@@ -1,5 +1,6 @@
 export type CommandMode = 'shell' | 'exec';
 
+import type { VirtualActiveSession, VirtualUserManager } from '../SSHMimic/users';
 import type VirtualFileSystem from '../VirtualFileSystem';
 
 export interface CommandResult {
@@ -22,6 +23,8 @@ export interface NanoEditorSession {
 export interface CommandContext {
   authUser: string;
   hostname: string;
+  users: VirtualUserManager;
+  activeSessions: VirtualActiveSession[];
   rawInput: string;
   mode: CommandMode;
   args: string[];

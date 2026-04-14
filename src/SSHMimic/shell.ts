@@ -4,7 +4,9 @@ import * as path from 'node:path';
 import type VirtualFileSystem from '../VirtualFileSystem';
 import type { ShellStream } from '../types/streams';
 import { getCommandNames, runCommand } from './commands';
+import { formatLoginDate } from './loginFormat';
 import { buildPrompt } from './prompt';
+import type { VirtualUserManager } from './users';
 
 interface NanoSession {
   kind: 'nano' | 'htop';
@@ -27,6 +29,7 @@ export function startShell(
   authUser: string,
   vfs: VirtualFileSystem,
   hostname: string,
+  users: VirtualUserManager,
   remoteAddress = 'unknown',
   terminalSize: TerminalSize = { cols: 80, rows: 24 }
 ): void {
@@ -297,17 +300,6 @@ export function startShell(
     vfs.writeFile('/virtual-env-js/.bash_history', data);
   }
 
-  function formatLoginDate(date: Date): string {
-    const weekday = date.toLocaleString('en-US', { weekday: 'short' });
-    const month = date.toLocaleString('en-US', { month: 'short' });
-    const day = date.getDate().toString().padStart(2, '0');
-    const hh = date.getHours().toString().padStart(2, '0');
-    const mm = date.getMinutes().toString().padStart(2, '0');
-    const ss = date.getSeconds().toString().padStart(2, '0');
-    const year = date.getFullYear();
-    return `${weekday} ${month} ${day} ${hh}:${mm}:${ss} ${year}`;
-  }
-
   function readLastLogin(): { at: string; from: string } | null {
     const lastlogPath = `/virtual-env-js/.lastlog/${authUser}.json`;
     if (!vfs.exists(lastlogPath)) {
@@ -469,7 +461,7 @@ export function startShell(
         stream.write('\r\n');
 
         if (line.length > 0) {
-          const result = await Promise.resolve(runCommand(line, authUser, hostname, 'shell', cwd, vfs));
+          const result = await Promise.resolve(runCommand(line, authUser, hostname, users, 'shell', cwd, vfs));
 
           pushHistory(line);
 

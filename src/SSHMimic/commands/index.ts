@@ -1,9 +1,12 @@
 import type { CommandMode, CommandOutcome, ShellModule } from '../../types/commands';
 import type VirtualFileSystem from '../../VirtualFileSystem';
+import type { VirtualUserManager } from '../users';
+import { adduserCommand } from './adduser';
 import { catCommand } from './cat';
 import { cdCommand } from './cd';
 import { clearCommand } from './clear';
 import { curlCommand } from './curl';
+import { deluserCommand } from './deluser';
 import { exitCommand } from './exit';
 import { createHelpCommand } from './help';
 import { hostnameCommand } from './hostname';
@@ -33,6 +36,8 @@ const BASE_COMMANDS: ShellModule[] = [
   treeCommand,
   nanoCommand,
   htopCommand,
+  adduserCommand,
+  deluserCommand,
   curlCommand,
   wgetCommand,
   clearCommand,
@@ -62,6 +67,7 @@ export function runCommand(
   rawInput: string,
   authUser: string,
   hostname: string,
+  users: VirtualUserManager,
   mode: CommandMode,
   cwd: string,
   vfs: VirtualFileSystem
@@ -86,6 +92,8 @@ export function runCommand(
     return mod.run({
       authUser,
       hostname,
+      users,
+      activeSessions: users.listActiveSessions(),
       rawInput: trimmed,
       mode,
       args,

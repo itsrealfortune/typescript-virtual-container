@@ -1,8 +1,8 @@
 {
-  "name": "virtual-env-js",
+  "name": "typescript-virtual-container",
   "module": "src/index.ts",
   "type": "module",
-  "private": true,
+  "version": "0.1.0",
   "scripts": {
     "postinstall": "rm -f node_modules/ssh2/lib/protocol/crypto/build/Release/sshcrypto.node && rm -rf node_modules/cpu-features"
   },

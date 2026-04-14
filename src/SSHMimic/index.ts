@@ -3,6 +3,7 @@ import VirtualFileSystem from '../VirtualFileSystem';
 import { runExec } from './exec';
 import { loadOrCreateHostKey } from './hostKey';
 import { startShell } from './shell';
+import { VirtualUserManager } from './users';
 
 class SSHMimic {
   private port: number;
@@ -19,6 +20,8 @@ class SSHMimic {
     const privateKey = loadOrCreateHostKey();
     const vfs = new VirtualFileSystem();
     await vfs.restoreMirror();
+    const users = new VirtualUserManager(vfs, process.env.SSH_MIMIC_ROOT_PASSWORD ?? 'root');
+    await users.initialize();
 
     this.server = new SSHServer(
       {
@@ -26,13 +29,22 @@ class SSHMimic {
         ident: `SSH-2.0-${this.hostname}`
       },
       (client) => {
-        let authUser = 'user';
+        let authUser = 'root';
         let remoteAddress = 'unknown';
+        let sessionId: string | null = null;
 
         client.on('authentication', (ctx) => {
-          if (ctx.method === 'none' || ctx.method === 'password' || ctx.method === 'publickey') {
-            authUser = ctx.username || 'user';
+          if (ctx.method === 'password') {
+            const candidateUser = ctx.username || 'root';
             remoteAddress = (ctx as { ip?: string }).ip ?? remoteAddress;
+
+            if (!users.verifyPassword(candidateUser, ctx.password ?? '')) {
+              ctx.reject();
+              return;
+            }
+
+            authUser = candidateUser;
+            sessionId = users.registerSession(authUser, remoteAddress).id;
 
             const homePath = `/home/${authUser}`;
             if (!vfs.exists(homePath)) {
@@ -46,6 +58,11 @@ class SSHMimic {
           }
 
           ctx.reject();
+        });
+
+        client.on('close', () => {
+          users.unregisterSession(sessionId);
+          sessionId = null;
         });
 
         client.on('ready', () => {
@@ -66,12 +83,12 @@ class SSHMimic {
 
             session.on('shell', (acceptShell) => {
               const stream = acceptShell();
-              startShell(stream, authUser, vfs, this.hostname, remoteAddress, terminalSize);
+              startShell(stream, authUser, vfs, this.hostname, users, remoteAddress, terminalSize);
             });
 
             session.on('exec', (acceptExec, _rejectExec, info) => {
               const stream = acceptExec();
-              runExec(stream, info.command.trim(), authUser, this.hostname, vfs);
+              runExec(stream, info.command.trim(), authUser, this.hostname, users, vfs);
             });
           });
         });
