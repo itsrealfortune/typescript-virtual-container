@@ -23,6 +23,8 @@ export interface CommandContext {
 export interface ShellModule {
   name: string;
   params: string[];
-  run: (ctx: CommandContext) => CommandResult;
+  run: (ctx: CommandContext) => CommandResult | Promise<CommandResult>;
   aliases?: string[];
 }
+
+export type CommandOutcome = CommandResult | Promise<CommandResult>;

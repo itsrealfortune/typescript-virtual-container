@@ -1,5 +1,5 @@
 import * as path from 'node:path';
-import type { CommandMode, CommandResult, ShellModule } from '../../types/commands';
+import type { CommandMode, CommandOutcome, CommandResult, ShellModule } from '../../types/commands';
 import type VirtualFileSystem from '../../VirtualFileSystem';
 
 function resolvePath(cwd: string, inputPath: string): string {
@@ -9,6 +9,51 @@ function resolvePath(cwd: string, inputPath: string): string {
   return inputPath.startsWith('/')
     ? path.posix.normalize(inputPath)
     : path.posix.normalize(path.posix.join(cwd, inputPath));
+}
+
+function parseOutputPath(args: string[]): { outputPath: string | null; inputArgs: string[] } {
+  const filtered: string[] = [];
+  let outputPath: string | null = null;
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index]!;
+
+    if (arg === '-o' || arg === '-O' || arg === '--output' || arg === '--output-document') {
+      outputPath = args[index + 1] ?? null;
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith('-o=')) {
+      outputPath = arg.slice(3);
+      continue;
+    }
+
+    if (arg.startsWith('-O=')) {
+      outputPath = arg.slice(3);
+      continue;
+    }
+
+    filtered.push(arg);
+  }
+
+  return { outputPath, inputArgs: filtered };
+}
+
+function stripUrlFilename(url: string): string {
+  const cleaned = url.split('?')[0]?.split('#')[0] ?? url;
+  const lastPart = cleaned.split('/').filter(Boolean).pop();
+  return lastPart && lastPart.length > 0 ? lastPart : 'index.html';
+}
+
+async function fetchResource(url: string): Promise<{ text: string; status: number; contentType: string | null }> {
+  const response = await fetch(url);
+  const contentType = response.headers.get('content-type');
+  return {
+    text: await response.text(),
+    status: response.status,
+    contentType
+  };
 }
 
 function levenshtein(a: string, b: string): number {
@@ -192,6 +237,55 @@ const COMMANDS: ShellModule[] = [
     }
   },
   {
+    name: 'curl',
+    params: ['[-o file] <url>'],
+    run: async ({ vfs, cwd, args }) => {
+      const { outputPath, inputArgs } = parseOutputPath(args);
+      const url = inputArgs[0];
+
+      if (!url) {
+        return { stderr: 'curl: missing URL', exitCode: 1 };
+      }
+
+      const result = await fetchResource(url);
+      if (result.status >= 400) {
+        return { stderr: `curl: HTTP ${result.status}`, exitCode: 22 };
+      }
+
+      if (outputPath) {
+        vfs.writeFile(resolvePath(cwd, outputPath), result.text);
+        return { exitCode: 0 };
+      }
+
+      return { stdout: result.text, exitCode: 0 };
+    }
+  },
+  {
+    name: 'wget',
+    params: ['[url]'],
+    run: async ({ vfs, cwd, args }) => {
+      const { outputPath, inputArgs } = parseOutputPath(args);
+      const url = inputArgs[0];
+
+      if (!url) {
+        return { stderr: 'wget: missing URL', exitCode: 1 };
+      }
+
+      const result = await fetchResource(url);
+      if (result.status >= 400) {
+        return { stderr: `wget: HTTP ${result.status}`, exitCode: 8 };
+      }
+
+      const target = resolvePath(cwd, outputPath ?? stripUrlFilename(url));
+      vfs.writeFile(target, result.text);
+
+      return {
+        stdout: `saved ${target}`,
+        exitCode: 0
+      };
+    }
+  },
+  {
     name: 'clear',
     params: [],
     run: () => ({ clearScreen: true, exitCode: 0 })
@@ -231,7 +325,7 @@ export function runCommand(
   mode: CommandMode,
   cwd: string,
   vfs: VirtualFileSystem
-): CommandResult {
+): CommandOutcome {
   const trimmed = rawInput.trim();
 
   if (trimmed.length === 0) {

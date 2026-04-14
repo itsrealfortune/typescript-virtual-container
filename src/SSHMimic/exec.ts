@@ -3,17 +3,17 @@ import type { ExecStream } from '../types/streams';
 import { runCommand } from './commands';
 
 export function runExec(stream: ExecStream, cmd: string, authUser: string, vfs: VirtualFileSystem): void {
-  const result = runCommand(cmd, authUser, 'exec', '/virtual-env-js', vfs);
+  Promise.resolve(runCommand(cmd, authUser, 'exec', '/home/' + authUser, vfs)).then((result) => {
+    if (result.stdout) {
+      stream.write(`${result.stdout}\n`);
+    }
 
-  if (result.stdout) {
-    stream.write(`${result.stdout}\n`);
-  }
+    if (result.stderr) {
+      stream.stderr.write(`${result.stderr}\n`);
+    }
 
-  if (result.stderr) {
-    stream.stderr.write(`${result.stderr}\n`);
-  }
+    stream.exit(result.exitCode ?? 0);
 
-  stream.exit(result.exitCode ?? 0);
-
-  stream.end();
+    stream.end();
+  });
 }

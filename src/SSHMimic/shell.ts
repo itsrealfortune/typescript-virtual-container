@@ -10,7 +10,7 @@ export function startShell(stream: ShellStream, authUser: string, vfs: VirtualFi
   let history = loadHistory(vfs);
   let historyIndex: number | null = null;
   let historyDraft = '';
-  let cwd = '/virtual-env-js';
+  let cwd = '/home/' + authUser;
   const buildCurrentPrompt = (): string => buildPrompt(authUser, 'typescript-vm', path.posix.basename(cwd) || '/');
   const commandNames = Array.from(new Set(getCommandNames())).sort();
 
@@ -130,7 +130,7 @@ export function startShell(stream: ShellStream, authUser: string, vfs: VirtualFi
   stream.write('Welcome to typescript-vm\r\n');
   renderLine();
 
-  stream.on('data', (chunk: Buffer) => {
+  stream.on('data', async (chunk: Buffer) => {
     const input = chunk.toString('utf8');
 
     for (let i = 0; i < input.length; i += 1) {
@@ -230,7 +230,7 @@ export function startShell(stream: ShellStream, authUser: string, vfs: VirtualFi
         stream.write('\r\n');
 
         if (line.length > 0) {
-          const result = runCommand(line, authUser, 'shell', cwd, vfs);
+          const result = await Promise.resolve(runCommand(line, authUser, 'shell', cwd, vfs));
 
           pushHistory(line);
 
