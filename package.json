@@ -9,7 +9,8 @@
     "check": "bunx --bun @biomejs/biome check ./src",
     "lint": "bunx --bun @biomejs/biome lint ./src",
     "lint:write": "bunx --bun @biomejs/biome lint --write ./src",
-    "test": "bunx --bun @biomejs/biome test ./src"
+    "test": "bunx --bun @biomejs/biome test ./src",
+    "deploy:npm": "npm publish --access public"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.11",
