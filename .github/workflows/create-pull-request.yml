@@ -63,13 +63,13 @@ jobs:
             const { data: pullRequest } = await github.rest.pulls.create({
               owner,
               repo,
-              head: 'dev',
+              head: ref.head,
               base,
-              title: 'chore: auto PR from dev to main',
+              title: 'chore: auto PR from ${ref.head} to main',
               body: [
                 'This pull request was created automatically by GitHub Actions.',
                 '',
-                `- source branch: \`dev\``,
+                `- source branch: \`${ref.head}\``,
                 `- target branch: \`main\``,
                 `- triggered by commit \`${context.sha}\``,
               ].join('\n'),
