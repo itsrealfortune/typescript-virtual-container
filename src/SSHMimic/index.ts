@@ -17,7 +17,7 @@ class SshMimic {
 	private server: SshServer | null;
 	private vfs: VirtualFileSystem | null = null;
 	private users: VirtualUserManager | null = null;
-    private basePath: string = ".";
+	private basePath: string = ".";
 
 	/**
 	 * Creates a new SSH mimic server instance.
@@ -26,15 +26,15 @@ class SshMimic {
 	 * @param hostname SSH ident hostname suffix and virtual host label.
 	 * @param basePath Optional base path for virtual filesystem (default: current directory).
 	 */
-    constructor({
-        port,
-        hostname = "typescript-vm",
-        basePath = "."
-    }: {
-        port: number;
-        hostname?: string;
-        basePath?: string;
-    }) {
+	constructor({
+		port,
+		hostname = "typescript-vm",
+		basePath = ".",
+	}: {
+		port: number;
+		hostname?: string;
+		basePath?: string;
+	}) {
 		this.port = port;
 		this.hostname = hostname;
 		this.basePath = basePath;
