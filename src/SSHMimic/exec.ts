@@ -13,7 +13,7 @@ export function runExec(stream: ExecStream, cmd: string, authUser: string, vfs: 
     }
 
     stream.exit(result.exitCode ?? 0);
-
+    void vfs.flushMirror();
     stream.end();
   });
 }

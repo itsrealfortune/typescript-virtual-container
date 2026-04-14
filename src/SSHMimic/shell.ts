@@ -260,6 +260,8 @@ export function startShell(stream: ShellStream, authUser: string, vfs: VirtualFi
           if (result.nextCwd) {
             cwd = result.nextCwd;
           }
+
+          await vfs.flushMirror();
         }
 
         renderLine();

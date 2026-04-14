@@ -29,3 +29,27 @@ export interface WriteFileOptions {
 export interface RemoveOptions {
   recursive?: boolean;
 }
+
+export interface VfsSnapshotBaseNode {
+  name: string;
+  mode: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VfsSnapshotFileNode extends VfsSnapshotBaseNode {
+  type: 'file';
+  compressed: boolean;
+  contentBase64: string;
+}
+
+export interface VfsSnapshotDirectoryNode extends VfsSnapshotBaseNode {
+  type: 'directory';
+  children: VfsSnapshotNode[];
+}
+
+export type VfsSnapshotNode = VfsSnapshotFileNode | VfsSnapshotDirectoryNode;
+
+export interface VfsSnapshot {
+  root: VfsSnapshotDirectoryNode;
+}

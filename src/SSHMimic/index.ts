@@ -5,78 +5,83 @@ import { loadOrCreateHostKey } from './hostKey';
 import { startShell } from './shell';
 
 class SSHMimic {
-    private port: number;
-    private server: SSHServer | null;
+  private port: number;
+  private server: SSHServer | null;
 
-    constructor(port: number) {
-        this.port = port;
-        this.server = null;
-    }
+  constructor(port: number) {
+    this.port = port;
+    this.server = null;
+  }
 
-    public start(): Promise<number> {
-        const privateKey = loadOrCreateHostKey();
-        const vfs = new VirtualFileSystem();
+  public async start(): Promise<number> {
+    const privateKey = loadOrCreateHostKey();
+    const vfs = new VirtualFileSystem();
+    await vfs.restoreMirror();
 
-        this.server = new SSHServer(
-            {
-                hostKeys: [privateKey],
-                ident: 'SSH-2.0-typescript-vm'
-            },
-            (client) => {
-                let authUser = 'user';
+    this.server = new SSHServer(
+      {
+        hostKeys: [privateKey],
+        ident: 'SSH-2.0-typescript-vm'
+      },
+      (client) => {
+        let authUser = 'user';
 
-                client.on('authentication', (ctx) => {
-                    if (ctx.method === 'none' || ctx.method === 'password' || ctx.method === 'publickey') {
-                        authUser = ctx.username || 'user';
+        client.on('authentication', (ctx) => {
+          if (ctx.method === 'none' || ctx.method === 'password' || ctx.method === 'publickey') {
+            authUser = ctx.username || 'user';
 
-                        vfs.mkdir('/home' + authUser, 0o755);
-                        vfs.writeFile('/home' + authUser + '/README.txt', 'Welcome to typescript-vm');
-
-                        ctx.accept();
-                        return;
-                    }
-                    ctx.reject();
-                });
-
-                client.on('ready', () => {
-                    client.on('session', (accept) => {
-                        const session = accept();
-
-                        session.on('pty', (acceptPty) => {
-                            acceptPty();
-                        });
-
-                        session.on('shell', (acceptShell) => {
-                            const stream = acceptShell();
-                            startShell(stream, authUser, vfs);
-                        });
-
-                        session.on('exec', (acceptExec, _rejectExec, info) => {
-                            const stream = acceptExec();
-                            const cmd = info.command.trim();
-                            runExec(stream, cmd, authUser, vfs);
-                        });
-                    });
-                });
+            const homePath = `/home/${authUser}`;
+            if (!vfs.exists(homePath)) {
+              vfs.mkdir(homePath, 0o755);
+              vfs.writeFile(`${homePath}/README.txt`, 'Welcome to typescript-vm');
+              void vfs.flushMirror();
             }
-        );
 
-        return new Promise((resolve, reject) => {
-            this.server?.once('error', (err: unknown) => reject(err));
-            this.server?.listen(this.port, '127.0.0.1', () => {
-                console.log(`SSH Mimic listening on port ${this.port}`);
-                resolve(this.port);
-            });
+            ctx.accept();
+            return;
+          }
+
+          ctx.reject();
         });
-    }
 
-    public stop(): void {
-        if (this.server) {
-            this.server.close(() => {
-                console.log('SSH Mimic stopped');
+        client.on('ready', () => {
+          client.on('session', (accept) => {
+            const session = accept();
+
+            session.on('pty', (acceptPty) => {
+              acceptPty();
             });
-        }
+
+            session.on('shell', (acceptShell) => {
+              const stream = acceptShell();
+              startShell(stream, authUser, vfs);
+            });
+
+            session.on('exec', (acceptExec, _rejectExec, info) => {
+              const stream = acceptExec();
+              runExec(stream, info.command.trim(), authUser, vfs);
+            });
+          });
+        });
+      }
+    );
+
+    return new Promise<number>((resolve, reject) => {
+      this.server?.once('error', (err: unknown) => reject(err));
+      this.server?.listen(this.port, '127.0.0.1', () => {
+        console.log(`SSH Mimic listening on port ${this.port}`);
+        resolve(this.port);
+      });
+    });
+  }
+
+  public stop(): void {
+    if (this.server) {
+      this.server.close(() => {
+        console.log('SSH Mimic stopped');
+      });
     }
+  }
 }
 
 export default SSHMimic;
