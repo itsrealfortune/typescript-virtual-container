@@ -15,6 +15,8 @@ class SshMimic {
 	private port: number;
 	private hostname: string;
 	private server: SshServer | null;
+	private vfs: VirtualFileSystem | null = null;
+	private users: VirtualUserManager | null = null;
 
 	/**
 	 * Creates a new SSH mimic server instance.
@@ -35,13 +37,13 @@ class SshMimic {
 	 */
 	public async start(): Promise<number> {
 		const privateKey = loadOrCreateHostKey();
-		const vfs = new VirtualFileSystem();
-		await vfs.restoreMirror();
-		const users = new VirtualUserManager(
-			vfs,
+		this.vfs = new VirtualFileSystem();
+		await this.vfs.restoreMirror();
+		this.users = new VirtualUserManager(
+			this.vfs,
 			process.env.SSH_MIMIC_ROOT_PASSWORD ?? "root",
 		);
-		await users.initialize();
+		await this.users.initialize();
 
 		this.server = new SshServer(
 			{
@@ -58,22 +60,24 @@ class SshMimic {
 						const candidateUser = ctx.username || "root";
 						remoteAddress = (ctx as { ip?: string }).ip ?? remoteAddress;
 
-						if (!users.verifyPassword(candidateUser, ctx.password ?? "")) {
+						if (
+							!this.users!.verifyPassword(candidateUser, ctx.password ?? "")
+						) {
 							ctx.reject();
 							return;
 						}
 
 						authUser = candidateUser;
-						sessionId = users.registerSession(authUser, remoteAddress).id;
+						sessionId = this.users!.registerSession(authUser, remoteAddress).id;
 
 						const homePath = `/home/${authUser}`;
-						if (!vfs.exists(homePath)) {
-							vfs.mkdir(homePath, 0o755);
-							vfs.writeFile(
+						if (!this.vfs!.exists(homePath)) {
+							this.vfs!.mkdir(homePath, 0o755);
+							this.vfs!.writeFile(
 								`${homePath}/README.txt`,
 								`Welcome to ${this.hostname}`,
 							);
-							void vfs.flushMirror();
+							void this.vfs!.flushMirror();
 						}
 
 						ctx.accept();
@@ -84,7 +88,7 @@ class SshMimic {
 				});
 
 				client.on("close", () => {
-					users.unregisterSession(sessionId);
+					this.users!.unregisterSession(sessionId);
 					sessionId = null;
 				});
 
@@ -112,9 +116,9 @@ class SshMimic {
 							startShell(
 								stream,
 								authUser,
-								vfs,
+								this.vfs!,
 								this.hostname,
-								users,
+								this.users!,
 								sessionId,
 								remoteAddress,
 								terminalSize,
@@ -128,8 +132,8 @@ class SshMimic {
 								info.command.trim(),
 								authUser,
 								this.hostname,
-								users,
-								vfs,
+								this.users!,
+								this.vfs!,
 							);
 						});
 					});
@@ -155,6 +159,33 @@ class SshMimic {
 				console.log("SSH Mimic stopped");
 			});
 		}
+	}
+
+	/**
+	 * Returns virtual filesystem instance after server started.
+	 *
+	 * @returns VirtualFileSystem or null when not started.
+	 */
+	public getVfs(): VirtualFileSystem | null {
+		return this.vfs;
+	}
+
+	/**
+	 * Returns user manager instance after server started.
+	 *
+	 * @returns VirtualUserManager or null when not started.
+	 */
+	public getUsers(): VirtualUserManager | null {
+		return this.users;
+	}
+
+	/**
+	 * Returns hostname shown in prompts and idents.
+	 *
+	 * @returns Configured hostname label.
+	 */
+	public getHostname(): string {
+		return this.hostname;
 	}
 }
 

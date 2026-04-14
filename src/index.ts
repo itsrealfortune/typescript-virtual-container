@@ -1,9 +1,8 @@
-
+import { SshClient } from "./SSHMimic/client";
+import { SshMimic } from "./SSHMimic/index";
 import { VirtualUserManager } from "./SSHMimic/users";
 import VirtualFileSystem from "./VirtualFileSystem";
 
-
-export { SshMimic as VirtualMachine } from "./SSHMimic/index";
 export type {
 	CommandContext,
 	CommandMode,
@@ -28,5 +27,8 @@ export type {
 	VfsSnapshotNode,
 	WriteFileOptions
 } from "./types/vfs";
-export { VirtualFileSystem, VirtualUserManager };
+
+export {
+	SshClient, VirtualFileSystem, SshMimic as VirtualMachine, VirtualUserManager
+};
 
