@@ -61,10 +61,14 @@ export function startShell(
     }
   }
 
-  async function getVisibleHtopPidList(): Promise<string> {
+  async function getVisibleHtopPidList(): Promise<string | null> {
     const rootPid = process.pid;
     const descendants = await collectChildPids(rootPid);
-    const unique = Array.from(new Set([rootPid, ...descendants])).sort((a, b) => a - b);
+    const unique = Array.from(new Set(descendants)).sort((a, b) => a - b);
+    if (unique.length === 0) {
+      return null;
+    }
+
     return unique.join(',');
   }
 
@@ -160,6 +164,11 @@ export function startShell(
 
   async function startHtop(): Promise<void> {
     const pidList = await getVisibleHtopPidList();
+    if (!pidList) {
+      stream.write('htop: no child_process processes to display\r\n');
+      return;
+    }
+
     const command = withTerminalSize(`htop -p ${shellQuote(pidList)}`);
     const monitor = spawn('script', ['-qfec', command, '/dev/null'], {
       stdio: ['pipe', 'pipe', 'pipe'],
