@@ -46,6 +46,7 @@ export class VirtualUserManager {
 	constructor(
 		private readonly vfs: VirtualFileSystem,
 		private readonly defaultRootPassword: string = "root",
+		private readonly autoSudoForNewUsers: boolean = true,
 	) {}
 
 	/**
@@ -98,7 +99,9 @@ export class VirtualUserManager {
 		}
 
 		this.users.set(username, this.createRecord(username, password));
-		this.sudoers.add(username);
+		if (this.autoSudoForNewUsers) {
+			this.sudoers.add(username);
+		}
 		const homePath = `/home/${username}`;
 		if (!this.vfs.exists(homePath)) {
 			this.vfs.mkdir(homePath, 0o755);

@@ -19,6 +19,15 @@ function resolveRootPassword(): string {
 	return generated;
 }
 
+function resolveAutoSudoForNewUsers(): boolean {
+	const configured = process.env.SSH_MIMIC_AUTO_SUDO_NEW_USERS;
+	if (!configured) {
+		return true;
+	}
+
+	return !["0", "false", "no", "off"].includes(configured.toLowerCase());
+}
+
 /**
  * SSH server wrapper that exposes virtual shell and exec sessions.
  *
@@ -64,7 +73,11 @@ class SshMimic {
 		const privateKey = loadOrCreateHostKey();
 		this.vfs = new VirtualFileSystem(this.basePath);
 		await this.vfs.restoreMirror();
-		this.users = new VirtualUserManager(this.vfs, resolveRootPassword());
+		this.users = new VirtualUserManager(
+			this.vfs,
+			resolveRootPassword(),
+			resolveAutoSudoForNewUsers(),
+		);
 		await this.users.initialize();
 
 		this.server = new SshServer(
