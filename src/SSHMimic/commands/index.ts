@@ -261,6 +261,17 @@ const COMMANDS: ShellModule[] = [
     }
   },
   {
+    name: 'htop',
+    params: [],
+    run: ({ mode }) => {
+      if (mode === 'exec') {
+        return { stderr: 'htop: interactive terminal required', exitCode: 1 };
+      }
+
+      return { openHtop: true, exitCode: 0 };
+    }
+  },
+  {
     name: 'curl',
     params: ['[-o file] <url>'],
     run: async ({ vfs, cwd, args }) => {

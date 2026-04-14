@@ -7,6 +7,7 @@ import { getCommandNames, runCommand } from './commands';
 import { buildPrompt } from './prompt';
 
 interface NanoSession {
+  kind: 'nano' | 'htop';
   targetPath: string;
   tempPath: string;
   process: ChildProcessWithoutNullStreams;
@@ -30,6 +31,30 @@ export function startShell(stream: ShellStream, authUser: string, vfs: VirtualFi
     return buildPrompt(authUser, 'typescript-vm', cwdLabel);
   };
   const commandNames = Array.from(new Set(getCommandNames())).sort();
+
+  async function collectChildPids(parentPid: number): Promise<number[]> {
+    try {
+      const childrenRaw = await readFile(`/proc/${parentPid}/task/${parentPid}/children`, 'utf8');
+      const directChildren = childrenRaw
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((value) => Number.parseInt(value, 10))
+        .filter((pid) => Number.isInteger(pid) && pid > 0);
+
+      const nested = await Promise.all(directChildren.map((pid) => collectChildPids(pid)));
+      return [...directChildren, ...nested.flat()];
+    } catch {
+      return [];
+    }
+  }
+
+  async function getVisibleHtopPidList(): Promise<string> {
+    const rootPid = process.pid;
+    const descendants = await collectChildPids(rootPid);
+    const unique = Array.from(new Set([rootPid, ...descendants])).sort((a, b) => a - b);
+    return unique.join(',');
+  }
 
   function resolvePath(base: string, inputPath: string): string {
     if (!inputPath || inputPath.trim() === '' || inputPath === '.') {
@@ -57,15 +82,17 @@ export function startShell(stream: ShellStream, authUser: string, vfs: VirtualFi
 
     const activeSession = nanoSession;
 
-    try {
-      const updatedContent = await readFile(activeSession.tempPath, 'utf8');
-      vfs.writeFile(activeSession.targetPath, updatedContent);
-      await vfs.flushMirror();
-    } catch {
-      // If temp file does not exist, nano exited without writing.
-    }
+    if (activeSession.kind === 'nano') {
+      try {
+        const updatedContent = await readFile(activeSession.tempPath, 'utf8');
+        vfs.writeFile(activeSession.targetPath, updatedContent);
+        await vfs.flushMirror();
+      } catch {
+        // If temp file does not exist, nano exited without writing.
+      }
 
-    await unlink(activeSession.tempPath).catch(() => undefined);
+      await unlink(activeSession.tempPath).catch(() => undefined);
+    }
 
     nanoSession = null;
     lineBuffer = '';
@@ -106,9 +133,46 @@ export function startShell(stream: ShellStream, authUser: string, vfs: VirtualFi
     });
 
     nanoSession = {
+      kind: 'nano',
       targetPath,
       tempPath,
       process: editor
+    };
+  }
+
+  async function startHtop(): Promise<void> {
+    const pidList = await getVisibleHtopPidList();
+    const command = `htop -p ${shellQuote(pidList)}`;
+    const monitor = spawn('script', ['-qfec', command, '/dev/null'], {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: {
+        ...process.env,
+        TERM: process.env.TERM ?? 'xterm-256color'
+      }
+    });
+
+    monitor.stdout.on('data', (data: Buffer) => {
+      stream.write(data.toString('utf8'));
+    });
+
+    monitor.stderr.on('data', (data: Buffer) => {
+      stream.write(data.toString('utf8'));
+    });
+
+    monitor.on('error', (error: Error) => {
+      stream.write(`htop: ${error.message}\r\n`);
+      void finishNanoEditor();
+    });
+
+    monitor.on('close', () => {
+      void finishNanoEditor();
+    });
+
+    nanoSession = {
+      kind: 'htop',
+      targetPath: '',
+      tempPath: '',
+      process: monitor
     };
   }
 
@@ -320,6 +384,11 @@ export function startShell(stream: ShellStream, authUser: string, vfs: VirtualFi
 
           if (result.openEditor) {
             await startNanoEditor(result.openEditor.targetPath, result.openEditor.initialContent, result.openEditor.tempPath);
+            return;
+          }
+
+          if (result.openHtop) {
+            await startHtop();
             return;
           }
 

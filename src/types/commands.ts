@@ -10,6 +10,7 @@ export interface CommandResult {
   exitCode?: number;
   nextCwd?: string;
   openEditor?: NanoEditorSession;
+  openHtop?: boolean;
 }
 
 export interface NanoEditorSession {
