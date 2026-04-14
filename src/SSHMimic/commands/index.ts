@@ -93,8 +93,9 @@ const COMMANDS: ShellModule[] = [
     name: 'ls',
     params: ['[path]'],
     run: ({ vfs, cwd, args }) => {
-      const target = resolvePath(cwd, args[0] ?? cwd);
-      const items = vfs.list(target);
+      const targetArg = args.find((arg) => !arg.startsWith('-'));
+      const target = resolvePath(cwd, targetArg ?? cwd);
+      const items = vfs.list(target).filter((name) => !name.startsWith('.'));
       const rendered = joinListWithType(target, items, (p) => vfs.stat(p));
       return { stdout: rendered, exitCode: 0 };
     }

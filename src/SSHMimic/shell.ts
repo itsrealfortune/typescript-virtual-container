@@ -68,6 +68,7 @@ export function startShell(stream: ShellStream, authUser: string, vfs: VirtualFi
     try {
       return vfs
         .list(basePath)
+        .filter((entry) => !entry.startsWith('.'))
         .filter((entry) => entry.startsWith(namePart))
         .map((entry) => {
           const fullPath = path.posix.join(basePath, entry);
