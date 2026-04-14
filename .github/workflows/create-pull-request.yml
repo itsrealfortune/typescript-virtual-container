@@ -25,18 +25,18 @@ jobs:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const head = `${owner}:dev`;
+            const head = `${owner}:${ref.head}`;
             const base = 'main';
 
-            // Check if there are commits between main and dev
+            // Check if there are commits between main and the current branch
             const { data: comparison } = await github.rest.repos.compareCommits({
               owner,
               repo,
               base: 'main',
-              head: 'dev',
+              head: ref.head,
             }).catch(err => {
               if (err.status === 404 && err.message.includes('No commits')) {
-                core.info('No commits between main and dev - skipping PR creation');
+                core.info('No commits between main and ' + ref.head + ' - skipping PR creation');
                 return { data: { ahead_by: 0 } };
               }
               throw err;
