@@ -1,0 +1,80 @@
+import { runCommand } from './commands';
+import { buildPrompt } from './prompt';
+
+interface ShellStream {
+  write(data: string): void;
+  exit(code: number): void;
+  end(): void;
+  on(event: 'data', listener: (chunk: Buffer) => void): void;
+}
+
+export function startShell(stream: ShellStream, authUser: string): void {
+  let lineBuffer = '';
+  const prompt = buildPrompt(authUser, 'typescript-vm', 'virtual-env-js');
+
+  stream.write('Welcome to typescript-vm\r\n');
+  stream.write(prompt);
+
+  stream.on('data', (chunk: Buffer) => {
+    const input = chunk.toString('utf8');
+
+    for (const ch of input) {
+      if (ch === '\u0004') {
+        stream.write('logout\r\n');
+        stream.exit(0);
+        stream.end();
+        return;
+      }
+
+      if (ch === '\u0003') {
+        lineBuffer = '';
+        stream.write('^C\r\n');
+        stream.write(prompt);
+        continue;
+      }
+
+      if (ch === '\r' || ch === '\n') {
+        const line = lineBuffer.trim();
+        lineBuffer = '';
+        stream.write('\r\n');
+
+        if (line.length > 0) {
+          const result = runCommand(line, authUser, 'shell');
+
+          if (result.clearScreen) {
+            stream.write('\u001b[2J\u001b[H');
+          }
+
+          if (result.stdout) {
+            stream.write(`${result.stdout}\r\n`);
+          }
+
+          if (result.stderr) {
+            stream.write(`${result.stderr}\r\n`);
+          }
+
+          if (result.closeSession) {
+            stream.write('logout\r\n');
+            stream.exit(result.exitCode ?? 0);
+            stream.end();
+            return;
+          }
+        }
+
+        stream.write(prompt);
+        continue;
+      }
+
+      if (ch === '\u007f' || ch === '\b') {
+        if (lineBuffer.length > 0) {
+          lineBuffer = lineBuffer.slice(0, -1);
+          stream.write('\b \b');
+        }
+        continue;
+      }
+
+      lineBuffer += ch;
+      stream.write(ch);
+    }
+  });
+}
