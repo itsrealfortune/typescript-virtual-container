@@ -26,10 +26,18 @@ class SshMimic {
 	 * @param hostname SSH ident hostname suffix and virtual host label.
 	 * @param basePath Optional base path for virtual filesystem (default: current directory).
 	 */
-	constructor(port: number, hostname = "typescript-vm", basePath?: string) {
+    constructor({
+        port,
+        hostname = "typescript-vm",
+        basePath = "."
+    }: {
+        port: number;
+        hostname?: string;
+        basePath?: string;
+    }) {
 		this.port = port;
 		this.hostname = hostname;
-		this.basePath = basePath || this.basePath;
+		this.basePath = basePath;
 		this.server = null;
 	}
 

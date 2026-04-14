@@ -1,7 +1,7 @@
 import { VirtualMachine } from ".";
 
 const sshHostname = process.env.SSH_MIMIC_HOSTNAME ?? "typescript-vm";
-const sshMimic = new VirtualMachine(2222, sshHostname);
+const sshMimic = new VirtualMachine({ port: 2222, hostname: sshHostname });
 
 sshMimic
 	.start()
