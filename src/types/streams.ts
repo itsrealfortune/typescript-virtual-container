@@ -12,4 +12,5 @@ export interface ShellStream {
   exit(code: number): void;
   end(): void;
   on(event: 'data', listener: (chunk: Buffer) => void): void;
+  on(event: 'close', listener: () => void): void;
 }

@@ -1,5 +1,5 @@
 import * as path from 'node:path';
-import type { CommandMode, CommandOutcome, CommandResult, ShellModule } from '../../types/commands';
+import type { CommandMode, CommandOutcome, ShellModule } from '../../types/commands';
 import type VirtualFileSystem from '../../VirtualFileSystem';
 
 function resolvePath(cwd: string, inputPath: string): string {
@@ -234,6 +234,30 @@ const COMMANDS: ShellModule[] = [
     run: ({ vfs, cwd, args }) => {
       const target = resolvePath(cwd, args[0] ?? cwd);
       return { stdout: vfs.tree(target), exitCode: 0 };
+    }
+  },
+  {
+    name: 'nano',
+    params: ['<file>'],
+    run: ({ vfs, cwd, args }) => {
+      const fileArg = args[0];
+      if (!fileArg) {
+        return { stderr: 'nano: missing file operand', exitCode: 1 };
+      }
+
+      const targetPath = resolvePath(cwd, fileArg);
+      const initialContent = vfs.exists(targetPath) ? vfs.readFile(targetPath) : '';
+      const safeName = path.posix.basename(targetPath) || 'buffer';
+      const tempPath = `/tmp/sshmimic-nano-${Date.now()}-${safeName}.tmp`;
+
+      return {
+        openEditor: {
+          targetPath,
+          tempPath,
+          initialContent
+        },
+        exitCode: 0
+      };
     }
   },
   {

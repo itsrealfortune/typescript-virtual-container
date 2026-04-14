@@ -9,6 +9,13 @@ export interface CommandResult {
   closeSession?: boolean;
   exitCode?: number;
   nextCwd?: string;
+  openEditor?: NanoEditorSession;
+}
+
+export interface NanoEditorSession {
+  targetPath: string;
+  tempPath: string;
+  initialContent: string;
 }
 
 export interface CommandContext {

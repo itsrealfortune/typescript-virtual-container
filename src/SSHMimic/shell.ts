@@ -1,8 +1,20 @@
+import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
+import { readFile, unlink, writeFile } from 'node:fs/promises';
 import * as path from 'node:path';
 import type VirtualFileSystem from '../VirtualFileSystem';
 import type { ShellStream } from '../types/streams';
 import { getCommandNames, runCommand } from './commands';
 import { buildPrompt } from './prompt';
+
+interface NanoSession {
+  targetPath: string;
+  tempPath: string;
+  process: ChildProcessWithoutNullStreams;
+}
+
+function shellQuote(value: string): string {
+  return `'${value.replace(/'/g, `'\\''`)}'`;
+}
 
 export function startShell(stream: ShellStream, authUser: string, vfs: VirtualFileSystem): void {
   let lineBuffer = '';
@@ -11,6 +23,7 @@ export function startShell(stream: ShellStream, authUser: string, vfs: VirtualFi
   let historyIndex: number | null = null;
   let historyDraft = '';
   let cwd = '/home/' + authUser;
+  let nanoSession: NanoSession | null = null;
   const buildCurrentPrompt = (): string => {
     const homePath = `/home/${authUser}`;
     const cwdLabel = cwd === homePath ? '~' : path.posix.basename(cwd) || '/';
@@ -35,6 +48,68 @@ export function startShell(stream: ShellStream, authUser: string, vfs: VirtualFi
     if (moveLeft > 0) {
       stream.write(`\u001b[${moveLeft}D`);
     }
+  }
+
+  async function finishNanoEditor(): Promise<void> {
+    if (!nanoSession) {
+      return;
+    }
+
+    const activeSession = nanoSession;
+
+    try {
+      const updatedContent = await readFile(activeSession.tempPath, 'utf8');
+      vfs.writeFile(activeSession.targetPath, updatedContent);
+      await vfs.flushMirror();
+    } catch {
+      // If temp file does not exist, nano exited without writing.
+    }
+
+    await unlink(activeSession.tempPath).catch(() => undefined);
+
+    nanoSession = null;
+    lineBuffer = '';
+    cursorPos = 0;
+    stream.write('\r\n');
+    renderLine();
+  }
+
+  async function startNanoEditor(targetPath: string, initialContent: string, tempPath: string): Promise<void> {
+    if (vfs.exists(targetPath)) {
+      await writeFile(tempPath, initialContent, 'utf8');
+    }
+
+    const command = `nano -- ${shellQuote(tempPath)}`;
+    const editor = spawn('script', ['-qfec', command, '/dev/null'], {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: {
+        ...process.env,
+        TERM: process.env.TERM ?? 'xterm-256color'
+      }
+    });
+
+    editor.stdout.on('data', (data: Buffer) => {
+      stream.write(data.toString('utf8'));
+    });
+
+    editor.stderr.on('data', (data: Buffer) => {
+      stream.write(data.toString('utf8'));
+    });
+
+    editor.on('error', (error: Error) => {
+      stream.write(`nano: ${error.message}\r\n`);
+      void finishNanoEditor();
+    });
+
+    editor.on('close', () => {
+      void finishNanoEditor();
+    });
+
+    nanoSession = {
+      targetPath,
+      tempPath,
+      process: editor
+    };
   }
 
   function applyHistoryLine(nextLine: string): void {
@@ -135,6 +210,11 @@ export function startShell(stream: ShellStream, authUser: string, vfs: VirtualFi
   renderLine();
 
   stream.on('data', async (chunk: Buffer) => {
+    if (nanoSession) {
+      nanoSession.process.stdin.write(chunk);
+      return;
+    }
+
     const input = chunk.toString('utf8');
 
     for (let i = 0; i < input.length; i += 1) {
@@ -238,6 +318,11 @@ export function startShell(stream: ShellStream, authUser: string, vfs: VirtualFi
 
           pushHistory(line);
 
+          if (result.openEditor) {
+            await startNanoEditor(result.openEditor.targetPath, result.openEditor.initialContent, result.openEditor.tempPath);
+            return;
+          }
+
           if (result.clearScreen) {
             stream.write('\u001b[2J\u001b[H');
           }
@@ -278,6 +363,13 @@ export function startShell(stream: ShellStream, authUser: string, vfs: VirtualFi
       }
 
       insertText(ch);
+    }
+  });
+
+  stream.on('close', () => {
+    if (nanoSession) {
+      nanoSession.process.kill('SIGTERM');
+      nanoSession = null;
     }
   });
 }
