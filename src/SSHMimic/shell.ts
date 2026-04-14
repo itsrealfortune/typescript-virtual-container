@@ -11,7 +11,11 @@ export function startShell(stream: ShellStream, authUser: string, vfs: VirtualFi
   let historyIndex: number | null = null;
   let historyDraft = '';
   let cwd = '/home/' + authUser;
-  const buildCurrentPrompt = (): string => buildPrompt(authUser, 'typescript-vm', path.posix.basename(cwd) || '/');
+  const buildCurrentPrompt = (): string => {
+    const homePath = `/home/${authUser}`;
+    const cwdLabel = cwd === homePath ? '~' : path.posix.basename(cwd) || '/';
+    return buildPrompt(authUser, 'typescript-vm', cwdLabel);
+  };
   const commandNames = Array.from(new Set(getCommandNames())).sort();
 
   function resolvePath(base: string, inputPath: string): string {
