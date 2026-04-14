@@ -4,17 +4,22 @@
   "type": "module",
   "version": "0.1.0",
   "scripts": {
-    "postinstall": "rm -f node_modules/ssh2/lib/protocol/crypto/build/Release/sshcrypto.node && rm -rf node_modules/cpu-features"
+    "postinstall": "rm -f node_modules/ssh2/lib/protocol/crypto/build/Release/sshcrypto.node && rm -rf node_modules/cpu-features",
+    "format": "bunx --bun @biomejs/biome format --write ./src",
+    "check": "bunx --bun @biomejs/biome check ./src",
+    "lint": "bunx --bun @biomejs/biome lint ./src",
+    "lint:write": "bunx --bun @biomejs/biome lint --write ./src",
+    "test": "bunx --bun @biomejs/biome test ./src"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/ssh2": "^1.15.5"
+    "@types/ssh2": "^1.15.5",
+    "@types/node": "^25.6.0"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
   "dependencies": {
-    "@types/node": "^25.6.0",
     "ssh2": "^1.17.0",
     "tar-stream": "^3.1.8"
   }
