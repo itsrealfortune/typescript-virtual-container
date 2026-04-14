@@ -15,6 +15,32 @@ The format is based on Keep a Changelog.
   - CODE_OF_CONDUCT.md
   - GitHub issue and PR templates
 
+## [1.0.1] - 2026-04-14
+
+### Added
+
+- `ls -l` / `ls --long` support with long listing format (permissions, size, updated time).
+- Host-command mirroring for network tools:
+  - `curl` now runs through host `curl` via `child_process`.
+  - `wget` now runs through host `wget` via `child_process`.
+- Temporary host download flow for `wget` using `/tmp` before import into VFS.
+- Terminal line normalization utility for command help and diagnostics rendering.
+
+### Changed
+
+- `curl` behavior is now aligned with the host binary output and exit codes.
+- `curl -o` writes host command output to the virtual filesystem target path.
+- `wget` writes downloaded payloads to VFS after host-side transfer, preserving command semantics.
+- URL fetch helper now accepts host-only inputs by normalizing missing protocol to `http://`.
+- Auto pull-request GitHub workflow now targets any non-`main` branch instead of only `dev`.
+- Auto PR metadata now uses the dynamic source branch name in PR head/title/body.
+- Test workflow trigger scope was generalized by removing hardcoded branch filters.
+
+### Fixed
+
+- Resolved large horizontal spacing artifacts in SSH terminal output by normalizing TTY line endings (`\r\n`) in both interactive shell and exec paths.
+- Reduced excessive whitespace in help output rendering (`curl --help`, `wget --help`) by normalizing tabs and over-padded spacing.
+
 ## [1.0.0] - 2026-04-14
 
 ### Added
