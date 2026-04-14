@@ -48,7 +48,7 @@ export function startShell(
   let history = loadHistory(vfs);
   let historyIndex: number | null = null;
   let historyDraft = '';
-  let cwd = '/home/' + authUser;
+  let cwd = `/home/${authUser}`;
   let nanoSession: NanoSession | null = null;
   let pendingSudo: PendingSudo | null = null;
   const buildCurrentPrompt = (): string => {

@@ -1,7 +1,7 @@
-import SSHMimic from './SSHMimic/index';
+import SshMimic from './SSHMimic/index';
 
 const sshHostname = process.env.SSH_MIMIC_HOSTNAME ?? 'typescript-vm';
-const sshMimic = new SSHMimic(2222, sshHostname);
+const sshMimic = new SshMimic(2222, sshHostname);
 
 sshMimic
 	.start()
@@ -13,5 +13,5 @@ sshMimic
 		process.exit(1);
 	});
 
-const exported = { VirtualMachine: SSHMimic };
+const exported = { VirtualMachine: SshMimic };
 export default exported;

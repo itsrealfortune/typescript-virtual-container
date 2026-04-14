@@ -11,7 +11,7 @@ export function runExec(
   users: VirtualUserManager,
   vfs: VirtualFileSystem
 ): void {
-  Promise.resolve(runCommand(cmd, authUser, hostname, users, 'exec', '/home/' + authUser, vfs)).then((result) => {
+  Promise.resolve(runCommand(cmd, authUser, hostname, users, 'exec', `/home/${authUser}`, vfs)).then((result) => {
     if (result.stdout) {
       stream.write(`${result.stdout}\n`);
     }

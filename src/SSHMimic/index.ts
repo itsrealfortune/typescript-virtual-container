@@ -1,4 +1,4 @@
-import { Server as SSHServer } from 'ssh2';
+import { Server as SshServer } from 'ssh2';
 import VirtualFileSystem from '../VirtualFileSystem';
 import { runExec } from './exec';
 import { loadOrCreateHostKey } from './hostKey';
@@ -8,7 +8,7 @@ import { VirtualUserManager } from './users';
 class SSHMimic {
   private port: number;
   private hostname: string;
-  private server: SSHServer | null;
+  private server: SshServer | null;
 
   constructor(port: number, hostname = 'typescript-vm') {
     this.port = port;
@@ -23,7 +23,7 @@ class SSHMimic {
     const users = new VirtualUserManager(vfs, process.env.SSH_MIMIC_ROOT_PASSWORD ?? 'root');
     await users.initialize();
 
-    this.server = new SSHServer(
+    this.server = new SshServer(
       {
         hostKeys: [privateKey],
         ident: `SSH-2.0-${this.hostname}`

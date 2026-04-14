@@ -1,6 +1,6 @@
-import { generateKeyPairSync } from 'crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { dirname, resolve } from 'path';
+import { generateKeyPairSync } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 
 export function loadOrCreateHostKey(baseDir: string = process.cwd()): string {
   const hostKeyPath = resolve(baseDir, '.ssh-mimic', 'host_rsa');
