@@ -1,4 +1,11 @@
 {
+    "assist": {
+        "actions": {
+            "source": {
+                "organizeImports": "off"
+            }
+        }
+    },
     "linter": {
         "rules": {
             "suspicious": {
@@ -9,12 +16,6 @@
                 "useNamingConvention": "error",
                 "noNonNullAssertion": "off"
             }
-        }
-    },
-    "assist": {
-        "source": {
-            "autoImport": "on",
-            "importModuleSpecifierPreference": "relative"
         }
     }
 }

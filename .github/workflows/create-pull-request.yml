@@ -3,11 +3,10 @@ name: Auto Create Pull Request
 on:
   push:
     branches:
-      - 'dev'
 
 jobs:
   create-pull-request:
-    if: github.ref == 'refs/heads/dev'
+    if: github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Validate pull request token
@@ -26,18 +25,21 @@ jobs:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const head = `${owner}:dev`;
+            const sourceBranch = context.ref.startsWith('refs/heads/')
+              ? context.ref.slice('refs/heads/'.length)
+              : context.ref;
+            const head = `${owner}:${sourceBranch}`;
             const base = 'main';
 
-            // Check if there are commits between main and dev
+            // Check if there are commits between main and the current branch
             const { data: comparison } = await github.rest.repos.compareCommits({
               owner,
               repo,
               base: 'main',
-              head: 'dev',
+              head: sourceBranch,
             }).catch(err => {
               if (err.status === 404 && err.message.includes('No commits')) {
-                core.info('No commits between main and dev - skipping PR creation');
+                core.info('No commits between main and ' + sourceBranch + ' - skipping PR creation');
                 return { data: { ahead_by: 0 } };
               }
               throw err;
@@ -64,13 +66,13 @@ jobs:
             const { data: pullRequest } = await github.rest.pulls.create({
               owner,
               repo,
-              head: 'dev',
+              head: sourceBranch,
               base,
-              title: 'chore: auto PR from dev to main',
+              title: `chore: auto PR from ${sourceBranch} to main`,
               body: [
                 'This pull request was created automatically by GitHub Actions.',
                 '',
-                `- source branch: \`dev\``,
+                `- source branch: \`${sourceBranch}\``,
                 `- target branch: \`main\``,
                 `- triggered by commit \`${context.sha}\``,
               ].join('\n'),

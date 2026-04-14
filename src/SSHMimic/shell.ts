@@ -33,6 +33,13 @@ interface TerminalSize {
 	rows: number;
 }
 
+function toTtyLines(text: string): string {
+	return text
+		.replace(/\r\n/g, "\n")
+		.replace(/\r/g, "\n")
+		.replace(/\n/g, "\r\n");
+}
+
 export function startShell(
 	stream: ShellStream,
 	authUser: string,
@@ -198,11 +205,11 @@ export function startShell(
 		}
 
 		if (result.stdout) {
-			stream.write(`${result.stdout}\r\n`);
+			stream.write(`${toTtyLines(result.stdout)}\r\n`);
 		}
 
 		if (result.stderr) {
-			stream.write(`${result.stderr}\r\n`);
+			stream.write(`${toTtyLines(result.stderr)}\r\n`);
 		}
 
 		if (result.switchUser) {
@@ -671,11 +678,11 @@ export function startShell(
 					}
 
 					if (result.stdout) {
-						stream.write(`${result.stdout}\r\n`);
+						stream.write(`${toTtyLines(result.stdout)}\r\n`);
 					}
 
 					if (result.stderr) {
-						stream.write(`${result.stderr}\r\n`);
+						stream.write(`${toTtyLines(result.stderr)}\r\n`);
 					}
 
 					if (result.closeSession) {

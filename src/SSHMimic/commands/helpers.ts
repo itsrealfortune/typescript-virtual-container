@@ -1,6 +1,28 @@
 import * as path from "node:path";
 import type VirtualFileSystem from "../../VirtualFileSystem";
 
+function normalizeFetchUrl(input: string): string {
+	if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(input)) {
+		return input;
+	}
+
+	return `http://${input}`;
+}
+
+export function normalizeTerminalOutput(text: string): string {
+	return text
+		.replace(/\r\n/g, "\n")
+		.replace(/\r/g, "\n")
+		.replace(/\t/g, "  ")
+		.split("\n")
+		.map((line) =>
+			line.replace(/^[ \u00A0]{8,}/, "  ").replace(/[ \u00A0]{3,}/g, "  "),
+		)
+		.join("\n")
+		.replace(/\n{3,}/g, "\n\n")
+		.trimEnd();
+}
+
 export function resolvePath(cwd: string, inputPath: string): string {
 	if (!inputPath || inputPath.trim() === "") {
 		return cwd;
@@ -56,7 +78,7 @@ export function stripUrlFilename(url: string): string {
 export async function fetchResource(
 	url: string,
 ): Promise<{ text: string; status: number; contentType: string | null }> {
-	const response = await fetch(url);
+	const response = await fetch(normalizeFetchUrl(url));
 	const contentType = response.headers.get("content-type");
 	return {
 		text: await response.text(),
