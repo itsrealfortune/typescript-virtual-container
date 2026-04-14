@@ -1,13 +1,16 @@
+import * as path from 'node:path';
+import type VirtualFileSystem from '../VirtualFileSystem';
 import type { ShellStream } from '../types/streams';
 import { runCommand } from './commands';
 import { buildPrompt } from './prompt';
 
-export function startShell(stream: ShellStream, authUser: string): void {
+export function startShell(stream: ShellStream, authUser: string, vfs: VirtualFileSystem): void {
   let lineBuffer = '';
-  const prompt = buildPrompt(authUser, 'typescript-vm', 'virtual-env-js');
+  let cwd = '/virtual-env-js';
+  const buildCurrentPrompt = (): string => buildPrompt(authUser, 'typescript-vm', path.posix.basename(cwd) || '/');
 
   stream.write('Welcome to typescript-vm\r\n');
-  stream.write(prompt);
+  stream.write(buildCurrentPrompt());
 
   stream.on('data', (chunk: Buffer) => {
     const input = chunk.toString('utf8');
@@ -23,7 +26,7 @@ export function startShell(stream: ShellStream, authUser: string): void {
       if (ch === '\u0003') {
         lineBuffer = '';
         stream.write('^C\r\n');
-        stream.write(prompt);
+        stream.write(buildCurrentPrompt());
         continue;
       }
 
@@ -33,7 +36,7 @@ export function startShell(stream: ShellStream, authUser: string): void {
         stream.write('\r\n');
 
         if (line.length > 0) {
-          const result = runCommand(line, authUser, 'shell');
+          const result = runCommand(line, authUser, 'shell', cwd, vfs);
 
           if (result.clearScreen) {
             stream.write('\u001b[2J\u001b[H');
@@ -53,9 +56,13 @@ export function startShell(stream: ShellStream, authUser: string): void {
             stream.end();
             return;
           }
+
+          if (result.nextCwd) {
+            cwd = result.nextCwd;
+          }
         }
 
-        stream.write(prompt);
+        stream.write(buildCurrentPrompt());
         continue;
       }
 

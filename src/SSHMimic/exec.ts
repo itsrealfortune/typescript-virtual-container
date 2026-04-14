@@ -1,8 +1,9 @@
+import type VirtualFileSystem from '../VirtualFileSystem';
 import type { ExecStream } from '../types/streams';
 import { runCommand } from './commands';
 
-export function runExec(stream: ExecStream, cmd: string, authUser: string): void {
-  const result = runCommand(cmd, authUser, 'exec');
+export function runExec(stream: ExecStream, cmd: string, authUser: string, vfs: VirtualFileSystem): void {
+  const result = runCommand(cmd, authUser, 'exec', '/virtual-env-js', vfs);
 
   if (result.stdout) {
     stream.write(`${result.stdout}\n`);

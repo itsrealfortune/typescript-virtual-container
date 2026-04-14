@@ -1,4 +1,5 @@
 import { Server as SSHServer } from 'ssh2';
+import VirtualFileSystem from '../VirtualFileSystem';
 import { runExec } from './exec';
 import { loadOrCreateHostKey } from './hostKey';
 import { startShell } from './shell';
@@ -14,6 +15,9 @@ class SSHMimic {
 
   public start(): Promise<number> {
     const privateKey = loadOrCreateHostKey();
+    const vfs = new VirtualFileSystem();
+    vfs.mkdir('/virtual-env-js');
+    vfs.writeFile('/virtual-env-js/README.txt', 'Welcome to typescript-vm');
 
     this.server = new SSHServer(
       {
@@ -42,13 +46,13 @@ class SSHMimic {
 
             session.on('shell', (acceptShell) => {
               const stream = acceptShell();
-              startShell(stream, authUser);
+              startShell(stream, authUser, vfs);
             });
 
             session.on('exec', (acceptExec, _rejectExec, info) => {
               const stream = acceptExec();
               const cmd = info.command.trim();
-              runExec(stream, cmd, authUser);
+              runExec(stream, cmd, authUser, vfs);
             });
           });
         });
