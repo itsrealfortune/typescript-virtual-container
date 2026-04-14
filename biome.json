@@ -10,5 +10,11 @@
                 "noNonNullAssertion": "off"
             }
         }
+    },
+    "assist": {
+        "source": {
+            "autoImport": "on",
+            "importModuleSpecifierPreference": "relative"
+        }
     }
 }
