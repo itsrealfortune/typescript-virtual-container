@@ -207,6 +207,10 @@ const COMMANDS: ShellModule[] = [
   }
 ];
 
+export function getCommandNames(): string[] {
+  return COMMANDS.flatMap((cmd) => [cmd.name, ...(cmd.aliases ?? [])]);
+}
+
 function resolveModule(name: string): ShellModule | undefined {
   const lowered = name.toLowerCase();
   return COMMANDS.find((cmd) => cmd.name === lowered || cmd.aliases?.includes(lowered));
