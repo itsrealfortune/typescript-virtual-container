@@ -3,7 +3,7 @@
   "description": "In-memory SSH server with virtual filesystem and typed programmatic API",
   "module": "src/index.ts",
   "type": "module",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "license": "MIT",
   "keywords": [
     "ssh",

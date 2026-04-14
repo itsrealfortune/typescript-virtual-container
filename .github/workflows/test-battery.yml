@@ -70,10 +70,32 @@ jobs:
       - name: Run lint
         run: bun lint
 
+  tests:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Restore dependencies
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lockb') }}
+
+      - name: Run tests
+        run: bun test
+
   test-battery:
     needs:
       - typecheck
       - lint
+      - tests
     runs-on: ubuntu-latest
     steps:
       - name: Test battery passed
