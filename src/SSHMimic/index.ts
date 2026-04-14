@@ -27,10 +27,12 @@ class SSHMimic {
       },
       (client) => {
         let authUser = 'user';
+        let remoteAddress = 'unknown';
 
         client.on('authentication', (ctx) => {
           if (ctx.method === 'none' || ctx.method === 'password' || ctx.method === 'publickey') {
             authUser = ctx.username || 'user';
+            remoteAddress = (ctx as { ip?: string }).ip ?? remoteAddress;
 
             const homePath = `/home/${authUser}`;
             if (!vfs.exists(homePath)) {
@@ -64,7 +66,7 @@ class SSHMimic {
 
             session.on('shell', (acceptShell) => {
               const stream = acceptShell();
-              startShell(stream, authUser, vfs, this.hostname, terminalSize);
+              startShell(stream, authUser, vfs, this.hostname, remoteAddress, terminalSize);
             });
 
             session.on('exec', (acceptExec, _rejectExec, info) => {

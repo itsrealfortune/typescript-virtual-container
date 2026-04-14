@@ -27,6 +27,7 @@ export function startShell(
   authUser: string,
   vfs: VirtualFileSystem,
   hostname: string,
+  remoteAddress = 'unknown',
   terminalSize: TerminalSize = { cols: 80, rows: 24 }
 ): void {
   let lineBuffer = '';
@@ -287,7 +288,71 @@ export function startShell(
     vfs.writeFile('/virtual-env-js/.bash_history', data);
   }
 
-  stream.write(`Welcome to ${hostname}\r\n`);
+  function formatLoginDate(date: Date): string {
+    const weekday = date.toLocaleString('en-US', { weekday: 'short' });
+    const month = date.toLocaleString('en-US', { month: 'short' });
+    const day = date.getDate().toString().padStart(2, '0');
+    const hh = date.getHours().toString().padStart(2, '0');
+    const mm = date.getMinutes().toString().padStart(2, '0');
+    const ss = date.getSeconds().toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${weekday} ${month} ${day} ${hh}:${mm}:${ss} ${year}`;
+  }
+
+  function readLastLogin(): { at: string; from: string } | null {
+    const lastlogPath = `/virtual-env-js/.lastlog/${authUser}.json`;
+    if (!vfs.exists(lastlogPath)) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(vfs.readFile(lastlogPath)) as { at: string; from: string };
+    } catch {
+      return null;
+    }
+  }
+
+  function writeLastLogin(nowIso: string): void {
+    const dir = '/virtual-env-js/.lastlog';
+    if (!vfs.exists(dir)) {
+      vfs.mkdir(dir, 0o700);
+    }
+
+    const lastlogPath = `${dir}/${authUser}.json`;
+    vfs.writeFile(lastlogPath, JSON.stringify({ at: nowIso, from: remoteAddress }));
+  }
+
+  function renderLoginBanner(): void {
+    // const kernel = os.release();
+    // const arch = os.arch();
+
+    // Our own kernel and arch strings to avoid leaking host info and to provide a more "Linux-like" feel
+    const kernel = '5.15.0-1051-azure';
+    const arch = 'x86_64';
+    
+    const last = readLastLogin();
+    const nowIso = new Date().toISOString();
+
+    stream.write(`Linux ${hostname} ${kernel} ${arch}\r\n`);
+    stream.write('\r\n');
+    stream.write('The programs included with the Debian GNU/Linux system are free software;\r\n');
+    stream.write('the exact distribution terms for each program are described in the\r\n');
+    stream.write('individual files in /usr/share/doc/*/copyright.\r\n');
+    stream.write('\r\n');
+    stream.write('Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent\r\n');
+    stream.write('permitted by applicable law.\r\n');
+
+    if (last) {
+      const when = new Date(last.at);
+      const displayed = Number.isNaN(when.getTime()) ? last.at : formatLoginDate(when);
+      stream.write(`Last login: ${displayed} from ${last.from || 'unknown'}\r\n`);
+    }
+
+    stream.write('\r\n');
+    writeLastLogin(nowIso);
+  }
+
+  renderLoginBanner();
   renderLine();
 
   stream.on('data', async (chunk: Buffer) => {
