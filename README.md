@@ -39,7 +39,7 @@
 - **Virtual Filesystem**: In-memory filesystem with optional compression, persistence to disk via tar.gz snapshots, and programmatic access.
 - **User Management**: Create, authenticate, and manage virtual users with strict password hashing (scrypt) and sudo-like privilege elevation.
 - **Programmatic Shell API**: Execute shell commands and query filesystem state directly from TypeScript without SSH overhead.
-- **Built-in Commands**: `ls`, `cd`, `pwd`, `cat`, `mkdir`, `touch`, `rm`, `tree`, `whoami`, `hostname`, `who`, `sudo`, `su`, `adduser`, `deluser`, `nano` (text editor), `curl`, `wget`, and more.
+- **Built-in Commands**: `ls`, `cd`, `pwd`, `cat`, `mkdir`, `touch`, `rm`, `tree`, `whoami`, `hostname`, `who`, `sudo`, `su`, `adduser`, `deluser`, `nano` (text editor), `curl`, `wget`, and a growing set of additional commands. Not everything is implemented yet, and shell compatibility is still being expanded.
 - **Full TypeScript Support**: Complete JSDoc coverage, exported types, and first-class async/await for all operations.
 
 ## Why This Package
@@ -140,7 +140,7 @@ ssh.stop();
 
 ## Architecture Overview
 
-### Core Components
+<!-- ### Core Components
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -158,7 +158,7 @@ ssh.stop();
 │              Backed by disk
 │              .vfs/mirror.tar.gz
 └──────────────────────────────────┘
-```
+``` -->
 
 ### Execution Modes
 
@@ -1006,7 +1006,7 @@ ssh.stop();
 
 ## Built-in Commands
 
-The following commands are available in both SSH shell mode and via `SshClient.exec()`:
+The following commands are available in both SSH shell mode and via `SshClient.exec()`. This list is intentionally incomplete: some commands, flags, and edge cases are still missing or only partially compatible with real shells, and that will continue to be worked on.
 
 | Command | Purpose | Notes |
 |---------|---------|-------|
@@ -1125,7 +1125,7 @@ No. It emulates SSH sessions, users, and filesystem behavior in memory. It is id
 
 ### Can I use this in production?
 
-You can use it in production-like automation contexts (sandboxed command runners, test harnesses, training environments), but it is not a security boundary like a real container/VM.
+You can use it in production-like automation contexts (sandboxed command runners, test harnesses, training environments), but it is not a security boundary like a real container/VM. And at the moment, all commands are not implemented with full fidelity, so it may not be suitable for all production use cases.
 
 ### Does data persist between restarts?
 
