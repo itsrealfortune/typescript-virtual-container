@@ -1,5 +1,5 @@
-import type VirtualFileSystem from "../VirtualFileSystem";
 import type { ExecStream } from "../types/streams";
+import type VirtualFileSystem from "../VirtualFileSystem";
 import { runCommand } from "./commands";
 import type { VirtualUserManager } from "./users";
 

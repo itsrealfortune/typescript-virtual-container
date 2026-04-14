@@ -5,17 +5,34 @@ import { loadOrCreateHostKey } from "./hostKey";
 import { startShell } from "./shell";
 import { VirtualUserManager } from "./users";
 
+/**
+ * SSH server wrapper that exposes virtual shell and exec sessions.
+ *
+ * Create an instance, call {@link SshMimic.start}, and stop it with
+ * {@link SshMimic.stop} when your process exits.
+ */
 class SshMimic {
 	private port: number;
 	private hostname: string;
 	private server: SshServer | null;
 
+	/**
+	 * Creates a new SSH mimic server instance.
+	 *
+	 * @param port TCP port to bind on localhost.
+	 * @param hostname SSH ident hostname suffix and virtual host label.
+	 */
 	constructor(port: number, hostname = "typescript-vm") {
 		this.port = port;
 		this.hostname = hostname;
 		this.server = null;
 	}
 
+	/**
+	 * Starts server and initializes virtual filesystem, users, and handlers.
+	 *
+	 * @returns Promise resolved with bound listening port.
+	 */
 	public async start(): Promise<number> {
 		const privateKey = loadOrCreateHostKey();
 		const vfs = new VirtualFileSystem();
@@ -129,6 +146,9 @@ class SshMimic {
 		});
 	}
 
+	/**
+	 * Stops server if running.
+	 */
 	public stop(): void {
 		if (this.server) {
 			this.server.close(() => {
@@ -138,4 +158,4 @@ class SshMimic {
 	}
 }
 
-export default SshMimic;
+export { SshMimic };

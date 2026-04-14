@@ -21,11 +21,23 @@ import {
 import { applySnapshot, createSnapshot } from "./vfs/snapshot";
 import { renderTree } from "./vfs/tree";
 
+/**
+ * In-memory virtual filesystem with tar.gz mirror persistence.
+ *
+ * Paths are normalized to POSIX-like absolute paths. Use
+ * {@link VirtualFileSystem.restoreMirror} on startup and
+ * {@link VirtualFileSystem.flushMirror} to persist pending changes.
+ */
 class VirtualFileSystem {
 	private readonly root: InternalDirectoryNode;
 	private readonly archivePath: string;
 	private dirty = false;
 
+	/**
+	 * Creates a virtual filesystem instance.
+	 *
+	 * @param baseDir Base directory used to resolve mirror archive location.
+	 */
 	constructor(baseDir: string = process.cwd()) {
 		const now = new Date();
 		this.archivePath = path.resolve(baseDir, ".vfs", "mirror.tar.gz");
@@ -39,6 +51,11 @@ class VirtualFileSystem {
 		};
 	}
 
+	/**
+	 * Restores filesystem state from mirror archive.
+	 *
+	 * If archive does not exist or cannot be read, creates fresh mirror file.
+	 */
 	public async restoreMirror(): Promise<void> {
 		await fs.mkdir(path.dirname(this.archivePath), { recursive: true });
 
@@ -54,6 +71,11 @@ class VirtualFileSystem {
 		}
 	}
 
+	/**
+	 * Persists current filesystem state to mirror archive.
+	 *
+	 * No-op when nothing changed and archive already exists.
+	 */
 	public async flushMirror(): Promise<void> {
 		if (!this.dirty && (await archiveExists(this.archivePath))) {
 			return;
@@ -67,6 +89,12 @@ class VirtualFileSystem {
 		this.dirty = false;
 	}
 
+	/**
+	 * Creates directory and any missing parent directories.
+	 *
+	 * @param targetPath Absolute or relative path to directory.
+	 * @param mode POSIX-like mode bits for new directories.
+	 */
 	public mkdir(targetPath: string, mode: number = 0o755): void {
 		const normalized = normalizePath(targetPath);
 		const parts = splitPath(normalized);
@@ -100,6 +128,15 @@ class VirtualFileSystem {
 		}
 	}
 
+	/**
+	 * Writes UTF-8 text or binary content into file.
+	 *
+	 * Parent directories are created when missing.
+	 *
+	 * @param targetPath Destination file path.
+	 * @param content File content as string or Buffer.
+	 * @param options Optional write behavior (mode, compression).
+	 */
 	public writeFile(
 		targetPath: string,
 		content: string | Buffer,
@@ -145,6 +182,14 @@ class VirtualFileSystem {
 		this.dirty = true;
 	}
 
+	/**
+	 * Reads file content as UTF-8 text.
+	 *
+	 * Compressed files are transparently decompressed.
+	 *
+	 * @param targetPath Path to file.
+	 * @returns UTF-8 string content.
+	 */
 	public readFile(targetPath: string): string {
 		const node = getNode(this.root, targetPath);
 		if (node.type !== "file") {
@@ -155,6 +200,12 @@ class VirtualFileSystem {
 		return raw.toString("utf8");
 	}
 
+	/**
+	 * Checks whether node exists at path.
+	 *
+	 * @param targetPath Node path.
+	 * @returns True when file or directory exists.
+	 */
 	public exists(targetPath: string): boolean {
 		try {
 			getNode(this.root, targetPath);
@@ -164,6 +215,12 @@ class VirtualFileSystem {
 		}
 	}
 
+	/**
+	 * Updates mode bits for file or directory.
+	 *
+	 * @param targetPath Node path.
+	 * @param mode New POSIX-like mode.
+	 */
 	public chmod(targetPath: string, mode: number): void {
 		const node = getNode(this.root, targetPath);
 		node.mode = mode;
@@ -171,6 +228,12 @@ class VirtualFileSystem {
 		this.dirty = true;
 	}
 
+	/**
+	 * Returns metadata for file or directory.
+	 *
+	 * @param targetPath Node path.
+	 * @returns Typed stat object based on node type.
+	 */
 	public stat(targetPath: string): VfsNodeStats {
 		const normalized = normalizePath(targetPath);
 		const node = getNode(this.root, normalized);
@@ -199,6 +262,12 @@ class VirtualFileSystem {
 		};
 	}
 
+	/**
+	 * Lists direct children names of directory.
+	 *
+	 * @param dirPath Directory path, defaults to root.
+	 * @returns Sorted child names.
+	 */
 	public list(dirPath: string = "/"): string[] {
 		const node = getNode(this.root, dirPath);
 		if (node.type !== "directory") {
@@ -208,6 +277,12 @@ class VirtualFileSystem {
 		return Array.from(node.children.keys()).sort();
 	}
 
+	/**
+	 * Renders ASCII tree view of directory hierarchy.
+	 *
+	 * @param dirPath Directory path, defaults to root.
+	 * @returns Multi-line tree string.
+	 */
 	public tree(dirPath: string = "/"): string {
 		const node = getNode(this.root, dirPath);
 		if (node.type !== "directory") {
@@ -219,6 +294,11 @@ class VirtualFileSystem {
 		return renderTree(node, rootLabel);
 	}
 
+	/**
+	 * Compresses file content with gzip and flags node as compressed.
+	 *
+	 * @param targetPath Path to file.
+	 */
 	public compressFile(targetPath: string): void {
 		const node = getNode(this.root, targetPath);
 		if (node.type !== "file") {
@@ -233,6 +313,11 @@ class VirtualFileSystem {
 		}
 	}
 
+	/**
+	 * Decompresses gzip-compressed file content.
+	 *
+	 * @param targetPath Path to file.
+	 */
 	public decompressFile(targetPath: string): void {
 		const node = getNode(this.root, targetPath);
 		if (node.type !== "file") {
@@ -247,6 +332,12 @@ class VirtualFileSystem {
 		}
 	}
 
+	/**
+	 * Removes file or directory node.
+	 *
+	 * @param targetPath Path to remove.
+	 * @param options Removal options, including recursive delete.
+	 */
 	public remove(targetPath: string, options: RemoveOptions = {}): void {
 		const normalized = normalizePath(targetPath);
 		if (normalized === "/") {
@@ -280,6 +371,12 @@ class VirtualFileSystem {
 		this.dirty = true;
 	}
 
+	/**
+	 * Moves or renames node to destination path.
+	 *
+	 * @param fromPath Existing source path.
+	 * @param toPath Destination path.
+	 */
 	public move(fromPath: string, toPath: string): void {
 		const fromNormalized = normalizePath(fromPath);
 		const toNormalized = normalizePath(toPath);

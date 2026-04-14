@@ -1,20 +1,33 @@
 import { randomBytes, randomUUID, scryptSync } from "node:crypto";
 import type VirtualFileSystem from "../VirtualFileSystem";
 
+/** Persisted virtual user credential record. */
 export interface VirtualUserRecord {
+	/** Unique login name. */
 	username: string;
+	/** Per-user random salt used for password hashing. */
 	salt: string;
+	/** Scrypt-derived password hash in hex encoding. */
 	passwordHash: string;
 }
 
+/** Runtime representation of authenticated SSH session. */
 export interface VirtualActiveSession {
+	/** Stable session identifier (UUID). */
 	id: string;
+	/** Username bound to session. */
 	username: string;
+	/** Virtual terminal identifier (pts/*). */
 	tty: string;
+	/** Remote client IP or host label. */
 	remoteAddress: string;
+	/** ISO-8601 start timestamp. */
 	startedAt: string;
 }
 
+/**
+ * User, sudoers, and active session manager for SSH mimic runtime.
+ */
 export class VirtualUserManager {
 	private readonly usersPath = "/virtual-env-js/.auth/htpasswd";
 	private readonly sudoersPath = "/virtual-env-js/.auth/sudoers";
@@ -23,11 +36,20 @@ export class VirtualUserManager {
 	private readonly activeSessions = new Map<string, VirtualActiveSession>();
 	private nextTty = 0;
 
+	/**
+	 * Creates user manager instance.
+	 *
+	 * @param vfs Backing virtual filesystem used for persistence.
+	 * @param defaultRootPassword Initial root password used when root missing.
+	 */
 	constructor(
 		private readonly vfs: VirtualFileSystem,
 		private readonly defaultRootPassword: string = "root",
 	) {}
 
+	/**
+	 * Loads users/sudoers from disk and ensures root account exists.
+	 */
 	public async initialize(): Promise<void> {
 		this.loadFromVfs();
 		this.loadSudoersFromVfs();
@@ -44,6 +66,13 @@ export class VirtualUserManager {
 		await this.persist();
 	}
 
+	/**
+	 * Verifies plaintext password against stored record.
+	 *
+	 * @param username User login name.
+	 * @param password Plaintext password candidate.
+	 * @returns True when credentials are valid.
+	 */
 	public verifyPassword(username: string, password: string): boolean {
 		const record = this.users.get(username);
 		if (!record) {
@@ -53,6 +82,12 @@ export class VirtualUserManager {
 		return this.hashPassword(password, record.salt) === record.passwordHash;
 	}
 
+	/**
+	 * Creates user, home directory, and sudo access entry.
+	 *
+	 * @param username New username.
+	 * @param password Initial plaintext password.
+	 */
 	public async addUser(username: string, password: string): Promise<void> {
 		this.validateUsername(username);
 		this.validatePassword(password);
@@ -74,6 +109,11 @@ export class VirtualUserManager {
 		await this.persist();
 	}
 
+	/**
+	 * Deletes existing non-root user account.
+	 *
+	 * @param username Username to remove.
+	 */
 	public async deleteUser(username: string): Promise<void> {
 		this.validateUsername(username);
 
@@ -90,10 +130,21 @@ export class VirtualUserManager {
 		await this.persist();
 	}
 
+	/**
+	 * Checks whether user is member of sudoers set.
+	 *
+	 * @param username Username to test.
+	 * @returns True when user can run sudo.
+	 */
 	public isSudoer(username: string): boolean {
 		return this.sudoers.has(username);
 	}
 
+	/**
+	 * Grants sudo access to existing user.
+	 *
+	 * @param username Username to promote.
+	 */
 	public async addSudoer(username: string): Promise<void> {
 		this.validateUsername(username);
 		if (!this.users.has(username)) {
@@ -104,6 +155,11 @@ export class VirtualUserManager {
 		await this.persist();
 	}
 
+	/**
+	 * Revokes sudo access from user.
+	 *
+	 * @param username Username to demote.
+	 */
 	public async removeSudoer(username: string): Promise<void> {
 		this.validateUsername(username);
 		if (username === "root") {
@@ -114,6 +170,13 @@ export class VirtualUserManager {
 		await this.persist();
 	}
 
+	/**
+	 * Registers active session and allocates tty id.
+	 *
+	 * @param username Session username.
+	 * @param remoteAddress Session source address.
+	 * @returns Registered session descriptor.
+	 */
 	public registerSession(
 		username: string,
 		remoteAddress: string,
@@ -130,6 +193,11 @@ export class VirtualUserManager {
 		return session;
 	}
 
+	/**
+	 * Unregisters active session when connection closes.
+	 *
+	 * @param sessionId Session identifier; ignored when nullish.
+	 */
 	public unregisterSession(sessionId: string | null | undefined): void {
 		if (!sessionId) {
 			return;
@@ -138,6 +206,13 @@ export class VirtualUserManager {
 		this.activeSessions.delete(sessionId);
 	}
 
+	/**
+	 * Updates username/address metadata for existing session.
+	 *
+	 * @param sessionId Session identifier; ignored when nullish.
+	 * @param username New username value.
+	 * @param remoteAddress New remote address value.
+	 */
 	public updateSession(
 		sessionId: string | null | undefined,
 		username: string,
@@ -159,6 +234,11 @@ export class VirtualUserManager {
 		});
 	}
 
+	/**
+	 * Lists active sessions sorted by start time.
+	 *
+	 * @returns Snapshot of active session descriptors.
+	 */
 	public listActiveSessions(): VirtualActiveSession[] {
 		return Array.from(this.activeSessions.values()).sort((left, right) =>
 			left.startedAt.localeCompare(right.startedAt),
