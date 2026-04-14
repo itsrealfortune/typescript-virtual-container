@@ -3,11 +3,10 @@ name: Auto Create Pull Request
 on:
   push:
     branches:
-      - 'dev'
 
 jobs:
   create-pull-request:
-    if: github.ref == 'refs/heads/dev'
+    if: github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Validate pull request token
