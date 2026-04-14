@@ -83,7 +83,7 @@ class SSHMimic {
 
             session.on('shell', (acceptShell) => {
               const stream = acceptShell();
-              startShell(stream, authUser, vfs, this.hostname, users, remoteAddress, terminalSize);
+              startShell(stream, authUser, vfs, this.hostname, users, sessionId, remoteAddress, terminalSize);
             });
 
             session.on('exec', (acceptExec, _rejectExec, info) => {

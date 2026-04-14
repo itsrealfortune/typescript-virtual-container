@@ -15,6 +15,15 @@ interface NanoSession {
   process: ChildProcessWithoutNullStreams;
 }
 
+interface PendingSudo {
+  username: string;
+  targetUser: string;
+  commandLine: string | null;
+  loginShell: boolean;
+  prompt: string;
+  buffer: string;
+}
+
 function shellQuote(value: string): string {
   return `'${value.replace(/'/g, `'\\''`)}'`;
 }
@@ -30,6 +39,7 @@ export function startShell(
   vfs: VirtualFileSystem,
   hostname: string,
   users: VirtualUserManager,
+  sessionId: string | null,
   remoteAddress = 'unknown',
   terminalSize: TerminalSize = { cols: 80, rows: 24 }
 ): void {
@@ -40,6 +50,7 @@ export function startShell(
   let historyDraft = '';
   let cwd = '/home/' + authUser;
   let nanoSession: NanoSession | null = null;
+  let pendingSudo: PendingSudo | null = null;
   const buildCurrentPrompt = (): string => {
     const homePath = `/home/${authUser}`;
     const cwdLabel = cwd === homePath ? '~' : path.posix.basename(cwd) || '/';
@@ -98,6 +109,81 @@ export function startShell(
     if (moveLeft > 0) {
       stream.write(`\u001b[${moveLeft}D`);
     }
+  }
+
+  function clearCurrentLine(): void {
+    stream.write('\r\u001b[K');
+  }
+
+  function startSudoPrompt(challenge: { username: string; targetUser: string; commandLine: string | null; loginShell: boolean; prompt: string }): void {
+    pendingSudo = {
+      ...challenge,
+      buffer: ''
+    };
+    clearCurrentLine();
+    stream.write(challenge.prompt);
+  }
+
+  async function finishSudoPrompt(success: boolean): Promise<void> {
+    if (!pendingSudo) {
+      return;
+    }
+
+    const challenge = pendingSudo;
+    pendingSudo = null;
+
+    if (!success) {
+      stream.write('\r\nSorry, try again.\r\n');
+      renderLine();
+      return;
+    }
+
+    if (!challenge.commandLine) {
+      authUser = challenge.targetUser;
+      cwd = `/home/${authUser}`;
+      users.updateSession(sessionId, authUser, remoteAddress);
+      stream.write('\r\n');
+      renderLine();
+      return;
+    }
+
+    const runCwd = challenge.loginShell ? `/home/${challenge.targetUser}` : cwd;
+    const result = await Promise.resolve(runCommand(challenge.commandLine, challenge.targetUser, hostname, users, 'shell', runCwd, vfs));
+
+    stream.write('\r\n');
+
+    if (result.openEditor) {
+      await startNanoEditor(result.openEditor.targetPath, result.openEditor.initialContent, result.openEditor.tempPath);
+      return;
+    }
+
+    if (result.openHtop) {
+      await startHtop();
+      return;
+    }
+
+    if (result.clearScreen) {
+      stream.write('\u001b[2J\u001b[H');
+    }
+
+    if (result.stdout) {
+      stream.write(`${result.stdout}\r\n`);
+    }
+
+    if (result.stderr) {
+      stream.write(`${result.stderr}\r\n`);
+    }
+
+    if (result.switchUser) {
+      authUser = result.switchUser;
+      cwd = result.nextCwd ?? `/home/${authUser}`;
+      users.updateSession(sessionId, authUser, remoteAddress);
+    } else if (result.nextCwd) {
+      cwd = result.nextCwd;
+    }
+
+    await vfs.flushMirror();
+    renderLine();
   }
 
   async function finishNanoEditor(): Promise<void> {
@@ -362,6 +448,40 @@ export function startShell(
       return;
     }
 
+    if (pendingSudo) {
+      const input = chunk.toString('utf8');
+
+      for (let i = 0; i < input.length; i += 1) {
+        const ch = input[i]!;
+
+        if (ch === '\u0003') {
+          pendingSudo = null;
+          stream.write('^C\r\n');
+          renderLine();
+          return;
+        }
+
+        if (ch === '\u007f' || ch === '\b') {
+          pendingSudo.buffer = pendingSudo.buffer.slice(0, -1);
+          continue;
+        }
+
+        if (ch === '\r' || ch === '\n') {
+          const password = pendingSudo.buffer;
+          pendingSudo.buffer = '';
+          const valid = users.verifyPassword(pendingSudo.username, password);
+          await finishSudoPrompt(valid);
+          return;
+        }
+
+        if (ch >= ' ') {
+          pendingSudo.buffer += ch;
+        }
+      }
+
+      return;
+    }
+
     const input = chunk.toString('utf8');
 
     for (let i = 0; i < input.length; i += 1) {
@@ -475,6 +595,11 @@ export function startShell(
             return;
           }
 
+          if (result.sudoChallenge) {
+            startSudoPrompt(result.sudoChallenge);
+            return;
+          }
+
           if (result.clearScreen) {
             stream.write('\u001b[2J\u001b[H');
           }
@@ -496,6 +621,14 @@ export function startShell(
 
           if (result.nextCwd) {
             cwd = result.nextCwd;
+          }
+
+          if (result.switchUser) {
+            authUser = result.switchUser;
+            cwd = result.nextCwd ?? `/home/${authUser}`;
+            users.updateSession(sessionId, authUser, remoteAddress);
+            lineBuffer = '';
+            cursorPos = 0;
           }
 
           await vfs.flushMirror();

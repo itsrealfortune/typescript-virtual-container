@@ -17,7 +17,9 @@ export interface VirtualActiveSession {
 
 export class VirtualUserManager {
   private readonly usersPath = '/virtual-env-js/.auth/htpasswd';
+  private readonly sudoersPath = '/virtual-env-js/.auth/sudoers';
   private readonly users = new Map<string, VirtualUserRecord>();
+  private readonly sudoers = new Set<string>();
   private readonly activeSessions = new Map<string, VirtualActiveSession>();
   private nextTty = 0;
 
@@ -28,12 +30,13 @@ export class VirtualUserManager {
 
   public async initialize(): Promise<void> {
     this.loadFromVfs();
+    this.loadSudoersFromVfs();
 
     if (!this.users.has('root')) {
       this.users.set('root', this.createRecord('root', this.defaultRootPassword));
-      await this.persist();
-      return;
     }
+
+    this.sudoers.add('root');
 
     await this.persist();
   }
@@ -56,6 +59,7 @@ export class VirtualUserManager {
     }
 
     this.users.set(username, this.createRecord(username, password));
+    this.sudoers.add(username);
     const homePath = `/home/${username}`;
     if (!this.vfs.exists(homePath)) {
       this.vfs.mkdir(homePath, 0o755);
@@ -75,6 +79,32 @@ export class VirtualUserManager {
       throw new Error(`deluser: user '${username}' does not exist`);
     }
 
+    this.sudoers.delete(username);
+
+    await this.persist();
+  }
+
+  public isSudoer(username: string): boolean {
+    return this.sudoers.has(username);
+  }
+
+  public async addSudoer(username: string): Promise<void> {
+    this.validateUsername(username);
+    if (!this.users.has(username)) {
+      throw new Error(`sudoers: user '${username}' does not exist`);
+    }
+
+    this.sudoers.add(username);
+    await this.persist();
+  }
+
+  public async removeSudoer(username: string): Promise<void> {
+    this.validateUsername(username);
+    if (username === 'root') {
+      throw new Error('sudoers: cannot remove root');
+    }
+
+    this.sudoers.delete(username);
     await this.persist();
   }
 
@@ -97,6 +127,23 @@ export class VirtualUserManager {
     }
 
     this.activeSessions.delete(sessionId);
+  }
+
+  public updateSession(sessionId: string | null | undefined, username: string, remoteAddress: string): void {
+    if (!sessionId) {
+      return;
+    }
+
+    const session = this.activeSessions.get(sessionId);
+    if (!session) {
+      return;
+    }
+
+    this.activeSessions.set(sessionId, {
+      ...session,
+      username,
+      remoteAddress
+    });
   }
 
   public listActiveSessions(): VirtualActiveSession[] {
@@ -131,6 +178,22 @@ export class VirtualUserManager {
     }
   }
 
+  private loadSudoersFromVfs(): void {
+    this.sudoers.clear();
+
+    if (!this.vfs.exists(this.sudoersPath)) {
+      return;
+    }
+
+    const raw = this.vfs.readFile(this.sudoersPath);
+    for (const line of raw.split('\n')) {
+      const username = line.trim();
+      if (username.length > 0) {
+        this.sudoers.add(username);
+      }
+    }
+  }
+
   private async persist(): Promise<void> {
     const content = Array.from(this.users.values())
       .sort((left, right) => left.username.localeCompare(right.username))
@@ -138,6 +201,8 @@ export class VirtualUserManager {
       .join('\n');
 
     this.vfs.writeFile(this.usersPath, content.length > 0 ? `${content}\n` : '');
+    const sudoersContent = Array.from(this.sudoers.values()).sort().join('\n');
+    this.vfs.writeFile(this.sudoersPath, sudoersContent.length > 0 ? `${sudoersContent}\n` : '');
     await this.vfs.flushMirror();
   }
 

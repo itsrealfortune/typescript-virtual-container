@@ -10,8 +10,18 @@ export interface CommandResult {
   closeSession?: boolean;
   exitCode?: number;
   nextCwd?: string;
+  switchUser?: string;
   openEditor?: NanoEditorSession;
   openHtop?: boolean;
+  sudoChallenge?: SudoChallenge;
+}
+
+export interface SudoChallenge {
+  username: string;
+  targetUser: string;
+  commandLine: string | null;
+  loginShell: boolean;
+  prompt: string;
 }
 
 export interface NanoEditorSession {

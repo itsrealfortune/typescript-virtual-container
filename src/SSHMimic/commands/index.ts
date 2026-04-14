@@ -16,6 +16,8 @@ import { mkdirCommand } from './mkdir';
 import { nanoCommand } from './nano';
 import { pwdCommand } from './pwd';
 import { rmCommand } from './rm';
+import { suCommand } from './su';
+import { sudoCommand } from './sudo';
 import { touchCommand } from './touch';
 import { treeCommand } from './tree';
 import { wgetCommand } from './wget';
@@ -38,6 +40,8 @@ const BASE_COMMANDS: ShellModule[] = [
   htopCommand,
   adduserCommand,
   deluserCommand,
+  sudoCommand,
+  suCommand,
   curlCommand,
   wgetCommand,
   clearCommand,
