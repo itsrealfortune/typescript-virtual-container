@@ -81,9 +81,10 @@ function runHostCurl(args: string[]): Promise<{
 		});
 
 		childProcess.on("error", (error) => {
-			const errorCode = error instanceof Error && "code" in error
-				? String((error as NodeJS.ErrnoException).code ?? "")
-				: "";
+			const errorCode =
+				error instanceof Error && "code" in error
+					? String((error as NodeJS.ErrnoException).code ?? "")
+					: "";
 			resolve({
 				stdout: "",
 				stderr: `curl: ${error.message}`,
@@ -107,20 +108,16 @@ export const curlCommand: ShellModule = {
 	run: async ({ vfs, cwd, args }) => {
 		const { outputPath, inputArgs } = parseCurlOutputPath(args);
 		const url = inputArgs[0];
-		const isHelpLike = inputArgs.some((arg) =>
-			arg === "-h" ||
-			arg === "--help" ||
-			arg === "-V" ||
-			arg === "--version"
+		const isHelpLike = inputArgs.some(
+			(arg) =>
+				arg === "-h" || arg === "--help" || arg === "-V" || arg === "--version",
 		);
 
 		if (!url) {
 			return { stderr: "curl: missing URL", exitCode: 1 };
 		}
 
-		const passthroughArgs = outputPath
-			? [...inputArgs, "-o", "-"]
-			: inputArgs;
+		const passthroughArgs = outputPath ? [...inputArgs, "-o", "-"] : inputArgs;
 		const result = await runHostCurl(passthroughArgs);
 
 		if (result.exitCode !== 0) {
@@ -135,14 +132,20 @@ export const curlCommand: ShellModule = {
 		if (outputPath) {
 			vfs.writeFile(resolvePath(cwd, outputPath), result.stdout);
 			return {
-				stderr: result.stderr ? normalizeTerminalOutput(result.stderr) : undefined,
+				stderr: result.stderr
+					? normalizeTerminalOutput(result.stderr)
+					: undefined,
 				exitCode: 0,
 			};
 		}
 
 		return {
-			stdout: isHelpLike ? normalizeTerminalOutput(result.stdout) : result.stdout,
-			stderr: result.stderr ? normalizeTerminalOutput(result.stderr) : undefined,
+			stdout: isHelpLike
+				? normalizeTerminalOutput(result.stdout)
+				: result.stdout,
+			stderr: result.stderr
+				? normalizeTerminalOutput(result.stderr)
+				: undefined,
 			exitCode: 0,
 		};
 	},

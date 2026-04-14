@@ -57,9 +57,10 @@ function runHostWget(args: string[]): Promise<{
 		});
 
 		childProcess.on("error", (error) => {
-			const errorCode = error instanceof Error && "code" in error
-				? String((error as NodeJS.ErrnoException).code ?? "")
-				: "";
+			const errorCode =
+				error instanceof Error && "code" in error
+					? String((error as NodeJS.ErrnoException).code ?? "")
+					: "";
 			resolve({
 				stdout: "",
 				stderr: `wget: ${error.message}`,
@@ -83,8 +84,9 @@ export const wgetCommand: ShellModule = {
 	run: async ({ vfs, cwd, args }) => {
 		const { outputPath, inputArgs } = parseOutputPath(args);
 		const url = inputArgs[0];
-		const isHelpLike = inputArgs.some((arg) =>
-			arg === "-h" || arg === "--help" || arg === "-V" || arg === "--version"
+		const isHelpLike = inputArgs.some(
+			(arg) =>
+				arg === "-h" || arg === "--help" || arg === "-V" || arg === "--version",
 		);
 
 		if (!url) {
@@ -95,7 +97,9 @@ export const wgetCommand: ShellModule = {
 			const result = await runHostWget(inputArgs);
 			return {
 				stdout: normalizeTerminalOutput(result.stdout),
-				stderr: result.stderr ? normalizeTerminalOutput(result.stderr) : undefined,
+				stderr: result.stderr
+					? normalizeTerminalOutput(result.stderr)
+					: undefined,
 				exitCode: result.exitCode,
 			};
 		}

@@ -16,9 +16,7 @@ export function normalizeTerminalOutput(text: string): string {
 		.replace(/\t/g, "  ")
 		.split("\n")
 		.map((line) =>
-			line
-				.replace(/^[ \u00A0]{8,}/, "  ")
-				.replace(/[ \u00A0]{3,}/g, "  "),
+			line.replace(/^[ \u00A0]{8,}/, "  ").replace(/[ \u00A0]{3,}/g, "  "),
 		)
 		.join("\n")
 		.replace(/\n{3,}/g, "\n\n")

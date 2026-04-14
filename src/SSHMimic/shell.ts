@@ -34,7 +34,10 @@ interface TerminalSize {
 }
 
 function toTtyLines(text: string): string {
-	return text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\n/g, "\r\n");
+	return text
+		.replace(/\r\n/g, "\n")
+		.replace(/\r/g, "\n")
+		.replace(/\n/g, "\r\n");
 }
 
 export function startShell(

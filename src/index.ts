@@ -10,7 +10,7 @@ export type {
 	CommandResult,
 	NanoEditorSession,
 	ShellModule,
-	SudoChallenge
+	SudoChallenge,
 } from "./types/commands";
 export type { ExecStream, ShellStream } from "./types/streams";
 export type {
@@ -25,10 +25,12 @@ export type {
 	VfsSnapshotDirectoryNode,
 	VfsSnapshotFileNode,
 	VfsSnapshotNode,
-	WriteFileOptions
+	WriteFileOptions,
 } from "./types/vfs";
 
 export {
-	SshClient, VirtualFileSystem, SshMimic as VirtualMachine, VirtualUserManager
+	SshClient,
+	VirtualFileSystem,
+	SshMimic as VirtualMachine,
+	VirtualUserManager,
 };
-

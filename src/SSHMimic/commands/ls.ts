@@ -35,13 +35,13 @@ export const lsCommand: ShellModule = {
 		const items = vfs.list(target).filter((name) => !name.startsWith("."));
 		const rendered = longFormat
 			? items
-				.map((name) => {
-					const childPath = resolvePath(target, name);
-					const stat = vfs.stat(childPath);
-					const size = stat.type === "file" ? stat.size : stat.childrenCount;
-					return `${formatPermissions(stat.mode, stat.type === "directory")} 1 ${size} ${formatDate(stat.updatedAt)} ${name}${stat.type === "directory" ? "/" : ""}`;
-				})
-				.join("\n")
+					.map((name) => {
+						const childPath = resolvePath(target, name);
+						const stat = vfs.stat(childPath);
+						const size = stat.type === "file" ? stat.size : stat.childrenCount;
+						return `${formatPermissions(stat.mode, stat.type === "directory")} 1 ${size} ${formatDate(stat.updatedAt)} ${name}${stat.type === "directory" ? "/" : ""}`;
+					})
+					.join("\n")
 			: joinListWithType(target, items, (p) => vfs.stat(p));
 		return { stdout: rendered, exitCode: 0 };
 	},
