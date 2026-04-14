@@ -1040,13 +1040,15 @@ The following commands are available in both SSH shell mode and via `SshClient.e
 ### Environment Variables
 
 - **`SSH_MIMIC_HOSTNAME`**: Override server hostname at startup (default: "typescript-vm")
-- **`SSH_MIMIC_ROOT_PASSWORD`**: Set root password (default: "root")
+- **`SSH_MIMIC_ROOT_PASSWORD`**: Set root password. If unset, a random ephemeral password is generated at startup and logged once.
+- **`SSH_MIMIC_AUTO_SUDO_NEW_USERS`**: Control whether new users are added to sudoers automatically (default: enabled). Set to `0`, `false`, `no`, or `off` to disable.
 
 **Example:**
 
 ```bash
 export SSH_MIMIC_HOSTNAME=production-lab
 export SSH_MIMIC_ROOT_PASSWORD=SecurePass123
+export SSH_MIMIC_AUTO_SUDO_NEW_USERS=false
 npm run start
 ```
 
@@ -1231,6 +1233,8 @@ const ssh = new VirtualMachine({ port: 2222, hostname: "hostname" });
 - Passwords are hashed with `scrypt` in the virtual auth store.
 - Root account is always protected and cannot be deleted.
 - Sudo privileges are explicit and persisted in sudoers data.
+- Protect the root password in production by setting `SSH_MIMIC_ROOT_PASSWORD`; otherwise startup logs a generated ephemeral password.
+- Disable `SSH_MIMIC_AUTO_SUDO_NEW_USERS` when you want newly created users to stay unprivileged by default.
 - This project is not intended to provide kernel-level or process-level isolation.
 
 If you discover a vulnerability, avoid public disclosure in issues and contact maintainers privately first.
