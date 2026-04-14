@@ -47,14 +47,22 @@ class SSHMimic {
         client.on('ready', () => {
           client.on('session', (accept) => {
             const session = accept();
+            const terminalSize = { cols: 80, rows: 24 };
 
-            session.on('pty', (acceptPty) => {
+            session.on('pty', (acceptPty, _rejectPty, info) => {
+              terminalSize.cols = info?.cols ?? terminalSize.cols;
+              terminalSize.rows = info?.rows ?? terminalSize.rows;
               acceptPty();
+            });
+
+            session.on('window-change', (_acceptChange, _rejectChange, info) => {
+              terminalSize.cols = info?.cols ?? terminalSize.cols;
+              terminalSize.rows = info?.rows ?? terminalSize.rows;
             });
 
             session.on('shell', (acceptShell) => {
               const stream = acceptShell();
-              startShell(stream, authUser, vfs);
+              startShell(stream, authUser, vfs, terminalSize);
             });
 
             session.on('exec', (acceptExec, _rejectExec, info) => {

@@ -17,7 +17,17 @@ function shellQuote(value: string): string {
   return `'${value.replace(/'/g, `'\\''`)}'`;
 }
 
-export function startShell(stream: ShellStream, authUser: string, vfs: VirtualFileSystem): void {
+interface TerminalSize {
+  cols: number;
+  rows: number;
+}
+
+export function startShell(
+  stream: ShellStream,
+  authUser: string,
+  vfs: VirtualFileSystem,
+  terminalSize: TerminalSize = { cols: 80, rows: 24 }
+): void {
   let lineBuffer = '';
   let cursorPos = 0;
   let history = loadHistory(vfs);
@@ -54,6 +64,12 @@ export function startShell(stream: ShellStream, authUser: string, vfs: VirtualFi
     const descendants = await collectChildPids(rootPid);
     const unique = Array.from(new Set([rootPid, ...descendants])).sort((a, b) => a - b);
     return unique.join(',');
+  }
+
+  function withTerminalSize(command: string): string {
+    const cols = Number.isFinite(terminalSize.cols) && terminalSize.cols > 0 ? Math.floor(terminalSize.cols) : 80;
+    const rows = Number.isFinite(terminalSize.rows) && terminalSize.rows > 0 ? Math.floor(terminalSize.rows) : 24;
+    return `stty cols ${cols} rows ${rows} 2>/dev/null; ${command}`;
   }
 
   function resolvePath(base: string, inputPath: string): string {
@@ -106,7 +122,7 @@ export function startShell(stream: ShellStream, authUser: string, vfs: VirtualFi
       await writeFile(tempPath, initialContent, 'utf8');
     }
 
-    const command = `nano -- ${shellQuote(tempPath)}`;
+    const command = withTerminalSize(`nano -- ${shellQuote(tempPath)}`);
     const editor = spawn('script', ['-qfec', command, '/dev/null'], {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: {
@@ -142,7 +158,7 @@ export function startShell(stream: ShellStream, authUser: string, vfs: VirtualFi
 
   async function startHtop(): Promise<void> {
     const pidList = await getVisibleHtopPidList();
-    const command = `htop -p ${shellQuote(pidList)}`;
+    const command = withTerminalSize(`htop -p ${shellQuote(pidList)}`);
     const monitor = spawn('script', ['-qfec', command, '/dev/null'], {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: {
