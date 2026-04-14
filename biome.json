@@ -1,4 +1,11 @@
 {
+    "assist": {
+        "actions": {
+            "source": {
+                "organizeImports": "off"
+            }
+        }
+    },
     "linter": {
         "rules": {
             "suspicious": {
