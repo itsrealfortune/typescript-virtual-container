@@ -1,12 +1,6 @@
+import type { ShellStream } from '../types/streams';
 import { runCommand } from './commands';
 import { buildPrompt } from './prompt';
-
-interface ShellStream {
-  write(data: string): void;
-  exit(code: number): void;
-  end(): void;
-  on(event: 'data', listener: (chunk: Buffer) => void): void;
-}
 
 export function startShell(stream: ShellStream, authUser: string): void {
   let lineBuffer = '';

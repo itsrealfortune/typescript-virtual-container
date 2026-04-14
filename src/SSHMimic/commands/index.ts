@@ -1,26 +1,4 @@
-export type CommandMode = 'shell' | 'exec';
-
-export interface ShellModule {
-  name: string;
-  params: string[];
-  run: (ctx: CommandContext) => CommandResult;
-  aliases?: string[];
-}
-
-export interface CommandContext {
-  authUser: string;
-  rawInput: string;
-  mode: CommandMode;
-  args: string[];
-}
-
-export interface CommandResult {
-  stdout?: string;
-  stderr?: string;
-  clearScreen?: boolean;
-  closeSession?: boolean;
-  exitCode?: number;
-}
+import type { CommandMode, CommandResult, ShellModule } from '../../types/commands';
 
 const COMMANDS: ShellModule[] = [
   {
