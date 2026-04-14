@@ -1,18 +1,3 @@
-import SshMimic from "./SSHMimic/index";
+import sshMimic from "./SSHMimic/index";
 
-const sshHostname = process.env.SSH_MIMIC_HOSTNAME ?? "typescript-vm";
-const sshMimic = new SshMimic(2222, sshHostname);
-
-sshMimic
-	.start()
-	.then((port) => {
-		console.log(`SSH Mimic initialized. Listening on port ${port}.`);
-	})
-	.catch((error: unknown) => {
-		console.error("Failed to start SSH Mimic:", error);
-		process.exit(1);
-	});
-
-// biome-ignore lint/style/useNamingConvention: VirtualMachine is a more user-friendly name for the default export of this module, which represents the main class for the SSH
-const exported = { VirtualMachine: SshMimic };
-export default exported;
+export { sshMimic as VirtualMachine };
