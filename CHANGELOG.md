@@ -6,6 +6,8 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-04-14
+
 ### Added
 
 - Governance and community files:
@@ -14,6 +16,13 @@ The format is based on Keep a Changelog.
   - SECURITY.md
   - CODE_OF_CONDUCT.md
   - GitHub issue and PR templates
+- Security hardening for virtual auth storage and shell access:
+  - Non-root commands now block access to `/virtual-env-js/.auth/**`.
+  - Auth files are persisted with restrictive modes (`0700` for `.auth`, `0600` for `htpasswd` and `sudoers`).
+  - Root password no longer falls back to a fixed default when `SSH_MIMIC_ROOT_PASSWORD` is unset; startup generates an ephemeral password instead.
+- New environment toggle `SSH_MIMIC_AUTO_SUDO_NEW_USERS` to control whether newly created users are added to sudoers by default.
+- README and security docs now describe the new auth hardening and configuration flags.
+- Added tests covering `.auth` path protection and auto-sudo behavior.
 
 ## [1.0.1] - 2026-04-14
 

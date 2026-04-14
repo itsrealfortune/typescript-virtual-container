@@ -1,9 +1,32 @@
+import { randomBytes } from "node:crypto";
 import { Server as SshServer } from "ssh2";
 import VirtualFileSystem from "../VirtualFileSystem";
 import { runExec } from "./exec";
 import { loadOrCreateHostKey } from "./hostKey";
 import { startShell } from "./shell";
 import { VirtualUserManager } from "./users";
+
+function resolveRootPassword(): string {
+	const configured = process.env.SSH_MIMIC_ROOT_PASSWORD;
+	if (configured && configured.trim().length > 0) {
+		return configured;
+	}
+
+	const generated = randomBytes(18).toString("base64url");
+	console.warn(
+		`[ssh-mimic] SSH_MIMIC_ROOT_PASSWORD missing; generated ephemeral root password: ${generated}`,
+	);
+	return generated;
+}
+
+function resolveAutoSudoForNewUsers(): boolean {
+	const configured = process.env.SSH_MIMIC_AUTO_SUDO_NEW_USERS;
+	if (!configured) {
+		return true;
+	}
+
+	return !["0", "false", "no", "off"].includes(configured.toLowerCase());
+}
 
 /**
  * SSH server wrapper that exposes virtual shell and exec sessions.
@@ -52,7 +75,8 @@ class SshMimic {
 		await this.vfs.restoreMirror();
 		this.users = new VirtualUserManager(
 			this.vfs,
-			process.env.SSH_MIMIC_ROOT_PASSWORD ?? "root",
+			resolveRootPassword(),
+			resolveAutoSudoForNewUsers(),
 		);
 		await this.users.initialize();
 

@@ -1,6 +1,10 @@
 import { spawn } from "node:child_process";
 import type { ShellModule } from "../../types/commands";
-import { normalizeTerminalOutput, resolvePath } from "./helpers";
+import {
+	assertPathAccess,
+	normalizeTerminalOutput,
+	resolvePath,
+} from "./helpers";
 
 function parseCurlOutputPath(args: string[]): {
 	outputPath: string | null;
@@ -105,7 +109,7 @@ function runHostCurl(args: string[]): Promise<{
 export const curlCommand: ShellModule = {
 	name: "curl",
 	params: ["[-o file] <url>"],
-	run: async ({ vfs, cwd, args }) => {
+	run: async ({ authUser, vfs, cwd, args }) => {
 		const { outputPath, inputArgs } = parseCurlOutputPath(args);
 		const url = inputArgs[0];
 		const isHelpLike = inputArgs.some(
@@ -130,7 +134,9 @@ export const curlCommand: ShellModule = {
 		}
 
 		if (outputPath) {
-			vfs.writeFile(resolvePath(cwd, outputPath), result.stdout);
+			const target = resolvePath(cwd, outputPath);
+			assertPathAccess(authUser, target, "curl");
+			vfs.writeFile(target, result.stdout);
 			return {
 				stderr: result.stderr
 					? normalizeTerminalOutput(result.stderr)

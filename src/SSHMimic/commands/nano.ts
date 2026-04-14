@@ -1,17 +1,18 @@
 import * as path from "node:path";
 import type { ShellModule } from "../../types/commands";
-import { resolvePath } from "./helpers";
+import { assertPathAccess, resolvePath } from "./helpers";
 
 export const nanoCommand: ShellModule = {
 	name: "nano",
 	params: ["<file>"],
-	run: ({ vfs, cwd, args }) => {
+	run: ({ authUser, vfs, cwd, args }) => {
 		const fileArg = args[0];
 		if (!fileArg) {
 			return { stderr: "nano: missing file operand", exitCode: 1 };
 		}
 
 		const targetPath = resolvePath(cwd, fileArg);
+		assertPathAccess(authUser, targetPath, "nano");
 		const initialContent = vfs.exists(targetPath)
 			? vfs.readFile(targetPath)
 			: "";

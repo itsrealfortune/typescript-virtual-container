@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ShellModule } from "../../types/commands";
 import {
+	assertPathAccess,
 	normalizeTerminalOutput,
 	parseOutputPath,
 	resolvePath,
@@ -81,7 +82,7 @@ function runHostWget(args: string[]): Promise<{
 export const wgetCommand: ShellModule = {
 	name: "wget",
 	params: ["[url]"],
-	run: async ({ vfs, cwd, args }) => {
+	run: async ({ authUser, vfs, cwd, args }) => {
 		const { outputPath, inputArgs } = parseOutputPath(args);
 		const url = inputArgs[0];
 		const isHelpLike = inputArgs.some(
@@ -122,6 +123,7 @@ export const wgetCommand: ShellModule = {
 
 			const content = await readFile(tempFile, "utf8");
 			const target = resolvePath(cwd, outputPath ?? stripUrlFilename(url));
+			assertPathAccess(authUser, target, "wget");
 			vfs.writeFile(target, content);
 
 			return {

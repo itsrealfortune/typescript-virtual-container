@@ -1,16 +1,18 @@
 import type { ShellModule } from "../../types/commands";
-import { resolvePath } from "./helpers";
+import { assertPathAccess, resolvePath } from "./helpers";
 
 export const mkdirCommand: ShellModule = {
 	name: "mkdir",
 	params: ["<dir>"],
-	run: ({ vfs, cwd, args }) => {
+	run: ({ authUser, vfs, cwd, args }) => {
 		if (args.length === 0) {
 			return { stderr: "mkdir: missing operand", exitCode: 1 };
 		}
 
 		for (const dir of args) {
-			vfs.mkdir(resolvePath(cwd, dir));
+			const target = resolvePath(cwd, dir);
+			assertPathAccess(authUser, target, "mkdir");
+			vfs.mkdir(target);
 		}
 		return { exitCode: 0 };
 	},

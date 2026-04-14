@@ -31,6 +31,7 @@ export interface VirtualActiveSession {
 export class VirtualUserManager {
 	private readonly usersPath = "/virtual-env-js/.auth/htpasswd";
 	private readonly sudoersPath = "/virtual-env-js/.auth/sudoers";
+	private readonly authDirPath = "/virtual-env-js/.auth";
 	private readonly users = new Map<string, VirtualUserRecord>();
 	private readonly sudoers = new Set<string>();
 	private readonly activeSessions = new Map<string, VirtualActiveSession>();
@@ -45,6 +46,7 @@ export class VirtualUserManager {
 	constructor(
 		private readonly vfs: VirtualFileSystem,
 		private readonly defaultRootPassword: string = "root",
+		private readonly autoSudoForNewUsers: boolean = true,
 	) {}
 
 	/**
@@ -97,7 +99,9 @@ export class VirtualUserManager {
 		}
 
 		this.users.set(username, this.createRecord(username, password));
-		this.sudoers.add(username);
+		if (this.autoSudoForNewUsers) {
+			this.sudoers.add(username);
+		}
 		const homePath = `/home/${username}`;
 		if (!this.vfs.exists(homePath)) {
 			this.vfs.mkdir(homePath, 0o755);
@@ -290,6 +294,10 @@ export class VirtualUserManager {
 	}
 
 	private async persist(): Promise<void> {
+		if (!this.vfs.exists(this.authDirPath)) {
+			this.vfs.mkdir(this.authDirPath, 0o700);
+		}
+
 		const content = Array.from(this.users.values())
 			.sort((left, right) => left.username.localeCompare(right.username))
 			.map((record) =>
@@ -300,11 +308,13 @@ export class VirtualUserManager {
 		this.vfs.writeFile(
 			this.usersPath,
 			content.length > 0 ? `${content}\n` : "",
+			{ mode: 0o600 },
 		);
 		const sudoersContent = Array.from(this.sudoers.values()).sort().join("\n");
 		this.vfs.writeFile(
 			this.sudoersPath,
 			sudoersContent.length > 0 ? `${sudoersContent}\n` : "",
+			{ mode: 0o600 },
 		);
 		await this.vfs.flushMirror();
 	}
@@ -324,6 +334,10 @@ export class VirtualUserManager {
 
 	private validateUsername(username: string): void {
 		if (!username || username.trim() === "") {
+			throw new Error("invalid username");
+		}
+
+		if (!/^[a-z_][a-z0-9_-]{0,31}$/i.test(username)) {
 			throw new Error("invalid username");
 		}
 	}
