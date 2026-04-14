@@ -12,3 +12,5 @@ sshMimic
 		console.error('Failed to start SSH Mimic:', error);
 		process.exit(1);
 	});
+
+export { SSHMimic };

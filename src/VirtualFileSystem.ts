@@ -1,35 +1,15 @@
 import { promises as fs } from 'node:fs';
 import * as path from 'node:path';
 import { gunzipSync, gzipSync } from 'node:zlib';
-import * as tarStream from 'tar-stream';
 import type {
     RemoveOptions,
     VfsNodeStats,
-    VfsSnapshot,
-    VfsSnapshotDirectoryNode,
-    VfsSnapshotNode,
     WriteFileOptions,
 } from './types/vfs';
-
-type InternalNode = InternalFileNode | InternalDirectoryNode;
-
-interface InternalBaseNode {
-  name: string;
-  mode: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface InternalFileNode extends InternalBaseNode {
-  type: 'file';
-  content: Buffer;
-  compressed: boolean;
-}
-
-interface InternalDirectoryNode extends InternalBaseNode {
-  type: 'directory';
-  children: Map<string, InternalNode>;
-}
+import { archiveExists, createTarBuffer, readSnapshotFromTar } from './vfs/archive';
+import type { InternalDirectoryNode, InternalNode } from './vfs/internalTypes';
+import { applySnapshot, createSnapshot } from './vfs/snapshot';
+import { renderTree } from './vfs/tree';
 
 class VirtualFileSystem {
   private readonly root: InternalDirectoryNode;
@@ -55,8 +35,8 @@ class VirtualFileSystem {
     try {
       const compressed = await fs.readFile(this.archivePath);
       const tarBuffer = gunzipSync(compressed);
-      const snapshot = await this.readSnapshotFromTar(tarBuffer);
-      this.applySnapshot(snapshot);
+      const snapshot = await readSnapshotFromTar(tarBuffer);
+      applySnapshot(this.root, snapshot);
       this.dirty = false;
       return;
     } catch {
@@ -65,13 +45,13 @@ class VirtualFileSystem {
   }
 
   public async flushMirror(): Promise<void> {
-    if (!this.dirty && (await this.archiveExists())) {
+    if (!this.dirty && (await archiveExists(this.archivePath))) {
       return;
     }
 
     await fs.mkdir(path.dirname(this.archivePath), { recursive: true });
-    const snapshotJson = JSON.stringify(this.createSnapshot(), null, 2);
-    const tarBuffer = await this.createTarBuffer(snapshotJson);
+    const snapshotJson = JSON.stringify(createSnapshot(this.root), null, 2);
+    const tarBuffer = await createTarBuffer(snapshotJson);
     const compressed = gzipSync(tarBuffer);
     await fs.writeFile(this.archivePath, compressed);
     this.dirty = false;
@@ -208,11 +188,8 @@ class VirtualFileSystem {
       throw new Error(`Cannot render tree for '${dirPath}': not a directory.`);
     }
 
-    const lines: string[] = [];
     const rootLabel = dirPath === '/' ? '/' : path.posix.basename(this.normalizePath(dirPath));
-    lines.push(rootLabel);
-    this.walkTree(node, '', lines);
-    return lines.join('\n');
+    return renderTree(node, rootLabel);
   }
 
   public compressFile(targetPath: string): void {
@@ -292,157 +269,6 @@ class VirtualFileSystem {
     fromParent.updatedAt = new Date();
     toParent.updatedAt = new Date();
     this.dirty = true;
-  }
-
-  private async archiveExists(): Promise<boolean> {
-    try {
-      await fs.access(this.archivePath);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  private createSnapshot(): VfsSnapshot {
-    return { root: this.serializeDirectory(this.root) };
-  }
-
-  private applySnapshot(snapshot: VfsSnapshot): void {
-    const root = this.deserializeDirectory(snapshot.root);
-    this.root.name = root.name;
-    this.root.mode = root.mode;
-    this.root.createdAt = root.createdAt;
-    this.root.updatedAt = root.updatedAt;
-    this.root.children = root.children;
-  }
-
-  private serializeNode(node: InternalNode): VfsSnapshotNode {
-    if (node.type === 'file') {
-      return {
-        type: 'file',
-        name: node.name,
-        mode: node.mode,
-        createdAt: node.createdAt.toISOString(),
-        updatedAt: node.updatedAt.toISOString(),
-        compressed: node.compressed,
-        contentBase64: node.content.toString('base64')
-      };
-    }
-
-    return this.serializeDirectory(node);
-  }
-
-  private serializeDirectory(node: InternalDirectoryNode): VfsSnapshotDirectoryNode {
-    return {
-      type: 'directory',
-      name: node.name,
-      mode: node.mode,
-      createdAt: node.createdAt.toISOString(),
-      updatedAt: node.updatedAt.toISOString(),
-      children: Array.from(node.children.values()).map((child) => this.serializeNode(child))
-    };
-  }
-
-  private deserializeNode(node: VfsSnapshotNode): InternalNode {
-    if (node.type === 'file') {
-      return {
-        type: 'file',
-        name: node.name,
-        mode: node.mode,
-        createdAt: new Date(node.createdAt),
-        updatedAt: new Date(node.updatedAt),
-        content: Buffer.from(node.contentBase64, 'base64'),
-        compressed: node.compressed
-      };
-    }
-
-    return this.deserializeDirectory(node);
-  }
-
-  private deserializeDirectory(node: VfsSnapshotDirectoryNode): InternalDirectoryNode {
-    return {
-      type: 'directory',
-      name: node.name,
-      mode: node.mode,
-      createdAt: new Date(node.createdAt),
-      updatedAt: new Date(node.updatedAt),
-      children: new Map<string, InternalNode>(node.children.map((child) => [child.name, this.deserializeNode(child)]))
-    };
-  }
-
-  private async createTarBuffer(snapshotJson: string): Promise<Buffer> {
-    const pack = tarStream.pack();
-    const chunks: Buffer[] = [];
-
-    const finished = new Promise<Buffer>((resolve, reject) => {
-      pack.on('data', (chunk: Buffer) => chunks.push(Buffer.from(chunk)));
-      pack.on('error', reject);
-      pack.on('end', () => resolve(Buffer.concat(chunks)));
-    });
-
-    pack.entry({ name: 'snapshot.json', mode: 0o600 }, snapshotJson, (error?: Error | null) => {
-      if (error) {
-        void error;
-        return;
-      }
-
-      pack.finalize();
-    });
-
-    return finished;
-  }
-
-  private async readSnapshotFromTar(tarBuffer: Buffer): Promise<VfsSnapshot> {
-    return new Promise<VfsSnapshot>((resolve, reject) => {
-      const extract = tarStream.extract();
-      let snapshotText = '';
-      let found = false;
-
-      extract.on('entry', (header, stream, next) => {
-        if (header.name === 'snapshot.json') {
-          found = true;
-          stream.on('data', (chunk: Buffer) => {
-            snapshotText += chunk.toString('utf8');
-          });
-          stream.on('end', next);
-          stream.resume();
-          return;
-        }
-
-        stream.resume();
-        stream.on('end', next);
-      });
-
-      extract.on('finish', () => {
-        if (!found) {
-          reject(new Error('snapshot.json missing from archive'));
-          return;
-        }
-
-        resolve(JSON.parse(snapshotText) as VfsSnapshot);
-      });
-
-      extract.on('error', reject);
-      extract.end(tarBuffer);
-    });
-  }
-
-  private walkTree(node: InternalDirectoryNode, indent: string, lines: string[]): void {
-    const entries = Array.from(node.children.entries()).sort(([a], [b]) => a.localeCompare(b));
-
-    entries.forEach(([name, child], index) => {
-      const isLast = index === entries.length - 1;
-      const branch = isLast ? '`-- ' : '|-- ';
-      const nextIndent = indent + (isLast ? '    ' : '|   ');
-
-      if (child.type === 'file') {
-        lines.push(`${indent}${branch}${name}${child.compressed ? ' [gz]' : ''}`);
-        return;
-      }
-
-      lines.push(`${indent}${branch}${name}/`);
-      this.walkTree(child, nextIndent, lines);
-    });
   }
 
   private getNode(targetPath: string): InternalNode {
