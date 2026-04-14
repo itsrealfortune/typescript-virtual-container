@@ -26,6 +26,7 @@ export function startShell(
   stream: ShellStream,
   authUser: string,
   vfs: VirtualFileSystem,
+  hostname: string,
   terminalSize: TerminalSize = { cols: 80, rows: 24 }
 ): void {
   let lineBuffer = '';
@@ -38,7 +39,7 @@ export function startShell(
   const buildCurrentPrompt = (): string => {
     const homePath = `/home/${authUser}`;
     const cwdLabel = cwd === homePath ? '~' : path.posix.basename(cwd) || '/';
-    return buildPrompt(authUser, 'typescript-vm', cwdLabel);
+    return buildPrompt(authUser, hostname, cwdLabel);
   };
   const commandNames = Array.from(new Set(getCommandNames())).sort();
 
@@ -286,7 +287,7 @@ export function startShell(
     vfs.writeFile('/virtual-env-js/.bash_history', data);
   }
 
-  stream.write('Welcome to typescript-vm\r\n');
+  stream.write(`Welcome to ${hostname}\r\n`);
   renderLine();
 
   stream.on('data', async (chunk: Buffer) => {
@@ -394,7 +395,7 @@ export function startShell(
         stream.write('\r\n');
 
         if (line.length > 0) {
-          const result = await Promise.resolve(runCommand(line, authUser, 'shell', cwd, vfs));
+          const result = await Promise.resolve(runCommand(line, authUser, hostname, 'shell', cwd, vfs));
 
           pushHistory(line);
 

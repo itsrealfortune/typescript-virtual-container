@@ -21,6 +21,7 @@ export interface NanoEditorSession {
 
 export interface CommandContext {
   authUser: string;
+  hostname: string;
   rawInput: string;
   mode: CommandMode;
   args: string[];

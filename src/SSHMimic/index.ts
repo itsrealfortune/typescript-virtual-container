@@ -6,10 +6,12 @@ import { startShell } from './shell';
 
 class SSHMimic {
   private port: number;
+  private hostname: string;
   private server: SSHServer | null;
 
-  constructor(port: number) {
+  constructor(port: number, hostname = 'typescript-vm') {
     this.port = port;
+    this.hostname = hostname;
     this.server = null;
   }
 
@@ -21,7 +23,7 @@ class SSHMimic {
     this.server = new SSHServer(
       {
         hostKeys: [privateKey],
-        ident: 'SSH-2.0-typescript-vm'
+        ident: `SSH-2.0-${this.hostname}`
       },
       (client) => {
         let authUser = 'user';
@@ -33,7 +35,7 @@ class SSHMimic {
             const homePath = `/home/${authUser}`;
             if (!vfs.exists(homePath)) {
               vfs.mkdir(homePath, 0o755);
-              vfs.writeFile(`${homePath}/README.txt`, 'Welcome to typescript-vm');
+              vfs.writeFile(`${homePath}/README.txt`, `Welcome to ${this.hostname}`);
               void vfs.flushMirror();
             }
 
@@ -62,12 +64,12 @@ class SSHMimic {
 
             session.on('shell', (acceptShell) => {
               const stream = acceptShell();
-              startShell(stream, authUser, vfs, terminalSize);
+              startShell(stream, authUser, vfs, this.hostname, terminalSize);
             });
 
             session.on('exec', (acceptExec, _rejectExec, info) => {
               const stream = acceptExec();
-              runExec(stream, info.command.trim(), authUser, vfs);
+              runExec(stream, info.command.trim(), authUser, this.hostname, vfs);
             });
           });
         });

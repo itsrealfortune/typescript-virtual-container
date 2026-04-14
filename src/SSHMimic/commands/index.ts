@@ -61,6 +61,7 @@ function parseInput(rawInput: string): { commandName: string; args: string[] } {
 export function runCommand(
   rawInput: string,
   authUser: string,
+  hostname: string,
   mode: CommandMode,
   cwd: string,
   vfs: VirtualFileSystem
@@ -84,6 +85,7 @@ export function runCommand(
   try {
     return mod.run({
       authUser,
+      hostname,
       rawInput: trimmed,
       mode,
       args,

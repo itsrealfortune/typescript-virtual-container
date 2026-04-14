@@ -2,8 +2,8 @@ import type VirtualFileSystem from '../VirtualFileSystem';
 import type { ExecStream } from '../types/streams';
 import { runCommand } from './commands';
 
-export function runExec(stream: ExecStream, cmd: string, authUser: string, vfs: VirtualFileSystem): void {
-  Promise.resolve(runCommand(cmd, authUser, 'exec', '/home/' + authUser, vfs)).then((result) => {
+export function runExec(stream: ExecStream, cmd: string, authUser: string, hostname: string, vfs: VirtualFileSystem): void {
+  Promise.resolve(runCommand(cmd, authUser, hostname, 'exec', '/home/' + authUser, vfs)).then((result) => {
     if (result.stdout) {
       stream.write(`${result.stdout}\n`);
     }
