@@ -6,6 +6,7 @@ import type { ShellModule } from "../../types/commands";
 import {
 	parseOutputPath,
 	resolvePath,
+	stripUrlFilename,
 } from "./helpers";
 
 function runHostWget(args: string[]): Promise<{
@@ -86,6 +87,20 @@ export const wgetCommand: ShellModule = {
 			return { stderr: "wget: missing URL", exitCode: 1 };
 		}
 
+		if(url=="--help" || url=="-h"){
+			const hostArgs = ["--help"];
+			const result = await runHostWget(hostArgs);
+			return {
+				stdout: result.stdout,
+				stderr: result.stderr,
+				exitCode: result.exitCode,
+			};
+		}
+
+		if (!url) {
+			return { stderr: "wget: missing URL", exitCode: 1 };
+		}
+
 		const tempDir = await mkdtemp(join(tmpdir(), "virtual-env-js-wget-"));
 		const tempFile = join(tempDir, "download");
 
@@ -101,12 +116,11 @@ export const wgetCommand: ShellModule = {
 			}
 
 			const content = await readFile(tempFile, "utf8");
-			const target = resolvePath(cwd, outputPath ?? tempFile);
-			const vfsTarget = outputPath ? target : resolvePath(cwd, inputArgs[0] ? inputArgs[0].split("/").pop() ?? "index.html" : "index.html");
-			vfs.writeFile(vfsTarget, content);
+			const target = resolvePath(cwd, outputPath ?? stripUrlFilename(url));
+			vfs.writeFile(target, content);
 
 			return {
-				stdout: `saved ${vfsTarget}`,
+				stdout: `saved ${target}`,
 				exitCode: 0,
 			};
 		} finally {
