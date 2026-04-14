@@ -39,7 +39,7 @@ export const lsCommand: ShellModule = {
 					const childPath = resolvePath(target, name);
 					const stat = vfs.stat(childPath);
 					const size = stat.type === "file" ? stat.size : stat.childrenCount;
-					return `${formatPermissions(stat.mode, stat.type === "directory")} 1 ${size.toString().padStart(6, " ")} ${formatDate(stat.updatedAt)} ${name}${stat.type === "directory" ? "/" : ""}`;
+					return `${formatPermissions(stat.mode, stat.type === "directory")} 1 ${size} ${formatDate(stat.updatedAt)} ${name}${stat.type === "directory" ? "/" : ""}`;
 				})
 				.join("\n")
 			: joinListWithType(target, items, (p) => vfs.stat(p));

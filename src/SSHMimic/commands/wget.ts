@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ShellModule } from "../../types/commands";
 import {
+	normalizeTerminalOutput,
 	parseOutputPath,
 	resolvePath,
 	stripUrlFilename,
@@ -82,23 +83,21 @@ export const wgetCommand: ShellModule = {
 	run: async ({ vfs, cwd, args }) => {
 		const { outputPath, inputArgs } = parseOutputPath(args);
 		const url = inputArgs[0];
+		const isHelpLike = inputArgs.some((arg) =>
+			arg === "-h" || arg === "--help" || arg === "-V" || arg === "--version"
+		);
 
 		if (!url) {
 			return { stderr: "wget: missing URL", exitCode: 1 };
 		}
 
-		if(url=="--help" || url=="-h"){
-			const hostArgs = ["--help"];
-			const result = await runHostWget(hostArgs);
+		if (isHelpLike) {
+			const result = await runHostWget(inputArgs);
 			return {
-				stdout: result.stdout,
-				stderr: result.stderr,
+				stdout: normalizeTerminalOutput(result.stdout),
+				stderr: result.stderr ? normalizeTerminalOutput(result.stderr) : undefined,
 				exitCode: result.exitCode,
 			};
-		}
-
-		if (!url) {
-			return { stderr: "wget: missing URL", exitCode: 1 };
 		}
 
 		const tempDir = await mkdtemp(join(tmpdir(), "virtual-env-js-wget-"));
@@ -110,7 +109,9 @@ export const wgetCommand: ShellModule = {
 
 			if (result.exitCode !== 0) {
 				return {
-					stderr: result.stderr || `wget: exited with code ${result.exitCode}`,
+					stderr: normalizeTerminalOutput(
+						result.stderr || `wget: exited with code ${result.exitCode}`,
+					),
 					exitCode: result.exitCode,
 				};
 			}

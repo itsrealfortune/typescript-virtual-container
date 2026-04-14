@@ -3,6 +3,10 @@ import type VirtualFileSystem from "../VirtualFileSystem";
 import { runCommand } from "./commands";
 import type { VirtualUserManager } from "./users";
 
+function toTtyLines(text: string): string {
+	return text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\n/g, "\r\n");
+}
+
 export function runExec(
 	stream: ExecStream,
 	cmd: string,
@@ -23,11 +27,11 @@ export function runExec(
 		),
 	).then((result) => {
 		if (result.stdout) {
-			stream.write(`${result.stdout}\n`);
+			stream.write(`${toTtyLines(result.stdout)}\r\n`);
 		}
 
 		if (result.stderr) {
-			stream.stderr.write(`${result.stderr}\n`);
+			stream.stderr.write(`${toTtyLines(result.stderr)}\r\n`);
 		}
 
 		stream.exit(result.exitCode ?? 0);

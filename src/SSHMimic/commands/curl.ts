@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import type { ShellModule } from "../../types/commands";
-import { resolvePath } from "./helpers";
+import { normalizeTerminalOutput, resolvePath } from "./helpers";
 
 function parseCurlOutputPath(args: string[]): {
 	outputPath: string | null;
@@ -107,10 +107,16 @@ export const curlCommand: ShellModule = {
 	run: async ({ vfs, cwd, args }) => {
 		const { outputPath, inputArgs } = parseCurlOutputPath(args);
 		const url = inputArgs[0];
+		const isHelpLike = inputArgs.some((arg) =>
+			arg === "-h" ||
+			arg === "--help" ||
+			arg === "-V" ||
+			arg === "--version"
+		);
 
-		// if (!url) {
-		// 	return { stderr: "curl: missing URL", exitCode: 1 };
-		// }
+		if (!url) {
+			return { stderr: "curl: missing URL", exitCode: 1 };
+		}
 
 		const passthroughArgs = outputPath
 			? [...inputArgs, "-o", "-"]
@@ -119,19 +125,24 @@ export const curlCommand: ShellModule = {
 
 		if (result.exitCode !== 0) {
 			return {
-				stderr: result.stderr || `curl: exited with code ${result.exitCode}`,
+				stderr: normalizeTerminalOutput(
+					result.stderr || `curl: exited with code ${result.exitCode}`,
+				),
 				exitCode: result.exitCode,
 			};
 		}
 
 		if (outputPath) {
 			vfs.writeFile(resolvePath(cwd, outputPath), result.stdout);
-			return { stderr: result.stderr || undefined, exitCode: 0 };
+			return {
+				stderr: result.stderr ? normalizeTerminalOutput(result.stderr) : undefined,
+				exitCode: 0,
+			};
 		}
 
 		return {
-			stdout: result.stdout,
-			stderr: result.stderr || undefined,
+			stdout: isHelpLike ? normalizeTerminalOutput(result.stdout) : result.stdout,
+			stderr: result.stderr ? normalizeTerminalOutput(result.stderr) : undefined,
 			exitCode: 0,
 		};
 	},

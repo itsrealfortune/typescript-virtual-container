@@ -9,6 +9,22 @@ function normalizeFetchUrl(input: string): string {
 	return `http://${input}`;
 }
 
+export function normalizeTerminalOutput(text: string): string {
+	return text
+		.replace(/\r\n/g, "\n")
+		.replace(/\r/g, "\n")
+		.replace(/\t/g, "  ")
+		.split("\n")
+		.map((line) =>
+			line
+				.replace(/^[ \u00A0]{8,}/, "  ")
+				.replace(/[ \u00A0]{3,}/g, "  "),
+		)
+		.join("\n")
+		.replace(/\n{3,}/g, "\n\n")
+		.trimEnd();
+}
+
 export function resolvePath(cwd: string, inputPath: string): string {
 	if (!inputPath || inputPath.trim() === "") {
 		return cwd;
