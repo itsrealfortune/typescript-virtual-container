@@ -25,7 +25,10 @@ jobs:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const head = `${owner}:${ref.head}`;
+            const sourceBranch = context.ref.startsWith('refs/heads/')
+              ? context.ref.slice('refs/heads/'.length)
+              : context.ref;
+            const head = `${owner}:${sourceBranch}`;
             const base = 'main';
 
             // Check if there are commits between main and the current branch
@@ -33,10 +36,10 @@ jobs:
               owner,
               repo,
               base: 'main',
-              head: ref.head,
+              head: sourceBranch,
             }).catch(err => {
               if (err.status === 404 && err.message.includes('No commits')) {
-                core.info('No commits between main and ' + ref.head + ' - skipping PR creation');
+                core.info('No commits between main and ' + sourceBranch + ' - skipping PR creation');
                 return { data: { ahead_by: 0 } };
               }
               throw err;
@@ -63,13 +66,13 @@ jobs:
             const { data: pullRequest } = await github.rest.pulls.create({
               owner,
               repo,
-              head: ref.head,
+              head: sourceBranch,
               base,
-              title: 'chore: auto PR from ${ref.head} to main',
+              title: `chore: auto PR from ${sourceBranch} to main`,
               body: [
                 'This pull request was created automatically by GitHub Actions.',
                 '',
-                `- source branch: \`${ref.head}\``,
+                `- source branch: \`${sourceBranch}\``,
                 `- target branch: \`main\``,
                 `- triggered by commit \`${context.sha}\``,
               ].join('\n'),
