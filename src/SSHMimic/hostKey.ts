@@ -1,21 +1,21 @@
-import { generateKeyPairSync } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { generateKeyPairSync } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 
 export function loadOrCreateHostKey(baseDir: string = process.cwd()): string {
-  const hostKeyPath = resolve(baseDir, '.ssh-mimic', 'host_rsa');
+	const hostKeyPath = resolve(baseDir, ".ssh-mimic", "host_rsa");
 
-  if (existsSync(hostKeyPath)) {
-    return readFileSync(hostKeyPath, 'utf8');
-  }
+	if (existsSync(hostKeyPath)) {
+		return readFileSync(hostKeyPath, "utf8");
+	}
 
-  const privateKey = generateKeyPairSync('rsa', {
-    modulusLength: 2048,
-    privateKeyEncoding: { type: 'pkcs1', format: 'pem' },
-    publicKeyEncoding: { type: 'pkcs1', format: 'pem' }
-  }).privateKey;
+	const privateKey = generateKeyPairSync("rsa", {
+		modulusLength: 2048,
+		privateKeyEncoding: { type: "pkcs1", format: "pem" },
+		publicKeyEncoding: { type: "pkcs1", format: "pem" },
+	}).privateKey;
 
-  mkdirSync(dirname(hostKeyPath), { recursive: true });
-  writeFileSync(hostKeyPath, privateKey, { mode: 0o600 });
-  return privateKey;
+	mkdirSync(dirname(hostKeyPath), { recursive: true });
+	writeFileSync(hostKeyPath, privateKey, { mode: 0o600 });
+	return privateKey;
 }

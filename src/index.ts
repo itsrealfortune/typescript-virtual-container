@@ -1,6 +1,6 @@
-import SshMimic from './SSHMimic/index';
+import SshMimic from "./SSHMimic/index";
 
-const sshHostname = process.env.SSH_MIMIC_HOSTNAME ?? 'typescript-vm';
+const sshHostname = process.env.SSH_MIMIC_HOSTNAME ?? "typescript-vm";
 const sshMimic = new SshMimic(2222, sshHostname);
 
 sshMimic
@@ -9,7 +9,7 @@ sshMimic
 		console.log(`SSH Mimic initialized. Listening on port ${port}.`);
 	})
 	.catch((error: unknown) => {
-		console.error('Failed to start SSH Mimic:', error);
+		console.error("Failed to start SSH Mimic:", error);
 		process.exit(1);
 	});
 
