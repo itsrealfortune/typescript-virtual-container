@@ -1,9 +1,23 @@
+import { randomBytes } from "node:crypto";
 import { Server as SshServer } from "ssh2";
 import VirtualFileSystem from "../VirtualFileSystem";
 import { runExec } from "./exec";
 import { loadOrCreateHostKey } from "./hostKey";
 import { startShell } from "./shell";
 import { VirtualUserManager } from "./users";
+
+function resolveRootPassword(): string {
+	const configured = process.env.SSH_MIMIC_ROOT_PASSWORD;
+	if (configured && configured.trim().length > 0) {
+		return configured;
+	}
+
+	const generated = randomBytes(18).toString("base64url");
+	console.warn(
+		`[ssh-mimic] SSH_MIMIC_ROOT_PASSWORD missing; generated ephemeral root password: ${generated}`,
+	);
+	return generated;
+}
 
 /**
  * SSH server wrapper that exposes virtual shell and exec sessions.
@@ -50,10 +64,7 @@ class SshMimic {
 		const privateKey = loadOrCreateHostKey();
 		this.vfs = new VirtualFileSystem(this.basePath);
 		await this.vfs.restoreMirror();
-		this.users = new VirtualUserManager(
-			this.vfs,
-			process.env.SSH_MIMIC_ROOT_PASSWORD ?? "root",
-		);
+		this.users = new VirtualUserManager(this.vfs, resolveRootPassword());
 		await this.users.initialize();
 
 		this.server = new SshServer(

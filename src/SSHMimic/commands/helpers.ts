@@ -1,6 +1,8 @@
 import * as path from "node:path";
 import type VirtualFileSystem from "../../VirtualFileSystem";
 
+const PROTECTED_PREFIXES = ["/virtual-env-js/.auth"] as const;
+
 function normalizeFetchUrl(input: string): string {
 	if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(input)) {
 		return input;
@@ -30,6 +32,30 @@ export function resolvePath(cwd: string, inputPath: string): string {
 	return inputPath.startsWith("/")
 		? path.posix.normalize(inputPath)
 		: path.posix.normalize(path.posix.join(cwd, inputPath));
+}
+
+function isProtectedPath(targetPath: string): boolean {
+	const normalized = targetPath.startsWith("/")
+		? path.posix.normalize(targetPath)
+		: path.posix.normalize(`/${targetPath}`);
+
+	return PROTECTED_PREFIXES.some(
+		(prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`),
+	);
+}
+
+export function assertPathAccess(
+	authUser: string,
+	targetPath: string,
+	operation: string,
+): void {
+	if (authUser === "root") {
+		return;
+	}
+
+	if (isProtectedPath(targetPath)) {
+		throw new Error(`${operation}: permission denied: ${targetPath}`);
+	}
 }
 
 export function parseOutputPath(args: string[]): {

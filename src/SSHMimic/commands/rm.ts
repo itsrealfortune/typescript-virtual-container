@@ -1,10 +1,10 @@
 import type { ShellModule } from "../../types/commands";
-import { resolvePath } from "./helpers";
+import { assertPathAccess, resolvePath } from "./helpers";
 
 export const rmCommand: ShellModule = {
 	name: "rm",
 	params: ["[-r|-rf] <path>"],
-	run: ({ vfs, cwd, args }) => {
+	run: ({ authUser, vfs, cwd, args }) => {
 		if (args.length === 0) {
 			return { stderr: "rm: missing operand", exitCode: 1 };
 		}
@@ -18,7 +18,9 @@ export const rmCommand: ShellModule = {
 		}
 
 		for (const target of targets) {
-			vfs.remove(resolvePath(cwd, target), { recursive });
+			const resolvedTarget = resolvePath(cwd, target);
+			assertPathAccess(authUser, resolvedTarget, "rm");
+			vfs.remove(resolvedTarget, { recursive });
 		}
 
 		return { exitCode: 0 };

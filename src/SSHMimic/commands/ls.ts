@@ -1,5 +1,5 @@
 import type { ShellModule } from "../../types/commands";
-import { joinListWithType, resolvePath } from "./helpers";
+import { assertPathAccess, joinListWithType, resolvePath } from "./helpers";
 
 function formatPermissions(mode: number, isDirectory: boolean): string {
 	const fileType = isDirectory ? "d" : "-";
@@ -28,10 +28,11 @@ function formatDate(date: Date): string {
 export const lsCommand: ShellModule = {
 	name: "ls",
 	params: ["[path]"],
-	run: ({ vfs, cwd, args }) => {
+	run: ({ authUser, vfs, cwd, args }) => {
 		const longFormat = args.includes("-l") || args.includes("--long");
 		const targetArg = args.find((arg) => !arg.startsWith("-"));
 		const target = resolvePath(cwd, targetArg ?? cwd);
+		assertPathAccess(authUser, target, "ls");
 		const items = vfs.list(target).filter((name) => !name.startsWith("."));
 		const rendered = longFormat
 			? items
