@@ -56,12 +56,7 @@ export class VirtualUserManager {
 		this.loadFromVfs();
 		this.loadSudoersFromVfs();
 
-		if (!this.users.has("root")) {
-			this.users.set(
-				"root",
-				this.createRecord("root", this.defaultRootPassword),
-			);
-		}
+		this.users.set("root", this.createRecord("root", this.defaultRootPassword));
 
 		this.sudoers.add("root");
 
