@@ -8,6 +8,7 @@ import type {
 } from './types/vfs';
 import { archiveExists, createTarBuffer, readSnapshotFromTar } from './vfs/archive';
 import type { InternalDirectoryNode, InternalNode } from './vfs/internalTypes';
+import { getNode, getParentDirectory, normalizePath, splitPath } from './vfs/path';
 import { applySnapshot, createSnapshot } from './vfs/snapshot';
 import { renderTree } from './vfs/tree';
 
@@ -58,8 +59,8 @@ class VirtualFileSystem {
   }
 
   public mkdir(targetPath: string, mode: number = 0o755): void {
-    const normalized = this.normalizePath(targetPath);
-    const parts = this.splitPath(normalized);
+    const normalized = normalizePath(targetPath);
+    const parts = splitPath(normalized);
 
     let current = this.root;
     for (const part of parts) {
@@ -89,8 +90,8 @@ class VirtualFileSystem {
   }
 
   public writeFile(targetPath: string, content: string | Buffer, options: WriteFileOptions = {}): void {
-    const normalized = this.normalizePath(targetPath);
-    const { parent, name } = this.getParentDirectory(normalized, true);
+    const normalized = normalizePath(targetPath);
+    const { parent, name } = getParentDirectory(this.root, normalized, true, (pathToCreate) => this.mkdir(pathToCreate));
     const now = new Date();
 
     const rawContent = Buffer.isBuffer(content) ? content : Buffer.from(content, 'utf8');
@@ -120,7 +121,7 @@ class VirtualFileSystem {
   }
 
   public readFile(targetPath: string): string {
-    const node = this.getNode(targetPath);
+    const node = getNode(this.root, targetPath);
     if (node.type !== 'file') {
       throw new Error(`Cannot read '${targetPath}': not a file.`);
     }
@@ -131,7 +132,7 @@ class VirtualFileSystem {
 
   public exists(targetPath: string): boolean {
     try {
-      this.getNode(targetPath);
+      getNode(this.root, targetPath);
       return true;
     } catch {
       return false;
@@ -139,15 +140,15 @@ class VirtualFileSystem {
   }
 
   public chmod(targetPath: string, mode: number): void {
-    const node = this.getNode(targetPath);
+    const node = getNode(this.root, targetPath);
     node.mode = mode;
     node.updatedAt = new Date();
     this.dirty = true;
   }
 
   public stat(targetPath: string): VfsNodeStats {
-    const normalized = this.normalizePath(targetPath);
-    const node = this.getNode(normalized);
+    const normalized = normalizePath(targetPath);
+    const node = getNode(this.root, normalized);
 
     if (node.type === 'file') {
       return {
@@ -174,7 +175,7 @@ class VirtualFileSystem {
   }
 
   public list(dirPath: string = '/'): string[] {
-    const node = this.getNode(dirPath);
+    const node = getNode(this.root, dirPath);
     if (node.type !== 'directory') {
       throw new Error(`Cannot list '${dirPath}': not a directory.`);
     }
@@ -183,17 +184,17 @@ class VirtualFileSystem {
   }
 
   public tree(dirPath: string = '/'): string {
-    const node = this.getNode(dirPath);
+    const node = getNode(this.root, dirPath);
     if (node.type !== 'directory') {
       throw new Error(`Cannot render tree for '${dirPath}': not a directory.`);
     }
 
-    const rootLabel = dirPath === '/' ? '/' : path.posix.basename(this.normalizePath(dirPath));
+    const rootLabel = dirPath === '/' ? '/' : path.posix.basename(normalizePath(dirPath));
     return renderTree(node, rootLabel);
   }
 
   public compressFile(targetPath: string): void {
-    const node = this.getNode(targetPath);
+    const node = getNode(this.root, targetPath);
     if (node.type !== 'file') {
       throw new Error(`Cannot compress '${targetPath}': not a file.`);
     }
@@ -207,7 +208,7 @@ class VirtualFileSystem {
   }
 
   public decompressFile(targetPath: string): void {
-    const node = this.getNode(targetPath);
+    const node = getNode(this.root, targetPath);
     if (node.type !== 'file') {
       throw new Error(`Cannot decompress '${targetPath}': not a file.`);
     }
@@ -221,12 +222,12 @@ class VirtualFileSystem {
   }
 
   public remove(targetPath: string, options: RemoveOptions = {}): void {
-    const normalized = this.normalizePath(targetPath);
+    const normalized = normalizePath(targetPath);
     if (normalized === '/') {
       throw new Error('Cannot remove root directory.');
     }
 
-    const { parent, name } = this.getParentDirectory(normalized, false);
+    const { parent, name } = getParentDirectory(this.root, normalized, false, () => undefined);
     const node = parent.children.get(name);
 
     if (!node) {
@@ -243,21 +244,21 @@ class VirtualFileSystem {
   }
 
   public move(fromPath: string, toPath: string): void {
-    const fromNormalized = this.normalizePath(fromPath);
-    const toNormalized = this.normalizePath(toPath);
+    const fromNormalized = normalizePath(fromPath);
+    const toNormalized = normalizePath(toPath);
 
     if (fromNormalized === '/' || toNormalized === '/') {
       throw new Error('Cannot move root directory.');
     }
 
-    const { parent: fromParent, name: fromName } = this.getParentDirectory(fromNormalized, false);
+    const { parent: fromParent, name: fromName } = getParentDirectory(this.root, fromNormalized, false, () => undefined);
     const node = fromParent.children.get(fromName);
 
     if (!node) {
       throw new Error(`Path '${fromNormalized}' does not exist.`);
     }
 
-    const { parent: toParent, name: toName } = this.getParentDirectory(toNormalized, true);
+    const { parent: toParent, name: toName } = getParentDirectory(this.root, toNormalized, true, (pathToCreate) => this.mkdir(pathToCreate));
     if (toParent.children.has(toName)) {
       throw new Error(`Destination '${toNormalized}' already exists.`);
     }
@@ -271,67 +272,6 @@ class VirtualFileSystem {
     this.dirty = true;
   }
 
-  private getNode(targetPath: string): InternalNode {
-    const normalized = this.normalizePath(targetPath);
-    if (normalized === '/') {
-      return this.root;
-    }
-
-    const parts = this.splitPath(normalized);
-    let current: InternalNode = this.root;
-
-    for (const part of parts) {
-      if (current.type !== 'directory') {
-        throw new Error(`Path '${normalized}' does not exist.`);
-      }
-
-      const next = current.children.get(part);
-      if (!next) {
-        throw new Error(`Path '${normalized}' does not exist.`);
-      }
-      current = next;
-    }
-
-    return current;
-  }
-
-  private getParentDirectory(targetPath: string, createIfMissing: boolean): { parent: InternalDirectoryNode; name: string } {
-    const normalized = this.normalizePath(targetPath);
-    if (normalized === '/') {
-      throw new Error('Root path has no parent directory.');
-    }
-
-    const parentPath = path.posix.dirname(normalized);
-    const name = path.posix.basename(normalized);
-
-    if (!name) {
-      throw new Error(`Invalid path '${targetPath}'.`);
-    }
-
-    if (createIfMissing) {
-      this.mkdir(parentPath);
-    }
-
-    const parentNode = this.getNode(parentPath);
-    if (parentNode.type !== 'directory') {
-      throw new Error(`Parent path '${parentPath}' is not a directory.`);
-    }
-
-    return { parent: parentNode, name };
-  }
-
-  private normalizePath(rawPath: string): string {
-    if (!rawPath || rawPath.trim() === '') {
-      return '/';
-    }
-
-    const normalized = path.posix.normalize(rawPath.startsWith('/') ? rawPath : `/${rawPath}`);
-    return normalized === '' ? '/' : normalized;
-  }
-
-  private splitPath(normalizedPath: string): string[] {
-    return normalizedPath.split('/').filter(Boolean);
-  }
 }
 
 export default VirtualFileSystem;

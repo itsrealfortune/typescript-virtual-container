@@ -13,4 +13,5 @@ sshMimic
 		process.exit(1);
 	});
 
-export { SSHMimic };
+const exported = { VirtualMachine: SSHMimic };
+export default exported;
