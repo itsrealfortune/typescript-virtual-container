@@ -13,5 +13,6 @@ sshMimic
 		process.exit(1);
 	});
 
+// biome-ignore lint/style/useNamingConvention: VirtualMachine is a more user-friendly name for the default export of this module, which represents the main class for the SSH
 const exported = { VirtualMachine: SshMimic };
 export default exported;

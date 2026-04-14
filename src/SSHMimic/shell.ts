@@ -1,8 +1,8 @@
-import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
+import { type ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
 import { readFile, unlink, writeFile } from 'node:fs/promises';
 import * as path from 'node:path';
-import type VirtualFileSystem from '../VirtualFileSystem';
 import type { ShellStream } from '../types/streams';
+import type VirtualFileSystem from '../VirtualFileSystem';
 import { getCommandNames, runCommand } from './commands';
 import { formatLoginDate } from './loginFormat';
 import { buildPrompt } from './prompt';
@@ -222,6 +222,7 @@ export function startShell(
       stdio: ['pipe', 'pipe', 'pipe'],
       env: {
         ...process.env,
+        // biome-ignore lint/style/useNamingConvention: TERM is an environment variable conventionally in uppercase
         TERM: process.env.TERM ?? 'xterm-256color'
       }
     });
@@ -263,6 +264,7 @@ export function startShell(
       stdio: ['pipe', 'pipe', 'pipe'],
       env: {
         ...process.env,
+        // biome-ignore lint/style/useNamingConvention: TERM is an environment variable conventionally in uppercase
         TERM: process.env.TERM ?? 'xterm-256color'
       }
     });

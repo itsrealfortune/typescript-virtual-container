@@ -12,9 +12,10 @@
     "test": "bunx --bun @biomejs/biome test ./src"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.11",
     "@types/bun": "latest",
-    "@types/ssh2": "^1.15.5",
-    "@types/node": "^25.6.0"
+    "@types/node": "^25.6.0",
+    "@types/ssh2": "^1.15.5"
   },
   "peerDependencies": {
     "typescript": "^5"

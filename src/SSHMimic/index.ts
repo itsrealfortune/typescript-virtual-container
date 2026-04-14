@@ -5,7 +5,7 @@ import { loadOrCreateHostKey } from './hostKey';
 import { startShell } from './shell';
 import { VirtualUserManager } from './users';
 
-class SSHMimic {
+class SshMimic {
   private port: number;
   private hostname: string;
   private server: SshServer | null;
@@ -113,4 +113,4 @@ class SSHMimic {
   }
 }
 
-export default SSHMimic;
+export default SshMimic;
