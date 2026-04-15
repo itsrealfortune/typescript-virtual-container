@@ -252,6 +252,11 @@ function resolveDefaults(info: NeofetchInfo): Required<NeofetchInfo> {
 	const usedMem = Math.max(0, totalMem - freeMem);
     const shellProps = info.shellProps;
 
+    const processUptime = process.uptime();
+    if (info.uptimeSeconds === undefined) {
+        info.uptimeSeconds = Math.round(processUptime);
+    }
+
     console.log("Resolving neofetch info with shellProps:", shellProps);
 
 	return {

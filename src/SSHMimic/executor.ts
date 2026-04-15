@@ -1,6 +1,7 @@
 import type { CommandMode, CommandResult } from "../types/commands";
 import type { Pipeline, PipelineCommand } from "../types/pipeline";
 import type VirtualFileSystem from "../VirtualFileSystem";
+import { defaultShellProperties } from "../VirtualShell";
 import { runCommand as runSingleCommand } from "../VirtualShell/commands";
 import { resolvePath } from "../VirtualShell/commands/helpers";
 import type { VirtualUserManager } from "./users";
@@ -84,6 +85,7 @@ async function executeSingleCommandWithRedirections(
 		users,
 		mode,
 		cwd,
+		defaultShellProperties,
 		vfs,
 		stdin,
 	);
@@ -159,6 +161,7 @@ async function executePipelineChain(
 			users,
 			mode,
 			cwd,
+			defaultShellProperties,
 			vfs,
 			currentOutput,
 		);
