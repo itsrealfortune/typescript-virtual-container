@@ -26,6 +26,8 @@ import { lsCommand } from "./ls";
 import { mkdirCommand } from "./mkdir";
 import { nanoCommand } from "./nano";
 import { neofetchCommand } from "./neofetch";
+import { nodeCommand } from "./node";
+import { npmCommand } from "./npm";
 import { pwdCommand } from "./pwd";
 import { rmCommand } from "./rm";
 import { setCommand } from "./set";
@@ -54,6 +56,8 @@ const BASE_COMMANDS: ShellModule[] = [
 	treeCommand,
 	nanoCommand,
 	neofetchCommand,
+	nodeCommand,
+	npmCommand,
 	htopCommand,
 	adduserCommand,
 	deluserCommand,
