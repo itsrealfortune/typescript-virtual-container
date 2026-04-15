@@ -1,6 +1,6 @@
+import { runCommand } from "../commands";
 import type { ExecStream } from "../types/streams";
 import type { VirtualShell } from "../VirtualShell";
-import { runCommand } from "../VirtualShell/commands";
 
 function toTtyLines(text: string): string {
 	return text

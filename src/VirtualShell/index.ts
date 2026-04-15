@@ -1,9 +1,9 @@
 import { randomBytes } from "node:crypto";
+import { createCustomCommand, registerCommand, runCommand } from "../commands";
 import type { CommandContext, CommandResult } from "../types/commands";
 import type { ShellStream } from "../types/streams";
 import VirtualFileSystem from "../VirtualFileSystem";
 import { VirtualUserManager } from "../VirtualUserManager";
-import { createCustomCommand, registerCommand, runCommand } from "./commands";
 import { startShell } from "./shell";
 
 export interface ShellProperties {

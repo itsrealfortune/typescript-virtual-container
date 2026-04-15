@@ -41,4 +41,4 @@ export {
 	getArg,
 	getFlag,
 	ifFlag,
-} from "./VirtualShell/commands/command-helpers";
+} from "./commands/command-helpers";

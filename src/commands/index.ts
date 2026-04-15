@@ -1,40 +1,40 @@
-import type { VirtualShell } from "..";
-import { adduserCommand } from "../../commands/adduser";
-import { catCommand } from "../../commands/cat";
-import { cdCommand } from "../../commands/cd";
-import { clearCommand } from "../../commands/clear";
-import { curlCommand } from "../../commands/curl";
-import { deluserCommand } from "../../commands/deluser";
-import { echoCommand } from "../../commands/echo";
-import { envCommand } from "../../commands/env";
-import { exitCommand } from "../../commands/exit";
-import { exportCommand } from "../../commands/export";
-import { grepCommand } from "../../commands/grep";
-import { createHelpCommand } from "../../commands/help";
-import { hostnameCommand } from "../../commands/hostname";
-import { htopCommand } from "../../commands/htop";
-import { lsCommand } from "../../commands/ls";
-import { mkdirCommand } from "../../commands/mkdir";
-import { nanoCommand } from "../../commands/nano";
-import { neofetchCommand } from "../../commands/neofetch";
-import { pwdCommand } from "../../commands/pwd";
-import { rmCommand } from "../../commands/rm";
-import { setCommand } from "../../commands/set";
-import { shCommand } from "../../commands/sh";
-import { suCommand } from "../../commands/su";
-import { sudoCommand } from "../../commands/sudo";
-import { touchCommand } from "../../commands/touch";
-import { treeCommand } from "../../commands/tree";
-import { unsetCommand } from "../../commands/unset";
-import { wgetCommand } from "../../commands/wget";
-import { whoCommand } from "../../commands/who";
-import { whoamiCommand } from "../../commands/whoami";
+import type { VirtualShell } from "../VirtualShell";
 import type {
 	CommandContext,
 	CommandMode,
 	CommandResult,
 	ShellModule,
-} from "../../types/commands";
+} from "../types/commands";
+import { adduserCommand } from "./adduser";
+import { catCommand } from "./cat";
+import { cdCommand } from "./cd";
+import { clearCommand } from "./clear";
+import { curlCommand } from "./curl";
+import { deluserCommand } from "./deluser";
+import { echoCommand } from "./echo";
+import { envCommand } from "./env";
+import { exitCommand } from "./exit";
+import { exportCommand } from "./export";
+import { grepCommand } from "./grep";
+import { createHelpCommand } from "./help";
+import { hostnameCommand } from "./hostname";
+import { htopCommand } from "./htop";
+import { lsCommand } from "./ls";
+import { mkdirCommand } from "./mkdir";
+import { nanoCommand } from "./nano";
+import { neofetchCommand } from "./neofetch";
+import { pwdCommand } from "./pwd";
+import { rmCommand } from "./rm";
+import { setCommand } from "./set";
+import { shCommand } from "./sh";
+import { suCommand } from "./su";
+import { sudoCommand } from "./sudo";
+import { touchCommand } from "./touch";
+import { treeCommand } from "./tree";
+import { unsetCommand } from "./unset";
+import { wgetCommand } from "./wget";
+import { whoCommand } from "./who";
+import { whoamiCommand } from "./whoami";
 
 const BASE_COMMANDS: ShellModule[] = [
 	pwdCommand,
@@ -216,8 +216,8 @@ export async function runCommand(
 	}
 
 	if (trimmed.includes("|") || trimmed.includes(">") || trimmed.includes("<")) {
-		const { parseShellPipeline } = await import("../shellParser");
-		const { executePipeline } = await import("../../SSHMimic/executor");
+		const { parseShellPipeline } = await import("../VirtualShell/shellParser");
+		const { executePipeline } = await import("../SSHMimic/executor");
 
 		const pipeline = parseShellPipeline(trimmed);
 		if (!pipeline.isValid) {

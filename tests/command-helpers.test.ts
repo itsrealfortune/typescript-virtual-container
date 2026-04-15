@@ -3,7 +3,7 @@ import {
     getArg,
     getFlag,
     ifFlag,
-} from "../src/VirtualShell/commands/command-helpers";
+} from "../src/commands/command-helpers";
 
 describe("command-helpers", () => {
 	test("ifFlag detects plain and inline flag forms", () => {

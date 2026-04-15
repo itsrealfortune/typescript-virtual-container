@@ -2,11 +2,11 @@ import { type ChildProcessWithoutNullStreams, spawn } from "node:child_process";
 import { readFile, unlink, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import type { ShellProperties, VirtualShell } from ".";
+import { getCommandNames, runCommand } from "../commands";
 import { formatLoginDate } from "../SSHMimic/loginFormat";
 import { buildPrompt } from "../SSHMimic/prompt";
 import type { ShellStream } from "../types/streams";
 import type VirtualFileSystem from "../VirtualFileSystem";
-import { getCommandNames, runCommand } from "./commands";
 
 interface NanoSession {
 	kind: "nano" | "htop";

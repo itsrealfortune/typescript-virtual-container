@@ -1,6 +1,6 @@
+import { runCommand } from "../commands";
 import type { CommandResult } from "../types/commands";
 import type { VirtualShell } from "../VirtualShell";
-import { runCommand } from "../VirtualShell/commands";
 
 /**
  * Programmatic client for executing shell commands against a virtual shell.

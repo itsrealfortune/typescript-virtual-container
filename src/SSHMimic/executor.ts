@@ -1,8 +1,8 @@
+import { runCommand as runSingleCommand } from "../commands";
+import { resolvePath } from "../commands/helpers";
 import type { CommandMode, CommandResult } from "../types/commands";
 import type { Pipeline, PipelineCommand } from "../types/pipeline";
 import type { VirtualShell } from "../VirtualShell";
-import { runCommand as runSingleCommand } from "../VirtualShell/commands";
-import { resolvePath } from "../VirtualShell/commands/helpers";
 
 /**
  * Execute a parsed pipeline, chaining commands and handling redirections.
