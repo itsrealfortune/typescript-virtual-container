@@ -38,6 +38,19 @@ describe("VirtualUserManager auto sudo", () => {
 			expect(users.isSudoer("bob")).toBe(false);
 		});
 	});
+
+	test("updates password for existing user", async () => {
+		await withTempVfs(async (vfs) => {
+			const users = new VirtualUserManager(vfs, "root-pass");
+			await users.initialize();
+			await users.addUser("alice", "alice-pass");
+
+			await users.setPassword("alice", "new-pass");
+
+			expect(users.verifyPassword("alice", "new-pass")).toBe(true);
+			expect(users.verifyPassword("alice", "alice-pass")).toBe(false);
+		});
+	});
 });
 
 describe("VirtualUserManager quotas", () => {

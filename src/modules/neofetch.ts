@@ -255,8 +255,6 @@ function resolveDefaults(info: NeofetchInfo): Required<NeofetchInfo> {
 		info.uptimeSeconds = Math.round(processUptime);
 	}
 
-	console.log("Resolving neofetch info with shellProps:", shellProps);
-
 	return {
 		user: info.user,
 		host: info.host,

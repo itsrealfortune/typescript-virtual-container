@@ -223,6 +223,24 @@ export class VirtualUserManager {
 	}
 
 	/**
+	 * Updates password for an existing user account.
+	 *
+	 * @param username Username to update.
+	 * @param password New plaintext password.
+	 */
+	public async setPassword(username: string, password: string): Promise<void> {
+		this.validateUsername(username);
+		this.validatePassword(password);
+
+		if (!this.users.has(username)) {
+			throw new Error(`passwd: user '${username}' does not exist`);
+		}
+
+		this.users.set(username, this.createRecord(username, password));
+		await this.persist();
+	}
+
+	/**
 	 * Deletes existing non-root user account.
 	 *
 	 * @param username Username to remove.

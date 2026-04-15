@@ -23,6 +23,7 @@ import { lsCommand } from "./ls";
 import { mkdirCommand } from "./mkdir";
 import { nanoCommand } from "./nano";
 import { neofetchCommand } from "./neofetch";
+import { passwdCommand } from "./passwd";
 import { pwdCommand } from "./pwd";
 import { rmCommand } from "./rm";
 import { setCommand } from "./set";
@@ -53,6 +54,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	neofetchCommand,
 	htopCommand,
 	adduserCommand,
+	passwdCommand,
 	deluserCommand,
 	sudoCommand,
 	suCommand,
