@@ -24,6 +24,18 @@ class VirtualFileSystem {
 	private readonly archivePath: string;
 	private dirty = false;
 
+	private computeNodeUsageBytes(node: InternalNode): number {
+		if (node.type === "file") {
+			return node.content.length;
+		}
+
+		let total = 0;
+		for (const child of node.children.values()) {
+			total += this.computeNodeUsageBytes(child);
+		}
+		return total;
+	}
+
 	/**
 	 * Creates a virtual filesystem instance.
 	 *
@@ -285,6 +297,20 @@ class VirtualFileSystem {
 		const rootLabel =
 			dirPath === "/" ? "/" : path.posix.basename(normalizePath(dirPath));
 		return renderTree(node, rootLabel);
+	}
+
+	/**
+	 * Computes total stored file bytes under a path.
+	 *
+	 * File usage is based on in-memory stored bytes, including compressed
+	 * payload size when files are marked as compressed.
+	 *
+	 * @param targetPath File or directory path to measure, defaults to root.
+	 * @returns Total byte usage for file content under target path.
+	 */
+	public getUsageBytes(targetPath: string = "/"): number {
+		const node = getNode(this.root, targetPath);
+		return this.computeNodeUsageBytes(node);
 	}
 
 	/**
