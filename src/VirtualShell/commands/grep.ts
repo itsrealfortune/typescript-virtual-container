@@ -5,7 +5,7 @@ import { assertPathAccess, resolvePath } from "./helpers";
 export const grepCommand: ShellModule = {
 	name: "grep",
 	params: ["[-i] [-v] <pattern> [file...]"],
-	run: ({ authUser, vfs, cwd, args, stdin }) => {
+	run: ({ authUser, shell, cwd, args, stdin }) => {
 		const { flags, positionals } = parseArgs(args, { flags: ["-i", "-v"] });
 		const caseInsensitive = flags.has("-i");
 		const invertMatch = flags.has("-v");
@@ -52,7 +52,7 @@ export const grepCommand: ShellModule = {
 			const target = resolvePath(cwd, file);
 			try {
 				assertPathAccess(authUser, target, "grep");
-				const content = vfs.readFile(target);
+				const content = shell.vfs.readFile(target);
 				const lines = content.split("\n");
 
 				for (const line of lines) {

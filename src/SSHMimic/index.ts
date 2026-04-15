@@ -1,31 +1,6 @@
-import { randomBytes } from "node:crypto";
 import { Server as SshServer } from "ssh2";
-import VirtualFileSystem from "../VirtualFileSystem";
 import { VirtualShell } from "../VirtualShell";
 import { loadOrCreateHostKey } from "./hostKey";
-import { VirtualUserManager } from "./users";
-
-function resolveRootPassword(): string {
-	const configured = process.env.SSH_MIMIC_ROOT_PASSWORD;
-	if (configured && configured.trim().length > 0) {
-		return configured;
-	}
-
-	const generated = randomBytes(18).toString("base64url");
-	console.warn(
-		`[ssh-mimic] SSH_MIMIC_ROOT_PASSWORD missing; generated ephemeral root password: ${generated}`,
-	);
-	return generated;
-}
-
-function resolveAutoSudoForNewUsers(): boolean {
-	const configured = process.env.SSH_MIMIC_AUTO_SUDO_NEW_USERS;
-	if (!configured) {
-		return true;
-	}
-
-	return !["0", "false", "no", "off"].includes(configured.toLowerCase());
-}
 
 /**
  * SSH server wrapper that exposes virtual shell and exec sessions.
@@ -35,33 +10,29 @@ function resolveAutoSudoForNewUsers(): boolean {
  */
 class SshMimic {
 	port: number;
-	hostname: string;
 	server: SshServer | null;
-	vfs: VirtualFileSystem | null = null;
-	users: VirtualUserManager | null = null;
-	shell: VirtualShell | null = null;
-	basePath: string = ".";
+	private shell: VirtualShell;
+	private shellHostname: string;
 
 	/**
 	 * Creates a new SSH mimic server instance.
 	 *
 	 * @param port TCP port to bind on localhost.
 	 * @param hostname SSH ident hostname suffix and virtual host label.
-	 * @param basePath Optional base path for virtual filesystem (default: current directory).
 	 */
 	constructor({
 		port,
 		hostname = "typescript-vm",
-		basePath = ".",
+		shell = new VirtualShell(hostname),
 	}: {
 		port: number;
 		hostname?: string;
-		basePath?: string;
+		shell?: VirtualShell;
 	}) {
 		this.port = port;
-		this.hostname = hostname;
-		this.basePath = basePath;
+		this.shellHostname = hostname;
 		this.server = null;
+		this.shell = shell;
 	}
 
 	/**
@@ -70,22 +41,13 @@ class SshMimic {
 	 * @returns Promise resolved with bound listening port.
 	 */
 	public async start(): Promise<number> {
+		const shell = this.shell;
 		const privateKey = loadOrCreateHostKey();
-		this.vfs = new VirtualFileSystem(this.basePath);
-		await this.vfs.restoreMirror();
-		this.users = new VirtualUserManager(
-			this.vfs,
-			resolveRootPassword(),
-			resolveAutoSudoForNewUsers(),
-		);
-		await this.users.initialize();
-
-		this.shell = new VirtualShell(this.vfs, this.users, this.hostname);
 
 		this.server = new SshServer(
 			{
 				hostKeys: [privateKey],
-				ident: `SSH-2.0-${this.hostname}`,
+				ident: `SSH-2.0-${shell.hostname}`,
 			},
 			(client) => {
 				let authUser = "root";
@@ -93,28 +55,29 @@ class SshMimic {
 				let sessionId: string | null = null;
 
 				client.on("authentication", (ctx) => {
+					shell;
 					if (ctx.method === "password") {
 						const candidateUser = ctx.username || "root";
 						remoteAddress = (ctx as { ip?: string }).ip ?? remoteAddress;
 
 						if (
-							!this.users!.verifyPassword(candidateUser, ctx.password ?? "")
+							!shell.users.verifyPassword(candidateUser, ctx.password ?? "")
 						) {
 							ctx.reject();
 							return;
 						}
 
 						authUser = candidateUser;
-						sessionId = this.users!.registerSession(authUser, remoteAddress).id;
+						sessionId = shell.users.registerSession(authUser, remoteAddress).id;
 
 						const homePath = `/home/${authUser}`;
-						if (!this.vfs!.exists(homePath)) {
-							this.vfs!.mkdir(homePath, 0o755);
-							this.vfs!.writeFile(
+						if (!shell.vfs.exists(homePath)) {
+							shell.vfs.mkdir(homePath, 0o755);
+							shell.vfs.writeFile(
 								`${homePath}/README.txt`,
-								`Welcome to ${this.hostname}`,
+								`Welcome to ${shell?.hostname ?? this.shellHostname}`,
 							);
-							void this.vfs!.flushMirror();
+							void shell.vfs.flushMirror();
 						}
 
 						ctx.accept();
@@ -125,7 +88,7 @@ class SshMimic {
 				});
 
 				client.on("close", () => {
-					this.users!.unregisterSession(sessionId);
+					shell.users.unregisterSession(sessionId);
 					sessionId = null;
 				});
 
@@ -150,7 +113,7 @@ class SshMimic {
 
 						session.on("shell", (acceptShell) => {
 							const stream = acceptShell();
-							this.shell?.startInteractiveSession(
+							shell?.startInteractiveSession(
 								stream,
 								authUser,
 								sessionId,
@@ -161,7 +124,7 @@ class SshMimic {
 
 						session.on("exec", (acceptExec, _rejectExec, info) => {
 							const _stream = acceptExec();
-							this.shell?.executeCommand(
+							shell?.executeCommand(
 								info.command.trim(),
 								authUser,
 								`/home/${authUser}`,
@@ -190,33 +153,6 @@ class SshMimic {
 				console.log("SSH Mimic stopped");
 			});
 		}
-	}
-
-	/**
-	 * Returns virtual filesystem instance after server started.
-	 *
-	 * @returns VirtualFileSystem or null when not started.
-	 */
-	public getVfs(): VirtualFileSystem | null {
-		return this.vfs;
-	}
-
-	/**
-	 * Returns user manager instance after server started.
-	 *
-	 * @returns VirtualUserManager or null when not started.
-	 */
-	public getUsers(): VirtualUserManager | null {
-		return this.users;
-	}
-
-	/**
-	 * Returns hostname shown in prompts and idents.
-	 *
-	 * @returns Configured hostname label.
-	 */
-	public getHostname(): string {
-		return this.hostname;
 	}
 }
 

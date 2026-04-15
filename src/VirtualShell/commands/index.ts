@@ -1,12 +1,10 @@
-import type { ShellProperties } from "..";
-import type { VirtualUserManager } from "../../SSHMimic/users";
+import type { VirtualShell } from "..";
 import type {
 	CommandContext,
 	CommandMode,
 	CommandResult,
 	ShellModule,
 } from "../../types/commands";
-import type VirtualFileSystem from "../../VirtualFileSystem";
 import { adduserCommand } from "./adduser";
 import { catCommand } from "./cat";
 import { cdCommand } from "./cd";
@@ -79,12 +77,7 @@ const helpCommand = createHelpCommand(() =>
 const commandRegistry = new Map<string, ShellModule>();
 let cachedCommandNames: string[] | null = null;
 
-function invalidateCache(): void {
-	cachedCommandNames = null;
-}
-
 function buildCache(): void {
-	commandRegistry.clear();
 	for (const mod of getCommandModules()) {
 		commandRegistry.set(mod.name, mod);
 		for (const alias of mod.aliases ?? []) {
@@ -95,18 +88,14 @@ function buildCache(): void {
 }
 
 function getCommandModules(): ShellModule[] {
+	// console.log("Loading command modules...");
+	// console.log(
+	// 	`Base commands: ${BASE_COMMANDS.map((cmd) => cmd.name).join(", ")}`,
+	// );
+	// console.log(
+	// 	`Custom commands: ${customCommands.map((cmd) => cmd.name).join(", ")}`,
+	// );
 	return [...BASE_COMMANDS, ...customCommands, helpCommand];
-}
-
-function _getTakenCommandNames(modules: ShellModule[]): Set<string> {
-	const taken = new Set<string>();
-	for (const mod of modules) {
-		taken.add(mod.name);
-		for (const alias of mod.aliases ?? []) {
-			taken.add(alias);
-		}
-	}
-	return taken;
 }
 
 export function registerCommand(module: ShellModule): void {
@@ -130,7 +119,7 @@ export function registerCommand(module: ShellModule): void {
 		commandRegistry.set(name, normalized);
 	}
 
-	invalidateCache();
+	buildCache();
 }
 
 export function createCustomCommand(
@@ -207,94 +196,14 @@ function parseInput(rawInput: string): { commandName: string; args: string[] } {
 }
 
 // Internal async function for pipeline execution
-async function _runCommandInternal(
-	rawInput: string,
-	authUser: string,
-	hostname: string,
-	users: VirtualUserManager,
-	mode: CommandMode,
-	cwd: string,
-	shellProps: ShellProperties,
-	vfs: VirtualFileSystem,
-	stdin?: string,
-): Promise<CommandResult> {
-	// Check if input contains pipes or redirections
-	if (
-		rawInput.includes("|") ||
-		rawInput.includes(">") ||
-		rawInput.includes("<")
-	) {
-		// Use pipeline executor
-		const { parseShellPipeline } = await import("../shellParser");
-		const { executePipeline } = await import("../../SSHMimic/executor");
-
-		const pipeline = parseShellPipeline(rawInput);
-		if (!pipeline.isValid) {
-			return {
-				stderr: pipeline.error || "Syntax error",
-				exitCode: 1,
-			};
-		}
-
-		try {
-			return await executePipeline(
-				pipeline,
-				authUser,
-				hostname,
-				users,
-				mode,
-				cwd,
-				vfs,
-			);
-		} catch (error: unknown) {
-			const message =
-				error instanceof Error ? error.message : "Pipeline execution failed";
-			return { stderr: message, exitCode: 1 };
-		}
-	}
-
-	// Regular command execution
-	const { commandName, args } = parseInput(rawInput);
-	const mod = resolveModule(commandName);
-
-	if (!mod) {
-		return {
-			stderr: `Command '${rawInput}' not found`,
-			exitCode: 127,
-		};
-	}
-
-	try {
-		const result = mod.run({
-			authUser,
-			hostname,
-			users,
-			activeSessions: users.listActiveSessions(),
-			rawInput,
-			mode,
-			args,
-			shellProps,
-			stdin,
-			cwd,
-			vfs,
-		});
-
-		return await Promise.resolve(result);
-	} catch (error: unknown) {
-		const message = error instanceof Error ? error.message : "Command failed";
-		return { stderr: message, exitCode: 1 };
-	}
-}
 
 export async function runCommand(
 	rawInput: string,
 	authUser: string,
 	hostname: string,
-	users: VirtualUserManager,
 	mode: CommandMode,
 	cwd: string,
-	shellProps: ShellProperties,
-	vfs: VirtualFileSystem,
+	shell: VirtualShell,
 	stdin?: string,
 ): Promise<CommandResult> {
 	const trimmed = rawInput.trim();
@@ -320,10 +229,9 @@ export async function runCommand(
 				pipeline,
 				authUser,
 				hostname,
-				users,
 				mode,
 				cwd,
-				vfs,
+				shell,
 			);
 		} catch (error: unknown) {
 			const message =
@@ -346,15 +254,13 @@ export async function runCommand(
 		return await mod.run({
 			authUser,
 			hostname,
-			users,
-			activeSessions: users.listActiveSessions(),
+			activeSessions: shell.users.listActiveSessions(),
 			rawInput: trimmed,
 			mode,
 			args,
 			stdin,
 			cwd,
-			vfs,
-			shellProps,
+			shell,
 		});
 	} catch (error: unknown) {
 		const message = error instanceof Error ? error.message : "Command failed";

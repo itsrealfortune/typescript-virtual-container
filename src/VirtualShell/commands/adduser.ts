@@ -3,7 +3,7 @@ import type { ShellModule } from "../../types/commands";
 export const adduserCommand: ShellModule = {
 	name: "adduser",
 	params: ["<username> <password>"],
-	run: async ({ authUser, users, args }) => {
+	run: async ({ authUser, shell, args }) => {
 		if (authUser !== "root") {
 			return { stderr: "adduser: permission denied", exitCode: 1 };
 		}
@@ -16,7 +16,7 @@ export const adduserCommand: ShellModule = {
 			};
 		}
 
-		await users.addUser(username, password);
+		await shell.users.addUser(username, password);
 		return { stdout: `adduser: user '${username}' created`, exitCode: 0 };
 	},
 };

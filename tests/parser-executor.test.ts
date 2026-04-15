@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { VirtualShell } from "../src";
 import { executePipeline } from "../src/SSHMimic/executor";
-import { VirtualUserManager } from "../src/SSHMimic/users";
-import VirtualFileSystem from "../src/VirtualFileSystem";
 import { parseShellPipeline } from "../src/VirtualShell/shellParser";
 
 describe("Pipeline parser and executor", () => {
@@ -20,18 +19,16 @@ describe("Pipeline parser and executor", () => {
   });
 
   test("executes simple pipeline", async () => {
-    const vfs = new VirtualFileSystem("/tmp");
-    const users = new VirtualUserManager(vfs, "root-pass");
+    const shell = new VirtualShell("localhost");
     const pipeline = parseShellPipeline("echo hello | grep h");
 
     const result = await executePipeline(
       pipeline,
       "root",
       "localhost",
-      users,
       "shell",
       "/",
-      vfs,
+      shell
     );
 
     expect(result.exitCode).toBe(0);

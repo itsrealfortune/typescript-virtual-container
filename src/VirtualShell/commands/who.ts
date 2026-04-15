@@ -4,8 +4,8 @@ import type { ShellModule } from "../../types/commands";
 export const whoCommand: ShellModule = {
 	name: "who",
 	params: [],
-	run: ({ users }) => {
-		const lines = users.listActiveSessions().map((session) => {
+	run: ({ shell }) => {
+		const lines = shell.users.listActiveSessions().map((session) => {
 			const loginAt = new Date(session.startedAt);
 			const displayDate = Number.isNaN(loginAt.getTime())
 				? session.startedAt

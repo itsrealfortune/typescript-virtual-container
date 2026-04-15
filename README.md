@@ -203,17 +203,25 @@ Main SSH server class. Manages virtual filesystem, user authentication, and sess
 new SshMimic(options: {
 	port: number;           // TCP port to bind on localhost
 	hostname?: string;      // Virtual hostname (default: "typescript-vm")
-	basePath?: string;      // Base directory for VFS snapshot storage (default: ".")
+	shell?: VirtualShell; // Optional shell properties override
 })
 ```
+
+- `hostname` and `properties` are forwarded to the underlying `VirtualShell` instance.
+- If `properties` is omitted, `VirtualShell.defaultShellProperties` is used.
 
 **Example:**
 
 ```typescript
+const virtualShell = new VirtualShell("my-lab", {
+	kernel: "1.0.0+itsrealfortune+1-amd64",
+	os: "Fortune GNU/Linux x64",
+	arch: "x86_64",
+}, "./data");
 const ssh = new SshMimic({
 	port: 2222,
 	hostname: "my-lab",
-	basePath: "./data"  // Snapshots stored in ./data/.vfs/mirror.tar.gz
+	shell: virtualShell
 });
 ```
 
@@ -438,6 +446,21 @@ console.log(client.getUsername());  // Username from constructor
 
 Encapsulates shell execution primitives used by the SSH runtime for command dispatch and interactive sessions.
 
+#### ShellProperties
+
+```typescript
+interface ShellProperties {
+	kernel: string;
+	os: "Fortune GNU/Linux x64";
+	arch: "x86_64";
+}
+
+const defaultShellProperties: ShellProperties;
+```
+
+- `kernel` is displayed in shell/system information output.
+- `os` and `arch` are fixed labels used by the shell runtime.
+
 #### Constructor
 
 ```typescript
@@ -445,17 +468,23 @@ new VirtualShell(
 	vfs: VirtualFileSystem,
 	users: VirtualUserManager,
 	hostname: string,
+	properties?: ShellProperties,
 )
 ```
 
 - **vfs**: Virtual filesystem instance used by shell commands.
 - **users**: User manager for authentication/session-aware command behavior.
 - **hostname**: Hostname injected into command context and prompt behavior.
+- **properties**: Optional shell metadata. Defaults to `defaultShellProperties`.
 
 **Example:**
 
 ```typescript
-const shell = new VirtualShell(vfs, users, "typescript-vm");
+const shell = new VirtualShell(vfs, users, "typescript-vm", {
+	kernel: "1.0.0+itsrealfortune+1-amd64",
+	os: "Fortune GNU/Linux x64",
+	arch: "x86_64",
+});
 ```
 
 #### Methods
@@ -1263,29 +1292,6 @@ vfs.mkdir("/home/alice", 0o755);
 ```typescript
 await ssh.getVfs().flushMirror();
 ```
-
----
-
-## Migration Guide
-
-### From v0.0.x to v1.x
-
-Old API:
-
-```typescript
-const ssh = new SshMimic(2222, "hostname");
-```
-
-New API:
-
-```typescript
-const ssh = new VirtualMachine({ port: 2222, hostname: "hostname" });
-```
-
-**Changes**:
-- Object-based constructor
-- Optional `basePath` parameter
-- Exports renamed: `SshMimic` → `VirtualMachine` from main entry
 
 ---
 

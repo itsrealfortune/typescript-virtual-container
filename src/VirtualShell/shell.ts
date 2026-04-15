@@ -1,10 +1,9 @@
 import { type ChildProcessWithoutNullStreams, spawn } from "node:child_process";
 import { readFile, unlink, writeFile } from "node:fs/promises";
 import * as path from "node:path";
-import { defaultShellProperties, type ShellProperties } from ".";
+import type { ShellProperties, VirtualShell } from ".";
 import { formatLoginDate } from "../SSHMimic/loginFormat";
 import { buildPrompt } from "../SSHMimic/prompt";
-import type { VirtualUserManager } from "../SSHMimic/users";
 import type { ShellStream } from "../types/streams";
 import type VirtualFileSystem from "../VirtualFileSystem";
 import { getCommandNames, runCommand } from "./commands";
@@ -45,16 +44,15 @@ export function startShell(
 	properties: ShellProperties,
 	stream: ShellStream,
 	authUser: string,
-	vfs: VirtualFileSystem,
 	hostname: string,
-	users: VirtualUserManager,
 	sessionId: string | null,
 	remoteAddress = "unknown",
 	terminalSize: TerminalSize = { cols: 80, rows: 24 },
+	shell: VirtualShell,
 ): void {
 	let lineBuffer = "";
 	let cursorPos = 0;
-	let history = loadHistory(vfs);
+	let history = loadHistory(shell.vfs);
 	let historyIndex: number | null = null;
 	let historyDraft = "";
 	let cwd = `/home/${authUser}`;
@@ -170,7 +168,7 @@ export function startShell(
 		if (!challenge.commandLine) {
 			authUser = challenge.targetUser;
 			cwd = `/home/${authUser}`;
-			users.updateSession(sessionId, authUser, remoteAddress);
+			shell.users.updateSession(sessionId, authUser, remoteAddress);
 			stream.write("\r\n");
 			renderLine();
 			return;
@@ -182,11 +180,9 @@ export function startShell(
 				challenge.commandLine,
 				challenge.targetUser,
 				hostname,
-				users,
 				"shell",
 				runCwd,
-				defaultShellProperties,
-				vfs,
+				shell,
 			),
 		);
 
@@ -221,12 +217,12 @@ export function startShell(
 		if (result.switchUser) {
 			authUser = result.switchUser;
 			cwd = result.nextCwd ?? `/home/${authUser}`;
-			users.updateSession(sessionId, authUser, remoteAddress);
+			shell.users.updateSession(sessionId, authUser, remoteAddress);
 		} else if (result.nextCwd) {
 			cwd = result.nextCwd;
 		}
 
-		await vfs.flushMirror();
+		await shell.vfs.flushMirror();
 		renderLine();
 	}
 
@@ -240,8 +236,8 @@ export function startShell(
 		if (activeSession.kind === "nano") {
 			try {
 				const updatedContent = await readFile(activeSession.tempPath, "utf8");
-				vfs.writeFile(activeSession.targetPath, updatedContent);
-				await vfs.flushMirror();
+				shell.vfs.writeFile(activeSession.targetPath, updatedContent);
+				await shell.vfs.flushMirror();
 			} catch {
 				// If temp file does not exist, nano exited without writing.
 			}
@@ -261,7 +257,7 @@ export function startShell(
 		initialContent: string,
 		tempPath: string,
 	): Promise<void> {
-		if (vfs.exists(targetPath)) {
+		if (shell.vfs.exists(targetPath)) {
 			await writeFile(tempPath, initialContent, "utf8");
 		}
 
@@ -378,13 +374,13 @@ export function startShell(
 		const basePath = resolvePath(cwd, dirPart || ".");
 
 		try {
-			return vfs
+			return shell.vfs
 				.list(basePath)
 				.filter((entry) => !entry.startsWith("."))
 				.filter((entry) => entry.startsWith(namePart))
 				.map((entry) => {
 					const fullPath = path.posix.join(basePath, entry);
-					const st = vfs.stat(fullPath);
+					const st = shell.vfs.stat(fullPath);
 					const suffix = st.type === "directory" ? "/" : "";
 					return `${dirPart}${entry}${suffix}`;
 				})
@@ -440,17 +436,17 @@ export function startShell(
 		}
 
 		const data = history.length > 0 ? `${history.join("\n")}\n` : "";
-		vfs.writeFile("/virtual-env-js/.bash_history", data);
+		shell.vfs.writeFile("/virtual-env-js/.bash_history", data);
 	}
 
 	function readLastLogin(): { at: string; from: string } | null {
 		const lastlogPath = `/virtual-env-js/.lastlog/${authUser}.json`;
-		if (!vfs.exists(lastlogPath)) {
+		if (!shell.vfs.exists(lastlogPath)) {
 			return null;
 		}
 
 		try {
-			return JSON.parse(vfs.readFile(lastlogPath)) as {
+			return JSON.parse(shell.vfs.readFile(lastlogPath)) as {
 				at: string;
 				from: string;
 			};
@@ -461,12 +457,12 @@ export function startShell(
 
 	function writeLastLogin(nowIso: string): void {
 		const dir = "/virtual-env-js/.lastlog";
-		if (!vfs.exists(dir)) {
-			vfs.mkdir(dir, 0o700);
+		if (!shell.vfs.exists(dir)) {
+			shell.vfs.mkdir(dir, 0o700);
 		}
 
 		const lastlogPath = `${dir}/${authUser}.json`;
-		vfs.writeFile(
+		shell.vfs.writeFile(
 			lastlogPath,
 			JSON.stringify({ at: nowIso, from: remoteAddress }),
 		);
@@ -537,7 +533,10 @@ export function startShell(
 				if (ch === "\r" || ch === "\n") {
 					const password = pendingSudo.buffer;
 					pendingSudo.buffer = "";
-					const valid = users.verifyPassword(pendingSudo.username, password);
+					const valid = shell.users.verifyPassword(
+						pendingSudo.username,
+						password,
+					);
 					await finishSudoPrompt(valid);
 					return;
 				}
@@ -650,16 +649,7 @@ export function startShell(
 
 				if (line.length > 0) {
 					const result = await Promise.resolve(
-						runCommand(
-							line,
-							authUser,
-							hostname,
-							users,
-							"shell",
-							cwd,
-							defaultShellProperties,
-							vfs,
-						),
+						runCommand(line, authUser, hostname, "shell", cwd, shell),
 					);
 
 					pushHistory(line);
@@ -709,12 +699,12 @@ export function startShell(
 					if (result.switchUser) {
 						authUser = result.switchUser;
 						cwd = result.nextCwd ?? `/home/${authUser}`;
-						users.updateSession(sessionId, authUser, remoteAddress);
+						shell.users.updateSession(sessionId, authUser, remoteAddress);
 						lineBuffer = "";
 						cursorPos = 0;
 					}
 
-					await vfs.flushMirror();
+					await shell.vfs.flushMirror();
 				}
 
 				renderLine();

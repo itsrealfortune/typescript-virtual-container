@@ -1,4 +1,3 @@
-import { defaultShellProperties } from "..";
 import type { ShellModule } from "../../types/commands";
 import { parseArgs } from "./command-helpers";
 import { runCommand } from "./index";
@@ -23,10 +22,10 @@ function parseSudoArgs(args: string[]): {
 export const sudoCommand: ShellModule = {
 	name: "sudo",
 	params: ["<command...>"],
-	run: async ({ authUser, hostname, users, mode, cwd, vfs, args }) => {
+	run: async ({ authUser, hostname, mode, cwd, shell, args }) => {
 		const { targetUser, loginShell, commandLine } = parseSudoArgs(args);
 
-		if (authUser !== "root" && !users.isSudoer(authUser)) {
+		if (authUser !== "root" && !shell.users.isSudoer(authUser)) {
 			return { stderr: "sudo: permission denied", exitCode: 1 };
 		}
 
@@ -50,11 +49,9 @@ export const sudoCommand: ShellModule = {
 				commandLine,
 				effectiveUser,
 				hostname,
-				users,
 				mode,
 				loginShell ? `/home/${effectiveUser}` : cwd,
-				defaultShellProperties,
-				vfs,
+				shell,
 			);
 		}
 

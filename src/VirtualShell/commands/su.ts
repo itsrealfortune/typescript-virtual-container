@@ -4,7 +4,8 @@ import { getArg } from "./command-helpers";
 export const suCommand: ShellModule = {
 	name: "su",
 	params: ["- <username>"],
-	run: ({ authUser, users, args }) => {
+	run: ({ authUser, shell, args }) => {
+		const users = shell.users!;
 		const targetUser = getArg(args, 0, { flags: ["-"] });
 
 		if (!targetUser) {

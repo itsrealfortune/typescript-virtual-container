@@ -1,6 +1,6 @@
 import type { CommandResult } from "../types/commands";
+import type { VirtualShell } from "../VirtualShell";
 import { runCommand } from "../VirtualShell/commands";
-import type { SshMimic } from "./index";
 
 /**
  * Programmatic SSH client to execute shell commands as a specific user.
@@ -10,10 +10,10 @@ import type { SshMimic } from "./index";
  *
  * @example
  * ```ts
- * const ssh = new SshMimic(2222, "myhost");
- * await ssh.start();
+ * const virtualShell = new VirtualShell();
+ * await virtualShell.start();
  *
- * const client = new SshClient(ssh, "alice");
+ * const client = new SshClient(virtualShell, "alice");
  * const result = await client.cd("/tmp");
  * const list = await client.ls();
  * ```
@@ -24,11 +24,11 @@ export class SshClient {
 	/**
 	 * Creates SSH client bound to user.
 	 *
-	 * @param ssh Parent SSH server instance (must be started).
+	 * @param shell Parent virtual shell instance (must be started).
 	 * @param username Login user for all commands.
 	 */
 	constructor(
-		private ssh: SshMimic,
+		private shell: VirtualShell,
 		private username: string,
 	) {}
 
@@ -39,9 +39,9 @@ export class SshClient {
 	 * @returns Command result with stdout/stderr/exitCode.
 	 */
 	async exec(command: string): Promise<CommandResult> {
-		const vfs = this.ssh.getVfs();
-		const users = this.ssh.getUsers();
-		const hostname = this.ssh.getHostname();
+		const vfs = this.shell.getVfs();
+		const users = this.shell.getUsers();
+		const hostname = this.shell.getHostname();
 
 		if (!vfs || !users) {
 			throw new Error("SSH client not started");
@@ -51,10 +51,9 @@ export class SshClient {
 			command,
 			this.username,
 			hostname,
-			users,
 			"exec",
 			this.currentCwd,
-			vfs,
+			this.shell,
 		);
 
 		// Handle async results
@@ -151,7 +150,7 @@ export class SshClient {
 	 * @returns Result from touch/write simulation.
 	 */
 	async writeFile(path: string, content: string): Promise<CommandResult> {
-		const vfs = this.ssh.getVfs();
+		const vfs = this.shell.getVfs();
 		if (!vfs) {
 			throw new Error("SSH client not started");
 		}
@@ -174,7 +173,7 @@ export class SshClient {
 	 * @returns File content as string or error in result.
 	 */
 	async readFile(path: string): Promise<CommandResult> {
-		const vfs = this.ssh.getVfs();
+		const vfs = this.shell.getVfs();
 		if (!vfs) {
 			throw new Error("SSH client not started");
 		}

@@ -1,4 +1,3 @@
-import { defaultShellProperties } from "..";
 import type { CommandContext, ShellModule } from "../../types/commands";
 import { getArg, getFlag } from "./command-helpers";
 import { runCommand } from "./index";
@@ -9,8 +8,7 @@ export const shCommand: ShellModule = {
 	params: ["-c <script>", "[<file>]"],
 	aliases: ["bash"],
 	run: async (ctx: CommandContext) => {
-		const { vfs, args, authUser, hostname, users, mode, cwd } = ctx;
-
+		const { args, authUser, hostname, mode, cwd } = ctx;
 		// Handle -c option: sh -c "command"
 		if (getFlag(args, "-c") && args.length >= 2) {
 			const script = getArg(args, 1) ?? "";
@@ -39,16 +37,7 @@ export const shCommand: ShellModule = {
 
 				// Execute the command
 				const result = await Promise.resolve(
-					runCommand(
-						command,
-						authUser,
-						hostname,
-						users,
-						mode,
-						cwd,
-						defaultShellProperties,
-						vfs,
-					),
+					runCommand(command, authUser, hostname, mode, cwd, ctx.shell),
 				);
 
 				if (result.stdout) {

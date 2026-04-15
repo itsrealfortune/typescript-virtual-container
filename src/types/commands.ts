@@ -1,12 +1,8 @@
 /** Command invocation mode used by shell runtime. */
 export type CommandMode = "shell" | "exec";
 
-import type {
-	VirtualActiveSession,
-	VirtualUserManager,
-} from "../SSHMimic/users";
-import type VirtualFileSystem from "../VirtualFileSystem";
-import type { ShellProperties } from "../VirtualShell";
+import type { VirtualShell } from "../VirtualShell";
+import type { VirtualActiveSession } from "../VirtualUserManager";
 
 /**
  * Normalized command execution output.
@@ -67,8 +63,6 @@ export interface CommandContext {
 	authUser: string;
 	/** Virtual hostname shown in prompt and banners. */
 	hostname: string;
-	/** User and session manager instance. */
-	users: VirtualUserManager;
 	/** Snapshot of currently active user sessions. */
 	activeSessions: VirtualActiveSession[];
 	/** Original unparsed command line input. */
@@ -78,13 +72,11 @@ export interface CommandContext {
 	/** Tokenized arguments excluding command name. */
 	args: string[];
 	/** Virtual shell instance. */
-	shellProps: ShellProperties;
+	shell: VirtualShell;
 	/** Optional stdin payload (used by pipes/redirections). */
 	stdin?: string;
 	/** Current working directory for command execution. */
 	cwd: string;
-	/** Virtual filesystem instance for IO operations. */
-	vfs: VirtualFileSystem;
 }
 
 /** Contract implemented by each shell command module. */

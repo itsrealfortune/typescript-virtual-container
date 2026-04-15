@@ -4,7 +4,7 @@ import { assertPathAccess, resolvePath } from "./helpers";
 export const touchCommand: ShellModule = {
 	name: "touch",
 	params: ["<file>"],
-	run: ({ authUser, vfs, cwd, args }) => {
+	run: ({ authUser, shell, cwd, args }) => {
 		if (args.length === 0) {
 			return { stderr: "touch: missing file operand", exitCode: 1 };
 		}
@@ -12,8 +12,8 @@ export const touchCommand: ShellModule = {
 		for (const file of args) {
 			const target = resolvePath(cwd, file);
 			assertPathAccess(authUser, target, "touch");
-			if (!vfs.exists(target)) {
-				vfs.writeFile(target, "");
+			if (!shell.vfs.exists(target)) {
+				shell.vfs.writeFile(target, "");
 			}
 		}
 		return { exitCode: 0 };

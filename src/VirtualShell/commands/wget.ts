@@ -83,7 +83,7 @@ function runHostWget(args: string[]): Promise<{
 export const wgetCommand: ShellModule = {
 	name: "wget",
 	params: ["[url]"],
-	run: async ({ authUser, vfs, cwd, args }) => {
+	run: async ({ authUser, cwd, args, shell }) => {
 		const { flagsWithValues, positionals } = parseArgs(args, {
 			flagsWithValue: ["-o", "-O", "--output", "--output-document"],
 		});
@@ -131,7 +131,7 @@ export const wgetCommand: ShellModule = {
 			const content = await readFile(tempFile, "utf8");
 			const target = resolvePath(cwd, outputPath || stripUrlFilename(url));
 			assertPathAccess(authUser, target, "wget");
-			vfs.writeFile(target, content);
+			shell.vfs.writeFile(target, content);
 
 			return {
 				stdout: `saved ${target}`,

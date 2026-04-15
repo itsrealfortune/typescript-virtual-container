@@ -6,7 +6,7 @@ import { getAllEnvVars } from "./set";
 export const neofetchCommand: ShellModule = {
 	name: "neofetch",
 	params: ["[--off]"],
-	run: ({ args, authUser, hostname, shellProps }) => {
+	run: ({ args, authUser, hostname, shell }) => {
 		const env = getAllEnvVars(authUser);
 
 		if (ifFlag(args, "--help")) {
@@ -28,7 +28,7 @@ export const neofetchCommand: ShellModule = {
 				user: authUser,
 				host: hostname,
 				shell: env.SHELL,
-				shellProps: shellProps,
+				shellProps: shell.properties,
 				terminal: env.TERM,
 			}),
 			exitCode: 0,

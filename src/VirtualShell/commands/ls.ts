@@ -29,22 +29,24 @@ function formatDate(date: Date): string {
 export const lsCommand: ShellModule = {
 	name: "ls",
 	params: ["[path]"],
-	run: ({ authUser, vfs, cwd, args }) => {
+	run: ({ authUser, shell, cwd, args }) => {
 		const longFormat = ifFlag(args, ["-l", "--long"]);
 		const targetArg = getArg(args, 0, { flags: ["-l", "--long"] });
 		const target = resolvePath(cwd, targetArg ?? cwd);
 		assertPathAccess(authUser, target, "ls");
-		const items = vfs.list(target).filter((name) => !name.startsWith("."));
+		const items = shell.vfs
+			.list(target)
+			.filter((name) => !name.startsWith("."));
 		const rendered = longFormat
 			? items
 					.map((name) => {
 						const childPath = resolvePath(target, name);
-						const stat = vfs.stat(childPath);
+						const stat = shell.vfs.stat(childPath);
 						const size = stat.type === "file" ? stat.size : stat.childrenCount;
 						return `${formatPermissions(stat.mode, stat.type === "directory")} 1 ${size} ${formatDate(stat.updatedAt)} ${name}${stat.type === "directory" ? "/" : ""}`;
 					})
 					.join("\n")
-			: joinListWithType(target, items, (p) => vfs.stat(p));
+			: joinListWithType(target, items, (p) => shell.vfs.stat(p));
 		return { stdout: rendered, exitCode: 0 };
 	},
 };

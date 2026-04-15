@@ -10,7 +10,7 @@ import {
 export const curlCommand: ShellModule = {
 	name: "curl",
 	params: ["[-o file] <url>"],
-	run: async ({ authUser, vfs, cwd, args }) => {
+	run: async ({ authUser, cwd, args, shell }) => {
 		const { flagsWithValues, positionals } = parseArgs(args, {
 			flagsWithValue: ["-o", "--output"],
 		});
@@ -39,7 +39,7 @@ export const curlCommand: ShellModule = {
 		if (outputPath) {
 			const target = resolvePath(cwd, outputPath);
 			assertPathAccess(authUser, target, "curl");
-			vfs.writeFile(target, result.stdout);
+			shell.vfs.writeFile(target, result.stdout);
 			return {
 				stderr: result.stderr
 					? normalizeTerminalOutput(result.stderr)

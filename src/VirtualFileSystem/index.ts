@@ -49,7 +49,6 @@ class VirtualFileSystem {
 	 */
 	public async restoreMirror(): Promise<void> {
 		await fs.mkdir(path.dirname(this.archivePath), { recursive: true });
-
 		try {
 			const compressed = await fs.readFile(this.archivePath);
 			const tarBuffer = gunzipSync(compressed);

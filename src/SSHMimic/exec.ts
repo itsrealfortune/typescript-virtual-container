@@ -1,8 +1,6 @@
 import type { ExecStream } from "../types/streams";
-import type VirtualFileSystem from "../VirtualFileSystem";
-import { defaultShellProperties } from "../VirtualShell";
+import type { VirtualShell } from "../VirtualShell";
 import { runCommand } from "../VirtualShell/commands";
-import type { VirtualUserManager } from "./users";
 
 function toTtyLines(text: string): string {
 	return text
@@ -16,20 +14,10 @@ export function runExec(
 	cmd: string,
 	authUser: string,
 	hostname: string,
-	users: VirtualUserManager,
-	vfs: VirtualFileSystem,
+	shell: VirtualShell,
 ): void {
 	Promise.resolve(
-		runCommand(
-			cmd,
-			authUser,
-			hostname,
-			users,
-			"exec",
-			`/home/${authUser}`,
-			defaultShellProperties,
-			vfs,
-		),
+		runCommand(cmd, authUser, hostname, "exec", `/home/${authUser}`, shell),
 	).then((result) => {
 		if (result.stdout) {
 			stream.write(`${toTtyLines(result.stdout)}\r\n`);
@@ -40,7 +28,8 @@ export function runExec(
 		}
 
 		stream.exit(result.exitCode ?? 0);
-		void vfs.flushMirror();
+		console.log(shell.vfs);
+		void shell.vfs.flushMirror();
 		stream.end();
 	});
 }

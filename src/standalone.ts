@@ -1,21 +1,26 @@
-import { VirtualMachine } from ".";
+import { VirtualMachine, VirtualShell } from ".";
 
-const sshHostname = process.env.SSH_MIMIC_HOSTNAME ?? "typescript-vm";
-const sshMimic = new VirtualMachine({ port: 2222, hostname: sshHostname });
+const hostname = process.env.SSH_MIMIC_HOSTNAME ?? "typescript-vm";
+const virtualShell = new VirtualShell(hostname);
 
-sshMimic
+virtualShell.addCommand("demo", [], () => {
+	return {
+		stdout: "This is a demo command. It does nothing useful.",
+		exitCode: 0,
+	};
+});
+
+new VirtualMachine({
+	port: 2222,
+	hostname,
+	shell: virtualShell,
+})
 	.start()
 	.then((port: number) => {
-		if (!sshMimic.shell) console.error("Failed to initialize SSH Mimic shell.");
-		else {
-			console.log(`SSH Mimic initialized. Listening on port ${port}.`);
-			sshMimic.shell.addCommand("demo", [], () => {
-				return {
-					stdout: "This is a demo command. It does nothing useful.",
-					exitCode: 0,
-				};
-			});
-		}
+		// if (!sshMimic) console.error("Failed to initialize SSH Mimic shell.");
+		// else {
+		console.log(`SSH Mimic initialized. Listening on port ${port}.`);
+		// }
 	})
 	.catch((error: unknown) => {
 		console.error("Failed to start SSH Mimic:", error);

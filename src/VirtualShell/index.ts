@@ -1,7 +1,8 @@
-import type { VirtualUserManager } from "../SSHMimic/users";
+import { randomBytes } from "node:crypto";
 import type { CommandContext, CommandResult } from "../types/commands";
 import type { ShellStream } from "../types/streams";
-import type VirtualFileSystem from "../VirtualFileSystem";
+import VirtualFileSystem from "../VirtualFileSystem";
+import { VirtualUserManager } from "../VirtualUserManager";
 import { createCustomCommand, registerCommand, runCommand } from "./commands";
 import { startShell } from "./shell";
 
@@ -17,22 +18,51 @@ export const defaultShellProperties: ShellProperties = {
 	arch: "x86_64",
 };
 
+function resolveRootPassword(): string {
+	const configured = process.env.SSH_MIMIC_ROOT_PASSWORD;
+	if (configured && configured.trim().length > 0) {
+		return configured;
+	}
+
+	const generated = randomBytes(18).toString("base64url");
+	console.warn(
+		`[ssh-mimic] SSH_MIMIC_ROOT_PASSWORD missing; generated ephemeral root password: ${generated}`,
+	);
+	return generated;
+}
+
+function resolveAutoSudoForNewUsers(): boolean {
+	const configured = process.env.SSH_MIMIC_AUTO_SUDO_NEW_USERS;
+	if (!configured) {
+		return true;
+	}
+
+	return !["0", "false", "no", "off"].includes(configured.toLowerCase());
+}
+
 class VirtualShell {
-	private vfs: VirtualFileSystem;
-	private users: VirtualUserManager;
-	private hostname: string;
-	public properties: ShellProperties;
+	basePath: string = ".";
+	vfs: VirtualFileSystem;
+	users: VirtualUserManager;
+	hostname: string;
+	properties: ShellProperties;
 
 	constructor(
-		vfs: VirtualFileSystem,
-		users: VirtualUserManager,
 		hostname: string,
 		properties?: ShellProperties,
+		basePath?: string,
 	) {
-		this.vfs = vfs;
-		this.users = users;
 		this.hostname = hostname;
 		this.properties = properties || defaultShellProperties;
+		this.basePath = basePath || ".";
+		this.vfs = new VirtualFileSystem(this.basePath);
+		this.users = new VirtualUserManager(
+			this.vfs,
+			resolveRootPassword(),
+			resolveAutoSudoForNewUsers(),
+		);
+		this.users.initialize();
+		this.vfs.restoreMirror();
 	}
 
 	addCommand(
@@ -49,16 +79,7 @@ class VirtualShell {
 	}
 
 	executeCommand(rawInput: string, authUser: string, cwd: string): void {
-		runCommand(
-			rawInput,
-			authUser,
-			this.hostname,
-			this.users,
-			"shell",
-			cwd,
-			this.properties,
-			this.vfs,
-		);
+		runCommand(rawInput, authUser, this.hostname, "shell", cwd, this);
 	}
 
 	startInteractiveSession(
@@ -73,13 +94,39 @@ class VirtualShell {
 			this.properties,
 			stream,
 			authUser,
-			this.vfs!,
 			this.hostname,
-			this.users!,
 			sessionId,
 			remoteAddress,
 			terminalSize,
+			this,
 		);
+	}
+
+	/**
+	 * Returns virtual filesystem instance after server started.
+	 *
+	 * @returns VirtualFileSystem or null when not started.
+	 */
+	public getVfs(): VirtualFileSystem | null {
+		return this?.vfs ?? null;
+	}
+
+	/**
+	 * Returns user manager instance after server started.
+	 *
+	 * @returns VirtualUserManager or null when not started.
+	 */
+	public getUsers(): VirtualUserManager | null {
+		return this?.users ?? null;
+	}
+
+	/**
+	 * Returns hostname shown in prompts and idents.
+	 *
+	 * @returns Configured hostname label.
+	 */
+	public getHostname(): string {
+		return this?.hostname;
 	}
 }
 

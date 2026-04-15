@@ -1,10 +1,8 @@
 import type { CommandMode, CommandResult } from "../types/commands";
 import type { Pipeline, PipelineCommand } from "../types/pipeline";
-import type VirtualFileSystem from "../VirtualFileSystem";
-import { defaultShellProperties } from "../VirtualShell";
+import type { VirtualShell } from "../VirtualShell";
 import { runCommand as runSingleCommand } from "../VirtualShell/commands";
 import { resolvePath } from "../VirtualShell/commands/helpers";
-import type { VirtualUserManager } from "./users";
 
 /**
  * Execute a parsed pipeline, chaining commands and handling redirections.
@@ -14,10 +12,9 @@ export async function executePipeline(
 	pipeline: Pipeline,
 	authUser: string,
 	hostname: string,
-	users: VirtualUserManager,
 	mode: CommandMode,
 	cwd: string,
-	vfs: VirtualFileSystem,
+	shell: VirtualShell,
 ): Promise<CommandResult> {
 	if (pipeline.commands.length === 0) {
 		return { exitCode: 0 };
@@ -29,10 +26,9 @@ export async function executePipeline(
 			pipeline.commands[0] as PipelineCommand,
 			authUser,
 			hostname,
-			users,
 			mode,
 			cwd,
-			vfs,
+			shell,
 		);
 	}
 
@@ -41,10 +37,9 @@ export async function executePipeline(
 		pipeline.commands as PipelineCommand[],
 		authUser,
 		hostname,
-		users,
 		mode,
 		cwd,
-		vfs,
+		shell,
 	);
 }
 
@@ -55,17 +50,16 @@ async function executeSingleCommandWithRedirections(
 	cmd: PipelineCommand,
 	authUser: string,
 	hostname: string,
-	users: VirtualUserManager,
 	mode: CommandMode,
 	cwd: string,
-	vfs: VirtualFileSystem,
+	shell: VirtualShell,
 ): Promise<CommandResult> {
 	// Prepare input if input file specified
 	let stdin: string | undefined;
 	if (cmd.inputFile) {
 		const inputPath = resolvePath(cwd, cmd.inputFile);
 		try {
-			stdin = vfs.readFile(inputPath);
+			stdin = shell.vfs.readFile(inputPath);
 		} catch {
 			return {
 				stderr: `cat: ${cmd.inputFile}: No such file or directory`,
@@ -82,11 +76,9 @@ async function executeSingleCommandWithRedirections(
 		rawInput,
 		authUser,
 		hostname,
-		users,
 		mode,
 		cwd,
-		defaultShellProperties,
-		vfs,
+		shell,
 		stdin,
 	);
 
@@ -97,13 +89,13 @@ async function executeSingleCommandWithRedirections(
 		try {
 			if (cmd.appendOutput) {
 				try {
-					const existing = vfs.readFile(outputPath);
-					vfs.writeFile(outputPath, existing + output);
+					const existing = shell.vfs.readFile(outputPath);
+					shell.vfs.writeFile(outputPath, existing + output);
 				} catch {
-					vfs.writeFile(outputPath, output);
+					shell.vfs.writeFile(outputPath, output);
 				}
 			} else {
-				vfs.writeFile(outputPath, output);
+				shell.vfs.writeFile(outputPath, output);
 			}
 			return { ...result, stdout: "" };
 		} catch {
@@ -125,10 +117,9 @@ async function executePipelineChain(
 	commands: PipelineCommand[],
 	authUser: string,
 	hostname: string,
-	users: VirtualUserManager,
 	mode: CommandMode,
 	cwd: string,
-	vfs: VirtualFileSystem,
+	shell: VirtualShell,
 ): Promise<CommandResult> {
 	let currentOutput = "";
 	let exitCode = 0;
@@ -140,7 +131,7 @@ async function executePipelineChain(
 		if (i === 0 && cmd.inputFile) {
 			const inputPath = resolvePath(cwd, cmd.inputFile);
 			try {
-				currentOutput = vfs.readFile(inputPath);
+				currentOutput = shell.vfs.readFile(inputPath);
 			} catch {
 				return {
 					stderr: `cat: ${cmd.inputFile}: No such file or directory`,
@@ -158,11 +149,9 @@ async function executePipelineChain(
 			rawInput,
 			authUser,
 			hostname,
-			users,
 			mode,
 			cwd,
-			defaultShellProperties,
-			vfs,
+			shell,
 			currentOutput,
 		);
 
@@ -175,13 +164,13 @@ async function executePipelineChain(
 			try {
 				if (cmd.appendOutput) {
 					try {
-						const existing = vfs.readFile(outputPath);
-						vfs.writeFile(outputPath, existing + output);
+						const existing = shell.vfs.readFile(outputPath);
+						shell.vfs.writeFile(outputPath, existing + output);
 					} catch {
-						vfs.writeFile(outputPath, output);
+						shell.vfs.writeFile(outputPath, output);
 					}
 				} else {
-					vfs.writeFile(outputPath, output);
+					shell.vfs.writeFile(outputPath, output);
 				}
 				currentOutput = "";
 			} catch {
