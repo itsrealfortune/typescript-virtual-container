@@ -1,4 +1,5 @@
 import type { ShellModule } from "../../types/commands";
+import { getArg, getFlag, ifFlag } from "./command-helpers";
 import { runCommand } from "./index";
 
 function parseSudoArgs(args: string[]): {
@@ -6,34 +7,23 @@ function parseSudoArgs(args: string[]): {
 	loginShell: boolean;
 	commandLine: string | null;
 } {
-	let targetUser = "root";
-	let loginShell = false;
+	const loginShell = ifFlag(args, "-i");
+	const targetUserValue = getFlag(args, ["-u", "--user"]);
+	const targetUser =
+		typeof targetUserValue === "string" && targetUserValue.length > 0
+			? targetUserValue
+			: "root";
+
 	const commandParts: string[] = [];
-
-	for (let index = 0; index < args.length; index += 1) {
-		const arg = args[index]!;
-
-		if (arg === "-i") {
-			loginShell = true;
-			continue;
+	for (let index = 0; ; index += 1) {
+		const part = getArg(args, index, {
+			flags: ["-i", "-S"],
+			flagsWithValue: ["-u", "--user"],
+		});
+		if (!part) {
+			break;
 		}
-
-		if (arg === "-S") {
-			continue;
-		}
-
-		if (arg === "-u") {
-			targetUser = args[index + 1] ?? "root";
-			index += 1;
-			continue;
-		}
-
-		if (arg.startsWith("-u=")) {
-			targetUser = arg.slice(3) || "root";
-			continue;
-		}
-
-		commandParts.push(arg);
+		commandParts.push(part);
 	}
 
 	const commandLine = commandParts.length > 0 ? commandParts.join(" ") : null;

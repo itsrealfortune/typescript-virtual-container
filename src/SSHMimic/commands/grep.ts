@@ -1,25 +1,32 @@
 import type { ShellModule } from "../../types/commands";
+import { getArg, ifFlag } from "./command-helpers";
 import { assertPathAccess, resolvePath } from "./helpers";
 
 export const grepCommand: ShellModule = {
 	name: "grep",
 	params: ["[-i] [-v] <pattern> [file...]"],
 	run: ({ authUser, vfs, cwd, args, stdin }) => {
-		const caseInsensitive = args.includes("-i");
-		const invertMatch = args.includes("-v");
-		const filteredArgs = args.filter((arg) => arg !== "-i" && arg !== "-v");
-
-		if (filteredArgs.length === 0) {
-			return { stderr: "grep: no pattern specified", exitCode: 1 };
+		const caseInsensitive = ifFlag(args, "-i");
+		const invertMatch = ifFlag(args, "-v");
+		const parserOptions = { flags: ["-i", "-v"] };
+		const pattern = getArg(args, 0, parserOptions);
+		const files: string[] = [];
+		for (let index = 1; ; index += 1) {
+			const file = getArg(args, index, parserOptions);
+			if (!file) {
+				break;
+			}
+			files.push(file);
 		}
 
-		const pattern = filteredArgs[0];
-		const files = filteredArgs.slice(1);
+		if (!pattern) {
+			return { stderr: "grep: no pattern specified", exitCode: 1 };
+		}
 
 		let regex: RegExp;
 		try {
 			const flags = caseInsensitive ? "gmi" : "gm";
-			regex = new RegExp(pattern as string, flags);
+			regex = new RegExp(pattern, flags);
 		} catch {
 			return { stderr: `grep: invalid regex: ${pattern}`, exitCode: 1 };
 		}
