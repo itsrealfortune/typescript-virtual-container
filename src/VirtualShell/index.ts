@@ -1,7 +1,8 @@
 import type { VirtualUserManager } from "../SSHMimic/users";
+import type { CommandContext, CommandResult } from "../types/commands";
 import type { ShellStream } from "../types/streams";
 import type VirtualFileSystem from "../VirtualFileSystem";
-import { runCommand } from "./commands";
+import { createCustomCommand, registerCommand, runCommand } from "./commands";
 import { startShell } from "./shell";
 
 class VirtualShell {
@@ -17,6 +18,19 @@ class VirtualShell {
 		this.vfs = vfs;
 		this.users = users;
 		this.hostname = hostname;
+	}
+
+	addCommand(
+		name: string,
+		params: string[],
+		callback: (ctx: CommandContext) => CommandResult | Promise<CommandResult>,
+	): void {
+		const normalized = name.trim().toLowerCase();
+		if (normalized.length === 0 || /\s/.test(normalized)) {
+			throw new Error("Command name must be non-empty and contain no spaces");
+		}
+
+		registerCommand(createCustomCommand(normalized, params, callback));
 	}
 
 	executeCommand(rawInput: string, authUser: string, cwd: string): void {

@@ -1,5 +1,6 @@
 import type { VirtualUserManager } from "../../SSHMimic/users";
 import type {
+	CommandContext,
 	CommandMode,
 	CommandOutcome,
 	CommandResult,
@@ -67,18 +68,72 @@ const BASE_COMMANDS: ShellModule[] = [
 	exitCommand,
 ];
 
-const COMMANDS: ShellModule[] = [
-	...BASE_COMMANDS,
-	createHelpCommand(() => COMMANDS.map((cmd) => cmd.name)),
-];
+const customCommands: ShellModule[] = [];
+
+const helpCommand = createHelpCommand(() =>
+	getCommandModules().map((cmd) => cmd.name),
+);
+
+function getCommandModules(): ShellModule[] {
+	return [...BASE_COMMANDS, ...customCommands, helpCommand];
+}
+
+function getTakenCommandNames(modules: ShellModule[]): Set<string> {
+	const taken = new Set<string>();
+	for (const mod of modules) {
+		taken.add(mod.name);
+		for (const alias of mod.aliases ?? []) {
+			taken.add(alias);
+		}
+	}
+	return taken;
+}
+
+export function registerCommand(module: ShellModule): void {
+	const normalized: ShellModule = {
+		...module,
+		name: module.name.trim().toLowerCase(),
+		aliases: module.aliases?.map((alias) => alias.trim().toLowerCase()),
+	};
+
+	const names = [normalized.name, ...(normalized.aliases ?? [])];
+	if (names.some((name) => name.length === 0 || /\s/.test(name))) {
+		throw new Error(
+			"Command names and aliases must be non-empty and contain no spaces",
+		);
+	}
+
+	const takenNames = getTakenCommandNames(getCommandModules());
+	const conflict = names.find((name) => takenNames.has(name));
+	if (conflict) {
+		throw new Error(`Command '${conflict}' already exists`);
+	}
+
+	customCommands.push(normalized);
+}
+
+export function createCustomCommand(
+	name: string,
+	params: string[],
+	run: (ctx: CommandContext) => CommandResult | Promise<CommandResult>,
+): ShellModule {
+	return {
+		name,
+		params,
+		run,
+	};
+}
 
 export function getCommandNames(): string[] {
-	return COMMANDS.flatMap((cmd) => [cmd.name, ...(cmd.aliases ?? [])]);
+	return getCommandModules().flatMap((cmd) => [
+		cmd.name,
+		...(cmd.aliases ?? []),
+	]);
 }
 
 function resolveModule(name: string): ShellModule | undefined {
 	const lowered = name.toLowerCase();
-	return COMMANDS.find(
+	return getCommandModules().find(
 		(cmd) => cmd.name === lowered || cmd.aliases?.includes(lowered),
 	);
 }
