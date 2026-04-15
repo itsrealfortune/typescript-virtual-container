@@ -6,6 +6,17 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-04-15
+
+### Changed
+
+- Refactored commands to use shared argument/flag parsing helpers.
+- Improved maintainability and consistency of argument parsing across commands.
+
+### Fixed
+
+- Verified all refactored commands pass existing test cases without regressions.
+
 ## [1.0.4] - 2026-04-15
 
 ### Added
