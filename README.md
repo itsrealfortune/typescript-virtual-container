@@ -1358,9 +1358,9 @@ MIT License. See LICENSE file for details.
 
 ## Roadmap
 
-- [ ] Custom command plugin API
+- [x] Custom command plugin API
 - [ ] Optional per-user quotas for virtual filesystem usage
-- [ ] Improved shell compatibility for complex piping and redirection
+- [x] Improved shell compatibility for complex piping and redirection
 - [ ] Snapshot diff tooling for test assertions
-- [ ] Structured event hooks (session open/close, file write, sudo challenge)
+- [x] Structured event hooks (session open/close, file write, sudo challenge)
 - [ ] WebSocket-based remote shell client (experimental)
