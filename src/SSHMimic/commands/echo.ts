@@ -10,11 +10,13 @@ function expandEnvVars(input: string, env: Record<string, string>): string {
 export const echoCommand: ShellModule = {
 	name: "echo",
 	params: ["[options] [text...]"],
-	run: ({ args, authUser }) => {
+	run: ({ args, authUser, stdin }) => {
 		const newline = !args.includes("-n");
 		const filteredArgs = args.filter((arg) => arg !== "-n");
 		const env = getAllEnvVars(authUser);
-		const text = expandEnvVars(filteredArgs.join(" "), env);
+		const rawText =
+			filteredArgs.length > 0 ? filteredArgs.join(" ") : (stdin ?? "");
+		const text = expandEnvVars(rawText, env);
 
 		return {
 			stdout: newline ? text : text.trimEnd(),

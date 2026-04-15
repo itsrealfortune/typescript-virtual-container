@@ -2,6 +2,7 @@ import type { CommandMode, CommandResult } from "../types/commands";
 import type { Pipeline, PipelineCommand } from "../types/pipeline";
 import type VirtualFileSystem from "../VirtualFileSystem";
 import { runCommand as runSingleCommand } from "./commands";
+import { resolvePath } from "./commands/helpers";
 import type { VirtualUserManager } from "./users";
 
 /**
@@ -61,8 +62,9 @@ async function executeSingleCommandWithRedirections(
 	// Prepare input if input file specified
 	let stdin: string | undefined;
 	if (cmd.inputFile) {
+		const inputPath = resolvePath(cwd, cmd.inputFile);
 		try {
-			stdin = vfs.readFile(cmd.inputFile);
+			stdin = vfs.readFile(inputPath);
 		} catch {
 			return {
 				stderr: `cat: ${cmd.inputFile}: No such file or directory`,
@@ -88,17 +90,18 @@ async function executeSingleCommandWithRedirections(
 
 	// Handle output redirection
 	if (cmd.outputFile) {
+		const outputPath = resolvePath(cwd, cmd.outputFile);
 		const output = result.stdout || "";
 		try {
 			if (cmd.appendOutput) {
 				try {
-					const existing = vfs.readFile(cmd.outputFile);
-					vfs.writeFile(cmd.outputFile, existing + output);
+					const existing = vfs.readFile(outputPath);
+					vfs.writeFile(outputPath, existing + output);
 				} catch {
-					vfs.writeFile(cmd.outputFile, output);
+					vfs.writeFile(outputPath, output);
 				}
 			} else {
-				vfs.writeFile(cmd.outputFile, output);
+				vfs.writeFile(outputPath, output);
 			}
 			return { ...result, stdout: "" };
 		} catch {
@@ -133,8 +136,9 @@ async function executePipelineChain(
 
 		// Handle input file for first command
 		if (i === 0 && cmd.inputFile) {
+			const inputPath = resolvePath(cwd, cmd.inputFile);
 			try {
-				currentOutput = vfs.readFile(cmd.inputFile);
+				currentOutput = vfs.readFile(inputPath);
 			} catch {
 				return {
 					stderr: `cat: ${cmd.inputFile}: No such file or directory`,
@@ -163,17 +167,18 @@ async function executePipelineChain(
 
 		// Handle output redirection (only for last command)
 		if (i === commands.length - 1 && cmd.outputFile) {
+			const outputPath = resolvePath(cwd, cmd.outputFile);
 			const output = result.stdout || "";
 			try {
 				if (cmd.appendOutput) {
 					try {
-						const existing = vfs.readFile(cmd.outputFile);
-						vfs.writeFile(cmd.outputFile, existing + output);
+						const existing = vfs.readFile(outputPath);
+						vfs.writeFile(outputPath, existing + output);
 					} catch {
-						vfs.writeFile(cmd.outputFile, output);
+						vfs.writeFile(outputPath, output);
 					}
 				} else {
-					vfs.writeFile(cmd.outputFile, output);
+					vfs.writeFile(outputPath, output);
 				}
 				currentOutput = "";
 			} catch {
