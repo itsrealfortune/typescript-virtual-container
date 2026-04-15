@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import * as path from "node:path";
 import type VirtualFileSystem from "../../VirtualFileSystem";
 
@@ -74,6 +75,79 @@ export async function fetchResource(
 		status: response.status,
 		contentType,
 	};
+}
+
+/**
+ * Run a host command like curl or wget and capture its output.
+ * @param binary - The binary to execute (e.g., "curl", "wget").
+ * @param args - Arguments to pass to the binary.
+ * @returns Promise resolving with stdout, stderr, and exit code.
+ */
+export function runHostCommand(
+	binary: string,
+	args: string[],
+): Promise<{ stdout: string; stderr: string; exitCode: number }> {
+	return new Promise((resolve) => {
+		let childProcess: ReturnType<typeof spawn>;
+
+		try {
+			childProcess = spawn(binary, args, {
+				stdio: ["ignore", "pipe", "pipe"],
+			});
+		} catch (error) {
+			resolve({
+				stdout: "",
+				stderr: `${binary}: ${error instanceof Error ? error.message : String(error)}`,
+				exitCode: 1,
+			});
+			return;
+		}
+
+		let stdout = "";
+		let stderr = "";
+		const stdoutStream = childProcess.stdout;
+		const stderrStream = childProcess.stderr;
+
+		if (!stdoutStream || !stderrStream) {
+			resolve({
+				stdout: "",
+				stderr: `${binary}: failed to capture process output`,
+				exitCode: 1,
+			});
+			return;
+		}
+
+		stdoutStream.setEncoding("utf8");
+		stderrStream.setEncoding("utf8");
+
+		stdoutStream.on("data", (chunk: string) => {
+			stdout += chunk;
+		});
+
+		stderrStream.on("data", (chunk: string) => {
+			stderr += chunk;
+		});
+
+		childProcess.on("error", (error) => {
+			const errorCode =
+				error instanceof Error && "code" in error
+					? String((error as NodeJS.ErrnoException).code ?? "")
+					: "";
+			resolve({
+				stdout: "",
+				stderr: `${binary}: ${error.message}`,
+				exitCode: errorCode === "ENOENT" ? 127 : 1,
+			});
+		});
+
+		childProcess.on("close", (code) => {
+			resolve({
+				stdout,
+				stderr,
+				exitCode: code ?? 1,
+			});
+		});
+	});
 }
 
 function levenshtein(a: string, b: string): number {

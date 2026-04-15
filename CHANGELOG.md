@@ -6,6 +6,10 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [1.0.6...1.0.8] - 2026-04-15
+
+Too much refactor to list.
+
 ## [1.0.5] - 2026-04-15
 
 ### Changed

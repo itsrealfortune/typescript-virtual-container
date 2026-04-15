@@ -1,5 +1,5 @@
 import type { ShellModule } from "../../types/commands";
-import { getArg, ifFlag } from "./command-helpers";
+import { parseArgs } from "./command-helpers";
 import { getAllEnvVars } from "./set";
 
 function expandEnvVars(input: string, env: Record<string, string>): string {
@@ -12,18 +12,11 @@ export const echoCommand: ShellModule = {
 	name: "echo",
 	params: ["[options] [text...]"],
 	run: ({ args, authUser, stdin }) => {
-		const newline = !ifFlag(args, "-n");
-		const filteredArgs: string[] = [];
-		for (let index = 0; ; index += 1) {
-			const value = getArg(args, index, { flags: ["-n"] });
-			if (value === undefined) {
-				break;
-			}
-			filteredArgs.push(value);
-		}
-		const env = getAllEnvVars(authUser);
+		const { flags, positionals } = parseArgs(args, { flags: ["-n"] });
+		const newline = !flags.has("-n");
 		const rawText =
-			filteredArgs.length > 0 ? filteredArgs.join(" ") : (stdin ?? "");
+			positionals.length > 0 ? positionals.join(" ") : (stdin ?? "");
+		const env = getAllEnvVars(authUser);
 		const text = expandEnvVars(rawText, env);
 
 		return {

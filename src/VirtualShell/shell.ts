@@ -66,6 +66,9 @@ export function startShell(
 		return buildPrompt(authUser, hostname, cwdLabel);
 	};
 	const commandNames = Array.from(new Set(getCommandNames())).sort();
+	console.log(
+		`[${sessionId}] Shell started for user '${authUser}' at ${remoteAddress}`,
+	);
 
 	async function collectChildPids(parentPid: number): Promise<number[]> {
 		try {

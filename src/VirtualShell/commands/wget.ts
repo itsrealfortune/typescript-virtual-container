@@ -3,11 +3,12 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ShellModule } from "../../types/commands";
-import { getArg, getFlag, ifFlag } from "./command-helpers";
+import { ifFlag, parseArgs } from "./command-helpers";
 import {
 	assertPathAccess,
 	normalizeTerminalOutput,
 	resolvePath,
+	runHostCommand,
 	stripUrlFilename,
 } from "./helpers";
 
@@ -83,36 +84,25 @@ export const wgetCommand: ShellModule = {
 	name: "wget",
 	params: ["[url]"],
 	run: async ({ authUser, vfs, cwd, args }) => {
-		const outputPathValue = getFlag(args, [
-			"-o",
-			"-O",
-			"--output",
-			"--output-document",
-		]);
-		const outputPath =
-			typeof outputPathValue === "string" && outputPathValue.length > 0
-				? outputPathValue
-				: null;
-		const parserOptions = {
+		const { flagsWithValues, positionals } = parseArgs(args, {
 			flagsWithValue: ["-o", "-O", "--output", "--output-document"],
-		};
-		const inputArgs: string[] = [];
-		for (let index = 0; ; index += 1) {
-			const arg = getArg(args, index, parserOptions);
-			if (!arg) {
-				break;
-			}
-			inputArgs.push(arg);
-		}
-		const url = inputArgs[0];
-		const isHelpLike = ifFlag(args, ["-h", "--help", "-V", "--version"]);
+		});
+		const outputPath =
+			flagsWithValues.get("-o") ||
+			flagsWithValues.get("-O") ||
+			flagsWithValues.get("--output") ||
+			flagsWithValues.get("--output-document") ||
+			null;
+		const url = positionals[0];
 
 		if (!url) {
 			return { stderr: "wget: missing URL", exitCode: 1 };
 		}
 
+		const isHelpLike = ifFlag(args, ["-h", "--help", "-V", "--version"]);
+
 		if (isHelpLike) {
-			const result = await runHostWget(inputArgs);
+			const result = await runHostWget(args);
 			return {
 				stdout: normalizeTerminalOutput(result.stdout),
 				stderr: result.stderr
@@ -126,8 +116,8 @@ export const wgetCommand: ShellModule = {
 		const tempFile = join(tempDir, "download");
 
 		try {
-			const hostArgs = [...inputArgs, "-O", tempFile];
-			const result = await runHostWget(hostArgs);
+			const hostArgs = [...positionals, "-O", tempFile];
+			const result = await runHostCommand("wget", hostArgs);
 
 			if (result.exitCode !== 0) {
 				return {
@@ -139,7 +129,7 @@ export const wgetCommand: ShellModule = {
 			}
 
 			const content = await readFile(tempFile, "utf8");
-			const target = resolvePath(cwd, outputPath ?? stripUrlFilename(url));
+			const target = resolvePath(cwd, outputPath || stripUrlFilename(url));
 			assertPathAccess(authUser, target, "wget");
 			vfs.writeFile(target, content);
 

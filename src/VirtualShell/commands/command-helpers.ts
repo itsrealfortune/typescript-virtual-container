@@ -133,3 +133,67 @@ export function getArg(
 	const positionals = collectPositionals(args, options);
 	return positionals[index];
 }
+
+/**
+ * Parse arguments into flags, flags with values, and positionals.
+ * @param args - Array of arguments to parse.
+ * @param options - Parsing options for flags and flags with values.
+ * @returns Parsed arguments as { flags, flagsWithValues, positionals }.
+ */
+export function parseArgs(
+	args: string[],
+	options: { flags?: string[]; flagsWithValue?: string[] } = {},
+): {
+	flags: Set<string>;
+	flagsWithValues: Map<string, string>;
+	positionals: string[];
+} {
+	const flags = new Set<string>();
+	const flagsWithValues = new Map<string, string>();
+	const positionals: string[] = [];
+	const boolFlags = new Set(options.flags ?? []);
+	const valueFlags = new Set(options.flagsWithValue ?? []);
+	let passthrough = false;
+
+	for (let index = 0; index < args.length; index += 1) {
+		const arg = args[index]!;
+
+		if (passthrough) {
+			positionals.push(arg);
+			continue;
+		}
+
+		if (arg === "--") {
+			passthrough = true;
+			continue;
+		}
+
+		if (boolFlags.has(arg)) {
+			flags.add(arg);
+			continue;
+		}
+
+		if (valueFlags.has(arg)) {
+			const next = args[index + 1];
+			if (next && !next.startsWith("-")) {
+				flagsWithValues.set(arg, next);
+				index += 1;
+			} else {
+				flagsWithValues.set(arg, "");
+			}
+			continue;
+		}
+
+		const inlineFlag = Array.from(valueFlags).find((flag) =>
+			arg.startsWith(`${flag}=`),
+		);
+		if (inlineFlag) {
+			flagsWithValues.set(inlineFlag, arg.slice(inlineFlag.length + 1));
+			continue;
+		}
+
+		positionals.push(arg);
+	}
+
+	return { flags, flagsWithValues, positionals };
+}

@@ -1,23 +1,16 @@
 import type { ShellModule } from "../../types/commands";
-import { getArg, ifFlag } from "./command-helpers";
+import { parseArgs } from "./command-helpers";
 import { assertPathAccess, resolvePath } from "./helpers";
 
 export const grepCommand: ShellModule = {
 	name: "grep",
 	params: ["[-i] [-v] <pattern> [file...]"],
 	run: ({ authUser, vfs, cwd, args, stdin }) => {
-		const caseInsensitive = ifFlag(args, "-i");
-		const invertMatch = ifFlag(args, "-v");
-		const parserOptions = { flags: ["-i", "-v"] };
-		const pattern = getArg(args, 0, parserOptions);
-		const files: string[] = [];
-		for (let index = 1; ; index += 1) {
-			const file = getArg(args, index, parserOptions);
-			if (!file) {
-				break;
-			}
-			files.push(file);
-		}
+		const { flags, positionals } = parseArgs(args, { flags: ["-i", "-v"] });
+		const caseInsensitive = flags.has("-i");
+		const invertMatch = flags.has("-v");
+		const pattern = positionals[0];
+		const files = positionals.slice(1);
 
 		if (!pattern) {
 			return { stderr: "grep: no pattern specified", exitCode: 1 };
@@ -33,7 +26,6 @@ export const grepCommand: ShellModule = {
 
 		const results: string[] = [];
 
-		// If no files specified, read from stdin (pipe/input redirection).
 		if (files.length === 0) {
 			if (!stdin) {
 				return { stdout: "", exitCode: 1 };

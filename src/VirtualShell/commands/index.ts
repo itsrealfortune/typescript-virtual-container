@@ -3,7 +3,6 @@ import type { VirtualUserManager } from "../../SSHMimic/users";
 import type {
 	CommandContext,
 	CommandMode,
-	CommandOutcome,
 	CommandResult,
 	ShellModule,
 } from "../../types/commands";
@@ -77,11 +76,29 @@ const helpCommand = createHelpCommand(() =>
 	getCommandModules().map((cmd) => cmd.name),
 );
 
+const commandRegistry = new Map<string, ShellModule>();
+let cachedCommandNames: string[] | null = null;
+
+function invalidateCache(): void {
+	cachedCommandNames = null;
+}
+
+function buildCache(): void {
+	commandRegistry.clear();
+	for (const mod of getCommandModules()) {
+		commandRegistry.set(mod.name, mod);
+		for (const alias of mod.aliases ?? []) {
+			commandRegistry.set(alias, mod);
+		}
+	}
+	cachedCommandNames = Array.from(commandRegistry.keys()).sort();
+}
+
 function getCommandModules(): ShellModule[] {
 	return [...BASE_COMMANDS, ...customCommands, helpCommand];
 }
 
-function getTakenCommandNames(modules: ShellModule[]): Set<string> {
+function _getTakenCommandNames(modules: ShellModule[]): Set<string> {
 	const taken = new Set<string>();
 	for (const mod of modules) {
 		taken.add(mod.name);
@@ -106,13 +123,14 @@ export function registerCommand(module: ShellModule): void {
 		);
 	}
 
-	const takenNames = getTakenCommandNames(getCommandModules());
-	const conflict = names.find((name) => takenNames.has(name));
-	if (conflict) {
-		throw new Error(`Command '${conflict}' already exists`);
+	for (const name of names) {
+		if (commandRegistry.has(name)) {
+			throw new Error(`Command '${name}' already exists`);
+		}
+		commandRegistry.set(name, normalized);
 	}
 
-	customCommands.push(normalized);
+	invalidateCache();
 }
 
 export function createCustomCommand(
@@ -128,17 +146,14 @@ export function createCustomCommand(
 }
 
 export function getCommandNames(): string[] {
-	return getCommandModules().flatMap((cmd) => [
-		cmd.name,
-		...(cmd.aliases ?? []),
-	]);
+	if (!cachedCommandNames) {
+		buildCache();
+	}
+	return cachedCommandNames!;
 }
 
-function resolveModule(name: string): ShellModule | undefined {
-	const lowered = name.toLowerCase();
-	return getCommandModules().find(
-		(cmd) => cmd.name === lowered || cmd.aliases?.includes(lowered),
-	);
+export function resolveModule(name: string): ShellModule | undefined {
+	return commandRegistry.get(name.toLowerCase());
 }
 
 function splitArgsRespectingQuotes(input: string): string[] {
@@ -192,7 +207,7 @@ function parseInput(rawInput: string): { commandName: string; args: string[] } {
 }
 
 // Internal async function for pipeline execution
-async function runCommandInternal(
+async function _runCommandInternal(
 	rawInput: string,
 	authUser: string,
 	hostname: string,
@@ -271,7 +286,7 @@ async function runCommandInternal(
 	}
 }
 
-export function runCommand(
+export async function runCommand(
 	rawInput: string,
 	authUser: string,
 	hostname: string,
@@ -281,29 +296,42 @@ export function runCommand(
 	shellProps: ShellProperties,
 	vfs: VirtualFileSystem,
 	stdin?: string,
-): CommandOutcome {
+): Promise<CommandResult> {
 	const trimmed = rawInput.trim();
 
 	if (trimmed.length === 0) {
 		return { exitCode: 0 };
 	}
 
-	// Check if input contains pipes or redirections - use async version
 	if (trimmed.includes("|") || trimmed.includes(">") || trimmed.includes("<")) {
-		return runCommandInternal(
-			trimmed,
-			authUser,
-			hostname,
-			users,
-			mode,
-			cwd,
-			shellProps,
-			vfs,
-			stdin,
-		);
+		const { parseShellPipeline } = await import("../shellParser");
+		const { executePipeline } = await import("../../SSHMimic/executor");
+
+		const pipeline = parseShellPipeline(trimmed);
+		if (!pipeline.isValid) {
+			return {
+				stderr: pipeline.error || "Syntax error",
+				exitCode: 1,
+			};
+		}
+
+		try {
+			return await executePipeline(
+				pipeline,
+				authUser,
+				hostname,
+				users,
+				mode,
+				cwd,
+				vfs,
+			);
+		} catch (error: unknown) {
+			const message =
+				error instanceof Error ? error.message : "Pipeline execution failed";
+			return { stderr: message, exitCode: 1 };
+		}
 	}
 
-	// Regular synchronous command execution
 	const { commandName, args } = parseInput(trimmed);
 	const mod = resolveModule(commandName);
 
@@ -315,7 +343,7 @@ export function runCommand(
 	}
 
 	try {
-		return mod.run({
+		return await mod.run({
 			authUser,
 			hostname,
 			users,
