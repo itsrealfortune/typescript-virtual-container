@@ -1,3 +1,4 @@
+import { defaultShellProperties } from "..";
 import type { CommandContext, ShellModule } from "../../types/commands";
 import { getArg, getFlag } from "./command-helpers";
 import { runCommand } from "./index";
@@ -38,7 +39,16 @@ export const shCommand: ShellModule = {
 
 				// Execute the command
 				const result = await Promise.resolve(
-					runCommand(command, authUser, hostname, users, mode, cwd, vfs),
+					runCommand(
+						command,
+						authUser,
+						hostname,
+						users,
+						mode,
+						cwd,
+						defaultShellProperties,
+						vfs,
+					),
 				);
 
 				if (result.stdout) {

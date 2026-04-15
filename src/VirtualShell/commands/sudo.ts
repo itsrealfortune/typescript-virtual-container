@@ -1,3 +1,4 @@
+import { defaultShellProperties } from "..";
 import type { ShellModule } from "../../types/commands";
 import { getArg, getFlag, ifFlag } from "./command-helpers";
 import { runCommand } from "./index";
@@ -62,6 +63,7 @@ export const sudoCommand: ShellModule = {
 				users,
 				mode,
 				loginShell ? `/home/${effectiveUser}` : cwd,
+				defaultShellProperties,
 				vfs,
 			);
 		}
