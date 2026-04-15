@@ -61,8 +61,14 @@ class VirtualShell {
 			resolveRootPassword(),
 			resolveAutoSudoForNewUsers(),
 		);
-		this.users.initialize();
-		this.vfs.restoreMirror();
+		this.vfs.restoreMirror().then(() => {
+			this.users = new VirtualUserManager(
+				this.vfs,
+				resolveRootPassword(),
+				resolveAutoSudoForNewUsers(),
+			);
+			this.users.initialize();
+		});
 	}
 
 	addCommand(
