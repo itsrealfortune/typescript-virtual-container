@@ -6,6 +6,37 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-04-15
+
+### Added
+
+- Shell pipeline parser and executor with support for:
+  - Pipes (`|`)
+  - Input redirection (`<`)
+  - Output redirection (`>`)
+  - Append redirection (`>>`)
+- New built-in commands:
+  - `echo`
+  - `grep`
+  - `set`
+  - `env`
+  - `export`
+  - `unset`
+  - `sh` (with `bash` alias)
+- Command stdin support in runtime context so commands can consume piped input.
+
+### Changed
+
+- Argument parsing now respects quoted strings, including for commands like `sh -c "echo hi"`.
+- `echo` now expands environment variables (`$VAR`) and can read from stdin when no explicit text argument is provided.
+- `grep` now supports stdin input (e.g. `ls | grep ".txt"`) in addition to file operands.
+
+### Fixed
+
+- Relative file paths in redirections are now resolved from current working directory during pipeline execution.
+  - Example fixed behavior: `echo hi > cat.txt` writes to `./cat.txt` in current virtual directory.
+- Pipeline chaining now correctly passes command stdout as stdin to next command.
+
 ## [1.0.2] - 2026-04-14
 
 ### Added
