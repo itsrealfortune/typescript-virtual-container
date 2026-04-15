@@ -154,7 +154,7 @@ export class SshClient {
 		}
 
 		try {
-			vfs.writeFile(path, content);
+			this.shell.writeFileAsUser(this.username, path, content);
 			return { stdout: `File '${path}' written`, exitCode: 0 };
 		} catch (error) {
 			return {

@@ -170,6 +170,22 @@ class VirtualShell {
 	public getHostname(): string {
 		return this?.hostname;
 	}
+
+	/**
+	 * Writes a file on behalf of a user with quota enforcement.
+	 *
+	 * @param authUser User performing the write.
+	 * @param targetPath Destination path.
+	 * @param content File content.
+	 */
+	public writeFileAsUser(
+		authUser: string,
+		targetPath: string,
+		content: string | Buffer,
+	): void {
+		this.users.assertWriteWithinQuota(authUser, targetPath, content);
+		this.vfs.writeFile(targetPath, content);
+	}
 }
 
 export { VirtualShell };

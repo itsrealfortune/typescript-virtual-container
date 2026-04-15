@@ -745,6 +745,46 @@ Revokes sudo privileges. Cannot remove root.
 await users.removeSudoer("charlie");
 ```
 
+##### `async setQuotaBytes(username: string, maxBytes: number): Promise<void>`
+
+Sets an optional per-user quota (bytes) for writes under `/home/<username>`.
+
+```typescript
+await users.setQuotaBytes("alice", 5 * 1024 * 1024); // 5 MB
+```
+
+##### `async clearQuota(username: string): Promise<void>`
+
+Removes quota limit for a user.
+
+```typescript
+await users.clearQuota("alice");
+```
+
+##### `getQuotaBytes(username: string): number | null`
+
+Returns configured quota in bytes, or `null` if unlimited.
+
+```typescript
+console.log(users.getQuotaBytes("alice"));
+```
+
+##### `getUsageBytes(username: string): number`
+
+Returns current stored usage in bytes under `/home/<username>`.
+
+```typescript
+console.log(users.getUsageBytes("alice"));
+```
+
+##### `assertWriteWithinQuota(username: string, targetPath: string, nextContent: string | Buffer): void`
+
+Validates a write operation against quota rules; throws when projected usage exceeds quota.
+
+```typescript
+users.assertWriteWithinQuota("alice", "/home/alice/data.txt", "payload");
+```
+
 ##### `registerSession(username: string, remoteAddress: string): VirtualActiveSession`
 
 Creates active session (called on SSH auth). Returns session descriptor with UUID, tty, start time.
@@ -1358,9 +1398,9 @@ MIT License. See LICENSE file for details.
 
 ## Roadmap
 
-- [ ] Custom command plugin API
-- [ ] Optional per-user quotas for virtual filesystem usage
-- [ ] Improved shell compatibility for complex piping and redirection
+- [x] Custom command plugin API
+- [x] Optional per-user quotas for virtual filesystem usage
+- [x] Improved shell compatibility for complex piping and redirection
 - [ ] Snapshot diff tooling for test assertions
-- [ ] Structured event hooks (session open/close, file write, sudo challenge)
+- [x] Structured event hooks (session open/close, file write, sudo challenge)
 - [ ] WebSocket-based remote shell client (experimental)

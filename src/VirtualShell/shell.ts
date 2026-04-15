@@ -236,7 +236,11 @@ export function startShell(
 		if (activeSession.kind === "nano") {
 			try {
 				const updatedContent = await readFile(activeSession.tempPath, "utf8");
-				shell.vfs.writeFile(activeSession.targetPath, updatedContent);
+				shell.writeFileAsUser(
+					authUser,
+					activeSession.targetPath,
+					updatedContent,
+				);
 				await shell.vfs.flushMirror();
 			} catch {
 				// If temp file does not exist, nano exited without writing.

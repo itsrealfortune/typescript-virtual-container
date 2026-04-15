@@ -142,6 +142,9 @@ export function getCommandNames(): string[] {
 }
 
 export function resolveModule(name: string): ShellModule | undefined {
+	if (!cachedCommandNames) {
+		buildCache();
+	}
 	return commandRegistry.get(name.toLowerCase());
 }
 

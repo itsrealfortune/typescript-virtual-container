@@ -1,4 +1,5 @@
 import { randomBytes, randomUUID, scryptSync } from "node:crypto";
+import * as path from "node:path";
 import type VirtualFileSystem from "../VirtualFileSystem";
 
 /** Persisted virtual user credential record. */
@@ -33,9 +34,11 @@ export interface VirtualActiveSession {
 export class VirtualUserManager {
 	private readonly usersPath = "/virtual-env-js/.auth/htpasswd";
 	private readonly sudoersPath = "/virtual-env-js/.auth/sudoers";
+	private readonly quotasPath = "/virtual-env-js/.auth/quotas";
 	private readonly authDirPath = "/virtual-env-js/.auth";
 	private readonly users = new Map<string, VirtualUserRecord>();
 	private readonly sudoers = new Set<string>();
+	private readonly quotas = new Map<string, number>();
 	private readonly activeSessions = new Map<string, VirtualActiveSession>();
 	private nextTty = 0;
 
@@ -58,12 +61,120 @@ export class VirtualUserManager {
 	public async initialize(): Promise<void> {
 		this.loadFromVfs();
 		this.loadSudoersFromVfs();
+		this.loadQuotasFromVfs();
 
 		this.users.set("root", this.createRecord("root", this.defaultRootPassword));
 
 		this.sudoers.add("root");
 
 		await this.persist();
+	}
+
+	/**
+	 * Sets max allowed bytes under /home/<username>.
+	 *
+	 * @param username Target username.
+	 * @param maxBytes Quota ceiling in bytes.
+	 */
+	public async setQuotaBytes(
+		username: string,
+		maxBytes: number,
+	): Promise<void> {
+		this.validateUsername(username);
+		if (!this.users.has(username)) {
+			throw new Error(`quota: user '${username}' does not exist`);
+		}
+
+		if (!Number.isFinite(maxBytes) || maxBytes < 0) {
+			throw new Error("quota: maxBytes must be a non-negative number");
+		}
+
+		this.quotas.set(username, Math.floor(maxBytes));
+		await this.persist();
+	}
+
+	/**
+	 * Removes quota for a user.
+	 *
+	 * @param username Target username.
+	 */
+	public async clearQuota(username: string): Promise<void> {
+		this.validateUsername(username);
+		this.quotas.delete(username);
+		await this.persist();
+	}
+
+	/**
+	 * Gets configured quota in bytes for a user.
+	 *
+	 * @param username Target username.
+	 * @returns Quota in bytes, or null when unlimited.
+	 */
+	public getQuotaBytes(username: string): number | null {
+		return this.quotas.get(username) ?? null;
+	}
+
+	/**
+	 * Computes current usage under /home/<username>.
+	 *
+	 * @param username Target username.
+	 * @returns Current usage in bytes.
+	 */
+	public getUsageBytes(username: string): number {
+		const homePath = `/home/${username}`;
+		if (!this.vfs.exists(homePath)) {
+			return 0;
+		}
+
+		return this.vfs.getUsageBytes(homePath);
+	}
+
+	/**
+	 * Validates that writing file content would not exceed user quota.
+	 *
+	 * Quotas are enforced only for writes inside /home/<username>.
+	 *
+	 * @param username Authenticated user.
+	 * @param targetPath Target file path.
+	 * @param nextContent New file content.
+	 */
+	public assertWriteWithinQuota(
+		username: string,
+		targetPath: string,
+		nextContent: string | Buffer,
+	): void {
+		const quota = this.quotas.get(username);
+		if (quota === undefined) {
+			return;
+		}
+
+		const normalizedPath = normalizeVfsPath(targetPath);
+		const homePath = normalizeVfsPath(`/home/${username}`);
+		const inUserHome =
+			normalizedPath === homePath || normalizedPath.startsWith(`${homePath}/`);
+		if (!inUserHome) {
+			return;
+		}
+
+		const currentUsage = this.getUsageBytes(username);
+		let existingSize = 0;
+		if (this.vfs.exists(normalizedPath)) {
+			const existing = this.vfs.stat(normalizedPath);
+			if (existing.type === "file") {
+				existingSize = existing.size;
+			}
+		}
+
+		const incomingSize = Buffer.isBuffer(nextContent)
+			? nextContent.length
+			: Buffer.byteLength(nextContent, "utf8");
+		const projectedUsage = currentUsage - existingSize + incomingSize;
+
+		if (projectedUsage > quota) {
+			throw new Error(
+				`quota exceeded for '${username}': ${projectedUsage}/${quota} bytes`,
+			);
+		}
 	}
 
 	/**
@@ -291,6 +402,30 @@ export class VirtualUserManager {
 		}
 	}
 
+	private loadQuotasFromVfs(): void {
+		this.quotas.clear();
+
+		if (!this.vfs.exists(this.quotasPath)) {
+			return;
+		}
+
+		const raw = this.vfs.readFile(this.quotasPath);
+		for (const line of raw.split("\n")) {
+			const trimmed = line.trim();
+			if (trimmed.length === 0) {
+				continue;
+			}
+
+			const [username, value] = trimmed.split(":");
+			const bytes = Number.parseInt(value ?? "", 10);
+			if (!username || !Number.isFinite(bytes) || bytes < 0) {
+				continue;
+			}
+
+			this.quotas.set(username, bytes);
+		}
+	}
+
 	private async persist(): Promise<void> {
 		if (!this.vfs.exists(this.authDirPath)) {
 			this.vfs.mkdir(this.authDirPath, 0o700);
@@ -312,6 +447,15 @@ export class VirtualUserManager {
 		this.vfs.writeFile(
 			this.sudoersPath,
 			sudoersContent.length > 0 ? `${sudoersContent}\n` : "",
+			{ mode: 0o600 },
+		);
+		const quotasContent = Array.from(this.quotas.entries())
+			.sort(([left], [right]) => left.localeCompare(right))
+			.map(([username, maxBytes]) => `${username}:${maxBytes}`)
+			.join("\n");
+		this.vfs.writeFile(
+			this.quotasPath,
+			quotasContent.length > 0 ? `${quotasContent}\n` : "",
 			{ mode: 0o600 },
 		);
 		await this.vfs.flushMirror();
@@ -345,4 +489,9 @@ export class VirtualUserManager {
 			throw new Error("invalid password");
 		}
 	}
+}
+
+function normalizeVfsPath(targetPath: string): string {
+	const normalized = path.posix.normalize(targetPath);
+	return normalized.startsWith("/") ? normalized : `/${normalized}`;
 }

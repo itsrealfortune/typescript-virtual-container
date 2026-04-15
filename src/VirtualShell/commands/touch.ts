@@ -13,7 +13,7 @@ export const touchCommand: ShellModule = {
 			const target = resolvePath(cwd, file);
 			assertPathAccess(authUser, target, "touch");
 			if (!shell.vfs.exists(target)) {
-				shell.vfs.writeFile(target, "");
+				shell.writeFileAsUser(authUser, target, "");
 			}
 		}
 		return { exitCode: 0 };

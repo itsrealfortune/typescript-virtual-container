@@ -1,4 +1,4 @@
-import { SshClient } from "./SSHMimic/client";
+import { SshClient } from "./SSHClient";
 import { SshMimic } from "./SSHMimic/index";
 import VirtualFileSystem from "./VirtualFileSystem";
 import { VirtualShell } from "./VirtualShell";

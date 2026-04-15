@@ -131,7 +131,7 @@ export const wgetCommand: ShellModule = {
 			const content = await readFile(tempFile, "utf8");
 			const target = resolvePath(cwd, outputPath || stripUrlFilename(url));
 			assertPathAccess(authUser, target, "wget");
-			shell.vfs.writeFile(target, content);
+			shell.writeFileAsUser(authUser, target, content);
 
 			return {
 				stdout: `saved ${target}`,

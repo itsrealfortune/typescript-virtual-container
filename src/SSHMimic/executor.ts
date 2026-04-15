@@ -90,12 +90,12 @@ async function executeSingleCommandWithRedirections(
 			if (cmd.appendOutput) {
 				try {
 					const existing = shell.vfs.readFile(outputPath);
-					shell.vfs.writeFile(outputPath, existing + output);
+					shell.writeFileAsUser(authUser, outputPath, existing + output);
 				} catch {
-					shell.vfs.writeFile(outputPath, output);
+					shell.writeFileAsUser(authUser, outputPath, output);
 				}
 			} else {
-				shell.vfs.writeFile(outputPath, output);
+				shell.writeFileAsUser(authUser, outputPath, output);
 			}
 			return { ...result, stdout: "" };
 		} catch {
@@ -165,12 +165,12 @@ async function executePipelineChain(
 				if (cmd.appendOutput) {
 					try {
 						const existing = shell.vfs.readFile(outputPath);
-						shell.vfs.writeFile(outputPath, existing + output);
+						shell.writeFileAsUser(authUser, outputPath, existing + output);
 					} catch {
-						shell.vfs.writeFile(outputPath, output);
+						shell.writeFileAsUser(authUser, outputPath, output);
 					}
 				} else {
-					shell.vfs.writeFile(outputPath, output);
+					shell.writeFileAsUser(authUser, outputPath, output);
 				}
 				currentOutput = "";
 			} catch {

@@ -39,7 +39,7 @@ export const curlCommand: ShellModule = {
 		if (outputPath) {
 			const target = resolvePath(cwd, outputPath);
 			assertPathAccess(authUser, target, "curl");
-			shell.vfs.writeFile(target, result.stdout);
+			shell.writeFileAsUser(authUser, target, result.stdout);
 			return {
 				stderr: result.stderr
 					? normalizeTerminalOutput(result.stderr)
