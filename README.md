@@ -10,6 +10,7 @@
 ## Table of Contents
 
 - [Overview](#overview)
+- [What This Is / What This Is Not](#what-this-is--what-this-is-not)
 - [Why This Package](#why-this-package)
 - [Installation](#installation)
 - [Compatibility](#compatibility)
@@ -41,6 +42,22 @@
 - **Programmatic Shell API**: Execute shell commands and query filesystem state directly from TypeScript without SSH overhead.
 - **Built-in Commands**: `ls`, `cd`, `pwd`, `cat`, `mkdir`, `touch`, `rm`, `tree`, `whoami`, `hostname`, `who`, `sudo`, `su`, `adduser`, `deluser`, `nano` (text editor), `curl`, `wget`, and a growing set of additional commands. Not everything is implemented yet, and shell compatibility is still being expanded.
 - **Full TypeScript Support**: Complete JSDoc coverage, exported types, and first-class async/await for all operations.
+
+## What This Is / What This Is Not
+
+### What This Is
+
+- A virtual shell runtime written in TypeScript.
+- An in-memory environment with its own virtual filesystem, user management, and command runtime.
+- A practical tool for deterministic testing, automation pipelines, and SSH-like workflows without running real containers.
+
+### What This Is Not
+
+- Not a fully isolated container runtime.
+- Not a security sandbox.
+- Not a kernel-level isolation boundary (unlike Docker/VM-based isolation).
+
+This project emulates shell behavior for developer workflows. It is designed for realism and productivity, not hard security isolation.
 
 ## Why This Package
 
@@ -1056,32 +1073,42 @@ ssh.stop();
 
 ## Built-in Commands
 
-The following commands are available in both SSH shell mode and via `SshClient.exec()`. This list is intentionally incomplete: some commands, flags, and edge cases are still missing or only partially compatible with real shells, and that will continue to be worked on.
+The following commands are currently registered and available in both SSH shell mode and via `SshClient.exec()`. Some flags and edge-case behavior are still being expanded for shell compatibility.
 
 | Command | Purpose | Notes |
 |---------|---------|-------|
-| `pwd` | Print working directory | No args |
+| `adduser <name> <pass>` | Create user | Root only |
+| `cat <path>` | Read file | Displays content |
 | `cd <path>` | Change directory | Updates client cwd |
+| `clear` | Clear screen | No args |
+| `curl <url>` | Fetch URL | Mock implementation |
+| `deluser <name>` | Delete user | Root only, not root |
+| `echo <text...>` | Print text | Supports shell-like argument output |
+| `env` | List environment variables | Shell environment view |
+| `exit [code]` | Close session | Optional exit code |
+| `export NAME=VALUE` | Set/export environment variable | Persists in shell env |
+| `grep <pattern> [path]` | Search for text | Simplified grep behavior |
+| `help` | List commands | No args |
+| `hostname` | Server hostname | No args |
+| `htop` | System monitor | Mock display |
+| `pwd` | Print working directory | No args |
 | `ls [path]` | List directory | Defaults to `.` |
 | `mkdir [-p] <path>` | Create directory | `-p` for parents |
-| `touch <path>` | Create empty file | Updates timestamps |
-| `cat <path>` | Read file | Displays content |
-| `rm [-r] <path>` | Remove file/dir | `-r` for recursive |
-| `tree [path]` | ASCII tree view | Defaults to `.` |
-| `whoami` | Current user | No args |
-| `hostname` | Server hostname | No args |
-| `who` | Active sessions | No args |
-| `sudo [-i] <cmd>` | Elevation | Requires sudoer status |
-| `su <user>` | Switch user | Requires password/sudo |
-| `adduser <name> <pass>` | Create user | Root only |
-| `deluser <name>` | Delete user | Root only, not root |
-| `curl <url>` | Fetch URL | Mock implementation |
-| `wget <url>` | Download | Mock implementation |
 | `nano <path>` | Text editor | Interactive mode |
-| `htop` | System monitor | Mock display |
-| `clear` | Clear screen | No args |
-| `exit [code]` | Close session | Optional exit code |
-| `help` | List commands | No args |
+| `neofetch` | Show system summary | Mock display |
+| `touch <path>` | Create empty file | Updates timestamps |
+| `rm [-r] <path>` | Remove file/dir | `-r` for recursive |
+| `set` | Show shell options/variables | Simplified behavior |
+| `sh <script>` | Run shell script | Simplified execution model |
+| `su <user>` | Switch user | Requires password/sudo |
+| `sudo [-i] <cmd>` | Elevation | Requires sudoer status |
+| `tree [path]` | ASCII tree view | Defaults to `.` |
+| `unset <name>` | Remove environment variable | Shell environment update |
+| `wget <url>` | Download | Mock implementation |
+| `who` | Active sessions | No args |
+| `whoami` | Current user | No args |
+
+Commands can be added via the VirtualShell addCommand() method for custom behavior.
 
 ---
 
