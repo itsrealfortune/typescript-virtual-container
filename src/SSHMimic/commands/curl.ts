@@ -1,42 +1,11 @@
 import { spawn } from "node:child_process";
 import type { ShellModule } from "../../types/commands";
+import { getArg, getFlag, ifFlag } from "./command-helpers";
 import {
 	assertPathAccess,
 	normalizeTerminalOutput,
 	resolvePath,
 } from "./helpers";
-
-function parseCurlOutputPath(args: string[]): {
-	outputPath: string | null;
-	inputArgs: string[];
-} {
-	const filtered: string[] = [];
-	let outputPath: string | null = null;
-
-	for (let index = 0; index < args.length; index += 1) {
-		const arg = args[index]!;
-
-		if (arg === "-o" || arg === "--output") {
-			outputPath = args[index + 1] ?? null;
-			index += 1;
-			continue;
-		}
-
-		if (arg.startsWith("-o=")) {
-			outputPath = arg.slice(3);
-			continue;
-		}
-
-		if (arg.startsWith("--output=")) {
-			outputPath = arg.slice("--output=".length);
-			continue;
-		}
-
-		filtered.push(arg);
-	}
-
-	return { outputPath, inputArgs: filtered };
-}
 
 function runHostCurl(args: string[]): Promise<{
 	stdout: string;
@@ -110,12 +79,22 @@ export const curlCommand: ShellModule = {
 	name: "curl",
 	params: ["[-o file] <url>"],
 	run: async ({ authUser, vfs, cwd, args }) => {
-		const { outputPath, inputArgs } = parseCurlOutputPath(args);
+		const outputPathValue = getFlag(args, ["-o", "--output"]);
+		const outputPath =
+			typeof outputPathValue === "string" && outputPathValue.length > 0
+				? outputPathValue
+				: null;
+		const parserOptions = { flagsWithValue: ["-o", "--output"] };
+		const inputArgs: string[] = [];
+		for (let index = 0; ; index += 1) {
+			const arg = getArg(args, index, parserOptions);
+			if (!arg) {
+				break;
+			}
+			inputArgs.push(arg);
+		}
 		const url = inputArgs[0];
-		const isHelpLike = inputArgs.some(
-			(arg) =>
-				arg === "-h" || arg === "--help" || arg === "-V" || arg === "--version",
-		);
+		const isHelpLike = ifFlag(args, ["-h", "--help", "-V", "--version"]);
 
 		if (!url) {
 			return { stderr: "curl: missing URL", exitCode: 1 };

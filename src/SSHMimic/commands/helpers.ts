@@ -58,43 +58,6 @@ export function assertPathAccess(
 	}
 }
 
-export function parseOutputPath(args: string[]): {
-	outputPath: string | null;
-	inputArgs: string[];
-} {
-	const filtered: string[] = [];
-	let outputPath: string | null = null;
-
-	for (let index = 0; index < args.length; index += 1) {
-		const arg = args[index]!;
-
-		if (
-			arg === "-o" ||
-			arg === "-O" ||
-			arg === "--output" ||
-			arg === "--output-document"
-		) {
-			outputPath = args[index + 1] ?? null;
-			index += 1;
-			continue;
-		}
-
-		if (arg.startsWith("-o=")) {
-			outputPath = arg.slice(3);
-			continue;
-		}
-
-		if (arg.startsWith("-O=")) {
-			outputPath = arg.slice(3);
-			continue;
-		}
-
-		filtered.push(arg);
-	}
-
-	return { outputPath, inputArgs: filtered };
-}
-
 export function stripUrlFilename(url: string): string {
 	const cleaned = url.split("?")[0]?.split("#")[0] ?? url;
 	const lastPart = cleaned.split("/").filter(Boolean).pop();
