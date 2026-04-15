@@ -35,7 +35,9 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "declaration": true,
-    "declarationMap": true
-  },
+    "declarationMap": true,
+    "rootDir": "src",
+    "outDir": "dist",
+  },    
   "include": ["src/**/*"]
 }
