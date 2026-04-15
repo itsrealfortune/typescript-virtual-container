@@ -1,6 +1,7 @@
 import { type ChildProcessWithoutNullStreams, spawn } from "node:child_process";
 import { readFile, unlink, writeFile } from "node:fs/promises";
 import * as path from "node:path";
+import { defaultShellProperties, type ShellProperties } from ".";
 import { formatLoginDate } from "../SSHMimic/loginFormat";
 import { buildPrompt } from "../SSHMimic/prompt";
 import type { VirtualUserManager } from "../SSHMimic/users";
@@ -41,6 +42,7 @@ function toTtyLines(text: string): string {
 }
 
 export function startShell(
+	properties: ShellProperties,
 	stream: ShellStream,
 	authUser: string,
 	vfs: VirtualFileSystem,
@@ -180,6 +182,7 @@ export function startShell(
 				users,
 				"shell",
 				runCwd,
+				defaultShellProperties,
 				vfs,
 			),
 		);
@@ -467,17 +470,12 @@ export function startShell(
 	}
 
 	function renderLoginBanner(): void {
-		// const kernel = os.release();
-		// const arch = os.arch();
-
-		// Our own kernel and arch strings to avoid leaking host info and to provide a more "Linux-like" feel
-		const kernel = "5.15.0-1051-azure";
-		const arch = "x86_64";
-
 		const last = readLastLogin();
 		const nowIso = new Date().toISOString();
 
-		stream.write(`Linux ${hostname} ${kernel} ${arch}\r\n`);
+		stream.write(
+			`Linux ${hostname} ${properties.kernel} ${properties.arch}\r\n`,
+		);
 		stream.write("\r\n");
 		stream.write(
 			"The programs included with the Debian GNU/Linux system are free software;\r\n",
@@ -649,7 +647,16 @@ export function startShell(
 
 				if (line.length > 0) {
 					const result = await Promise.resolve(
-						runCommand(line, authUser, hostname, users, "shell", cwd, vfs),
+						runCommand(
+							line,
+							authUser,
+							hostname,
+							users,
+							"shell",
+							cwd,
+							defaultShellProperties,
+							vfs,
+						),
 					);
 
 					pushHistory(line);

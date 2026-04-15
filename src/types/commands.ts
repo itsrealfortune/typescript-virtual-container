@@ -6,6 +6,7 @@ import type {
 	VirtualUserManager,
 } from "../SSHMimic/users";
 import type VirtualFileSystem from "../VirtualFileSystem";
+import type { ShellProperties } from "../VirtualShell";
 
 /**
  * Normalized command execution output.
@@ -76,6 +77,8 @@ export interface CommandContext {
 	mode: CommandMode;
 	/** Tokenized arguments excluding command name. */
 	args: string[];
+	/** Virtual shell instance. */
+	shellProps: ShellProperties;
 	/** Optional stdin payload (used by pipes/redirections). */
 	stdin?: string;
 	/** Current working directory for command execution. */

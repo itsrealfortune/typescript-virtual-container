@@ -1,3 +1,4 @@
+import type { ShellProperties } from "..";
 import type { VirtualUserManager } from "../../SSHMimic/users";
 import type {
 	CommandContext,
@@ -24,6 +25,7 @@ import { htopCommand } from "./htop";
 import { lsCommand } from "./ls";
 import { mkdirCommand } from "./mkdir";
 import { nanoCommand } from "./nano";
+import { neofetchCommand } from "./neofetch";
 import { pwdCommand } from "./pwd";
 import { rmCommand } from "./rm";
 import { setCommand } from "./set";
@@ -51,6 +53,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	rmCommand,
 	treeCommand,
 	nanoCommand,
+	neofetchCommand,
 	htopCommand,
 	adduserCommand,
 	deluserCommand,
@@ -196,6 +199,7 @@ async function runCommandInternal(
 	users: VirtualUserManager,
 	mode: CommandMode,
 	cwd: string,
+	shellProps: ShellProperties,
 	vfs: VirtualFileSystem,
 	stdin?: string,
 ): Promise<CommandResult> {
@@ -254,6 +258,7 @@ async function runCommandInternal(
 			rawInput,
 			mode,
 			args,
+			shellProps,
 			stdin,
 			cwd,
 			vfs,
@@ -273,6 +278,7 @@ export function runCommand(
 	users: VirtualUserManager,
 	mode: CommandMode,
 	cwd: string,
+	shellProps: ShellProperties,
 	vfs: VirtualFileSystem,
 	stdin?: string,
 ): CommandOutcome {
@@ -291,6 +297,7 @@ export function runCommand(
 			users,
 			mode,
 			cwd,
+			shellProps,
 			vfs,
 			stdin,
 		);
@@ -319,6 +326,7 @@ export function runCommand(
 			stdin,
 			cwd,
 			vfs,
+			shellProps,
 		});
 	} catch (error: unknown) {
 		const message = error instanceof Error ? error.message : "Command failed";

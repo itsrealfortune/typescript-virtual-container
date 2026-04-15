@@ -1,5 +1,6 @@
 import type { ExecStream } from "../types/streams";
 import type VirtualFileSystem from "../VirtualFileSystem";
+import { defaultShellProperties } from "../VirtualShell";
 import { runCommand } from "../VirtualShell/commands";
 import type { VirtualUserManager } from "./users";
 
@@ -26,6 +27,7 @@ export function runExec(
 			users,
 			"exec",
 			`/home/${authUser}`,
+			defaultShellProperties,
 			vfs,
 		),
 	).then((result) => {
