@@ -151,7 +151,7 @@ async function runCommandInternal(
 		rawInput.includes("<")
 	) {
 		// Use pipeline executor
-		const { parseShellPipeline } = await import("../../SSHMimic/shellParser");
+		const { parseShellPipeline } = await import("../shellParser");
 		const { executePipeline } = await import("../../SSHMimic/executor");
 
 		const pipeline = parseShellPipeline(rawInput);
