@@ -8,11 +8,11 @@ import { startShell } from "./shell";
 
 export interface ShellProperties {
 	kernel: string;
-	os: "Fortune GNU/Linux x64";
-	arch: "x86_64";
+	os: string;
+	arch: string;
 }
 
-export const defaultShellProperties: ShellProperties = {
+const defaultShellProperties: ShellProperties = {
 	kernel: "1.0.0+itsrealfortune+1-amd64",
 	os: "Fortune GNU/Linux x64",
 	arch: "x86_64",
