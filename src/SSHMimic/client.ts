@@ -1,5 +1,5 @@
 import type { CommandResult } from "../types/commands";
-import { runCommand } from "./commands";
+import { runCommand } from "../VirtualShell/commands";
 import type { SshMimic } from "./index";
 
 /**

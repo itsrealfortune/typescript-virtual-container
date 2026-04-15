@@ -1,9 +1,8 @@
 import { randomBytes } from "node:crypto";
 import { Server as SshServer } from "ssh2";
 import VirtualFileSystem from "../VirtualFileSystem";
-import { runExec } from "./exec";
+import { VirtualShell } from "../VirtualShell";
 import { loadOrCreateHostKey } from "./hostKey";
-import { startShell } from "./shell";
 import { VirtualUserManager } from "./users";
 
 function resolveRootPassword(): string {
@@ -35,12 +34,13 @@ function resolveAutoSudoForNewUsers(): boolean {
  * {@link SshMimic.stop} when your process exits.
  */
 class SshMimic {
-	private port: number;
-	private hostname: string;
-	private server: SshServer | null;
-	private vfs: VirtualFileSystem | null = null;
-	private users: VirtualUserManager | null = null;
-	private basePath: string = ".";
+	port: number;
+	hostname: string;
+	server: SshServer | null;
+	vfs: VirtualFileSystem | null = null;
+	users: VirtualUserManager | null = null;
+	shell: VirtualShell | null = null;
+	basePath: string = ".";
 
 	/**
 	 * Creates a new SSH mimic server instance.
@@ -79,6 +79,8 @@ class SshMimic {
 			resolveAutoSudoForNewUsers(),
 		);
 		await this.users.initialize();
+
+		this.shell = new VirtualShell(this.vfs, this.users, this.hostname);
 
 		this.server = new SshServer(
 			{
@@ -148,12 +150,9 @@ class SshMimic {
 
 						session.on("shell", (acceptShell) => {
 							const stream = acceptShell();
-							startShell(
+							this.shell?.startInteractiveSession(
 								stream,
 								authUser,
-								this.vfs!,
-								this.hostname,
-								this.users!,
 								sessionId,
 								remoteAddress,
 								terminalSize,
@@ -161,14 +160,11 @@ class SshMimic {
 						});
 
 						session.on("exec", (acceptExec, _rejectExec, info) => {
-							const stream = acceptExec();
-							runExec(
-								stream,
+							const _stream = acceptExec();
+							this.shell?.executeCommand(
 								info.command.trim(),
 								authUser,
-								this.hostname,
-								this.users!,
-								this.vfs!,
+								`/home/${authUser}`,
 							);
 						});
 					});

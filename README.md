@@ -417,6 +417,56 @@ console.log(client.getUsername());  // Username from constructor
 
 ---
 
+### VirtualShell
+
+Encapsulates shell execution primitives used by the SSH runtime for command dispatch and interactive sessions.
+
+#### Constructor
+
+```typescript
+new VirtualShell(
+	vfs: VirtualFileSystem,
+	users: VirtualUserManager,
+	hostname: string,
+)
+```
+
+- **vfs**: Virtual filesystem instance used by shell commands.
+- **users**: User manager for authentication/session-aware command behavior.
+- **hostname**: Hostname injected into command context and prompt behavior.
+
+**Example:**
+
+```typescript
+const shell = new VirtualShell(vfs, users, "typescript-vm");
+```
+
+#### Methods
+
+##### `executeCommand(rawInput: string, authUser: string, cwd: string): void`
+
+Runs one command input in shell mode for a given user and working directory.
+
+```typescript
+shell.executeCommand("ls -la", "root", "/home/root");
+```
+
+##### `startInteractiveSession(stream: ShellStream, authUser: string, sessionId: string | null, remoteAddress: string, terminalSize: { cols: number; rows: number }): void`
+
+Starts an interactive shell session over a shell stream.
+
+```typescript
+shell.startInteractiveSession(
+	stream,
+	"root",
+	sessionId,
+	"127.0.0.1",
+	{ cols: 120, rows: 30 },
+);
+```
+
+---
+
 ### VirtualFileSystem
 
 In-memory filesystem with optional gzip compression and tar.gz persistence.

@@ -1,5 +1,5 @@
+import { formatLoginDate } from "../../SSHMimic/loginFormat";
 import type { ShellModule } from "../../types/commands";
-import { formatLoginDate } from "../loginFormat";
 
 export const whoCommand: ShellModule = {
 	name: "who",
