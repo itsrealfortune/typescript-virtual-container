@@ -1,11 +1,13 @@
 import type { VirtualUserManager } from "../SSHMimic/users";
 import type { ShellStream } from "../types/streams";
 import type VirtualFileSystem from "../VirtualFileSystem";
+import { runCommand } from "./commands";
+import { startShell } from "./shell";
 
 class VirtualShell {
-	vfs: VirtualFileSystem;
-	users: VirtualUserManager;
-	hostname: string;
+	private vfs: VirtualFileSystem;
+	private users: VirtualUserManager;
+	private hostname: string;
 
 	constructor(
 		vfs: VirtualFileSystem,
@@ -17,18 +19,36 @@ class VirtualShell {
 		this.hostname = hostname;
 	}
 
-	executeCommand(_command: string, _args: string[]): void {
-		// Command execution logic
+	executeCommand(rawInput: string, authUser: string, cwd: string): void {
+		runCommand(
+			rawInput,
+			authUser,
+			this.hostname,
+			this.users,
+			"shell",
+			cwd,
+			this.vfs,
+		);
 	}
 
 	startInteractiveSession(
-		_stream: ShellStream,
-		_authUser: string,
-		_sessionId: string | null,
-		_remoteAddress: string,
-		_terminalSize: { cols: number; rows: number },
+		stream: ShellStream,
+		authUser: string,
+		sessionId: string | null,
+		remoteAddress: string,
+		terminalSize: { cols: number; rows: number },
 	): void {
 		// Interactive shell logic
+		startShell(
+			stream,
+			authUser,
+			this.vfs!,
+			this.hostname,
+			this.users!,
+			sessionId,
+			remoteAddress,
+			terminalSize,
+		);
 	}
 }
 
