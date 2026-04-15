@@ -1,16 +1,18 @@
 {
     "files.exclude": {
         "**/.git": true,
-        "**/.svn": true,
         "**/.hg": true,
+        "**/.svn": true,
         "**/.DS_Store": true,
         "**/Thumbs.db": true,
-
-        "*.md": true,
-        "*.json": true,
         "**/node_modules": true,
+
         ".ssh-mimic": true,
         ".vfs": true,
-        "tsconfig.tsbuildinfo": true,
+        
+        "LICENSE": true,
+        "*.md": true,
+        "biome.json": true,
+        "tsconfig.tsbuildinfo": true
     }
 }
