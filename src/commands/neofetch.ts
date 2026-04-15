@@ -1,4 +1,4 @@
-import { buildNeofetchOutput } from "../../modules/neofetch";
+import { buildNeofetchOutput } from "../modules/neofetch";
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 import { getAllEnvVars } from "./set";

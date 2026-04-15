@@ -1,9 +1,10 @@
 {
   "name": "typescript-virtual-container",
   "description": "In-memory SSH server with virtual filesystem and typed programmatic API",
-  "module": "src/index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "type": "module",
-  "version": "1.1.1b",
+  "version": "1.1.1c",
   "license": "MIT",
   "keywords": [
     "ssh",
@@ -20,6 +21,7 @@
     "lint": "bunx --bun @biomejs/biome lint ./src",
     "lint:write": "bunx --bun @biomejs/biome lint --write ./src",
     "test": "bunx --bun @biomejs/biome test ./src",
+    "build": "tsc --project tsconfig.json",
     "deploy:npm": "npm publish --access public"
   },
   "devDependencies": {

@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import type { ShellProperties } from "../src/VirtualShell";
+import type { ShellProperties } from "../VirtualShell";
 
 function formatUptime(seconds: number): string {
 	const totalMinutes = Math.max(1, Math.floor(seconds / 60));
@@ -56,11 +56,11 @@ function colorizeDetailLine(line: string): string {
 		return line;
 	}
 
-	const colonIndex = line.indexOf(':');
+	const colonIndex = line.indexOf(":");
 
 	if (colonIndex === -1) {
 		// Pas de ':', chercher '@' pour identifier user@host
-		if (line.includes('@')) {
+		if (line.includes("@")) {
 			// C'est user@host, appliquer dégradé horizontal
 			return applyHorizontalGradient(line);
 		}
@@ -79,8 +79,8 @@ function colorizeDetailLine(line: string): string {
 
 function applyHorizontalGradient(text: string): string {
 	// Nettoyer les codes ANSI existants
-	const ansiRegex = new RegExp(`${String.fromCharCode(27)}\\[[\\d;]*m`, 'g');
-	const cleaned = text.replace(ansiRegex, '');
+	const ansiRegex = new RegExp(`${String.fromCharCode(27)}\\[[\\d;]*m`, "g");
+	const cleaned = text.replace(ansiRegex, "");
 
 	if (cleaned.trim().length === 0) {
 		return text;
@@ -88,7 +88,7 @@ function applyHorizontalGradient(text: string): string {
 
 	const start = { r: 255, g: 255, b: 255 };
 	const end = { r: 168, g: 85, b: 247 };
-	let result = '';
+	let result = "";
 
 	for (let i = 0; i < cleaned.length; i += 1) {
 		const ratio = cleaned.length <= 1 ? 0 : i / (cleaned.length - 1);
@@ -111,7 +111,7 @@ export interface NeofetchInfo {
 	uptimeSeconds?: number;
 	packages?: string;
 	shell?: string;
-    shellProps?: ShellProperties;
+	shellProps?: ShellProperties;
 	resolution?: string;
 	terminal?: string;
 	cpu?: string;
@@ -180,8 +180,7 @@ function countDpkgPackages(): number | undefined {
 			const data = readFileSync(filePath, "utf8");
 			const matches = data.match(/^Package:\s+/gm);
 			return matches?.length ?? 0;
-		} catch {
-		}
+		} catch {}
 	}
 
 	return undefined;
@@ -199,8 +198,7 @@ function countSnapPackages(): number | undefined {
 			const entries = readdirSync(dirPath, { withFileTypes: true });
 			const count = entries.filter((entry) => entry.isDirectory()).length;
 			return count;
-		} catch {
-		}
+		} catch {}
 	}
 
 	return undefined;
@@ -250,28 +248,31 @@ function resolveDefaults(info: NeofetchInfo): Required<NeofetchInfo> {
 	const totalMem = os.totalmem();
 	const freeMem = os.freemem();
 	const usedMem = Math.max(0, totalMem - freeMem);
-    const shellProps = info.shellProps;
+	const shellProps = info.shellProps;
 
-    const processUptime = process.uptime();
-    if (info.uptimeSeconds === undefined) {
-        info.uptimeSeconds = Math.round(processUptime);
-    }
+	const processUptime = process.uptime();
+	if (info.uptimeSeconds === undefined) {
+		info.uptimeSeconds = Math.round(processUptime);
+	}
 
-    console.log("Resolving neofetch info with shellProps:", shellProps);
+	console.log("Resolving neofetch info with shellProps:", shellProps);
 
 	return {
 		user: info.user,
 		host: info.host,
-		osName: shellProps?.os ?? info.osName ?? `${readOsPrettyName() ?? os.type()} ${os.arch()}`,
+		osName:
+			shellProps?.os ??
+			info.osName ??
+			`${readOsPrettyName() ?? os.type()} ${os.arch()}`,
 		kernel: shellProps?.kernel ?? info.kernel ?? os.release(),
 		uptimeSeconds: info.uptimeSeconds ?? os.uptime(),
 		packages: info.packages ?? resolvePackagesLabel(),
 		shell: resolveShellLabel(info.shell),
-		shellProps: info.shellProps as ShellProperties ?? {
-            kernel: info.kernel ?? os.release(),
-            os: info.osName ?? `${readOsPrettyName() ?? os.type()} ${os.arch()}`,
-            arch: os.arch(),
-        },
+		shellProps: (info.shellProps as ShellProperties) ?? {
+			kernel: info.kernel ?? os.release(),
+			os: info.osName ?? `${readOsPrettyName() ?? os.type()} ${os.arch()}`,
+			arch: os.arch(),
+		},
 		resolution: info.resolution ?? "n/a (ssh)",
 		terminal: info.terminal ?? "unknown",
 		cpu: info.cpu ?? resolveCpuLabel(),
@@ -287,32 +288,32 @@ export function buildNeofetchOutput(info: NeofetchInfo): string {
 	const colorBars = buildColorBars();
 
 	const distroLogo = [
-        "                               .. .:.    ",
-        " .::..                       ..     ..   ",
-        ".    ....                  ...       ..  ",
-        ":       ....             .:.          .. ",
-        ":           .:.:........:.            .. ",
-        ":                                     .. ",
-        ".                                      : ",
-        ".                                      : ",
-        "..                                     : ",
-        " :.                                   .. ",
-        " ..                                   .. ",
-        " :-.                                  :: ",
-        "  .:.                                 :. ",
-        "   ..:                               ... ",
-        "   ..:                               :.. ",
-        "  :...                              :....",
-        "   ..                                ....",
-        "   .                                  .. ",
-        "  .:.                                 .: ",
-        "  :.                                  .. ",
-        " ::.                                 ..  ",
-        ".....                          ..:...    ",
-        "...:.                         ..         ",
-        ".:...:.       ::.           ..           ",
-        "  ... ..:::::..  ..:::::::..             ",
-    ]
+		"                               .. .:.    ",
+		" .::..                       ..     ..   ",
+		".    ....                  ...       ..  ",
+		":       ....             .:.          .. ",
+		":           .:.:........:.            .. ",
+		":                                     .. ",
+		".                                      : ",
+		".                                      : ",
+		"..                                     : ",
+		" :.                                   .. ",
+		" ..                                   .. ",
+		" :-.                                  :: ",
+		"  .:.                                 :. ",
+		"   ..:                               ... ",
+		"   ..:                               :.. ",
+		"  :...                              :....",
+		"   ..                                ....",
+		"   .                                  .. ",
+		"  .:.                                 .: ",
+		"  :.                                  .. ",
+		" ::.                                 ..  ",
+		".....                          ..:...    ",
+		"...:.                         ..         ",
+		".:...:.       ::.           ..           ",
+		"  ... ..:::::..  ..:::::::..             ",
+	];
 
 	const details = [
 		`${fields.user}@${fields.host}`,
@@ -341,7 +342,11 @@ export function buildNeofetchOutput(info: NeofetchInfo): string {
 		const rawLeft = distroLogo[i] ?? "";
 		const right = details[i] ?? "";
 		if (right.length > 0) {
-			const left = colorizeLogoLine(rawLeft.padEnd(31, " "), i, distroLogo.length);
+			const left = colorizeLogoLine(
+				rawLeft.padEnd(31, " "),
+				i,
+				distroLogo.length,
+			);
 			const coloredRight = colorizeDetailLine(right);
 			lines.push(`${left}  ${coloredRight}`);
 			continue;

@@ -1,6 +1,10 @@
 import { type ChildProcessWithoutNullStreams, spawn } from "node:child_process";
-import type { ShellStream } from "../src/types/streams";
-import { shellQuote, type TerminalSize, withTerminalSize } from "./shellRuntime";
+import type { ShellStream } from "../types/streams";
+import {
+	shellQuote,
+	type TerminalSize,
+	withTerminalSize,
+} from "./shellRuntime";
 
 function spawnScriptProcess(
 	command: string,
@@ -33,7 +37,11 @@ export function spawnNanoEditorProcess(
 	terminalSize: TerminalSize,
 	stream: ShellStream,
 ): ChildProcessWithoutNullStreams {
-	return spawnScriptProcess(`nano -- ${shellQuote(tempPath)}`, terminalSize, stream);
+	return spawnScriptProcess(
+		`nano -- ${shellQuote(tempPath)}`,
+		terminalSize,
+		stream,
+	);
 }
 
 export function spawnHtopProcess(
@@ -41,5 +49,9 @@ export function spawnHtopProcess(
 	terminalSize: TerminalSize,
 	stream: ShellStream,
 ): ChildProcessWithoutNullStreams {
-	return spawnScriptProcess(`htop -p ${shellQuote(pidList)}`, terminalSize, stream);
+	return spawnScriptProcess(
+		`htop -p ${shellQuote(pidList)}`,
+		terminalSize,
+		stream,
+	);
 }

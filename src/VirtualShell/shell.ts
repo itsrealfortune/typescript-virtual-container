@@ -2,17 +2,17 @@ import type { ChildProcessWithoutNullStreams } from "node:child_process";
 import { readFile, unlink, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import type { ShellProperties, VirtualShell } from ".";
+import { getCommandNames, runCommand } from "../commands";
 import {
 	spawnHtopProcess,
 	spawnNanoEditorProcess,
-} from "../../modules/shellInteractive";
+} from "../modules/shellInteractive";
 import {
 	getVisibleHtopPidList,
 	resolvePath,
 	type TerminalSize,
 	toTtyLines,
-} from "../../modules/shellRuntime";
-import { getCommandNames, runCommand } from "../commands";
+} from "../modules/shellRuntime";
 import { formatLoginDate } from "../SSHMimic/loginFormat";
 import { buildPrompt } from "../SSHMimic/prompt";
 import type { ShellStream } from "../types/streams";
