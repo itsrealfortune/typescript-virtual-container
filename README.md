@@ -104,10 +104,10 @@ The virtual filesystem and shell behavior are intentionally portable and do not 
 ### Running an SSH Server
 
 ```typescript
-import { VirtualMachine } from "typescript-virtual-container";
+import { VirtualSshServer } from "typescript-virtual-container";
 
 // Create server on port 2222
-const ssh = new VirtualMachine({ 
+const ssh = new VirtualSshServer({ 
 	port: 2222, 
 	hostname: "my-container" 
 });
@@ -129,13 +129,14 @@ process.on("SIGTERM", () => {
 ### Using the Programmatic Client API
 
 ```typescript
-import { VirtualMachine, SshClient } from "typescript-virtual-container";
+import { VirtualSshServer, SshClient, VirtualShell } from "typescript-virtual-container";
 
-const ssh = new VirtualMachine({ port: 2222 });
+const shell = new VirtualShell("typescript-vm");
+const ssh = new VirtualSshServer({ port: 2222, shell });
 await ssh.start();
 
 // Create authenticated client for specific user
-const client = new SshClient(ssh, "root");
+const client = new SshClient(shell, "root");
 
 // Execute commands programmatically
 const list = await client.ls("/home");
@@ -195,7 +196,7 @@ ssh.stop();
 
 ### SshMimic (SSH Server)
 
-Main SSH server class. Manages virtual filesystem, user authentication, and session handlers.
+Main SSH server class, exported as `VirtualSshServer` in the package entrypoint. It wires the virtual shell runtime into ssh2 sessions and manages authentication/session handlers.
 
 #### Constructor
 
@@ -203,12 +204,12 @@ Main SSH server class. Manages virtual filesystem, user authentication, and sess
 new SshMimic(options: {
 	port: number;           // TCP port to bind on localhost
 	hostname?: string;      // Virtual hostname (default: "typescript-vm")
-	shell?: VirtualShell; // Optional shell properties override
+	shell?: VirtualShell;   // Optional preconfigured shell instance
 })
 ```
 
-- `hostname` and `properties` are forwarded to the underlying `VirtualShell` instance.
-- If `properties` is omitted, `VirtualShell.defaultShellProperties` is used.
+- `hostname` controls the SSH ident label and the default hostname used by a generated shell.
+- If `shell` is omitted, the server creates `new VirtualShell(hostname)` for you.
 
 **Example:**
 
@@ -279,21 +280,22 @@ console.log(`Server name: ${ssh.getHostname()}`);
 
 ### SshClient (Programmatic Shell API)
 
-Execute shell commands as a specific user without SSH overhead. Maintains connection state (current working directory) across calls.
+Execute shell commands against a `VirtualShell` instance without SSH overhead. Maintains connection state (current working directory) across calls.
 
 #### Constructor
 
 ```typescript
-new SshClient(ssh: SshMimic, username: string)
+new SshClient(shell: VirtualShell, username: string)
 ```
 
-- **ssh**: Parent SSH server instance (must be started)
+- **shell**: Parent virtual shell instance
 - **username**: User to authenticate as (no password required)
 
 **Example:**
 
 ```typescript
-const client = new SshClient(ssh, "alice");
+const shell = new VirtualShell("typescript-vm");
+const client = new SshClient(shell, "alice");
 ```
 
 #### Methods
@@ -444,7 +446,7 @@ console.log(client.getUsername());  // Username from constructor
 
 ### VirtualShell
 
-Encapsulates shell execution primitives used by the SSH runtime for command dispatch and interactive sessions.
+Encapsulates shell execution primitives used by the SSH runtime for command dispatch, interactive sessions, and the programmatic client.
 
 #### ShellProperties
 
@@ -465,29 +467,35 @@ const defaultShellProperties: ShellProperties;
 
 ```typescript
 new VirtualShell(
-	vfs: VirtualFileSystem,
-	users: VirtualUserManager,
 	hostname: string,
 	properties?: ShellProperties,
+	basePath?: string,
 )
 ```
 
-- **vfs**: Virtual filesystem instance used by shell commands.
-- **users**: User manager for authentication/session-aware command behavior.
 - **hostname**: Hostname injected into command context and prompt behavior.
 - **properties**: Optional shell metadata. Defaults to `defaultShellProperties`.
+- **basePath**: Optional directory used to resolve `.vfs/mirror.tar.gz` (defaults to `.`).
 
 **Example:**
 
 ```typescript
-const shell = new VirtualShell(vfs, users, "typescript-vm", {
+const shell = new VirtualShell("typescript-vm", {
 	kernel: "1.0.0+itsrealfortune+1-amd64",
 	os: "Fortune GNU/Linux x64",
 	arch: "x86_64",
-});
+}, "./data");
 ```
 
 #### Methods
+
+##### `addCommand(name: string, params: string[], callback: (ctx: CommandContext) => CommandResult | Promise<CommandResult>): void`
+
+Registers a custom command at runtime.
+
+```typescript
+shell.addCommand("hello", [], () => ({ stdout: "hello", exitCode: 0 }));
+```
 
 ##### `executeCommand(rawInput: string, authUser: string, cwd: string): void`
 
@@ -663,11 +671,12 @@ User authentication, password hashing (scrypt), sudo privilege management, and s
 #### Constructor
 
 ```typescript
-new VirtualUserManager(vfs: VirtualFileSystem, defaultRootPassword?: string)
+new VirtualUserManager(vfs: VirtualFileSystem, defaultRootPassword?: string, autoSudoForNewUsers?: boolean)
 ```
 
 - **vfs**: Virtual filesystem (for auth data persistence)
-- **defaultRootPassword**: Root password if creating new user (default: "root")
+- **defaultRootPassword**: Root password used when root is created (default: "root")
+- **autoSudoForNewUsers**: When true, new users are added to sudoers automatically (default: `true` unless `SSH_MIMIC_AUTO_SUDO_NEW_USERS` disables it)
 
 ```typescript
 const users = new VirtualUserManager(vfs, "SecureRootPass123");
@@ -847,9 +856,9 @@ interface VirtualActiveSession {
 Minimal server startup that accepts SSH connections:
 
 ```typescript
-import { VirtualMachine } from "typescript-virtual-container";
+import { VirtualSshServer } from "typescript-virtual-container";
 
-const ssh = new VirtualMachine({
+const ssh = new VirtualSshServer({
 	port: 2222,
 	hostname: "lab-environment"
 });
@@ -881,12 +890,13 @@ ssh root@localhost -p 2222
 Create, read, modify files without SSH:
 
 ```typescript
-import { VirtualMachine, SshClient } from "typescript-virtual-container";
+import { VirtualSshServer, SshClient, VirtualShell } from "typescript-virtual-container";
 
-const ssh = new VirtualMachine({ port: 2222 });
+const shell = new VirtualShell("typescript-vm");
+const ssh = new VirtualSshServer({ port: 2222, shell });
 await ssh.start();
 
-const client = new SshClient(ssh, "root");
+const client = new SshClient(shell, "root");
 
 // Create structure
 await client.mkdir("/app/config", true);
@@ -920,9 +930,10 @@ ssh.stop();
 Create users, manage permissions, session tracking:
 
 ```typescript
-import { VirtualMachine, SshClient } from "typescript-virtual-container";
+import { VirtualSshServer, SshClient, VirtualShell } from "typescript-virtual-container";
 
-const ssh = new VirtualMachine({ port: 2222 });
+const shell = new VirtualShell("typescript-vm");
+const ssh = new VirtualSshServer({ port: 2222, shell });
 await ssh.start();
 
 const users = ssh.getUsers()!;
@@ -937,11 +948,11 @@ await users.removeSudoer("bob");
 await users.addSudoer("alice");
 
 // Alice: High privilege
-const alice = new SshClient(ssh, "alice");
+const alice = new SshClient(shell, "alice");
 await alice.writeFile("/etc/important.conf", "secret=yes");
 
 // Bob: Regular user
-const bob = new SshClient(ssh, "bob");
+const bob = new SshClient(shell, "bob");
 const result = await bob.cat("/etc/important.conf");
 console.log("Bob read file:", result.stderr);
 
@@ -955,12 +966,13 @@ ssh.stop();
 Save filesystem state between runs:
 
 ```typescript
-import { VirtualMachine } from "typescript-virtual-container";
+import { VirtualSshServer, VirtualShell } from "typescript-virtual-container";
 
 // First run: Initialize
-const ssh1 = new VirtualMachine({ 
+const shell1 = new VirtualShell("typescript-vm", undefined, "./container");
+const ssh1 = new VirtualSshServer({ 
 	port: 2222,
-	basePath: "./container" 
+	shell: shell1 
 });
 await ssh1.start();
 const vfs1 = ssh1.getVfs()!;
@@ -973,9 +985,10 @@ ssh1.stop();
 console.log("State saved to ./container/.vfs/mirror.tar.gz");
 
 // Later: Reload and continue
-const ssh2 = new VirtualMachine({ 
+const shell2 = new VirtualShell("typescript-vm", undefined, "./container");
+const ssh2 = new VirtualSshServer({ 
 	port: 2223,
-	basePath: "./container" 
+	shell: shell2 
 });
 await ssh2.start();
 const vfs2 = ssh2.getVfs()!;
@@ -994,13 +1007,14 @@ ssh2.stop();
 Simulate filesystem changes and verify outcomes:
 
 ```typescript
-import { VirtualMachine, SshClient } from "typescript-virtual-container";
+import { VirtualSshServer, SshClient, VirtualShell } from "typescript-virtual-container";
 
 async function testDeployment() {
-	const ssh = new VirtualMachine({ port: 2222 });
+	const shell = new VirtualShell("typescript-vm");
+	const ssh = new VirtualSshServer({ port: 2222, shell });
 	await ssh.start();
 
-	const client = new SshClient(ssh, "root");
+	const client = new SshClient(shell, "root");
 
 	// Pre-deployment: Set up base structure
 	await client.mkdir("/srv/app", true);
@@ -1030,12 +1044,13 @@ testDeployment().catch(console.error);
 Simulate shell workflows:
 
 ```typescript
-import { VirtualMachine, SshClient } from "typescript-virtual-container";
+import { VirtualSshServer, SshClient, VirtualShell } from "typescript-virtual-container";
 
-const ssh = new VirtualMachine({ port: 2222 });
+const shell = new VirtualShell("typescript-vm");
+const ssh = new VirtualSshServer({ port: 2222, shell });
 await ssh.start();
 
-const client = new SshClient(ssh, "root");
+const client = new SshClient(shell, "root");
 
 // Create nested structure
 await client.mkdir("/home/user/projects/myapp/src", true);
@@ -1072,12 +1087,13 @@ ssh.stop();
 Graceful error handling in programmatic workflows:
 
 ```typescript
-import { VirtualMachine, SshClient } from "typescript-virtual-container";
+import { VirtualSshServer, SshClient, VirtualShell } from "typescript-virtual-container";
 
-const ssh = new VirtualMachine({ port: 2222 });
+const shell = new VirtualShell("typescript-vm");
+const ssh = new VirtualSshServer({ port: 2222, shell });
 await ssh.start();
 
-const client = new SshClient(ssh, "root");
+const client = new SshClient(shell, "root");
 
 // Try read non-existent file
 const result = await client.readFile("/etc/nonexistent.conf");
@@ -1161,10 +1177,11 @@ npm run start
 ### Runtime Options
 
 ```typescript
-const ssh = new VirtualMachine({
+const shell = new VirtualShell("my-container", undefined, "./data");
+const ssh = new VirtualSshServer({
 	port: 2222,                    // Required
 	hostname: "my-container",      // Optional
-	basePath: "./data"             // Optional, default: "."
+	shell                          // Optional, prebuilt shell instance
 });
 ```
 
@@ -1187,8 +1204,9 @@ const ssh = new VirtualMachine({
 **Example:**
 
 ```typescript
-const client1 = new SshClient(ssh, "alice");
-const client2 = new SshClient(ssh, "bob");
+const shell = new VirtualShell("typescript-vm");
+const client1 = new SshClient(shell, "alice");
+const client2 = new SshClient(shell, "bob");
 
 const [result1, result2] = await Promise.all([
 	client1.writeFile("/tmp/alice.txt", "..."),
@@ -1258,7 +1276,7 @@ Error: listen EADDRINUSE :::2222
 **Solution**: Use a different port
 
 ```typescript
-const ssh = new VirtualMachine({ port: 3333 });
+const ssh = new VirtualSshServer({ port: 3333 });
 ```
 
 ### SSH Authentication Failed

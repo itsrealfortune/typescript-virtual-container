@@ -32,8 +32,8 @@ export type {
 export {
 	SshClient,
 	VirtualFileSystem,
-	SshMimic as VirtualMachine,
 	VirtualShell,
+	SshMimic as VirtualSshServer,
 	VirtualUserManager,
 };
 

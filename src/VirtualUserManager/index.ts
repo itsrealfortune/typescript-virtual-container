@@ -26,7 +26,9 @@ export interface VirtualActiveSession {
 }
 
 /**
- * User, sudoers, and active session manager for SSH mimic runtime.
+ * Persistent user, sudoers, and active-session manager for the shell runtime.
+ *
+ * Passwords are hashed with scrypt and stored in the backing virtual filesystem.
  */
 export class VirtualUserManager {
 	private readonly usersPath = "/virtual-env-js/.auth/htpasswd";
@@ -38,10 +40,11 @@ export class VirtualUserManager {
 	private nextTty = 0;
 
 	/**
-	 * Creates user manager instance.
+	 * Creates a user manager instance backed by a virtual filesystem.
 	 *
 	 * @param vfs Backing virtual filesystem used for persistence.
-	 * @param defaultRootPassword Initial root password used when root missing.
+	 * @param defaultRootPassword Initial root password used when root is created.
+	 * @param autoSudoForNewUsers Whether newly created users are added to sudoers.
 	 */
 	constructor(
 		private readonly vfs: VirtualFileSystem,

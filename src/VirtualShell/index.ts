@@ -40,6 +40,12 @@ function resolveAutoSudoForNewUsers(): boolean {
 	return !["0", "false", "no", "off"].includes(configured.toLowerCase());
 }
 
+/**
+ * Coordinates the virtual filesystem, user manager, and command runtime.
+ *
+ * Instances are used both by the SSH server facade and by the programmatic
+ * client API.
+ */
 class VirtualShell {
 	basePath: string = ".";
 	vfs: VirtualFileSystem;
@@ -47,6 +53,13 @@ class VirtualShell {
 	hostname: string;
 	properties: ShellProperties;
 
+	/**
+	 * Creates a new virtual shell instance.
+	 *
+	 * @param hostname Virtual hostname used for prompts and idents.
+	 * @param properties Customizable properties shown in `uname -a` and similar commands.
+	 * @param basePath Optional base path for the virtual filesystem (defaults to process.cwd()).
+	 */
 	constructor(
 		hostname: string,
 		properties?: ShellProperties,
@@ -71,6 +84,13 @@ class VirtualShell {
 		});
 	}
 
+	/**
+	 * Registers a new command in the shell runtime.
+	 *
+	 * @param name Case-insensitive command name (no spaces).
+	 * @param params List of parameter names for help text (no validation).
+	 * @param callback Function invoked with command context on execution.
+	 */
 	addCommand(
 		name: string,
 		params: string[],
@@ -84,9 +104,25 @@ class VirtualShell {
 		registerCommand(createCustomCommand(normalized, params, callback));
 	}
 
+	/**
+	 * Executes a command line string in the context of this shell instance.
+	 *
+	 * @param rawInput
+	 * @param authUser
+	 * @param cwd
+	 */
 	executeCommand(rawInput: string, authUser: string, cwd: string): void {
 		runCommand(rawInput, authUser, this.hostname, "shell", cwd, this);
 	}
+
+	/**
+	 * Starts an interactive session with the shell.
+	 *
+	 * @param stream The stream for the interactive session.
+	 * @param authUser The authenticated user for the session.
+	 * @param sessionId The ID of the session.
+	 * @param remoteAddress The address of the remote client.
+	 */
 
 	startInteractiveSession(
 		stream: ShellStream,

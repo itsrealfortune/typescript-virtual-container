@@ -1,4 +1,4 @@
-import { VirtualMachine, VirtualShell } from ".";
+import { VirtualShell, VirtualSshServer } from ".";
 
 const hostname = process.env.SSH_MIMIC_HOSTNAME ?? "typescript-vm";
 const virtualShell = new VirtualShell(hostname);
@@ -10,7 +10,7 @@ virtualShell.addCommand("demo", [], () => {
 	};
 });
 
-new VirtualMachine({
+new VirtualSshServer({
 	port: 2222,
 	hostname,
 	shell: virtualShell,

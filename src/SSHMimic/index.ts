@@ -3,8 +3,9 @@ import { VirtualShell } from "../VirtualShell";
 import { loadOrCreateHostKey } from "./hostKey";
 
 /**
- * SSH server wrapper that exposes virtual shell and exec sessions.
+ * SSH server facade that wires the virtual shell runtime into ssh2 sessions.
  *
+ * This class is exported as `VirtualSshServer` for public API compatibility.
  * Create an instance, call {@link SshMimic.start}, and stop it with
  * {@link SshMimic.stop} when your process exits.
  */
@@ -18,7 +19,8 @@ class SshMimic {
 	 * Creates a new SSH mimic server instance.
 	 *
 	 * @param port TCP port to bind on localhost.
-	 * @param hostname SSH ident hostname suffix and virtual host label.
+	 * @param hostname Virtual hostname used for the SSH ident and default shell label.
+	 * @param shell Optional preconfigured virtual shell instance to reuse.
 	 */
 	constructor({
 		port,

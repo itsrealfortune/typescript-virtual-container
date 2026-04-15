@@ -3,17 +3,15 @@ import type { VirtualShell } from "../VirtualShell";
 import { runCommand } from "../VirtualShell/commands";
 
 /**
- * Programmatic SSH client to execute shell commands as a specific user.
+ * Programmatic client for executing shell commands against a virtual shell.
  *
- * Maintains connection state (cwd) across multiple command invocations.
- * All commands execute with implicit authentication (no password required).
+ * Maintains working-directory state across invocations and runs commands as a
+ * single authenticated user without SSH transport overhead.
  *
  * @example
  * ```ts
- * const virtualShell = new VirtualShell();
- * await virtualShell.start();
- *
- * const client = new SshClient(virtualShell, "alice");
+ * const shell = new VirtualShell("typescript-vm");
+ * const client = new SshClient(shell, "alice");
  * const result = await client.cd("/tmp");
  * const list = await client.ls();
  * ```
@@ -22,9 +20,9 @@ export class SshClient {
 	private currentCwd = "/";
 
 	/**
-	 * Creates SSH client bound to user.
+	 * Creates a programmatic client bound to a virtual shell and user.
 	 *
-	 * @param shell Parent virtual shell instance (must be started).
+	 * @param shell Parent virtual shell instance.
 	 * @param username Login user for all commands.
 	 */
 	constructor(
