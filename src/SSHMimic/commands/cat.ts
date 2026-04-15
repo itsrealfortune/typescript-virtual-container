@@ -1,11 +1,12 @@
 import type { ShellModule } from "../../types/commands";
+import { getArg } from "./command-helpers";
 import { assertPathAccess, resolveReadablePath } from "./helpers";
 
 export const catCommand: ShellModule = {
 	name: "cat",
 	params: ["<file>"],
 	run: ({ authUser, vfs, cwd, args }) => {
-		const fileArg = args[0];
+		const fileArg = getArg(args, 0);
 		if (!fileArg) {
 			return { stderr: "cat: missing file operand", exitCode: 1 };
 		}
