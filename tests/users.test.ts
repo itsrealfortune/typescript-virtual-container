@@ -46,7 +46,8 @@ describe("VirtualUserManager quotas", () => {
 			const users = new VirtualUserManager(vfs, "root-pass");
 			await users.initialize();
 			await users.addUser("alice", "alice-pass");
-			await users.setQuotaBytes("alice", 10);
+			const startingUsage = users.getUsageBytes("alice");
+			await users.setQuotaBytes("alice", startingUsage + 5);
 
 			expect(() => {
 				users.assertWriteWithinQuota("alice", "/home/alice/note.txt", "hello");
@@ -58,7 +59,7 @@ describe("VirtualUserManager quotas", () => {
 				users.assertWriteWithinQuota(
 					"alice",
 					"/home/alice/note.txt",
-					"this exceeds ten bytes",
+					"this exceeds the configured quota",
 				);
 			}).toThrow("quota exceeded for 'alice'");
 		});

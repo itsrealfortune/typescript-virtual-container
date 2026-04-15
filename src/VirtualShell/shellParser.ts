@@ -9,7 +9,16 @@ export function parseShellPipeline(rawInput: string): Pipeline {
 	}
 
 	const commands: PipelineCommand[] = [];
-	const pipeTokens = tokenizePipeline(trimmed);
+	const tokenized = tokenizePipeline(trimmed);
+	if (tokenized.error) {
+		return {
+			commands: [],
+			isValid: false,
+			error: tokenized.error,
+		};
+	}
+
+	const pipeTokens = tokenized.tokens;
 
 	for (const token of pipeTokens) {
 		const cmd = parseCommandWithRedirections(token);
@@ -29,7 +38,7 @@ export function parseShellPipeline(rawInput: string): Pipeline {
 }
 
 /** Tokenize input by pipes, respecting quoted strings */
-function tokenizePipeline(input: string): string[] {
+function tokenizePipeline(input: string): { tokens: string[]; error?: string } {
 	const tokens: string[] = [];
 	let current = "";
 	let inQuotes = false;
@@ -49,9 +58,13 @@ function tokenizePipeline(input: string): string[] {
 			current += ch;
 			i++;
 		} else if (ch === "|" && !inQuotes) {
-			if (current.trim()) {
-				tokens.push(current.trim());
+			if (!current.trim()) {
+				return {
+					tokens: [],
+					error: "Syntax error near unexpected token '|'",
+				};
 			}
+			tokens.push(current.trim());
 			current = "";
 			i++;
 		} else {
@@ -60,11 +73,23 @@ function tokenizePipeline(input: string): string[] {
 		}
 	}
 
-	if (current.trim()) {
-		tokens.push(current.trim());
+	if (inQuotes) {
+		return {
+			tokens: [],
+			error: "Syntax error: unterminated quote",
+		};
 	}
 
-	return tokens;
+	if (!current.trim()) {
+		return {
+			tokens: [],
+			error: "Syntax error near unexpected token '|'",
+		};
+	}
+
+	tokens.push(current.trim());
+
+	return { tokens };
 }
 
 interface ParseResult {
