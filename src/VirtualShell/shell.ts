@@ -2,6 +2,14 @@ import { type ChildProcessWithoutNullStreams, spawn } from "node:child_process";
 import { readFile, unlink, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import type { ShellProperties, VirtualShell } from ".";
+import {
+	getVisibleHtopPidList,
+	resolvePath,
+	shellQuote,
+	type TerminalSize,
+	toTtyLines,
+	withTerminalSize,
+} from "../../modules/shellRuntime";
 import { getCommandNames, runCommand } from "../commands";
 import { formatLoginDate } from "../SSHMimic/loginFormat";
 import { buildPrompt } from "../SSHMimic/prompt";
@@ -22,22 +30,6 @@ interface PendingSudo {
 	loginShell: boolean;
 	prompt: string;
 	buffer: string;
-}
-
-function shellQuote(value: string): string {
-	return `'${value.replace(/'/g, `'\\''`)}'`;
-}
-
-interface TerminalSize {
-	cols: number;
-	rows: number;
-}
-
-function toTtyLines(text: string): string {
-	return text
-		.replace(/\r\n/g, "\n")
-		.replace(/\r/g, "\n")
-		.replace(/\n/g, "\r\n");
 }
 
 export function startShell(
@@ -67,60 +59,6 @@ export function startShell(
 	console.log(
 		`[${sessionId}] Shell started for user '${authUser}' at ${remoteAddress}`,
 	);
-
-	async function collectChildPids(parentPid: number): Promise<number[]> {
-		try {
-			const childrenRaw = await readFile(
-				`/proc/${parentPid}/task/${parentPid}/children`,
-				"utf8",
-			);
-			const directChildren = childrenRaw
-				.trim()
-				.split(/\s+/)
-				.filter(Boolean)
-				.map((value) => Number.parseInt(value, 10))
-				.filter((pid) => Number.isInteger(pid) && pid > 0);
-
-			const nested = await Promise.all(
-				directChildren.map((pid) => collectChildPids(pid)),
-			);
-			return [...directChildren, ...nested.flat()];
-		} catch {
-			return [];
-		}
-	}
-
-	async function getVisibleHtopPidList(): Promise<string | null> {
-		const rootPid = process.pid;
-		const descendants = await collectChildPids(rootPid);
-		const unique = Array.from(new Set(descendants)).sort((a, b) => a - b);
-		if (unique.length === 0) {
-			return null;
-		}
-
-		return unique.join(",");
-	}
-
-	function withTerminalSize(command: string): string {
-		const cols =
-			Number.isFinite(terminalSize.cols) && terminalSize.cols > 0
-				? Math.floor(terminalSize.cols)
-				: 80;
-		const rows =
-			Number.isFinite(terminalSize.rows) && terminalSize.rows > 0
-				? Math.floor(terminalSize.rows)
-				: 24;
-		return `stty cols ${cols} rows ${rows} 2>/dev/null; ${command}`;
-	}
-
-	function resolvePath(base: string, inputPath: string): string {
-		if (!inputPath || inputPath.trim() === "" || inputPath === ".") {
-			return base;
-		}
-		return inputPath.startsWith("/")
-			? path.posix.normalize(inputPath)
-			: path.posix.normalize(path.posix.join(base, inputPath));
-	}
 
 	function renderLine(): void {
 		const prompt = buildCurrentPrompt();
@@ -265,7 +203,10 @@ export function startShell(
 			await writeFile(tempPath, initialContent, "utf8");
 		}
 
-		const command = withTerminalSize(`nano -- ${shellQuote(tempPath)}`);
+		const command = withTerminalSize(
+			`nano -- ${shellQuote(tempPath)}`,
+			terminalSize,
+		);
 		const editor = spawn("script", ["-qfec", command, "/dev/null"], {
 			stdio: ["pipe", "pipe", "pipe"],
 			env: {
@@ -307,7 +248,10 @@ export function startShell(
 			return;
 		}
 
-		const command = withTerminalSize(`htop -p ${shellQuote(pidList)}`);
+		const command = withTerminalSize(
+			`htop -p ${shellQuote(pidList)}`,
+			terminalSize,
+		);
 		const monitor = spawn("script", ["-qfec", command, "/dev/null"], {
 			stdio: ["pipe", "pipe", "pipe"],
 			env: {
