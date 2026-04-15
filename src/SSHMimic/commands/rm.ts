@@ -1,4 +1,5 @@
 import type { ShellModule } from "../../types/commands";
+import { getArg, ifFlag } from "./command-helpers";
 import { assertPathAccess, resolvePath } from "./helpers";
 
 export const rmCommand: ShellModule = {
@@ -9,9 +10,15 @@ export const rmCommand: ShellModule = {
 			return { stderr: "rm: missing operand", exitCode: 1 };
 		}
 
-		const recursive =
-			args.includes("-r") || args.includes("-rf") || args.includes("-fr");
-		const targets = args.filter((arg) => !arg.startsWith("-"));
+		const recursive = ifFlag(args, ["-r", "-rf", "-fr"]);
+		const targets: string[] = [];
+		for (let index = 0; ; index += 1) {
+			const target = getArg(args, index, { flags: ["-r", "-rf", "-fr"] });
+			if (!target) {
+				break;
+			}
+			targets.push(target);
+		}
 
 		if (targets.length === 0) {
 			return { stderr: "rm: missing operand", exitCode: 1 };

@@ -1,11 +1,11 @@
 import type { ShellModule } from "../../types/commands";
+import { getArg } from "./command-helpers";
 
 export const suCommand: ShellModule = {
 	name: "su",
 	params: ["- <username>"],
 	run: ({ authUser, users, args }) => {
-		const filtered = args.filter((arg) => arg !== "-");
-		const targetUser = filtered[0];
+		const targetUser = getArg(args, 0, { flags: ["-"] });
 
 		if (!targetUser) {
 			return { stderr: "su: missing username", exitCode: 1 };
@@ -16,7 +16,7 @@ export const suCommand: ShellModule = {
 		}
 
 		if (
-			!users.verifyPassword(targetUser, filtered[1] ?? "") &&
+			!users.verifyPassword(targetUser, getArg(args, 1) ?? "") &&
 			authUser !== "root"
 		) {
 			return { stderr: "su: authentication failure", exitCode: 1 };

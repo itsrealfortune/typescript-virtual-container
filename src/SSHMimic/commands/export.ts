@@ -1,4 +1,5 @@
 import type { ShellModule } from "../../types/commands";
+import { getArg } from "./command-helpers";
 import { getEnvVar, setEnvVar } from "./set";
 
 export const exportCommand: ShellModule = {
@@ -15,7 +16,12 @@ export const exportCommand: ShellModule = {
 		}
 
 		// Parse VAR=value format
-		for (const arg of args) {
+		for (let index = 0; ; index += 1) {
+			const arg = getArg(args, index);
+			if (!arg) {
+				break;
+			}
+
 			if (arg.includes("=")) {
 				const [varName, varValue] = arg.split("=", 2);
 				if (varName && varValue !== undefined) {

@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/style/useNamingConvention: env variables */
 import type { ShellModule } from "../../types/commands";
+import { getArg } from "./command-helpers";
 
 // Simple in-memory environment variables store
 // In a real implementation, this would be per-session/per-user
@@ -41,7 +42,12 @@ export const setCommand: ShellModule = {
 
 		// Parse VAR=value format
 		const assignments: string[] = [];
-		for (const arg of args) {
+		for (let index = 0; ; index += 1) {
+			const arg = getArg(args, index);
+			if (!arg) {
+				break;
+			}
+
 			if (arg.includes("=")) {
 				const [varName, varValue] = arg.split("=", 2);
 				if (varName && varValue !== undefined) {

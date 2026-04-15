@@ -34,3 +34,5 @@ export {
 	SshMimic as VirtualMachine,
 	VirtualUserManager,
 };
+
+export { getArg, getFlag, ifFlag } from "./SSHMimic/commands/command-helpers";

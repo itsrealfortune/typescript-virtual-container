@@ -3,10 +3,10 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ShellModule } from "../../types/commands";
+import { getArg, getFlag, ifFlag } from "./command-helpers";
 import {
 	assertPathAccess,
 	normalizeTerminalOutput,
-	parseOutputPath,
 	resolvePath,
 	stripUrlFilename,
 } from "./helpers";
@@ -83,12 +83,29 @@ export const wgetCommand: ShellModule = {
 	name: "wget",
 	params: ["[url]"],
 	run: async ({ authUser, vfs, cwd, args }) => {
-		const { outputPath, inputArgs } = parseOutputPath(args);
+		const outputPathValue = getFlag(args, [
+			"-o",
+			"-O",
+			"--output",
+			"--output-document",
+		]);
+		const outputPath =
+			typeof outputPathValue === "string" && outputPathValue.length > 0
+				? outputPathValue
+				: null;
+		const parserOptions = {
+			flagsWithValue: ["-o", "-O", "--output", "--output-document"],
+		};
+		const inputArgs: string[] = [];
+		for (let index = 0; ; index += 1) {
+			const arg = getArg(args, index, parserOptions);
+			if (!arg) {
+				break;
+			}
+			inputArgs.push(arg);
+		}
 		const url = inputArgs[0];
-		const isHelpLike = inputArgs.some(
-			(arg) =>
-				arg === "-h" || arg === "--help" || arg === "-V" || arg === "--version",
-		);
+		const isHelpLike = ifFlag(args, ["-h", "--help", "-V", "--version"]);
 
 		if (!url) {
 			return { stderr: "wget: missing URL", exitCode: 1 };
