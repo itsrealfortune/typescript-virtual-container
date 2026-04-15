@@ -58,6 +58,9 @@ class VirtualFileSystem {
 			this.dirty = false;
 			return;
 		} catch {
+			console.warn(
+				`No valid mirror archive found at '${this.archivePath}'. Starting with empty filesystem.`,
+			);
 			await this.flushMirror();
 		}
 	}
