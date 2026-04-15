@@ -83,7 +83,7 @@ bun add typescript-virtual-container
 ### From source (development)
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/itsrealfortune/typescript-virtual-container/
 cd virtual-env-js
 bun install
 bun format  # Format code per Biome
