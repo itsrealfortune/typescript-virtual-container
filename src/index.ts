@@ -2,6 +2,7 @@ import { SshClient } from "./SSHMimic/client";
 import { SshMimic } from "./SSHMimic/index";
 import { VirtualUserManager } from "./SSHMimic/users";
 import VirtualFileSystem from "./VirtualFileSystem";
+import type { VirtualShell } from "./VirtualShell";
 
 export type {
 	CommandContext,
@@ -33,6 +34,11 @@ export {
 	VirtualFileSystem,
 	SshMimic as VirtualMachine,
 	VirtualUserManager,
+	type VirtualShell,
 };
 
-export { getArg, getFlag, ifFlag } from "./SSHMimic/commands/command-helpers";
+export {
+	getArg,
+	getFlag,
+	ifFlag,
+} from "./VirtualShell/commands/command-helpers";

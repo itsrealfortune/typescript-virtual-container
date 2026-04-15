@@ -1,3 +1,4 @@
+import type { VirtualUserManager } from "../../SSHMimic/users";
 import type {
 	CommandMode,
 	CommandOutcome,
@@ -5,7 +6,6 @@ import type {
 	ShellModule,
 } from "../../types/commands";
 import type VirtualFileSystem from "../../VirtualFileSystem";
-import type { VirtualUserManager } from "../users";
 import { adduserCommand } from "./adduser";
 import { catCommand } from "./cat";
 import { cdCommand } from "./cd";
@@ -151,8 +151,8 @@ async function runCommandInternal(
 		rawInput.includes("<")
 	) {
 		// Use pipeline executor
-		const { parseShellPipeline } = await import("../shellParser");
-		const { executePipeline } = await import("../executor");
+		const { parseShellPipeline } = await import("../../SSHMimic/shellParser");
+		const { executePipeline } = await import("../../SSHMimic/executor");
 
 		const pipeline = parseShellPipeline(rawInput);
 		if (!pipeline.isValid) {

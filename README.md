@@ -1263,3 +1263,21 @@ MIT License. See LICENSE file for details.
 - [ ] Snapshot diff tooling for test assertions
 - [ ] Structured event hooks (session open/close, file write, sudo challenge)
 - [ ] WebSocket-based remote shell client (experimental)
+```
+
+## VirtualShell
+
+The `VirtualShell` class encapsulates the logic for executing commands and managing interactive shell sessions. It integrates with the virtual filesystem and user manager to provide a seamless SSH-like experience.
+
+### Features
+- Command execution
+- Interactive shell sessions
+- Integration with `VirtualFileSystem` and `VirtualUserManager`
+
+### Example
+```typescript
+import { VirtualShell } from "typescript-virtual-container";
+
+const shell = new VirtualShell(vfs, users, hostname);
+shell.executeCommand("ls", ["-l"]);
+```

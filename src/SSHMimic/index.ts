@@ -1,9 +1,9 @@
 import { randomBytes } from "node:crypto";
 import { Server as SshServer } from "ssh2";
 import VirtualFileSystem from "../VirtualFileSystem";
+import { startShell } from "../VirtualShell/shell";
 import { runExec } from "./exec";
 import { loadOrCreateHostKey } from "./hostKey";
-import { startShell } from "./shell";
 import { VirtualUserManager } from "./users";
 
 function resolveRootPassword(): string {
@@ -35,12 +35,12 @@ function resolveAutoSudoForNewUsers(): boolean {
  * {@link SshMimic.stop} when your process exits.
  */
 class SshMimic {
-	private port: number;
-	private hostname: string;
-	private server: SshServer | null;
-	private vfs: VirtualFileSystem | null = null;
-	private users: VirtualUserManager | null = null;
-	private basePath: string = ".";
+	port: number;
+	hostname: string;
+	server: SshServer | null;
+	vfs: VirtualFileSystem | null = null;
+	users: VirtualUserManager | null = null;
+	basePath: string = ".";
 
 	/**
 	 * Creates a new SSH mimic server instance.

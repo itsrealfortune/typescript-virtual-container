@@ -1,8 +1,8 @@
 import type { CommandMode, CommandResult } from "../types/commands";
 import type { Pipeline, PipelineCommand } from "../types/pipeline";
 import type VirtualFileSystem from "../VirtualFileSystem";
-import { runCommand as runSingleCommand } from "./commands";
-import { resolvePath } from "./commands/helpers";
+import { runCommand as runSingleCommand } from "../VirtualShell/commands";
+import { resolvePath } from "../VirtualShell/commands/helpers";
 import type { VirtualUserManager } from "./users";
 
 /**

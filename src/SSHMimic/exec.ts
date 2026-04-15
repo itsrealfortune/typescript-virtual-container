@@ -1,6 +1,6 @@
 import type { ExecStream } from "../types/streams";
 import type VirtualFileSystem from "../VirtualFileSystem";
-import { runCommand } from "./commands";
+import { runCommand } from "../VirtualShell/commands";
 import type { VirtualUserManager } from "./users";
 
 function toTtyLines(text: string): string {
