@@ -5,21 +5,21 @@ import type {
 	RemoveOptions,
 	VfsNodeStats,
 	WriteFileOptions,
-} from "./types/vfs";
+} from "../types/vfs";
 import {
 	archiveExists,
 	createTarBuffer,
 	readSnapshotFromTar,
-} from "./vfs/archive";
-import type { InternalDirectoryNode, InternalNode } from "./vfs/internalTypes";
+} from "../vfs/archive";
+import type { InternalDirectoryNode, InternalNode } from "../vfs/internalTypes";
 import {
 	getNode,
 	getParentDirectory,
 	normalizePath,
 	splitPath,
-} from "./vfs/path";
-import { applySnapshot, createSnapshot } from "./vfs/snapshot";
-import { renderTree } from "./vfs/tree";
+} from "../vfs/path";
+import { applySnapshot, createSnapshot } from "../vfs/snapshot";
+import { renderTree } from "../vfs/tree";
 
 /**
  * In-memory virtual filesystem with tar.gz mirror persistence.
