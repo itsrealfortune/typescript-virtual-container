@@ -1,14 +1,16 @@
-import { type ChildProcessWithoutNullStreams, spawn } from "node:child_process";
+import type { ChildProcessWithoutNullStreams } from "node:child_process";
 import { readFile, unlink, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import type { ShellProperties, VirtualShell } from ".";
 import {
+	spawnHtopProcess,
+	spawnNanoEditorProcess,
+} from "../../modules/shellInteractive";
+import {
 	getVisibleHtopPidList,
 	resolvePath,
-	shellQuote,
 	type TerminalSize,
 	toTtyLines,
-	withTerminalSize,
 } from "../../modules/shellRuntime";
 import { getCommandNames, runCommand } from "../commands";
 import { formatLoginDate } from "../SSHMimic/loginFormat";
@@ -203,26 +205,7 @@ export function startShell(
 			await writeFile(tempPath, initialContent, "utf8");
 		}
 
-		const command = withTerminalSize(
-			`nano -- ${shellQuote(tempPath)}`,
-			terminalSize,
-		);
-		const editor = spawn("script", ["-qfec", command, "/dev/null"], {
-			stdio: ["pipe", "pipe", "pipe"],
-			env: {
-				...process.env,
-				// biome-ignore lint/style/useNamingConvention: TERM is an environment variable conventionally in uppercase
-				TERM: process.env.TERM ?? "xterm-256color",
-			},
-		});
-
-		editor.stdout.on("data", (data: Buffer) => {
-			stream.write(data.toString("utf8"));
-		});
-
-		editor.stderr.on("data", (data: Buffer) => {
-			stream.write(data.toString("utf8"));
-		});
+		const editor = spawnNanoEditorProcess(tempPath, terminalSize, stream);
 
 		editor.on("error", (error: Error) => {
 			stream.write(`nano: ${error.message}\r\n`);
@@ -248,26 +231,7 @@ export function startShell(
 			return;
 		}
 
-		const command = withTerminalSize(
-			`htop -p ${shellQuote(pidList)}`,
-			terminalSize,
-		);
-		const monitor = spawn("script", ["-qfec", command, "/dev/null"], {
-			stdio: ["pipe", "pipe", "pipe"],
-			env: {
-				...process.env,
-				// biome-ignore lint/style/useNamingConvention: TERM is an environment variable conventionally in uppercase
-				TERM: process.env.TERM ?? "xterm-256color",
-			},
-		});
-
-		monitor.stdout.on("data", (data: Buffer) => {
-			stream.write(data.toString("utf8"));
-		});
-
-		monitor.stderr.on("data", (data: Buffer) => {
-			stream.write(data.toString("utf8"));
-		});
+		const monitor = spawnHtopProcess(pidList, terminalSize, stream);
 
 		monitor.on("error", (error: Error) => {
 			stream.write(`htop: ${error.message}\r\n`);
