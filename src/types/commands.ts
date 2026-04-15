@@ -76,6 +76,8 @@ export interface CommandContext {
 	mode: CommandMode;
 	/** Tokenized arguments excluding command name. */
 	args: string[];
+	/** Optional stdin payload (used by pipes/redirections). */
+	stdin?: string;
 	/** Current working directory for command execution. */
 	cwd: string;
 	/** Virtual filesystem instance for IO operations. */
