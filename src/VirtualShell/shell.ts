@@ -478,7 +478,7 @@ export function startShell(
 		);
 		stream.write("\r\n");
 		stream.write(
-			"The programs included with the Debian GNU/Linux system are free software;\r\n",
+			"The programs included with the Fortune GNU/Linux system are free software;\r\n",
 		);
 		stream.write(
 			"the exact distribution terms for each program are described in the\r\n",
@@ -486,7 +486,7 @@ export function startShell(
 		stream.write("individual files in /usr/share/doc/*/copyright.\r\n");
 		stream.write("\r\n");
 		stream.write(
-			"Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent\r\n",
+			"Fortune GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent\r\n",
 		);
 		stream.write("permitted by applicable law.\r\n");
 
