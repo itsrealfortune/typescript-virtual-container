@@ -15,9 +15,7 @@ function formatPermissions(mode: number, isDirectory: boolean): string {
 		[0o002, "w"],
 		[0o001, "x"],
 	] as const;
-	const permissions = permissionBits
-		.map(([bit, symbol]) => (mode & bit ? symbol : "-"))
-		.join("");
+	const permissions = permissionBits.map(([bit, symbol]) => (mode & bit ? symbol : "-")).join("");
 
 	return `${fileType}${permissions}`;
 }
@@ -34,9 +32,7 @@ export const lsCommand: ShellModule = {
 		const targetArg = getArg(args, 0, { flags: ["-l", "--long"] });
 		const target = resolvePath(cwd, targetArg ?? cwd);
 		assertPathAccess(authUser, target, "ls");
-		const items = shell.vfs
-			.list(target)
-			.filter((name) => !name.startsWith("."));
+		const items = shell.vfs.list(target).filter((name) => !name.startsWith("."));
 		const rendered = longFormat
 			? items
 					.map((name) => {

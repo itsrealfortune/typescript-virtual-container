@@ -3,16 +3,8 @@ import { readFile, unlink, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import type { ShellProperties, VirtualShell } from ".";
 import { getCommandNames, runCommand } from "../commands";
-import {
-	spawnHtopProcess,
-	spawnNanoEditorProcess,
-} from "../modules/shellInteractive";
-import {
-	getVisibleHtopPidList,
-	resolvePath,
-	type TerminalSize,
-	toTtyLines,
-} from "../modules/shellRuntime";
+import { spawnHtopProcess, spawnNanoEditorProcess } from "../modules/shellInteractive";
+import { getVisibleHtopPidList, resolvePath, type TerminalSize, toTtyLines } from "../modules/shellRuntime";
 import { formatLoginDate } from "../SSHMimic/loginFormat";
 import { buildPrompt } from "../SSHMimic/prompt";
 import type { ShellStream } from "../types/streams";
@@ -34,16 +26,7 @@ interface PendingSudo {
 	buffer: string;
 }
 
-export function startShell(
-	properties: ShellProperties,
-	stream: ShellStream,
-	authUser: string,
-	hostname: string,
-	sessionId: string | null,
-	remoteAddress = "unknown",
-	terminalSize: TerminalSize = { cols: 80, rows: 24 },
-	shell: VirtualShell,
-): void {
+export function startShell(properties: ShellProperties, stream: ShellStream, authUser: string, hostname: string, sessionId: string | null, remoteAddress = "unknown", terminalSize: TerminalSize = { cols: 80, rows: 24 }, shell: VirtualShell): void {
 	let lineBuffer = "";
 	let cursorPos = 0;
 	let history = loadHistory(shell.vfs);
@@ -58,9 +41,7 @@ export function startShell(
 		return buildPrompt(authUser, hostname, cwdLabel);
 	};
 	const commandNames = Array.from(new Set(getCommandNames())).sort();
-	console.log(
-		`[${sessionId}] Shell started for user '${authUser}' at ${remoteAddress}`,
-	);
+	console.log(`[${sessionId}] Shell started for user '${authUser}' at ${remoteAddress}`);
 
 	function renderLine(): void {
 		const prompt = buildCurrentPrompt();
@@ -76,13 +57,7 @@ export function startShell(
 		stream.write("\r\u001b[K");
 	}
 
-	function startSudoPrompt(challenge: {
-		username: string;
-		targetUser: string;
-		commandLine: string | null;
-		loginShell: boolean;
-		prompt: string;
-	}): void {
+	function startSudoPrompt(challenge: { username: string; targetUser: string; commandLine: string | null; loginShell: boolean; prompt: string }): void {
 		pendingSudo = {
 			...challenge,
 			buffer: "",
@@ -115,25 +90,12 @@ export function startShell(
 		}
 
 		const runCwd = challenge.loginShell ? `/home/${challenge.targetUser}` : cwd;
-		const result = await Promise.resolve(
-			runCommand(
-				challenge.commandLine,
-				challenge.targetUser,
-				hostname,
-				"shell",
-				runCwd,
-				shell,
-			),
-		);
+		const result = await Promise.resolve(runCommand(challenge.commandLine, challenge.targetUser, hostname, "shell", runCwd, shell));
 
 		stream.write("\r\n");
 
 		if (result.openEditor) {
-			await startNanoEditor(
-				result.openEditor.targetPath,
-				result.openEditor.initialContent,
-				result.openEditor.tempPath,
-			);
+			await startNanoEditor(result.openEditor.targetPath, result.openEditor.initialContent, result.openEditor.tempPath);
 			return;
 		}
 
@@ -176,11 +138,7 @@ export function startShell(
 		if (activeSession.kind === "nano") {
 			try {
 				const updatedContent = await readFile(activeSession.tempPath, "utf8");
-				shell.writeFileAsUser(
-					authUser,
-					activeSession.targetPath,
-					updatedContent,
-				);
+				shell.writeFileAsUser(authUser, activeSession.targetPath, updatedContent);
 				await shell.vfs.flushMirror();
 			} catch {
 				// If temp file does not exist, nano exited without writing.
@@ -196,11 +154,7 @@ export function startShell(
 		renderLine();
 	}
 
-	async function startNanoEditor(
-		targetPath: string,
-		initialContent: string,
-		tempPath: string,
-	): Promise<void> {
+	async function startNanoEditor(targetPath: string, initialContent: string, tempPath: string): Promise<void> {
 		if (shell.vfs.exists(targetPath)) {
 			await writeFile(tempPath, initialContent, "utf8");
 		}
@@ -262,10 +216,7 @@ export function startShell(
 		renderLine();
 	}
 
-	function getTokenRange(
-		line: string,
-		cursor: number,
-	): { start: number; end: number } {
+	function getTokenRange(line: string, cursor: number): { start: number; end: number } {
 		let start = cursor;
 		while (start > 0 && !/\s/.test(line[start - 1]!)) {
 			start -= 1;
@@ -311,13 +262,9 @@ export function startShell(
 		}
 
 		const firstToken = lineBuffer.slice(0, start).trim().length === 0;
-		const commandCandidates = firstToken
-			? commandNames.filter((name) => name.startsWith(token))
-			: [];
+		const commandCandidates = firstToken ? commandNames.filter((name) => name.startsWith(token)) : [];
 		const pathCandidates = listPathCompletions(token);
-		const candidates = Array.from(
-			new Set([...commandCandidates, ...pathCandidates]),
-		).sort();
+		const candidates = Array.from(new Set([...commandCandidates, ...pathCandidates])).sort();
 
 		if (candidates.length === 0) {
 			return;
@@ -374,41 +321,26 @@ export function startShell(
 		}
 
 		const lastlogPath = `${dir}/${authUser}.json`;
-		shell.vfs.writeFile(
-			lastlogPath,
-			JSON.stringify({ at: nowIso, from: remoteAddress }),
-		);
+		shell.vfs.writeFile(lastlogPath, JSON.stringify({ at: nowIso, from: remoteAddress }));
 	}
 
 	function renderLoginBanner(): void {
 		const last = readLastLogin();
 		const nowIso = new Date().toISOString();
 
-		stream.write(
-			`Linux ${hostname} ${properties.kernel} ${properties.arch}\r\n`,
-		);
+		stream.write(`Linux ${hostname} ${properties.kernel} ${properties.arch}\r\n`);
 		stream.write("\r\n");
-		stream.write(
-			"The programs included with the Fortune GNU/Linux system are free software;\r\n",
-		);
-		stream.write(
-			"the exact distribution terms for each program are described in the\r\n",
-		);
+		stream.write("The programs included with the Fortune GNU/Linux system are free software;\r\n");
+		stream.write("the exact distribution terms for each program are described in the\r\n");
 		stream.write("individual files in /usr/share/doc/*/copyright.\r\n");
 		stream.write("\r\n");
-		stream.write(
-			"Fortune GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent\r\n",
-		);
+		stream.write("Fortune GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent\r\n");
 		stream.write("permitted by applicable law.\r\n");
 
 		if (last) {
 			const when = new Date(last.at);
-			const displayed = Number.isNaN(when.getTime())
-				? last.at
-				: formatLoginDate(when);
-			stream.write(
-				`Last login: ${displayed} from ${last.from || "unknown"}\r\n`,
-			);
+			const displayed = Number.isNaN(when.getTime()) ? last.at : formatLoginDate(when);
+			stream.write(`Last login: ${displayed} from ${last.from || "unknown"}\r\n`);
 		}
 
 		stream.write("\r\n");
@@ -445,10 +377,7 @@ export function startShell(
 				if (ch === "\r" || ch === "\n") {
 					const password = pendingSudo.buffer;
 					pendingSudo.buffer = "";
-					const valid = shell.users.verifyPassword(
-						pendingSudo.username,
-						password,
-					);
+					const valid = shell.users.verifyPassword(pendingSudo.username, password);
 					await finishSudoPrompt(valid);
 					return;
 				}
@@ -567,18 +496,12 @@ export function startShell(
 				stream.write("\r\n");
 
 				if (line.length > 0) {
-					const result = await Promise.resolve(
-						runCommand(line, authUser, hostname, "shell", cwd, shell),
-					);
+					const result = await Promise.resolve(runCommand(line, authUser, hostname, "shell", cwd, shell));
 
 					pushHistory(line);
 
 					if (result.openEditor) {
-						await startNanoEditor(
-							result.openEditor.targetPath,
-							result.openEditor.initialContent,
-							result.openEditor.tempPath,
-						);
+						await startNanoEditor(result.openEditor.targetPath, result.openEditor.initialContent, result.openEditor.tempPath);
 						return;
 					}
 

@@ -29,9 +29,7 @@ function colorBlock(code: number): string {
 
 function buildColorBars(): string[] {
 	const normal = [40, 41, 42, 43, 44, 45, 46, 47].map(colorBlock).join("");
-	const bright = [100, 101, 102, 103, 104, 105, 106, 107]
-		.map(colorBlock)
-		.join("");
+	const bright = [100, 101, 102, 103, 104, 105, 106, 107].map(colorBlock).join("");
 	return [normal, bright];
 }
 
@@ -258,10 +256,7 @@ function resolveDefaults(info: NeofetchInfo): Required<NeofetchInfo> {
 	return {
 		user: info.user,
 		host: info.host,
-		osName:
-			shellProps?.os ??
-			info.osName ??
-			`${readOsPrettyName() ?? os.type()} ${os.arch()}`,
+		osName: shellProps?.os ?? info.osName ?? `${readOsPrettyName() ?? os.type()} ${os.arch()}`,
 		kernel: shellProps?.kernel ?? info.kernel ?? os.release(),
 		uptimeSeconds: info.uptimeSeconds ?? os.uptime(),
 		packages: info.packages ?? resolvePackagesLabel(),
@@ -340,11 +335,7 @@ export function buildNeofetchOutput(info: NeofetchInfo): string {
 		const rawLeft = distroLogo[i] ?? "";
 		const right = details[i] ?? "";
 		if (right.length > 0) {
-			const left = colorizeLogoLine(
-				rawLeft.padEnd(31, " "),
-				i,
-				distroLogo.length,
-			);
+			const left = colorizeLogoLine(rawLeft.padEnd(31, " "), i, distroLogo.length);
 			const coloredRight = colorizeDetailLine(right);
 			lines.push(`${left}  ${coloredRight}`);
 			continue;

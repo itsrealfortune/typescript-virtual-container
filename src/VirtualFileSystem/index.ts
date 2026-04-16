@@ -2,11 +2,7 @@ import { EventEmitter } from "node:events";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { gunzipSync, gzipSync } from "node:zlib";
-import type {
-	RemoveOptions,
-	VfsNodeStats,
-	WriteFileOptions,
-} from "../types/vfs";
+import type { RemoveOptions, VfsNodeStats, WriteFileOptions } from "../types/vfs";
 import type { PerfLogger } from "../utils/perfLogger";
 import { createPerfLogger } from "../utils/perfLogger";
 import { normalizePath } from "./path";
@@ -135,9 +131,7 @@ class VirtualFileSystem extends EventEmitter {
 		this.ensureMirrorRoot();
 		const fsPath = this.resolveFsPath(targetPath);
 		if (fs.existsSync(fsPath) && !fs.statSync(fsPath).isDirectory()) {
-			throw new Error(
-				`Cannot create directory '${normalizePath(targetPath)}': path is a file.`,
-			);
+			throw new Error(`Cannot create directory '${normalizePath(targetPath)}': path is a file.`);
 		}
 		fs.mkdirSync(fsPath, { recursive: true, mode });
 		this.emit("dir:create", { path: normalizePath(targetPath), mode });
@@ -152,11 +146,7 @@ class VirtualFileSystem extends EventEmitter {
 	 * @param content File content as string or Buffer.
 	 * @param options Optional write behavior (mode, compression).
 	 */
-	public writeFile(
-		targetPath: string,
-		content: string | Buffer,
-		options: WriteFileOptions = {},
-	): void {
+	public writeFile(targetPath: string, content: string | Buffer, options: WriteFileOptions = {}): void {
 		perf.mark("writeFile");
 		this.ensureMirrorRoot();
 		const normalized = normalizePath(targetPath);
@@ -164,16 +154,12 @@ class VirtualFileSystem extends EventEmitter {
 		const parentPath = path.dirname(fsPath);
 		fs.mkdirSync(parentPath, { recursive: true, mode: 0o755 });
 
-		const rawContent = Buffer.isBuffer(content)
-			? content
-			: Buffer.from(content, "utf8");
+		const rawContent = Buffer.isBuffer(content) ? content : Buffer.from(content, "utf8");
 		const shouldCompress = options.compress ?? false;
 		const storedContent = shouldCompress ? gzipSync(rawContent) : rawContent;
 
 		if (fs.existsSync(fsPath) && fs.statSync(fsPath).isDirectory()) {
-			throw new Error(
-				`Cannot write file '${normalized}': path is a directory.`,
-			);
+			throw new Error(`Cannot write file '${normalized}': path is a directory.`);
 		}
 
 		fs.writeFileSync(fsPath, storedContent);
@@ -308,8 +294,7 @@ class VirtualFileSystem extends EventEmitter {
 			throw new Error(`Cannot render tree for '${dirPath}': not a directory.`);
 		}
 
-		const rootLabel =
-			dirPath === "/" ? "/" : path.posix.basename(normalizePath(dirPath));
+		const rootLabel = dirPath === "/" ? "/" : path.posix.basename(normalizePath(dirPath));
 		return this.renderTreeLines(fsPath, rootLabel);
 	}
 
@@ -389,9 +374,7 @@ class VirtualFileSystem extends EventEmitter {
 		if (stats.isDirectory() && !options.recursive) {
 			const entries = fs.readdirSync(fsPath);
 			if (entries.length > 0) {
-				throw new Error(
-					`Directory '${normalized}' is not empty. Use recursive option.`,
-				);
+				throw new Error(`Directory '${normalized}' is not empty. Use recursive option.`);
 			}
 		}
 

@@ -91,13 +91,7 @@ export class HoneyPot {
 	 * @param ssh SshMimic instance (optional).
 	 * @param sftp SftpMimic instance (optional).
 	 */
-	public attach(
-		shell: VirtualShell,
-		vfs: VirtualFileSystem,
-		users: VirtualUserManager,
-		ssh?: SshMimic,
-		sftp?: SftpMimic,
-	): void {
+	public attach(shell: VirtualShell, vfs: VirtualFileSystem, users: VirtualUserManager, ssh?: SshMimic, sftp?: SftpMimic): void {
 		perf.mark("attach");
 		this.attachVirtualShell(shell);
 		this.attachVirtualFileSystem(vfs);
@@ -123,13 +117,10 @@ export class HoneyPot {
 			this.log("VirtualShell", "command", data);
 		});
 
-		(shell as EventEmitter).on(
-			"session:start",
-			(data: Record<string, unknown>) => {
-				this.stats.sessionStarts++;
-				this.log("VirtualShell", "session:start", data);
-			},
-		);
+		(shell as EventEmitter).on("session:start", (data: Record<string, unknown>) => {
+			this.stats.sessionStarts++;
+			this.log("VirtualShell", "session:start", data);
+		});
 	}
 
 	/**
@@ -168,28 +159,19 @@ export class HoneyPot {
 			this.log("VirtualUserManager", "user:add", data);
 		});
 
-		(users as EventEmitter).on(
-			"user:delete",
-			(data: Record<string, unknown>) => {
-				this.stats.userDeleted++;
-				this.log("VirtualUserManager", "user:delete", data);
-			},
-		);
+		(users as EventEmitter).on("user:delete", (data: Record<string, unknown>) => {
+			this.stats.userDeleted++;
+			this.log("VirtualUserManager", "user:delete", data);
+		});
 
-		(users as EventEmitter).on(
-			"session:register",
-			(data: Record<string, unknown>) => {
-				this.log("VirtualUserManager", "session:register", data);
-			},
-		);
+		(users as EventEmitter).on("session:register", (data: Record<string, unknown>) => {
+			this.log("VirtualUserManager", "session:register", data);
+		});
 
-		(users as EventEmitter).on(
-			"session:unregister",
-			(data: Record<string, unknown>) => {
-				this.stats.sessionEnds++;
-				this.log("VirtualUserManager", "session:unregister", data);
-			},
-		);
+		(users as EventEmitter).on("session:unregister", (data: Record<string, unknown>) => {
+			this.stats.sessionEnds++;
+			this.log("VirtualUserManager", "session:unregister", data);
+		});
 	}
 
 	/**
@@ -204,36 +186,27 @@ export class HoneyPot {
 			this.log("SshMimic", "stop", {});
 		});
 
-		(ssh as EventEmitter).on(
-			"auth:success",
-			(data: Record<string, unknown>) => {
-				this.stats.authAttempts++;
-				this.stats.authSuccesses++;
-				this.log("SshMimic", "auth:success", data);
-			},
-		);
+		(ssh as EventEmitter).on("auth:success", (data: Record<string, unknown>) => {
+			this.stats.authAttempts++;
+			this.stats.authSuccesses++;
+			this.log("SshMimic", "auth:success", data);
+		});
 
-		(ssh as EventEmitter).on(
-			"auth:failure",
-			(data: Record<string, unknown>) => {
-				this.stats.authAttempts++;
-				this.stats.authFailures++;
-				this.log("SshMimic", "auth:failure", data);
-			},
-		);
+		(ssh as EventEmitter).on("auth:failure", (data: Record<string, unknown>) => {
+			this.stats.authAttempts++;
+			this.stats.authFailures++;
+			this.log("SshMimic", "auth:failure", data);
+		});
 
 		(ssh as EventEmitter).on("client:connect", () => {
 			this.stats.clientConnects++;
 			this.log("SshMimic", "client:connect", {});
 		});
 
-		(ssh as EventEmitter).on(
-			"client:disconnect",
-			(data: Record<string, unknown>) => {
-				this.stats.clientDisconnects++;
-				this.log("SshMimic", "client:disconnect", data);
-			},
-		);
+		(ssh as EventEmitter).on("client:disconnect", (data: Record<string, unknown>) => {
+			this.stats.clientDisconnects++;
+			this.log("SshMimic", "client:disconnect", data);
+		});
 	}
 
 	/**
@@ -248,36 +221,27 @@ export class HoneyPot {
 			this.log("SftpMimic", "stop", {});
 		});
 
-		(sftp as EventEmitter).on(
-			"auth:success",
-			(data: Record<string, unknown>) => {
-				this.stats.authAttempts++;
-				this.stats.authSuccesses++;
-				this.log("SftpMimic", "auth:success", data);
-			},
-		);
+		(sftp as EventEmitter).on("auth:success", (data: Record<string, unknown>) => {
+			this.stats.authAttempts++;
+			this.stats.authSuccesses++;
+			this.log("SftpMimic", "auth:success", data);
+		});
 
-		(sftp as EventEmitter).on(
-			"auth:failure",
-			(data: Record<string, unknown>) => {
-				this.stats.authAttempts++;
-				this.stats.authFailures++;
-				this.log("SftpMimic", "auth:failure", data);
-			},
-		);
+		(sftp as EventEmitter).on("auth:failure", (data: Record<string, unknown>) => {
+			this.stats.authAttempts++;
+			this.stats.authFailures++;
+			this.log("SftpMimic", "auth:failure", data);
+		});
 
 		(sftp as EventEmitter).on("client:connect", () => {
 			this.stats.clientConnects++;
 			this.log("SftpMimic", "client:connect", {});
 		});
 
-		(sftp as EventEmitter).on(
-			"client:disconnect",
-			(data: Record<string, unknown>) => {
-				this.stats.clientDisconnects++;
-				this.log("SftpMimic", "client:disconnect", data);
-			},
-		);
+		(sftp as EventEmitter).on("client:disconnect", (data: Record<string, unknown>) => {
+			this.stats.clientDisconnects++;
+			this.log("SftpMimic", "client:disconnect", data);
+		});
 	}
 
 	/**
@@ -287,11 +251,7 @@ export class HoneyPot {
 	 * @param type Event type.
 	 * @param details Event-specific data.
 	 */
-	private log(
-		source: string,
-		type: string,
-		details: Record<string, unknown>,
-	): void {
+	private log(source: string, type: string, details: Record<string, unknown>): void {
 		const entry: AuditLogEntry = {
 			timestamp: new Date().toISOString(),
 			type,
@@ -319,10 +279,7 @@ export class HoneyPot {
 	 */
 	public getAuditLog(type?: string, source?: string): AuditLogEntry[] {
 		perf.mark("getAuditLog");
-		return this.auditLog.filter(
-			(entry) =>
-				(!type || entry.type === type) && (!source || entry.source === source),
-		);
+		return this.auditLog.filter((entry) => (!type || entry.type === type) && (!source || entry.source === source));
 	}
 
 	/**
@@ -386,16 +343,11 @@ export class HoneyPot {
 		}> = [];
 
 		// High auth failure rate
-		if (
-			this.stats.authAttempts > 0 &&
-			this.stats.authFailures / this.stats.authAttempts > 0.5
-		) {
+		if (this.stats.authAttempts > 0 && this.stats.authFailures / this.stats.authAttempts > 0.5) {
 			anomalies.push({
 				type: "high_auth_failure_rate",
 				severity: "medium",
-				message: `Auth failure rate: ${(
-					(this.stats.authFailures / this.stats.authAttempts) * 100
-				).toFixed(1)}%`,
+				message: `Auth failure rate: ${((this.stats.authFailures / this.stats.authAttempts) * 100).toFixed(1)}%`,
 			});
 		}
 

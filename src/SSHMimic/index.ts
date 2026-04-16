@@ -75,9 +75,7 @@ class SshMimic extends EventEmitter {
 						const candidateUser = ctx.username || "root";
 						remoteAddress = (ctx as { ip?: string }).ip ?? remoteAddress;
 
-						if (
-							!shell.users.verifyPassword(candidateUser, ctx.password ?? "")
-						) {
+						if (!shell.users.verifyPassword(candidateUser, ctx.password ?? "")) {
 							this.emit("auth:failure", {
 								username: candidateUser,
 								remoteAddress,
@@ -93,10 +91,7 @@ class SshMimic extends EventEmitter {
 						const homePath = `/home/${authUser}`;
 						if (!shell.vfs.exists(homePath)) {
 							shell.vfs.mkdir(homePath, 0o755);
-							shell.vfs.writeFile(
-								`${homePath}/README.txt`,
-								`Welcome to ${shell?.hostname ?? this.shellHostname}`,
-							);
+							shell.vfs.writeFile(`${homePath}/README.txt`, `Welcome to ${shell?.hostname ?? this.shellHostname}`);
 							void shell.vfs.flushMirror();
 						}
 
@@ -124,35 +119,20 @@ class SshMimic extends EventEmitter {
 							acceptPty();
 						});
 
-						session.on(
-							"window-change",
-							(_acceptChange, _rejectChange, info) => {
-								terminalSize.cols = info?.cols ?? terminalSize.cols;
-								terminalSize.rows = info?.rows ?? terminalSize.rows;
-							},
-						);
+						session.on("window-change", (_acceptChange, _rejectChange, info) => {
+							terminalSize.cols = info?.cols ?? terminalSize.cols;
+							terminalSize.rows = info?.rows ?? terminalSize.rows;
+						});
 
 						session.on("shell", (acceptShell) => {
 							const stream = acceptShell();
-							shell?.startInteractiveSession(
-								stream,
-								authUser,
-								sessionId,
-								remoteAddress,
-								terminalSize,
-							);
+							shell?.startInteractiveSession(stream, authUser, sessionId, remoteAddress, terminalSize);
 						});
 
 						session.on("exec", (acceptExec, _rejectExec, info) => {
 							const stream = acceptExec();
 							if (stream) {
-								runExec(
-									stream,
-									info.command.trim(),
-									authUser,
-									shell.hostname,
-									shell,
-								);
+								runExec(stream, info.command.trim(), authUser, shell.hostname, shell);
 							}
 						});
 					});

@@ -9,10 +9,7 @@ function isTruthyEnv(value: string | undefined): boolean {
 }
 
 function nowMs(): number {
-	if (
-		typeof performance !== "undefined" &&
-		typeof performance.now === "function"
-	) {
+	if (typeof performance !== "undefined" && typeof performance.now === "function") {
 		return performance.now();
 	}
 
@@ -20,9 +17,7 @@ function nowMs(): number {
 }
 
 export function isPerfLoggingEnabled(): boolean {
-	return (
-		isTruthyEnv(process.env.DEV_MODE) || isTruthyEnv(process.env.RENDER_PERF)
-	);
+	return isTruthyEnv(process.env.DEV_MODE) || isTruthyEnv(process.env.RENDER_PERF);
 }
 
 export function createPerfLogger(scope: string): PerfLogger {
@@ -53,11 +48,7 @@ export function createPerfLogger(scope: string): PerfLogger {
 	};
 }
 
-export async function withPerf<T>(
-	scope: string,
-	label: string,
-	work: () => Promise<T>,
-): Promise<T> {
+export async function withPerf<T>(scope: string, label: string, work: () => Promise<T>): Promise<T> {
 	const perf = createPerfLogger(scope);
 	if (!perf.enabled) {
 		return work();

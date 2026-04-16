@@ -8,52 +8,24 @@ import type { VirtualShell } from "../VirtualShell";
  * Execute a parsed pipeline, chaining commands and handling redirections.
  * Manages stdout/stderr flow between commands and file I/O.
  */
-export async function executePipeline(
-	pipeline: Pipeline,
-	authUser: string,
-	hostname: string,
-	mode: CommandMode,
-	cwd: string,
-	shell: VirtualShell,
-): Promise<CommandResult> {
+export async function executePipeline(pipeline: Pipeline, authUser: string, hostname: string, mode: CommandMode, cwd: string, shell: VirtualShell): Promise<CommandResult> {
 	if (pipeline.commands.length === 0) {
 		return { exitCode: 0 };
 	}
 
 	if (pipeline.commands.length === 1) {
 		// Single command with possible redirections
-		return executeSingleCommandWithRedirections(
-			pipeline.commands[0] as PipelineCommand,
-			authUser,
-			hostname,
-			mode,
-			cwd,
-			shell,
-		);
+		return executeSingleCommandWithRedirections(pipeline.commands[0] as PipelineCommand, authUser, hostname, mode, cwd, shell);
 	}
 
 	// Multiple commands in a pipeline
-	return executePipelineChain(
-		pipeline.commands as PipelineCommand[],
-		authUser,
-		hostname,
-		mode,
-		cwd,
-		shell,
-	);
+	return executePipelineChain(pipeline.commands as PipelineCommand[], authUser, hostname, mode, cwd, shell);
 }
 
 /**
  * Execute a single command with input/output redirections
  */
-async function executeSingleCommandWithRedirections(
-	cmd: PipelineCommand,
-	authUser: string,
-	hostname: string,
-	mode: CommandMode,
-	cwd: string,
-	shell: VirtualShell,
-): Promise<CommandResult> {
+async function executeSingleCommandWithRedirections(cmd: PipelineCommand, authUser: string, hostname: string, mode: CommandMode, cwd: string, shell: VirtualShell): Promise<CommandResult> {
 	// Prepare input if input file specified
 	let stdin: string | undefined;
 	if (cmd.inputFile) {
@@ -72,15 +44,7 @@ async function executeSingleCommandWithRedirections(
 	const rawInput = [cmd.name, ...cmd.args].join(" ");
 
 	// Run the command with potential input
-	const result = await runSingleCommand(
-		rawInput,
-		authUser,
-		hostname,
-		mode,
-		cwd,
-		shell,
-		stdin,
-	);
+	const result = await runSingleCommand(rawInput, authUser, hostname, mode, cwd, shell, stdin);
 
 	// Handle output redirection
 	if (cmd.outputFile) {
@@ -113,14 +77,7 @@ async function executeSingleCommandWithRedirections(
 /**
  * Execute a chain of commands connected by pipes
  */
-async function executePipelineChain(
-	commands: PipelineCommand[],
-	authUser: string,
-	hostname: string,
-	mode: CommandMode,
-	cwd: string,
-	shell: VirtualShell,
-): Promise<CommandResult> {
+async function executePipelineChain(commands: PipelineCommand[], authUser: string, hostname: string, mode: CommandMode, cwd: string, shell: VirtualShell): Promise<CommandResult> {
 	let currentOutput = "";
 	let exitCode = 0;
 
@@ -145,15 +102,7 @@ async function executePipelineChain(
 
 		// Create a modified context that might accept stdin
 		// For now, we'll append input as an additional arg for commands that support it
-		const result = await runSingleCommand(
-			rawInput,
-			authUser,
-			hostname,
-			mode,
-			cwd,
-			shell,
-			currentOutput,
-		);
+		const result = await runSingleCommand(rawInput, authUser, hostname, mode, cwd, shell, currentOutput);
 
 		exitCode = result.exitCode ?? 0;
 

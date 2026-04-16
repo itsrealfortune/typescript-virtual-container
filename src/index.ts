@@ -34,15 +34,7 @@ export type {
 	WriteFileOptions,
 } from "./types/vfs";
 
-export {
-	HoneyPot,
-	SshClient,
-	VirtualFileSystem,
-	SftpMimic as VirtualSftpServer,
-	VirtualShell,
-	SshMimic as VirtualSshServer,
-	VirtualUserManager,
-};
+export { HoneyPot, SshClient, VirtualFileSystem, SftpMimic as VirtualSftpServer, VirtualShell, SshMimic as VirtualSshServer, VirtualUserManager };
 
 export {
 	getArg,

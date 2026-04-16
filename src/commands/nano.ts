@@ -13,9 +13,7 @@ export const nanoCommand: ShellModule = {
 
 		const targetPath = resolvePath(cwd, fileArg);
 		assertPathAccess(authUser, targetPath, "nano");
-		const initialContent = shell.vfs.exists(targetPath)
-			? shell.vfs.readFile(targetPath)
-			: "";
+		const initialContent = shell.vfs.exists(targetPath) ? shell.vfs.readFile(targetPath) : "";
 		const safeName = path.posix.basename(targetPath) || "buffer";
 		const tempPath = `/tmp/sshmimic-nano-${Date.now()}-${safeName}.tmp`;
 

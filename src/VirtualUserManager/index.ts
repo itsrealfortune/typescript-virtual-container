@@ -31,10 +31,7 @@ export interface VirtualActiveSession {
 
 function resolveFastPasswordHash(): boolean {
 	const configured = process.env.SSH_MIMIC_FAST_PASSWORD_HASH;
-	return (
-		!!configured &&
-		!["0", "false", "no", "off"].includes(configured.toLowerCase())
-	);
+	return !!configured && !["0", "false", "no", "off"].includes(configured.toLowerCase());
 }
 
 const perf: PerfLogger = createPerfLogger("VirtualUserManager");
@@ -85,10 +82,7 @@ export class VirtualUserManager extends EventEmitter {
 
 		let changed = false;
 		if (!this.users.has("root")) {
-			this.users.set(
-				"root",
-				this.createRecord("root", this.defaultRootPassword),
-			);
+			this.users.set("root", this.createRecord("root", this.defaultRootPassword));
 			changed = true;
 		}
 
@@ -105,10 +99,7 @@ export class VirtualUserManager extends EventEmitter {
 			const homePath = `/home/${currentUser}`;
 			if (!this.vfs.exists(homePath)) {
 				this.vfs.mkdir(homePath, 0o755);
-				this.vfs.writeFile(
-					`${homePath}/README.txt`,
-					`Welcome to the virtual environment, ${currentUser}`,
-				);
+				this.vfs.writeFile(`${homePath}/README.txt`, `Welcome to the virtual environment, ${currentUser}`);
 			}
 		}
 
@@ -124,10 +115,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param username Target username.
 	 * @param maxBytes Quota ceiling in bytes.
 	 */
-	public async setQuotaBytes(
-		username: string,
-		maxBytes: number,
-	): Promise<void> {
+	public async setQuotaBytes(username: string, maxBytes: number): Promise<void> {
 		perf.mark("setQuotaBytes");
 		this.validateUsername(username);
 		if (!this.users.has(username)) {
@@ -190,11 +178,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param targetPath Target file path.
 	 * @param nextContent New file content.
 	 */
-	public assertWriteWithinQuota(
-		username: string,
-		targetPath: string,
-		nextContent: string | Buffer,
-	): void {
+	public assertWriteWithinQuota(username: string, targetPath: string, nextContent: string | Buffer): void {
 		perf.mark("assertWriteWithinQuota");
 		const quota = this.quotas.get(username);
 		if (quota === undefined) {
@@ -203,8 +187,7 @@ export class VirtualUserManager extends EventEmitter {
 
 		const normalizedPath = normalizeVfsPath(targetPath);
 		const homePath = normalizeVfsPath(`/home/${username}`);
-		const inUserHome =
-			normalizedPath === homePath || normalizedPath.startsWith(`${homePath}/`);
+		const inUserHome = normalizedPath === homePath || normalizedPath.startsWith(`${homePath}/`);
 		if (!inUserHome) {
 			return;
 		}
@@ -218,15 +201,11 @@ export class VirtualUserManager extends EventEmitter {
 			}
 		}
 
-		const incomingSize = Buffer.isBuffer(nextContent)
-			? nextContent.length
-			: Buffer.byteLength(nextContent, "utf8");
+		const incomingSize = Buffer.isBuffer(nextContent) ? nextContent.length : Buffer.byteLength(nextContent, "utf8");
 		const projectedUsage = currentUsage - existingSize + incomingSize;
 
 		if (projectedUsage > quota) {
-			throw new Error(
-				`quota exceeded for '${username}': ${projectedUsage}/${quota} bytes`,
-			);
+			throw new Error(`quota exceeded for '${username}': ${projectedUsage}/${quota} bytes`);
 		}
 	}
 
@@ -270,10 +249,7 @@ export class VirtualUserManager extends EventEmitter {
 		const homePath = `/home/${username}`;
 		if (!this.vfs.exists(homePath)) {
 			this.vfs.mkdir(homePath, 0o755);
-			this.vfs.writeFile(
-				`${homePath}/README.txt`,
-				`Welcome to the virtual environment, ${username}`,
-			);
+			this.vfs.writeFile(`${homePath}/README.txt`, `Welcome to the virtual environment, ${username}`);
 		}
 		await this.persist();
 		this.emit("user:add", { username });
@@ -371,10 +347,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param remoteAddress Session source address.
 	 * @returns Registered session descriptor.
 	 */
-	public registerSession(
-		username: string,
-		remoteAddress: string,
-	): VirtualActiveSession {
+	public registerSession(username: string, remoteAddress: string): VirtualActiveSession {
 		perf.mark("registerSession");
 		const session: VirtualActiveSession = {
 			id: randomUUID(),
@@ -421,11 +394,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param username New username value.
 	 * @param remoteAddress New remote address value.
 	 */
-	public updateSession(
-		sessionId: string | null | undefined,
-		username: string,
-		remoteAddress: string,
-	): void {
+	public updateSession(sessionId: string | null | undefined, username: string, remoteAddress: string): void {
 		perf.mark("updateSession");
 		if (!sessionId) {
 			return;
@@ -450,9 +419,7 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public listActiveSessions(): VirtualActiveSession[] {
 		perf.mark("listActiveSessions");
-		return Array.from(this.activeSessions.values()).sort((left, right) =>
-			left.startedAt.localeCompare(right.startedAt),
-		);
+		return Array.from(this.activeSessions.values()).sort((left, right) => left.startedAt.localeCompare(right.startedAt));
 	}
 
 	private loadFromVfs(): void {
@@ -530,9 +497,7 @@ export class VirtualUserManager extends EventEmitter {
 
 		const authContent = Array.from(this.users.values())
 			.sort((left, right) => left.username.localeCompare(right.username))
-			.map((record) =>
-				[record.username, record.salt, record.passwordHash].join(":"),
-			)
+			.map((record) => [record.username, record.salt, record.passwordHash].join(":"))
 			.join("\n");
 		const sudoersContent = Array.from(this.sudoers.values()).sort().join("\n");
 		const quotasContent = Array.from(this.quotas.entries())
@@ -541,35 +506,16 @@ export class VirtualUserManager extends EventEmitter {
 			.join("\n");
 
 		let changed = false;
-		changed =
-			this.writeIfChanged(
-				this.usersPath,
-				authContent.length > 0 ? `${authContent}\n` : "",
-				0o600,
-			) || changed;
-		changed =
-			this.writeIfChanged(
-				this.sudoersPath,
-				sudoersContent.length > 0 ? `${sudoersContent}\n` : "",
-				0o600,
-			) || changed;
-		changed =
-			this.writeIfChanged(
-				this.quotasPath,
-				quotasContent.length > 0 ? `${quotasContent}\n` : "",
-				0o600,
-			) || changed;
+		changed = this.writeIfChanged(this.usersPath, authContent.length > 0 ? `${authContent}\n` : "", 0o600) || changed;
+		changed = this.writeIfChanged(this.sudoersPath, sudoersContent.length > 0 ? `${sudoersContent}\n` : "", 0o600) || changed;
+		changed = this.writeIfChanged(this.quotasPath, quotasContent.length > 0 ? `${quotasContent}\n` : "", 0o600) || changed;
 
 		if (changed) {
 			await this.vfs.flushMirror();
 		}
 	}
 
-	private writeIfChanged(
-		targetPath: string,
-		content: string,
-		mode: number,
-	): boolean {
+	private writeIfChanged(targetPath: string, content: string, mode: number): boolean {
 		if (this.vfs.exists(targetPath)) {
 			const existing = this.vfs.readFile(targetPath);
 			if (existing === content) {

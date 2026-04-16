@@ -38,9 +38,7 @@ function resolveRootPassword(): string {
 
 	const generated = randomBytes(18).toString("base64url");
 	cachedRootPassword = generated;
-	console.warn(
-		`[ssh-mimic] SSH_MIMIC_ROOT_PASSWORD missing; generated ephemeral root password: ${generated}`,
-	);
+	console.warn(`[ssh-mimic] SSH_MIMIC_ROOT_PASSWORD missing; generated ephemeral root password: ${generated}`);
 	return generated;
 }
 
@@ -74,22 +72,14 @@ class VirtualShell extends EventEmitter {
 	 * @param properties Customizable properties shown in `uname -a` and similar commands.
 	 * @param basePath Optional base path for the virtual filesystem (defaults to process.cwd()).
 	 */
-	constructor(
-		hostname: string,
-		properties?: ShellProperties,
-		basePath?: string,
-	) {
+	constructor(hostname: string, properties?: ShellProperties, basePath?: string) {
 		super();
 		perf.mark("constructor");
 		this.hostname = hostname;
 		this.properties = properties || defaultShellProperties;
 		this.basePath = basePath || ".";
 		this.vfs = new VirtualFileSystem(this.basePath);
-		this.users = new VirtualUserManager(
-			this.vfs,
-			resolveRootPassword(),
-			resolveAutoSudoForNewUsers(),
-		);
+		this.users = new VirtualUserManager(this.vfs, resolveRootPassword(), resolveAutoSudoForNewUsers());
 
 		// Store references to avoid TypeScript "used before assigned" errors
 		const vfs = this.vfs;
@@ -119,11 +109,7 @@ class VirtualShell extends EventEmitter {
 	 * @param params List of parameter names for help text (no validation).
 	 * @param callback Function invoked with command context on execution.
 	 */
-	addCommand(
-		name: string,
-		params: string[],
-		callback: (ctx: CommandContext) => CommandResult | Promise<CommandResult>,
-	): void {
+	addCommand(name: string, params: string[], callback: (ctx: CommandContext) => CommandResult | Promise<CommandResult>): void {
 		const normalized = name.trim().toLowerCase();
 		if (normalized.length === 0 || /\s/.test(normalized)) {
 			throw new Error("Command name must be non-empty and contain no spaces");
@@ -154,26 +140,11 @@ class VirtualShell extends EventEmitter {
 	 * @param remoteAddress The address of the remote client.
 	 */
 
-	startInteractiveSession(
-		stream: ShellStream,
-		authUser: string,
-		sessionId: string | null,
-		remoteAddress: string,
-		terminalSize: { cols: number; rows: number },
-	): void {
+	startInteractiveSession(stream: ShellStream, authUser: string, sessionId: string | null, remoteAddress: string, terminalSize: { cols: number; rows: number }): void {
 		perf.mark("startInteractiveSession");
 		// Interactive shell logic
 		this.emit("session:start", { user: authUser, sessionId, remoteAddress });
-		startShell(
-			this.properties,
-			stream,
-			authUser,
-			this.hostname,
-			sessionId,
-			remoteAddress,
-			terminalSize,
-			this,
-		);
+		startShell(this.properties, stream, authUser, this.hostname, sessionId, remoteAddress, terminalSize, this);
 	}
 
 	/**
@@ -210,11 +181,7 @@ class VirtualShell extends EventEmitter {
 	 * @param targetPath Destination path.
 	 * @param content File content.
 	 */
-	public writeFileAsUser(
-		authUser: string,
-		targetPath: string,
-		content: string | Buffer,
-	): void {
+	public writeFileAsUser(authUser: string, targetPath: string, content: string | Buffer): void {
 		perf.mark("writeFileAsUser");
 		this.users.assertWriteWithinQuota(authUser, targetPath, content);
 		this.vfs.writeFile(targetPath, content);

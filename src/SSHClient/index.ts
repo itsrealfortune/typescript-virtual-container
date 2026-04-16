@@ -52,14 +52,7 @@ export class SshClient {
 			throw new Error("SSH client not started");
 		}
 
-		const result = runCommand(
-			command,
-			this.username,
-			hostname,
-			"exec",
-			this.currentCwd,
-			this.shell,
-		);
+		const result = runCommand(command, this.username, hostname, "exec", this.currentCwd, this.shell);
 
 		// Handle async results
 		if (result instanceof Promise) {

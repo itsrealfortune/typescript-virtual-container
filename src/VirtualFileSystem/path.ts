@@ -6,9 +6,7 @@ export function normalizePath(rawPath: string): string {
 		return "/";
 	}
 
-	const normalized = path.posix.normalize(
-		rawPath.startsWith("/") ? rawPath : `/${rawPath}`,
-	);
+	const normalized = path.posix.normalize(rawPath.startsWith("/") ? rawPath : `/${rawPath}`);
 	return normalized === "" ? "/" : normalized;
 }
 
@@ -16,10 +14,7 @@ export function splitPath(normalizedPath: string): string[] {
 	return normalizedPath.split("/").filter(Boolean);
 }
 
-export function getNode(
-	root: InternalDirectoryNode,
-	targetPath: string,
-): InternalNode {
+export function getNode(root: InternalDirectoryNode, targetPath: string): InternalNode {
 	const normalized = normalizePath(targetPath);
 	if (normalized === "/") {
 		return root;
@@ -43,12 +38,7 @@ export function getNode(
 	return current;
 }
 
-export function getParentDirectory(
-	root: InternalDirectoryNode,
-	targetPath: string,
-	createIfMissing: boolean,
-	createPath: (pathToCreate: string) => void,
-): { parent: InternalDirectoryNode; name: string } {
+export function getParentDirectory(root: InternalDirectoryNode, targetPath: string, createIfMissing: boolean, createPath: (pathToCreate: string) => void): { parent: InternalDirectoryNode; name: string } {
 	const normalized = normalizePath(targetPath);
 	if (normalized === "/") {
 		throw new Error("Root path has no parent directory.");

@@ -16,10 +16,7 @@ export const suCommand: ShellModule = {
 			return { stderr: "su: permission denied", exitCode: 1 };
 		}
 
-		if (
-			!users.verifyPassword(targetUser, getArg(args, 1) ?? "") &&
-			authUser !== "root"
-		) {
+		if (!users.verifyPassword(targetUser, getArg(args, 1) ?? "") && authUser !== "root") {
 			return { stderr: "su: authentication failure", exitCode: 1 };
 		}
 

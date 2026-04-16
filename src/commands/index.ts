@@ -1,10 +1,5 @@
 import type { VirtualShell } from "../VirtualShell";
-import type {
-	CommandContext,
-	CommandMode,
-	CommandResult,
-	ShellModule,
-} from "../types/commands";
+import type { CommandContext, CommandMode, CommandResult, ShellModule } from "../types/commands";
 import { adduserCommand } from "./adduser";
 import { catCommand } from "./cat";
 import { cdCommand } from "./cd";
@@ -72,9 +67,7 @@ const BASE_COMMANDS: ShellModule[] = [
 
 const customCommands: ShellModule[] = [];
 
-const helpCommand = createHelpCommand(() =>
-	getCommandModules().map((cmd) => cmd.name),
-);
+const helpCommand = createHelpCommand(() => getCommandModules().map((cmd) => cmd.name));
 
 const commandRegistry = new Map<string, ShellModule>();
 let cachedCommandNames: string[] | null = null;
@@ -109,9 +102,7 @@ export function registerCommand(module: ShellModule): void {
 
 	const names = [normalized.name, ...(normalized.aliases ?? [])];
 	if (names.some((name) => name.length === 0 || /\s/.test(name))) {
-		throw new Error(
-			"Command names and aliases must be non-empty and contain no spaces",
-		);
+		throw new Error("Command names and aliases must be non-empty and contain no spaces");
 	}
 
 	for (const name of names) {
@@ -124,11 +115,7 @@ export function registerCommand(module: ShellModule): void {
 	buildCache();
 }
 
-export function createCustomCommand(
-	name: string,
-	params: string[],
-	run: (ctx: CommandContext) => CommandResult | Promise<CommandResult>,
-): ShellModule {
+export function createCustomCommand(name: string, params: string[], run: (ctx: CommandContext) => CommandResult | Promise<CommandResult>): ShellModule {
 	return {
 		name,
 		params,
@@ -202,15 +189,7 @@ function parseInput(rawInput: string): { commandName: string; args: string[] } {
 
 // Internal async function for pipeline execution
 
-export async function runCommand(
-	rawInput: string,
-	authUser: string,
-	hostname: string,
-	mode: CommandMode,
-	cwd: string,
-	shell: VirtualShell,
-	stdin?: string,
-): Promise<CommandResult> {
+export async function runCommand(rawInput: string, authUser: string, hostname: string, mode: CommandMode, cwd: string, shell: VirtualShell, stdin?: string): Promise<CommandResult> {
 	const trimmed = rawInput.trim();
 
 	if (trimmed.length === 0) {
@@ -230,17 +209,9 @@ export async function runCommand(
 		}
 
 		try {
-			return await executePipeline(
-				pipeline,
-				authUser,
-				hostname,
-				mode,
-				cwd,
-				shell,
-			);
+			return await executePipeline(pipeline, authUser, hostname, mode, cwd, shell);
 		} catch (error: unknown) {
-			const message =
-				error instanceof Error ? error.message : "Pipeline execution failed";
+			const message = error instanceof Error ? error.message : "Pipeline execution failed";
 			return { stderr: message, exitCode: 1 };
 		}
 	}

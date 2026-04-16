@@ -4,13 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ShellModule } from "../types/commands";
 import { ifFlag, parseArgs } from "./command-helpers";
-import {
-	assertPathAccess,
-	normalizeTerminalOutput,
-	resolvePath,
-	runHostCommand,
-	stripUrlFilename,
-} from "./helpers";
+import { assertPathAccess, normalizeTerminalOutput, resolvePath, runHostCommand, stripUrlFilename } from "./helpers";
 
 function runHostWget(args: string[]): Promise<{
 	stdout: string;
@@ -59,10 +53,7 @@ function runHostWget(args: string[]): Promise<{
 		});
 
 		childProcess.on("error", (error) => {
-			const errorCode =
-				error instanceof Error && "code" in error
-					? String((error as NodeJS.ErrnoException).code ?? "")
-					: "";
+			const errorCode = error instanceof Error && "code" in error ? String((error as NodeJS.ErrnoException).code ?? "") : "";
 			resolve({
 				stdout: "",
 				stderr: `wget: ${error.message}`,
@@ -87,12 +78,7 @@ export const wgetCommand: ShellModule = {
 		const { flagsWithValues, positionals } = parseArgs(args, {
 			flagsWithValue: ["-o", "-O", "--output", "--output-document"],
 		});
-		const outputPath =
-			flagsWithValues.get("-o") ||
-			flagsWithValues.get("-O") ||
-			flagsWithValues.get("--output") ||
-			flagsWithValues.get("--output-document") ||
-			null;
+		const outputPath = flagsWithValues.get("-o") || flagsWithValues.get("-O") || flagsWithValues.get("--output") || flagsWithValues.get("--output-document") || null;
 		const url = positionals[0];
 
 		if (!url) {
@@ -105,9 +91,7 @@ export const wgetCommand: ShellModule = {
 			const result = await runHostWget(args);
 			return {
 				stdout: normalizeTerminalOutput(result.stdout),
-				stderr: result.stderr
-					? normalizeTerminalOutput(result.stderr)
-					: undefined,
+				stderr: result.stderr ? normalizeTerminalOutput(result.stderr) : undefined,
 				exitCode: result.exitCode,
 			};
 		}
@@ -121,9 +105,7 @@ export const wgetCommand: ShellModule = {
 
 			if (result.exitCode !== 0) {
 				return {
-					stderr: normalizeTerminalOutput(
-						result.stderr || `wget: exited with code ${result.exitCode}`,
-					),
+					stderr: normalizeTerminalOutput(result.stderr || `wget: exited with code ${result.exitCode}`),
 					exitCode: result.exitCode,
 				};
 			}

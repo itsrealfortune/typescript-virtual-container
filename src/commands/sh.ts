@@ -36,9 +36,7 @@ export const shCommand: ShellModule = {
 				command = command.replaceAll("$@", scriptArgs.join(" "));
 
 				// Execute the command
-				const result = await Promise.resolve(
-					runCommand(command, authUser, hostname, mode, cwd, ctx.shell),
-				);
+				const result = await Promise.resolve(runCommand(command, authUser, hostname, mode, cwd, ctx.shell));
 
 				if (result.stdout) {
 					output += `${result.stdout}\n`;

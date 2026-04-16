@@ -14,8 +14,7 @@ export const echoCommand: ShellModule = {
 	run: ({ args, authUser, stdin }) => {
 		const { flags, positionals } = parseArgs(args, { flags: ["-n"] });
 		const newline = !flags.has("-n");
-		const rawText =
-			positionals.length > 0 ? positionals.join(" ") : (stdin ?? "");
+		const rawText = positionals.length > 0 ? positionals.join(" ") : (stdin ?? "");
 		const env = getAllEnvVars(authUser);
 		const text = expandEnvVars(rawText, env);
 

@@ -7,9 +7,7 @@ export const whoCommand: ShellModule = {
 	run: ({ shell }) => {
 		const lines = shell.users.listActiveSessions().map((session) => {
 			const loginAt = new Date(session.startedAt);
-			const displayDate = Number.isNaN(loginAt.getTime())
-				? session.startedAt
-				: formatLoginDate(loginAt);
+			const displayDate = Number.isNaN(loginAt.getTime()) ? session.startedAt : formatLoginDate(loginAt);
 			return `${session.username} ${session.tty} ${displayDate} (${session.remoteAddress || "unknown"})`;
 		});
 

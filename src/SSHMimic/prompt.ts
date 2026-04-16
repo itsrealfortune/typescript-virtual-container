@@ -1,8 +1,4 @@
-export function buildPrompt(
-	user: string,
-	host: string,
-	cwdName: string,
-): string {
+export function buildPrompt(user: string, host: string, cwdName: string): string {
 	const isRoot = user === "root";
 	const colorUser = isRoot ? "\u001b[31;1m" : "\u001b[35;1m";
 	const colorWhite = "\u001b[37;1m";

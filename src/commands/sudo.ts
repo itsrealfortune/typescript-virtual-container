@@ -13,8 +13,7 @@ function parseSudoArgs(args: string[]): {
 	});
 
 	const loginShell = flags.has("-i");
-	const targetUser =
-		flagsWithValues.get("-u") || flagsWithValues.get("--user") || "root";
+	const targetUser = flagsWithValues.get("-u") || flagsWithValues.get("--user") || "root";
 	const commandLine = positionals.length > 0 ? positionals.join(" ") : null;
 
 	return { targetUser, loginShell, commandLine };
@@ -45,14 +44,7 @@ export const sudoCommand: ShellModule = {
 				return { stderr: "sudo: missing command", exitCode: 1 };
 			}
 
-			return runCommand(
-				commandLine,
-				effectiveUser,
-				hostname,
-				mode,
-				loginShell ? `/home/${effectiveUser}` : cwd,
-				shell,
-			);
+			return runCommand(commandLine, effectiveUser, hostname, mode, loginShell ? `/home/${effectiveUser}` : cwd, shell);
 		}
 
 		return {
