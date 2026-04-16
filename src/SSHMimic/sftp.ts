@@ -181,6 +181,14 @@ export class SftpMimic {
 	public async start(): Promise<number> {
 		const privateKey = loadOrCreateHostKey();
 
+		// Ensure VirtualShell is fully initialized before accepting connections
+		if (this.shell) {
+			await this.shell.ensureInitialized();
+		} else {
+			// If using standalone VFS+Users, initialize users now
+			await this.users.initialize();
+		}
+
 		this.server = new SshServer(
 			{
 				hostKeys: [privateKey],

@@ -47,6 +47,9 @@ class SshMimic {
 		const shell = this.shell;
 		const privateKey = loadOrCreateHostKey();
 
+		// Ensure VirtualShell is fully initialized before accepting connections
+		await shell.ensureInitialized();
+
 		this.server = new SshServer(
 			{
 				hostKeys: [privateKey],

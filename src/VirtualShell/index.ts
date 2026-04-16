@@ -52,6 +52,7 @@ class VirtualShell {
 	users: VirtualUserManager;
 	hostname: string;
 	properties: ShellProperties;
+	private initialized: Promise<void>;
 
 	/**
 	 * Creates a new virtual shell instance.
@@ -74,14 +75,24 @@ class VirtualShell {
 			resolveRootPassword(),
 			resolveAutoSudoForNewUsers(),
 		);
-		this.vfs.restoreMirror().then(() => {
-			this.users = new VirtualUserManager(
-				this.vfs,
-				resolveRootPassword(),
-				resolveAutoSudoForNewUsers(),
-			);
-			this.users.initialize();
-		});
+
+		// Store references to avoid TypeScript "used before assigned" errors
+		const vfs = this.vfs;
+		const users = this.users;
+
+		// Initialize both VFS mirror and users, ensuring all is ready before auth
+		this.initialized = (async () => {
+			await vfs.restoreMirror();
+			await users.initialize();
+		})();
+	}
+
+	/**
+	 * Ensures initialization is complete before allowing operations.
+	 * Call this before any authentication or command execution.
+	 */
+	public async ensureInitialized(): Promise<void> {
+		await this.initialized;
 	}
 
 	/**

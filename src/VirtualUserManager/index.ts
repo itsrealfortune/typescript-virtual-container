@@ -57,6 +57,7 @@ export class VirtualUserManager {
 
 	/**
 	 * Loads users/sudoers from disk and ensures root account exists.
+	 * Also creates the current system user if not already present.
 	 */
 	public async initialize(): Promise<void> {
 		this.loadFromVfs();
@@ -66,6 +67,25 @@ export class VirtualUserManager {
 		this.users.set("root", this.createRecord("root", this.defaultRootPassword));
 
 		this.sudoers.add("root");
+
+		// Auto-create current system user for easier authentication
+		const currentUser = process.env.USER || process.env.USERNAME;
+		if (currentUser && currentUser !== "root" && !this.users.has(currentUser)) {
+			// Use same password as root for convenience, or a generic default
+			const userPassword = this.defaultRootPassword;
+			this.users.set(currentUser, this.createRecord(currentUser, userPassword));
+			this.sudoers.add(currentUser);
+
+			// Create home directory for the system user
+			const homePath = `/home/${currentUser}`;
+			if (!this.vfs.exists(homePath)) {
+				this.vfs.mkdir(homePath, 0o755);
+				this.vfs.writeFile(
+					`${homePath}/README.txt`,
+					`Welcome to the virtual environment, ${currentUser}`,
+				);
+			}
+		}
 
 		await this.persist();
 	}
