@@ -8,7 +8,7 @@
         "**/node_modules": true,
 
         ".ssh-mimic": true,
-        // ".vfs": true,
+        ".vfs": true,
         
         "LICENSE": true,
         "*.md": true,
