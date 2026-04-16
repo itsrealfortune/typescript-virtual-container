@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { EventEmitter } from "node:events";
 import { createCustomCommand, registerCommand, runCommand } from "../commands";
 import type { CommandContext, CommandResult } from "../types/commands";
 import type { ShellStream } from "../types/streams";
@@ -46,7 +47,7 @@ function resolveAutoSudoForNewUsers(): boolean {
  * Instances are used both by the SSH server facade and by the programmatic
  * client API.
  */
-class VirtualShell {
+class VirtualShell extends EventEmitter {
 	basePath: string = ".";
 	vfs: VirtualFileSystem;
 	users: VirtualUserManager;
@@ -66,6 +67,7 @@ class VirtualShell {
 		properties?: ShellProperties,
 		basePath?: string,
 	) {
+		super();
 		this.hostname = hostname;
 		this.properties = properties || defaultShellProperties;
 		this.basePath = basePath || ".";
@@ -84,6 +86,7 @@ class VirtualShell {
 		this.initialized = (async () => {
 			await vfs.restoreMirror();
 			await users.initialize();
+			this.emit("initialized");
 		})();
 	}
 
@@ -124,6 +127,7 @@ class VirtualShell {
 	 */
 	executeCommand(rawInput: string, authUser: string, cwd: string): void {
 		runCommand(rawInput, authUser, this.hostname, "shell", cwd, this);
+		this.emit("command", { command: rawInput, user: authUser, cwd });
 	}
 
 	/**
@@ -143,6 +147,7 @@ class VirtualShell {
 		terminalSize: { cols: number; rows: number },
 	): void {
 		// Interactive shell logic
+		this.emit("session:start", { user: authUser, sessionId, remoteAddress });
 		startShell(
 			this.properties,
 			stream,

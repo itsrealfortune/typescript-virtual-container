@@ -1,3 +1,4 @@
+import { EventEmitter } from "node:events";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { gunzipSync, gzipSync } from "node:zlib";
@@ -15,7 +16,7 @@ import { normalizePath } from "./path";
  * {@link VirtualFileSystem.restoreMirror} on startup and
  * {@link VirtualFileSystem.flushMirror} to persist pending changes.
  */
-class VirtualFileSystem {
+class VirtualFileSystem extends EventEmitter {
 	private readonly mirrorRoot: string;
 
 	private ensureMirrorRoot(): void {
@@ -93,6 +94,7 @@ class VirtualFileSystem {
 	 * @param baseDir Base directory used to resolve mirror archive location.
 	 */
 	constructor(baseDir: string = process.cwd()) {
+		super();
 		this.mirrorRoot = path.resolve(baseDir, ".vfs", "mirror");
 	}
 
@@ -112,6 +114,7 @@ class VirtualFileSystem {
 	 */
 	public async flushMirror(): Promise<void> {
 		this.ensureMirrorRoot();
+		this.emit("mirror:flush");
 	}
 
 	/**
@@ -129,6 +132,7 @@ class VirtualFileSystem {
 			);
 		}
 		fs.mkdirSync(fsPath, { recursive: true, mode });
+		this.emit("dir:create", { path: normalizePath(targetPath), mode });
 	}
 
 	/**
@@ -165,6 +169,7 @@ class VirtualFileSystem {
 
 		fs.writeFileSync(fsPath, storedContent);
 		fs.chmodSync(fsPath, options.mode ?? 0o644);
+		this.emit("file:write", { path: normalized, size: storedContent.length });
 	}
 
 	/**
@@ -184,6 +189,8 @@ class VirtualFileSystem {
 
 		const stored = fs.readFileSync(fsPath);
 		const raw = this.detectGzipFile(fsPath) ? gunzipSync(stored) : stored;
+		const normalized = normalizePath(targetPath);
+		this.emit("file:read", { path: normalized, size: raw.length });
 		return raw.toString("utf8");
 	}
 

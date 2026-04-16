@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/style/useNamingConvention: const as enum */
+import { EventEmitter } from "node:events";
 import * as path from "node:path";
 import type { AuthenticationType, KeyboardAuthContext } from "ssh2";
 import { Server as SshServer } from "ssh2";
@@ -135,7 +136,7 @@ export interface SftpMimicOptions {
 	users?: VirtualUserManager;
 }
 
-export class SftpMimic {
+export class SftpMimic extends EventEmitter {
 	port: number;
 	server: SshServer | null;
 	private readonly hostname: string;
@@ -152,6 +153,7 @@ export class SftpMimic {
 		vfs,
 		users,
 	}: SftpMimicOptions) {
+		super();
 		this.port = port;
 		this.server = null;
 		this.hostname = hostname;
@@ -206,6 +208,8 @@ export class SftpMimic {
 				let sessionId: string | null = null;
 				let remoteAddress = "unknown";
 
+				this.emit("client:connect");
+
 				// Add error handling for the client
 				client.on("error", (error: unknown) => {
 					console.error(`[SFTP] Client error:`, error);
@@ -246,11 +250,16 @@ export class SftpMimic {
 						if (
 							!this.getUsers().verifyPassword(candidateUser, ctx.password ?? "")
 						) {
+							this.emit("auth:failure", {
+								username: candidateUser,
+								remoteAddress,
+							});
 							ctx.reject(allowedAuthMethods);
 							return;
 						}
 
 						acceptSession(candidateUser);
+						this.emit("auth:success", { username: authUser, remoteAddress });
 						ctx.accept();
 						return;
 					}
@@ -262,11 +271,19 @@ export class SftpMimic {
 							(answers) => {
 								const password = answers[0] ?? "";
 								if (!this.getUsers().verifyPassword(candidateUser, password)) {
+									this.emit("auth:failure", {
+										username: candidateUser,
+										remoteAddress,
+									});
 									keyboardCtx.reject(allowedAuthMethods);
 									return;
 								}
 
 								acceptSession(candidateUser);
+								this.emit("auth:success", {
+									username: authUser,
+									remoteAddress,
+								});
 								keyboardCtx.accept();
 							},
 						);
@@ -278,6 +295,7 @@ export class SftpMimic {
 
 				client.on("close", () => {
 					this.getUsers().unregisterSession(sessionId);
+					this.emit("client:disconnect", { user: authUser });
 					sessionId = null;
 				});
 
@@ -311,6 +329,7 @@ export class SftpMimic {
 						? address.port
 						: this.port;
 				console.log(`SFTP Mimic listening on port ${actualPort}`);
+				this.emit("start", { port: actualPort });
 				resolve(actualPort as number);
 			});
 		});
@@ -320,6 +339,7 @@ export class SftpMimic {
 		if (this.server) {
 			this.server.close(() => {
 				console.log("SFTP Mimic stopped");
+				this.emit("stop");
 			});
 		}
 	}

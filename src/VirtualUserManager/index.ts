@@ -1,4 +1,5 @@
 import { randomBytes, randomUUID, scryptSync } from "node:crypto";
+import { EventEmitter } from "node:events";
 import * as path from "node:path";
 import type VirtualFileSystem from "../VirtualFileSystem";
 
@@ -31,7 +32,7 @@ export interface VirtualActiveSession {
  *
  * Passwords are hashed with scrypt and stored in the backing virtual filesystem.
  */
-export class VirtualUserManager {
+export class VirtualUserManager extends EventEmitter {
 	private readonly usersPath = "/virtual-env-js/.auth/htpasswd";
 	private readonly sudoersPath = "/virtual-env-js/.auth/sudoers";
 	private readonly quotasPath = "/virtual-env-js/.auth/quotas";
@@ -53,7 +54,9 @@ export class VirtualUserManager {
 		private readonly vfs: VirtualFileSystem,
 		private readonly defaultRootPassword: string = "root",
 		private readonly autoSudoForNewUsers: boolean = true,
-	) {}
+	) {
+		super();
+	}
 
 	/**
 	 * Loads users/sudoers from disk and ensures root account exists.
@@ -88,6 +91,7 @@ export class VirtualUserManager {
 		}
 
 		await this.persist();
+		this.emit("initialized");
 	}
 
 	/**
@@ -240,6 +244,7 @@ export class VirtualUserManager {
 			);
 		}
 		await this.persist();
+		this.emit("user:add", { username });
 	}
 
 	/**
@@ -278,6 +283,7 @@ export class VirtualUserManager {
 
 		this.sudoers.delete(username);
 
+		this.emit("user:delete", { username });
 		await this.persist();
 	}
 
@@ -339,8 +345,12 @@ export class VirtualUserManager {
 			remoteAddress,
 			startedAt: new Date().toISOString(),
 		};
-
 		this.activeSessions.set(session.id, session);
+		this.emit("session:register", {
+			sessionId: session.id,
+			username,
+			remoteAddress,
+		});
 		return session;
 	}
 
@@ -354,6 +364,14 @@ export class VirtualUserManager {
 			return;
 		}
 
+		const session = this.activeSessions.get(sessionId);
+		this.activeSessions.delete(sessionId);
+		if (session) {
+			this.emit("session:unregister", {
+				sessionId,
+				username: session.username,
+			});
+		}
 		this.activeSessions.delete(sessionId);
 	}
 

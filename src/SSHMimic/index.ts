@@ -1,3 +1,4 @@
+import { EventEmitter } from "node:events";
 import { Server as SshServer } from "ssh2";
 import { VirtualShell } from "../VirtualShell";
 import { runExec } from "./exec";
@@ -10,7 +11,7 @@ import { loadOrCreateHostKey } from "./hostKey";
  * Create an instance, call {@link SshMimic.start}, and stop it with
  * {@link SshMimic.stop} when your process exits.
  */
-class SshMimic {
+class SshMimic extends EventEmitter {
 	port: number;
 	server: SshServer | null;
 	private shell: VirtualShell;
@@ -32,6 +33,7 @@ class SshMimic {
 		hostname?: string;
 		shell?: VirtualShell;
 	}) {
+		super();
 		this.port = port;
 		this.shellHostname = hostname;
 		this.server = null;
@@ -60,6 +62,8 @@ class SshMimic {
 				let remoteAddress = "unknown";
 				let sessionId: string | null = null;
 
+				this.emit("client:connect");
+
 				client.on("authentication", (ctx) => {
 					shell;
 					if (ctx.method === "password") {
@@ -69,12 +73,17 @@ class SshMimic {
 						if (
 							!shell.users.verifyPassword(candidateUser, ctx.password ?? "")
 						) {
+							this.emit("auth:failure", {
+								username: candidateUser,
+								remoteAddress,
+							});
 							ctx.reject();
 							return;
 						}
 
 						authUser = candidateUser;
 						sessionId = shell.users.registerSession(authUser, remoteAddress).id;
+						this.emit("auth:success", { username: authUser, remoteAddress });
 
 						const homePath = `/home/${authUser}`;
 						if (!shell.vfs.exists(homePath)) {
@@ -95,6 +104,7 @@ class SshMimic {
 
 				client.on("close", () => {
 					shell.users.unregisterSession(sessionId);
+					this.emit("client:disconnect", { user: authUser });
 					sessionId = null;
 				});
 
@@ -149,6 +159,7 @@ class SshMimic {
 			this.server?.once("error", (err: unknown) => reject(err));
 			this.server?.listen(this.port, "0.0.0.0", () => {
 				console.log(`SSH Mimic listening on port ${this.port}`);
+				this.emit("start", { port: this.port });
 				resolve(this.port);
 			});
 		});
@@ -161,6 +172,7 @@ class SshMimic {
 		if (this.server) {
 			this.server.close(() => {
 				console.log("SSH Mimic stopped");
+				this.emit("stop");
 			});
 		}
 	}
