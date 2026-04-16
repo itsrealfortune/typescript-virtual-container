@@ -16,6 +16,12 @@ The format is based on Keep a Changelog.
 - Keyboard-interactive authentication support in SFTP in addition to password auth.
 - Standalone runtime now starts both SSH and SFTP servers with a shared `VirtualShell`.
 - New SFTP test suite covering authentication, read/write flows, system-user login, and traversal protection.
+- **Event-Driven Integration**: Core classes now extend `EventEmitter` for full lifecycle visibility:
+  - `VirtualShell`: `initialized`, `command`, `session:start` events
+  - `VirtualFileSystem`: `file:read`, `file:write`, `dir:create`, `mirror:flush` events
+  - `VirtualUserManager`: `initialized`, `user:add`, `user:delete`, `session:register`, `session:unregister` events
+  - `SshMimic` & `SftpMimic`: `start`, `stop`, `auth:success`, `auth:failure`, `client:connect`, `client:disconnect` events
+- New `HoneyPot` utility for tracking and auditing server activity via event listeners.
 
 ### Changed
 

@@ -40,6 +40,7 @@
 - **Virtual Filesystem**: In-memory-like developer workflow backed by a mirror directory under `.vfs/mirror`, with optional gzip compression and programmatic access.
 - **User Management**: Create, authenticate, and manage virtual users with strict password hashing (scrypt) and sudo-like privilege elevation.
 - **Programmatic Shell API**: Execute shell commands and query filesystem state directly from TypeScript without SSH overhead.
+- **Event-Driven Architecture**: All core classes extend `EventEmitter` for lifecycle and operation tracking. Listen to auth events, filesystem operations, session lifecycle, and command execution for auditing and integration.
 - **Built-in Commands**: `ls`, `cd`, `pwd`, `cat`, `mkdir`, `touch`, `rm`, `tree`, `whoami`, `hostname`, `who`, `sudo`, `su`, `adduser`, `deluser`, `nano` (text editor), `curl`, `wget`, and a growing set of additional commands. Not everything is implemented yet, and shell compatibility is still being expanded.
 - **Full TypeScript Support**: Complete JSDoc coverage, exported types, and first-class async/await for all operations.
 
