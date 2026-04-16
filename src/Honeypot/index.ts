@@ -11,6 +11,8 @@
 import type { EventEmitter } from "node:events";
 import type { SshMimic } from "../SSHMimic";
 import type { SftpMimic } from "../SSHMimic/sftp";
+import type { PerfLogger } from "../utils/perfLogger";
+import { createPerfLogger } from "../utils/perfLogger";
 import type VirtualFileSystem from "../VirtualFileSystem";
 import type { VirtualShell } from "../VirtualShell";
 import type { VirtualUserManager } from "../VirtualUserManager";
@@ -42,6 +44,9 @@ export interface HoneyPotStats {
 	clientConnects: number;
 	clientDisconnects: number;
 }
+
+const perf: PerfLogger = createPerfLogger("HoneyPot");
+
 
 /**
  * HoneyPot audit and event tracking utility.

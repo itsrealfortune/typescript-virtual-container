@@ -3,6 +3,8 @@ import { EventEmitter } from "node:events";
 import { createCustomCommand, registerCommand, runCommand } from "../commands";
 import type { CommandContext, CommandResult } from "../types/commands";
 import type { ShellStream } from "../types/streams";
+import type { PerfLogger } from "../utils/perfLogger";
+import { createPerfLogger } from "../utils/perfLogger";
 import VirtualFileSystem from "../VirtualFileSystem";
 import { VirtualUserManager } from "../VirtualUserManager";
 import { startShell } from "./shell";
@@ -18,6 +20,8 @@ const defaultShellProperties: ShellProperties = {
 	os: "Fortune GNU/Linux x64",
 	arch: "x86_64",
 };
+
+const perf: PerfLogger = createPerfLogger("VirtualShell");
 
 let cachedRootPassword: string | null = null;
 
@@ -103,7 +107,9 @@ class VirtualShell extends EventEmitter {
 	 * Call this before any authentication or command execution.
 	 */
 	public async ensureInitialized(): Promise<void> {
+		perf.mark("ensureInitialized:start");
 		await this.initialized;
+		perf.done("ensureInitialized:done");
 	}
 
 	/**

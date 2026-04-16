@@ -1,6 +1,7 @@
 import { EventEmitter } from "node:events";
 import { Server as SshServer } from "ssh2";
 import { VirtualShell } from "../VirtualShell";
+import { createPerfLogger, type PerfLogger } from "../utils/perfLogger";
 import { runExec } from "./exec";
 import { loadOrCreateHostKey } from "./hostKey";
 
@@ -11,6 +12,9 @@ import { loadOrCreateHostKey } from "./hostKey";
  * Create an instance, call {@link SshMimic.start}, and stop it with
  * {@link SshMimic.stop} when your process exits.
  */
+const perf: PerfLogger = createPerfLogger("SshMimic");
+
+
 class SshMimic extends EventEmitter {
 	port: number;
 	server: SshServer | null;
@@ -180,3 +184,4 @@ class SshMimic extends EventEmitter {
 
 export { SftpMimic } from "./sftp";
 export { SshMimic };
+

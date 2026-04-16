@@ -3,10 +3,12 @@ import { EventEmitter } from "node:events";
 import * as path from "node:path";
 import type { AuthenticationType, KeyboardAuthContext } from "ssh2";
 import { Server as SshServer } from "ssh2";
+import type { VfsNodeStats } from "../types/vfs";
+import type { PerfLogger } from "../utils/perfLogger";
+import { createPerfLogger } from "../utils/perfLogger";
 import type VirtualFileSystem from "../VirtualFileSystem";
 import { VirtualShell } from "../VirtualShell";
 import type { VirtualUserManager } from "../VirtualUserManager";
-import type { VfsNodeStats } from "../types/vfs";
 import { loadOrCreateHostKey } from "./hostKey";
 
 const SFTP_STATUS_CODE = {
@@ -29,6 +31,9 @@ const OPEN_MODE = {
 	TRUNC: 0x00000010,
 	EXCL: 0x00000020,
 };
+
+const perf: PerfLogger = createPerfLogger("SftpMimic");
+
 
 interface SftpFileHandle {
 	type: "file";

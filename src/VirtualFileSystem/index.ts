@@ -3,10 +3,12 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { gunzipSync, gzipSync } from "node:zlib";
 import type {
-	RemoveOptions,
-	VfsNodeStats,
-	WriteFileOptions,
+    RemoveOptions,
+    VfsNodeStats,
+    WriteFileOptions,
 } from "../types/vfs";
+import type { PerfLogger } from "../utils/perfLogger";
+import { createPerfLogger } from "../utils/perfLogger";
 import { normalizePath } from "./path";
 
 /**
@@ -16,6 +18,9 @@ import { normalizePath } from "./path";
  * {@link VirtualFileSystem.restoreMirror} on startup and
  * {@link VirtualFileSystem.flushMirror} to persist pending changes.
  */
+const perf: PerfLogger = createPerfLogger("VirtualFileSystem");
+
+
 class VirtualFileSystem extends EventEmitter {
 	private readonly mirrorRoot: string;
 

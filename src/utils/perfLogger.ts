@@ -1,4 +1,4 @@
-type PerfLogger = {
+export type PerfLogger = {
 	enabled: boolean;
 	mark: (label: string) => void;
 	done: (label?: string) => void;

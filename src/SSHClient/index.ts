@@ -1,5 +1,7 @@
 import { runCommand } from "../commands";
 import type { CommandResult } from "../types/commands";
+import type { PerfLogger } from "../utils/perfLogger";
+import { createPerfLogger } from "../utils/perfLogger";
 import type { VirtualShell } from "../VirtualShell";
 
 /**
@@ -16,6 +18,9 @@ import type { VirtualShell } from "../VirtualShell";
  * const list = await client.ls();
  * ```
  */
+const perf: PerfLogger = createPerfLogger("SshClient");
+
+
 export class SshClient {
 	private currentCwd = "/";
 

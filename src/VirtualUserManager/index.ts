@@ -1,6 +1,8 @@
 import { createHash, randomBytes, randomUUID, scryptSync } from "node:crypto";
 import { EventEmitter } from "node:events";
 import * as path from "node:path";
+import type { PerfLogger } from "../utils/perfLogger";
+import { createPerfLogger } from "../utils/perfLogger";
 import type VirtualFileSystem from "../VirtualFileSystem";
 
 /** Persisted virtual user credential record. */
@@ -34,6 +36,8 @@ function resolveFastPasswordHash(): boolean {
 		!["0", "false", "no", "off"].includes(configured.toLowerCase())
 	);
 }
+
+const perf: PerfLogger = createPerfLogger("VirtualUserManager");
 
 /**
  * Persistent user, sudoers, and active-session manager for the shell runtime.
@@ -73,6 +77,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * Also creates the current system user if not already present.
 	 */
 	public async initialize(): Promise<void> {
+		perf.mark("initialize:start");
 		this.loadFromVfs();
 		this.loadSudoersFromVfs();
 		this.loadQuotasFromVfs();
@@ -110,6 +115,7 @@ export class VirtualUserManager extends EventEmitter {
 			await this.persist();
 		}
 		this.emit("initialized");
+		perf.done("initialize:done");
 	}
 
 	/**
