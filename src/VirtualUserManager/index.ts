@@ -70,6 +70,7 @@ export class VirtualUserManager extends EventEmitter {
 		private readonly autoSudoForNewUsers: boolean = true,
 	) {
 		super();
+		perf.mark("constructor");
 	}
 
 	/**
@@ -77,7 +78,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * Also creates the current system user if not already present.
 	 */
 	public async initialize(): Promise<void> {
-		perf.mark("initialize:start");
+		perf.mark("initialize");
 		this.loadFromVfs();
 		this.loadSudoersFromVfs();
 		this.loadQuotasFromVfs();
@@ -115,7 +116,6 @@ export class VirtualUserManager extends EventEmitter {
 			await this.persist();
 		}
 		this.emit("initialized");
-		perf.done("initialize:done");
 	}
 
 	/**
@@ -128,6 +128,7 @@ export class VirtualUserManager extends EventEmitter {
 		username: string,
 		maxBytes: number,
 	): Promise<void> {
+		perf.mark("setQuotaBytes");
 		this.validateUsername(username);
 		if (!this.users.has(username)) {
 			throw new Error(`quota: user '${username}' does not exist`);
@@ -147,6 +148,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param username Target username.
 	 */
 	public async clearQuota(username: string): Promise<void> {
+		perf.mark("clearQuota");
 		this.validateUsername(username);
 		this.quotas.delete(username);
 		await this.persist();
@@ -159,6 +161,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns Quota in bytes, or null when unlimited.
 	 */
 	public getQuotaBytes(username: string): number | null {
+		perf.mark("getQuotaBytes");
 		return this.quotas.get(username) ?? null;
 	}
 
@@ -169,6 +172,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns Current usage in bytes.
 	 */
 	public getUsageBytes(username: string): number {
+		perf.mark("getUsageBytes");
 		const homePath = `/home/${username}`;
 		if (!this.vfs.exists(homePath)) {
 			return 0;
@@ -191,6 +195,7 @@ export class VirtualUserManager extends EventEmitter {
 		targetPath: string,
 		nextContent: string | Buffer,
 	): void {
+		perf.mark("assertWriteWithinQuota");
 		const quota = this.quotas.get(username);
 		if (quota === undefined) {
 			return;
@@ -233,6 +238,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns True when credentials are valid.
 	 */
 	public verifyPassword(username: string, password: string): boolean {
+		perf.mark("verifyPassword");
 		const record = this.users.get(username);
 		if (!record) {
 			return false;
@@ -248,6 +254,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param password Initial plaintext password.
 	 */
 	public async addUser(username: string, password: string): Promise<void> {
+		perf.mark("addUser");
 		this.validateUsername(username);
 		this.validatePassword(password);
 
@@ -279,6 +286,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param password New plaintext password.
 	 */
 	public async setPassword(username: string, password: string): Promise<void> {
+		perf.mark("setPassword");
 		this.validateUsername(username);
 		this.validatePassword(password);
 
@@ -296,6 +304,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param username Username to remove.
 	 */
 	public async deleteUser(username: string): Promise<void> {
+		perf.mark("deleteUser");
 		this.validateUsername(username);
 
 		if (username === "root") {
@@ -319,6 +328,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns True when user can run sudo.
 	 */
 	public isSudoer(username: string): boolean {
+		perf.mark("isSudoer");
 		return this.sudoers.has(username);
 	}
 
@@ -328,6 +338,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param username Username to promote.
 	 */
 	public async addSudoer(username: string): Promise<void> {
+		perf.mark("addSudoer");
 		this.validateUsername(username);
 		if (!this.users.has(username)) {
 			throw new Error(`sudoers: user '${username}' does not exist`);
@@ -343,6 +354,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param username Username to demote.
 	 */
 	public async removeSudoer(username: string): Promise<void> {
+		perf.mark("removeSudoer");
 		this.validateUsername(username);
 		if (username === "root") {
 			throw new Error("sudoers: cannot remove root");
@@ -363,6 +375,7 @@ export class VirtualUserManager extends EventEmitter {
 		username: string,
 		remoteAddress: string,
 	): VirtualActiveSession {
+		perf.mark("registerSession");
 		const session: VirtualActiveSession = {
 			id: randomUUID(),
 			username,
@@ -385,6 +398,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param sessionId Session identifier; ignored when nullish.
 	 */
 	public unregisterSession(sessionId: string | null | undefined): void {
+		perf.mark("unregisterSession");
 		if (!sessionId) {
 			return;
 		}
@@ -412,6 +426,7 @@ export class VirtualUserManager extends EventEmitter {
 		username: string,
 		remoteAddress: string,
 	): void {
+		perf.mark("updateSession");
 		if (!sessionId) {
 			return;
 		}
@@ -434,6 +449,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns Snapshot of active session descriptors.
 	 */
 	public listActiveSessions(): VirtualActiveSession[] {
+		perf.mark("listActiveSessions");
 		return Array.from(this.activeSessions.values()).sort((left, right) =>
 			left.startedAt.localeCompare(right.startedAt),
 		);

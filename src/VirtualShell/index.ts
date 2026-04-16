@@ -80,6 +80,7 @@ class VirtualShell extends EventEmitter {
 		basePath?: string,
 	) {
 		super();
+		perf.mark("constructor");
 		this.hostname = hostname;
 		this.properties = properties || defaultShellProperties;
 		this.basePath = basePath || ".";
@@ -107,9 +108,8 @@ class VirtualShell extends EventEmitter {
 	 * Call this before any authentication or command execution.
 	 */
 	public async ensureInitialized(): Promise<void> {
-		perf.mark("ensureInitialized:start");
+		perf.mark("ensureInitialized");
 		await this.initialized;
-		perf.done("ensureInitialized:done");
 	}
 
 	/**
@@ -140,6 +140,7 @@ class VirtualShell extends EventEmitter {
 	 * @param cwd
 	 */
 	executeCommand(rawInput: string, authUser: string, cwd: string): void {
+		perf.mark("executeCommand");
 		runCommand(rawInput, authUser, this.hostname, "shell", cwd, this);
 		this.emit("command", { command: rawInput, user: authUser, cwd });
 	}
@@ -160,6 +161,7 @@ class VirtualShell extends EventEmitter {
 		remoteAddress: string,
 		terminalSize: { cols: number; rows: number },
 	): void {
+		perf.mark("startInteractiveSession");
 		// Interactive shell logic
 		this.emit("session:start", { user: authUser, sessionId, remoteAddress });
 		startShell(
@@ -213,6 +215,7 @@ class VirtualShell extends EventEmitter {
 		targetPath: string,
 		content: string | Buffer,
 	): void {
+		perf.mark("writeFileAsUser");
 		this.users.assertWriteWithinQuota(authUser, targetPath, content);
 		this.vfs.writeFile(targetPath, content);
 	}

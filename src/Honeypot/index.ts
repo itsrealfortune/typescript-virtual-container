@@ -47,7 +47,6 @@ export interface HoneyPotStats {
 
 const perf: PerfLogger = createPerfLogger("HoneyPot");
 
-
 /**
  * HoneyPot audit and event tracking utility.
  *
@@ -79,6 +78,7 @@ export class HoneyPot {
 	 * @param maxLogSize Maximum audit log entries to retain (default: 10000).
 	 */
 	constructor(maxLogSize: number = 10000) {
+		perf.mark("constructor");
 		this.maxLogSize = maxLogSize;
 	}
 
@@ -98,6 +98,7 @@ export class HoneyPot {
 		ssh?: SshMimic,
 		sftp?: SftpMimic,
 	): void {
+		perf.mark("attach");
 		this.attachVirtualShell(shell);
 		this.attachVirtualFileSystem(vfs);
 		this.attachVirtualUserManager(users);
@@ -317,6 +318,7 @@ export class HoneyPot {
 	 * @returns Filtered audit log entries.
 	 */
 	public getAuditLog(type?: string, source?: string): AuditLogEntry[] {
+		perf.mark("getAuditLog");
 		return this.auditLog.filter(
 			(entry) =>
 				(!type || entry.type === type) && (!source || entry.source === source),
@@ -329,6 +331,7 @@ export class HoneyPot {
 	 * @returns Snapshot of honeypot stats.
 	 */
 	public getStats(): Readonly<HoneyPotStats> {
+		perf.mark("getStats");
 		return Object.freeze({ ...this.stats });
 	}
 
@@ -336,6 +339,7 @@ export class HoneyPot {
 	 * Clears audit log and resets statistics.
 	 */
 	public reset(): void {
+		perf.mark("reset");
 		this.auditLog = [];
 		this.stats = {
 			authAttempts: 0,
@@ -360,6 +364,7 @@ export class HoneyPot {
 	 * @returns Recent audit log entries.
 	 */
 	public getRecent(limit: number = 100): AuditLogEntry[] {
+		perf.mark("getRecent");
 		return this.auditLog.slice(Math.max(0, this.auditLog.length - limit));
 	}
 
@@ -373,6 +378,7 @@ export class HoneyPot {
 		severity: "low" | "medium" | "high";
 		message: string;
 	}> {
+		perf.mark("detectAnomalies");
 		const anomalies: Array<{
 			type: string;
 			severity: "low" | "medium" | "high";

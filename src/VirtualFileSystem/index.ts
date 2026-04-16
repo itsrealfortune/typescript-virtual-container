@@ -3,9 +3,9 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { gunzipSync, gzipSync } from "node:zlib";
 import type {
-    RemoveOptions,
-    VfsNodeStats,
-    WriteFileOptions,
+	RemoveOptions,
+	VfsNodeStats,
+	WriteFileOptions,
 } from "../types/vfs";
 import type { PerfLogger } from "../utils/perfLogger";
 import { createPerfLogger } from "../utils/perfLogger";
@@ -19,7 +19,6 @@ import { normalizePath } from "./path";
  * {@link VirtualFileSystem.flushMirror} to persist pending changes.
  */
 const perf: PerfLogger = createPerfLogger("VirtualFileSystem");
-
 
 class VirtualFileSystem extends EventEmitter {
 	private readonly mirrorRoot: string;
@@ -100,6 +99,7 @@ class VirtualFileSystem extends EventEmitter {
 	 */
 	constructor(baseDir: string = process.cwd()) {
 		super();
+		perf.mark("constructor");
 		this.mirrorRoot = path.resolve(baseDir, ".vfs", "mirror");
 	}
 
@@ -109,6 +109,7 @@ class VirtualFileSystem extends EventEmitter {
 	 * If archive does not exist or cannot be read, creates fresh mirror file.
 	 */
 	public async restoreMirror(): Promise<void> {
+		perf.mark("restoreMirror");
 		this.ensureMirrorRoot();
 	}
 
@@ -118,6 +119,7 @@ class VirtualFileSystem extends EventEmitter {
 	 * No-op when nothing changed and archive already exists.
 	 */
 	public async flushMirror(): Promise<void> {
+		perf.mark("flushMirror");
 		this.ensureMirrorRoot();
 		this.emit("mirror:flush");
 	}
@@ -129,6 +131,7 @@ class VirtualFileSystem extends EventEmitter {
 	 * @param mode POSIX-like mode bits for new directories.
 	 */
 	public mkdir(targetPath: string, mode: number = 0o755): void {
+		perf.mark("mkdir");
 		this.ensureMirrorRoot();
 		const fsPath = this.resolveFsPath(targetPath);
 		if (fs.existsSync(fsPath) && !fs.statSync(fsPath).isDirectory()) {
@@ -154,6 +157,7 @@ class VirtualFileSystem extends EventEmitter {
 		content: string | Buffer,
 		options: WriteFileOptions = {},
 	): void {
+		perf.mark("writeFile");
 		this.ensureMirrorRoot();
 		const normalized = normalizePath(targetPath);
 		const fsPath = this.resolveFsPath(normalized);
@@ -186,6 +190,7 @@ class VirtualFileSystem extends EventEmitter {
 	 * @returns UTF-8 string content.
 	 */
 	public readFile(targetPath: string): string {
+		perf.mark("readFile");
 		this.ensureMirrorRoot();
 		const fsPath = this.resolveFsPath(targetPath);
 		if (!fs.existsSync(fsPath) || !fs.statSync(fsPath).isFile()) {
@@ -206,6 +211,7 @@ class VirtualFileSystem extends EventEmitter {
 	 * @returns True when file or directory exists.
 	 */
 	public exists(targetPath: string): boolean {
+		perf.mark("exists");
 		try {
 			const fsPath = this.resolveFsPath(targetPath);
 			return fs.existsSync(fsPath);
@@ -221,6 +227,7 @@ class VirtualFileSystem extends EventEmitter {
 	 * @param mode New POSIX-like mode.
 	 */
 	public chmod(targetPath: string, mode: number): void {
+		perf.mark("chmod");
 		const fsPath = this.resolveFsPath(targetPath);
 		if (!fs.existsSync(fsPath)) {
 			throw new Error(`Path '${normalizePath(targetPath)}' does not exist.`);
@@ -235,6 +242,7 @@ class VirtualFileSystem extends EventEmitter {
 	 * @returns Typed stat object based on node type.
 	 */
 	public stat(targetPath: string): VfsNodeStats {
+		perf.mark("stat");
 		this.ensureMirrorRoot();
 		const normalized = normalizePath(targetPath);
 		const fsPath = this.resolveFsPath(normalized);
@@ -278,6 +286,7 @@ class VirtualFileSystem extends EventEmitter {
 	 * @returns Sorted child names.
 	 */
 	public list(dirPath: string = "/"): string[] {
+		perf.mark("list");
 		const fsPath = this.resolveFsPath(dirPath);
 		if (!fs.existsSync(fsPath) || !fs.statSync(fsPath).isDirectory()) {
 			throw new Error(`Cannot list '${dirPath}': not a directory.`);
@@ -293,6 +302,7 @@ class VirtualFileSystem extends EventEmitter {
 	 * @returns Multi-line tree string.
 	 */
 	public tree(dirPath: string = "/"): string {
+		perf.mark("tree");
 		const fsPath = this.resolveFsPath(dirPath);
 		if (!fs.existsSync(fsPath) || !fs.statSync(fsPath).isDirectory()) {
 			throw new Error(`Cannot render tree for '${dirPath}': not a directory.`);
@@ -313,6 +323,7 @@ class VirtualFileSystem extends EventEmitter {
 	 * @returns Total byte usage for file content under target path.
 	 */
 	public getUsageBytes(targetPath: string = "/"): number {
+		perf.mark("getUsageBytes");
 		const fsPath = this.resolveFsPath(targetPath);
 		if (!fs.existsSync(fsPath)) {
 			throw new Error(`Path '${normalizePath(targetPath)}' does not exist.`);
@@ -326,6 +337,7 @@ class VirtualFileSystem extends EventEmitter {
 	 * @param targetPath Path to file.
 	 */
 	public compressFile(targetPath: string): void {
+		perf.mark("compressFile");
 		const fsPath = this.resolveFsPath(targetPath);
 		if (!fs.existsSync(fsPath) || !fs.statSync(fsPath).isFile()) {
 			throw new Error(`Cannot compress '${targetPath}': not a file.`);
@@ -343,6 +355,7 @@ class VirtualFileSystem extends EventEmitter {
 	 * @param targetPath Path to file.
 	 */
 	public decompressFile(targetPath: string): void {
+		perf.mark("decompressFile");
 		const fsPath = this.resolveFsPath(targetPath);
 		if (!fs.existsSync(fsPath) || !fs.statSync(fsPath).isFile()) {
 			throw new Error(`Cannot decompress '${targetPath}': not a file.`);
@@ -361,6 +374,7 @@ class VirtualFileSystem extends EventEmitter {
 	 * @param options Removal options, including recursive delete.
 	 */
 	public remove(targetPath: string, options: RemoveOptions = {}): void {
+		perf.mark("remove");
 		const normalized = normalizePath(targetPath);
 		if (normalized === "/") {
 			throw new Error("Cannot remove root directory.");
@@ -395,6 +409,7 @@ class VirtualFileSystem extends EventEmitter {
 	 * @param toPath Destination path.
 	 */
 	public move(fromPath: string, toPath: string): void {
+		perf.mark("move");
 		const fromNormalized = normalizePath(fromPath);
 		const toNormalized = normalizePath(toPath);
 

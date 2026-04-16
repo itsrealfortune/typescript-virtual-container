@@ -34,7 +34,6 @@ const OPEN_MODE = {
 
 const perf: PerfLogger = createPerfLogger("SftpMimic");
 
-
 interface SftpFileHandle {
 	type: "file";
 	path: string;
@@ -159,6 +158,7 @@ export class SftpMimic extends EventEmitter {
 		users,
 	}: SftpMimicOptions) {
 		super();
+		perf.mark("constructor");
 		this.port = port;
 		this.server = null;
 		this.hostname = hostname;
@@ -189,6 +189,7 @@ export class SftpMimic extends EventEmitter {
 	}
 
 	public async start(): Promise<number> {
+		perf.mark("start");
 		const privateKey = loadOrCreateHostKey();
 
 		// Ensure VirtualShell is fully initialized before accepting connections
@@ -341,6 +342,7 @@ export class SftpMimic extends EventEmitter {
 	}
 
 	public stop(): void {
+		perf.mark("stop");
 		if (this.server) {
 			this.server.close(() => {
 				console.log("SFTP Mimic stopped");

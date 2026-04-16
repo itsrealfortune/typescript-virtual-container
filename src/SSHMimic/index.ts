@@ -14,7 +14,6 @@ import { loadOrCreateHostKey } from "./hostKey";
  */
 const perf: PerfLogger = createPerfLogger("SshMimic");
 
-
 class SshMimic extends EventEmitter {
 	port: number;
 	server: SshServer | null;
@@ -38,6 +37,7 @@ class SshMimic extends EventEmitter {
 		shell?: VirtualShell;
 	}) {
 		super();
+		perf.mark("constructor");
 		this.port = port;
 		this.shellHostname = hostname;
 		this.server = null;
@@ -50,6 +50,7 @@ class SshMimic extends EventEmitter {
 	 * @returns Promise resolved with bound listening port.
 	 */
 	public async start(): Promise<number> {
+		perf.mark("start");
 		const shell = this.shell;
 		const privateKey = loadOrCreateHostKey();
 
@@ -173,6 +174,7 @@ class SshMimic extends EventEmitter {
 	 * Stops server if running.
 	 */
 	public stop(): void {
+		perf.mark("stop");
 		if (this.server) {
 			this.server.close(() => {
 				console.log("SSH Mimic stopped");
@@ -184,4 +186,3 @@ class SshMimic extends EventEmitter {
 
 export { SftpMimic } from "./sftp";
 export { SshMimic };
-
