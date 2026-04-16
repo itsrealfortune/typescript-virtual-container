@@ -41,6 +41,7 @@
 - **User Management**: Create, authenticate, and manage virtual users with strict password hashing (scrypt) and sudo-like privilege elevation.
 - **Programmatic Shell API**: Execute shell commands and query filesystem state directly from TypeScript without SSH overhead.
 - **Event-Driven Architecture**: All core classes extend `EventEmitter` for lifecycle and operation tracking. Listen to auth events, filesystem operations, session lifecycle, and command execution for auditing and integration.
+- **Security Auditing**: Built-in `HoneyPot` utility for comprehensive activity logging, event tracking, statistics collection, and anomaly detection across all components.
 - **Built-in Commands**: `ls`, `cd`, `pwd`, `cat`, `mkdir`, `touch`, `rm`, `tree`, `whoami`, `hostname`, `who`, `sudo`, `su`, `adduser`, `deluser`, `nano` (text editor), `curl`, `wget`, and a growing set of additional commands. Not everything is implemented yet, and shell compatibility is still being expanded.
 - **Full TypeScript Support**: Complete JSDoc coverage, exported types, and first-class async/await for all operations.
 
@@ -1030,6 +1031,126 @@ users.on("session:unregister", ({ sessionId, username }) => {
 
 ---
 
+### HoneyPot (Auditing & Event Tracking)
+
+Comprehensive security auditing and event tracking utility. Attaches to all core components (VirtualShell, VirtualFileSystem, VirtualUserManager, SshMimic, SftpMimic) to log activity, track statistics, and detect anomalies.
+
+#### Constructor
+
+```typescript
+new HoneyPot(maxLogSize?: number)
+```
+
+- **maxLogSize**: Maximum audit log entries to retain (default: 10000)
+
+```typescript
+const honeypot = new HoneyPot(5000);  // Keep last 5000 audit entries
+```
+
+#### Methods
+
+##### `attach(shell: VirtualShell, vfs: VirtualFileSystem, users: VirtualUserManager, ssh?: SshMimic, sftp?: SftpMimic): void`
+
+Attaches honeypot listeners to all provided event emitters. This wires up all audit tracking across the entire virtual environment.
+
+```typescript
+honeypot.attach(shell, vfs, users, ssh, sftp);
+// All components now emit events to honeypot
+```
+
+##### `getAuditLog(type?: string, source?: string): AuditLogEntry[]`
+
+Returns audit log entries with optional filtering by event type or source component.
+
+```typescript
+// All entries
+const allLogs = honeypot.getAuditLog();
+
+// Only auth events
+const authLogs = honeypot.getAuditLog("auth:failure");
+
+// Only SshMimic events
+const sshLogs = honeypot.getAuditLog(undefined, "SshMimic");
+
+// Combine filters
+const sshAuthLogs = honeypot.getAuditLog("auth:success", "SshMimic");
+```
+
+##### `getStats(): Readonly<HoneyPotStats>`
+
+Returns current activity statistics snapshot.
+
+```typescript
+const stats = honeypot.getStats();
+console.log(`Auth attempts: ${stats.authAttempts}`);
+console.log(`Auth successes: ${stats.authSuccesses}`);
+console.log(`Auth failures: ${stats.authFailures}`);
+console.log(`Commands executed: ${stats.commands}`);
+console.log(`File writes: ${stats.fileWrites}`);
+console.log(`File reads: ${stats.fileReads}`);
+console.log(`Sessions started: ${stats.sessionStarts}`);
+console.log(`Sessions ended: ${stats.sessionEnds}`);
+console.log(`Users created: ${stats.userCreated}`);
+console.log(`Users deleted: ${stats.userDeleted}`);
+console.log(`Client connects: ${stats.clientConnects}`);
+console.log(`Client disconnects: ${stats.clientDisconnects}`);
+```
+
+##### `getRecent(limit?: number): AuditLogEntry[]`
+
+Returns most recent audit entries in reverse chronological order.
+
+```typescript
+const last50 = honeypot.getRecent(50);
+last50.forEach(entry => {
+	console.log(`${entry.timestamp} | ${entry.source} | ${entry.type}`);
+	console.log(`Details:`, entry.details);
+});
+```
+
+##### `detectAnomalies(): Array<{ type: string; severity: "low" | "medium" | "high"; message: string }>`
+
+Analyzes activity patterns and detects potential security issues.
+
+```typescript
+const anomalies = honeypot.detectAnomalies();
+anomalies.forEach(anomaly => {
+	console.log(`[${anomaly.severity.toUpperCase()}] ${anomaly.type}`);
+	console.log(`  ${anomaly.message}`);
+});
+```
+
+Detects:
+- High authentication failure rates
+- Excessive authentication failures
+- Unusual command execution volume
+- Unusual file write volume
+
+##### `reset(): void`
+
+Clears audit log and resets all statistics counters.
+
+```typescript
+honeypot.reset();  // Fresh start
+```
+
+#### Audit Log Entry Structure
+
+```typescript
+interface AuditLogEntry {
+	timestamp: string;              // ISO-8601 timestamp
+	type: string;                   // Event type (e.g., "auth:success", "file:write")
+	source: string;                 // Event source component
+	details: Record<string, unknown>; // Event-specific data
+}
+```
+
+#### Example Usage
+
+See [Example 8: Security Auditing with HoneyPot](#example-8-security-auditing-with-honeypot) in Usage Examples.
+
+---
+
 ### Key Types
 
 #### CommandResult
@@ -1359,6 +1480,133 @@ const rmResult = await client.rm("/", true);
 console.log("Remove root:", rmResult.stderr);  // Error
 
 ssh.stop();
+```
+
+---
+
+### Example 8: Security Auditing with HoneyPot
+
+Track all system activity, detect anomalies, and maintain security audit logs:
+
+```typescript
+import {
+	VirtualSshServer,
+	VirtualShell,
+	SshClient,
+	HoneyPot,
+} from "typescript-virtual-container";
+
+const shell = new VirtualShell("typescript-vm");
+const ssh = new VirtualSshServer({ port: 2222, shell });
+await ssh.start();
+
+const users = ssh.getUsers()!;
+const vfs = ssh.getVfs()!;
+
+// Initialize honeypot with 5000-entry log limit
+const honeypot = new HoneyPot(5000);
+honeypot.attach(shell, vfs, users, ssh);
+
+// Create users
+await users.addUser("alice", "alice123");
+await users.addUser("bob", "bob456");
+
+// Simulate activity
+const alice = new SshClient(shell, "alice");
+await alice.mkdir("/home/alice/projects", true);
+await alice.writeFile("/home/alice/projects/app.txt", "My application");
+await alice.ls("/home/alice/projects");
+
+const bob = new SshClient(shell, "bob");
+// Bob tries invalid operations
+await bob.readFile("/etc/shadow");  // Will fail
+await bob.writeFile("/etc/passwd", "hacked");  // Will fail
+
+// Collect stats
+const stats = honeypot.getStats();
+console.log("\n=== Activity Summary ===");
+console.log(`Auth attempts: ${stats.authAttempts}`);
+console.log(`Auth successes: ${stats.authSuccesses}`);
+console.log(`Auth failures: ${stats.authFailures}`);
+console.log(`Commands executed: ${stats.commands}`);
+console.log(`File writes: ${stats.fileWrites}`);
+console.log(`File reads: ${stats.fileReads}`);
+console.log(`Sessions active: ${stats.sessionStarts}`);
+console.log(`Users created: ${stats.userCreated}`);
+
+// Get recent events
+console.log("\n=== Last 5 Events ===");
+honeypot.getRecent(5).forEach((entry) => {
+	console.log(`[${entry.timestamp}] ${entry.source} -> ${entry.type}`);
+	console.log(`  Details: ${JSON.stringify(entry.details, null, 2)}`);
+});
+
+// Detect anomalies
+console.log("\n=== Security Analysis ===");
+const anomalies = honeypot.detectAnomalies();
+if (anomalies.length > 0) {
+	anomalies.forEach((anomaly) => {
+		console.log(
+			`[${anomaly.severity.toUpperCase()}] ${anomaly.type}: ${anomaly.message}`,
+		);
+	});
+} else {
+	console.log("No anomalies detected");
+}
+
+// Filter audit log by event type
+console.log("\n=== Auth Failures ===");
+const authFailures = honeypot.getAuditLog("auth:failure");
+authFailures.forEach((entry) => {
+	console.log(
+		`  ${entry.details.username} from ${entry.details.remoteAddress}`,
+	);
+});
+
+// Filter by source component
+console.log("\n=== All SSH Events ===");
+const sshEvents = honeypot.getAuditLog(undefined, "SshMimic");
+console.log(`  Total SSH events: ${sshEvents.length}`);
+
+// Export full audit log (for external storage/analysis)
+const fullAuditLog = honeypot.getAuditLog();
+console.log(`\nTotal audit entries: ${fullAuditLog.length}`);
+
+// Optional: Reset for next test phase
+// honeypot.reset();
+
+ssh.stop();
+```
+
+**Output example:**
+
+```
+[AUDIT] 2026-04-16T10:30:45.123Z | SshMimic | start { port: 2222 }
+[AUDIT] 2026-04-16T10:30:46.234Z | VirtualUserManager | user:add { username: 'alice' }
+[AUDIT] 2026-04-16T10:30:47.345Z | VirtualUserManager | user:add { username: 'bob' }
+[AUDIT] 2026-04-16T10:30:48.456Z | VirtualShell | command { command: 'mkdir /home/alice/projects', user: 'alice', cwd: '/home/alice' }
+[AUDIT] 2026-04-16T10:30:49.567Z | VirtualFileSystem | dir:create { path: '/home/alice/projects', mode: 16877 }
+[AUDIT] 2026-04-16T10:30:50.678Z | VirtualShell | command { command: 'writeFile /home/alice/projects/app.txt', user: 'alice', cwd: '/home/alice' }
+
+=== Activity Summary ===
+Auth attempts: 2
+Auth successes: 2
+Auth failures: 0
+Commands executed: 8
+File writes: 1
+File reads: 2
+Sessions active: 2
+Users created: 2
+
+=== Last 5 Events ===
+[2026-04-16T10:30:50.678Z] VirtualShell -> command
+  Details: { command: 'ls /home/alice/projects', user: 'alice', cwd: '/home/alice/projects' }
+
+=== Security Analysis ===
+No anomalies detected
+
+=== All SSH Events ===
+  Total SSH events: 4
 ```
 
 ---
