@@ -110,6 +110,9 @@ interface SftpServerStream {
 	on(event: "READLINK", listener: (reqid: number) => void): this;
 	on(event: "SYMLINK", listener: (reqid: number) => void): this;
 	on(event: "END", listener: () => void): this;
+	on(event: "end", listener: () => void): this;
+	on(event: "error", listener: (error: Error) => void): this;
+	on(event: "close", listener: () => void): this;
 	status(reqid: number, code: number): void;
 	attrs(reqid: number, attrs: SftpAttributes): void;
 	handle(reqid: number, handle: Buffer): void;
@@ -203,6 +206,11 @@ export class SftpMimic {
 				let sessionId: string | null = null;
 				let remoteAddress = "unknown";
 
+				// Add error handling for the client
+				client.on("error", (error: unknown) => {
+					console.error(`[SFTP] Client error:`, error);
+				});
+
 				const acceptSession = (username: string): void => {
 					authUser = username;
 					sessionId = this.getUsers().registerSession(
@@ -276,6 +284,15 @@ export class SftpMimic {
 				client.on("ready", () => {
 					client.on("session", (accept, _reject) => {
 						const session = accept();
+
+						// Add error handling for the session
+						session.on("error", (error: unknown) => {
+							console.error(
+								`[SFTP] Session error for user=${authUser}:`,
+								error,
+							);
+						});
+
 						session.on("sftp", (acceptSftp) => {
 							const sftp = acceptSftp();
 							this.attachSftpHandlers(sftp, authUser);
@@ -384,10 +401,7 @@ export class SftpMimic {
 		this.handles.delete(handle.toString("hex"));
 	}
 
-	private async attachSftpHandlers(
-		sftp: SftpServerStream,
-		authUser: string,
-	): Promise<void> {
+	private attachSftpHandlers(sftp: SftpServerStream, authUser: string): void {
 		const getVfs = () => this.getVfs();
 		const getUsers = () => this.getUsers();
 
@@ -797,7 +811,22 @@ export class SftpMimic {
 			sftp.status(reqid, SFTP_STATUS_CODE.OP_UNSUPPORTED);
 		});
 
+		sftp.on("error", (error: Error) => {
+			console.error(`[SFTP] Stream error for user=${authUser}:`, error);
+		});
+
+		sftp.on("close", () => {
+			console.log(`[SFTP] Stream closed for user=${authUser}`);
+			this.handles.clear();
+		});
+
+		sftp.on("end", () => {
+			console.log(`[SFTP] end event for user=${authUser}`);
+			this.handles.clear();
+		});
+
 		sftp.on("END", () => {
+			console.log(`[SFTP] END event for user=${authUser}`);
 			this.handles.clear();
 		});
 	}
