@@ -8,10 +8,10 @@
  */
 
 import {
-    HoneyPot,
-    SshClient,
-    VirtualShell,
-    VirtualSshServer,
+	HoneyPot,
+	SshClient,
+	VirtualShell,
+	VirtualSshServer,
 } from "../src/index";
 
 async function quickStart() {

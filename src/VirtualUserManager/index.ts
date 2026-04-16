@@ -228,7 +228,8 @@ export class VirtualUserManager extends EventEmitter {
 		this.validatePassword(password);
 
 		if (this.users.has(username)) {
-			throw new Error(`adduser: user '${username}' already exists`);
+			return;
+			// throw new Error(`adduser: user '${username}' already exists`);
 		}
 
 		this.users.set(username, this.createRecord(username, password));
