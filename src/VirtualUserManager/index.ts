@@ -33,6 +33,10 @@ export interface VirtualActiveSession {
  * Passwords are hashed with scrypt and stored in the backing virtual filesystem.
  */
 export class VirtualUserManager extends EventEmitter {
+	private static readonly rootRecordCache = new Map<
+		string,
+		VirtualUserRecord
+	>();
 	private readonly usersPath = "/virtual-env-js/.auth/htpasswd";
 	private readonly sudoersPath = "/virtual-env-js/.auth/sudoers";
 	private readonly quotasPath = "/virtual-env-js/.auth/quotas";
@@ -67,19 +71,25 @@ export class VirtualUserManager extends EventEmitter {
 		this.loadSudoersFromVfs();
 		this.loadQuotasFromVfs();
 
-		this.users.set("root", this.createRecord("root", this.defaultRootPassword));
+		let changed = false;
+		if (!this.users.has("root")) {
+			this.users.set(
+				"root",
+				this.createRecord("root", this.defaultRootPassword),
+			);
+			changed = true;
+		}
 
 		this.sudoers.add("root");
 
 		// Auto-create current system user for easier authentication
 		const currentUser = process.env.USER || process.env.USERNAME;
 		if (currentUser && currentUser !== "root" && !this.users.has(currentUser)) {
-			// Use same password as root for convenience, or a generic default
 			const userPassword = this.defaultRootPassword;
 			this.users.set(currentUser, this.createRecord(currentUser, userPassword));
 			this.sudoers.add(currentUser);
+			changed = true;
 
-			// Create home directory for the system user
 			const homePath = `/home/${currentUser}`;
 			if (!this.vfs.exists(homePath)) {
 				this.vfs.mkdir(homePath, 0o755);
@@ -90,7 +100,9 @@ export class VirtualUserManager extends EventEmitter {
 			}
 		}
 
-		await this.persist();
+		if (changed) {
+			await this.persist();
+		}
 		this.emit("initialized");
 	}
 
@@ -488,43 +500,80 @@ export class VirtualUserManager extends EventEmitter {
 			this.vfs.mkdir(this.authDirPath, 0o700);
 		}
 
-		const content = Array.from(this.users.values())
+		const authContent = Array.from(this.users.values())
 			.sort((left, right) => left.username.localeCompare(right.username))
 			.map((record) =>
 				[record.username, record.salt, record.passwordHash].join(":"),
 			)
 			.join("\n");
-
-		this.vfs.writeFile(
-			this.usersPath,
-			content.length > 0 ? `${content}\n` : "",
-			{ mode: 0o600 },
-		);
 		const sudoersContent = Array.from(this.sudoers.values()).sort().join("\n");
-		this.vfs.writeFile(
-			this.sudoersPath,
-			sudoersContent.length > 0 ? `${sudoersContent}\n` : "",
-			{ mode: 0o600 },
-		);
 		const quotasContent = Array.from(this.quotas.entries())
 			.sort(([left], [right]) => left.localeCompare(right))
 			.map(([username, maxBytes]) => `${username}:${maxBytes}`)
 			.join("\n");
-		this.vfs.writeFile(
-			this.quotasPath,
-			quotasContent.length > 0 ? `${quotasContent}\n` : "",
-			{ mode: 0o600 },
-		);
-		await this.vfs.flushMirror();
+
+		let changed = false;
+		changed =
+			this.writeIfChanged(
+				this.usersPath,
+				authContent.length > 0 ? `${authContent}\n` : "",
+				0o600,
+			) || changed;
+		changed =
+			this.writeIfChanged(
+				this.sudoersPath,
+				sudoersContent.length > 0 ? `${sudoersContent}\n` : "",
+				0o600,
+			) || changed;
+		changed =
+			this.writeIfChanged(
+				this.quotasPath,
+				quotasContent.length > 0 ? `${quotasContent}\n` : "",
+				0o600,
+			) || changed;
+
+		if (changed) {
+			await this.vfs.flushMirror();
+		}
+	}
+
+	private writeIfChanged(
+		targetPath: string,
+		content: string,
+		mode: number,
+	): boolean {
+		if (this.vfs.exists(targetPath)) {
+			const existing = this.vfs.readFile(targetPath);
+			if (existing === content) {
+				this.vfs.chmod(targetPath, mode);
+				return false;
+			}
+		}
+
+		this.vfs.writeFile(targetPath, content, { mode });
+		return true;
 	}
 
 	private createRecord(username: string, password: string): VirtualUserRecord {
+		if (username === "root") {
+			const cached = VirtualUserManager.rootRecordCache.get(password);
+			if (cached) {
+				return cached;
+			}
+		}
+
 		const salt = randomBytes(16).toString("hex");
-		return {
+		const record = {
 			username,
 			salt,
 			passwordHash: this.hashPassword(password, salt),
 		};
+
+		if (username === "root") {
+			VirtualUserManager.rootRecordCache.set(password, record);
+		}
+
+		return record;
 	}
 
 	private hashPassword(password: string, salt: string): string {

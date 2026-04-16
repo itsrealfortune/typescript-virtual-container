@@ -19,13 +19,21 @@ const defaultShellProperties: ShellProperties = {
 	arch: "x86_64",
 };
 
+let cachedRootPassword: string | null = null;
+
 function resolveRootPassword(): string {
+	if (cachedRootPassword) {
+		return cachedRootPassword;
+	}
+
 	const configured = process.env.SSH_MIMIC_ROOT_PASSWORD;
 	if (configured && configured.trim().length > 0) {
-		return configured;
+		cachedRootPassword = configured.trim();
+		return cachedRootPassword;
 	}
 
 	const generated = randomBytes(18).toString("base64url");
+	cachedRootPassword = generated;
 	console.warn(
 		`[ssh-mimic] SSH_MIMIC_ROOT_PASSWORD missing; generated ephemeral root password: ${generated}`,
 	);
