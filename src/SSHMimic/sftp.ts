@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/style/useNamingConvention: const as enum */
 import * as path from "node:path";
-import type { KeyboardAuthContext } from "ssh2";
+import type { AuthenticationType, KeyboardAuthContext } from "ssh2";
 import { Server as SshServer } from "ssh2";
 import type VirtualFileSystem from "../VirtualFileSystem";
 import { VirtualShell } from "../VirtualShell";
@@ -195,6 +195,10 @@ export class SftpMimic {
 				ident: `SSH-2.0-${this.hostname}`,
 			},
 			(client) => {
+				const allowedAuthMethods: AuthenticationType[] = [
+					"password",
+					"keyboard-interactive",
+				];
 				let authUser = "root";
 				let sessionId: string | null = null;
 				let remoteAddress = "unknown";
@@ -226,11 +230,15 @@ export class SftpMimic {
 					const candidateUser = ctx.username || "root";
 					remoteAddress = (ctx as { ip?: string }).ip ?? remoteAddress;
 
+					console.log(
+						`[SFTP] Auth attempt: user=${candidateUser}, method=${ctx.method}, ip=${remoteAddress}`,
+					);
+
 					if (ctx.method === "password") {
 						if (
 							!this.getUsers().verifyPassword(candidateUser, ctx.password ?? "")
 						) {
-							ctx.reject();
+							ctx.reject(allowedAuthMethods);
 							return;
 						}
 
@@ -246,7 +254,7 @@ export class SftpMimic {
 							(answers) => {
 								const password = answers[0] ?? "";
 								if (!this.getUsers().verifyPassword(candidateUser, password)) {
-									keyboardCtx.reject();
+									keyboardCtx.reject(allowedAuthMethods);
 									return;
 								}
 
@@ -257,7 +265,7 @@ export class SftpMimic {
 						return;
 					}
 
-					ctx.reject();
+					ctx.reject(allowedAuthMethods);
 				});
 
 				client.on("close", () => {
