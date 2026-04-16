@@ -80,4 +80,64 @@ describe("SftpMimic", () => {
 		client.end();
 		server.stop();
 	});
+
+	test("blocks path traversal attempts outside home directory", async () => {
+		const vfs = new VirtualFileSystem();
+		const users = new VirtualUserManager(vfs, "root");
+		await users.initialize();
+
+		const rootPath = "/home/root";
+		if (!vfs.exists(rootPath)) {
+			vfs.mkdir(rootPath, 0o755);
+		}
+
+		const server = new SftpMimic({ port: 0, hostname: "test-sftp", vfs, users });
+		const port = await server.start();
+
+		const { client, sftp } = await connectSftp(port);
+
+		// Try to read /etc/passwd (outside home directory) - should fail with PERMISSION_DENIED
+		const traversalAttempt = await new Promise<Error | null>((resolve) => {
+			sftp.stat(
+				"/etc/passwd",
+				(err: Error | undefined) => {
+					resolve(err ?? null);
+				},
+			);
+		});
+
+		expect(traversalAttempt).not.toBeNull();
+		expect(traversalAttempt?.message).toContain("Permission denied");
+
+		// Try to access /home/root which should work
+		const homeAccess = await new Promise<FileEntryWithStats[]>((resolve, reject) => {
+			sftp.readdir(
+				"/home/root",
+				(err: Error | undefined, list: FileEntryWithStats[]) => {
+					if (err) {
+						reject(err);
+						return;
+					}
+					resolve(list);
+				},
+			);
+		});
+
+		expect(homeAccess).toBeDefined();
+
+		// Try to go up with ../ - should fail
+		const upTraversalAttempt = await new Promise<Error | null>((resolve) => {
+			sftp.readdir(
+				"/home/root/../../etc",
+				(err: Error | undefined) => {
+					resolve(err ?? null);
+				},
+			);
+		});
+
+		expect(upTraversalAttempt).not.toBeNull();
+
+		client.end();
+		server.stop();
+	});
 });

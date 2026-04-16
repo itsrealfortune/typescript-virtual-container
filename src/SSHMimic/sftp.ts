@@ -296,6 +296,31 @@ export class SftpMimic {
 		return normalized.startsWith("/") ? normalized : `/${normalized}`;
 	}
 
+	/**
+	 * Verifies that a target path is confined within the user's home directory.
+	 * This implements chroot-like behavior for security.
+	 * @param targetPath - The normalized target path
+	 * @param authUser - The authenticated username
+	 * @returns true if path is within home, false if traversal attempt detected
+	 */
+	private isPathWithinHome(targetPath: string, authUser: string): boolean {
+		const homePath = `/home/${authUser}`;
+		const normalized = path.posix.normalize(targetPath);
+
+		// Allow access to home directory itself
+		if (normalized === homePath) {
+			return true;
+		}
+
+		// Check if path is within home directory (starts with /home/username/)
+		if (normalized.startsWith(`${homePath}/`)) {
+			return true;
+		}
+
+		// Reject any attempt to escape home directory
+		return false;
+	}
+
 	private createAttrs(node: VfsNodeStats): SftpAttributes {
 		const permissions = node.mode & 0o777;
 		const fileType = node.type === "directory" ? 0o040000 : 0o100000;
@@ -335,6 +360,16 @@ export class SftpMimic {
 
 		sftp.on("OPEN", (reqid: number, filename: string, flags: number) => {
 			const targetPath = this.normalizePath(filename);
+
+			// Security: Confine to home directory
+			if (!this.isPathWithinHome(targetPath, authUser)) {
+				console.warn(
+					`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${targetPath}`,
+				);
+				sftp.status(reqid, SFTP_STATUS_CODE.PERMISSION_DENIED);
+				return;
+			}
+
 			const openMode = flags;
 			const _canRead = Boolean(openMode & OPEN_MODE.READ);
 			const _canWrite = Boolean(
@@ -469,6 +504,16 @@ export class SftpMimic {
 
 		sftp.on("OPENDIR", (reqid: number, requestPath: string) => {
 			const targetPath = this.normalizePath(requestPath);
+
+			// Security: Confine to home directory
+			if (!this.isPathWithinHome(targetPath, authUser)) {
+				console.warn(
+					`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${targetPath}`,
+				);
+				sftp.status(reqid, SFTP_STATUS_CODE.PERMISSION_DENIED);
+				return;
+			}
+
 			try {
 				const stats = getVfs().stat(targetPath);
 				if (stats.type !== "directory") {
@@ -512,6 +557,16 @@ export class SftpMimic {
 
 		sftp.on("STAT", (reqid: number, requestPath: string) => {
 			const targetPath = this.normalizePath(requestPath);
+
+			// Security: Confine to home directory
+			if (!this.isPathWithinHome(targetPath, authUser)) {
+				console.warn(
+					`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${targetPath}`,
+				);
+				sftp.status(reqid, SFTP_STATUS_CODE.PERMISSION_DENIED);
+				return;
+			}
+
 			try {
 				const stats = getVfs().stat(targetPath);
 				sftp.attrs(reqid, this.createAttrs(stats));
@@ -522,6 +577,16 @@ export class SftpMimic {
 
 		sftp.on("LSTAT", (reqid: number, requestPath: string) => {
 			const targetPath = this.normalizePath(requestPath);
+
+			// Security: Confine to home directory
+			if (!this.isPathWithinHome(targetPath, authUser)) {
+				console.warn(
+					`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${targetPath}`,
+				);
+				sftp.status(reqid, SFTP_STATUS_CODE.PERMISSION_DENIED);
+				return;
+			}
+
 			try {
 				const stats = getVfs().stat(targetPath);
 				sftp.attrs(reqid, this.createAttrs(stats));
@@ -554,6 +619,16 @@ export class SftpMimic {
 			"SETSTAT",
 			(reqid: number, requestPath: string, attrs: { mode?: number }) => {
 				const targetPath = this.normalizePath(requestPath);
+
+				// Security: Confine to home directory
+				if (!this.isPathWithinHome(targetPath, authUser)) {
+					console.warn(
+						`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${targetPath}`,
+					);
+					sftp.status(reqid, SFTP_STATUS_CODE.PERMISSION_DENIED);
+					return;
+				}
+
 				try {
 					if (attrs.mode !== undefined) {
 						getVfs().chmod(targetPath, attrs.mode);
@@ -567,6 +642,16 @@ export class SftpMimic {
 
 		sftp.on("REALPATH", (reqid: number, requestPath: string) => {
 			const normalized = this.normalizePath(requestPath);
+
+			// Security: Confine to home directory
+			if (!this.isPathWithinHome(normalized, authUser)) {
+				console.warn(
+					`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${normalized}`,
+				);
+				sftp.status(reqid, SFTP_STATUS_CODE.PERMISSION_DENIED);
+				return;
+			}
+
 			sftp.name(reqid, [
 				{
 					filename: normalized,
@@ -585,6 +670,16 @@ export class SftpMimic {
 
 		sftp.on("MKDIR", (reqid: number, requestPath: string) => {
 			const targetPath = this.normalizePath(requestPath);
+
+			// Security: Confine to home directory
+			if (!this.isPathWithinHome(targetPath, authUser)) {
+				console.warn(
+					`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${targetPath}`,
+				);
+				sftp.status(reqid, SFTP_STATUS_CODE.PERMISSION_DENIED);
+				return;
+			}
+
 			try {
 				getVfs().mkdir(targetPath, 0o755);
 				void getVfs().flushMirror();
@@ -596,6 +691,16 @@ export class SftpMimic {
 
 		sftp.on("RMDIR", (reqid: number, requestPath: string) => {
 			const targetPath = this.normalizePath(requestPath);
+
+			// Security: Confine to home directory
+			if (!this.isPathWithinHome(targetPath, authUser)) {
+				console.warn(
+					`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${targetPath}`,
+				);
+				sftp.status(reqid, SFTP_STATUS_CODE.PERMISSION_DENIED);
+				return;
+			}
+
 			try {
 				getVfs().remove(targetPath, { recursive: false });
 				void getVfs().flushMirror();
@@ -607,6 +712,16 @@ export class SftpMimic {
 
 		sftp.on("REMOVE", (reqid: number, requestPath: string) => {
 			const targetPath = this.normalizePath(requestPath);
+
+			// Security: Confine to home directory
+			if (!this.isPathWithinHome(targetPath, authUser)) {
+				console.warn(
+					`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${targetPath}`,
+				);
+				sftp.status(reqid, SFTP_STATUS_CODE.PERMISSION_DENIED);
+				return;
+			}
+
 			try {
 				getVfs().remove(targetPath, { recursive: false });
 				void getVfs().flushMirror();
@@ -619,6 +734,19 @@ export class SftpMimic {
 		sftp.on("RENAME", (reqid: number, oldPath: string, newPath: string) => {
 			const fromPath = this.normalizePath(oldPath);
 			const toPath = this.normalizePath(newPath);
+
+			// Security: Confine both source and destination to home directory
+			if (
+				!this.isPathWithinHome(fromPath, authUser) ||
+				!this.isPathWithinHome(toPath, authUser)
+			) {
+				console.warn(
+					`[SFTP] Path traversal attempt blocked: user=${authUser}, from=${fromPath}, to=${toPath}`,
+				);
+				sftp.status(reqid, SFTP_STATUS_CODE.PERMISSION_DENIED);
+				return;
+			}
+
 			try {
 				getVfs().move(fromPath, toPath);
 				void getVfs().flushMirror();
