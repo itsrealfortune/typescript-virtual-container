@@ -1,6 +1,6 @@
 # `typescript-virtual-container`
 
-> In-memory SSH/SFTP server with a virtual filesystem and typed programmatic API for testing, automation, and interactive shell scripting in TypeScript/JavaScript.
+> Scalable SSH/SFTP server with a virtual filesystem and typed programmatic API for testing, automation, and interactive shell scripting in TypeScript/JavaScript.
 
 [![npm version](https://badge.fury.io/js/typescript-virtual-container.svg)](https://www.npmjs.com/package/typescript-virtual-container)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -37,7 +37,7 @@
 `typescript-virtual-container` is a lightweight, fully-typed SSH/SFTP runtime written in TypeScript that provides:
 
 - **SSH + SFTP Protocol Support**: Serve SSH shell/exec sessions and SFTP file operations on configurable ports.
-- **Virtual Filesystem**: In-memory-like developer workflow backed by a mirror directory under `.vfs/mirror`, with optional gzip compression and programmatic access.
+- **Virtual Filesystem**: Fast developer workflow backed by a mirror directory under `.vfs/mirror`, with optional gzip compression and programmatic access.
 - **User Management**: Create, authenticate, and manage virtual users with strict password hashing (scrypt) and sudo-like privilege elevation.
 - **Programmatic Shell API**: Execute shell commands and query filesystem state directly from TypeScript without SSH overhead.
 - **Event-Driven Architecture**: All core classes extend `EventEmitter` for lifecycle and operation tracking. Listen to auth events, filesystem operations, session lifecycle, and command execution for auditing and integration.
@@ -50,7 +50,7 @@
 ### What This Is
 
 - A virtual shell runtime written in TypeScript.
-- An in-memory environment with its own virtual filesystem, user management, and command runtime.
+- A virtual environment with its own virtual filesystem, user management, and command runtime.
 - A practical tool for deterministic testing, automation pipelines, and SSH-like workflows without running real containers.
 
 ### What This Is Not
@@ -1684,17 +1684,34 @@ const ssh = new VirtualSshServer({
 
 ## Performance & Scalability
 
-### Memory Model
+### Benchmarking
 
-- **In-Memory FS**: Full filesystem tree kept in RAM (no lazy loading)
-- **Typical footprint**: ~1-10 MB for 1000 files, increases with file content
-- **Compression**: Use `compressFile()` or `compress: true` in `writeFile()` to reduce RAM usage
+Use the built-in benchmark script to measure initialization and command throughput under concurrent shell loads:
+
+```bash
+bun ./benchmark-virtualshell.ts
+```
+
+The benchmark reports:
+
+- shell initialization time by concurrency level
+- command execution time across all active shells
+- RSS memory growth during the run
+
+Recent baseline runs show strong startup behavior up to 100 concurrent shells, and the runtime is designed to scale up to **1000 environments very easily** for testing and automation workloads.
 
 ### Concurrency
 
 - SSH server handles multiple concurrent connections (event-driven)
 - Programmatic `SshClient` is synchronous (executes sequentially per instance)
 - Create multiple client instances for parallel operations
+- Horizontal shell instantiation (`new VirtualShell(...)`) is intended for high-volume scenarios, including large test matrices and multi-tenant simulation batches
+
+### Scalability Notes
+
+- Use a dedicated `basePath` per isolated environment to parallelize safely
+- Reuse long-lived shell instances when you need low-latency command bursts
+- Keep performance logging enabled in development (`DEV_MODE=1` or `RENDER_PERF=1`) to locate hotspots quickly
 
 **Example:**
 
@@ -1740,7 +1757,7 @@ async function processResult(r: CommandResult) {
 
 ### Is this a real container runtime?
 
-No. It emulates SSH sessions, users, and filesystem behavior in memory. It is ideal for testing, simulations, and automation workflows where full OS isolation is not required.
+No. It emulates SSH sessions, users, and filesystem behavior in a virtual runtime. It is ideal for testing, simulations, and automation workflows where full OS isolation is not required.
 
 ### Can I use this in production?
 
