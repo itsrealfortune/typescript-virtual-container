@@ -163,4 +163,5 @@ class SshMimic {
 	}
 }
 
+export { SftpMimic } from "./sftp";
 export { SshMimic };
