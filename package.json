@@ -4,7 +4,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -19,7 +19,7 @@
     "shell"
   ],
   "scripts": {
-    "postinstall": "rm -f node_modules/ssh2/lib/protocol/crypto/build/Release/sshcrypto.node && rm -rf node_modules/cpu-features",
+    "postinstall": "node scripts/postinstall.js",
     "format": "bunx --bun @biomejs/biome format --write ./src",
     "check": "bunx --bun @biomejs/biome check ./src",
     "lint": "bunx --bun @biomejs/biome lint ./src",
