@@ -1,5 +1,6 @@
 import { Server as SshServer } from "ssh2";
 import { VirtualShell } from "../VirtualShell";
+import { runExec } from "./exec";
 import { loadOrCreateHostKey } from "./hostKey";
 
 /**
@@ -125,12 +126,16 @@ class SshMimic {
 						});
 
 						session.on("exec", (acceptExec, _rejectExec, info) => {
-							const _stream = acceptExec();
-							shell?.executeCommand(
-								info.command.trim(),
-								authUser,
-								`/home/${authUser}`,
-							);
+							const stream = acceptExec();
+							if (stream) {
+								runExec(
+									stream,
+									info.command.trim(),
+									authUser,
+									shell.hostname,
+									shell,
+								);
+							}
 						});
 					});
 				});

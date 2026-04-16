@@ -28,7 +28,6 @@ export function runExec(
 		}
 
 		stream.exit(result.exitCode ?? 0);
-		console.log(shell.vfs);
 		void shell.vfs.flushMirror();
 		stream.end();
 	});
