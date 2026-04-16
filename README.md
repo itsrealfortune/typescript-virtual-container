@@ -1,6 +1,6 @@
 # `typescript-virtual-container`
 
-> In-memory SSH server with a virtual filesystem and typed programmatic API for testing, automation, and interactive shell scripting in TypeScript/JavaScript.
+> In-memory SSH/SFTP server with a virtual filesystem and typed programmatic API for testing, automation, and interactive shell scripting in TypeScript/JavaScript.
 
 [![npm version](https://badge.fury.io/js/typescript-virtual-container.svg)](https://www.npmjs.com/package/typescript-virtual-container)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -34,10 +34,10 @@
 
 ## Overview
 
-`typescript-virtual-container` is a lightweight, fully-typed SSH server written in TypeScript that provides:
+`typescript-virtual-container` is a lightweight, fully-typed SSH/SFTP runtime written in TypeScript that provides:
 
-- **SSH Protocol Support**: Serve SSH connections on any port with password authentication and support for both shell and exec modes.
-- **Virtual Filesystem**: In-memory filesystem with optional compression, persistence to disk via tar.gz snapshots, and programmatic access.
+- **SSH + SFTP Protocol Support**: Serve SSH shell/exec sessions and SFTP file operations on configurable ports.
+- **Virtual Filesystem**: In-memory-like developer workflow backed by a mirror directory under `.vfs/mirror`, with optional gzip compression and programmatic access.
 - **User Management**: Create, authenticate, and manage virtual users with strict password hashing (scrypt) and sudo-like privilege elevation.
 - **Programmatic Shell API**: Execute shell commands and query filesystem state directly from TypeScript without SSH overhead.
 - **Built-in Commands**: `ls`, `cd`, `pwd`, `cat`, `mkdir`, `touch`, `rm`, `tree`, `whoami`, `hostname`, `who`, `sudo`, `su`, `adduser`, `deluser`, `nano` (text editor), `curl`, `wget`, and a growing set of additional commands. Not everything is implemented yet, and shell compatibility is still being expanded.
@@ -126,6 +126,31 @@ process.on("SIGTERM", () => {
 });
 ```
 
+### Running SSH + SFTP with Shared State
+
+```typescript
+import { VirtualSftpServer, VirtualShell, VirtualSshServer } from "typescript-virtual-container";
+
+const shell = new VirtualShell("my-container");
+
+const ssh = new VirtualSshServer({
+	port: 2222,
+	hostname: "my-container",
+	shell,
+});
+
+const sftp = new VirtualSftpServer({
+	port: 2223,
+	hostname: "my-container",
+	shell,
+});
+
+await ssh.start();
+await sftp.start();
+
+console.log("SSH on :2222, SFTP on :2223");
+```
+
 ### Using the Programmatic Client API
 
 ```typescript
@@ -174,7 +199,7 @@ ssh.stop();
 └──────────────┘  └──────────┘  └──────────┘
 			 ▲
 │              Backed by disk
-│              .vfs/mirror.tar.gz
+│              .vfs/mirror
 └──────────────────────────────────┘
 ``` -->
 
@@ -182,13 +207,14 @@ ssh.stop();
 
 1. **SSH Shell Mode**: Interactive terminal session over SSH with readline, prompt, TTY resizing.
 2. **SSH Exec Mode**: Non-interactive command execution (e.g., `ssh user@host "ls -la"`).
-3. **Programmatic Mode** (new): Direct TypeScript API via `SshClient`, no SSH protocol overhead.
+3. **SFTP Mode**: Remote file operations (`readdir`, `stat`, `readFile`, `writeFile`, `mkdir`, `rename`, etc.) with home-directory confinement.
+4. **Programmatic Mode**: Direct TypeScript API via `SshClient`, no SSH protocol overhead.
 
 ### Persistence
 
-- Filesystem state saved as gzip-compressed tar archive at `.vfs/mirror.tar.gz`
+- Filesystem state is stored under `.vfs/mirror` inside the configured `basePath`
 - Users/passwords stored in virtual paths `/virtual-env-js/.auth/htpasswd` and `/virtual-env-js/.auth/sudoers`
-- Manual flush via `VirtualFileSystem.flushMirror()` or automatic on command completion
+- `restoreMirror()` and `flushMirror()` are lightweight compatibility hooks for initialization boundaries
 
 ---
 
@@ -275,6 +301,54 @@ Returns configured server hostname.
 ```typescript
 console.log(`Server name: ${ssh.getHostname()}`);
 ```
+
+---
+
+### SftpMimic (SFTP Server)
+
+SFTP server class, exported as `VirtualSftpServer` in the package entrypoint. It can run with a shared `VirtualShell` (recommended) or with explicit `vfs + users` dependencies.
+
+#### Constructor
+
+```typescript
+new SftpMimic(options: {
+	port: number;
+	hostname?: string;
+	shell?: VirtualShell;
+	vfs?: VirtualFileSystem;
+	users?: VirtualUserManager;
+})
+```
+
+- If `shell` is provided, SFTP reuses the same users/filesystem state as SSH.
+- If `shell` is omitted, pass `vfs` and `users` explicitly.
+
+#### Methods
+
+##### `async start(): Promise<number>`
+
+Starts the SFTP server and returns the bound port (useful with `port: 0`).
+
+```typescript
+const sftp = new SftpMimic({ port: 0, shell });
+const boundPort = await sftp.start();
+console.log(`SFTP listening on ${boundPort}`);
+```
+
+##### `stop(): void`
+
+Stops the SFTP server.
+
+```typescript
+sftp.stop();
+```
+
+#### Behavior Notes
+
+- Supports `password` and `keyboard-interactive` authentication.
+- Resolves relative SFTP paths from `/home/<user>`.
+- Confines all SFTP operations to `/home/<user>` and blocks traversal attempts outside the user home.
+- Unsupported operations (`READLINK`, `SYMLINK`) return `OP_UNSUPPORTED`.
 
 ---
 
@@ -475,7 +549,7 @@ new VirtualShell(
 
 - **hostname**: Hostname injected into command context and prompt behavior.
 - **properties**: Optional shell metadata. Defaults to `defaultShellProperties`.
-- **basePath**: Optional directory used to resolve `.vfs/mirror.tar.gz` (defaults to `.`).
+- **basePath**: Optional directory used to resolve `.vfs/mirror` and auth storage (defaults to `.`).
 
 **Example:**
 
@@ -523,7 +597,7 @@ shell.startInteractiveSession(
 
 ### VirtualFileSystem
 
-In-memory filesystem with optional gzip compression and tar.gz persistence.
+Virtual filesystem abstraction backed by a mirror directory on disk, with optional gzip compression per file.
 
 #### Constructor
 
@@ -531,18 +605,18 @@ In-memory filesystem with optional gzip compression and tar.gz persistence.
 new VirtualFileSystem(baseDir?: string)
 ```
 
-- **baseDir**: Directory to store `.vfs/mirror.tar.gz` snapshot (default: current working directory)
+- **baseDir**: Directory used for the `.vfs/mirror` root (default: current working directory)
 
 ```typescript
 const vfs = new VirtualFileSystem("./container-data");
-// Snapshot at ./container-data/.vfs/mirror.tar.gz
+// Mirror root at ./container-data/.vfs/mirror
 ```
 
 #### Methods
 
 ##### `async restoreMirror(): Promise<void>`
 
-Loads filesystem state from disk snapshot. If missing, creates fresh filesystem.
+Ensures mirror directory structure exists and is ready for operations.
 
 ```typescript
 await vfs.restoreMirror();
@@ -550,7 +624,7 @@ await vfs.restoreMirror();
 
 ##### `async flushMirror(): Promise<void>`
 
-Persists current filesystem state to disk. No-op if nothing changed.
+Compatibility hook to finalize mirror boundary operations.
 
 ```typescript
 // After file modifications...
@@ -1022,7 +1096,7 @@ vfs1.writeFile("/data/report.txt", "Baseline data");
 await vfs1.flushMirror();
 ssh1.stop();
 
-console.log("State saved to ./container/.vfs/mirror.tar.gz");
+console.log("State available under ./container/.vfs/mirror");
 
 // Later: Reload and continue
 const shell2 = new VirtualShell("typescript-vm", undefined, "./container");
@@ -1293,7 +1367,7 @@ You can use it in production-like automation contexts (sandboxed command runners
 
 ### Does data persist between restarts?
 
-Yes, if you call `flushMirror()` and use a stable `basePath`. State is restored from `.vfs/mirror.tar.gz`.
+Yes, when using a stable `basePath`. Files are stored under `.vfs/mirror`.
 
 ### Is networking fully implemented for curl/wget?
 
