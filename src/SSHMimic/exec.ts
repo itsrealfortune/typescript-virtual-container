@@ -18,17 +18,24 @@ export function runExec(
 ): void {
 	Promise.resolve(
 		runCommand(cmd, authUser, hostname, "exec", `/home/${authUser}`, shell),
-	).then((result) => {
-		if (result.stdout) {
-			stream.write(`${toTtyLines(result.stdout)}\r\n`);
-		}
+	)
+		.then((result) => {
+			if (result.stdout) {
+				stream.write(`${toTtyLines(result.stdout)}\r\n`);
+			}
 
-		if (result.stderr) {
-			stream.stderr.write(`${toTtyLines(result.stderr)}\r\n`);
-		}
+			if (result.stderr) {
+				stream.stderr.write(`${toTtyLines(result.stderr)}\r\n`);
+			}
 
-		stream.exit(result.exitCode ?? 0);
-		void shell.vfs.flushMirror();
-		stream.end();
-	});
+			stream.exit(result.exitCode ?? 0);
+			void shell.vfs.flushMirror();
+			stream.end();
+		})
+		.catch((error) => {
+			console.error("Exec error:", error);
+			stream.stderr.write(`Error: ${String(error)}\r\n`);
+			stream.exit(1);
+			stream.end();
+		});
 }

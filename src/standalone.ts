@@ -1,4 +1,4 @@
-import { VirtualShell, VirtualSshServer } from ".";
+import { VirtualSftpServer, VirtualShell, VirtualSshServer } from ".";
 
 const hostname = process.env.SSH_MIMIC_HOSTNAME ?? "typescript-vm";
 const virtualShell = new VirtualShell(hostname);
@@ -24,5 +24,15 @@ new VirtualSshServer({
 	})
 	.catch((error: unknown) => {
 		console.error("Failed to start SSH Mimic:", error);
+		process.exit(1);
+	});
+
+new VirtualSftpServer({ port: 2223, hostname, shell: virtualShell })
+	.start()
+	.then((port: number) => {
+		console.log(`SFTP Mimic initialized. Listening on port ${port}.`);
+	})
+	.catch((error: unknown) => {
+		console.error("Failed to start SFTP Mimic:", error);
 		process.exit(1);
 	});

@@ -1,5 +1,5 @@
 import { SshClient } from "./SSHClient";
-import { SshMimic } from "./SSHMimic/index";
+import { SftpMimic, SshMimic } from "./SSHMimic/index";
 import VirtualFileSystem from "./VirtualFileSystem";
 import { VirtualShell } from "./VirtualShell";
 import { VirtualUserManager } from "./VirtualUserManager";
@@ -32,6 +32,7 @@ export type {
 export {
 	SshClient,
 	VirtualFileSystem,
+	SftpMimic as VirtualSftpServer,
 	VirtualShell,
 	SshMimic as VirtualSshServer,
 	VirtualUserManager,

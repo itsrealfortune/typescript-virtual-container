@@ -6,6 +6,31 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [1.1.4] - 2026-04-16
+
+### Added
+
+- New SFTP server implementation (`SftpMimic`), exported as `VirtualSftpServer`.
+- SFTP handlers for file/directory operations: `OPEN`, `READ`, `WRITE`, `FSTAT`, `CLOSE`, `OPENDIR`, `READDIR`, `STAT`, `LSTAT`, `SETSTAT`, `FSETSTAT`, `REALPATH`, `MKDIR`, `RMDIR`, `REMOVE`, `RENAME`.
+- Home-directory confinement for SFTP sessions (`/home/<user>`) with path traversal blocking.
+- Keyboard-interactive authentication support in SFTP in addition to password auth.
+- Standalone runtime now starts both SSH and SFTP servers with a shared `VirtualShell`.
+- New SFTP test suite covering authentication, read/write flows, system-user login, and traversal protection.
+
+### Changed
+
+- `VirtualFileSystem` mirror strategy now uses `.vfs/mirror` directory storage as the persistence boundary.
+- SSH and SFTP startup now explicitly wait for full shell/user initialization before accepting connections.
+- SFTP `start()` returns the actual bound port (including when configured with port `0`).
+- Relative SFTP request paths are resolved from the authenticated user home.
+- `VirtualUserManager.initialize()` auto-creates the current system user (`$USER` / `$USERNAME`) for easier local auth flows.
+
+### Fixed
+
+- Added stronger error handling/logging for SFTP client/session/stream lifecycle events.
+- Fixed flaky SFTP tests by isolating each test run with temporary VFS base paths and deterministic cleanup.
+- Fixed `ssh-exec` test timeout by resolving the mocked exec stream completion correctly.
+
 ## [1.0.6...1.0.8] - 2026-04-15
 
 Too much refactor to list.

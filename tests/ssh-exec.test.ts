@@ -7,13 +7,13 @@ describe("SSH exec inline commands", () => {
 		const shell = new VirtualShell("localhost");
 		const stdout: string[] = [];
 		const stderr: string[] = [];
-		let exitCode: number | null = null;
+		let exitCode: number = -1;
 
 		const stream = {
 			write(data: string) {
 				stdout.push(data);
 			},
-			err: {
+			stderr: {
 				write(data: string) {
 					stderr.push(data);
 				},
@@ -26,12 +26,13 @@ describe("SSH exec inline commands", () => {
 			},
 		};
 
-		const endPromise = new Promise<void>(() => {
-            stream.end = () => {
-                if (exitCode !== null) {
-                    return;
-                }
-            }
+		await shell.ensureInitialized();
+
+		const endPromise = new Promise<void>((resolve) => {
+			stream.end = () => {
+				resolve();
+				return;
+			};
 		});
 
 		runExec(stream as never, "echo hello", "root", "localhost", shell);

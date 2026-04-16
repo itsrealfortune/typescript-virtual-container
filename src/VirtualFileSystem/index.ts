@@ -1,4 +1,4 @@
-import { promises as fs } from "node:fs";
+import * as fs from "node:fs";
 import * as path from "node:path";
 import { gunzipSync, gzipSync } from "node:zlib";
 import type {
@@ -6,11 +6,7 @@ import type {
 	VfsNodeStats,
 	WriteFileOptions,
 } from "../types/vfs";
-import { archiveExists, createTarBuffer, readSnapshotFromTar } from "./archive";
-import type { InternalDirectoryNode, InternalNode } from "./internalTypes";
-import { getNode, getParentDirectory, normalizePath, splitPath } from "./path";
-import { applySnapshot, createSnapshot } from "./snapshot";
-import { renderTree } from "./tree";
+import { normalizePath } from "./path";
 
 /**
  * In-memory virtual filesystem with tar.gz mirror persistence.
@@ -20,20 +16,75 @@ import { renderTree } from "./tree";
  * {@link VirtualFileSystem.flushMirror} to persist pending changes.
  */
 class VirtualFileSystem {
-	private readonly root: InternalDirectoryNode;
-	private readonly archivePath: string;
-	private dirty = false;
+	private readonly mirrorRoot: string;
 
-	private computeNodeUsageBytes(node: InternalNode): number {
-		if (node.type === "file") {
-			return node.content.length;
+	private ensureMirrorRoot(): void {
+		fs.mkdirSync(this.mirrorRoot, { recursive: true, mode: 0o755 });
+	}
+
+	private resolveFsPath(targetPath: string): string {
+		const normalized = normalizePath(targetPath);
+		const relativePath = normalized.slice(1);
+		const resolved = path.resolve(this.mirrorRoot, relativePath || ".");
+		const relative = path.relative(this.mirrorRoot, resolved);
+
+		if (relative.startsWith("..") || path.isAbsolute(relative)) {
+			throw new Error(`Invalid path '${targetPath}'.`);
+		}
+
+		return resolved;
+	}
+
+	private detectGzipFile(targetPath: string): boolean {
+		const fd = fs.openSync(targetPath, "r");
+		try {
+			const header = Buffer.alloc(2);
+			const bytesRead = fs.readSync(fd, header, 0, 2, 0);
+			return bytesRead === 2 && header[0] === 0x1f && header[1] === 0x8b;
+		} finally {
+			fs.closeSync(fd);
+		}
+	}
+
+	private computeDiskUsageBytes(targetPath: string): number {
+		const stats = fs.statSync(targetPath);
+		if (stats.isFile()) {
+			return stats.size;
 		}
 
 		let total = 0;
-		for (const child of node.children.values()) {
-			total += this.computeNodeUsageBytes(child);
+		for (const entry of fs.readdirSync(targetPath)) {
+			total += this.computeDiskUsageBytes(path.join(targetPath, entry));
 		}
 		return total;
+	}
+
+	private renderTreeLines(targetPath: string, label: string): string {
+		const lines = [label];
+
+		const walk = (currentPath: string, prefix: string): void => {
+			const entries = fs
+				.readdirSync(currentPath, { withFileTypes: true })
+				.map((entry) => entry.name)
+				.sort((left, right) => left.localeCompare(right));
+
+			for (let i = 0; i < entries.length; i += 1) {
+				const name = entries[i]!;
+				const isLast = i === entries.length - 1;
+				const connector = isLast ? "└── " : "├── ";
+				const nextPrefix = `${prefix}${isLast ? "    " : "│   "}`;
+				const entryPath = path.join(currentPath, name);
+				const isDirectory = fs.statSync(entryPath).isDirectory();
+
+				lines.push(`${prefix}${connector}${name}`);
+				if (isDirectory) {
+					walk(entryPath, nextPrefix);
+				}
+			}
+		};
+
+		walk(targetPath, "");
+		return lines.join("\n");
 	}
 
 	/**
@@ -42,16 +93,7 @@ class VirtualFileSystem {
 	 * @param baseDir Base directory used to resolve mirror archive location.
 	 */
 	constructor(baseDir: string = process.cwd()) {
-		const now = new Date();
-		this.archivePath = path.resolve(baseDir, ".vfs", "mirror.tar.gz");
-		this.root = {
-			type: "directory",
-			name: "",
-			mode: 0o755,
-			createdAt: now,
-			updatedAt: now,
-			children: new Map<string, InternalNode>(),
-		};
+		this.mirrorRoot = path.resolve(baseDir, ".vfs", "mirror");
 	}
 
 	/**
@@ -60,20 +102,7 @@ class VirtualFileSystem {
 	 * If archive does not exist or cannot be read, creates fresh mirror file.
 	 */
 	public async restoreMirror(): Promise<void> {
-		await fs.mkdir(path.dirname(this.archivePath), { recursive: true });
-		try {
-			const compressed = await fs.readFile(this.archivePath);
-			const tarBuffer = gunzipSync(compressed);
-			const snapshot = await readSnapshotFromTar(tarBuffer);
-			applySnapshot(this.root, snapshot);
-			this.dirty = false;
-			return;
-		} catch {
-			console.warn(
-				`No valid mirror archive found at '${this.archivePath}'. Starting with empty filesystem.`,
-			);
-			await this.flushMirror();
-		}
+		this.ensureMirrorRoot();
 	}
 
 	/**
@@ -82,16 +111,7 @@ class VirtualFileSystem {
 	 * No-op when nothing changed and archive already exists.
 	 */
 	public async flushMirror(): Promise<void> {
-		if (!this.dirty && (await archiveExists(this.archivePath))) {
-			return;
-		}
-
-		await fs.mkdir(path.dirname(this.archivePath), { recursive: true });
-		const snapshotJson = JSON.stringify(createSnapshot(this.root), null, 2);
-		const tarBuffer = await createTarBuffer(snapshotJson);
-		const compressed = gzipSync(tarBuffer);
-		await fs.writeFile(this.archivePath, compressed);
-		this.dirty = false;
+		this.ensureMirrorRoot();
 	}
 
 	/**
@@ -101,36 +121,14 @@ class VirtualFileSystem {
 	 * @param mode POSIX-like mode bits for new directories.
 	 */
 	public mkdir(targetPath: string, mode: number = 0o755): void {
-		const normalized = normalizePath(targetPath);
-		const parts = splitPath(normalized);
-
-		let current = this.root;
-		for (const part of parts) {
-			const existing = current.children.get(part);
-			if (!existing) {
-				const now = new Date();
-				const nextDir: InternalDirectoryNode = {
-					type: "directory",
-					name: part,
-					mode,
-					createdAt: now,
-					updatedAt: now,
-					children: new Map<string, InternalNode>(),
-				};
-				current.children.set(part, nextDir);
-				current.updatedAt = now;
-				this.dirty = true;
-				current = nextDir;
-				continue;
-			}
-
-			if (existing.type !== "directory") {
-				throw new Error(
-					`Cannot create directory '${normalized}': '${part}' is a file.`,
-				);
-			}
-			current = existing;
+		this.ensureMirrorRoot();
+		const fsPath = this.resolveFsPath(targetPath);
+		if (fs.existsSync(fsPath) && !fs.statSync(fsPath).isDirectory()) {
+			throw new Error(
+				`Cannot create directory '${normalizePath(targetPath)}': path is a file.`,
+			);
 		}
+		fs.mkdirSync(fsPath, { recursive: true, mode });
 	}
 
 	/**
@@ -147,44 +145,26 @@ class VirtualFileSystem {
 		content: string | Buffer,
 		options: WriteFileOptions = {},
 	): void {
+		this.ensureMirrorRoot();
 		const normalized = normalizePath(targetPath);
-		const { parent, name } = getParentDirectory(
-			this.root,
-			normalized,
-			true,
-			(pathToCreate) => this.mkdir(pathToCreate),
-		);
-		const now = new Date();
+		const fsPath = this.resolveFsPath(normalized);
+		const parentPath = path.dirname(fsPath);
+		fs.mkdirSync(parentPath, { recursive: true, mode: 0o755 });
 
 		const rawContent = Buffer.isBuffer(content)
 			? content
 			: Buffer.from(content, "utf8");
 		const shouldCompress = options.compress ?? false;
 		const storedContent = shouldCompress ? gzipSync(rawContent) : rawContent;
-		const existing = parent.children.get(name);
 
-		if (existing && existing.type === "directory") {
+		if (fs.existsSync(fsPath) && fs.statSync(fsPath).isDirectory()) {
 			throw new Error(
 				`Cannot write file '${normalized}': path is a directory.`,
 			);
 		}
 
-		const createdAt = existing?.type === "file" ? existing.createdAt : now;
-		const mode =
-			options.mode ?? (existing?.type === "file" ? existing.mode : 0o644);
-
-		parent.children.set(name, {
-			type: "file",
-			name,
-			mode,
-			createdAt,
-			updatedAt: now,
-			content: storedContent,
-			compressed: shouldCompress,
-		});
-
-		parent.updatedAt = now;
-		this.dirty = true;
+		fs.writeFileSync(fsPath, storedContent);
+		fs.chmodSync(fsPath, options.mode ?? 0o644);
 	}
 
 	/**
@@ -196,12 +176,14 @@ class VirtualFileSystem {
 	 * @returns UTF-8 string content.
 	 */
 	public readFile(targetPath: string): string {
-		const node = getNode(this.root, targetPath);
-		if (node.type !== "file") {
+		this.ensureMirrorRoot();
+		const fsPath = this.resolveFsPath(targetPath);
+		if (!fs.existsSync(fsPath) || !fs.statSync(fsPath).isFile()) {
 			throw new Error(`Cannot read '${targetPath}': not a file.`);
 		}
 
-		const raw = node.compressed ? gunzipSync(node.content) : node.content;
+		const stored = fs.readFileSync(fsPath);
+		const raw = this.detectGzipFile(fsPath) ? gunzipSync(stored) : stored;
 		return raw.toString("utf8");
 	}
 
@@ -213,8 +195,8 @@ class VirtualFileSystem {
 	 */
 	public exists(targetPath: string): boolean {
 		try {
-			getNode(this.root, targetPath);
-			return true;
+			const fsPath = this.resolveFsPath(targetPath);
+			return fs.existsSync(fsPath);
 		} catch {
 			return false;
 		}
@@ -227,10 +209,11 @@ class VirtualFileSystem {
 	 * @param mode New POSIX-like mode.
 	 */
 	public chmod(targetPath: string, mode: number): void {
-		const node = getNode(this.root, targetPath);
-		node.mode = mode;
-		node.updatedAt = new Date();
-		this.dirty = true;
+		const fsPath = this.resolveFsPath(targetPath);
+		if (!fs.existsSync(fsPath)) {
+			throw new Error(`Path '${normalizePath(targetPath)}' does not exist.`);
+		}
+		fs.chmodSync(fsPath, mode);
 	}
 
 	/**
@@ -240,30 +223,39 @@ class VirtualFileSystem {
 	 * @returns Typed stat object based on node type.
 	 */
 	public stat(targetPath: string): VfsNodeStats {
+		this.ensureMirrorRoot();
 		const normalized = normalizePath(targetPath);
-		const node = getNode(this.root, normalized);
+		const fsPath = this.resolveFsPath(normalized);
 
-		if (node.type === "file") {
+		if (!fs.existsSync(fsPath)) {
+			throw new Error(`Path '${normalized}' does not exist.`);
+		}
+
+		const stats = fs.statSync(fsPath);
+		const mode = stats.mode & 0o777;
+		const name = normalized === "/" ? "" : path.posix.basename(normalized);
+
+		if (stats.isFile()) {
 			return {
 				type: "file",
-				name: node.name,
+				name,
 				path: normalized,
-				mode: node.mode,
-				createdAt: node.createdAt,
-				updatedAt: node.updatedAt,
-				compressed: node.compressed,
-				size: node.content.length,
+				mode,
+				createdAt: stats.birthtime,
+				updatedAt: stats.mtime,
+				compressed: this.detectGzipFile(fsPath),
+				size: stats.size,
 			};
 		}
 
 		return {
 			type: "directory",
-			name: node.name,
+			name,
 			path: normalized,
-			mode: node.mode,
-			createdAt: node.createdAt,
-			updatedAt: node.updatedAt,
-			childrenCount: node.children.size,
+			mode,
+			createdAt: stats.birthtime,
+			updatedAt: stats.mtime,
+			childrenCount: fs.readdirSync(fsPath).length,
 		};
 	}
 
@@ -274,12 +266,12 @@ class VirtualFileSystem {
 	 * @returns Sorted child names.
 	 */
 	public list(dirPath: string = "/"): string[] {
-		const node = getNode(this.root, dirPath);
-		if (node.type !== "directory") {
+		const fsPath = this.resolveFsPath(dirPath);
+		if (!fs.existsSync(fsPath) || !fs.statSync(fsPath).isDirectory()) {
 			throw new Error(`Cannot list '${dirPath}': not a directory.`);
 		}
 
-		return Array.from(node.children.keys()).sort();
+		return fs.readdirSync(fsPath).sort();
 	}
 
 	/**
@@ -289,14 +281,14 @@ class VirtualFileSystem {
 	 * @returns Multi-line tree string.
 	 */
 	public tree(dirPath: string = "/"): string {
-		const node = getNode(this.root, dirPath);
-		if (node.type !== "directory") {
+		const fsPath = this.resolveFsPath(dirPath);
+		if (!fs.existsSync(fsPath) || !fs.statSync(fsPath).isDirectory()) {
 			throw new Error(`Cannot render tree for '${dirPath}': not a directory.`);
 		}
 
 		const rootLabel =
 			dirPath === "/" ? "/" : path.posix.basename(normalizePath(dirPath));
-		return renderTree(node, rootLabel);
+		return this.renderTreeLines(fsPath, rootLabel);
 	}
 
 	/**
@@ -309,8 +301,11 @@ class VirtualFileSystem {
 	 * @returns Total byte usage for file content under target path.
 	 */
 	public getUsageBytes(targetPath: string = "/"): number {
-		const node = getNode(this.root, targetPath);
-		return this.computeNodeUsageBytes(node);
+		const fsPath = this.resolveFsPath(targetPath);
+		if (!fs.existsSync(fsPath)) {
+			throw new Error(`Path '${normalizePath(targetPath)}' does not exist.`);
+		}
+		return this.computeDiskUsageBytes(fsPath);
 	}
 
 	/**
@@ -319,16 +314,14 @@ class VirtualFileSystem {
 	 * @param targetPath Path to file.
 	 */
 	public compressFile(targetPath: string): void {
-		const node = getNode(this.root, targetPath);
-		if (node.type !== "file") {
+		const fsPath = this.resolveFsPath(targetPath);
+		if (!fs.existsSync(fsPath) || !fs.statSync(fsPath).isFile()) {
 			throw new Error(`Cannot compress '${targetPath}': not a file.`);
 		}
 
-		if (!node.compressed) {
-			node.content = gzipSync(node.content);
-			node.compressed = true;
-			node.updatedAt = new Date();
-			this.dirty = true;
+		if (!this.detectGzipFile(fsPath)) {
+			const content = fs.readFileSync(fsPath);
+			fs.writeFileSync(fsPath, gzipSync(content));
 		}
 	}
 
@@ -338,16 +331,14 @@ class VirtualFileSystem {
 	 * @param targetPath Path to file.
 	 */
 	public decompressFile(targetPath: string): void {
-		const node = getNode(this.root, targetPath);
-		if (node.type !== "file") {
+		const fsPath = this.resolveFsPath(targetPath);
+		if (!fs.existsSync(fsPath) || !fs.statSync(fsPath).isFile()) {
 			throw new Error(`Cannot decompress '${targetPath}': not a file.`);
 		}
 
-		if (node.compressed) {
-			node.content = gunzipSync(node.content);
-			node.compressed = false;
-			node.updatedAt = new Date();
-			this.dirty = true;
+		if (this.detectGzipFile(fsPath)) {
+			const content = fs.readFileSync(fsPath);
+			fs.writeFileSync(fsPath, gunzipSync(content));
 		}
 	}
 
@@ -362,32 +353,27 @@ class VirtualFileSystem {
 		if (normalized === "/") {
 			throw new Error("Cannot remove root directory.");
 		}
+		const fsPath = this.resolveFsPath(normalized);
 
-		const { parent, name } = getParentDirectory(
-			this.root,
-			normalized,
-			false,
-			() => undefined,
-		);
-		const node = parent.children.get(name);
-
-		if (!node) {
+		if (!fs.existsSync(fsPath)) {
 			throw new Error(`Path '${normalized}' does not exist.`);
 		}
 
-		if (
-			node.type === "directory" &&
-			node.children.size > 0 &&
-			!options.recursive
-		) {
-			throw new Error(
-				`Directory '${normalized}' is not empty. Use recursive option.`,
-			);
+		const stats = fs.statSync(fsPath);
+		if (stats.isDirectory() && !options.recursive) {
+			const entries = fs.readdirSync(fsPath);
+			if (entries.length > 0) {
+				throw new Error(
+					`Directory '${normalized}' is not empty. Use recursive option.`,
+				);
+			}
 		}
 
-		parent.children.delete(name);
-		parent.updatedAt = new Date();
-		this.dirty = true;
+		if (stats.isDirectory()) {
+			fs.rmSync(fsPath, { recursive: options.recursive ?? false });
+		} else {
+			fs.rmSync(fsPath);
+		}
 	}
 
 	/**
@@ -404,35 +390,19 @@ class VirtualFileSystem {
 			throw new Error("Cannot move root directory.");
 		}
 
-		const { parent: fromParent, name: fromName } = getParentDirectory(
-			this.root,
-			fromNormalized,
-			false,
-			() => undefined,
-		);
-		const node = fromParent.children.get(fromName);
+		const fromFsPath = this.resolveFsPath(fromNormalized);
+		const toFsPath = this.resolveFsPath(toNormalized);
 
-		if (!node) {
+		if (!fs.existsSync(fromFsPath)) {
 			throw new Error(`Path '${fromNormalized}' does not exist.`);
 		}
 
-		const { parent: toParent, name: toName } = getParentDirectory(
-			this.root,
-			toNormalized,
-			true,
-			(pathToCreate) => this.mkdir(pathToCreate),
-		);
-		if (toParent.children.has(toName)) {
+		if (fs.existsSync(toFsPath)) {
 			throw new Error(`Destination '${toNormalized}' already exists.`);
 		}
 
-		fromParent.children.delete(fromName);
-		node.name = toName;
-		node.updatedAt = new Date();
-		toParent.children.set(toName, node);
-		fromParent.updatedAt = new Date();
-		toParent.updatedAt = new Date();
-		this.dirty = true;
+		fs.mkdirSync(path.dirname(toFsPath), { recursive: true, mode: 0o755 });
+		fs.renameSync(fromFsPath, toFsPath);
 	}
 }
 
