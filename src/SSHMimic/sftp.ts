@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/style/useNamingConvention: const as enum */
 import * as path from "node:path";
+import type { KeyboardAuthContext } from "ssh2";
 import { Server as SshServer } from "ssh2";
 import type VirtualFileSystem from "../VirtualFileSystem";
 import { VirtualShell } from "../VirtualShell";
@@ -190,28 +191,65 @@ export class SftpMimic {
 				let sessionId: string | null = null;
 				let remoteAddress = "unknown";
 
-				client.on("authentication", (ctx) => {
-					if (ctx.method !== "password") {
-						ctx.reject();
-						return;
-					}
-
-					const candidateUser = ctx.username || "root";
-					remoteAddress = (ctx as { ip?: string }).ip ?? remoteAddress;
-
-					if (
-						!this.getUsers().verifyPassword(candidateUser, ctx.password ?? "")
-					) {
-						ctx.reject();
-						return;
-					}
-
-					authUser = candidateUser;
+				const acceptSession = (username: string): void => {
+					authUser = username;
 					sessionId = this.getUsers().registerSession(
 						authUser,
 						remoteAddress,
 					).id;
-					ctx.accept();
+
+					const homeRoot = "/home";
+					if (!this.getVfs().exists(homeRoot)) {
+						this.getVfs().mkdir(homeRoot, 0o755);
+					}
+
+					const homePath = `/home/${authUser}`;
+					if (!this.getVfs().exists(homePath)) {
+						this.getVfs().mkdir(homePath, 0o755);
+						this.getVfs().writeFile(
+							`${homePath}/README.txt`,
+							`Welcome to ${this.hostname}`,
+						);
+						void this.getVfs().flushMirror();
+					}
+				};
+
+				client.on("authentication", (ctx) => {
+					const candidateUser = ctx.username || "root";
+					remoteAddress = (ctx as { ip?: string }).ip ?? remoteAddress;
+
+					if (ctx.method === "password") {
+						if (
+							!this.getUsers().verifyPassword(candidateUser, ctx.password ?? "")
+						) {
+							ctx.reject();
+							return;
+						}
+
+						acceptSession(candidateUser);
+						ctx.accept();
+						return;
+					}
+
+					if (ctx.method === "keyboard-interactive") {
+						const keyboardCtx = ctx as KeyboardAuthContext;
+						keyboardCtx.prompt(
+							[{ prompt: "Password: ", echo: false }],
+							(answers) => {
+								const password = answers[0] ?? "";
+								if (!this.getUsers().verifyPassword(candidateUser, password)) {
+									keyboardCtx.reject();
+									return;
+								}
+
+								acceptSession(candidateUser);
+								keyboardCtx.accept();
+							},
+						);
+						return;
+					}
+
+					ctx.reject();
 				});
 
 				client.on("close", () => {
@@ -259,8 +297,11 @@ export class SftpMimic {
 	}
 
 	private createAttrs(node: VfsNodeStats): SftpAttributes {
+		const permissions = node.mode & 0o777;
+		const fileType = node.type === "directory" ? 0o040000 : 0o100000;
+
 		return {
-			mode: node.mode,
+			mode: fileType | permissions,
 			size: node.type === "file" ? node.size : 0,
 			uid: 0,
 			gid: 0,
@@ -531,7 +572,7 @@ export class SftpMimic {
 					filename: normalized,
 					longname: normalized,
 					attrs: {
-						mode: 0o755,
+						mode: 0o040755,
 						uid: 0,
 						gid: 0,
 						size: 0,
