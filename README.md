@@ -275,6 +275,31 @@ Cleanly closes server and all active connections.
 ssh.stop();
 ```
 
+#### Events
+
+`SshMimic` extends `EventEmitter` and emits the following events:
+
+| Event | Data | Description |
+|-------|------|-------------|
+| `start` | `{ port: number }` | Server started and listening |
+| `stop` | — | Server stopped |
+| `auth:success` | `{ username: string; remoteAddress: string }` | User authenticated |
+| `auth:failure` | `{ username: string; remoteAddress: string }` | Auth failed for user |
+| `client:connect` | — | New SSH client connected |
+| `client:disconnect` | `{ user: string }` | SSH client disconnected |
+
+**Example:**
+
+```typescript
+ssh.on("auth:success", ({ username, remoteAddress }) => {
+	console.log(`[SSH] User ${username} authenticated from ${remoteAddress}`);
+});
+
+ssh.on("auth:failure", ({ username }) => {
+	console.log(`[SSH] Auth failed for user ${username}`);
+});
+```
+
 ##### `getVfs(): VirtualFileSystem | null`
 
 Returns the virtual filesystem instance. Null if server not started.
@@ -350,6 +375,27 @@ sftp.stop();
 - Resolves relative SFTP paths from `/home/<user>`.
 - Confines all SFTP operations to `/home/<user>` and blocks traversal attempts outside the user home.
 - Unsupported operations (`READLINK`, `SYMLINK`) return `OP_UNSUPPORTED`.
+
+#### Events
+
+`SftpMimic` extends `EventEmitter` and emits the following events:
+
+| Event | Data | Description |
+|-------|------|-------------|
+| `start` | `{ port: number }` | SFTP server started and listening |
+| `stop` | — | SFTP server stopped |
+| `auth:success` | `{ username: string; remoteAddress: string }` | User authenticated for SFTP |
+| `auth:failure` | `{ username: string; remoteAddress: string }` | SFTP auth failed for user |
+| `client:connect` | — | New SFTP client connected |
+| `client:disconnect` | `{ user: string }` | SFTP client disconnected |
+
+**Example:**
+
+```typescript
+sftp.on("auth:success", ({ username }) => {
+	console.log(`[SFTP] User ${username} authenticated`);
+});
+```
 
 ---
 
@@ -594,6 +640,28 @@ shell.startInteractiveSession(
 );
 ```
 
+#### Events
+
+`VirtualShell` extends `EventEmitter` and emits the following events:
+
+| Event | Data | Description |
+|-------|------|-------------|
+| `initialized` | — | Shell initialization complete |
+| `command` | `{ command: string; user: string; cwd: string }` | Command executed |
+| `session:start` | `{ user: string; sessionId: string \| null; remoteAddress: string }` | Interactive session started |
+
+**Example:**
+
+```typescript
+shell.on("command", ({ command, user, cwd }) => {
+	console.log(`[SHELL] User ${user} executed: ${command} (cwd: ${cwd})`);
+});
+
+shell.on("session:start", ({ user, remoteAddress }) => {
+	console.log(`[SHELL] Session started for ${user} from ${remoteAddress}`);
+});
+```
+
 ---
 
 ### VirtualFileSystem
@@ -614,6 +682,29 @@ const vfs = new VirtualFileSystem("./container-data");
 ```
 
 #### Methods
+
+#### Events
+
+`VirtualFileSystem` extends `EventEmitter` and emits the following events:
+
+| Event | Data | Description |
+|-------|------|-------------|
+| `file:read` | `{ path: string; size: number }` | File read |
+| `file:write` | `{ path: string; size: number }` | File written |
+| `dir:create` | `{ path: string; mode: number }` | Directory created |
+| `mirror:flush` | — | Mirror persisted to disk |
+
+**Example:**
+
+```typescript
+vfs.on("file:write", ({ path, size }) => {
+	console.log(`[VFS] File written: ${path} (${size} bytes)`);
+});
+
+vfs.on("dir:create", ({ path, mode }) => {
+	console.log(`[VFS] Directory created: ${path} (mode: ${mode.toString(8)})`);
+});
+```
 
 ##### `async restoreMirror(): Promise<void>`
 
@@ -737,6 +828,18 @@ Decompresses file content (inverse of `compressFile`).
 vfs.decompressFile("/var/log/app.log");
 ```
 
+**Example:**
+
+```typescript
+vfs.on("file:write", ({ path, size }) => {
+	console.log(`[VFS] File written: ${path} (${size} bytes)`);
+});
+
+vfs.on("dir:create", ({ path, mode }) => {
+	console.log(`[VFS] Directory created: ${path} (mode: ${mode.toString(8)})`);
+});
+```
+
 ---
 
 ### VirtualUserManager
@@ -797,6 +900,7 @@ await users.deleteUser("bob");
 ##### `isSudoer(username: string): boolean`
 
 Checks sudo access.
+
 
 ```typescript
 if (users.isSudoer("alice")) {
@@ -893,6 +997,34 @@ Returns snapshot of active sessions (sorted by start time).
 const sessions = users.listActiveSessions();
 sessions.forEach(s => {
 	console.log(`${s.username}@${s.remoteAddress} on ${s.tty}`);
+});
+```
+
+#### Events
+
+`VirtualUserManager` extends `EventEmitter` and emits the following events:
+
+| Event | Data | Description |
+|-------|------|-------------|
+| `initialized` | — | User manager initialization complete, root user ready |
+| `user:add` | `{ username: string }` | New user created |
+| `user:delete` | `{ username: string }` | User deleted |
+| `session:register` | `{ sessionId: string; username: string; remoteAddress: string }` | Session registered (user logged in) |
+| `session:unregister` | `{ sessionId: string; username: string }` | Session unregistered (user logged out) |
+
+**Example:**
+
+```typescript
+users.on("user:add", ({ username }) => {
+	console.log(`[USERS] User created: ${username}`);
+});
+
+users.on("session:register", ({ sessionId, username, remoteAddress }) => {
+	console.log(`[USERS] Session ${sessionId}: ${username} from ${remoteAddress}`);
+});
+
+users.on("session:unregister", ({ sessionId, username }) => {
+	console.log(`[USERS] Session ${sessionId} (${username}) closed`);
 });
 ```
 
