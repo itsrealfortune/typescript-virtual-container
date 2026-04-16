@@ -6,6 +6,17 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [1.1.5] - 2026-04-16
+
+### Added
+
+- `HoneyPot` auditing utility for tracking and auditing SSH/SFTP activity across virtual shell, filesystem, user manager, and server components.
+- HoneyPot attaches event listeners to `VirtualShell`, `VirtualFileSystem`, `VirtualUserManager`, `SshMimic`, and `SftpMimic` for holistic activity capture.
+- HoneyPot event tracking, statistics, anomaly detection, and audit log export support.
+- Comprehensive HoneyPot documentation in `README.md` and dedicated example files.
+- Added `examples/honeypot-quickstart.ts`, `examples/honeypot-audit.ts`, `examples/honeypot-export.ts`, and `examples/README.md`.
+- Added `HONEYPOT.md` implementation guide for HoneyPot usage patterns and integrations.
+
 ## [1.1.4] - 2026-04-16
 
 ### Added
