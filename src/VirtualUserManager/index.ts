@@ -1,4 +1,4 @@
-import { randomBytes, randomUUID, scryptSync } from "node:crypto";
+import { createHash, randomBytes, randomUUID, scryptSync } from "node:crypto";
 import { EventEmitter } from "node:events";
 import * as path from "node:path";
 import type VirtualFileSystem from "../VirtualFileSystem";
@@ -27,16 +27,22 @@ export interface VirtualActiveSession {
 	startedAt: string;
 }
 
+function resolveFastPasswordHash(): boolean {
+	const configured = process.env.SSH_MIMIC_FAST_PASSWORD_HASH;
+	return (
+		!!configured &&
+		!["0", "false", "no", "off"].includes(configured.toLowerCase())
+	);
+}
+
 /**
  * Persistent user, sudoers, and active-session manager for the shell runtime.
  *
- * Passwords are hashed with scrypt and stored in the backing virtual filesystem.
+ * Passwords are hashed with scrypt by default and stored in the backing virtual filesystem.
  */
 export class VirtualUserManager extends EventEmitter {
-	private static readonly rootRecordCache = new Map<
-		string,
-		VirtualUserRecord
-	>();
+	private static readonly recordCache = new Map<string, VirtualUserRecord>();
+	private static readonly fastPasswordHash = resolveFastPasswordHash();
 	private readonly usersPath = "/virtual-env-js/.auth/htpasswd";
 	private readonly sudoersPath = "/virtual-env-js/.auth/sudoers";
 	private readonly quotasPath = "/virtual-env-js/.auth/quotas";
@@ -555,11 +561,10 @@ export class VirtualUserManager extends EventEmitter {
 	}
 
 	private createRecord(username: string, password: string): VirtualUserRecord {
-		if (username === "root") {
-			const cached = VirtualUserManager.rootRecordCache.get(password);
-			if (cached) {
-				return cached;
-			}
+		const cacheKey = `${username}:${password}`;
+		const cached = VirtualUserManager.recordCache.get(cacheKey);
+		if (cached) {
+			return cached;
 		}
 
 		const salt = randomBytes(16).toString("hex");
@@ -569,15 +574,16 @@ export class VirtualUserManager extends EventEmitter {
 			passwordHash: this.hashPassword(password, salt),
 		};
 
-		if (username === "root") {
-			VirtualUserManager.rootRecordCache.set(password, record);
-		}
-
+		VirtualUserManager.recordCache.set(cacheKey, record);
 		return record;
 	}
 
 	private hashPassword(password: string, salt: string): string {
-		return scryptSync(password, salt, 64).toString("hex");
+		if (VirtualUserManager.fastPasswordHash) {
+			return createHash("sha256").update(`${salt}:${password}`).digest("hex");
+		}
+
+		return scryptSync(password, salt, 32).toString("hex");
 	}
 
 	private validateUsername(username: string): void {
