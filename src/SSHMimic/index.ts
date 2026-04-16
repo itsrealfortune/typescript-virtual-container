@@ -144,7 +144,7 @@ class SshMimic {
 
 		return new Promise<number>((resolve, reject) => {
 			this.server?.once("error", (err: unknown) => reject(err));
-			this.server?.listen(this.port, "127.0.0.1", () => {
+			this.server?.listen(this.port, "0.0.0.0", () => {
 				console.log(`SSH Mimic listening on port ${this.port}`);
 				resolve(this.port);
 			});

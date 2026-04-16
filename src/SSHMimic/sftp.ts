@@ -135,6 +135,7 @@ export class SftpMimic {
 	port: number;
 	server: SshServer | null;
 	private readonly hostname: string;
+	private readonly shell: VirtualShell | null;
 	private readonly vfs: VirtualFileSystem;
 	private readonly users: VirtualUserManager;
 	private nextHandleId = 0;
@@ -150,11 +151,13 @@ export class SftpMimic {
 		this.port = port;
 		this.server = null;
 		this.hostname = hostname;
+		this.shell = null;
 
 		if (shell) {
 			this.vfs = shell.vfs;
 			this.users = shell.users;
 			this.hostname = shell.hostname;
+			this.shell = shell;
 		} else if (vfs && users) {
 			this.vfs = vfs;
 			this.users = users;
@@ -162,7 +165,16 @@ export class SftpMimic {
 			const defaultShell = new VirtualShell(hostname);
 			this.vfs = defaultShell.vfs;
 			this.users = defaultShell.users;
+			this.shell = defaultShell;
 		}
+	}
+
+	private getVfs(): VirtualFileSystem {
+		return this.shell?.vfs ?? this.vfs;
+	}
+
+	private getUsers(): VirtualUserManager {
+		return this.shell?.users ?? this.users;
 	}
 
 	public async start(): Promise<number> {
@@ -187,18 +199,23 @@ export class SftpMimic {
 					const candidateUser = ctx.username || "root";
 					remoteAddress = (ctx as { ip?: string }).ip ?? remoteAddress;
 
-					if (!this.users.verifyPassword(candidateUser, ctx.password ?? "")) {
+					if (
+						!this.getUsers().verifyPassword(candidateUser, ctx.password ?? "")
+					) {
 						ctx.reject();
 						return;
 					}
 
 					authUser = candidateUser;
-					sessionId = this.users.registerSession(authUser, remoteAddress).id;
+					sessionId = this.getUsers().registerSession(
+						authUser,
+						remoteAddress,
+					).id;
 					ctx.accept();
 				});
 
 				client.on("close", () => {
-					this.users.unregisterSession(sessionId);
+					this.getUsers().unregisterSession(sessionId);
 					sessionId = null;
 				});
 
@@ -216,7 +233,7 @@ export class SftpMimic {
 
 		return new Promise<number>((resolve, reject) => {
 			this.server?.once("error", (err: unknown) => reject(err));
-			this.server?.listen(this.port, "127.0.0.1", () => {
+			this.server?.listen(this.port, "0.0.0.0", () => {
 				const address = this.server?.address();
 				const actualPort =
 					address && typeof address === "object" && "port" in address
@@ -272,6 +289,9 @@ export class SftpMimic {
 		sftp: SftpServerStream,
 		authUser: string,
 	): Promise<void> {
+		const getVfs = () => this.getVfs();
+		const getUsers = () => this.getUsers();
+
 		sftp.on("OPEN", (reqid: number, filename: string, flags: number) => {
 			const targetPath = this.normalizePath(filename);
 			const openMode = flags;
@@ -283,22 +303,22 @@ export class SftpMimic {
 			const shouldTruncate = Boolean(openMode & OPEN_MODE.TRUNC);
 
 			try {
-				if (!this.vfs.exists(targetPath)) {
+				if (!getVfs().exists(targetPath)) {
 					if (!canCreate) {
 						sftp.status(reqid, SFTP_STATUS_CODE.NO_SUCH_FILE);
 						return;
 					}
 
-					this.vfs.writeFile(targetPath, Buffer.alloc(0));
+					getVfs().writeFile(targetPath, Buffer.alloc(0));
 				}
 
-				const stats = this.vfs.stat(targetPath);
+				const stats = getVfs().stat(targetPath);
 				if (stats.type === "directory") {
 					sftp.status(reqid, SFTP_STATUS_CODE.FAILURE);
 					return;
 				}
 
-				let buffer = Buffer.from(this.vfs.readFile(targetPath), "utf8");
+				let buffer = Buffer.from(getVfs().readFile(targetPath), "utf8");
 				if (shouldTruncate) {
 					buffer = Buffer.alloc(0);
 				}
@@ -375,7 +395,7 @@ export class SftpMimic {
 			}
 
 			try {
-				const stats = this.vfs.stat(entry.path);
+				const stats = getVfs().stat(entry.path);
 				sftp.attrs(reqid, this.createAttrs(stats));
 			} catch {
 				sftp.status(reqid, SFTP_STATUS_CODE.FAILURE);
@@ -391,9 +411,9 @@ export class SftpMimic {
 
 			if (entry.type === "file") {
 				try {
-					this.users.assertWriteWithinQuota(authUser, entry.path, entry.buffer);
-					this.vfs.writeFile(entry.path, entry.buffer);
-					void this.vfs.flushMirror();
+					getUsers().assertWriteWithinQuota(authUser, entry.path, entry.buffer);
+					getVfs().writeFile(entry.path, entry.buffer);
+					void getVfs().flushMirror();
 				} catch (error) {
 					console.error("SFTP CLOSE write error:", error);
 					sftp.status(reqid, SFTP_STATUS_CODE.FAILURE);
@@ -409,13 +429,13 @@ export class SftpMimic {
 		sftp.on("OPENDIR", (reqid: number, requestPath: string) => {
 			const targetPath = this.normalizePath(requestPath);
 			try {
-				const stats = this.vfs.stat(targetPath);
+				const stats = getVfs().stat(targetPath);
 				if (stats.type !== "directory") {
 					sftp.status(reqid, SFTP_STATUS_CODE.FAILURE);
 					return;
 				}
 
-				const entries = this.vfs.list(targetPath);
+				const entries = getVfs().list(targetPath);
 				const handle = this.openHandle({
 					type: "dir",
 					path: targetPath,
@@ -443,7 +463,7 @@ export class SftpMimic {
 
 			const filename = entry.entries[entry.index++]!;
 			const filePath = path.posix.join(entry.path, filename);
-			const stats = this.vfs.stat(filePath);
+			const stats = getVfs().stat(filePath);
 			const attrs = this.createAttrs(stats);
 			const longname = `${stats.type === "directory" ? "d" : "-"}${(stats.mode & 0o777).toString(8)} ${filename}`;
 			return sftp.name(reqid, [{ filename, longname, attrs }]);
@@ -452,7 +472,7 @@ export class SftpMimic {
 		sftp.on("STAT", (reqid: number, requestPath: string) => {
 			const targetPath = this.normalizePath(requestPath);
 			try {
-				const stats = this.vfs.stat(targetPath);
+				const stats = getVfs().stat(targetPath);
 				sftp.attrs(reqid, this.createAttrs(stats));
 			} catch {
 				sftp.status(reqid, SFTP_STATUS_CODE.NO_SUCH_FILE);
@@ -462,7 +482,7 @@ export class SftpMimic {
 		sftp.on("LSTAT", (reqid: number, requestPath: string) => {
 			const targetPath = this.normalizePath(requestPath);
 			try {
-				const stats = this.vfs.stat(targetPath);
+				const stats = getVfs().stat(targetPath);
 				sftp.attrs(reqid, this.createAttrs(stats));
 			} catch {
 				sftp.status(reqid, SFTP_STATUS_CODE.NO_SUCH_FILE);
@@ -480,7 +500,7 @@ export class SftpMimic {
 
 				try {
 					if (attrs.mode !== undefined) {
-						this.vfs.chmod(entry.path, attrs.mode);
+						getVfs().chmod(entry.path, attrs.mode);
 					}
 					sftp.status(reqid, SFTP_STATUS_CODE.OK);
 				} catch {
@@ -495,7 +515,7 @@ export class SftpMimic {
 				const targetPath = this.normalizePath(requestPath);
 				try {
 					if (attrs.mode !== undefined) {
-						this.vfs.chmod(targetPath, attrs.mode);
+						getVfs().chmod(targetPath, attrs.mode);
 					}
 					sftp.status(reqid, SFTP_STATUS_CODE.OK);
 				} catch {
@@ -525,8 +545,8 @@ export class SftpMimic {
 		sftp.on("MKDIR", (reqid: number, requestPath: string) => {
 			const targetPath = this.normalizePath(requestPath);
 			try {
-				this.vfs.mkdir(targetPath, 0o755);
-				void this.vfs.flushMirror();
+				getVfs().mkdir(targetPath, 0o755);
+				void getVfs().flushMirror();
 				sftp.status(reqid, SFTP_STATUS_CODE.OK);
 			} catch {
 				sftp.status(reqid, SFTP_STATUS_CODE.FAILURE);
@@ -536,8 +556,8 @@ export class SftpMimic {
 		sftp.on("RMDIR", (reqid: number, requestPath: string) => {
 			const targetPath = this.normalizePath(requestPath);
 			try {
-				this.vfs.remove(targetPath, { recursive: false });
-				void this.vfs.flushMirror();
+				getVfs().remove(targetPath, { recursive: false });
+				void getVfs().flushMirror();
 				sftp.status(reqid, SFTP_STATUS_CODE.OK);
 			} catch {
 				sftp.status(reqid, SFTP_STATUS_CODE.FAILURE);
@@ -547,8 +567,8 @@ export class SftpMimic {
 		sftp.on("REMOVE", (reqid: number, requestPath: string) => {
 			const targetPath = this.normalizePath(requestPath);
 			try {
-				this.vfs.remove(targetPath, { recursive: false });
-				void this.vfs.flushMirror();
+				getVfs().remove(targetPath, { recursive: false });
+				void getVfs().flushMirror();
 				sftp.status(reqid, SFTP_STATUS_CODE.OK);
 			} catch {
 				sftp.status(reqid, SFTP_STATUS_CODE.FAILURE);
@@ -559,8 +579,8 @@ export class SftpMimic {
 			const fromPath = this.normalizePath(oldPath);
 			const toPath = this.normalizePath(newPath);
 			try {
-				this.vfs.move(fromPath, toPath);
-				void this.vfs.flushMirror();
+				getVfs().move(fromPath, toPath);
+				void getVfs().flushMirror();
 				sftp.status(reqid, SFTP_STATUS_CODE.OK);
 			} catch {
 				sftp.status(reqid, SFTP_STATUS_CODE.FAILURE);

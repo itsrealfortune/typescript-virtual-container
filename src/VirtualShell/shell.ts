@@ -467,6 +467,13 @@ export function startShell(
 			const ch = input[i]!;
 
 			if (ch === "\u0004") {
+				lineBuffer = "";
+				cursorPos = 0;
+				historyIndex = null;
+				historyDraft = "";
+				stream.write("bye\r\n");
+				pushHistory("bye");
+				await shell.vfs.flushMirror();
 				stream.write("logout\r\n");
 				stream.exit(0);
 				stream.end();
