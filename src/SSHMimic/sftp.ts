@@ -299,11 +299,28 @@ export class SftpMimic {
 		}
 	}
 
-	private normalizePath(requestPath: string): string {
-		const normalized = path.posix.normalize(requestPath || "/");
-		return normalized.startsWith("/") ? normalized : `/${normalized}`;
-	}
+	/**
+	 * Resolves SFTP request paths with proper handling of relative paths.
+	 * Relative paths (including ".") are resolved relative to the user's home directory.
+	 * This is standard SFTP behavior where the "working directory" is always the home.
+	 */
+	private resolveRequestPath(requestPath: string, authUser: string): string {
+		const homePath = `/home/${authUser}`;
 
+		// Empty path or "." → resolve to home directory
+		if (!requestPath || requestPath === ".") {
+			return homePath;
+		}
+
+		// Relative path (doesn't start with "/") → resolve relative to home
+		if (!requestPath.startsWith("/")) {
+			const joined = path.posix.join(homePath, requestPath);
+			return path.posix.normalize(joined);
+		}
+
+		// Absolute path → just normalize it
+		return path.posix.normalize(requestPath);
+	}
 	/**
 	 * Verifies that a target path is confined within the user's home directory.
 	 * This implements chroot-like behavior for security.
@@ -367,7 +384,7 @@ export class SftpMimic {
 		const getUsers = () => this.getUsers();
 
 		sftp.on("OPEN", (reqid: number, filename: string, flags: number) => {
-			const targetPath = this.normalizePath(filename);
+			const targetPath = this.resolveRequestPath(filename, authUser);
 
 			// Security: Confine to home directory
 			if (!this.isPathWithinHome(targetPath, authUser)) {
@@ -511,7 +528,7 @@ export class SftpMimic {
 		});
 
 		sftp.on("OPENDIR", (reqid: number, requestPath: string) => {
-			const targetPath = this.normalizePath(requestPath);
+			const targetPath = this.resolveRequestPath(requestPath, authUser);
 
 			// Security: Confine to home directory
 			if (!this.isPathWithinHome(targetPath, authUser)) {
@@ -564,7 +581,7 @@ export class SftpMimic {
 		});
 
 		sftp.on("STAT", (reqid: number, requestPath: string) => {
-			const targetPath = this.normalizePath(requestPath);
+			const targetPath = this.resolveRequestPath(requestPath, authUser);
 
 			// Security: Confine to home directory
 			if (!this.isPathWithinHome(targetPath, authUser)) {
@@ -584,7 +601,7 @@ export class SftpMimic {
 		});
 
 		sftp.on("LSTAT", (reqid: number, requestPath: string) => {
-			const targetPath = this.normalizePath(requestPath);
+			const targetPath = this.resolveRequestPath(requestPath, authUser);
 
 			// Security: Confine to home directory
 			if (!this.isPathWithinHome(targetPath, authUser)) {
@@ -626,7 +643,7 @@ export class SftpMimic {
 		sftp.on(
 			"SETSTAT",
 			(reqid: number, requestPath: string, attrs: { mode?: number }) => {
-				const targetPath = this.normalizePath(requestPath);
+				const targetPath = this.resolveRequestPath(requestPath, authUser);
 
 				// Security: Confine to home directory
 				if (!this.isPathWithinHome(targetPath, authUser)) {
@@ -649,7 +666,7 @@ export class SftpMimic {
 		);
 
 		sftp.on("REALPATH", (reqid: number, requestPath: string) => {
-			const normalized = this.normalizePath(requestPath);
+			const normalized = this.resolveRequestPath(requestPath, authUser);
 
 			// Security: Confine to home directory
 			if (!this.isPathWithinHome(normalized, authUser)) {
@@ -677,7 +694,7 @@ export class SftpMimic {
 		});
 
 		sftp.on("MKDIR", (reqid: number, requestPath: string) => {
-			const targetPath = this.normalizePath(requestPath);
+			const targetPath = this.resolveRequestPath(requestPath, authUser);
 
 			// Security: Confine to home directory
 			if (!this.isPathWithinHome(targetPath, authUser)) {
@@ -698,7 +715,7 @@ export class SftpMimic {
 		});
 
 		sftp.on("RMDIR", (reqid: number, requestPath: string) => {
-			const targetPath = this.normalizePath(requestPath);
+			const targetPath = this.resolveRequestPath(requestPath, authUser);
 
 			// Security: Confine to home directory
 			if (!this.isPathWithinHome(targetPath, authUser)) {
@@ -719,7 +736,7 @@ export class SftpMimic {
 		});
 
 		sftp.on("REMOVE", (reqid: number, requestPath: string) => {
-			const targetPath = this.normalizePath(requestPath);
+			const targetPath = this.resolveRequestPath(requestPath, authUser);
 
 			// Security: Confine to home directory
 			if (!this.isPathWithinHome(targetPath, authUser)) {
@@ -740,8 +757,8 @@ export class SftpMimic {
 		});
 
 		sftp.on("RENAME", (reqid: number, oldPath: string, newPath: string) => {
-			const fromPath = this.normalizePath(oldPath);
-			const toPath = this.normalizePath(newPath);
+			const fromPath = this.resolveRequestPath(oldPath, authUser);
+			const toPath = this.resolveRequestPath(newPath, authUser);
 
 			// Security: Confine both source and destination to home directory
 			if (
