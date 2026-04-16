@@ -1,14 +1,14 @@
-import { HoneyPot } from "./Honeypot";
-import { SshClient } from "./SSHClient";
+import { HoneyPot } from "./Honeypot/index";
+import { SshClient } from "./SSHClient/index";
 import { SftpMimic, SshMimic } from "./SSHMimic/index";
-import VirtualFileSystem from "./VirtualFileSystem";
-import { VirtualShell } from "./VirtualShell";
-import { VirtualUserManager } from "./VirtualUserManager";
+import VirtualFileSystem from "./VirtualFileSystem/index";
+import { VirtualShell } from "./VirtualShell/index";
+import { VirtualUserManager } from "./VirtualUserManager/index";
 
 export type {
 	AuditLogEntry,
 	HoneyPotStats,
-} from "./Honeypot";
+} from "./Honeypot/index";
 export type {
 	CommandContext,
 	CommandMode,
