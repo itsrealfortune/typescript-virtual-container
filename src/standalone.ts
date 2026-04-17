@@ -16,12 +16,6 @@ new VirtualSshServer({
 	shell: virtualShell,
 })
 	.start()
-	.then((port: number) => {
-		// if (!sshMimic) console.error("Failed to initialize SSH Mimic shell.");
-		// else {
-		console.log(`SSH Mimic initialized. Listening on port ${port}.`);
-		// }
-	})
 	.catch((error: unknown) => {
 		console.error("Failed to start SSH Mimic:", error);
 		process.exit(1);
@@ -29,9 +23,6 @@ new VirtualSshServer({
 
 new VirtualSftpServer({ port: 2223, hostname, shell: virtualShell })
 	.start()
-	.then((port: number) => {
-		console.log(`SFTP Mimic initialized. Listening on port ${port}.`);
-	})
 	.catch((error: unknown) => {
 		console.error("Failed to start SFTP Mimic:", error);
 		process.exit(1);
