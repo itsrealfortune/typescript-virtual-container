@@ -1,4 +1,3 @@
-import { randomBytes } from "node:crypto";
 import { EventEmitter } from "node:events";
 import { createCustomCommand, registerCommand, runCommand } from "../commands";
 import type { CommandContext, CommandResult } from "../types/commands";
@@ -22,27 +21,6 @@ const defaultShellProperties: ShellProperties = {
 };
 
 const perf: PerfLogger = createPerfLogger("VirtualShell");
-
-let cachedRootPassword: string | null = null;
-
-function resolveRootPassword(): string {
-	if (cachedRootPassword) {
-		return cachedRootPassword;
-	}
-
-	const configured = process.env.SSH_MIMIC_ROOT_PASSWORD;
-	if (configured && configured.trim().length > 0) {
-		cachedRootPassword = configured.trim();
-		return cachedRootPassword;
-	}
-
-	const generated = randomBytes(18).toString("base64url");
-	cachedRootPassword = generated;
-	console.warn(
-		`[ssh-mimic] SSH_MIMIC_ROOT_PASSWORD missing; generated ephemeral root password: ${generated}`,
-	);
-	return generated;
-}
 
 function resolveAutoSudoForNewUsers(): boolean {
 	const configured = process.env.SSH_MIMIC_AUTO_SUDO_NEW_USERS;
@@ -85,11 +63,7 @@ class VirtualShell extends EventEmitter {
 		this.properties = properties || defaultShellProperties;
 		this.basePath = basePath || ".";
 		this.vfs = new VirtualFileSystem(this.basePath);
-		this.users = new VirtualUserManager(
-			this.vfs,
-			resolveRootPassword(),
-			resolveAutoSudoForNewUsers(),
-		);
+		this.users = new VirtualUserManager(this.vfs, resolveAutoSudoForNewUsers());
 
 		// Store references to avoid TypeScript "used before assigned" errors
 		const vfs = this.vfs;

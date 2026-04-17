@@ -66,7 +66,8 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	constructor(
 		private readonly vfs: VirtualFileSystem,
-		private readonly defaultRootPassword: string = "root",
+		// private readonly defaultRootPassword: string = process.env
+		// .SSH_MIMIC_ROOT_PASSWORD || "root",
 		private readonly autoSudoForNewUsers: boolean = true,
 	) {
 		super();
@@ -85,32 +86,29 @@ export class VirtualUserManager extends EventEmitter {
 
 		let changed = false;
 		if (!this.users.has("root")) {
-			this.users.set(
-				"root",
-				this.createRecord("root", this.defaultRootPassword),
-			);
+			this.users.set("root", this.createRecord("root", ""));
 			changed = true;
 		}
 
 		this.sudoers.add("root");
 
 		// Auto-create current system user for easier authentication
-		const currentUser = process.env.USER || process.env.USERNAME;
-		if (currentUser && currentUser !== "root" && !this.users.has(currentUser)) {
-			const userPassword = this.defaultRootPassword;
-			this.users.set(currentUser, this.createRecord(currentUser, userPassword));
-			this.sudoers.add(currentUser);
-			changed = true;
+		// const currentUser = process.env.USER || process.env.USERNAME;
+		// if (currentUser && currentUser !== "root" && !this.users.has(currentUser)) {
+		// 	const userPassword = this.defaultRootPassword;
+		// 	this.users.set(currentUser, this.createRecord(currentUser, userPassword));
+		// 	this.sudoers.add(currentUser);
+		// 	changed = true;
 
-			const homePath = `/home/${currentUser}`;
-			if (!this.vfs.exists(homePath)) {
-				this.vfs.mkdir(homePath, 0o755);
-				this.vfs.writeFile(
-					`${homePath}/README.txt`,
-					`Welcome to the virtual environment, ${currentUser}`,
-				);
-			}
-		}
+		// 	const homePath = `/home/${currentUser}`;
+		// 	if (!this.vfs.exists(homePath)) {
+		// 		this.vfs.mkdir(homePath, 0o755);
+		// 		this.vfs.writeFile(
+		// 			`${homePath}/README.txt`,
+		// 			`Welcome to the virtual environment, ${currentUser}`,
+		// 		);
+		// 	}
+		// }
 
 		if (changed) {
 			await this.persist();
@@ -244,7 +242,7 @@ export class VirtualUserManager extends EventEmitter {
 			return false;
 		}
 
-		return this.hashPassword(password, record.salt) === record.passwordHash;
+		return this.hashPassword(password) === record.passwordHash;
 	}
 
 	/**
@@ -277,6 +275,18 @@ export class VirtualUserManager extends EventEmitter {
 		}
 		await this.persist();
 		this.emit("user:add", { username });
+	}
+
+	/**
+	 * Retrieves stored password hash for a user, or null if user does not exist.
+	 *
+	 * @param username Target username.
+	 * @returns Password hash in hex encoding, or null when user is not found.
+	 */
+	public getPasswordHash(username: string): string | null {
+		perf.mark("getPasswordHash");
+		const record = this.users.get(username);
+		return record ? record.passwordHash : null;
 	}
 
 	/**
@@ -593,19 +603,34 @@ export class VirtualUserManager extends EventEmitter {
 		const record = {
 			username,
 			salt,
-			passwordHash: this.hashPassword(password, salt),
+			passwordHash: this.hashPassword(password),
 		};
 
 		VirtualUserManager.recordCache.set(cacheKey, record);
 		return record;
 	}
 
-	private hashPassword(password: string, salt: string): string {
+	public hasPassword(username: string): boolean {
+		perf.mark("hasPassword");
+		if (this.getPasswordHash(username) === this.hashPassword("")) {
+			return false;
+		}
+		const record = this.users.get(username);
+		return !!record && !!record.passwordHash;
+	}
+
+	/**
+	 * Hashes plaintext password with per-user salt using scrypt.
+	 *
+	 * @param password Plaintext password.
+	 * @returns Hex-encoded password hash.
+	 */
+	public hashPassword(password: string): string {
 		if (VirtualUserManager.fastPasswordHash) {
-			return createHash("sha256").update(`${salt}:${password}`).digest("hex");
+			return createHash("sha256").update(`${password}`).digest("hex");
 		}
 
-		return scryptSync(password, salt, 32).toString("hex");
+		return scryptSync(password, "", 32).toString("hex");
 	}
 
 	private validateUsername(username: string): void {

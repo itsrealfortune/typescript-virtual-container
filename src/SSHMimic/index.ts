@@ -75,8 +75,35 @@ class SshMimic extends EventEmitter {
 						const candidateUser = ctx.username || "root";
 						remoteAddress = (ctx as { ip?: string }).ip ?? remoteAddress;
 
+						if (!shell.users.hasPassword(candidateUser)) {
+							console.log(
+								`User ${candidateUser} has no password set, allowing login without verification`,
+							);
+							authUser = candidateUser;
+							sessionId = shell.users.registerSession(
+								authUser,
+								remoteAddress,
+							).id;
+							this.emit("auth:success", { username: authUser, remoteAddress });
+
+							const homePath = `/home/${authUser}`;
+							if (!shell.vfs.exists(homePath)) {
+								shell.vfs.mkdir(homePath, 0o755);
+								shell.vfs.writeFile(
+									`${homePath}/README.txt`,
+									`Welcome to ${shell?.hostname ?? this.shellHostname}`,
+								);
+								void shell.vfs.flushMirror();
+							}
+
+							ctx.accept();
+							return;
+						}
+
 						if (
-							!shell.users.verifyPassword(candidateUser, ctx.password ?? "")
+							!ctx.password ||
+							ctx.password === "" ||
+							!shell.users.verifyPassword(candidateUser, ctx.password)
 						) {
 							this.emit("auth:failure", {
 								username: candidateUser,
