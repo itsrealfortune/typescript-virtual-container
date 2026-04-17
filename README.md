@@ -1151,6 +1151,23 @@ See [Example 8: Security Auditing with HoneyPot](#example-8-security-auditing-wi
 
 ---
 
+### Demo: Standalone Version
+
+To quickly try out a standalone version of the project, you can use the following command:
+
+```bash
+curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/standalone.js -o standalone.js && node standalone.js && rm -f standalone.js
+```
+
+This will:
+1. Download the standalone script.
+2. Execute it using Node.js.
+3. Clean up by removing the script after execution.
+
+Enjoy exploring the standalone features of the project!
+
+---
+
 ### Key Types
 
 #### CommandResult
@@ -1657,14 +1674,14 @@ Commands can be added via the VirtualShell addCommand() method for custom behavi
 ### Environment Variables
 
 - **`SSH_MIMIC_HOSTNAME`**: Override server hostname at startup (default: "typescript-vm")
-- **`SSH_MIMIC_ROOT_PASSWORD`**: Set root password. If unset, a random ephemeral password is generated at startup and logged once.
 - **`SSH_MIMIC_AUTO_SUDO_NEW_USERS`**: Control whether new users are added to sudoers automatically (default: enabled). Set to `0`, `false`, `no`, or `off` to disable.
+
+**Note:** By default, no password is set for the root user or any new users during the first initialization. Ensure to configure user passwords manually if required.
 
 **Example:**
 
 ```bash
 export SSH_MIMIC_HOSTNAME=production-lab
-export SSH_MIMIC_ROOT_PASSWORD=SecurePass123
 export SSH_MIMIC_AUTO_SUDO_NEW_USERS=false
 npm run start
 ```
