@@ -1,40 +1,40 @@
 Benchmarking VirtualShell concurrency:
 
 Running 1 shells...
-  Initialized 1 shells in 86ms, RSS 82 MB
-  Executed shell commands in 2ms, RSS now 82 MB (+0 MB)
+  Initialized 1 shells in 50ms, RSS 82 MB
+  Executed shell commands in 4ms, RSS now 83 MB (+0 MB)
 
 Running 2 shells...
-  Initialized 2 shells in 2ms, RSS 82 MB
-  Executed shell commands in 1ms, RSS now 82 MB (+0 MB)
+  Initialized 2 shells in 2ms, RSS 83 MB
+  Executed shell commands in 0ms, RSS now 83 MB (+0 MB)
 
 Running 5 shells...
-  Initialized 5 shells in 5ms, RSS 82 MB
-  Executed shell commands in 2ms, RSS now 82 MB (+0 MB)
+  Initialized 5 shells in 3ms, RSS 83 MB
+  Executed shell commands in 1ms, RSS now 83 MB (+0 MB)
 
 Running 10 shells...
-  Initialized 10 shells in 5ms, RSS 84 MB
-  Executed shell commands in 3ms, RSS now 84 MB (+1 MB)
+  Initialized 10 shells in 4ms, RSS 83 MB
+  Executed shell commands in 4ms, RSS now 84 MB (+1 MB)
 
 Running 20 shells...
-  Initialized 20 shells in 12ms, RSS 84 MB
-  Executed shell commands in 6ms, RSS now 85 MB (+1 MB)
+  Initialized 20 shells in 7ms, RSS 84 MB
+  Executed shell commands in 5ms, RSS now 85 MB (+0 MB)
 
 Running 50 shells...
-  Initialized 50 shells in 30ms, RSS 87 MB
-  Executed shell commands in 12ms, RSS now 88 MB (+2 MB)
+  Initialized 50 shells in 23ms, RSS 85 MB
+  Executed shell commands in 12ms, RSS now 87 MB (+2 MB)
 
 Running 100 shells...
-  Initialized 100 shells in 52ms, RSS 91 MB
-  Executed shell commands in 28ms, RSS now 92 MB (+2 MB)
+  Initialized 100 shells in 36ms, RSS 89 MB
+  Executed shell commands in 33ms, RSS now 91 MB (+2 MB)
 
 Summary:
 
 count   init_ms cmd_ms  init_rss        final_rss
-1       86      2       82 MB   82 MB   0 MB
-2       2       1       82 MB   82 MB   0 MB
-5       5       2       82 MB   82 MB   0 MB
-10      5       3       84 MB   84 MB   1 MB
-20      12      6       84 MB   85 MB   1 MB
-50      30      12      87 MB   88 MB   2 MB
-100     52      28      91 MB   92 MB   2 MB
+1       50      4       82 MB   83 MB   0 MB
+2       2       0       83 MB   83 MB   0 MB
+5       3       1       83 MB   83 MB   0 MB
+10      4       4       83 MB   84 MB   1 MB
+20      7       5       84 MB   85 MB   0 MB
+50      23      12      85 MB   87 MB   2 MB
+100     36      33      89 MB   91 MB   2 MB
