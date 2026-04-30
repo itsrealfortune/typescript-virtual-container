@@ -1,36 +1,28 @@
 /// <reference types="bun" />
 import { describe, expect, test } from "bun:test";
-import { rmSync } from "node:fs";
 import type { FileEntryWithStats, SFTPWrapper } from "ssh2";
 import { Client } from "ssh2";
 import { SftpMimic } from "../src/SSHMimic/sftp";
 import VirtualFileSystem from "../src/VirtualFileSystem";
 import { VirtualUserManager } from "../src/VirtualUserManager";
 
-function makeTempBasePath(): string {
-	return `./temp-test-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
+// VirtualFileSystem is now pure in-memory — no temp dir or cleanup needed.
 
 function connectSftp(port: number): Promise<{ client: Client; sftp: SFTPWrapper }> {
 	return new Promise((resolve, reject) => {
 		const client = new Client();
 		client.on("ready", () => {
 			client.sftp((err, sftp) => {
-				if (err) {
-					client.end();
-					reject(err);
-					return;
-				}
+				if (err) { client.end(); reject(err); return; }
 				resolve({ client, sftp });
 			});
 		});
-
 		client.on("error", reject);
 		client.connect({
 			host: "127.0.0.1",
 			port,
 			username: "root",
-			password: "root",
+			password: "",           // root has no password — any value or empty is accepted
 			hostVerifier: () => true,
 		});
 	});
@@ -45,15 +37,10 @@ function connectSftpWithUser(
 		const client = new Client();
 		client.on("ready", () => {
 			client.sftp((err, sftp) => {
-				if (err) {
-					client.end();
-					reject(err);
-					return;
-				}
+				if (err) { client.end(); reject(err); return; }
 				resolve({ client, sftp });
 			});
 		});
-
 		client.on("error", reject);
 		client.connect({
 			host: "127.0.0.1",
@@ -67,253 +54,190 @@ function connectSftpWithUser(
 
 describe("SftpMimic", () => {
 	test("authenticates with VirtualUserManager and serves files from the VirtualFileSystem", async () => {
-		const tempBasePath = makeTempBasePath();
-		const vfs = new VirtualFileSystem(tempBasePath);
-		const users = new VirtualUserManager(vfs, "root");
+		const vfs   = new VirtualFileSystem();
+		const users = new VirtualUserManager(vfs);
+
+		await users.initialize();
+
+		const rootPath = "/home/root";
+		if (!vfs.exists(rootPath)) {
+			vfs.mkdir(rootPath, 0o755);
+		}
+		vfs.writeFile(`${rootPath}/TEST.txt`, "hello world");
+
+		const server = new SftpMimic({ port: 0, hostname: "test-sftp", vfs, users });
+		const port = await server.start();
 
 		try {
-			await users.initialize();
-
-			const rootPath = "/home/root";
-			if (!vfs.exists(rootPath)) {
-				vfs.mkdir(rootPath, 0o755);
-			}
-			vfs.writeFile(`${rootPath}/TEST.txt`, "hello world");
-
-			const server = new SftpMimic({
-				port: 0,
-				hostname: "test-sftp",
-				vfs,
-				users,
-			});
-			const port = await server.start();
-
 			const { client, sftp } = await connectSftp(port);
+
 			const list = await new Promise<FileEntryWithStats[]>((resolve, reject) => {
-				sftp.readdir(
-					"/home/root",
-					(err?: Error | null, list?: FileEntryWithStats[]) => {
-						if (err) {
-							reject(err);
-							return;
-						}
-						resolve(list || []);
-					},
-				);
+				sftp.readdir("/home/root", (err?: Error | null, list?: FileEntryWithStats[]) => {
+					if (err) { reject(err); return; }
+					resolve(list || []);
+				});
 			});
 
 			expect(list.map((entry) => entry.filename)).toContain("TEST.txt");
 
 			const content = await new Promise<string>((resolve, reject) => {
-				sftp.readFile(
-					"/home/root/TEST.txt",
-					"utf8",
-					(err?: Error | null, data?: Buffer) => {
-						if (err) {
-							reject(err);
-							return;
-						}
-						resolve((data || Buffer.alloc(0)).toString("utf8"));
-					},
-				);
+				sftp.readFile("/home/root/TEST.txt", "utf8", (err?: Error | null, data?: Buffer) => {
+					if (err) { reject(err); return; }
+					resolve((data || Buffer.alloc(0)).toString("utf8"));
+				});
 			});
 
 			expect(content).toBe("hello world");
 			client.end();
-			server.stop();
 		} finally {
-			rmSync(tempBasePath, { recursive: true, force: true });
+			server.stop();
 		}
 	});
 
 	test("blocks path traversal attempts outside home directory", async () => {
-		const tempBasePath = makeTempBasePath();
-		const vfs = new VirtualFileSystem(tempBasePath);
-		const users = new VirtualUserManager(vfs, "root");
+		const vfs   = new VirtualFileSystem();
+		const users = new VirtualUserManager(vfs);
+
+		await users.initialize();
+
+		const rootPath = "/home/root";
+		if (!vfs.exists(rootPath)) {
+			vfs.mkdir(rootPath, 0o755);
+		}
+
+		const server = new SftpMimic({ port: 0, hostname: "test-sftp", vfs, users });
+		const port = await server.start();
 
 		try {
-			await users.initialize();
-
-			const rootPath = "/home/root";
-			if (!vfs.exists(rootPath)) {
-				vfs.mkdir(rootPath, 0o755);
-			}
-
-			const server = new SftpMimic({
-				port: 0,
-				hostname: "test-sftp",
-				vfs,
-				users,
-			});
-			const port = await server.start();
-
 			const { client, sftp } = await connectSftp(port);
 
-			// Try to read /etc/passwd (outside home directory) - should fail with PERMISSION_DENIED
+			// /etc/passwd is outside /home/root — should be rejected
 			const traversalAttempt = await new Promise<Error | null>((resolve) => {
-				sftp.stat(
-					"/etc/passwd",
-					(err?: Error | null) => {
-						resolve(err ?? null);
-					},
-				);
+				sftp.stat("/etc/passwd", (err?: Error | null) => { resolve(err ?? null); });
 			});
 
 			expect(traversalAttempt).not.toBeNull();
 			expect(traversalAttempt?.message).toContain("Permission denied");
 
-			// Try to access /home/root which should work
-			const homeAccess = await new Promise<FileEntryWithStats[]>((
-				resolve,
-				reject,
-			) => {
-				sftp.readdir(
-					"/home/root",
-					(err?: Error | null, list?: FileEntryWithStats[]) => {
-						if (err) {
-							reject(err);
-							return;
-						}
-						resolve(list || []);
-					},
-				);
+			// /home/root itself should work
+			const homeAccess = await new Promise<FileEntryWithStats[]>((resolve, reject) => {
+				sftp.readdir("/home/root", (err?: Error | null, list?: FileEntryWithStats[]) => {
+					if (err) { reject(err); return; }
+					resolve(list || []);
+				});
 			});
-
 			expect(homeAccess).toBeDefined();
 
-			// Try to go up with ../ - should fail
+			// Path traversal via ../.. should also be rejected
 			const upTraversalAttempt = await new Promise<Error | null>((resolve) => {
-				sftp.readdir(
-					"/home/root/../../etc",
-					(err?: Error | null) => {
-						resolve(err ?? null);
-					},
-				);
+				sftp.readdir("/home/root/../../etc", (err?: Error | null) => { resolve(err ?? null); });
 			});
-
 			expect(upTraversalAttempt).not.toBeNull();
 
 			client.end();
-			server.stop();
 		} finally {
-			rmSync(tempBasePath, { recursive: true, force: true });
+			server.stop();
 		}
 	});
 
-	test("auto-creates current system user on initialization", async () => {
-		// Use a unique temp directory for this test to avoid VFS sharing
-		const tempPath = `./temp-test-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-		const vfs = new VirtualFileSystem(tempPath);
-		const users = new VirtualUserManager(vfs, "testpass");
+	test("allows a user with a password to authenticate", async () => {
+		const vfs   = new VirtualFileSystem();
+		const users = new VirtualUserManager(vfs);
+
 		await users.initialize();
+		await users.addUser("alice", "alice-pass");
 
-		// Verify that the current system user was created
-		const currentUser = process.env.USER || process.env.USERNAME;
-		if (currentUser && currentUser !== "root") {
-			// Should be able to verify password with the default password (testpass)
-			const passwordValid = users.verifyPassword(currentUser, "testpass");
-			expect(passwordValid).toBe(true);
-
-			// Home directory should exist
-			const homePath = `/home/${currentUser}`;
-			expect(vfs.exists(homePath)).toBe(true);
-
-			// README.txt should exist in home
-			const readmePath = `${homePath}/README.txt`;
-			expect(vfs.exists(readmePath)).toBe(true);
+		// Ensure alice's home exists (addUser should create it, but let's be explicit)
+		if (!vfs.exists("/home/alice")) {
+			vfs.mkdir("/home/alice", 0o755);
 		}
+		vfs.writeFile("/home/alice/hello.txt", "hi alice");
 
-		// Cleanup
-		const fs = await import("node:fs");
-		fs.rmSync(tempPath, { recursive: true, force: true });
-	});
-
-	test("allows system user to authenticate and access SFTP", async () => {
-		const tempBasePath = makeTempBasePath();
-		const vfs = new VirtualFileSystem(tempBasePath);
-		const users = new VirtualUserManager(vfs, "root");
+		const server = new SftpMimic({ port: 0, hostname: "test-sftp", vfs, users });
+		const port = await server.start();
 
 		try {
-			await users.initialize();
+			const { client, sftp } = await connectSftpWithUser(port, "alice", "alice-pass");
 
-			// Verify system user was created with the default password
-			const currentUser = process.env.USER || process.env.USERNAME;
-			if (!currentUser || currentUser === "root") {
-				// Skip test if we can't determine current user
-				return;
-			}
-
-			// Ensure a deterministic password for environments where user data may persist.
-			await users.setPassword(currentUser, "root");
-
-			const server = new SftpMimic({
-				port: 0,
-				hostname: "test-sftp",
-				vfs,
-				users,
-			});
-			const port = await server.start();
-
-			// Connect as the system user (which was auto-created during initialize)
-			const { client, sftp } = await connectSftpWithUser(
-				port,
-				currentUser,
-				"root",
-			);
-
-			// User should be able to list their home directory
 			const list = await new Promise<FileEntryWithStats[]>((resolve, reject) => {
-				sftp.readdir(
-					`/home/${currentUser}`,
-					(err?: Error | null, list?: FileEntryWithStats[]) => {
-						if (err) {
-							reject(err);
-							return;
-						}
-						resolve(list || []);
-					},
-				);
+				sftp.readdir("/home/alice", (err?: Error | null, list?: FileEntryWithStats[]) => {
+					if (err) { reject(err); return; }
+					resolve(list || []);
+				});
 			});
 
-			// README.txt should be in the home directory
-			expect(list.map((e) => e.filename)).toContain("README.txt");
+			expect(list.map((e) => e.filename)).toContain("hello.txt");
 
-			// Create a file as the system user
+			client.end();
+		} finally {
+			server.stop();
+		}
+	});
+
+	test("rejects a user with a wrong password", async () => {
+		const vfs   = new VirtualFileSystem();
+		const users = new VirtualUserManager(vfs);
+
+		await users.initialize();
+		await users.addUser("bob", "correct-pass");
+
+		const server = new SftpMimic({ port: 0, hostname: "test-sftp", vfs, users });
+		const port = await server.start();
+
+		try {
+			const connectPromise = connectSftpWithUser(port, "bob", "wrong-pass");
+			await expect(connectPromise).rejects.toThrow();
+		} finally {
+			server.stop();
+		}
+	});
+
+	test("allows writing and reading back a file over SFTP", async () => {
+		const vfs   = new VirtualFileSystem();
+		const users = new VirtualUserManager(vfs);
+
+		await users.initialize();
+
+		if (!vfs.exists("/home/root")) {
+			vfs.mkdir("/home/root", 0o755);
+		}
+
+		const server = new SftpMimic({ port: 0, hostname: "test-sftp", vfs, users });
+		const port = await server.start();
+
+		try {
+			const { client, sftp } = await connectSftp(port);
+
 			await new Promise<void>((resolve, reject) => {
 				sftp.writeFile(
-					`/home/${currentUser}/test-file.txt`,
-					Buffer.from("WinSCP test"),
+					"/home/root/written.txt",
+					Buffer.from("written via sftp"),
 					(err?: Error | null) => {
-						if (err) {
-							reject(err);
-							return;
-						}
+						if (err) { reject(err); return; }
 						resolve();
 					},
 				);
 			});
 
-			// Read the file back
 			const content = await new Promise<string>((resolve, reject) => {
 				sftp.readFile(
-					`/home/${currentUser}/test-file.txt`,
+					"/home/root/written.txt",
 					"utf8",
 					(err?: Error | null, data?: Buffer) => {
-						if (err) {
-							reject(err);
-							return;
-						}
+						if (err) { reject(err); return; }
 						resolve((data || Buffer.alloc(0)).toString("utf8"));
 					},
 				);
 			});
 
-			expect(content).toBe("WinSCP test");
+			expect(content).toBe("written via sftp");
+
+			// Also verify it landed in the in-memory VFS
+			expect(vfs.readFile("/home/root/written.txt")).toBe("written via sftp");
 
 			client.end();
-			server.stop();
 		} finally {
-			rmSync(tempBasePath, { recursive: true, force: true });
+			server.stop();
 		}
 	});
 });
