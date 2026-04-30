@@ -14,7 +14,10 @@ export const chmodCommand: ShellModule = {
 		try {
 			assertPathAccess(authUser, filePath, "chmod");
 			if (!shell.vfs.exists(filePath)) {
-				return { stderr: `chmod: ${fileArg}: No such file or directory`, exitCode: 1 };
+				return {
+					stderr: `chmod: ${fileArg}: No such file or directory`,
+					exitCode: 1,
+				};
 			}
 			const mode = parseInt(modeArg, 8);
 			if (Number.isNaN(mode)) {

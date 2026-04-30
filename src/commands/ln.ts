@@ -16,7 +16,7 @@ export const lnCommand: ShellModule = {
 
 		const linkPath = resolvePath(cwd, linkArg);
 		const targetPath = symbolic
-			? targetArg  // keep relative for symlinks
+			? targetArg // keep relative for symlinks
 			: resolvePath(cwd, targetArg);
 
 		try {
@@ -27,7 +27,10 @@ export const lnCommand: ShellModule = {
 				const srcPath = resolvePath(cwd, targetArg);
 				assertPathAccess(authUser, srcPath, "ln");
 				if (!shell.vfs.exists(srcPath)) {
-					return { stderr: `ln: ${targetArg}: No such file or directory`, exitCode: 1 };
+					return {
+						stderr: `ln: ${targetArg}: No such file or directory`,
+						exitCode: 1,
+					};
 				}
 				const content = shell.vfs.readFile(srcPath);
 				shell.writeFileAsUser(authUser, linkPath, content);

@@ -76,7 +76,6 @@ const BASE_COMMANDS: ShellModule[] = [
 	shCommand,
 	clearCommand,
 	exitCommand,
-	// New commands
 	cpCommand,
 	mvCommand,
 	lnCommand,
@@ -216,9 +215,17 @@ export async function runCommand(
 		}
 
 		try {
-			return await executePipeline(pipeline, authUser, hostname, mode, cwd, shell);
+			return await executePipeline(
+				pipeline,
+				authUser,
+				hostname,
+				mode,
+				cwd,
+				shell,
+			);
 		} catch (error: unknown) {
-			const message = error instanceof Error ? error.message : "Pipeline execution failed";
+			const message =
+				error instanceof Error ? error.message : "Pipeline execution failed";
 			return { stderr: message, exitCode: 1 };
 		}
 	}

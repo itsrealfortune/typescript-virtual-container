@@ -37,7 +37,10 @@ export const wcCommand: ShellModule = {
 				const content = shell.vfs.readFile(filePath);
 				results.push(count(content, file));
 			} catch {
-				return { stderr: `wc: ${file}: No such file or directory`, exitCode: 1 };
+				return {
+					stderr: `wc: ${file}: No such file or directory`,
+					exitCode: 1,
+				};
 			}
 		}
 		return { stdout: results.join("\n"), exitCode: 0 };

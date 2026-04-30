@@ -20,13 +20,18 @@ export const mvCommand: ShellModule = {
 			assertPathAccess(authUser, destPath, "mv");
 
 			if (!shell.vfs.exists(srcPath)) {
-				return { stderr: `mv: ${srcArg}: No such file or directory`, exitCode: 1 };
+				return {
+					stderr: `mv: ${srcArg}: No such file or directory`,
+					exitCode: 1,
+				};
 			}
 
 			// If dest is a directory, move into it
-			const finalDest = shell.vfs.exists(destPath) && shell.vfs.stat(destPath).type === "directory"
-				? `${destPath}/${srcArg.split("/").pop()}`
-				: destPath;
+			const finalDest =
+				shell.vfs.exists(destPath) &&
+				shell.vfs.stat(destPath).type === "directory"
+					? `${destPath}/${srcArg.split("/").pop()}`
+					: destPath;
 
 			shell.vfs.move(srcPath, finalDest);
 			return { exitCode: 0 };

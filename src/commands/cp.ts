@@ -22,14 +22,20 @@ export const cpCommand: ShellModule = {
 			assertPathAccess(authUser, destPath, "cp");
 
 			if (!shell.vfs.exists(srcPath)) {
-				return { stderr: `cp: ${srcArg}: No such file or directory`, exitCode: 1 };
+				return {
+					stderr: `cp: ${srcArg}: No such file or directory`,
+					exitCode: 1,
+				};
 			}
 
 			const srcStat = shell.vfs.stat(srcPath);
 
 			if (srcStat.type === "directory") {
 				if (!recursive) {
-					return { stderr: `cp: ${srcArg}: is a directory (use -r)`, exitCode: 1 };
+					return {
+						stderr: `cp: ${srcArg}: is a directory (use -r)`,
+						exitCode: 1,
+					};
 				}
 				const copyDir = (from: string, to: string) => {
 					shell.vfs.mkdir(to, 0o755);
@@ -45,14 +51,18 @@ export const cpCommand: ShellModule = {
 						}
 					}
 				};
-				const finalDest = shell.vfs.exists(destPath) && shell.vfs.stat(destPath).type === "directory"
-					? `${destPath}/${srcArg.split("/").pop()}`
-					: destPath;
+				const finalDest =
+					shell.vfs.exists(destPath) &&
+					shell.vfs.stat(destPath).type === "directory"
+						? `${destPath}/${srcArg.split("/").pop()}`
+						: destPath;
 				copyDir(srcPath, finalDest);
 			} else {
-				const finalDest = shell.vfs.exists(destPath) && shell.vfs.stat(destPath).type === "directory"
-					? `${destPath}/${srcArg.split("/").pop()}`
-					: destPath;
+				const finalDest =
+					shell.vfs.exists(destPath) &&
+					shell.vfs.stat(destPath).type === "directory"
+						? `${destPath}/${srcArg.split("/").pop()}`
+						: destPath;
 				const content = shell.vfs.readFileRaw(srcPath);
 				shell.writeFileAsUser(authUser, finalDest, content);
 			}

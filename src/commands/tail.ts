@@ -26,7 +26,10 @@ export const tailCommand: ShellModule = {
 				assertPathAccess(authUser, filePath, "tail");
 				results.push(take(shell.vfs.readFile(filePath)));
 			} catch {
-				return { stderr: `tail: ${file}: No such file or directory`, exitCode: 1 };
+				return {
+					stderr: `tail: ${file}: No such file or directory`,
+					exitCode: 1,
+				};
 			}
 		}
 		return { stdout: results.join("\n"), exitCode: 0 };
