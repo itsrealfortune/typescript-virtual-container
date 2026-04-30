@@ -1,7 +1,10 @@
 import { VirtualSftpServer, VirtualShell, VirtualSshServer } from ".";
 
 const hostname = process.env.SSH_MIMIC_HOSTNAME ?? "typescript-vm";
-const virtualShell = new VirtualShell(hostname);
+const virtualShell = new VirtualShell(hostname, undefined, {
+	mode: "fs",
+	snapshotPath: ".vfs",
+});
 
 virtualShell.addCommand("demo", [], () => {
 	return {
