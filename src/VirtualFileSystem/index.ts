@@ -210,11 +210,7 @@ class VirtualFileSystem extends EventEmitter {
 	public mkdir(targetPath: string, mode: number = 0o755): void {
 		const normalized = normalizePath(targetPath);
 		const existing = (() => {
-			try {
-				return getNode(this.root, normalized);
-			} catch {
-				return null;
-			}
+			try { return getNode(this.root, normalized); } catch { return null; }
 		})();
 		if (existing && existing.type !== "directory") {
 			throw new Error(
@@ -305,9 +301,7 @@ class VirtualFileSystem extends EventEmitter {
 		try {
 			getNode(this.root, normalizePath(targetPath));
 			return true;
-		} catch {
-			return false;
-		}
+		} catch { return false; }
 	}
 
 	/** Updates mode bits on a node. */
@@ -323,24 +317,15 @@ class VirtualFileSystem extends EventEmitter {
 		if (node.type === "file") {
 			const f = node as InternalFileNode;
 			return {
-				type: "file",
-				name,
-				path: normalized,
-				mode: f.mode,
-				createdAt: f.createdAt,
-				updatedAt: f.updatedAt,
-				compressed: f.compressed,
-				size: f.content.length,
+				type: "file", name, path: normalized, mode: f.mode,
+				createdAt: f.createdAt, updatedAt: f.updatedAt,
+				compressed: f.compressed, size: f.content.length,
 			};
 		}
 		const d = node as InternalDirectoryNode;
 		return {
-			type: "directory",
-			name,
-			path: normalized,
-			mode: d.mode,
-			createdAt: d.createdAt,
-			updatedAt: d.updatedAt,
+			type: "directory", name, path: normalized, mode: d.mode,
+			createdAt: d.createdAt, updatedAt: d.updatedAt,
 			childrenCount: d.children.size,
 		};
 	}
@@ -360,7 +345,9 @@ class VirtualFileSystem extends EventEmitter {
 		const normalized = normalizePath(dirPath);
 		const node = getNode(this.root, normalized);
 		if (node.type !== "directory") {
-			throw new Error(`Cannot render tree for '${dirPath}': not a directory.`);
+			throw new Error(
+				`Cannot render tree for '${dirPath}': not a directory.`,
+			);
 		}
 		const label = dirPath === "/" ? "/" : path.posix.basename(normalized);
 		return this.renderTreeLines(node as InternalDirectoryNode, label);
@@ -378,8 +365,7 @@ class VirtualFileSystem extends EventEmitter {
 			lines.push(`${connector}${name}`);
 			if (child.type === "directory") {
 				const sub = this.renderTreeLines(child as InternalDirectoryNode, "")
-					.split("\n")
-					.slice(1)
+					.split("\n").slice(1)
 					.map((l) => `${nextPrefix}${l}`);
 				lines.push(...sub);
 			}
@@ -404,8 +390,7 @@ class VirtualFileSystem extends EventEmitter {
 	/** Compresses a file's content with gzip in place. */
 	public compressFile(targetPath: string): void {
 		const node = getNode(this.root, normalizePath(targetPath));
-		if (node.type !== "file")
-			throw new Error(`Cannot compress '${targetPath}': not a file.`);
+		if (node.type !== "file") throw new Error(`Cannot compress '${targetPath}': not a file.`);
 		const f = node as InternalFileNode;
 		if (!f.compressed) {
 			f.content = gzipSync(f.content);
@@ -417,8 +402,7 @@ class VirtualFileSystem extends EventEmitter {
 	/** Decompresses a gzip-compressed file in place. */
 	public decompressFile(targetPath: string): void {
 		const node = getNode(this.root, normalizePath(targetPath));
-		if (node.type !== "file")
-			throw new Error(`Cannot decompress '${targetPath}': not a file.`);
+		if (node.type !== "file") throw new Error(`Cannot decompress '${targetPath}': not a file.`);
 		const f = node as InternalFileNode;
 		if (f.compressed) {
 			f.content = gunzipSync(f.content);
@@ -437,25 +421,18 @@ class VirtualFileSystem extends EventEmitter {
 			? normalizePath(targetPath)
 			: targetPath;
 		const { parent, name } = getParentDirectory(
-			this.root,
-			normalizedLink,
-			true,
+			this.root, normalizedLink, true,
 			(p) => this.mkdirRecursive(p, 0o755),
 		);
 		const symNode: InternalFileNode = {
-			type: "file",
-			name,
+			type: "file", name,
 			content: Buffer.from(normalizedTarget, "utf8"),
 			mode: 0o120777,
 			compressed: false,
-			createdAt: new Date(),
-			updatedAt: new Date(),
+			createdAt: new Date(), updatedAt: new Date(),
 		};
 		parent.children.set(name, symNode);
-		this.emit("symlink:create", {
-			link: normalizedLink,
-			target: normalizedTarget,
-		});
+		this.emit("symlink:create", { link: normalizedLink, target: normalizedTarget });
 	}
 
 	/** Returns true when the path is a symbolic link node. */
@@ -463,9 +440,7 @@ class VirtualFileSystem extends EventEmitter {
 		try {
 			const node = getNode(this.root, normalizePath(targetPath));
 			return node.type === "file" && node.mode === 0o120777;
-		} catch {
-			return false;
-		}
+		} catch { return false; }
 	}
 
 	/**
@@ -481,14 +456,10 @@ class VirtualFileSystem extends EventEmitter {
 					const target = (node as InternalFileNode).content.toString("utf8");
 					current = target.startsWith("/")
 						? target
-						: normalizePath(
-								path.posix.join(path.posix.dirname(current), target),
-							);
+						: normalizePath(path.posix.join(path.posix.dirname(current), target));
 					continue;
 				}
-			} catch {
-				break;
-			}
+			} catch { break; }
 			return current;
 		}
 		throw new Error(`Too many levels of symbolic links: ${linkPath}`);
@@ -507,12 +478,7 @@ class VirtualFileSystem extends EventEmitter {
 				);
 			}
 		}
-		const { parent, name } = getParentDirectory(
-			this.root,
-			normalized,
-			false,
-			() => {},
-		);
+		const { parent, name } = getParentDirectory(this.root, normalized, false, () => {});
 		parent.children.delete(name);
 		this.emit("node:remove", { path: normalized });
 	}
@@ -530,16 +496,10 @@ class VirtualFileSystem extends EventEmitter {
 		}
 		this.mkdirRecursive(path.posix.dirname(toNormalized), 0o755);
 		const { parent: destParent, name: destName } = getParentDirectory(
-			this.root,
-			toNormalized,
-			false,
-			() => {},
+			this.root, toNormalized, false, () => {},
 		);
 		const { parent: srcParent, name: srcName } = getParentDirectory(
-			this.root,
-			fromNormalized,
-			false,
-			() => {},
+			this.root, fromNormalized, false, () => {},
 		);
 		srcParent.children.delete(srcName);
 		node.name = destName;
@@ -568,9 +528,7 @@ class VirtualFileSystem extends EventEmitter {
 			);
 		}
 		return {
-			type: "directory",
-			name: dir.name,
-			mode: dir.mode,
+			type: "directory", name: dir.name, mode: dir.mode,
 			createdAt: dir.createdAt.toISOString(),
 			updatedAt: dir.updatedAt.toISOString(),
 			children,
@@ -579,9 +537,7 @@ class VirtualFileSystem extends EventEmitter {
 
 	private serializeFile(file: InternalFileNode): VfsSnapshotFileNode {
 		return {
-			type: "file",
-			name: file.name,
-			mode: file.mode,
+			type: "file", name: file.name, mode: file.mode,
 			createdAt: file.createdAt.toISOString(),
 			updatedAt: file.updatedAt.toISOString(),
 			compressed: file.compressed,
@@ -622,9 +578,7 @@ class VirtualFileSystem extends EventEmitter {
 		name: string,
 	): InternalDirectoryNode {
 		const dir: InternalDirectoryNode = {
-			type: "directory",
-			name,
-			mode: snap.mode,
+			type: "directory", name, mode: snap.mode,
 			createdAt: new Date(snap.createdAt),
 			updatedAt: new Date(snap.updatedAt),
 			children: new Map(),
@@ -633,9 +587,7 @@ class VirtualFileSystem extends EventEmitter {
 			if (child.type === "file") {
 				const f = child as VfsSnapshotFileNode;
 				dir.children.set(f.name, {
-					type: "file",
-					name: f.name,
-					mode: f.mode,
+					type: "file", name: f.name, mode: f.mode,
 					createdAt: new Date(f.createdAt),
 					updatedAt: new Date(f.updatedAt),
 					compressed: f.compressed,
