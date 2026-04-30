@@ -648,6 +648,47 @@ export class VirtualUserManager extends EventEmitter {
 			throw new Error("invalid password");
 		}
 	}
+	private readonly authorizedKeys = new Map<
+		string,
+		Array<{ algo: string; data: Buffer }>
+	>();
+
+	/**
+	 * Adds an SSH public key for a user, enabling public-key authentication.
+	 *
+	 * @param username Target user.
+	 * @param algo Key algorithm (e.g. "ssh-rsa", "ssh-ed25519").
+	 * @param data Raw key data as a Buffer (the base64-decoded key bytes).
+	 */
+	public addAuthorizedKey(username: string, algo: string, data: Buffer): void {
+		perf.mark("addAuthorizedKey");
+		const keys = this.authorizedKeys.get(username) ?? [];
+		keys.push({ algo, data });
+		this.authorizedKeys.set(username, keys);
+		this.emit("key:add", { username, algo });
+	}
+
+	/**
+	 * Removes all authorized keys for a user.
+	 *
+	 * @param username Target user.
+	 */
+	public removeAuthorizedKeys(username: string): void {
+		this.authorizedKeys.delete(username);
+		this.emit("key:remove", { username });
+	}
+
+	/**
+	 * Returns the list of authorized keys for a user.
+	 * Returns an empty array when no keys are registered.
+	 *
+	 * @param username Target user.
+	 */
+	public getAuthorizedKeys(
+		username: string,
+	): Array<{ algo: string; data: Buffer }> {
+		return this.authorizedKeys.get(username) ?? [];
+	}
 }
 
 function normalizeVfsPath(targetPath: string): string {

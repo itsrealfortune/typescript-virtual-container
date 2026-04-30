@@ -11,14 +11,31 @@ import { loadOrCreateHostKey } from "./hostKey";
  * This class is exported as `VirtualSshServer` for public API compatibility.
  * Create an instance, call {@link SshMimic.start}, and stop it with
  * {@link SshMimic.stop} when your process exits.
+ *
+ * Features:
+ * - Password authentication
+ * - Public-key authentication
+ * - Per-IP rate limiting / lockout for brute-force protection
+ * - Interactive shell sessions
+ * - Non-interactive exec sessions
  */
 const perf: PerfLogger = createPerfLogger("SshMimic");
+
+interface RateLimitEntry {
+	attempts: number;
+	lockedUntil: number;
+}
 
 class SshMimic extends EventEmitter {
 	port: number;
 	server: SshServer | null;
 	private shell: VirtualShell;
-	private shellHostname: string;
+
+	/** Max failed auth attempts before an IP is temporarily locked. */
+	private readonly maxAuthAttempts: number;
+	/** How long (ms) a locked IP must wait before retrying. */
+	private readonly lockoutDurationMs: number;
+	private readonly authAttempts = new Map<string, RateLimitEntry>();
 
 	/**
 	 * Creates a new SSH mimic server instance.
@@ -26,23 +43,72 @@ class SshMimic extends EventEmitter {
 	 * @param port TCP port to bind on localhost.
 	 * @param hostname Virtual hostname used for the SSH ident and default shell label.
 	 * @param shell Optional preconfigured virtual shell instance to reuse.
+	 * @param maxAuthAttempts Max failed attempts per IP before lockout (default: 5).
+	 * @param lockoutDurationMs Lockout window in ms after exceeding attempts (default: 60 000).
 	 */
 	constructor({
 		port,
 		hostname = "typescript-vm",
 		shell = new VirtualShell(hostname),
+		maxAuthAttempts = 5,
+		lockoutDurationMs = 60_000,
 	}: {
 		port: number;
 		hostname?: string;
 		shell?: VirtualShell;
+		maxAuthAttempts?: number;
+		lockoutDurationMs?: number;
 	}) {
 		super();
 		perf.mark("constructor");
 		this.port = port;
-		this.shellHostname = hostname;
 		this.server = null;
 		this.shell = shell;
+		this.maxAuthAttempts = maxAuthAttempts;
+		this.lockoutDurationMs = lockoutDurationMs;
 	}
+
+	// ── Rate limiting ────────────────────────────────────────────────────────
+
+	private isLockedOut(ip: string): boolean {
+		const entry = this.authAttempts.get(ip);
+		if (!entry) return false;
+		if (Date.now() < entry.lockedUntil) return true;
+		if (entry.lockedUntil > 0) {
+			this.authAttempts.delete(ip);
+		}
+		return false;
+	}
+
+	private recordFailure(ip: string): void {
+		const entry = this.authAttempts.get(ip) ?? { attempts: 0, lockedUntil: 0 };
+		entry.attempts += 1;
+		if (entry.attempts >= this.maxAuthAttempts) {
+			entry.lockedUntil = Date.now() + this.lockoutDurationMs;
+			this.emit("auth:lockout", { ip, until: new Date(entry.lockedUntil) });
+		}
+		this.authAttempts.set(ip, entry);
+	}
+
+	private recordSuccess(ip: string): void {
+		this.authAttempts.delete(ip);
+	}
+
+	// ── Home directory bootstrap ─────────────────────────────────────────────
+
+	private ensureHomeDir(authUser: string): void {
+		const homePath = `/home/${authUser}`;
+		if (!this.shell.vfs.exists(homePath)) {
+			this.shell.vfs.mkdir(homePath, 0o755);
+			this.shell.vfs.writeFile(
+				`${homePath}/README.txt`,
+				`Welcome to ${this.shell.hostname}\n`,
+			);
+			void this.shell.vfs.flushMirror();
+		}
+	}
+
+	// ── Server lifecycle ─────────────────────────────────────────────────────
 
 	/**
 	 * Starts server and initializes virtual filesystem, users, and handlers.
@@ -54,7 +120,6 @@ class SshMimic extends EventEmitter {
 		const shell = this.shell;
 		const privateKey = loadOrCreateHostKey();
 
-		// Ensure VirtualShell is fully initialized before accepting connections
 		await shell.ensureInitialized();
 
 		this.server = new SshServer(
@@ -70,11 +135,22 @@ class SshMimic extends EventEmitter {
 				this.emit("client:connect");
 
 				client.on("authentication", (ctx) => {
-					shell;
-					if (ctx.method === "password") {
-						const candidateUser = ctx.username || "root";
-						remoteAddress = (ctx as { ip?: string }).ip ?? remoteAddress;
+					const candidateUser = ctx.username || "root";
+					remoteAddress = (ctx as { ip?: string }).ip ?? remoteAddress;
 
+					// Rate-limit check
+					if (this.isLockedOut(remoteAddress)) {
+						this.emit("auth:failure", {
+							username: candidateUser,
+							remoteAddress,
+							reason: "lockout",
+						});
+						ctx.reject();
+						return;
+					}
+
+					// ── Password auth ──────────────────────────────────────
+					if (ctx.method === "password") {
 						if (!shell.users.hasPassword(candidateUser)) {
 							console.log(
 								`User ${candidateUser} has no password set, allowing login without verification`,
@@ -84,18 +160,9 @@ class SshMimic extends EventEmitter {
 								authUser,
 								remoteAddress,
 							).id;
+							this.recordSuccess(remoteAddress);
 							this.emit("auth:success", { username: authUser, remoteAddress });
-
-							const homePath = `/home/${authUser}`;
-							if (!shell.vfs.exists(homePath)) {
-								shell.vfs.mkdir(homePath, 0o755);
-								shell.vfs.writeFile(
-									`${homePath}/README.txt`,
-									`Welcome to ${shell?.hostname ?? this.shellHostname}`,
-								);
-								void shell.vfs.flushMirror();
-							}
-
+							this.ensureHomeDir(authUser);
 							ctx.accept();
 							return;
 						}
@@ -105,6 +172,7 @@ class SshMimic extends EventEmitter {
 							ctx.password === "" ||
 							!shell.users.verifyPassword(candidateUser, ctx.password)
 						) {
+							this.recordFailure(remoteAddress);
 							this.emit("auth:failure", {
 								username: candidateUser,
 								remoteAddress,
@@ -115,23 +183,62 @@ class SshMimic extends EventEmitter {
 
 						authUser = candidateUser;
 						sessionId = shell.users.registerSession(authUser, remoteAddress).id;
+						this.recordSuccess(remoteAddress);
 						this.emit("auth:success", { username: authUser, remoteAddress });
-
-						const homePath = `/home/${authUser}`;
-						if (!shell.vfs.exists(homePath)) {
-							shell.vfs.mkdir(homePath, 0o755);
-							shell.vfs.writeFile(
-								`${homePath}/README.txt`,
-								`Welcome to ${shell?.hostname ?? this.shellHostname}`,
-							);
-							void shell.vfs.flushMirror();
-						}
-
+						this.ensureHomeDir(authUser);
 						ctx.accept();
 						return;
 					}
 
-					ctx.reject();
+					// ── Public-key auth ────────────────────────────────────
+					if (ctx.method === "publickey") {
+						const authorizedKeys = shell.users.getAuthorizedKeys(candidateUser);
+						if (authorizedKeys.length === 0) {
+							// No keys configured — reject cleanly
+							ctx.reject();
+							return;
+						}
+
+						const incomingKey = ctx.key;
+						const keyMatches = authorizedKeys.some(
+							(k) =>
+								k.algo === incomingKey.algo && k.data.equals(incomingKey.data),
+						);
+
+						if (!keyMatches) {
+							this.recordFailure(remoteAddress);
+							this.emit("auth:failure", {
+								username: candidateUser,
+								remoteAddress,
+								method: "publickey",
+							});
+							ctx.reject();
+							return;
+						}
+
+						// Key matched — if this is a signature check step, accept
+						if (ctx.signature) {
+							authUser = candidateUser;
+							sessionId = shell.users.registerSession(
+								authUser,
+								remoteAddress,
+							).id;
+							this.recordSuccess(remoteAddress);
+							this.emit("auth:success", {
+								username: authUser,
+								remoteAddress,
+								method: "publickey",
+							});
+							this.ensureHomeDir(authUser);
+							ctx.accept();
+						} else {
+							// Key exists but no signature yet — ssh2 will call again with signature
+							ctx.accept();
+						}
+						return;
+					}
+
+					ctx.reject(["password", "publickey"]);
 				});
 
 				client.on("close", () => {
@@ -208,6 +315,14 @@ class SshMimic extends EventEmitter {
 				this.emit("stop");
 			});
 		}
+	}
+
+	/**
+	 * Manually clears the rate-limit record for an IP address.
+	 * Useful in tests or admin tooling.
+	 */
+	public clearLockout(ip: string): void {
+		this.authAttempts.delete(ip);
 	}
 }
 

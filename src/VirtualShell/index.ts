@@ -4,7 +4,7 @@ import type { CommandContext, CommandResult } from "../types/commands";
 import type { ShellStream } from "../types/streams";
 import type { PerfLogger } from "../utils/perfLogger";
 import { createPerfLogger } from "../utils/perfLogger";
-import VirtualFileSystem from "../VirtualFileSystem";
+import VirtualFileSystem, { type VfsOptions } from "../VirtualFileSystem";
 import { VirtualUserManager } from "../VirtualUserManager";
 import { startShell } from "./shell";
 
@@ -38,7 +38,6 @@ function resolveAutoSudoForNewUsers(): boolean {
  * client API.
  */
 class VirtualShell extends EventEmitter {
-	basePath: string = ".";
 	vfs: VirtualFileSystem;
 	users: VirtualUserManager;
 	hostname: string;
@@ -50,19 +49,18 @@ class VirtualShell extends EventEmitter {
 	 *
 	 * @param hostname Virtual hostname used for prompts and idents.
 	 * @param properties Customizable properties shown in `uname -a` and similar commands.
-	 * @param basePath Optional base path for the virtual filesystem (defaults to process.cwd()).
+	 * @param vfsOptions Optional VFS persistence options (mode, snapshotPath).
 	 */
 	constructor(
 		hostname: string,
 		properties?: ShellProperties,
-		basePath?: string,
+		vfsOptions?: VfsOptions,
 	) {
 		super();
 		perf.mark("constructor");
 		this.hostname = hostname;
 		this.properties = properties || defaultShellProperties;
-		this.basePath = basePath || ".";
-		this.vfs = new VirtualFileSystem(this.basePath);
+		this.vfs = new VirtualFileSystem(vfsOptions ?? {});
 		this.users = new VirtualUserManager(this.vfs, resolveAutoSudoForNewUsers());
 
 		// Store references to avoid TypeScript "used before assigned" errors
