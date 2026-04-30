@@ -4,6 +4,8 @@ import { assertPathAccess, resolvePath } from "./helpers";
 
 export const lnCommand: ShellModule = {
 	name: "ln",
+	description: "Create links",
+	category: "files",
 	params: ["[-s] <target> <link_name>"],
 	run: ({ authUser, shell, cwd, args }) => {
 		const symbolic = ifFlag(args, ["-s", "--symbolic"]);

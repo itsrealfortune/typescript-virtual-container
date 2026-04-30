@@ -2,6 +2,8 @@ import type { ShellModule } from "../types/commands";
 
 export const deluserCommand: ShellModule = {
 	name: "deluser",
+	description: "Delete a user",
+	category: "users",
 	params: ["<username>"],
 	run: async ({ authUser, args, shell }) => {
 		if (authUser !== "root") {

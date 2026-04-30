@@ -4,6 +4,8 @@ import { assertPathAccess, resolveReadablePath } from "./helpers";
 
 export const catCommand: ShellModule = {
 	name: "cat",
+	description: "Concatenate and print files",
+	category: "files",
 	params: ["<file>"],
 	run: ({ authUser, shell, cwd, args }) => {
 		const fileArg = getArg(args, 0);

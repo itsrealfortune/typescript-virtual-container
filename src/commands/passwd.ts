@@ -2,6 +2,8 @@ import type { ShellModule } from "../types/commands";
 
 export const passwdCommand: ShellModule = {
 	name: "passwd",
+	description: "Change user password",
+	category: "users",
 	params: ["<username> <password>"],
 	run: async ({ authUser, args, shell }) => {
 		const [username, password] = args;

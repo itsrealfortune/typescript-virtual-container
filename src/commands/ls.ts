@@ -28,6 +28,8 @@ function formatDate(date: Date): string {
 
 export const lsCommand: ShellModule = {
 	name: "ls",
+	description: "List directory contents",
+	category: "navigation",
 	params: ["[path]"],
 	run: ({ authUser, shell, cwd, args }) => {
 		const longFormat = ifFlag(args, ["-l", "--long"]);

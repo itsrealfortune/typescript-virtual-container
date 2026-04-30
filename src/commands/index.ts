@@ -1,28 +1,41 @@
+/** biome-ignore-all lint/style/useNamingConvention: ENV VARIABLES */
 import type { VirtualShell } from "../VirtualShell";
 import type {
 	CommandContext,
 	CommandMode,
 	CommandResult,
+	ShellEnv,
 	ShellModule,
 } from "../types/commands";
 import { adduserCommand } from "./adduser";
+import { awkCommand } from "./awk";
+import { base64Command } from "./base64";
 import { catCommand } from "./cat";
 import { cdCommand } from "./cd";
 import { chmodCommand } from "./chmod";
 import { clearCommand } from "./clear";
 import { cpCommand } from "./cp";
 import { curlCommand } from "./curl";
+import { cutCommand } from "./cut";
+import { dateCommand } from "./date";
 import { deluserCommand } from "./deluser";
+import { dfCommand } from "./df";
+import { diffCommand } from "./diff";
+import { duCommand } from "./du";
 import { echoCommand } from "./echo";
 import { envCommand } from "./env";
 import { exitCommand } from "./exit";
 import { exportCommand } from "./export";
 import { findCommand } from "./find";
 import { grepCommand } from "./grep";
+import { groupsCommand } from "./groups";
+import { gunzipCommand, gzipCommand } from "./gzip";
 import { headCommand } from "./head";
 import { createHelpCommand } from "./help";
 import { hostnameCommand } from "./hostname";
 import { htopCommand } from "./htop";
+import { idCommand } from "./id";
+import { killCommand } from "./kill";
 import { lnCommand } from "./ln";
 import { lsCommand } from "./ls";
 import { mkdirCommand } from "./mkdir";
@@ -30,78 +43,71 @@ import { mvCommand } from "./mv";
 import { nanoCommand } from "./nano";
 import { neofetchCommand } from "./neofetch";
 import { passwdCommand } from "./passwd";
+import { pingCommand } from "./ping";
+import { psCommand } from "./ps";
 import { pwdCommand } from "./pwd";
 import { rmCommand } from "./rm";
+import { sedCommand } from "./sed";
 import { setCommand } from "./set";
 import { shCommand } from "./sh";
+import { sleepCommand } from "./sleep";
+import { sortCommand } from "./sort";
 import { suCommand } from "./su";
 import { sudoCommand } from "./sudo";
 import { tailCommand } from "./tail";
+import { tarCommand } from "./tar";
+import { teeCommand } from "./tee";
 import { touchCommand } from "./touch";
+import { trCommand } from "./tr";
 import { treeCommand } from "./tree";
+import { unameCommand } from "./uname";
+import { uniqCommand } from "./uniq";
 import { unsetCommand } from "./unset";
 import { wcCommand } from "./wc";
 import { wgetCommand } from "./wget";
 import { whoCommand } from "./who";
 import { whoamiCommand } from "./whoami";
+import { xargsCommand } from "./xargs";
 
 const BASE_COMMANDS: ShellModule[] = [
-	pwdCommand,
-	whoamiCommand,
-	whoCommand,
-	hostnameCommand,
-	lsCommand,
-	cdCommand,
-	catCommand,
-	echoCommand,
-	mkdirCommand,
-	touchCommand,
-	rmCommand,
-	treeCommand,
-	nanoCommand,
+	// Navigation
+	pwdCommand, cdCommand, lsCommand, treeCommand,
+	// Files
+	catCommand, touchCommand, rmCommand, mkdirCommand, cpCommand, mvCommand, lnCommand,
+	chmodCommand, findCommand,
+	// Text processing
+	grepCommand, sedCommand, awkCommand, sortCommand, uniqCommand, wcCommand,
+	headCommand, tailCommand, cutCommand, trCommand, teeCommand, xargsCommand,
+	diffCommand,
+	// Archives
+	tarCommand, gzipCommand, gunzipCommand, base64Command,
+	// System info
+	whoamiCommand, whoCommand, hostnameCommand, idCommand, groupsCommand, unameCommand,
+	psCommand, killCommand, dfCommand, duCommand, dateCommand, sleepCommand, pingCommand,
+	// Shell
+	echoCommand, envCommand, exportCommand, setCommand, unsetCommand, shCommand,
+	clearCommand, exitCommand,
+	// Editors
+	nanoCommand, htopCommand,
+	// Network
+	curlCommand, wgetCommand,
+	// Users
+	adduserCommand, passwdCommand, deluserCommand, sudoCommand, suCommand,
+	// Misc
 	neofetchCommand,
-	htopCommand,
-	adduserCommand,
-	passwdCommand,
-	deluserCommand,
-	sudoCommand,
-	suCommand,
-	curlCommand,
-	envCommand,
-	wgetCommand,
-	grepCommand,
-	exportCommand,
-	setCommand,
-	unsetCommand,
-	shCommand,
-	clearCommand,
-	exitCommand,
-	cpCommand,
-	mvCommand,
-	lnCommand,
-	findCommand,
-	wcCommand,
-	headCommand,
-	tailCommand,
-	chmodCommand,
 ];
 
 const customCommands: ShellModule[] = [];
-
-const helpCommand = createHelpCommand(() =>
-	getCommandModules().map((cmd) => cmd.name),
-);
-
 const commandRegistry = new Map<string, ShellModule>();
 let cachedCommandNames: string[] | null = null;
+
+const helpCommand = createHelpCommand(() => getCommandModules().map((cmd) => cmd.name));
 
 function buildCache(): void {
 	commandRegistry.clear();
 	for (const mod of getCommandModules()) {
 		commandRegistry.set(mod.name, mod);
-		for (const alias of mod.aliases ?? []) {
-			commandRegistry.set(alias, mod);
-		}
+		for (const alias of mod.aliases ?? []) commandRegistry.set(alias, mod);
 	}
 	cachedCommandNames = Array.from(commandRegistry.keys()).sort();
 }
@@ -114,16 +120,12 @@ export function registerCommand(module: ShellModule): void {
 	const normalized: ShellModule = {
 		...module,
 		name: module.name.trim().toLowerCase(),
-		aliases: module.aliases?.map((alias) => alias.trim().toLowerCase()),
+		aliases: module.aliases?.map((a) => a.trim().toLowerCase()),
 	};
-
 	const names = [normalized.name, ...(normalized.aliases ?? [])];
-	if (names.some((name) => name.length === 0 || /\s/.test(name))) {
-		throw new Error(
-			"Command names and aliases must be non-empty and contain no spaces",
-		);
+	if (names.some((n) => n.length === 0 || /\s/.test(n))) {
+		throw new Error("Command names must be non-empty and contain no spaces");
 	}
-
 	customCommands.push(normalized);
 	buildCache();
 }
@@ -141,6 +143,10 @@ export function getCommandNames(): string[] {
 	return cachedCommandNames!;
 }
 
+export function getCommandModulesPublic(): ShellModule[] {
+	return getCommandModules();
+}
+
 export function resolveModule(name: string): ShellModule | undefined {
 	if (!cachedCommandNames) buildCache();
 	return commandRegistry.get(name.toLowerCase());
@@ -152,43 +158,41 @@ function splitArgsRespectingQuotes(input: string): string[] {
 	let inQuotes = false;
 	let quoteChar = "";
 
-	for (let i = 0; i < input.length; i += 1) {
+	for (let i = 0; i < input.length; i++) {
 		const ch = input[i] || "";
 		const prev = i > 0 ? input[i - 1] : "";
-
 		if ((ch === '"' || ch === "'") && prev !== "\\") {
-			if (!inQuotes) {
-				inQuotes = true;
-				quoteChar = ch;
-				continue;
-			}
-			if (ch === quoteChar) {
-				inQuotes = false;
-				quoteChar = "";
-				continue;
-			}
+			if (!inQuotes) { inQuotes = true; quoteChar = ch; continue; }
+			if (ch === quoteChar) { inQuotes = false; quoteChar = ""; continue; }
 		}
-
 		if (/\s/.test(ch) && !inQuotes) {
-			if (current.length > 0) {
-				tokens.push(current);
-				current = "";
-			}
+			if (current.length > 0) { tokens.push(current); current = ""; }
 			continue;
 		}
-
 		current += ch;
 	}
-
 	if (current.length > 0) tokens.push(current);
 	return tokens;
 }
 
 function parseInput(rawInput: string): { commandName: string; args: string[] } {
 	const parts = splitArgsRespectingQuotes(rawInput.trim());
+	return { commandName: parts[0]?.toLowerCase() ?? "", args: parts.slice(1) };
+}
+
+export function makeDefaultEnv(authUser: string, hostname: string): ShellEnv {
 	return {
-		commandName: parts[0]?.toLowerCase() ?? "",
-		args: parts.slice(1),
+		vars: {
+			PATH: "/usr/local/bin:/usr/bin:/bin",
+			HOME: `/home/${authUser}`,
+			USER: authUser,
+			LOGNAME: authUser,
+			SHELL: "/bin/sh",
+			TERM: "xterm-256color",
+			HOSTNAME: hostname,
+			PS1: "\\u@\\h:\\w\\$ ",
+		},
+		lastExitCode: 0,
 	};
 }
 
@@ -200,42 +204,37 @@ export async function runCommand(
 	cwd: string,
 	shell: VirtualShell,
 	stdin?: string,
+	env?: ShellEnv,
 ): Promise<CommandResult> {
 	const trimmed = rawInput.trim();
-
 	if (trimmed.length === 0) return { exitCode: 0 };
 
-	if (trimmed.includes("|") || trimmed.includes(">") || trimmed.includes("<")) {
-		const { parseShellPipeline } = await import("../VirtualShell/shellParser");
-		const { executePipeline } = await import("../SSHMimic/executor");
+	const shellEnv: ShellEnv = env ?? makeDefaultEnv(authUser, hostname);
 
-		const pipeline = parseShellPipeline(trimmed);
-		if (!pipeline.isValid) {
-			return { stderr: pipeline.error || "Syntax error", exitCode: 1 };
-		}
-
+	// Detect shell operators
+	if (
+		/(?<![|&])[|](?![|])/.test(trimmed) ||
+		trimmed.includes(">") ||
+		trimmed.includes("<") ||
+		trimmed.includes("&&") ||
+		trimmed.includes("||") ||
+		trimmed.includes(";")
+	) {
+		const { parseScript } = await import("../VirtualShell/shellParser");
+		const { executeStatements } = await import("../SSHMimic/executor");
+		const script = parseScript(trimmed);
+		if (!script.isValid) return { stderr: script.error || "Syntax error", exitCode: 1 };
 		try {
-			return await executePipeline(
-				pipeline,
-				authUser,
-				hostname,
-				mode,
-				cwd,
-				shell,
-			);
+			return await executeStatements(script.statements, authUser, hostname, mode, cwd, shell, shellEnv);
 		} catch (error: unknown) {
-			const message =
-				error instanceof Error ? error.message : "Pipeline execution failed";
-			return { stderr: message, exitCode: 1 };
+			return { stderr: error instanceof Error ? error.message : "Execution failed", exitCode: 1 };
 		}
 	}
 
 	const { commandName, args } = parseInput(trimmed);
 	const mod = resolveModule(commandName);
 
-	if (!mod) {
-		return { stderr: `Command '${trimmed}' not found`, exitCode: 127 };
-	}
+	if (!mod) return { stderr: `${commandName}: command not found`, exitCode: 127 };
 
 	try {
 		return await mod.run({
@@ -248,9 +247,9 @@ export async function runCommand(
 			stdin,
 			cwd,
 			shell,
+			env: shellEnv,
 		});
 	} catch (error: unknown) {
-		const message = error instanceof Error ? error.message : "Command failed";
-		return { stderr: message, exitCode: 1 };
+		return { stderr: error instanceof Error ? error.message : "Command failed", exitCode: 1 };
 	}
 }

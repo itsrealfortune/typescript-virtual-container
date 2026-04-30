@@ -3,6 +3,8 @@ import { assertPathAccess, resolvePath } from "./helpers";
 
 export const cdCommand: ShellModule = {
 	name: "cd",
+	description: "Change directory",
+	category: "navigation",
 	params: ["[path]"],
 	run: ({ authUser, shell, cwd, args, mode }) => {
 		const target = resolvePath(cwd, args[0] ?? "/virtual-env-js");

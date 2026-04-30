@@ -2,6 +2,8 @@ import type { ShellModule } from "../types/commands";
 
 export const htopCommand: ShellModule = {
 	name: "htop",
+	description: "System monitor",
+	category: "system",
 	params: [],
 	run: ({ mode }) => {
 		if (mode === "exec") {

@@ -82,6 +82,8 @@ function runHostWget(args: string[]): Promise<{
 
 export const wgetCommand: ShellModule = {
 	name: "wget",
+	description: "File downloader",
+	category: "network",
 	params: ["[url]"],
 	run: async ({ authUser, cwd, args, shell }) => {
 		const { flagsWithValues, positionals } = parseArgs(args, {

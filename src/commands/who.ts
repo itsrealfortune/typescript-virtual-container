@@ -3,6 +3,8 @@ import type { ShellModule } from "../types/commands";
 
 export const whoCommand: ShellModule = {
 	name: "who",
+	description: "Show active sessions",
+	category: "system",
 	params: [],
 	run: ({ shell }) => {
 		const lines = shell.users.listActiveSessions().map((session) => {

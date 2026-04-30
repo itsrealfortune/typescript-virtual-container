@@ -4,6 +4,8 @@ import { assertPathAccess, resolvePath } from "./helpers";
 
 export const headCommand: ShellModule = {
 	name: "head",
+	description: "Output first lines",
+	category: "text",
 	params: ["[-n <lines>] [file...]"],
 	run: ({ authUser, shell, cwd, args, stdin }) => {
 		const nArg = getFlag(args, ["-n"]);

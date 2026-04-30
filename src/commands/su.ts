@@ -3,6 +3,8 @@ import { getArg } from "./command-helpers";
 
 export const suCommand: ShellModule = {
 	name: "su",
+	description: "Switch user",
+	category: "users",
 	params: ["- <username>"],
 	run: ({ authUser, shell, args }) => {
 		const users = shell.users!;
