@@ -46,6 +46,7 @@ function parseBlocks(lines: string[]): Block[] {
 				}
 				i++;
 			}
+			// biome-ignore lint/suspicious/noThenProperty: expected behavior for if/elif parsing
 			blocks.push({ type: "if", cond, then: thenLines, elif: elifBlocks, else_: elseLines });
 		} else if (line.startsWith("for ")) {
 			const m = line.match(/^for\s+(\w+)\s+in\s+(.+?)(?:\s*;\s*do)?$/);
@@ -179,7 +180,7 @@ export const shCommand: ShellModule = {
 	category: "shell",
 	params: ["-c <script>", "[<file>]"],
 	run: async (ctx: CommandContext) => {
-		const { args, authUser, shell, cwd } = ctx;
+		const { args, shell, cwd } = ctx;
 
 		// sh -c "inline script"
 		if (ifFlag(args, "-c")) {
