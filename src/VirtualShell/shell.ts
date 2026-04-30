@@ -2,7 +2,8 @@ import type { ChildProcessWithoutNullStreams } from "node:child_process";
 import { readFile, unlink, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import type { ShellProperties, VirtualShell } from ".";
-import { getCommandNames, runCommand } from "../commands";
+import { getCommandNames, makeDefaultEnv, runCommand } from "../commands";
+import type { ShellEnv } from "../types/commands";
 import {
 	spawnHtopProcess,
 	spawnNanoEditorProcess,
@@ -50,6 +51,7 @@ export function startShell(
 	let historyIndex: number | null = null;
 	let historyDraft = "";
 	let cwd = `/home/${authUser}`;
+	const shellEnv: ShellEnv = makeDefaultEnv(authUser, hostname);
 	let nanoSession: NanoSession | null = null;
 	let pendingSudo: PendingSudo | null = null;
 	const buildCurrentPrompt = (): string => {
@@ -61,6 +63,21 @@ export function startShell(
 	console.log(
 		`[${sessionId}] Shell started for user '${authUser}' at ${remoteAddress}`,
 	);
+
+	// Load .bashrc if it exists
+	void (async () => {
+		const bashrcPath = `/home/${authUser}/.bashrc`;
+		if (shell.vfs.exists(bashrcPath)) {
+			try {
+				const bashrc = shell.vfs.readFile(bashrcPath);
+				for (const line of bashrc.split("\n")) {
+					const l = line.trim();
+					if (!l || l.startsWith("#")) continue;
+					await runCommand(l, authUser, hostname, "shell", cwd, shell, undefined, shellEnv);
+				}
+			} catch { /* ignore bashrc errors */ }
+		}
+	})();
 
 	function renderLine(): void {
 		const prompt = buildCurrentPrompt();
@@ -568,7 +585,7 @@ export function startShell(
 
 				if (line.length > 0) {
 					const result = await Promise.resolve(
-						runCommand(line, authUser, hostname, "shell", cwd, shell),
+						runCommand(line, authUser, hostname, "shell", cwd, shell, undefined, shellEnv),
 					);
 
 					pushHistory(line);
