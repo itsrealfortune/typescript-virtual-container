@@ -19,7 +19,7 @@
         }
     },
     "formatter": {
-        "enabled": true,
+        "enabled": false,
         "formatWithErrors": false,
         "attributePosition": "auto",
         "indentStyle": "tab",
