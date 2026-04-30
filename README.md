@@ -1,6 +1,6 @@
 # `typescript-virtual-container`
 
-> Pure in-memory SSH/SFTP server with a virtual filesystem and typed programmatic API for testing, automation, honeypots, and interactive shell scripting in TypeScript/JavaScript.
+> Pure in-memory SSH/SFTP server with a virtual filesystem, a real shell interpreter, and a typed programmatic API for testing, automation, honeypots, and interactive shell scripting in TypeScript/JavaScript.
 
 [![npm version](https://badge.fury.io/js/typescript-virtual-container.svg)](https://www.npmjs.com/package/typescript-virtual-container)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -27,6 +27,7 @@
   - [Key Types](#key-types)
 - [Usage Examples](#usage-examples)
 - [Built-in Commands](#built-in-commands)
+- [Shell Scripting](#shell-scripting)
 - [Configuration](#configuration)
 - [Performance & Scalability](#performance--scalability)
 - [Types & TypeScript](#types--typescript)
@@ -51,9 +52,11 @@
 - **Rate limiting / brute-force protection**: Configurable per-IP lockout after N failed auth attempts.
 - **User Management**: Create, authenticate, and manage virtual users with scrypt password hashing, sudo-like privilege elevation, and optional per-user disk quotas.
 - **Programmatic Shell API**: Execute shell commands and query filesystem state directly from TypeScript without SSH overhead.
-- **Event-Driven Architecture**: All core classes extend `EventEmitter` for lifecycle and operation tracking. Listen to auth events, filesystem operations, session lifecycle, and command execution for auditing and integration.
+- **Real shell interpreter**: `&&` / `||` / `;` operators, `if`/`elif`/`else`/`fi`, `for`/`do`/`done`, `while`/`do`/`done`, variable expansion (`$VAR`, `${VAR:-default}`), `$?`, per-session environment.
+- **`.bashrc` support**: Loaded automatically at interactive session start from `/home/<user>/.bashrc`.
+- **Event-Driven Architecture**: All core classes extend `EventEmitter` for lifecycle and operation tracking.
 - **Security Auditing**: Built-in `HoneyPot` utility for comprehensive activity logging, event tracking, statistics collection, and anomaly detection across all components.
-- **40+ Built-in Commands**: `ls`, `cd`, `cat`, `cp`, `mv`, `ln`, `find`, `grep`, `wc`, `head`, `tail`, `chmod`, `mkdir`, `touch`, `rm`, `tree`, `nano`, `curl`, `wget`, `sudo`, `su`, `adduser`, `deluser`, and more. Shell compatibility is still being expanded.
+- **60+ Built-in Commands**: Full navigation, text processing, archiving, system info, and user management commands — grouped and documented in the interactive `help` system.
 - **Full TypeScript Support**: Complete JSDoc coverage, exported types, and first-class async/await for all operations.
 
 ---
@@ -63,7 +66,7 @@
 ### What This Is
 
 - A virtual shell runtime written in TypeScript with a **pure in-memory filesystem**.
-- A virtual environment with its own filesystem, user management, and command runtime.
+- A virtual environment with its own filesystem, user management, and a real shell interpreter.
 - A practical tool for deterministic testing, automation pipelines, and SSH-like workflows without running real containers.
 - A honeypot framework for capturing and auditing attacker behavior.
 
@@ -85,6 +88,7 @@ This package is designed for teams that need a realistic SSH-like runtime withou
 - **Deterministic test environments**: Repeatable state for CI pipelines and integration tests. Build a fixture snapshot once, hydrate for each test.
 - **Low operational overhead**: No Docker daemon, no kernel namespaces, no privileged setup.
 - **Fast feedback loops**: Programmatic API for command execution and filesystem assertions.
+- **Real shell scripting**: `&&`/`||`/`;`, `if`/`for`/`while`, variable expansion — not just command dispatch.
 - **Developer-friendly internals**: Typed APIs, clear boundaries, composable building blocks, and full JSDoc.
 
 ---
@@ -208,7 +212,7 @@ ssh.stop();
 
 ### Execution Modes
 
-1. **SSH Shell Mode**: Interactive terminal session over SSH with readline, prompt, history, TTY resizing.
+1. **SSH Shell Mode**: Interactive terminal session over SSH with readline, history, `.bashrc` loading, TTY resizing, `Ctrl+W` word delete, `Ctrl+U` line clear.
 2. **SSH Exec Mode**: Non-interactive command execution (e.g. `ssh user@host "ls -la"`).
 3. **SFTP Mode**: Remote file operations (`readdir`, `stat`, `readFile`, `writeFile`, `mkdir`, `rename`, etc.) with home-directory confinement.
 4. **Programmatic Mode**: Direct TypeScript API via `SshClient` — no SSH protocol overhead.
@@ -222,8 +226,9 @@ ssh.stop();
                           │
                ┌──────────▼──────────┐
                │    VirtualShell     │
-               │  pipeline parser    │
-               │  command executor   │
+               │  script parser      │  ← &&/||/; · if/for/while
+               │  command executor   │  ← per-session ShellEnv
+               │  .bashrc loader     │  ← /home/<user>/.bashrc
                │  session manager    │
                └──┬──────────────┬───┘
                   │              │
@@ -338,9 +343,9 @@ new VirtualSftpServer({
 
 #### Behavior Notes
 
-- Supports `password` and `keyboard-interactive` authentication.
+- Supports `password` and `keyboard-interactive` authentication. Users without a password set are accepted on any attempt.
 - Resolves relative SFTP paths from `/home/<user>`.
-- Confines all SFTP operations to `/home/<user>` — blocks traversal attempts.
+- Confines all SFTP operations to `/home/<user>` — blocks traversal attempts outside home.
 - Unsupported operations (`READLINK`, `SYMLINK`) return `OP_UNSUPPORTED`.
 
 #### Events
@@ -578,6 +583,7 @@ new VirtualUserManager(
 | `hashPassword(password): string` | Hash a password using the configured algorithm. |
 | `addUser(username, password): Promise<void>` | Create user with home directory. |
 | `deleteUser(username): Promise<void>` | Delete user. Cannot delete root. |
+| `setPassword(username, password): Promise<void>` | Update password for an existing user. |
 | `isSudoer(username): boolean` | Check if user has sudo privileges. |
 | `addSudoer(username): Promise<void>` | Grant sudo privileges. |
 | `removeSudoer(username): Promise<void>` | Revoke sudo privileges. Cannot remove root. |
@@ -672,6 +678,8 @@ interface AuditLogEntry {
 }
 ```
 
+`detectAnomalies` detects: high authentication failure rates, excessive auth failures, unusual command volume, unusual file write volume.
+
 #### Example
 
 ```typescript
@@ -700,12 +708,6 @@ process.on("SIGINT", () => {
 });
 ```
 
-**`detectAnomalies` detects:**
-- High authentication failure rates
-- Excessive authentication failures
-- Unusual command execution volume
-- Unusual file write volume
-
 ---
 
 ### `SshClient` (Programmatic API)
@@ -724,7 +726,7 @@ No password required — the client authenticates by username only.
 
 | Method | Description |
 |--------|-------------|
-| `exec(command): Promise<CommandResult>` | Run arbitrary raw command string. |
+| `exec(command): Promise<CommandResult>` | Run arbitrary raw command string (supports `&&`, `\|`, etc.). |
 | `ls(path?)` | List directory (default: cwd). |
 | `pwd()` | Print current working directory. |
 | `cd(path)` | Change directory. Updates internal cwd state on success. |
@@ -758,6 +760,10 @@ console.log(list.stdout);  // notes.txt
 
 const read = await client.readFile("notes.txt");
 console.log(read.stdout);  // Work in progress
+
+// Shell operators work in exec()
+const r = await client.exec("echo hello && echo world");
+console.log(r.stdout); // hello\nworld
 ```
 
 ---
@@ -770,16 +776,57 @@ Returned by all command executions (shell or programmatic).
 
 ```typescript
 interface CommandResult {
-  stdout?: string;           // Standard output
-  stderr?: string;           // Standard error
-  exitCode?: number;         // Exit code (default: 0)
-  nextCwd?: string;          // Updated cwd (set by cd command)
-  clearScreen?: boolean;     // Request terminal clear
-  closeSession?: boolean;    // Request session close
-  switchUser?: string;       // User switch (su/sudo)
-  openEditor?: NanoEditorSession;  // Nano editor launch
-  openHtop?: boolean;        // htop launch
-  sudoChallenge?: SudoChallenge;   // Sudo password challenge
+  stdout?: string;
+  stderr?: string;
+  exitCode?: number;
+  nextCwd?: string;
+  clearScreen?: boolean;
+  closeSession?: boolean;
+  switchUser?: string;
+  openEditor?: NanoEditorSession;
+  openHtop?: boolean;
+  sudoChallenge?: SudoChallenge;
+}
+```
+
+#### `ShellEnv`
+
+Per-session shell environment. Passed as `env` in `CommandContext`.
+
+```typescript
+interface ShellEnv {
+  vars: Record<string, string>;  // $VAR accessible in expansions
+  lastExitCode: number;          // $? value
+}
+```
+
+Default variables initialized per session: `PATH`, `HOME`, `USER`, `LOGNAME`, `SHELL`, `TERM`, `HOSTNAME`, `PS1`.
+
+#### `ShellModule`
+
+Contract for custom command plugins:
+
+```typescript
+interface ShellModule {
+  name: string;
+  params: string[];
+  aliases?: string[];
+  description?: string;    // shown in grouped help
+  category?: string;       // navigation|files|text|archive|system|network|shell|users|misc
+  run: (ctx: CommandContext) => CommandResult | Promise<CommandResult>;
+}
+
+interface CommandContext {
+  authUser: string;
+  hostname: string;
+  activeSessions: VirtualActiveSession[];
+  rawInput: string;
+  mode: "shell" | "exec";
+  args: string[];
+  stdin?: string;
+  cwd: string;
+  shell: VirtualShell;
+  env: ShellEnv;           // per-session environment (read/write)
 }
 ```
 
@@ -792,8 +839,8 @@ interface VfsFileNode {
   type: "file";
   name: string;
   path: string;
-  mode: number;          // POSIX mode bits
-  size: number;          // Byte length (compressed size when compressed=true)
+  mode: number;
+  size: number;
   compressed: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -814,11 +861,11 @@ interface VfsDirectoryNode {
 
 ```typescript
 interface VirtualActiveSession {
-  id: string;             // UUID
+  id: string;
   username: string;
-  tty: string;            // e.g. "pts/0"
-  remoteAddress: string;  // Client IP or label
-  startedAt: string;      // ISO-8601
+  tty: string;
+  remoteAddress: string;
+  startedAt: string;  // ISO-8601
 }
 ```
 
@@ -828,33 +875,7 @@ interface VirtualActiveSession {
 interface VfsSnapshot {
   root: VfsSnapshotDirectoryNode;
 }
-// VfsSnapshotNode = VfsSnapshotFileNode | VfsSnapshotDirectoryNode
 // File nodes store content as base64 in contentBase64.
-```
-
-#### `ShellModule`
-
-Contract for custom command plugins:
-
-```typescript
-interface ShellModule {
-  name: string;
-  params: string[];
-  aliases?: string[];
-  run: (ctx: CommandContext) => CommandResult | Promise<CommandResult>;
-}
-
-interface CommandContext {
-  authUser: string;
-  hostname: string;
-  activeSessions: VirtualActiveSession[];
-  rawInput: string;
-  mode: "shell" | "exec";
-  args: string[];
-  stdin?: string;
-  cwd: string;
-  shell: VirtualShell;
-}
 ```
 
 ---
@@ -904,9 +925,6 @@ await client.writeFile("/app/config/settings.json", JSON.stringify({
 const result = await client.readFile("/app/config/settings.json");
 console.log("Config:", result.stdout);
 
-const list = await client.ls("/app");
-console.log(list.stdout);
-
 const tree = await client.tree("/app");
 console.log(tree.stdout);
 
@@ -915,7 +933,7 @@ ssh.stop();
 
 ---
 
-### Example 3: Multi-User Environment
+### Example 3: Multi-User Environment with Quotas
 
 ```typescript
 import { SshClient, VirtualShell, VirtualSshServer } from "typescript-virtual-container";
@@ -929,11 +947,8 @@ const users = ssh.getUsers()!;
 await users.addUser("alice", "alice123");
 await users.addUser("bob", "bob456");
 
-// Alice has sudo; Bob does not
 await users.removeSudoer("bob");
-
-// Set a 5 MB quota for bob
-await users.setQuotaBytes("bob", 5 * 1024 * 1024);
+await users.setQuotaBytes("bob", 5 * 1024 * 1024); // 5 MB
 
 const alice = new SshClient(shell, "alice");
 await alice.writeFile("/etc/important.conf", "secret=yes");
@@ -958,10 +973,8 @@ import { writeFileSync, readFileSync } from "node:fs";
 const vfs = new VirtualFileSystem();
 vfs.writeFile("/data/report.txt", "Baseline data");
 
-// Persist
 writeFileSync("snapshot.json", JSON.stringify(vfs.toSnapshot()));
 
-// Later, in a new process
 const snapshot = JSON.parse(readFileSync("snapshot.json", "utf8"));
 const restored = VirtualFileSystem.fromSnapshot(snapshot);
 console.log(restored.readFile("/data/report.txt")); // Baseline data
@@ -979,14 +992,12 @@ const shell = new VirtualShell("my-vm", undefined, {
 
 const ssh = new VirtualSshServer({ port: 2222, shell });
 await ssh.start();
-// Snapshot is auto-restored on start and auto-written on each flushMirror() call.
-
 process.on("SIGTERM", () => { ssh.stop(); process.exit(0); });
 ```
 
 ---
 
-### Example 5: Public-key authentication
+### Example 5: Public-Key Authentication
 
 ```typescript
 import { VirtualShell, VirtualSshServer } from "typescript-virtual-container";
@@ -997,7 +1008,6 @@ await shell.ensureInitialized();
 
 await shell.users.addUser("alice", "fallback-password");
 
-// Parse from ~/.ssh/id_ed25519.pub
 const pubLine = readFileSync(`${process.env.HOME}/.ssh/id_ed25519.pub`, "utf8").trim();
 const [algo, b64] = pubLine.split(" ");
 shell.users.addAuthorizedKey("alice", algo, Buffer.from(b64, "base64"));
@@ -1014,58 +1024,109 @@ await ssh.start();
 ```typescript
 const ssh = new VirtualSshServer({
   port: 2222,
-  maxAuthAttempts: 3,         // lock after 3 consecutive failures
-  lockoutDurationMs: 300_000, // 5-minute lockout
+  maxAuthAttempts: 3,
+  lockoutDurationMs: 300_000,
 });
 
 ssh.on("auth:lockout", ({ ip, until }) => {
   console.warn(`[SSH] ${ip} locked until ${until}`);
 });
 
-ssh.on("auth:failure", ({ username, remoteAddress }) => {
-  console.warn(`[SSH] Failed login: ${username} from ${remoteAddress}`);
-});
-
-// Manually lift a lockout (e.g. in an admin endpoint)
-ssh.clearLockout("192.168.1.100");
+ssh.clearLockout("192.168.1.100"); // manual override
 ```
 
 ---
 
-### Example 7: CI/CD Automation & Assertions
+### Example 7: Shell Operators and Variables
 
 ```typescript
-import { SshClient, VirtualShell, VirtualSshServer } from "typescript-virtual-container";
+import { SshClient, VirtualShell } from "typescript-virtual-container";
 
-async function testDeployment() {
-  const shell = new VirtualShell("typescript-vm");
-  const ssh   = new VirtualSshServer({ port: 2222, shell });
-  await ssh.start();
+const shell  = new VirtualShell("typescript-vm");
+await shell.ensureInitialized();
+const client = new SshClient(shell, "root");
 
-  const client = new SshClient(shell, "root");
+// && and || operators
+await client.exec("mkdir /tmp/test && echo created || echo failed");
 
-  await client.mkdir("/srv/app", true);
-  await client.writeFile("/srv/app/package.json", '{"name":"myapp","version":"1.0.0"}');
+// Chaining with ;
+await client.exec("echo a; echo b; echo c");
 
-  // Simulate deployment
-  await client.writeFile("/srv/app/app.js", 'console.log("v2.0");');
+// Variable expansion via export then use
+await client.exec("export GREETING=hello");
+await client.exec("echo $GREETING world");  // hello world
 
-  const appContent = await client.readFile("/srv/app/app.js");
-  if (appContent.stdout.includes("v2.0")) {
-    console.log("✓ Deployment verified");
-  } else {
-    throw new Error("✗ Deployment failed");
-  }
+// $? last exit code
+await client.exec("false; echo exit=$?");   // exit=1
 
-  ssh.stop();
-}
-
-testDeployment().catch(console.error);
+// Piping
+const r = await client.exec("echo -e 'banana\\napple\\ncherry' | sort");
+console.log(r.stdout); // apple\nbanana\ncherry
 ```
 
 ---
 
-### Example 8: Snapshot-Based Test Fixtures
+### Example 8: .bashrc
+
+```typescript
+import { VirtualShell, VirtualSshServer } from "typescript-virtual-container";
+
+const shell = new VirtualShell("typescript-vm");
+await shell.ensureInitialized();
+
+// Write a .bashrc for the root user
+shell.vfs.mkdir("/home/root", 0o755);
+shell.vfs.writeFile("/home/root/.bashrc", `
+export PS1="\\u@\\h:\\w\\$ "
+export EDITOR=nano
+export PATH="/usr/local/bin:/usr/bin:/bin"
+alias ll="ls -l"
+echo "Welcome back, root!"
+`.trim());
+
+const ssh = new VirtualSshServer({ port: 2222, shell });
+await ssh.start();
+// On interactive login, .bashrc is sourced automatically.
+// "Welcome back, root!" is printed, and $EDITOR is set in the session.
+```
+
+---
+
+### Example 9: Shell Scripting
+
+```typescript
+import { SshClient, VirtualShell } from "typescript-virtual-container";
+
+const shell  = new VirtualShell("typescript-vm");
+await shell.ensureInitialized();
+const client = new SshClient(shell, "root");
+
+// Write a script to VFS
+shell.vfs.writeFile("/usr/local/bin/setup.sh", `
+#!/bin/sh
+for dir in config logs tmp; do
+  mkdir /app/$dir
+  echo "Created /app/$dir"
+done
+if [ -d /app/config ]; then
+  echo "Setup complete"
+else
+  echo "Setup failed"
+fi
+`);
+
+// Execute it
+const r = await client.exec("sh /usr/local/bin/setup.sh");
+console.log(r.stdout);
+// Created /app/config
+// Created /app/logs
+// Created /app/tmp
+// Setup complete
+```
+
+---
+
+### Example 10: Snapshot-Based Test Fixtures
 
 ```typescript
 import { VirtualFileSystem } from "typescript-virtual-container";
@@ -1081,7 +1142,6 @@ function buildFixture(): VfsSnapshot {
 
 const FIXTURE = buildFixture();
 
-// Each test gets a clean, isolated VFS from the same fixture
 test("reads config file", () => {
   const vfs = VirtualFileSystem.fromSnapshot(FIXTURE);
   const content = JSON.parse(vfs.readFile("/app/config/settings.json"));
@@ -1091,7 +1151,7 @@ test("reads config file", () => {
 
 ---
 
-### Example 9: Symlinks
+### Example 11: Symlinks
 
 ```typescript
 const vfs = new VirtualFileSystem();
@@ -1105,55 +1165,30 @@ console.log(vfs.resolveSymlink("/usr/local/bin/app")); // /opt/myapp/bin/app
 
 ---
 
-### Example 10: Security Auditing with HoneyPot
+### Example 12: Security Auditing with HoneyPot
 
 ```typescript
-import {
-  HoneyPot,
-  SshClient,
-  VirtualShell,
-  VirtualSshServer,
-} from "typescript-virtual-container";
+import { HoneyPot, SshClient, VirtualShell, VirtualSshServer } from "typescript-virtual-container";
 
 const shell = new VirtualShell("typescript-vm");
 const ssh   = new VirtualSshServer({ port: 2222, shell });
 await ssh.start();
 
-const users = ssh.getUsers()!;
-const vfs   = ssh.getVfs()!;
-
 const hp = new HoneyPot(5000);
-hp.attach(shell, vfs, users, ssh);
-
-await users.addUser("alice", "alice123");
-await users.addUser("bob", "bob456");
+hp.attach(shell, shell.vfs, shell.users, ssh);
 
 const alice = new SshClient(shell, "alice");
 await alice.mkdir("/home/alice/projects", true);
 await alice.writeFile("/home/alice/projects/app.txt", "My application");
-await alice.ls("/home/alice/projects");
 
-const bob = new SshClient(shell, "bob");
-await bob.readFile("/etc/shadow");      // will fail
-await bob.writeFile("/etc/passwd", ""); // will fail
-
-// Stats
 const stats = hp.getStats();
-console.log(`Auth attempts:  ${stats.authAttempts}`);
-console.log(`Commands run:   ${stats.commands}`);
-console.log(`File writes:    ${stats.fileWrites}`);
+console.log(`Commands run: ${stats.commands}`);
+console.log(`File writes:  ${stats.fileWrites}`);
 
-// Recent events
-hp.getRecent(5).forEach(e =>
-  console.log(`[${e.timestamp}] ${e.source} → ${e.type}`)
-);
-
-// Anomaly detection
 hp.detectAnomalies().forEach(a =>
   console.log(`[${a.severity.toUpperCase()}] ${a.type}: ${a.message}`)
 );
 
-// Filter by type and source
 const authFailures = hp.getAuditLog("auth:failure");
 const sshEvents    = hp.getAuditLog(undefined, "SshMimic");
 console.log(`Auth failures: ${authFailures.length}`);
@@ -1164,15 +1199,9 @@ ssh.stop();
 
 ---
 
-### Example 11: Error Handling
+### Example 13: Error Handling
 
 ```typescript
-import { SshClient, VirtualShell, VirtualSshServer } from "typescript-virtual-container";
-
-const shell  = new VirtualShell("typescript-vm");
-const ssh    = new VirtualSshServer({ port: 2222, shell });
-await ssh.start();
-
 const client = new SshClient(shell, "root");
 
 const r1 = await client.readFile("/etc/nonexistent.conf");
@@ -1183,13 +1212,11 @@ if (r2.exitCode !== 0) console.error("cd failed");
 
 const r3 = await client.rm("/", true);
 console.log("Remove root:", r3.stderr); // Cannot remove root directory.
-
-ssh.stop();
 ```
 
 ---
 
-### Example 12: Concurrent Clients
+### Example 14: Concurrent Clients
 
 ```typescript
 const shell   = new VirtualShell("typescript-vm");
@@ -1206,51 +1233,208 @@ const [r1, r2] = await Promise.all([
 
 ## Built-in Commands
 
-All commands are available in SSH shell mode and via `SshClient.exec()`.
+All commands are available in SSH shell mode and via `SshClient.exec()`. Type `help` in the shell for a grouped, colorized listing. Type `help <command>` for detailed usage.
+
+### Navigation
+
+| Command | Flags | Description |
+|---------|-------|-------------|
+| `cd <path>` | | Change directory |
+| `ls [path]` | `-l` | List directory contents |
+| `pwd` | | Print working directory |
+| `tree [path]` | | ASCII directory tree |
+
+### Files & Filesystem
+
+| Command | Flags | Description |
+|---------|-------|-------------|
+| `cat <path>` | | Print file contents |
+| `chmod <mode> <file>` | | Change file permissions (octal) |
+| `cp <src> <dest>` | `-r` | Copy file or directory |
+| `find [path]` | `-name <pat>` `-type f\|d` | Search for files |
+| `ln <target> <link>` | `-s` | Create hard or symbolic link |
+| `mkdir <path>` | `-p` | Create directory |
+| `mv <src> <dest>` | | Move or rename |
+| `rm <path>` | `-r` | Remove file or directory |
+| `touch <path>` | | Create or update file |
+
+### Text Processing
+
+| Command | Flags | Description |
+|---------|-------|-------------|
+| `awk [-F <sep>] '<prog>'` | | Pattern scanning (print $N) |
+| `cut` | `-d <sep>` `-f <cols>` | Remove sections from lines |
+| `diff <f1> <f2>` | | Compare files line by line |
+| `grep <pattern> [files]` | `-i` `-v` `-n` `-r` | Search file content |
+| `head [files]` | `-n <N>` | First N lines (default 10) |
+| `sed -e 's/pat/rep/[g]'` | `-i` | Stream editor |
+| `sort [files]` | `-r` `-n` `-u` | Sort lines |
+| `tail [files]` | `-n <N>` | Last N lines (default 10) |
+| `tee [files]` | `-a` | Read stdin, write to stdout and files |
+| `tr <set1> [set2]` | `-d` | Translate or delete characters |
+| `uniq` | `-c` `-d` `-u` | Filter repeated lines |
+| `wc [files]` | `-l` `-w` `-c` | Word/line/byte count |
+| `xargs [cmd]` | | Build and execute commands from stdin |
+
+### Archive & Compression
+
+| Command | Flags | Description |
+|---------|-------|-------------|
+| `base64` | `-d` | Encode/decode base64 |
+| `gzip <file>` | | Compress file |
+| `gunzip <file>` | | Decompress file |
+| `tar <archive> [files]` | `-czf` `-xzf` `-tf` | Archive utility |
+
+### System
+
+| Command | Flags | Description |
+|---------|-------|-------------|
+| `date` | `+format` | Print current date and time |
+| `df` | `-h` | Filesystem disk space usage |
+| `du [path]` | `-h` `-s` | Estimate file space usage |
+| `groups [user]` | | Print group memberships |
+| `hostname` | | Print hostname |
+| `htop` | | System monitor (mock) |
+| `id [user]` | | Print user identity (uid/gid/groups) |
+| `kill [-9] <pid>` | | Send signal to process (mock) |
+| `neofetch` | | System info display (mock) |
+| `ping [-c <n>] <host>` | | Send ICMP ECHO_REQUEST (mock) |
+| `ps` | `-a` `-u` `-x` | Report process status |
+| `sleep <seconds>` | | Delay execution |
+| `uname` | `-a` `-r` `-m` | Print system information |
+| `who` | | List active sessions |
+| `whoami` | | Print current user |
+
+### Network
+
+| Command | Flags | Description |
+|---------|-------|-------------|
+| `curl <url>` | | HTTP client (delegates to host binary) |
+| `wget <url>` | | File downloader (delegates to host binary) |
+
+### Shell
+
+| Command | Flags | Description |
+|---------|-------|-------------|
+| `clear` | | Clear terminal screen (full ANSI reset) |
+| `echo <text>` | | Display text |
+| `env` | | Print session environment variables |
+| `exit [code]` | | Exit session |
+| `export NAME=VALUE` | | Set shell variable in current session |
+| `help [command]` | | List commands (grouped) or show command details |
+| `set [VAR=val]` | | Display or set shell variables |
+| `sh` | `-c <script>` `[file]` | Execute shell script (supports if/for/while) |
+| `unset <VAR>` | | Remove shell variable |
+
+### Users & Permissions
 
 | Command | Flags | Description |
 |---------|-------|-------------|
 | `adduser <name> <pass>` | | Create user (root only) |
-| `cat <path>` | | Print file contents |
-| `cd <path>` | | Change directory |
-| `chmod <mode> <file>` | | Change file permissions (octal) |
-| `clear` | | Clear terminal screen |
-| `cp <src> <dest>` | `-r` | Copy file or directory |
-| `curl <url>` | | Fetch URL (delegates to host binary) |
-| `deluser <name>` | | Delete user (root only, not root) |
-| `echo <text...>` | | Print text |
-| `env` | | List environment variables |
-| `exit [code]` | | Close session |
-| `export NAME=VALUE` | | Set/export shell variable |
-| `find [path]` | `-name <pat>` `-type f\|d` | Search for files |
-| `grep <pattern> [files]` | `-i` `-v` `-n` `-r` | Search file content |
-| `head [files]` | `-n <N>` | First N lines (default 10) |
-| `help` | | List all commands |
-| `hostname` | | Print hostname |
-| `htop` | | System monitor (mock) |
-| `ln <target> <link>` | `-s` | Create hard or symbolic link |
-| `ls [path]` | `-l` | List directory |
-| `mkdir <path>` | `-p` | Create directory |
-| `mv <src> <dest>` | | Move or rename |
+| `deluser <name>` | | Delete user (root only) |
 | `nano <path>` | | Interactive text editor |
-| `neofetch` | | System summary (mock) |
 | `passwd [user]` | | Change password |
-| `pwd` | | Print working directory |
-| `rm <path>` | `-r` | Remove file or directory |
-| `set` | | Show shell variables |
-| `sh <script>` | | Run shell script |
 | `su [user]` | | Switch user |
 | `sudo <cmd>` | `-i` | Run as root |
-| `tail [files]` | `-n <N>` | Last N lines (default 10) |
-| `touch <path>` | | Create/update file |
-| `tree [path]` | | ASCII directory tree |
-| `unset <name>` | | Remove shell variable |
-| `wc [files]` | `-l` `-w` `-c` | Line/word/byte count |
-| `wget <url>` | | Download file (delegates to host binary) |
-| `who` | | List active sessions |
-| `whoami` | | Print current user |
 
 Custom commands can be added via `shell.addCommand()`.
+
+---
+
+## Shell Scripting
+
+The shell interpreter supports a subset of POSIX sh syntax, usable both interactively and via `sh -c '...'` or `sh <file>`.
+
+### Logical Operators
+
+```bash
+mkdir /app && echo "created"       # run second only if first succeeds
+rm /missing || echo "not found"    # run second only if first fails
+echo a; echo b; echo c             # always run all three
+```
+
+### Pipes and Redirections
+
+```bash
+cat /etc/hosts | grep local
+ls /home | sort | head -5
+echo "hello world" > /tmp/out.txt
+cat /tmp/out.txt >> /tmp/log.txt
+```
+
+### Variable Expansion
+
+```bash
+export NAME=world
+echo "Hello $NAME"           # Hello world
+echo "${NAME:-fallback}"     # world (or fallback if unset)
+echo "${UNSET:-default}"     # default
+echo "Exit: $?"              # last exit code
+```
+
+### Conditionals
+
+```bash
+if [ -f /etc/config ]; then
+  echo "config exists"
+elif [ -d /etc ]; then
+  echo "etc is a directory"
+else
+  echo "nothing found"
+fi
+
+# String comparison
+if [ "$USER" = "root" ]; then echo "root"; fi
+
+# Numeric comparison
+if [ $COUNT -gt 10 ]; then echo "large"; fi
+```
+
+### Loops
+
+```bash
+# for loop
+for name in alice bob charlie; do
+  echo "Hello $name"
+done
+
+# while loop
+COUNT=0
+while [ $COUNT -lt 3 ]; do
+  echo "Count: $COUNT"
+  export COUNT=$((COUNT + 1))
+done
+```
+
+### Script Files
+
+Write a script to the VFS and execute it:
+
+```bash
+# Via SSH shell:
+nano /usr/local/bin/deploy.sh
+# ... write the script ...
+sh /usr/local/bin/deploy.sh
+
+# Via programmatic client:
+await client.writeFile("/usr/local/bin/setup.sh", `
+for dir in config logs tmp; do
+  mkdir /app/$dir
+done
+`);
+await client.exec("sh /usr/local/bin/setup.sh");
+```
+
+### .bashrc
+
+On every interactive SSH login, `/home/<user>/.bashrc` is sourced automatically. Use it to set environment variables, aliases (via `sh -c`), or print a welcome message.
+
+```bash
+# /home/alice/.bashrc
+export EDITOR=nano
+export PATH="/usr/local/bin:/usr/bin:/bin"
+echo "Welcome, Alice!"
+```
 
 ---
 
@@ -1323,7 +1507,7 @@ Recent baselines show strong startup behavior up to 100 concurrent shells. The r
 
 - SSH server is event-driven and handles multiple concurrent connections.
 - `SshClient` is sequential per instance — create multiple instances for parallel operations.
-- Each `VirtualShell` instance is fully independent (separate VFS, users, state).
+- Each `VirtualShell` instance is fully independent (separate VFS, users, env state).
 
 ### Performance Tips
 
@@ -1368,6 +1552,7 @@ import type {
   CommandMode,
   CommandOutcome,
   ShellModule,
+  ShellEnv,
   SudoChallenge,
   NanoEditorSession,
   // Audit
@@ -1387,7 +1572,7 @@ import type {
 No. It emulates SSH sessions, users, and filesystem behavior in a virtual runtime. Ideal for testing, simulations, and automation where full OS isolation is not required.
 
 **Can I use this in production?**
-You can use it in production-like automation contexts (sandboxed command runners, test harnesses, training environments, honeypots). It is not a security boundary like a real container/VM. Shell command fidelity is still being expanded.
+You can use it in production-like automation contexts (sandboxed command runners, test harnesses, training environments, honeypots). It is not a security boundary like a real container/VM.
 
 **Does the VFS touch the host filesystem?**
 In the default `"memory"` mode: no, all data lives in memory. In `"fs"` mode, it reads/writes a single JSON file (`vfs-snapshot.json`) inside the configured `snapshotPath` directory. No other host paths are accessed.
@@ -1396,16 +1581,22 @@ In the default `"memory"` mode: no, all data lives in memory. In `"fs"` mode, it
 Only if you explicitly use `"fs"` mode or call `toSnapshot()` / `fromSnapshot()` manually. Memory mode is ephemeral.
 
 **Can I run multiple isolated shells?**
-Yes. Each `new VirtualShell(...)` creates a completely independent VFS and user manager.
+Yes. Each `new VirtualShell(...)` creates a completely independent VFS, user manager, and shell environment.
 
 **Are custom commands shared between shell instances?**
 No. Custom commands registered with `shell.addCommand()` are instance-local.
+
+**Does the shell support `&&`, `||`, and `;`?**
+Yes. The shell parser handles logical operators, pipes, and redirections. `if`/`elif`/`else`/`fi`, `for`/`do`/`done`, and `while`/`do`/`done` are supported in scripts.
+
+**Does `.bashrc` work?**
+Yes. When an interactive SSH session starts, `/home/<user>/.bashrc` is loaded automatically and each non-comment line is executed in the session environment.
 
 **Is networking fully implemented for curl/wget?**
 `curl` and `wget` delegate to the host binaries. They are intended for realistic workflows, not full GNU tooling parity.
 
 **Can I create custom commands?**
-Yes — use `shell.addCommand()` or implement the `ShellModule` interface directly.
+Yes — use `shell.addCommand()` or implement the `ShellModule` interface directly. Set `description` and `category` to appear in the grouped `help` output.
 
 **Is SFTP fully supported?**
 Core SFTP operations (open, read, write, stat, mkdir, remove, rename) are implemented. Some optional operations (extended attributes, symlinks) return `OP_UNSUPPORTED`.
@@ -1419,14 +1610,9 @@ Yes — that is one of its primary use-cases. Use `HoneyPot.attach()` to capture
 
 **`Error: listen EADDRINUSE :::2222`**
 The port is already in use. Use a different port or stop the existing process.
-```typescript
-const ssh = new VirtualSshServer({ port: 3333 });
-```
 
 **SSH authentication always fails**
-- Check the password (root has no password by default — any login is accepted).
-- If you set a password, verify it with `users.verifyPassword(username, password)`.
-- Check if the IP is rate-limited: call `ssh.clearLockout(ip)`.
+Check the password (root has no password by default). If you set a password, verify it with `users.verifyPassword(username, password)`. Check if the IP is rate-limited: call `ssh.clearLockout(ip)`.
 
 **Auth always fails with "lockout"**
 Call `ssh.clearLockout(ip)` or increase `maxAuthAttempts`. In tests, use `maxAuthAttempts: Infinity`.
@@ -1435,20 +1621,19 @@ Call `ssh.clearLockout(ip)` or increase `maxAuthAttempts`. In tests, use `maxAut
 A symlink chain exceeds 8 hops. Check for circular links or pass a larger `maxDepth` to `resolveSymlink()`.
 
 **`Command 'xyz' not found` (exit code 127)**
-The command is not registered. Register it with `shell.addCommand()` or use `SshClient.exec()` with a handler.
+The command is not registered. Register it with `shell.addCommand()`.
+
+**Shell scripting — `if` block not working**
+Ensure each keyword is on its own line or separated by `;`. The interpreter does not support complex one-liners like `if condition; then cmd; fi` as a single string passed to `sh -c` — split by line or use semicolons.
 
 **File not found errors**
-Create the parent directory first:
-```typescript
-vfs.mkdir("/home/alice", 0o755);
-vfs.writeFile("/home/alice/file.txt", "content");
-```
+Create the parent directory first with `vfs.mkdir(path, 0o755)`.
 
 **`snapshotPath` is required error**
-You set `mode: "fs"` without providing `snapshotPath`:
-```typescript
-new VirtualFileSystem({ mode: "fs", snapshotPath: "./data" });
-```
+You set `mode: "fs"` without providing `snapshotPath`: `new VirtualFileSystem({ mode: "fs", snapshotPath: "./data" })`.
+
+**Variables not persisting between `exec()` calls**
+Each `SshClient.exec()` call shares the same `ShellEnv` object per shell instance. Variables set via `export` in one exec call are visible in the next. If you need full isolation, create a new `SshClient` instance.
 
 ---
 
@@ -1466,6 +1651,7 @@ new VirtualFileSystem({ mode: "fs", snapshotPath: "./data" });
 - JSDoc comments on all public API surface
 - Async/await throughout — no callbacks
 - Tests for new commands and VFS behavior
+- New commands must include `description` and `category` fields for `help`
 
 ---
 
@@ -1476,7 +1662,7 @@ new VirtualFileSystem({ mode: "fs", snapshotPath: "./data" });
 - Sudo privileges are explicit and stored in the VFS under `/virtual-env-js/.auth/sudoers`.
 - Per-IP rate limiting prevents automated brute-force attacks on the SSH server.
 - This project does **not** provide kernel-level or process-level isolation.
-- Do **not** expose a running instance to the public internet without understanding the risks — the virtual shell allows arbitrary command execution within the virtual environment.
+- Do **not** expose a running instance to the public internet without understanding the risks.
 
 If you discover a vulnerability, avoid public disclosure in GitHub Issues. Contact maintainers privately first — see `SECURITY.md`.
 
@@ -1505,11 +1691,19 @@ MIT — see [LICENSE](./LICENSE).
 - [x] Symlinks (`ln -s`, `isSymlink`, `resolveSymlink`)
 - [x] SSH public-key authentication
 - [x] Per-IP rate limiting and lockout
-- [x] New commands: `cp`, `mv`, `ln`, `find`, `wc`, `head`, `tail`, `chmod`
+- [x] Shell operators: `&&` / `||` / `;`
+- [x] Shell scripting: `if`/`elif`/`else`/`fi`, `for`/`do`/`done`, `while`/`do`/`done`
+- [x] Variable expansion: `$VAR`, `${VAR:-default}`, `$?`
+- [x] Per-session `ShellEnv` (no more global variable store)
+- [x] `.bashrc` auto-sourced on interactive login
+- [x] `clear` with full ANSI screen reset (`\x1b[2J\x1b[H\x1b[3J`)
+- [x] `Ctrl+W` delete word in interactive shell
+- [x] Grouped, colorized `help` with per-command detail
+- [x] New commands: `sort`, `uniq`, `tee`, `cut`, `tr`, `xargs`, `diff`, `sed`, `awk`, `tar`, `gzip`, `gunzip`, `base64`, `date`, `sleep`, `id`, `groups`, `uname`, `ps`, `kill`, `df`, `du`, `ping`
 - [x] Structured event hooks (session open/close, file write, sudo challenge)
 - [ ] Snapshot diff tooling for test assertions
 - [ ] WebSocket-based remote shell client (experimental)
-- [ ] Shell scripting: `if`/`for`/`while` constructs
+- [ ] `$(cmd)` command substitution in variable expansion
 
 ---
 
