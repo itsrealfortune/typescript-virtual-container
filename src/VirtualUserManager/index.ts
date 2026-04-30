@@ -648,10 +648,7 @@ export class VirtualUserManager extends EventEmitter {
 			throw new Error("invalid password");
 		}
 	}
-	private readonly authorizedKeys = new Map<
-		string,
-		Array<{ algo: string; data: Buffer }>
-	>();
+	private readonly authorizedKeys = new Map<string, Array<{ algo: string; data: Buffer }>>();
 
 	/**
 	 * Adds an SSH public key for a user, enabling public-key authentication.
@@ -684,9 +681,7 @@ export class VirtualUserManager extends EventEmitter {
 	 *
 	 * @param username Target user.
 	 */
-	public getAuthorizedKeys(
-		username: string,
-	): Array<{ algo: string; data: Buffer }> {
+	public getAuthorizedKeys(username: string): Array<{ algo: string; data: Buffer }> {
 		return this.authorizedKeys.get(username) ?? [];
 	}
 }

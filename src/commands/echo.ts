@@ -10,6 +10,8 @@ function expandEnvVars(input: string, env: Record<string, string>): string {
 
 export const echoCommand: ShellModule = {
 	name: "echo",
+	description: "Display text",
+	category: "shell",
 	params: ["[options] [text...]"],
 	run: ({ args, authUser, stdin }) => {
 		const { flags, positionals } = parseArgs(args, { flags: ["-n"] });

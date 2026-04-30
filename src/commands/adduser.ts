@@ -2,6 +2,8 @@ import type { ShellModule } from "../types/commands";
 
 export const adduserCommand: ShellModule = {
 	name: "adduser",
+	description: "Add a new user",
+	category: "users",
 	params: ["<username> <password>"],
 	run: async ({ authUser, shell, args }) => {
 		if (authUser !== "root") {

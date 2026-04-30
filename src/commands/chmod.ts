@@ -3,6 +3,8 @@ import { assertPathAccess, resolvePath } from "./helpers";
 
 export const chmodCommand: ShellModule = {
 	name: "chmod",
+	description: "Change file permissions",
+	category: "files",
 	params: ["<mode> <file>"],
 	run: ({ authUser, shell, cwd, args }) => {
 		const [modeArg, fileArg] = args;

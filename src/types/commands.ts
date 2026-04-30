@@ -57,6 +57,14 @@ export interface NanoEditorSession {
 	initialContent: string;
 }
 
+/** Per-session shell environment (variables, last exit code). */
+export interface ShellEnv {
+	/** Environment variables visible to commands. */
+	vars: Record<string, string>;
+	/** Exit status of the last executed command. */
+	lastExitCode: number;
+}
+
 /** Runtime context object passed to each command module. */
 export interface CommandContext {
 	/** Authenticated user currently bound to stream. */
@@ -77,6 +85,8 @@ export interface CommandContext {
 	stdin?: string;
 	/** Current working directory for command execution. */
 	cwd: string;
+	/** Per-session environment available to command modules. */
+	env: ShellEnv;
 }
 
 /** Contract implemented by each shell command module. */
@@ -89,6 +99,10 @@ export interface ShellModule {
 	run: (ctx: CommandContext) => CommandResult | Promise<CommandResult>;
 	/** Optional alternative command names. */
 	aliases?: string[];
+	/** Short description shown in `help`. */
+	description?: string;
+	/** Category used for grouped help output. */
+	category?: string;
 }
 
 /** Command return union allowing sync or async handlers. */

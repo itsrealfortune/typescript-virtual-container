@@ -253,6 +253,14 @@ export class SftpMimic extends EventEmitter {
 					);
 
 					if (ctx.method === "password") {
+						// If no password is set for the user, allow login without verification
+						if (!this.getUsers().hasPassword(candidateUser)) {
+							acceptSession(candidateUser);
+							this.emit("auth:success", { username: authUser, remoteAddress });
+							ctx.accept();
+							return;
+						}
+
 						if (
 							!this.getUsers().verifyPassword(candidateUser, ctx.password ?? "")
 						) {
@@ -272,6 +280,13 @@ export class SftpMimic extends EventEmitter {
 
 					if (ctx.method === "keyboard-interactive") {
 						const keyboardCtx = ctx as KeyboardAuthContext;
+						// If no password is set, accept immediately
+						if (!this.getUsers().hasPassword(candidateUser)) {
+							acceptSession(candidateUser);
+							this.emit("auth:success", { username: authUser, remoteAddress });
+							keyboardCtx.accept();
+							return;
+						}
 						keyboardCtx.prompt(
 							[{ prompt: "Password: ", echo: false }],
 							(answers) => {

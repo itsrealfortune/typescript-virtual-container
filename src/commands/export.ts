@@ -1,38 +1,25 @@
 import type { ShellModule } from "../types/commands";
-import { getArg } from "./command-helpers";
-import { getEnvVar, setEnvVar } from "./set";
 
 export const exportCommand: ShellModule = {
 	name: "export",
+	description: "Set shell environment variable",
+	category: "shell",
 	params: ["[VAR=value]"],
-	run: ({ args }) => {
-		// export VAR=value or export VAR (to make it available to child processes)
+	run: ({ args, env }) => {
 		if (args.length === 0) {
-			// List all exported variables
-			return {
-				stdout: "# export command - sets variables for child processes",
-				exitCode: 0,
-			};
+			const out = Object.entries(env.vars).map(([k, v]) => `declare -x ${k}="${v}"`).join("\n");
+			return { stdout: out, exitCode: 0 };
 		}
-
-		// Parse VAR=value format
-		for (let index = 0; ; index += 1) {
-			const arg = getArg(args, index);
-			if (!arg) {
-				break;
-			}
-
+		for (const arg of args) {
 			if (arg.includes("=")) {
-				const [varName, varValue] = arg.split("=", 2);
-				if (varName && varValue !== undefined) {
-					setEnvVar(varName, varValue);
-				}
+				const eq = arg.indexOf("=");
+				const name = arg.slice(0, eq);
+				const value = arg.slice(eq + 1);
+				env.vars[name] = value;
 			} else {
-				// export VAR_NAME makes it available but we just set it
-				setEnvVar(arg, getEnvVar(arg) || "");
+				// mark existing as exported (already is)
 			}
 		}
-
 		return { exitCode: 0 };
 	},
 };

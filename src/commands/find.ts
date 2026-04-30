@@ -4,6 +4,8 @@ import { assertPathAccess, resolvePath } from "./helpers";
 
 export const findCommand: ShellModule = {
 	name: "find",
+	description: "Search for files",
+	category: "files",
 	params: ["[path] [-name <pattern>] [-type f|d]"],
 	run: ({ authUser, shell, cwd, args }) => {
 		const namePattern = getFlag(args, ["-name"]);

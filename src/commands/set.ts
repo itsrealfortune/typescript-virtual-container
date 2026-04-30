@@ -1,10 +1,8 @@
 /** biome-ignore-all lint/style/useNamingConvention: env variables */
 import type { ShellModule } from "../types/commands";
-import { getArg } from "./command-helpers";
 
-// Simple in-memory environment variables store
-// In a real implementation, this would be per-session/per-user
-const envVars: Record<string, string> = {
+// Legacy global store kept for compatibility with older callers
+const _globalEnv: Record<string, string> = {
 	PATH: "/usr/local/bin:/usr/bin:/bin",
 	HOME: "/home/user",
 	SHELL: "/bin/sh",
@@ -12,62 +10,33 @@ const envVars: Record<string, string> = {
 	USER: "user",
 };
 
-export function getEnvVar(name: string): string | undefined {
-	return envVars[name];
-}
-
-export function setEnvVar(name: string, value: string): void {
-	envVars[name] = value;
-}
-
+/** @deprecated use env.vars from CommandContext */
+export function getEnvVar(name: string): string | undefined { return _globalEnv[name]; }
+/** @deprecated use env.vars from CommandContext */
+export function setEnvVar(name: string, value: string): void { _globalEnv[name] = value; }
+/** @deprecated use env.vars from CommandContext */
 export function getAllEnvVars(authUser: string): Record<string, string> {
-	envVars.USER = authUser;
-	envVars.HOME = `/home/${authUser}`;
-	return { ...envVars };
+	_globalEnv.USER = authUser;
+	_globalEnv.HOME = `/home/${authUser}`;
+	return { ..._globalEnv };
 }
 
 export const setCommand: ShellModule = {
 	name: "set",
+	description: "Display or set shell variables",
+	category: "shell",
 	params: ["[VAR=value]"],
-	run: ({ args }) => {
-		// No arguments: display all environment variables
+	run: ({ args, env }) => {
 		if (args.length === 0) {
-			const output = Object.entries(envVars)
-				.map(([key, value]) => `${key}=${value}`)
-				.sort()
-				.join("\n");
-
-			return { stdout: output, exitCode: 0 };
+			const out = Object.entries(env.vars).map(([k, v]) => `${k}=${v}`).join("\n");
+			return { stdout: out, exitCode: 0 };
 		}
-
-		// Parse VAR=value format
-		const assignments: string[] = [];
-		for (let index = 0; ; index += 1) {
-			const arg = getArg(args, index);
-			if (!arg) {
-				break;
-			}
-
+		for (const arg of args) {
 			if (arg.includes("=")) {
-				const [varName, varValue] = arg.split("=", 2);
-				if (varName && varValue !== undefined) {
-					setEnvVar(varName, varValue);
-					assignments.push(arg);
-				}
-			} else {
-				// If no '=' present, display that specific variable
-				const value = getEnvVar(arg);
-				if (value !== undefined) {
-					assignments.push(`${arg}=${value}`);
-				} else {
-					assignments.push(`${arg}: not set`);
-				}
+				const eq = arg.indexOf("=");
+				env.vars[arg.slice(0, eq)] = arg.slice(eq + 1);
 			}
 		}
-
-		return {
-			stdout: assignments.length > 0 ? assignments.join("\n") : "",
-			exitCode: 0,
-		};
+		return { exitCode: 0 };
 	},
 };

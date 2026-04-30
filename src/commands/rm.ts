@@ -4,6 +4,8 @@ import { assertPathAccess, resolvePath } from "./helpers";
 
 export const rmCommand: ShellModule = {
 	name: "rm",
+	description: "Remove files or directories",
+	category: "files",
 	params: ["[-r|-rf] <path>"],
 	run: ({ authUser, shell, cwd, args }) => {
 		if (args.length === 0) {

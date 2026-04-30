@@ -21,6 +21,8 @@ function parseSudoArgs(args: string[]): {
 }
 export const sudoCommand: ShellModule = {
 	name: "sudo",
+	description: "Execute as superuser",
+	category: "users",
 	params: ["<command...>"],
 	run: async ({ authUser, hostname, mode, cwd, shell, args }) => {
 		const { targetUser, loginShell, commandLine } = parseSudoArgs(args);

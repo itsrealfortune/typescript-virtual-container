@@ -5,6 +5,8 @@ import { getAllEnvVars } from "./set";
 
 export const neofetchCommand: ShellModule = {
 	name: "neofetch",
+	description: "System info display",
+	category: "misc",
 	params: ["[--off]"],
 	run: ({ args, authUser, hostname, shell }) => {
 		const env = getAllEnvVars(authUser);

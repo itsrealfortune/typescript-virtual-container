@@ -4,6 +4,8 @@ import { assertPathAccess, resolvePath } from "./helpers";
 
 export const treeCommand: ShellModule = {
 	name: "tree",
+	description: "Display directory tree",
+	category: "navigation",
 	params: ["[path]"],
 	run: ({ authUser, shell, cwd, args }) => {
 		const target = resolvePath(cwd, getArg(args, 0) ?? cwd);

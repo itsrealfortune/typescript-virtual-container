@@ -4,6 +4,8 @@ import { assertPathAccess, resolvePath } from "./helpers";
 
 export const tailCommand: ShellModule = {
 	name: "tail",
+	description: "Output last lines",
+	category: "text",
 	params: ["[-n <lines>] [file...]"],
 	run: ({ authUser, shell, cwd, args, stdin }) => {
 		const nArg = getFlag(args, ["-n"]);

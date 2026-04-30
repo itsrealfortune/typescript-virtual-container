@@ -4,6 +4,8 @@ import { assertPathAccess, resolvePath } from "./helpers";
 
 export const cpCommand: ShellModule = {
 	name: "cp",
+	description: "Copy files or directories",
+	category: "files",
 	params: ["[-r] <source> <dest>"],
 	run: ({ authUser, shell, cwd, args }) => {
 		const recursive = ifFlag(args, ["-r", "-R", "--recursive"]);

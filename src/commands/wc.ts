@@ -4,6 +4,8 @@ import { assertPathAccess, resolvePath } from "./helpers";
 
 export const wcCommand: ShellModule = {
 	name: "wc",
+	description: "Count words/lines/bytes",
+	category: "text",
 	params: ["[-l] [-w] [-c] [file...]"],
 	run: ({ authUser, shell, cwd, args, stdin }) => {
 		const lines = ifFlag(args, ["-l"]);

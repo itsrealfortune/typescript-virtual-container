@@ -4,6 +4,8 @@ import { assertPathAccess, resolvePath } from "./helpers";
 
 export const mkdirCommand: ShellModule = {
 	name: "mkdir",
+	description: "Make directories",
+	category: "files",
 	params: ["<dir>"],
 	run: ({ authUser, shell, cwd, args }) => {
 		if (args.length === 0) {

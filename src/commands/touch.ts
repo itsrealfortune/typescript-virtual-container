@@ -3,6 +3,8 @@ import { assertPathAccess, resolvePath } from "./helpers";
 
 export const touchCommand: ShellModule = {
 	name: "touch",
+	description: "Create or update files",
+	category: "files",
 	params: ["<file>"],
 	run: ({ authUser, shell, cwd, args }) => {
 		if (args.length === 0) {

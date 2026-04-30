@@ -12,6 +12,9 @@ export interface PipelineCommand {
 	appendOutput?: boolean;
 }
 
+/** Logical operator connecting two statement groups. */
+export type LogicalOp = "&&" | "||" | ";";
+
 /** Represents a parsed shell pipeline */
 export interface Pipeline {
 	/** List of commands in the pipeline */
@@ -19,5 +22,25 @@ export interface Pipeline {
 	/** Whether this is a valid pipeline */
 	isValid: boolean;
 	/** Error message if parsing failed */
+	error?: string;
+}
+
+/** A statement: one pipeline optionally followed by && / || / ; and the next statement */
+export interface Statement {
+	/** Pipeline to execute for this statement. */
+	pipeline: Pipeline;
+	/** Operator connecting this statement to the next one. */
+	op?: LogicalOp;
+	/** Optional next statement in sequence. */
+	next?: Statement;
+}
+
+/** Top-level parse result for a script. */
+export interface Script {
+	/** Statements contained in the script. */
+	statements: Statement[];
+	/** Whether the script was parsed successfully. */
+	isValid: boolean;
+	/** Optional parse error message. */
 	error?: string;
 }

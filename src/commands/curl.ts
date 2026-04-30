@@ -9,6 +9,8 @@ import {
 
 export const curlCommand: ShellModule = {
 	name: "curl",
+	description: "HTTP client",
+	category: "network",
 	params: ["[-o file] <url>"],
 	run: async ({ authUser, cwd, args, shell }) => {
 		const { flagsWithValues, positionals } = parseArgs(args, {

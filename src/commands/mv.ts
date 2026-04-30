@@ -3,6 +3,8 @@ import { assertPathAccess, resolvePath } from "./helpers";
 
 export const mvCommand: ShellModule = {
 	name: "mv",
+	description: "Move or rename files",
+	category: "files",
 	params: ["<source> <dest>"],
 	run: ({ authUser, shell, cwd, args }) => {
 		const positionals = args.filter((a) => !a.startsWith("-"));
