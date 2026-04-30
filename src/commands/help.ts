@@ -66,22 +66,13 @@ export function createHelpCommand(_getNames: () => string[]): ShellModule {
 				if (!mods || mods.length === 0) continue;
 				lines.push(`\x1b[33m${CATEGORY_LABELS[cat] ?? cat}\x1b[0m`);
 
-				// Two-column layout
 				const sorted = [...mods].sort((a, b) => a.name.localeCompare(b.name));
-				for (let i = 0; i < sorted.length; i += 2) {
-					const left = sorted[i]!;
-					const right = sorted[i + 1];
-					const leftStr = `  \x1b[36m${padRight(left.name, 14)}\x1b[0m ${left.description ?? ""}`;
-					const rightStr = right
-						? `  \x1b[36m${padRight(right.name, 14)}\x1b[0m ${right.description ?? ""}`
-						: "";
-					lines.push(rightStr ? `${leftStr.padEnd(44)}${rightStr}` : leftStr);
+				for (const mod of sorted) {
+					lines.push(`  \x1b[36m${padRight(mod.name, 14)}\x1b[0m ${mod.description ?? ""}`);
 				}
-				lines.push("");
 			}
 
-			lines.push("Type \x1b[1mhelp <command>\x1b[0m for usage details.");
-			return { stdout: lines.join("\n"), exitCode: 0 };
+		return { stdout: lines.join("\n"), exitCode: 0 };
 		},
 	};
 }
