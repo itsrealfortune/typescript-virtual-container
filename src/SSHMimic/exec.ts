@@ -1,4 +1,4 @@
-import { runCommand } from "../commands";
+import { makeDefaultEnv, runCommand } from "../commands";
 import type { ExecStream } from "../types/streams";
 import type { VirtualShell } from "../VirtualShell";
 
@@ -17,7 +17,7 @@ export function runExec(
 	shell: VirtualShell,
 ): void {
 	Promise.resolve(
-		runCommand(cmd, authUser, hostname, "exec", `/home/${authUser}`, shell),
+		runCommand(cmd, authUser, hostname, "exec", `/home/${authUser}`, shell, undefined, makeDefaultEnv(authUser, hostname)),
 	)
 		.then((result) => {
 			if (result.stdout) {
