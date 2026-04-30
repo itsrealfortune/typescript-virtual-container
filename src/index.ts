@@ -33,6 +33,7 @@ export type {
 	VfsSnapshotNode,
 	WriteFileOptions,
 } from "./types/vfs";
+export type { VfsOptions, VfsPersistenceMode } from "./VirtualFileSystem/index";
 
 export {
 	HoneyPot,

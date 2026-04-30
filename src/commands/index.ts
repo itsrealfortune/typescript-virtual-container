@@ -8,19 +8,25 @@ import type {
 import { adduserCommand } from "./adduser";
 import { catCommand } from "./cat";
 import { cdCommand } from "./cd";
+import { chmodCommand } from "./chmod";
 import { clearCommand } from "./clear";
+import { cpCommand } from "./cp";
 import { curlCommand } from "./curl";
 import { deluserCommand } from "./deluser";
 import { echoCommand } from "./echo";
 import { envCommand } from "./env";
 import { exitCommand } from "./exit";
 import { exportCommand } from "./export";
+import { findCommand } from "./find";
 import { grepCommand } from "./grep";
+import { headCommand } from "./head";
 import { createHelpCommand } from "./help";
 import { hostnameCommand } from "./hostname";
 import { htopCommand } from "./htop";
+import { lnCommand } from "./ln";
 import { lsCommand } from "./ls";
 import { mkdirCommand } from "./mkdir";
+import { mvCommand } from "./mv";
 import { nanoCommand } from "./nano";
 import { neofetchCommand } from "./neofetch";
 import { passwdCommand } from "./passwd";
@@ -30,9 +36,11 @@ import { setCommand } from "./set";
 import { shCommand } from "./sh";
 import { suCommand } from "./su";
 import { sudoCommand } from "./sudo";
+import { tailCommand } from "./tail";
 import { touchCommand } from "./touch";
 import { treeCommand } from "./tree";
 import { unsetCommand } from "./unset";
+import { wcCommand } from "./wc";
 import { wgetCommand } from "./wget";
 import { whoCommand } from "./who";
 import { whoamiCommand } from "./whoami";
@@ -68,6 +76,14 @@ const BASE_COMMANDS: ShellModule[] = [
 	shCommand,
 	clearCommand,
 	exitCommand,
+	cpCommand,
+	mvCommand,
+	lnCommand,
+	findCommand,
+	wcCommand,
+	headCommand,
+	tailCommand,
+	chmodCommand,
 ];
 
 const customCommands: ShellModule[] = [];
@@ -80,6 +96,7 @@ const commandRegistry = new Map<string, ShellModule>();
 let cachedCommandNames: string[] | null = null;
 
 function buildCache(): void {
+	commandRegistry.clear();
 	for (const mod of getCommandModules()) {
 		commandRegistry.set(mod.name, mod);
 		for (const alias of mod.aliases ?? []) {
@@ -90,13 +107,6 @@ function buildCache(): void {
 }
 
 function getCommandModules(): ShellModule[] {
-	// console.log("Loading command modules...");
-	// console.log(
-	// 	`Base commands: ${BASE_COMMANDS.map((cmd) => cmd.name).join(", ")}`,
-	// );
-	// console.log(
-	// 	`Custom commands: ${customCommands.map((cmd) => cmd.name).join(", ")}`,
-	// );
 	return [...BASE_COMMANDS, ...customCommands, helpCommand];
 }
 
@@ -114,13 +124,7 @@ export function registerCommand(module: ShellModule): void {
 		);
 	}
 
-	for (const name of names) {
-		if (commandRegistry.has(name)) {
-			throw new Error(`Command '${name}' already exists`);
-		}
-		commandRegistry.set(name, normalized);
-	}
-
+	customCommands.push(normalized);
 	buildCache();
 }
 
@@ -129,24 +133,16 @@ export function createCustomCommand(
 	params: string[],
 	run: (ctx: CommandContext) => CommandResult | Promise<CommandResult>,
 ): ShellModule {
-	return {
-		name,
-		params,
-		run,
-	};
+	return { name, params, run };
 }
 
 export function getCommandNames(): string[] {
-	if (!cachedCommandNames) {
-		buildCache();
-	}
+	if (!cachedCommandNames) buildCache();
 	return cachedCommandNames!;
 }
 
 export function resolveModule(name: string): ShellModule | undefined {
-	if (!cachedCommandNames) {
-		buildCache();
-	}
+	if (!cachedCommandNames) buildCache();
 	return commandRegistry.get(name.toLowerCase());
 }
 
@@ -166,7 +162,6 @@ function splitArgsRespectingQuotes(input: string): string[] {
 				quoteChar = ch;
 				continue;
 			}
-
 			if (ch === quoteChar) {
 				inQuotes = false;
 				quoteChar = "";
@@ -185,10 +180,7 @@ function splitArgsRespectingQuotes(input: string): string[] {
 		current += ch;
 	}
 
-	if (current.length > 0) {
-		tokens.push(current);
-	}
-
+	if (current.length > 0) tokens.push(current);
 	return tokens;
 }
 
@@ -199,8 +191,6 @@ function parseInput(rawInput: string): { commandName: string; args: string[] } {
 		args: parts.slice(1),
 	};
 }
-
-// Internal async function for pipeline execution
 
 export async function runCommand(
 	rawInput: string,
@@ -213,9 +203,7 @@ export async function runCommand(
 ): Promise<CommandResult> {
 	const trimmed = rawInput.trim();
 
-	if (trimmed.length === 0) {
-		return { exitCode: 0 };
-	}
+	if (trimmed.length === 0) return { exitCode: 0 };
 
 	if (trimmed.includes("|") || trimmed.includes(">") || trimmed.includes("<")) {
 		const { parseShellPipeline } = await import("../VirtualShell/shellParser");
@@ -223,10 +211,7 @@ export async function runCommand(
 
 		const pipeline = parseShellPipeline(trimmed);
 		if (!pipeline.isValid) {
-			return {
-				stderr: pipeline.error || "Syntax error",
-				exitCode: 1,
-			};
+			return { stderr: pipeline.error || "Syntax error", exitCode: 1 };
 		}
 
 		try {
@@ -249,10 +234,7 @@ export async function runCommand(
 	const mod = resolveModule(commandName);
 
 	if (!mod) {
-		return {
-			stderr: `Command '${trimmed}' not found`,
-			exitCode: 127,
-		};
+		return { stderr: `Command '${trimmed}' not found`, exitCode: 127 };
 	}
 
 	try {
