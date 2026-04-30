@@ -28,6 +28,7 @@
     "build": "tsc --project tsconfig.json",
     "deploy:npm": "npm publish --access public",
     "bench": "rm -rf .benchmark-shells/ && bun benchmark-virtualshell.ts",
+    "publish-package": "bash ./scripts/publish-package.sh",
     "standalone-build": "bunx esbuild src/standalone.ts --bundle --platform=node --target=node18 --outfile=standalone.js --tree-shaking=true --minify --sourcemap"
   },
   "devDependencies": {
