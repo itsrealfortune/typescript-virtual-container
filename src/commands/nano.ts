@@ -5,7 +5,7 @@ import { assertPathAccess, resolvePath } from "./helpers";
 export const nanoCommand: ShellModule = {
 	name: "nano",
 	description: "Text editor",
-	category: "shell",
+	category: "files",
 	params: ["<file>"],
 	run: ({ authUser, shell, cwd, args }) => {
 		const fileArg = args[0];

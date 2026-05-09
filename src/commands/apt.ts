@@ -6,7 +6,7 @@ export const aptCommand: ShellModule = {
 	name: "apt",
 	aliases: ["apt-get"],
 	description: "Package manager",
-	category: "system",
+	category: "package",
 	params: ["<install|remove|update|upgrade|search|show|list> [pkg...]"],
 	run: ({ args, shell, authUser }) => {
 		const pm = getPackageManager(shell);
@@ -146,7 +146,7 @@ export const aptCommand: ShellModule = {
 export const aptCacheCommand: ShellModule = {
 	name: "apt-cache",
 	description: "Query the package cache",
-	category: "system",
+	category: "package",
 	params: ["<search|show|policy> [pkg]"],
 	run: ({ args, shell }) => {
 		const pm = getPackageManager(shell);

@@ -5,7 +5,7 @@ import { getPackageManager } from "./helpers";
 export const dpkgCommand: ShellModule = {
 	name: "dpkg",
 	description: "Debian package manager low-level tool",
-	category: "system",
+	category: "package",
 	params: ["[-l] [-s pkg] [-L pkg] [-i pkg] [--remove pkg]"],
 	run: ({ args, authUser, shell }) => {
 		const pm = getPackageManager(shell);
@@ -114,7 +114,7 @@ export const dpkgCommand: ShellModule = {
 export const dpkgQueryCommand: ShellModule = {
 	name: "dpkg-query",
 	description: "Show information about installed packages",
-	category: "system",
+	category: "package",
 	params: ["-W [pkg] | -l [pattern]"],
 	run: ({ args, shell }) => {
 		const pm = getPackageManager(shell);

@@ -2,6 +2,7 @@
 import { executeStatements } from "../SSHMimic/executor";
 import type { VirtualShell } from "../VirtualShell";
 import { parseScript } from "../VirtualShell/shellParser";
+import { expandAsync } from "../utils/expand";
 import type {
 	CommandContext,
 	CommandMode,
@@ -14,6 +15,11 @@ import { aliasCommand, unaliasCommand } from "./alias";
 import { testCommand } from "./test";
 import { sourceCommand } from "./source";
 import { historyCommand } from "./history";
+import { printfCommand } from "./printf";
+import { readCommand } from "./read";
+import { declareCommand } from "./declare";
+import { shiftCommand, trapCommand, returnCommand } from "./shift";
+import { trueCommand, falseCommand } from "./true";
 import { aptCacheCommand, aptCommand } from "./apt";
 import { awkCommand } from "./awk";
 import { base64Command } from "./base64";
@@ -114,6 +120,9 @@ const BASE_COMMANDS: ShellModule[] = [
 	// Shell (extended)
 	whichCommand, typeCommand, manCommand, aliasCommand, unaliasCommand,
 	testCommand, sourceCommand, historyCommand,
+	printfCommand, readCommand, declareCommand,
+	shiftCommand, trapCommand, returnCommand,
+	trueCommand, falseCommand,
 	// System (extended)
 	uptimeCommand, freeCommand, lsbReleaseCommand,
 ];
@@ -223,6 +232,10 @@ export function makeDefaultEnv(authUser: string, hostname: string): ShellEnv {
  * Unlike `runCommand`, this function does NOT re-join name+args into a string
  * and re-parse — so arguments that contain special characters (`;`, `|`, `>`,
  * quotes) are passed through verbatim. Use this from the pipeline executor.
+ *
+ * Variable expansion (`$VAR`, `$((expr))`, `${#VAR}`, etc.) is handled by
+ * `runCommand` for simple commands and by `sh.ts` line-by-line for scripts.
+ * Args are NOT pre-expanded here to preserve lazy evaluation across `&&`/`||`.
  */
 export async function runCommandDirect(
 	name: string,
@@ -278,56 +291,27 @@ export async function runCommand(
 
 	const shellEnv: ShellEnv = env ?? makeDefaultEnv(authUser, hostname);
 
-	// ── $(cmd) command substitution ──────────────────────────────────────────
-	let expanded = trimmed;
-	if (expanded.includes("$(")) {
-		// Only substitute $(…) that are NOT inside single quotes
-		// Strategy: walk char by char, track single-quote state
-		let result = "";
-		let inSingle = false;
-		let i = 0;
-		while (i < expanded.length) {
-			const ch = expanded[i]!;
-			if (ch === "'" && !inSingle) { inSingle = true; result += ch; i++; continue; }
-			if (ch === "'" && inSingle)  { inSingle = false; result += ch; i++; continue; }
-			if (!inSingle && ch === "$" && expanded[i + 1] === "(") {
-				// Find matching closing )
-				let depth = 0;
-				let j = i + 1;
-				while (j < expanded.length) {
-					if (expanded[j] === "(") depth++;
-					else if (expanded[j] === ")") { depth--; if (depth === 0) break; }
-					j++;
-				}
-				const sub = expanded.slice(i + 2, j).trim();
-				const subResult = await runCommand(sub, authUser, hostname, mode, cwd, shell, undefined, shellEnv);
-				const subOut = (subResult.stdout ?? "").replace(/\n$/, "");
-				result += subOut;
-				i = j + 1;
-				continue;
-			}
-			result += ch; i++;
-		}
-		expanded = result;
-	}
+	// ── Alias expansion on raw input (before operator detection) ─────────────
+	// Only expand the first word to avoid breaking quoted multi-word aliases
+	const rawFirstWord = trimmed.split(/\s+/)[0] ?? "";
+	const aliasVal = shellEnv.vars[`__alias_${rawFirstWord}`];
+	const aliasExpanded = aliasVal
+		? trimmed.replace(rawFirstWord, aliasVal)
+		: trimmed;
 
-	// ── alias expansion ───────────────────────────────────────────────────────
-	const firstWord = expanded.split(/\s+/)[0] ?? "";
-	const aliasVal = shellEnv.vars[`__alias_${firstWord}`];
-	if (aliasVal) {
-		expanded = expanded.replace(firstWord, aliasVal);
-	}
+	// ── Detect shell operators FIRST (on raw input, before variable expansion) ─
+	// This ensures `export A=1 && echo $A` expands $A AFTER export runs,
+	// not before. Expansion happens lazily in runCommandDirect for each node.
+	const hasOperators =
+		/(?<![|&])[|](?![|])/.test(aliasExpanded) ||
+		aliasExpanded.includes(">") ||
+		aliasExpanded.includes("<") ||
+		aliasExpanded.includes("&&") ||
+		aliasExpanded.includes("||") ||
+		aliasExpanded.includes(";");
 
-	// Detect shell operators
-	if (
-		/(?<![|&])[|](?![|])/.test(expanded) ||
-		expanded.includes(">") ||
-		expanded.includes("<") ||
-		expanded.includes("&&") ||
-		expanded.includes("||") ||
-		expanded.includes(";")
-	) {
-		const script = parseScript(expanded);
+	if (hasOperators) {
+		const script = parseScript(aliasExpanded);
 		if (!script.isValid) return { stderr: script.error || "Syntax error", exitCode: 1 };
 		try {
 			return await executeStatements(script.statements, authUser, hostname, mode, cwd, shell, shellEnv);
@@ -335,6 +319,17 @@ export async function runCommand(
 			return { stderr: error instanceof Error ? error.message : "Execution failed", exitCode: 1 };
 		}
 	}
+
+	// ── Simple command: full variable + $(cmd) expansion ─────────────────────
+	// expandAsync handles: $((expr)) ${#VAR} ${VAR:-def} ${VAR:=def} ${VAR:+alt}
+	// ${VAR} $VAR $? $$ $# ~ — and $(cmd) substitution (single-quote-aware).
+	const expanded = await expandAsync(
+		aliasExpanded,
+		shellEnv.vars,
+		shellEnv.lastExitCode,
+		(sub) => runCommand(sub, authUser, hostname, mode, cwd, shell, undefined, shellEnv)
+			.then((r) => r.stdout ?? ""),
+	);
 
 	const { commandName, args } = parseInput(expanded);
 	const mod = resolveModule(commandName);
