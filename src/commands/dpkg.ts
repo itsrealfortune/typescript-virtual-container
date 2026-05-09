@@ -1,9 +1,6 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag, parseArgs } from "./command-helpers";
-
-function getPackageManager(shell: import("../VirtualShell").VirtualShell) {
-	return (shell as unknown as { packageManager?: import("../VirtualPackageManager").VirtualPackageManager }).packageManager;
-}
+import { getPackageManager } from "./helpers";
 
 export const dpkgCommand: ShellModule = {
 	name: "dpkg",
