@@ -439,3 +439,188 @@ describe("syncPasswd", () => {
 		expect(stat.type).toBe("file");
 	});
 });
+
+// ─── Bug fixes ────────────────────────────────────────────────────────────────
+
+describe("Bug fixes", () => {
+	let shell2: VirtualShell;
+	let c: InstanceType<typeof SshClient>;
+
+	beforeAll(async () => {
+		shell2 = new VirtualShell("fix-vm");
+		await shell2.ensureInitialized();
+		c = new SshClient(shell2, "root");
+	});
+
+	// echo
+	test("echo adds newline — >> append works", async () => {
+		await c.exec("echo line1 > /tmp/append.txt");
+		await c.exec("echo line2 >> /tmp/append.txt");
+		const content = shell2.vfs.readFile("/tmp/append.txt");
+		expect(content).toBe("line1\nline2\n");
+	});
+
+	test("echo -e interprets escape sequences", async () => {
+		const r = await c.exec("echo -e 'a\\tb'");
+		expect(r.stdout?.trim()).toBe("a\tb");
+	});
+
+	test("echo -n suppresses trailing newline", async () => {
+		const r = await c.exec("echo -n hello");
+		expect(r.stdout).toBe("hello");
+	});
+
+	test("echo uses session env.vars for $VAR", async () => {
+		const r = await c.exec("export MYVAR=world && echo $MYVAR");
+		expect(r.stdout?.trim()).toBe("world");
+	});
+
+	// ls -a
+	test("ls -a shows dotfiles", async () => {
+		await c.exec("touch /tmp/.hidden && touch /tmp/visible");
+		const normal = await c.exec("ls /tmp");
+		const all    = await c.exec("ls -a /tmp");
+		expect(normal.stdout).not.toContain(".hidden");
+		expect(all.stdout).toContain(".hidden");
+		expect(all.stdout).toContain("visible");
+	});
+
+	// chmod symbolic
+	test("chmod +x adds execute bit", async () => {
+		await c.exec("touch /tmp/script.sh");
+		const before = shell2.vfs.stat("/tmp/script.sh").mode;
+		await c.exec("chmod +x /tmp/script.sh");
+		const after = shell2.vfs.stat("/tmp/script.sh").mode;
+		expect(after & 0o111).toBeGreaterThan(0);
+		expect(before & 0o111).toBe(0);
+	});
+
+	test("chmod u+x adds only user execute bit", async () => {
+		await c.exec("touch /tmp/u.sh && chmod 644 /tmp/u.sh");
+		await c.exec("chmod u+x /tmp/u.sh");
+		const mode = shell2.vfs.stat("/tmp/u.sh").mode;
+		expect(mode & 0o100).toBe(0o100); // user x set
+		expect(mode & 0o010).toBe(0);     // group x not set
+	});
+
+	test("chmod go-r removes group+other read", async () => {
+		await c.exec("touch /tmp/priv.sh && chmod 755 /tmp/priv.sh");
+		await c.exec("chmod go-r /tmp/priv.sh");
+		const mode = shell2.vfs.stat("/tmp/priv.sh").mode;
+		expect(mode & 0o044).toBe(0);
+	});
+
+	// cat -n
+	test("cat -n numbers lines", async () => {
+		await c.exec("echo -e 'foo\\nbar' > /tmp/cattest.txt");
+		const r = await c.exec("cat -n /tmp/cattest.txt");
+		expect(r.stdout).toContain("1\t");
+		expect(r.stdout).toContain("2\t");
+	});
+
+	// ping -c
+	test("ping -c 2 sends exactly 2 packets", async () => {
+		const r = await c.exec("ping -c 2 localhost");
+		const dataLines = r.stdout?.split("\n").filter((l) => l.includes("icmp_seq="));
+		expect(dataLines?.length).toBe(2);
+	});
+
+	// test / [ command
+	test("[ -f path ] returns 0 for existing file", async () => {
+		await c.exec("touch /tmp/testfile");
+		const r = await c.exec("[ -f /tmp/testfile ] && echo yes || echo no");
+		expect(r.stdout?.trim()).toBe("yes");
+	});
+
+	test("[ -d path ] returns 0 for existing directory", async () => {
+		const r = await c.exec("[ -d /etc ] && echo yes || echo no");
+		expect(r.stdout?.trim()).toBe("yes");
+	});
+
+	test("[ -f path ] returns 1 for non-existent file", async () => {
+		const r = await c.exec("[ -f /tmp/doesnotexist999 ] && echo yes || echo no");
+		expect(r.stdout?.trim()).toBe("no");
+	});
+
+	test("[ -e path ] returns 0 for existing path", async () => {
+		const r = await c.exec("[ -e /etc/hostname ] && echo yes || echo no");
+		expect(r.stdout?.trim()).toBe("yes");
+	});
+
+	test("test string comparison = works", async () => {
+		const r = await c.exec("[ hello = hello ] && echo yes || echo no");
+		expect(r.stdout?.trim()).toBe("yes");
+	});
+
+	test("test numeric -eq works", async () => {
+		const r = await c.exec("[ 5 -eq 5 ] && echo yes || echo no");
+		expect(r.stdout?.trim()).toBe("yes");
+	});
+
+	test("test numeric -lt works", async () => {
+		const r = await c.exec("[ 3 -lt 5 ] && echo yes || echo no");
+		expect(r.stdout?.trim()).toBe("yes");
+	});
+
+	test("test -z empty string", async () => {
+		const r = await c.exec("[ -z '' ] && echo yes || echo no");
+		expect(r.stdout?.trim()).toBe("yes");
+	});
+
+	test("test -n non-empty string", async () => {
+		const r = await c.exec("[ -n hello ] && echo yes || echo no");
+		expect(r.stdout?.trim()).toBe("yes");
+	});
+
+	// source / .
+	test("source executes file in current env", async () => {
+		shell2.vfs.writeFile("/tmp/setup.sh", "export SOURCED=yes\n");
+		const r = await c.exec("source /tmp/setup.sh && echo $SOURCED");
+		expect(r.stdout?.trim()).toBe("yes");
+	});
+
+	test(". (dot) is alias for source", async () => {
+		shell2.vfs.writeFile("/tmp/dot.sh", "export DOTTED=ok\n");
+		const r = await c.exec(". /tmp/dot.sh && echo $DOTTED");
+		expect(r.stdout?.trim()).toBe("ok");
+	});
+
+	// sh -c with $(cmd)
+	test("sh -c handles $(cmd) substitution", async () => {
+		const r = await c.exec("sh -c 'echo user=$(whoami)'");
+		expect(r.stdout?.trim()).toBe("user=root");
+	});
+
+	test("sh -c for loop with $(cmd)", async () => {
+		const r = await c.exec("sh -c 'for x in a b; do echo $(echo $x); done'");
+		expect(r.stdout?.trim()).toBe("a\nb");
+	});
+
+	// history
+	test("history command returns command list", async () => {
+		// history reads from VFS .bash_history (written by interactive shell)
+		// in non-interactive context it may be empty — just check it doesn't crash
+		const r = await c.exec("history");
+		expect(r.exitCode).toBe(0);
+	});
+
+	// ps -u
+	test("ps -u shows USER column", async () => {
+		const r = await c.exec("ps -u");
+		expect(r.stdout).toContain("USER");
+		expect(r.stdout).toContain("PID");
+		expect(r.stdout).toContain("%CPU");
+	});
+
+	test("ps aux shows extended format", async () => {
+		const r = await c.exec("ps aux");
+		expect(r.stdout).toContain("USER");
+		expect(r.exitCode).toBe(0);
+	});
+
+	// wc -l with pipe (after echo -e fix)
+	test("wc -l counts newlines correctly via pipe", async () => {
+		const r = await c.exec("echo -e 'a\\nb\\nc' | wc -l");
+		expect(r.stdout?.trim()).toBe("3");
+	});
+});
