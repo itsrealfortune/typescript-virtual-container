@@ -1,4 +1,4 @@
-import { runCommand as runSingleCommand } from "../commands";
+import { runCommandDirect } from "../commands";
 import { resolvePath } from "../commands/helpers";
 import type { CommandMode, CommandResult, ShellEnv } from "../types/commands";
 import type { Pipeline, PipelineCommand, Script, Statement } from "../types/pipeline";
@@ -117,8 +117,7 @@ async function executeSingleCommandWithRedirections(
 		catch { return { stderr: `${cmd.inputFile}: No such file or directory`, exitCode: 1 }; }
 	}
 
-	const rawInput = [cmd.name, ...cmd.args].join(" ");
-	const result = await runSingleCommand(rawInput, authUser, hostname, mode, cwd, shell, stdin, env);
+	const result = await runCommandDirect(cmd.name, cmd.args, authUser, hostname, mode, cwd, shell, stdin, env);
 
 	if (cmd.outputFile) {
 		const outputPath = resolvePath(cwd, cmd.outputFile);
@@ -160,8 +159,7 @@ async function executePipelineChain(
 			catch { return { stderr: `${cmd.inputFile}: No such file or directory`, exitCode: 1 }; }
 		}
 
-		const rawInput = [cmd.name, ...cmd.args].join(" ");
-		const result = await runSingleCommand(rawInput, authUser, hostname, mode, cwd, shell, currentOutput, env);
+		const result = await runCommandDirect(cmd.name, cmd.args, authUser, hostname, mode, cwd, shell, currentOutput, env);
 		exitCode = result.exitCode ?? 0;
 
 		if (i === commands.length - 1 && cmd.outputFile) {

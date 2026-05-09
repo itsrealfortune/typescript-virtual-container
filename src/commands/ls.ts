@@ -30,15 +30,16 @@ export const lsCommand: ShellModule = {
 	name: "ls",
 	description: "List directory contents",
 	category: "navigation",
-	params: ["[path]"],
+	params: ["[-la] [path]"],
 	run: ({ authUser, shell, cwd, args }) => {
-		const longFormat = ifFlag(args, ["-l", "--long"]);
-		const targetArg = getArg(args, 0, { flags: ["-l", "--long"] });
+		const longFormat  = ifFlag(args, ["-l", "--long"]);
+		const showHidden  = ifFlag(args, ["-a", "--all"]);
+		const targetArg   = getArg(args, 0, { flags: ["-l", "--long", "-a", "--all", "-la", "-al"] });
 		const target = resolvePath(cwd, targetArg ?? cwd);
 		assertPathAccess(authUser, target, "ls");
 		const items = shell.vfs
 			.list(target)
-			.filter((name) => !name.startsWith("."));
+			.filter((name) => showHidden || !name.startsWith("."));
 		const rendered = longFormat
 			? items
 					.map((name) => {

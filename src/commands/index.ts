@@ -11,6 +11,9 @@ import type {
 } from "../types/commands";
 import { adduserCommand } from "./adduser";
 import { aliasCommand, unaliasCommand } from "./alias";
+import { testCommand } from "./test";
+import { sourceCommand } from "./source";
+import { historyCommand } from "./history";
 import { aptCacheCommand, aptCommand } from "./apt";
 import { awkCommand } from "./awk";
 import { base64Command } from "./base64";
@@ -110,6 +113,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	aptCommand, aptCacheCommand, dpkgCommand, dpkgQueryCommand,
 	// Shell (extended)
 	whichCommand, typeCommand, manCommand, aliasCommand, unaliasCommand,
+	testCommand, sourceCommand, historyCommand,
 	// System (extended)
 	uptimeCommand, freeCommand, lsbReleaseCommand,
 ];
@@ -213,6 +217,52 @@ export function makeDefaultEnv(authUser: string, hostname: string): ShellEnv {
 	};
 }
 
+/**
+ * Execute a pre-parsed command directly by name and argument list.
+ *
+ * Unlike `runCommand`, this function does NOT re-join name+args into a string
+ * and re-parse — so arguments that contain special characters (`;`, `|`, `>`,
+ * quotes) are passed through verbatim. Use this from the pipeline executor.
+ */
+export async function runCommandDirect(
+	name: string,
+	args: string[],
+	authUser: string,
+	hostname: string,
+	mode: CommandMode,
+	cwd: string,
+	shell: VirtualShell,
+	stdin: string | undefined,
+	env: ShellEnv,
+): Promise<CommandResult> {
+	// Alias expansion on the command name
+	const aliasVal = env.vars[`__alias_${name}`];
+	if (aliasVal) {
+		// Alias may expand to a multi-word command — re-route through runCommand
+		return runCommand(`${aliasVal} ${args.join(" ")}`, authUser, hostname, mode, cwd, shell, stdin, env);
+	}
+
+	const mod = resolveModule(name);
+	if (!mod) return { stderr: `${name}: command not found`, exitCode: 127 };
+
+	try {
+		return await mod.run({
+			authUser,
+			hostname,
+			activeSessions: shell.users.listActiveSessions(),
+			rawInput: [name, ...args].join(" "),
+			mode,
+			args,
+			stdin,
+			cwd,
+			shell,
+			env,
+		});
+	} catch (error: unknown) {
+		return { stderr: error instanceof Error ? error.message : "Command failed", exitCode: 1 };
+	}
+}
+
 export async function runCommand(
 	rawInput: string,
 	authUser: string,
@@ -231,15 +281,34 @@ export async function runCommand(
 	// ── $(cmd) command substitution ──────────────────────────────────────────
 	let expanded = trimmed;
 	if (expanded.includes("$(")) {
-		// Replace each $(…) with the stdout of running that command
-		const subRe = /\$\(([^)]+)\)/g;
-		const matches = [...expanded.matchAll(subRe)];
-		for (const m of matches) {
-			const sub = m[1]?.trim() ?? "";
-			const subResult = await runCommand(sub, authUser, hostname, mode, cwd, shell, undefined, shellEnv);
-			const subOut = (subResult.stdout ?? "").replace(/\n$/, "");
-			expanded = expanded.replace(m[0], subOut);
+		// Only substitute $(…) that are NOT inside single quotes
+		// Strategy: walk char by char, track single-quote state
+		let result = "";
+		let inSingle = false;
+		let i = 0;
+		while (i < expanded.length) {
+			const ch = expanded[i]!;
+			if (ch === "'" && !inSingle) { inSingle = true; result += ch; i++; continue; }
+			if (ch === "'" && inSingle)  { inSingle = false; result += ch; i++; continue; }
+			if (!inSingle && ch === "$" && expanded[i + 1] === "(") {
+				// Find matching closing )
+				let depth = 0;
+				let j = i + 1;
+				while (j < expanded.length) {
+					if (expanded[j] === "(") depth++;
+					else if (expanded[j] === ")") { depth--; if (depth === 0) break; }
+					j++;
+				}
+				const sub = expanded.slice(i + 2, j).trim();
+				const subResult = await runCommand(sub, authUser, hostname, mode, cwd, shell, undefined, shellEnv);
+				const subOut = (subResult.stdout ?? "").replace(/\n$/, "");
+				result += subOut;
+				i = j + 1;
+				continue;
+			}
+			result += ch; i++;
 		}
+		expanded = result;
 	}
 
 	// ── alias expansion ───────────────────────────────────────────────────────

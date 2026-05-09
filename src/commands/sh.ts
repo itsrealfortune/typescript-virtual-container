@@ -1,16 +1,38 @@
 import type { CommandContext, CommandResult, ShellModule } from "../types/commands";
-import { getArg, ifFlag } from "./command-helpers";
+import { ifFlag } from "./command-helpers";
 import { resolvePath } from "./helpers";
 import { runCommand } from "./index";
 
-/** Expand $VAR and ${VAR:-default} in a line using the current env */
-function expandVars(line: string, env: Record<string, string>, lastExit: number): string {
+/** Alias for clarity inside sh.ts */
+type ShellContext = CommandContext;
+
+/** Expand $VAR and ${VAR:-default} in a line using the current env (sync, no $(cmd)) */
+function expandVarsSync(line: string, env: Record<string, string>, lastExit: number): string {
 	return line
 		.replace(/\$\?/g, String(lastExit))
 		.replace(/\$\{([^}:]+):-([^}]*)\}/g, (_, n, d) => env[n] ?? d)
 		.replace(/\$\{([^}]+)\}/g, (_, n) => env[n] ?? "")
 		.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, n) => env[n] ?? "")
 		.replace(/^~(\/|$)/, `${env.HOME ?? "/home/user"}$1`);
+}
+
+/**
+ * Expand $VAR, ${VAR:-default}, and $(cmd) substitution asynchronously.
+ * Used before executing each line in sh script context.
+ */
+async function expandVars(line: string, env: Record<string, string>, lastExit: number, ctx: ShellContext): Promise<string> {
+	// $(cmd) substitution first
+	if (line.includes("$(")) {
+		const subRe = /\$\(([^)]+)\)/g;
+		const matches = [...line.matchAll(subRe)];
+		for (const m of matches) {
+			const sub = m[1]?.trim() ?? "";
+			const subResult = await runCommand(sub, ctx.authUser, ctx.hostname, ctx.mode, ctx.cwd, ctx.shell, undefined, ctx.env);
+			const subOut = (subResult.stdout ?? "").replace(/\n$/, "");
+			line = line.replace(m[0], subOut);
+		}
+	}
+	return expandVarsSync(line, env, lastExit);
 }
 
 type Block =
@@ -54,8 +76,8 @@ function parseBlocks(lines: string[]): Block[] {
 				const body: string[] = [];
 				i++;
 				while (i < lines.length && lines[i]?.trim() !== "done") {
-					const l = lines[i]!.trim();
-					if (l !== "do") body.push(l);
+					const l = lines[i]!.trim().replace(/^do\s+/, "");
+					if (l && l !== "do") body.push(l);
 					i++;
 				}
 				blocks.push({ type: "for", var: m[1]!, list: m[2]!, body });
@@ -65,8 +87,8 @@ function parseBlocks(lines: string[]): Block[] {
 			const body: string[] = [];
 			i++;
 			while (i < lines.length && lines[i]?.trim() !== "done") {
-				const l = lines[i]!.trim();
-				if (l !== "do") body.push(l);
+				const l = lines[i]!.trim().replace(/^do\s+/, "");
+				if (l && l !== "do") body.push(l);
 				i++;
 			}
 			blocks.push({ type: "while", cond, body });
@@ -79,7 +101,7 @@ function parseBlocks(lines: string[]): Block[] {
 }
 
 async function evalCondition(cond: string, ctx: CommandContext): Promise<boolean> {
-	const expanded = expandVars(cond, ctx.env.vars, ctx.env.lastExitCode);
+	const expanded = await expandVars(cond, ctx.env.vars, ctx.env.lastExitCode, ctx);
 	// test -f / test -d / [ ... ]
 	const testMatch = expanded.match(/^\[?\s*(.+?)\s*\]?$/);
 	if (testMatch) {
@@ -126,7 +148,7 @@ async function runBlocks(blocks: Block[], ctx: CommandContext): Promise<CommandR
 
 	for (const block of blocks) {
 		if (block.type === "cmd") {
-			const expanded = expandVars(block.line, ctx.env.vars, ctx.env.lastExitCode);
+			const expanded = await expandVars(block.line, ctx.env.vars, ctx.env.lastExitCode, ctx);
 			const r = await runCommand(expanded, ctx.authUser, ctx.hostname, ctx.mode, ctx.cwd, ctx.shell, undefined, ctx.env);
 			ctx.env.lastExitCode = r.exitCode ?? 0;
 			if (r.stdout) output += `${r.stdout}\n`;
@@ -152,7 +174,7 @@ async function runBlocks(blocks: Block[], ctx: CommandContext): Promise<CommandR
 				}
 			}
 		} else if (block.type === "for") {
-			const listExpanded = expandVars(block.list, ctx.env.vars, ctx.env.lastExitCode);
+			const listExpanded = await expandVars(block.list, ctx.env.vars, ctx.env.lastExitCode, ctx);
 			const items = listExpanded.trim().split(/\s+/);
 			for (const item of items) {
 				ctx.env.vars[block.var] = item;
@@ -184,7 +206,7 @@ export const shCommand: ShellModule = {
 
 		// sh -c "inline script"
 		if (ifFlag(args, "-c")) {
-			const script = getArg(args, 1) ?? "";
+			const script = args[args.indexOf("-c") + 1] ?? "";
 			if (!script) return { stderr: "sh: -c requires a script", exitCode: 1 };
 			const lines = script.split(/[;\n]/).map((l) => l.trim()).filter((l) => l && !l.startsWith("#"));
 			const blocks = parseBlocks(lines);
