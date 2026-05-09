@@ -4,6 +4,7 @@ import { SftpMimic, SshMimic } from "./SSHMimic/index";
 import VirtualFileSystem from "./VirtualFileSystem/index";
 import { VirtualShell } from "./VirtualShell/index";
 import { VirtualUserManager } from "./VirtualUserManager/index";
+import { VirtualPackageManager } from "./VirtualPackageManager/index";
 
 export type {
 	AuditLogEntry,
@@ -15,9 +16,11 @@ export type {
 	CommandOutcome,
 	CommandResult,
 	NanoEditorSession,
+	ShellEnv,
 	ShellModule,
 	SudoChallenge,
 } from "./types/commands";
+export type { ShellProperties } from "./VirtualShell/index";
 export type { ExecStream, ShellStream } from "./types/streams";
 export type {
 	RemoveOptions,
@@ -35,6 +38,12 @@ export type {
 } from "./types/vfs";
 export type { VfsOptions, VfsPersistenceMode } from "./VirtualFileSystem/index";
 
+export type {
+	PackageDefinition,
+	PackageFile,
+	InstalledPackage,
+} from "./VirtualPackageManager/index";
+
 export {
 	HoneyPot,
 	SshClient,
@@ -43,6 +52,7 @@ export {
 	VirtualShell,
 	SshMimic as VirtualSshServer,
 	VirtualUserManager,
+	VirtualPackageManager,
 };
 
 export {
