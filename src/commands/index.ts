@@ -14,6 +14,10 @@ import { aliasCommand, unaliasCommand } from "./alias";
 import { testCommand } from "./test";
 import { sourceCommand } from "./source";
 import { historyCommand } from "./history";
+import { printfCommand } from "./printf";
+import { readCommand } from "./read";
+import { declareCommand } from "./declare";
+import { shiftCommand, trapCommand, returnCommand } from "./shift";
 import { aptCacheCommand, aptCommand } from "./apt";
 import { awkCommand } from "./awk";
 import { base64Command } from "./base64";
@@ -114,6 +118,8 @@ const BASE_COMMANDS: ShellModule[] = [
 	// Shell (extended)
 	whichCommand, typeCommand, manCommand, aliasCommand, unaliasCommand,
 	testCommand, sourceCommand, historyCommand,
+	printfCommand, readCommand, declareCommand,
+	shiftCommand, trapCommand, returnCommand,
 	// System (extended)
 	uptimeCommand, freeCommand, lsbReleaseCommand,
 ];
