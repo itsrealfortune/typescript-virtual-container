@@ -1,146 +1,93 @@
-import { spawn } from "node:child_process";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import type { ShellModule } from "../types/commands";
 import { ifFlag, parseArgs } from "./command-helpers";
-import {
-	assertPathAccess,
-	normalizeTerminalOutput,
-	resolvePath,
-	runHostCommand,
-	stripUrlFilename,
-} from "./helpers";
-
-function runHostWget(args: string[]): Promise<{
-	stdout: string;
-	stderr: string;
-	exitCode: number;
-}> {
-	return new Promise((resolve) => {
-		let childProcess: ReturnType<typeof spawn>;
-
-		try {
-			childProcess = spawn("wget", args, {
-				stdio: ["ignore", "pipe", "pipe"],
-			});
-		} catch (error) {
-			resolve({
-				stdout: "",
-				stderr: `wget: ${error instanceof Error ? error.message : String(error)}`,
-				exitCode: 1,
-			});
-			return;
-		}
-
-		let stdout = "";
-		let stderr = "";
-		const stdoutStream = childProcess.stdout;
-		const stderrStream = childProcess.stderr;
-
-		if (!stdoutStream || !stderrStream) {
-			resolve({
-				stdout: "",
-				stderr: "wget: failed to capture process output",
-				exitCode: 1,
-			});
-			return;
-		}
-
-		stdoutStream.setEncoding("utf8");
-		stderrStream.setEncoding("utf8");
-
-		stdoutStream.on("data", (chunk: string) => {
-			stdout += chunk;
-		});
-
-		stderrStream.on("data", (chunk: string) => {
-			stderr += chunk;
-		});
-
-		childProcess.on("error", (error) => {
-			const errorCode =
-				error instanceof Error && "code" in error
-					? String((error as NodeJS.ErrnoException).code ?? "")
-					: "";
-			resolve({
-				stdout: "",
-				stderr: `wget: ${error.message}`,
-				exitCode: errorCode === "ENOENT" ? 127 : 1,
-			});
-		});
-
-		childProcess.on("close", (code) => {
-			resolve({
-				stdout,
-				stderr,
-				exitCode: code ?? 1,
-			});
-		});
-	});
-}
+import { assertPathAccess, resolvePath, stripUrlFilename } from "./helpers";
 
 export const wgetCommand: ShellModule = {
 	name: "wget",
-	description: "File downloader",
+	description: "File downloader (pure fetch)",
 	category: "network",
-	params: ["[url]"],
+	params: ["[options] <url>"],
 	run: async ({ authUser, cwd, args, shell }) => {
 		const { flagsWithValues, positionals } = parseArgs(args, {
-			flagsWithValue: ["-o", "-O", "--output", "--output-document"],
+			flagsWithValue: ["-O", "--output-document", "-o", "--output-file", "-P", "--directory-prefix", "--tries", "--timeout"],
 		});
-		const outputPath =
-			flagsWithValues.get("-o") ||
-			flagsWithValues.get("-O") ||
-			flagsWithValues.get("--output") ||
-			flagsWithValues.get("--output-document") ||
-			null;
-		const url = positionals[0];
 
-		if (!url) {
-			return { stderr: "wget: missing URL", exitCode: 1 };
-		}
-
-		const isHelpLike = ifFlag(args, ["-h", "--help", "-V", "--version"]);
-
-		if (isHelpLike) {
-			const result = await runHostWget(args);
+		if (ifFlag(args, ["-h", "--help"])) {
 			return {
-				stdout: normalizeTerminalOutput(result.stdout),
-				stderr: result.stderr
-					? normalizeTerminalOutput(result.stderr)
-					: undefined,
-				exitCode: result.exitCode,
-			};
-		}
-
-		const tempDir = await mkdtemp(join(tmpdir(), "virtual-env-js-wget-"));
-		const tempFile = join(tempDir, "download");
-
-		try {
-			const hostArgs = [...positionals, "-O", tempFile];
-			const result = await runHostCommand("wget", hostArgs);
-
-			if (result.exitCode !== 0) {
-				return {
-					stderr: normalizeTerminalOutput(
-						result.stderr || `wget: exited with code ${result.exitCode}`,
-					),
-					exitCode: result.exitCode,
-				};
-			}
-
-			const content = await readFile(tempFile, "utf8");
-			const target = resolvePath(cwd, outputPath || stripUrlFilename(url));
-			assertPathAccess(authUser, target, "wget");
-			shell.writeFileAsUser(authUser, target, content);
-
-			return {
-				stdout: `saved ${target}`,
+				stdout: [
+					"Usage: wget [option]... [URL]...",
+					"  -O, --output-document=FILE  Write to FILE ('-' for stdout)",
+					"  -P, --directory-prefix=DIR  Save files in DIR",
+					"  -q, --quiet                 Quiet mode",
+					"  -v, --verbose               Verbose output (default)",
+					"  -c, --continue              Continue partial download",
+					"  --tries=N                   Retry N times",
+					"  --timeout=N                 Timeout in seconds",
+				].join("\n"),
 				exitCode: 0,
 			};
-		} finally {
-			await rm(tempDir, { recursive: true, force: true });
 		}
+
+		if (ifFlag(args, ["-V", "--version"])) {
+			return { stdout: "GNU Wget 1.21.3 (virtual) built on Fortune GNU/Linux.", exitCode: 0 };
+		}
+
+		const url = positionals[0];
+		if (!url) return { stderr: "wget: missing URL\nUsage: wget [OPTION]... [URL]...", exitCode: 1 };
+
+		const outputArg = flagsWithValues.get("-O") ?? flagsWithValues.get("--output-document") ?? null;
+		const dirPrefix = flagsWithValues.get("-P") ?? flagsWithValues.get("--directory-prefix") ?? null;
+		const quiet = ifFlag(args, ["-q", "--quiet"]);
+
+		// Derive target filename
+		const filename = outputArg === "-" ? null : (outputArg ?? stripUrlFilename(url));
+		const targetPath = filename
+			? resolvePath(cwd, dirPrefix ? `${dirPrefix}/${filename}` : filename)
+			: null;
+
+		if (targetPath) assertPathAccess(authUser, targetPath, "wget");
+
+		const stderrLines: string[] = [];
+		if (!quiet) {
+			stderrLines.push(`--${new Date().toISOString()}--  ${url}`);
+			stderrLines.push(`Resolving ${new URL(url).host}...`);
+			stderrLines.push(`Connecting to ${new URL(url).host}...`);
+		}
+
+		let response: Response;
+		try {
+			response = await fetch(url, { headers: { "User-Agent": "Wget/1.21.3 (Fortune GNU/Linux)" } });
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
+			stderrLines.push(`wget: unable to resolve host: ${msg}`);
+			return { stderr: stderrLines.join("\n"), exitCode: 4 };
+		}
+
+		if (!response.ok) {
+			stderrLines.push(`ERROR ${response.status}: ${response.statusText}`);
+			return { stderr: stderrLines.join("\n"), exitCode: 8 };
+		}
+
+		let body: string;
+		try { body = await response.text(); } catch { return { stderr: "wget: failed to read response", exitCode: 1 }; }
+
+		if (!quiet) {
+			const ct = response.headers.get("content-type") ?? "application/octet-stream";
+			stderrLines.push(`HTTP request sent, awaiting response... ${response.status} ${response.statusText}`);
+			stderrLines.push(`Length: ${body.length} [${ct}]`);
+		}
+
+		// Output to stdout (pipe) or file
+		if (outputArg === "-") {
+			return { stdout: body, stderr: stderrLines.join("\n") || undefined, exitCode: 0 };
+		}
+
+		if (targetPath) {
+			shell.writeFileAsUser(authUser, targetPath, body);
+			if (!quiet) stderrLines.push(`Saving to: '${targetPath}'\n${targetPath}            100%[==================>]  ${body.length} B`);
+			return { stderr: stderrLines.join("\n") || undefined, exitCode: 0 };
+		}
+
+		return { stdout: body, exitCode: 0 };
 	},
 };

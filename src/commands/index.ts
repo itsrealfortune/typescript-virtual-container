@@ -1,5 +1,7 @@
 /** biome-ignore-all lint/style/useNamingConvention: ENV VARIABLES */
+import { executeStatements } from "../SSHMimic/executor";
 import type { VirtualShell } from "../VirtualShell";
+import { parseScript } from "../VirtualShell/shellParser";
 import type {
 	CommandContext,
 	CommandMode,
@@ -8,6 +10,11 @@ import type {
 	ShellModule,
 } from "../types/commands";
 import { adduserCommand } from "./adduser";
+import { aliasCommand, unaliasCommand } from "./alias";
+import { testCommand } from "./test";
+import { sourceCommand } from "./source";
+import { historyCommand } from "./history";
+import { aptCacheCommand, aptCommand } from "./apt";
 import { awkCommand } from "./awk";
 import { base64Command } from "./base64";
 import { catCommand } from "./cat";
@@ -21,12 +28,14 @@ import { dateCommand } from "./date";
 import { deluserCommand } from "./deluser";
 import { dfCommand } from "./df";
 import { diffCommand } from "./diff";
+import { dpkgCommand, dpkgQueryCommand } from "./dpkg";
 import { duCommand } from "./du";
 import { echoCommand } from "./echo";
 import { envCommand } from "./env";
 import { exitCommand } from "./exit";
 import { exportCommand } from "./export";
 import { findCommand } from "./find";
+import { freeCommand } from "./free";
 import { grepCommand } from "./grep";
 import { groupsCommand } from "./groups";
 import { gunzipCommand, gzipCommand } from "./gzip";
@@ -38,6 +47,8 @@ import { idCommand } from "./id";
 import { killCommand } from "./kill";
 import { lnCommand } from "./ln";
 import { lsCommand } from "./ls";
+import { lsbReleaseCommand } from "./lsb-release";
+import { manCommand } from "./man";
 import { mkdirCommand } from "./mkdir";
 import { mvCommand } from "./mv";
 import { nanoCommand } from "./nano";
@@ -60,11 +71,14 @@ import { teeCommand } from "./tee";
 import { touchCommand } from "./touch";
 import { trCommand } from "./tr";
 import { treeCommand } from "./tree";
+import { typeCommand } from "./type";
 import { unameCommand } from "./uname";
 import { uniqCommand } from "./uniq";
 import { unsetCommand } from "./unset";
+import { uptimeCommand } from "./uptime";
 import { wcCommand } from "./wc";
 import { wgetCommand } from "./wget";
+import { whichCommand } from "./which";
 import { whoCommand } from "./who";
 import { whoamiCommand } from "./whoami";
 import { xargsCommand } from "./xargs";
@@ -95,6 +109,13 @@ const BASE_COMMANDS: ShellModule[] = [
 	adduserCommand, passwdCommand, deluserCommand, sudoCommand, suCommand,
 	// Misc
 	neofetchCommand,
+	// Package management
+	aptCommand, aptCacheCommand, dpkgCommand, dpkgQueryCommand,
+	// Shell (extended)
+	whichCommand, typeCommand, manCommand, aliasCommand, unaliasCommand,
+	testCommand, sourceCommand, historyCommand,
+	// System (extended)
+	uptimeCommand, freeCommand, lsbReleaseCommand,
 ];
 
 const customCommands: ShellModule[] = [];
@@ -196,6 +217,52 @@ export function makeDefaultEnv(authUser: string, hostname: string): ShellEnv {
 	};
 }
 
+/**
+ * Execute a pre-parsed command directly by name and argument list.
+ *
+ * Unlike `runCommand`, this function does NOT re-join name+args into a string
+ * and re-parse — so arguments that contain special characters (`;`, `|`, `>`,
+ * quotes) are passed through verbatim. Use this from the pipeline executor.
+ */
+export async function runCommandDirect(
+	name: string,
+	args: string[],
+	authUser: string,
+	hostname: string,
+	mode: CommandMode,
+	cwd: string,
+	shell: VirtualShell,
+	stdin: string | undefined,
+	env: ShellEnv,
+): Promise<CommandResult> {
+	// Alias expansion on the command name
+	const aliasVal = env.vars[`__alias_${name}`];
+	if (aliasVal) {
+		// Alias may expand to a multi-word command — re-route through runCommand
+		return runCommand(`${aliasVal} ${args.join(" ")}`, authUser, hostname, mode, cwd, shell, stdin, env);
+	}
+
+	const mod = resolveModule(name);
+	if (!mod) return { stderr: `${name}: command not found`, exitCode: 127 };
+
+	try {
+		return await mod.run({
+			authUser,
+			hostname,
+			activeSessions: shell.users.listActiveSessions(),
+			rawInput: [name, ...args].join(" "),
+			mode,
+			args,
+			stdin,
+			cwd,
+			shell,
+			env,
+		});
+	} catch (error: unknown) {
+		return { stderr: error instanceof Error ? error.message : "Command failed", exitCode: 1 };
+	}
+}
+
 export async function runCommand(
 	rawInput: string,
 	authUser: string,
@@ -211,18 +278,56 @@ export async function runCommand(
 
 	const shellEnv: ShellEnv = env ?? makeDefaultEnv(authUser, hostname);
 
+	// ── $(cmd) command substitution ──────────────────────────────────────────
+	let expanded = trimmed;
+	if (expanded.includes("$(")) {
+		// Only substitute $(…) that are NOT inside single quotes
+		// Strategy: walk char by char, track single-quote state
+		let result = "";
+		let inSingle = false;
+		let i = 0;
+		while (i < expanded.length) {
+			const ch = expanded[i]!;
+			if (ch === "'" && !inSingle) { inSingle = true; result += ch; i++; continue; }
+			if (ch === "'" && inSingle)  { inSingle = false; result += ch; i++; continue; }
+			if (!inSingle && ch === "$" && expanded[i + 1] === "(") {
+				// Find matching closing )
+				let depth = 0;
+				let j = i + 1;
+				while (j < expanded.length) {
+					if (expanded[j] === "(") depth++;
+					else if (expanded[j] === ")") { depth--; if (depth === 0) break; }
+					j++;
+				}
+				const sub = expanded.slice(i + 2, j).trim();
+				const subResult = await runCommand(sub, authUser, hostname, mode, cwd, shell, undefined, shellEnv);
+				const subOut = (subResult.stdout ?? "").replace(/\n$/, "");
+				result += subOut;
+				i = j + 1;
+				continue;
+			}
+			result += ch; i++;
+		}
+		expanded = result;
+	}
+
+	// ── alias expansion ───────────────────────────────────────────────────────
+	const firstWord = expanded.split(/\s+/)[0] ?? "";
+	const aliasVal = shellEnv.vars[`__alias_${firstWord}`];
+	if (aliasVal) {
+		expanded = expanded.replace(firstWord, aliasVal);
+	}
+
 	// Detect shell operators
 	if (
-		/(?<![|&])[|](?![|])/.test(trimmed) ||
-		trimmed.includes(">") ||
-		trimmed.includes("<") ||
-		trimmed.includes("&&") ||
-		trimmed.includes("||") ||
-		trimmed.includes(";")
+		/(?<![|&])[|](?![|])/.test(expanded) ||
+		expanded.includes(">") ||
+		expanded.includes("<") ||
+		expanded.includes("&&") ||
+		expanded.includes("||") ||
+		expanded.includes(";")
 	) {
-		const { parseScript } = await import("../VirtualShell/shellParser");
-		const { executeStatements } = await import("../SSHMimic/executor");
-		const script = parseScript(trimmed);
+		const script = parseScript(expanded);
 		if (!script.isValid) return { stderr: script.error || "Syntax error", exitCode: 1 };
 		try {
 			return await executeStatements(script.statements, authUser, hostname, mode, cwd, shell, shellEnv);
@@ -231,7 +336,7 @@ export async function runCommand(
 		}
 	}
 
-	const { commandName, args } = parseInput(trimmed);
+	const { commandName, args } = parseInput(expanded);
 	const mod = resolveModule(commandName);
 
 	if (!mod) return { stderr: `${commandName}: command not found`, exitCode: 127 };
@@ -241,7 +346,7 @@ export async function runCommand(
 			authUser,
 			hostname,
 			activeSessions: shell.users.listActiveSessions(),
-			rawInput: trimmed,
+			rawInput: expanded,
 			mode,
 			args,
 			stdin,

@@ -1,28 +1,44 @@
 import type { ShellModule } from "../types/commands";
 import { parseArgs } from "./command-helpers";
-import { getAllEnvVars } from "./set";
 
-function expandEnvVars(input: string, env: Record<string, string>): string {
-	return input.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, name: string) => {
-		return env[name] ?? "";
-	});
+/**
+ * Expand escape sequences for `echo -e`.
+ * Handles \n \t \r \\ \a \b \f \v and \0NNN (octal).
+ */
+function expandEscapes(text: string): string {
+	return text
+		.replace(/\\n/g, "\n")
+		.replace(/\\t/g, "\t")
+		.replace(/\\r/g, "\r")
+		.replace(/\\\\/g, "\\")
+		.replace(/\\a/g, "\x07")
+		.replace(/\\b/g, "\x08")
+		.replace(/\\f/g, "\x0C")
+		.replace(/\\v/g, "\x0B")
+		.replace(/\\0(\d{1,3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)));
 }
 
 export const echoCommand: ShellModule = {
 	name: "echo",
 	description: "Display text",
 	category: "shell",
-	params: ["[options] [text...]"],
-	run: ({ args, authUser, stdin }) => {
-		const { flags, positionals } = parseArgs(args, { flags: ["-n"] });
-		const newline = !flags.has("-n");
-		const rawText =
-			positionals.length > 0 ? positionals.join(" ") : (stdin ?? "");
-		const env = getAllEnvVars(authUser);
-		const text = expandEnvVars(rawText, env);
+	params: ["[-n] [-e] [text...]"],
+	run: ({ args, stdin, env }) => {
+		const { flags, positionals } = parseArgs(args, { flags: ["-n", "-e", "-E"] });
+		const noNewline = flags.has("-n");
+		const escapes  = flags.has("-e");
+
+		const rawText = positionals.length > 0 ? positionals.join(" ") : (stdin ?? "");
+
+		// Expand $VAR references using the session env (not the legacy global store)
+		const varsExpanded = rawText.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, name: string) =>
+			env?.vars[name] ?? "",
+		);
+
+		const text = escapes ? expandEscapes(varsExpanded) : varsExpanded;
 
 		return {
-			stdout: newline ? text : text.trimEnd(),
+			stdout: noNewline ? text : `${text}\n`,
 			exitCode: 0,
 		};
 	},

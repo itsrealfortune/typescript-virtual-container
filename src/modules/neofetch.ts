@@ -321,6 +321,7 @@ export function buildNeofetchOutput(info: NeofetchInfo): string {
 		`Kernel: ${fields.kernel}`,
 		`Uptime: ${uptime}`,
 		// `Packages: ${fields.packages}`,
+		`Packages: ${fields.packages}`,
 		`Shell: ${fields.shell}`,
 		// `Shell Props: ${fields.shellProps}`,
 		`Resolution: ${fields.resolution}`,

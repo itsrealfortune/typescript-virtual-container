@@ -32,6 +32,11 @@ export const neofetchCommand: ShellModule = {
 				shell: env.SHELL,
 				shellProps: shell.properties,
 				terminal: env.TERM,
+				uptimeSeconds: Math.floor((Date.now() - shell.startTime) / 1000),
+				packages: (() => {
+					const count = shell.packageManager?.installedCount() ?? 0;
+					return `${count} (dpkg)`;
+				})(),
 			}),
 			exitCode: 0,
 		};

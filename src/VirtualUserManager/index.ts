@@ -290,10 +290,11 @@ export class VirtualUserManager extends EventEmitter {
 	}
 
 	/**
-	 * Updates password for an existing user account.
+	 * Updates the password for an existing user account.
 	 *
 	 * @param username Username to update.
-	 * @param password New plaintext password.
+	 * @param password New plaintext password (must be non-empty).
+	 * @throws When the user does not exist or the password is empty.
 	 */
 	public async setPassword(username: string, password: string): Promise<void> {
 		perf.mark("setPassword");
@@ -309,9 +310,10 @@ export class VirtualUserManager extends EventEmitter {
 	}
 
 	/**
-	 * Deletes existing non-root user account.
+	 * Deletes an existing non-root user account and revokes sudo access.
 	 *
 	 * @param username Username to remove.
+	 * @throws When `username` is `"root"` or the user does not exist.
 	 */
 	public async deleteUser(username: string): Promise<void> {
 		perf.mark("deleteUser");
@@ -343,9 +345,10 @@ export class VirtualUserManager extends EventEmitter {
 	}
 
 	/**
-	 * Grants sudo access to existing user.
+	 * Grants sudo privileges to an existing user.
 	 *
 	 * @param username Username to promote.
+	 * @throws When the user does not exist.
 	 */
 	public async addSudoer(username: string): Promise<void> {
 		perf.mark("addSudoer");
@@ -359,9 +362,10 @@ export class VirtualUserManager extends EventEmitter {
 	}
 
 	/**
-	 * Revokes sudo access from user.
+	 * Revokes sudo privileges from a user. Root cannot be demoted.
 	 *
 	 * @param username Username to demote.
+	 * @throws When `username` is `"root"`.
 	 */
 	public async removeSudoer(username: string): Promise<void> {
 		perf.mark("removeSudoer");
@@ -375,11 +379,14 @@ export class VirtualUserManager extends EventEmitter {
 	}
 
 	/**
-	 * Registers active session and allocates tty id.
+	 * Registers a new active session and allocates a virtual TTY identifier.
 	 *
-	 * @param username Session username.
-	 * @param remoteAddress Session source address.
-	 * @returns Registered session descriptor.
+	 * Called by the SSH server when a client is authenticated. The returned
+	 * descriptor is visible in `who` output and `listActiveSessions()`.
+	 *
+	 * @param username      Authenticated username bound to the session.
+	 * @param remoteAddress IP address or hostname of the connecting client.
+	 * @returns The newly created `VirtualActiveSession` descriptor.
 	 */
 	public registerSession(
 		username: string,
@@ -403,9 +410,11 @@ export class VirtualUserManager extends EventEmitter {
 	}
 
 	/**
-	 * Unregisters active session when connection closes.
+	 * Removes an active session record when the connection closes.
 	 *
-	 * @param sessionId Session identifier; ignored when nullish.
+	 * Safe to call with a `null` or `undefined` session ID — it will be a no-op.
+	 *
+	 * @param sessionId Session UUID returned by `registerSession()`, or nullish.
 	 */
 	public unregisterSession(sessionId: string | null | undefined): void {
 		perf.mark("unregisterSession");
@@ -425,11 +434,15 @@ export class VirtualUserManager extends EventEmitter {
 	}
 
 	/**
-	 * Updates username/address metadata for existing session.
+	 * Updates the username and remote address metadata for an active session.
 	 *
-	 * @param sessionId Session identifier; ignored when nullish.
-	 * @param username New username value.
-	 * @param remoteAddress New remote address value.
+	 * Called internally by `su` and `sudo` when the effective user changes
+	 * within a session. Silently ignored when the session ID is nullish or
+	 * unknown.
+	 *
+	 * @param sessionId     Session UUID to update, or nullish for no-op.
+	 * @param username      New effective username.
+	 * @param remoteAddress New remote address (usually unchanged).
 	 */
 	public updateSession(
 		sessionId: string | null | undefined,
@@ -454,15 +467,26 @@ export class VirtualUserManager extends EventEmitter {
 	}
 
 	/**
-	 * Lists active sessions sorted by start time.
+	 * Returns a snapshot of all currently active sessions, sorted by start time.
 	 *
-	 * @returns Snapshot of active session descriptors.
+	 * Used by `who`, `ps`, `uptime`, and the `HoneyPot` auditor.
+	 *
+	 * @returns Array of `VirtualActiveSession` descriptors.
 	 */
 	public listActiveSessions(): VirtualActiveSession[] {
 		perf.mark("listActiveSessions");
 		return Array.from(this.activeSessions.values()).sort((left, right) =>
 			left.startedAt.localeCompare(right.startedAt),
 		);
+	}
+
+	/**
+	 * Returns a sorted list of all registered usernames.
+	 *
+	 * @returns Array of username strings sorted alphabetically.
+	 */
+	public listUsers(): string[] {
+		return Array.from(this.users.keys()).sort();
 	}
 
 	private loadFromVfs(): void {
@@ -610,6 +634,14 @@ export class VirtualUserManager extends EventEmitter {
 		return record;
 	}
 
+	/**
+	 * Returns `true` when the user has a non-empty password set.
+	 *
+	 * A user with no password (or whose password hash matches the empty-string
+	 * hash) is allowed to authenticate without a credential check.
+	 *
+	 * @param username Target username.
+	 */
 	public hasPassword(username: string): boolean {
 		perf.mark("hasPassword");
 		if (this.getPasswordHash(username) === this.hashPassword("")) {
@@ -620,10 +652,13 @@ export class VirtualUserManager extends EventEmitter {
 	}
 
 	/**
-	 * Hashes plaintext password with per-user salt using scrypt.
+	 * Hashes a plaintext password using scrypt (or SHA-256 in fast-hash mode).
 	 *
-	 * @param password Plaintext password.
-	 * @returns Hex-encoded password hash.
+	 * Set `SSH_MIMIC_FAST_PASSWORD_HASH=1` to switch to SHA-256 for test
+	 * environments where scrypt latency is undesirable.
+	 *
+	 * @param password Plaintext password string.
+	 * @returns Hex-encoded hash string.
 	 */
 	public hashPassword(password: string): string {
 		if (VirtualUserManager.fastPasswordHash) {

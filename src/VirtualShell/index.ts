@@ -6,11 +6,32 @@ import type { PerfLogger } from "../utils/perfLogger";
 import { createPerfLogger } from "../utils/perfLogger";
 import VirtualFileSystem, { type VfsOptions } from "../VirtualFileSystem";
 import { VirtualUserManager } from "../VirtualUserManager";
+import { VirtualPackageManager } from "../VirtualPackageManager";
+import { bootstrapLinuxRootfs, refreshProc, syncEtcPasswd } from "../modules/linuxRootfs";
 import { startShell } from "./shell";
 
+/**
+ * Virtual machine identity strings surfaced by system-info commands
+ * (`uname`, `neofetch`, `lsb_release`, `/proc/version`, `/etc/os-release`).
+ *
+ * Pass this as the second argument to `new VirtualShell()` to customise the
+ * distro name, kernel version, and CPU architecture reported inside the shell.
+ *
+ * @example
+ * ```ts
+ * const shell = new VirtualShell("my-vm", {
+ *   kernel: "6.1.0+custom-amd64",
+ *   os:     "Acme GNU/Linux x64",
+ *   arch:   "x86_64",
+ * });
+ * ```
+ */
 export interface ShellProperties {
+	/** Kernel version string (e.g. `"1.0.0+itsrealfortune+1-amd64"`). */
 	kernel: string;
+	/** Full OS description (e.g. `"Fortune GNU/Linux x64"`). */
 	os: string;
+	/** CPU architecture label (e.g. `"x86_64"`, `"aarch64"`). */
 	arch: string;
 }
 
@@ -32,16 +53,40 @@ function resolveAutoSudoForNewUsers(): boolean {
 }
 
 /**
- * Coordinates the virtual filesystem, user manager, and command runtime.
+ * Coordinates the virtual filesystem, user manager, package manager, and
+ * command runtime for a single isolated shell environment.
  *
- * Instances are used both by the SSH server facade and by the programmatic
- * client API.
+ * Each instance owns its own VFS tree, user database, package registry, and
+ * session state — multiple instances are fully independent.
+ *
+ * Instances are consumed both by the SSH/SFTP server facades and directly via
+ * the programmatic `SshClient` API.
+ *
+ * @example
+ * ```ts
+ * const shell = new VirtualShell("my-vm");
+ * await shell.ensureInitialized();
+ * const client = new SshClient(shell, "root");
+ * const result = await client.exec("uname -a");
+ * ```
+ *
+ * @fires VirtualShell#initialized  Emitted once the VFS and users are ready.
+ * @fires VirtualShell#command       Emitted after every command execution.
+ * @fires VirtualShell#session:start Emitted when an interactive session opens.
  */
 class VirtualShell extends EventEmitter {
+	/** Backing virtual filesystem — use for direct path operations. */
 	vfs: VirtualFileSystem;
+	/** Virtual user database — use for auth, quotas, and session tracking. */
 	users: VirtualUserManager;
+	/** APT/dpkg package manager backed by the built-in package registry. */
+	packageManager: VirtualPackageManager;
+	/** Hostname shown in the shell prompt and SSH ident string. */
 	hostname: string;
+	/** Distro identity strings surfaced by `uname`, `neofetch`, etc. */
 	properties: ShellProperties;
+	/** Unix ms timestamp of shell creation — used by `uptime` and `/proc/uptime`. */
+	startTime: number;
 	private initialized: Promise<void>;
 
 	/**
@@ -60,17 +105,27 @@ class VirtualShell extends EventEmitter {
 		perf.mark("constructor");
 		this.hostname = hostname;
 		this.properties = properties || defaultShellProperties;
+		this.startTime = Date.now();
 		this.vfs = new VirtualFileSystem(vfsOptions ?? {});
 		this.users = new VirtualUserManager(this.vfs, resolveAutoSudoForNewUsers());
+		this.packageManager = new VirtualPackageManager(this.vfs, this.users);
 
 		// Store references to avoid TypeScript "used before assigned" errors
 		const vfs = this.vfs;
 		const users = this.users;
+		const pm = this.packageManager;
+		const shellProps = this.properties;
+		const shellHostname = this.hostname;
+		const startTime = this.startTime;
 
 		// Initialize both VFS mirror and users, ensuring all is ready before auth
 		this.initialized = (async () => {
 			await vfs.restoreMirror();
 			await users.initialize();
+			// Bootstrap Linux rootfs (idempotent)
+			bootstrapLinuxRootfs(vfs, users, shellHostname, shellProps, startTime);
+			// Load installed packages from dpkg status
+			pm.load();
 			this.emit("initialized");
 		})();
 	}
@@ -105,11 +160,16 @@ class VirtualShell extends EventEmitter {
 	}
 
 	/**
-	 * Executes a command line string in the context of this shell instance.
+	 * Executes a raw command line string programmatically.
 	 *
-	 * @param rawInput
-	 * @param authUser
-	 * @param cwd
+	 * Supports the full shell operator set (`&&`, `||`, `;`, `|`, `>`, `<`,
+	 * `$(cmd)`) and alias expansion. The result is emitted via the
+	 * `"command"` event but not returned — use `SshClient.exec()` for a
+	 * result-returning wrapper.
+	 *
+	 * @param rawInput Unparsed command line (e.g. `"ls -la /tmp"`).
+	 * @param authUser Username to run the command as.
+	 * @param cwd      Current working directory for path resolution.
 	 */
 	executeCommand(rawInput: string, authUser: string, cwd: string): void {
 		perf.mark("executeCommand");
@@ -118,14 +178,19 @@ class VirtualShell extends EventEmitter {
 	}
 
 	/**
-	 * Starts an interactive session with the shell.
+	 * Attaches an interactive PTY session to this shell instance.
 	 *
-	 * @param stream The stream for the interactive session.
-	 * @param authUser The authenticated user for the session.
-	 * @param sessionId The ID of the session.
-	 * @param remoteAddress The address of the remote client.
+	 * Called internally by `SshMimic` when a client opens a shell channel.
+	 * The session reads from `stream` (user keystrokes) and writes back ANSI
+	 * output. History, `.bashrc` sourcing, and Ctrl+W/Ctrl+U line editing are
+	 * handled automatically.
+	 *
+	 * @param stream        Bidirectional SSH channel stream.
+	 * @param authUser      Authenticated username bound to this session.
+	 * @param sessionId     Stable session UUID (used for `who` output), or `null`.
+	 * @param remoteAddress IP or hostname of the connecting client.
+	 * @param terminalSize  Initial terminal dimensions in columns and rows.
 	 */
-
 	startInteractiveSession(
 		stream: ShellStream,
 		authUser: string,
@@ -146,6 +211,32 @@ class VirtualShell extends EventEmitter {
 			terminalSize,
 			this,
 		);
+	}
+
+	/**
+	 * Refreshes the `/proc` virtual filesystem with current system state.
+	 *
+	 * Updates `/proc/uptime`, `/proc/meminfo`, `/proc/cpuinfo`,
+	 * `/proc/version`, and `/proc/loadavg` from live host data.
+	 *
+	 * Called automatically during `bootstrapLinuxRootfs`. Call again before
+	 * reading `/proc` files for up-to-date values (e.g. before `neofetch`
+	 * or `free` in long-running processes).
+	 */
+	public refreshProcFs(): void {
+		refreshProc(this.vfs, this.properties, this.hostname, this.startTime);
+	}
+
+	/**
+	 * Syncs `/etc/passwd`, `/etc/group`, and `/etc/shadow` from the current
+	 * `VirtualUserManager` state.
+	 *
+	 * Called automatically during `bootstrapLinuxRootfs`. Call again after
+	 * `users.addUser()`, `users.deleteUser()`, or `users.addSudoer()` to keep
+	 * the classic Unix credential files in sync with the user manager.
+	 */
+	public syncPasswd(): void {
+		syncEtcPasswd(this.vfs, this.users);
 	}
 
 	/**
