@@ -82,7 +82,7 @@
 - **Security Auditing**: Built-in `HoneyPot` utility for comprehensive activity logging, event tracking, statistics collection, and anomaly detection across all components.
 - **Linux rootfs on boot**: Realistic `/etc`, `/proc`, `/sys`, `/dev`, `/usr`, `/var` hierarchy populated at startup — `os-release`, `passwd`, `hosts`, `resolv.conf`, `/proc/meminfo`, `/proc/cpuinfo`, and more.
 - **Virtual package manager**: `apt install`, `apt remove`, `apt search`, `dpkg -l`, `dpkg -s` — 25 packages in the built-in registry (vim, git, nodejs, python3, curl, openssh, gcc…). Writes files into VFS, tracks state in `/var/lib/dpkg/status`.
-- **80+ Built-in Commands**: Full navigation, text processing, archiving, system info, package management, and user management commands — grouped and documented in the interactive `help` system.
+- **90+ Built-in Commands**: Full navigation, text processing, archiving, system info, package management, and user management commands — grouped and documented in the interactive `help` system.
 - **`$(cmd)` command substitution**: Nested command execution in any argument position.
 - **Alias support**: `alias`, `unalias` — persisted in session environment.
 - **Full TypeScript Support**: Complete JSDoc coverage, exported types, and first-class async/await for all operations.
@@ -1601,7 +1601,7 @@ All commands are available in SSH shell mode and via `SshClient.exec()`. Type `h
 | Command | Flags | Description |
 |---------|-------|-------------|
 | `cd <path>` | | Change directory |
-| `ls [path]` | `-l` | List directory contents |
+| `ls [path]` | `-l` `-a` | List directory contents (`-a` shows dotfiles) |
 | `pwd` | | Print working directory |
 | `tree [path]` | | ASCII directory tree |
 
@@ -1609,8 +1609,8 @@ All commands are available in SSH shell mode and via `SshClient.exec()`. Type `h
 
 | Command | Flags | Description |
 |---------|-------|-------------|
-| `cat <path>` | | Print file contents |
-| `chmod <mode> <file>` | | Change file permissions (octal) |
+| `cat <path...>` | `-n` `-b` | Concatenate and print files; `-n` numbers all lines, `-b` numbers non-blank lines |
+| `chmod <mode> <file>` | | Change file permissions — octal (`755`) or symbolic (`+x`, `u+x`, `go-w`, `a=rx`) |
 | `cp <src> <dest>` | `-r` | Copy file or directory |
 | `find [path]` | `-name <pat>` `-type f\|d` | Search for files |
 | `ln <target> <link>` | `-s` | Create hard or symbolic link |
@@ -1663,7 +1663,7 @@ All commands are available in SSH shell mode and via `SshClient.exec()`. Type `h
 | `neofetch` | | System info display (shows real packages/uptime) |
 | `uptime` | `-p` `-s` | Tell how long the system has been running |
 | `ping [-c <n>] <host>` | | Send ICMP ECHO_REQUEST (mock) |
-| `ps` | `-a` `-u` `-x` | Report process status |
+| `ps` | `-a` `-u` `-x` `aux` | Report process status; `-u` / `aux` shows USER/PID/%CPU/%MEM columns |
 | `sleep <seconds>` | | Delay execution |
 | `uname` | `-a` `-r` `-m` | Print system information |
 | `who` | | List active sessions |
@@ -1680,14 +1680,21 @@ All commands are available in SSH shell mode and via `SshClient.exec()`. Type `h
 
 | Command | Flags | Description |
 |---------|-------|-------------|
+| `alias [name=value]` | | Define or display aliases |
 | `clear` | | Clear terminal screen (full ANSI reset) |
-| `echo <text>` | | Display text |
+| `echo <text>` | `-n` `-e` | Display text; `-n` suppresses newline, `-e` interprets escape sequences (`\n`, `\t`, `\r`, `\\`) |
 | `env` | | Print session environment variables |
 | `exit [code]` | | Exit session |
 | `export NAME=VALUE` | | Set shell variable in current session |
 | `help [command]` | | List commands (grouped) or show command details |
 | `set [VAR=val]` | | Display or set shell variables |
-| `sh` | `-c <script>` `[file]` | Execute shell script (supports if/for/while) |
+| `sh` | `-c <script>` `[file]` | Execute shell script (supports if/for/while/do/done); `$(cmd)` substitution inside single-quoted args is preserved |
+| `history [n]` | | Display command history (last N entries) |
+| `source <file>` | | Execute file in current shell environment (aliases and exports persist) |
+| `. <file>` | | Alias for `source` |
+| `test <expr>` | | Evaluate conditional expression |
+| `[ <expr> ]` | | Alias for `test` — supports `-f`, `-d`, `-e`, `-z`, `-n`, `=`, `!=`, `-eq`, `-lt`, `-gt`, etc. |
+| `unalias <name>` | `-a` | Remove alias definitions |
 | `unset <VAR>` | | Remove shell variable |
 
 ### Package Management
@@ -2094,6 +2101,20 @@ MIT — see [LICENSE](./LICENSE).
 - [x] Alias expansion in command dispatch
 - [x] `neofetch` shows real package count and shell uptime
 - [x] `syncPasswd()` / `refreshProcFs()` public API on `VirtualShell`
+- [x] `test` / `[` — full POSIX conditional expressions (`-f`, `-d`, `-e`, `-z`, `-n`, `-x`, `-s`, `-L`, `=`, `!=`, `-eq`, `-lt`, `-gt`, `-le`, `-ge`, `!`, `-a`, `-o`)
+- [x] `source` / `.` — execute file in current shell env (aliases and exports persist across commands)
+- [x] `history [n]` — display command history from VFS `.bash_history`
+- [x] `echo -e` / `echo -n` — escape sequence interpretation and newline suppression
+- [x] `ls -a` — show dotfiles
+- [x] `chmod` symbolic modes — `+x`, `u+x`, `go-w`, `a=rx`, comma-separated
+- [x] `cat -n` / `-b` — line numbering, multi-file concatenation, stdin support
+- [x] `ping -c N` — respects packet count flag
+- [x] `ps -u` / `ps aux` — extended format with USER/PID/%CPU/%MEM/VSZ/RSS columns
+- [x] `$(cmd)` in single-quoted args preserved — `sh -c 'echo $(whoami)'` now works correctly
+- [x] Pipeline executor: `runCommandDirect` — args with `;`, `|`, `>` no longer re-parsed
+- [x] `>>` append redirect fixed — was broken because `echo` lacked terminal newline
+- [x] `export A=1 && echo $A` — env vars visible to subsequent commands in same pipeline
+- [x] `echo` uses session `env.vars` (not stale global store)
 - [ ] Snapshot diff tooling for test assertions
 - [ ] WebSocket-based remote shell client (experimental)
 - [ ] Package stubs that simulate REPL behavior (node, python3)
