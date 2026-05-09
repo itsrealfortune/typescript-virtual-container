@@ -1,4 +1,4 @@
-import { describe, expect, test, beforeAll } from "bun:test";
+import { beforeAll, describe, expect, test } from "bun:test";
 import { VirtualShell } from "../src";
 import { SshClient } from "../src/SSHClient";
 
@@ -289,7 +289,7 @@ describe("/proc filesystem", () => {
 	});
 
 	test("refreshProcFs updates /proc/uptime", async () => {
-		const before = shell.vfs.readFile("/proc/uptime");
+		// const before = shell.vfs.readFile("/proc/uptime");
 		await new Promise((r) => setTimeout(r, 50));
 		shell.refreshProcFs();
 		const after = shell.vfs.readFile("/proc/uptime");
