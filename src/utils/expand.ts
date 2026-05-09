@@ -1,14 +1,10 @@
 /**
  * expand.ts
  *
- * Centralised shell variable and expression expansion utilities.
- * Intended to be used by runCommand, echo, and sh.ts to replace
- * the per-file expansion logic with a single shared implementation.
+ * Centralised shell variable and expression expansion.
+ * Used by `runCommand` (index.ts), `echo`, and `sh.ts`.
  *
- * Currently available but not yet wired into the main runtime —
- * integration is the next expansion phase.
- *
- * Handles:
+ * Handles (in order):
  *   ~             tilde to $HOME
  *   $?            last exit code
  *   $$            mock PID
@@ -53,8 +49,41 @@ export function evalArith(expr: string, env: Record<string, string>): number {
 // ─── synchronous expansion ───────────────────────────────────────────────────
 
 /**
+ * Apply a replacer only to portions of `input` that are NOT inside single quotes.
+ * Single-quoted content is passed through verbatim (POSIX sh behaviour).
+ */
+function outsideSingleQuotes(
+	input: string,
+	replacer: (chunk: string) => string,
+): string {
+	const parts: string[] = [];
+	let i = 0;
+	while (i < input.length) {
+		const sqIdx = input.indexOf("'", i);
+		if (sqIdx === -1) {
+			// No more single quotes — expand the rest
+			parts.push(replacer(input.slice(i)));
+			break;
+		}
+		// Expand the part before the single quote
+		parts.push(replacer(input.slice(i, sqIdx)));
+		// Find closing single quote — everything inside is literal
+		const closeIdx = input.indexOf("'", sqIdx + 1);
+		if (closeIdx === -1) {
+			// Unclosed quote — treat rest as literal
+			parts.push(input.slice(sqIdx));
+			break;
+		}
+		parts.push(input.slice(sqIdx, closeIdx + 1)); // include quotes
+		i = closeIdx + 1;
+	}
+	return parts.join("");
+}
+
+/**
  * Expand all shell variable and expression forms synchronously.
  * Does NOT handle `$(cmd)` — that requires async; see `expandAsync`.
+ * Content inside single quotes is left verbatim per POSIX sh rules.
  *
  * @param input     Raw string possibly containing `$VAR`, `${...}`, `$((...))`.
  * @param env       Current session env vars.
@@ -67,51 +96,54 @@ export function expandSync(
 	lastExit = 0,
 	home?: string,
 ): string {
-	let s = input;
 	const homePath = home ?? env.HOME ?? "/home/user";
 
-	// Tilde expansion — only at start of string or after `:` or whitespace
-	s = s.replace(/(^|[\s:])~(\/|$)/g, (_, pre, post) => `${pre}${homePath}${post}`);
+	return outsideSingleQuotes(input, (chunk) => {
+		let s = chunk;
 
-	// $? $$ $#
-	s = s.replace(/\$\?/g, String(lastExit));
-	s = s.replace(/\$\$/g, "1");
-	s = s.replace(/\$#/g, "0");
+		// Tilde expansion — only at start of token or after `:` or whitespace
+		s = s.replace(/(^|[\s:])~(\/|$)/g, (_, pre, post) => `${pre}${homePath}${post}`);
 
-	// $(( arithmetic )) — greedy matching with paren depth tracking
-	s = s.replace(/\$\(\(([^)]+(?:\([^)]*\)[^)]*)*)\)\)/g, (_, expr) => {
-		const result = evalArith(expr, env);
-		return Number.isNaN(result) ? "0" : String(result);
+		// $? $$ $#
+		s = s.replace(/\$\?/g, String(lastExit));
+		s = s.replace(/\$\$/g, "1");
+		s = s.replace(/\$#/g, "0");
+
+		// $(( arithmetic )) — must come before ${ and $VAR to avoid conflicts
+		s = s.replace(/\$\(\(([^)]+(?:\([^)]*\)[^)]*)*)\)\)/g, (_, expr) => {
+			const result = evalArith(expr, env);
+			return Number.isNaN(result) ? "0" : String(result);
+		});
+
+		// ${#VAR} — string length
+		s = s.replace(/\$\{#([A-Za-z_][A-Za-z0-9_]*)\}/g, (_, name) =>
+			String((env[name] ?? "").length),
+		);
+
+		// ${VAR:-default}
+		s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*):-([^}]*)\}/g, (_, name, def) =>
+			(env[name] !== undefined && env[name] !== "") ? (env[name] as string) : def,
+		);
+
+		// ${VAR:=default} — also assigns to env
+		s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*):=([^}]*)\}/g, (_, name, def) => {
+			if (env[name] === undefined || env[name] === "") env[name] = def;
+			return env[name] as string;
+		});
+
+		// ${VAR:+alternate}
+		s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*):\+([^}]*)\}/g, (_, name, alt) =>
+			(env[name] !== undefined && env[name] !== "") ? alt : "",
+		);
+
+		// ${VAR}
+		s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g, (_, name) => env[name] ?? "");
+
+		// $VAR
+		s = s.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, name) => env[name] ?? "");
+
+		return s;
 	});
-
-	// ${#VAR} — string length
-	s = s.replace(/\$\{#([A-Za-z_][A-Za-z0-9_]*)\}/g, (_, name) =>
-		String((env[name] ?? "").length),
-	);
-
-	// ${VAR:-default}
-	s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*):-([^}]*)\}/g, (_, name, def) =>
-		(env[name] !== undefined && env[name] !== "") ? (env[name] as string) : def,
-	);
-
-	// ${VAR:=default} — also assigns to env
-	s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*):=([^}]*)\}/g, (_, name, def) => {
-		if (env[name] === undefined || env[name] === "") env[name] = def;
-		return env[name] as string;
-	});
-
-	// ${VAR:+alternate}
-	s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*):\+([^}]*)\}/g, (_, name, alt) =>
-		(env[name] !== undefined && env[name] !== "") ? alt : "",
-	);
-
-	// ${VAR}
-	s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g, (_, name) => env[name] ?? "");
-
-	// $VAR
-	s = s.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, name) => env[name] ?? "");
-
-	return s;
 }
 
 // ─── async expansion (includes $(cmd)) ──────────────────────────────────────
@@ -146,6 +178,10 @@ export async function expandAsync(
 			if (ch === "'" && inSingle)  { inSingle = false; result += ch; i++; continue; }
 
 			if (!inSingle && ch === "$" && input[i + 1] === "(") {
+				// $((expr)) arithmetic — NOT a $(cmd) substitution, skip it
+				if (input[i + 2] === "(") {
+					result += ch; i++; continue;
+				}
 				// Find matching ) with depth tracking
 				let depth = 0;
 				let j = i + 1;
