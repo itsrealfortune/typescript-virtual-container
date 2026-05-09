@@ -2140,8 +2140,6 @@ MIT — see [LICENSE](./LICENSE).
 - [x] `>>` append redirect fixed — was broken because `echo` lacked terminal newline
 - [x] `export A=1 && echo $A` — env vars visible to subsequent commands in same pipeline
 - [x] `echo` uses session `env.vars` (not stale global store)
-- [ ] Snapshot diff tooling for test assertions
-- [ ] WebSocket-based remote shell client (experimental)
 - [x] `printf` — format string with `%s` `%d` `%f` `%x` `\n` `\t`
 - [x] `read` — read stdin into variables (supports multiple vars, splits on whitespace)
 - [x] `declare` / `local` / `typeset` — variable declaration with `-i` integer, `-r` readonly, `-x` export
@@ -2160,9 +2158,5 @@ MIT — see [LICENSE](./LICENSE).
 - [x] `$?` reflects last command exit code correctly across `&&` / `;` chains
 - [ ] Package stubs that simulate REPL behavior (node, python3)
 - [ ] `/proc/self` and `/proc/<pid>` per-session process entries
-
----
-
-## Changelog
-
-See [CHANGELOG.md](./CHANGELOG.md).
+- [ ] Snapshot diff tooling for test assertions
+- [ ] WebSocket-based remote shell client (experimental)
