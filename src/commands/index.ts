@@ -68,6 +68,13 @@ import { wgetCommand } from "./wget";
 import { whoCommand } from "./who";
 import { whoamiCommand } from "./whoami";
 import { xargsCommand } from "./xargs";
+import { aptCommand, aptCacheCommand } from "./apt";
+import { dpkgCommand, dpkgQueryCommand } from "./dpkg";
+import {
+	whichCommand, typeCommand, manCommand,
+	uptimeCommand, freeCommand, lsbReleaseCommand,
+	aliasCommand, unaliasCommand,
+} from "./extras";
 
 const BASE_COMMANDS: ShellModule[] = [
 	// Navigation
@@ -95,6 +102,12 @@ const BASE_COMMANDS: ShellModule[] = [
 	adduserCommand, passwdCommand, deluserCommand, sudoCommand, suCommand,
 	// Misc
 	neofetchCommand,
+	// Package management
+	aptCommand, aptCacheCommand, dpkgCommand, dpkgQueryCommand,
+	// Shell extras
+	whichCommand, typeCommand, manCommand, aliasCommand, unaliasCommand,
+	// System extras
+	uptimeCommand, freeCommand, lsbReleaseCommand,
 ];
 
 const customCommands: ShellModule[] = [];
@@ -211,18 +224,39 @@ export async function runCommand(
 
 	const shellEnv: ShellEnv = env ?? makeDefaultEnv(authUser, hostname);
 
+	// ── $(cmd) command substitution ──────────────────────────────────────────
+	let expanded = trimmed;
+	if (expanded.includes("$(")) {
+		// Replace each $(…) with the stdout of running that command
+		const subRe = /\$\(([^)]+)\)/g;
+		const matches = [...expanded.matchAll(subRe)];
+		for (const m of matches) {
+			const sub = m[1]?.trim() ?? "";
+			const subResult = await runCommand(sub, authUser, hostname, mode, cwd, shell, undefined, shellEnv);
+			const subOut = (subResult.stdout ?? "").replace(/\n$/, "");
+			expanded = expanded.replace(m[0], subOut);
+		}
+	}
+
+	// ── alias expansion ───────────────────────────────────────────────────────
+	const firstWord = expanded.split(/\s+/)[0] ?? "";
+	const aliasVal = shellEnv.vars[`__alias_${firstWord}`];
+	if (aliasVal) {
+		expanded = expanded.replace(firstWord, aliasVal);
+	}
+
 	// Detect shell operators
 	if (
-		/(?<![|&])[|](?![|])/.test(trimmed) ||
-		trimmed.includes(">") ||
-		trimmed.includes("<") ||
-		trimmed.includes("&&") ||
-		trimmed.includes("||") ||
-		trimmed.includes(";")
+		/(?<![|&])[|](?![|])/.test(expanded) ||
+		expanded.includes(">") ||
+		expanded.includes("<") ||
+		expanded.includes("&&") ||
+		expanded.includes("||") ||
+		expanded.includes(";")
 	) {
 		const { parseScript } = await import("../VirtualShell/shellParser");
 		const { executeStatements } = await import("../SSHMimic/executor");
-		const script = parseScript(trimmed);
+		const script = parseScript(expanded);
 		if (!script.isValid) return { stderr: script.error || "Syntax error", exitCode: 1 };
 		try {
 			return await executeStatements(script.statements, authUser, hostname, mode, cwd, shell, shellEnv);
@@ -231,7 +265,7 @@ export async function runCommand(
 		}
 	}
 
-	const { commandName, args } = parseInput(trimmed);
+	const { commandName, args } = parseInput(expanded);
 	const mod = resolveModule(commandName);
 
 	if (!mod) return { stderr: `${commandName}: command not found`, exitCode: 127 };
@@ -241,7 +275,7 @@ export async function runCommand(
 			authUser,
 			hostname,
 			activeSessions: shell.users.listActiveSessions(),
-			rawInput: trimmed,
+			rawInput: expanded,
 			mode,
 			args,
 			stdin,
