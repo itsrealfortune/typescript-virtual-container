@@ -465,6 +465,13 @@ export class VirtualUserManager extends EventEmitter {
 		);
 	}
 
+	/**
+	 * Returns sorted list of all usernames.
+	 */
+	public listUsers(): string[] {
+		return Array.from(this.users.keys()).sort();
+	}
+
 	private loadFromVfs(): void {
 		this.users.clear();
 

@@ -6,6 +6,8 @@ import type { PerfLogger } from "../utils/perfLogger";
 import { createPerfLogger } from "../utils/perfLogger";
 import VirtualFileSystem, { type VfsOptions } from "../VirtualFileSystem";
 import { VirtualUserManager } from "../VirtualUserManager";
+import { VirtualPackageManager } from "../VirtualPackageManager";
+import { bootstrapLinuxRootfs, refreshProc, syncEtcPasswd } from "../modules/linuxRootfs";
 import { startShell } from "./shell";
 
 export interface ShellProperties {
@@ -40,8 +42,11 @@ function resolveAutoSudoForNewUsers(): boolean {
 class VirtualShell extends EventEmitter {
 	vfs: VirtualFileSystem;
 	users: VirtualUserManager;
+	packageManager: VirtualPackageManager;
 	hostname: string;
 	properties: ShellProperties;
+	/** Unix ms timestamp of shell creation — used for uptime calculation. */
+	_startTime: number;
 	private initialized: Promise<void>;
 
 	/**
@@ -60,17 +65,27 @@ class VirtualShell extends EventEmitter {
 		perf.mark("constructor");
 		this.hostname = hostname;
 		this.properties = properties || defaultShellProperties;
+		this._startTime = Date.now();
 		this.vfs = new VirtualFileSystem(vfsOptions ?? {});
 		this.users = new VirtualUserManager(this.vfs, resolveAutoSudoForNewUsers());
+		this.packageManager = new VirtualPackageManager(this.vfs, this.users);
 
 		// Store references to avoid TypeScript "used before assigned" errors
 		const vfs = this.vfs;
 		const users = this.users;
+		const pm = this.packageManager;
+		const shellProps = this.properties;
+		const shellHostname = this.hostname;
+		const startTime = this._startTime;
 
 		// Initialize both VFS mirror and users, ensuring all is ready before auth
 		this.initialized = (async () => {
 			await vfs.restoreMirror();
 			await users.initialize();
+			// Bootstrap Linux rootfs (idempotent)
+			bootstrapLinuxRootfs(vfs, users, shellHostname, shellProps, startTime);
+			// Load installed packages from dpkg status
+			pm.load();
 			this.emit("initialized");
 		})();
 	}
@@ -146,6 +161,20 @@ class VirtualShell extends EventEmitter {
 			terminalSize,
 			this,
 		);
+	}
+
+	/**
+	 * Refreshes /proc virtual files with current system state.
+	 */
+	public refreshProcFs(): void {
+		refreshProc(this.vfs, this.properties, this.hostname, this._startTime);
+	}
+
+	/**
+	 * Syncs /etc/passwd, /etc/group, /etc/shadow from VirtualUserManager state.
+	 */
+	public syncPasswd(): void {
+		syncEtcPasswd(this.vfs, this.users);
 	}
 
 	/**
