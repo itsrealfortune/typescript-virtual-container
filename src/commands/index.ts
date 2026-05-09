@@ -1,5 +1,7 @@
 /** biome-ignore-all lint/style/useNamingConvention: ENV VARIABLES */
+import { executeStatements } from "../SSHMimic/executor";
 import type { VirtualShell } from "../VirtualShell";
+import { parseScript } from "../VirtualShell/shellParser";
 import type {
 	CommandContext,
 	CommandMode,
@@ -8,6 +10,8 @@ import type {
 	ShellModule,
 } from "../types/commands";
 import { adduserCommand } from "./adduser";
+import { aliasCommand, unaliasCommand } from "./alias";
+import { aptCacheCommand, aptCommand } from "./apt";
 import { awkCommand } from "./awk";
 import { base64Command } from "./base64";
 import { catCommand } from "./cat";
@@ -21,12 +25,14 @@ import { dateCommand } from "./date";
 import { deluserCommand } from "./deluser";
 import { dfCommand } from "./df";
 import { diffCommand } from "./diff";
+import { dpkgCommand, dpkgQueryCommand } from "./dpkg";
 import { duCommand } from "./du";
 import { echoCommand } from "./echo";
 import { envCommand } from "./env";
 import { exitCommand } from "./exit";
 import { exportCommand } from "./export";
 import { findCommand } from "./find";
+import { freeCommand } from "./free";
 import { grepCommand } from "./grep";
 import { groupsCommand } from "./groups";
 import { gunzipCommand, gzipCommand } from "./gzip";
@@ -38,6 +44,8 @@ import { idCommand } from "./id";
 import { killCommand } from "./kill";
 import { lnCommand } from "./ln";
 import { lsCommand } from "./ls";
+import { lsbReleaseCommand } from "./lsb-release";
+import { manCommand } from "./man";
 import { mkdirCommand } from "./mkdir";
 import { mvCommand } from "./mv";
 import { nanoCommand } from "./nano";
@@ -60,21 +68,17 @@ import { teeCommand } from "./tee";
 import { touchCommand } from "./touch";
 import { trCommand } from "./tr";
 import { treeCommand } from "./tree";
+import { typeCommand } from "./type";
 import { unameCommand } from "./uname";
 import { uniqCommand } from "./uniq";
 import { unsetCommand } from "./unset";
+import { uptimeCommand } from "./uptime";
 import { wcCommand } from "./wc";
 import { wgetCommand } from "./wget";
+import { whichCommand } from "./which";
 import { whoCommand } from "./who";
 import { whoamiCommand } from "./whoami";
 import { xargsCommand } from "./xargs";
-import { aptCommand, aptCacheCommand } from "./apt";
-import { dpkgCommand, dpkgQueryCommand } from "./dpkg";
-import {
-	whichCommand, typeCommand, manCommand,
-	uptimeCommand, freeCommand, lsbReleaseCommand,
-	aliasCommand, unaliasCommand,
-} from "./extras";
 
 const BASE_COMMANDS: ShellModule[] = [
 	// Navigation
@@ -104,9 +108,9 @@ const BASE_COMMANDS: ShellModule[] = [
 	neofetchCommand,
 	// Package management
 	aptCommand, aptCacheCommand, dpkgCommand, dpkgQueryCommand,
-	// Shell extras
+	// Shell (extended)
 	whichCommand, typeCommand, manCommand, aliasCommand, unaliasCommand,
-	// System extras
+	// System (extended)
 	uptimeCommand, freeCommand, lsbReleaseCommand,
 ];
 
@@ -254,8 +258,6 @@ export async function runCommand(
 		expanded.includes("||") ||
 		expanded.includes(";")
 	) {
-		const { parseScript } = await import("../VirtualShell/shellParser");
-		const { executeStatements } = await import("../SSHMimic/executor");
 		const script = parseScript(expanded);
 		if (!script.isValid) return { stderr: script.error || "Syntax error", exitCode: 1 };
 		try {
