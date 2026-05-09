@@ -82,7 +82,7 @@
 - **Security Auditing**: Built-in `HoneyPot` utility for comprehensive activity logging, event tracking, statistics collection, and anomaly detection across all components.
 - **Linux rootfs on boot**: Realistic `/etc`, `/proc`, `/sys`, `/dev`, `/usr`, `/var` hierarchy populated at startup — `os-release`, `passwd`, `hosts`, `resolv.conf`, `/proc/meminfo`, `/proc/cpuinfo`, and more.
 - **Virtual package manager**: `apt install`, `apt remove`, `apt search`, `dpkg -l`, `dpkg -s` — 25 packages in the built-in registry (vim, git, nodejs, python3, curl, openssh, gcc…). Writes files into VFS, tracks state in `/var/lib/dpkg/status`.
-- **90+ Built-in Commands**: Full navigation, text processing, archiving, system info, package management, and user management commands — grouped and documented in the interactive `help` system.
+- **83 Built-in Commands**: Full navigation, text processing, archiving, system info, package management, and user management commands — grouped and documented in the interactive `help` system.
 - **`$(cmd)` command substitution**: Nested command execution in any argument position.
 - **Alias support**: `alias`, `unalias` — persisted in session environment.
 - **Full TypeScript Support**: Complete JSDoc coverage, exported types, and first-class async/await for all operations.
@@ -1617,6 +1617,7 @@ All commands are available in SSH shell mode and via `SshClient.exec()`. Type `h
 | `mkdir <path>` | `-p` | Create directory |
 | `mv <src> <dest>` | | Move or rename |
 | `rm <path>` | `-r` | Remove file or directory |
+| `nano <path>` | | Interactive text editor |
 | `touch <path>` | | Create or update file |
 
 ### Text Processing
@@ -1682,20 +1683,29 @@ All commands are available in SSH shell mode and via `SshClient.exec()`. Type `h
 |---------|-------|-------------|
 | `alias [name=value]` | | Define or display aliases |
 | `clear` | | Clear terminal screen (full ANSI reset) |
-| `echo <text>` | `-n` `-e` | Display text; `-n` suppresses newline, `-e` interprets escape sequences (`\n`, `\t`, `\r`, `\\`) |
+| `declare [name=value]` | `-i` `-r` `-x` | Declare variables with attributes; aliases `local`, `typeset` |
+| `echo <text>` | `-n` `-e` | Display text; `-n` suppresses newline, `-e` interprets `\n` `\t` `\r` `\\` |
 | `env` | | Print session environment variables |
-| `exit [code]` | | Exit session |
+| `exit [code]` | | Exit session with optional exit code |
 | `export NAME=VALUE` | | Set shell variable in current session |
-| `help [command]` | | List commands (grouped) or show command details |
-| `set [VAR=val]` | | Display or set shell variables |
-| `sh` | `-c <script>` `[file]` | Execute shell script (supports if/for/while/do/done); `$(cmd)` substitution inside single-quoted args is preserved |
+| `help [command]` | | List commands grouped by category, or show usage for a specific command |
 | `history [n]` | | Display command history (last N entries) |
-| `source <file>` | | Execute file in current shell environment (aliases and exports persist) |
+| `man <command>` | | Display command reference manual |
+| `printf <fmt> [args...]` | | Format and print data (`%s` `%d` `%f` `%x` `\n` `\t`) |
+| `read [-r] <var...>` | `-r` `-p` | Read a line from stdin into variable(s) |
+| `return [n]` | | Return from a shell function with optional exit code |
+| `set [VAR=val]` | | Display or set shell variables |
+| `sh` | `-c <script>` `[file]` | Execute shell script — supports `if`/`for`/`while`/`case`/functions; `$(cmd)` substitution respects single quotes |
+| `shift [n]` | | Shift positional parameters left by n (default 1) |
+| `source <file>` | | Execute file in current shell environment; aliases and exports persist |
 | `. <file>` | | Alias for `source` |
-| `test <expr>` | | Evaluate conditional expression |
-| `[ <expr> ]` | | Alias for `test` — supports `-f`, `-d`, `-e`, `-z`, `-n`, `=`, `!=`, `-eq`, `-lt`, `-gt`, etc. |
+| `test <expr>` | | Evaluate POSIX conditional expression |
+| `[ <expr> ]` | | Alias for `test`; supports `-f` `-d` `-e` `-z` `-n` `-x` `-s` `=` `!=` `-eq` `-lt` `-gt` `-le` `-ge` `!` `-a` `-o` |
+| `trap [action] [signal]` | | Register handler for shell signals; supports `EXIT` |
+| `type <command>` | | Describe how a command would be interpreted (builtin vs PATH) |
 | `unalias <name>` | `-a` | Remove alias definitions |
 | `unset <VAR>` | | Remove shell variable |
+| `which <command>` | | Locate a command in the session PATH |
 
 ### Package Management
 
@@ -1707,15 +1717,6 @@ All commands are available in SSH shell mode and via `SshClient.exec()`. Type `h
 | `dpkg` | `-l` `-s` `-L` `-r` `-P` | Debian package manager low-level tool |
 | `dpkg-query` | `-W` `-l` | Show information about installed packages |
 
-### Shell (extended)
-
-| Command | Flags | Description |
-|---------|-------|-------------|
-| `alias [name=value]` | | Define or display aliases |
-| `man <command>` | | Display command manual page |
-| `type <command>` | | Describe how command is interpreted |
-| `unalias <name>` | `-a` | Remove alias definitions |
-| `which <command>` | | Locate command in PATH |
 
 ### Users & Permissions
 
@@ -1723,7 +1724,6 @@ All commands are available in SSH shell mode and via `SshClient.exec()`. Type `h
 |---------|-------|-------------|
 | `adduser <name> <pass>` | | Create user (root only) |
 | `deluser <name>` | | Delete user (root only) |
-| `nano <path>` | | Interactive text editor |
 | `passwd [user]` | | Change password |
 | `su [user]` | | Switch user |
 | `sudo <cmd>` | `-i` | Run as root |
@@ -2117,6 +2117,15 @@ MIT — see [LICENSE](./LICENSE).
 - [x] `echo` uses session `env.vars` (not stale global store)
 - [ ] Snapshot diff tooling for test assertions
 - [ ] WebSocket-based remote shell client (experimental)
+- [x] `printf` — format string with `%s` `%d` `%f` `%x` `\n` `\t`
+- [x] `read` — read stdin into variables (supports multiple vars, splits on whitespace)
+- [x] `declare` / `local` / `typeset` — variable declaration with `-i` integer, `-r` readonly, `-x` export
+- [x] `shift [n]` — shift positional parameters
+- [x] `trap [action] [signal]` — signal handlers with `EXIT` support
+- [x] `return [n]` — return from shell functions
+- [x] `exit [code]` — optional exit code
+- [x] `help` rewrite — Package Management category, aliases shown inline, `help <cmd>` shows category
+- [x] Category corrections — `neofetch`→system, `nano`→files, `apt`/`dpkg`→package
 - [ ] Package stubs that simulate REPL behavior (node, python3)
 - [ ] `/proc/self` and `/proc/<pid>` per-session process entries
 
