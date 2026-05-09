@@ -1,5 +1,6 @@
 import type { ShellModule } from "../types/commands";
 import { parseArgs } from "./command-helpers";
+import { expandSync } from "../utils/expand";
 
 /**
  * Expand escape sequences for `echo -e`.
@@ -30,12 +31,10 @@ export const echoCommand: ShellModule = {
 
 		const rawText = positionals.length > 0 ? positionals.join(" ") : (stdin ?? "");
 
-		// Expand $VAR references using the session env (not the legacy global store)
-		const varsExpanded = rawText.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, name: string) =>
-			env?.vars[name] ?? "",
-		);
-
-		const text = escapes ? expandEscapes(varsExpanded) : varsExpanded;
+		// Full expansion: $? ${#VAR} $((expr)) ~ ${VAR:-def} $VAR etc.
+		// $(cmd) is already resolved upstream by runCommand before echo.run is called.
+		const expanded = expandSync(rawText, env?.vars ?? {}, env?.lastExitCode ?? 0);
+		const text = escapes ? expandEscapes(expanded) : expanded;
 
 		return {
 			stdout: noNewline ? text : `${text}\n`,

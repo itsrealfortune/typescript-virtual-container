@@ -2,37 +2,20 @@ import type { CommandContext, CommandResult, ShellModule } from "../types/comman
 import { ifFlag } from "./command-helpers";
 import { resolvePath } from "./helpers";
 import { runCommand } from "./index";
+import { expandAsync } from "../utils/expand";
 
 /** Alias for clarity inside sh.ts */
 type ShellContext = CommandContext;
 
-/** Expand $VAR and ${VAR:-default} in a line using the current env (sync, no $(cmd)) */
-function expandVarsSync(line: string, env: Record<string, string>, lastExit: number): string {
-	return line
-		.replace(/\$\?/g, String(lastExit))
-		.replace(/\$\{([^}:]+):-([^}]*)\}/g, (_, n, d) => env[n] ?? d)
-		.replace(/\$\{([^}]+)\}/g, (_, n) => env[n] ?? "")
-		.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, n) => env[n] ?? "")
-		.replace(/^~(\/|$)/, `${env.HOME ?? "/home/user"}$1`);
-}
-
 /**
- * Expand $VAR, ${VAR:-default}, and $(cmd) substitution asynchronously.
- * Used before executing each line in sh script context.
+ * Expand all shell forms including $(cmd) substitution.
+ * Delegates to centralised expandAsync (single-quote-aware, depth-tracked).
  */
 async function expandVars(line: string, env: Record<string, string>, lastExit: number, ctx: ShellContext): Promise<string> {
-	// $(cmd) substitution first
-	if (line.includes("$(")) {
-		const subRe = /\$\(([^)]+)\)/g;
-		const matches = [...line.matchAll(subRe)];
-		for (const m of matches) {
-			const sub = m[1]?.trim() ?? "";
-			const subResult = await runCommand(sub, ctx.authUser, ctx.hostname, ctx.mode, ctx.cwd, ctx.shell, undefined, ctx.env);
-			const subOut = (subResult.stdout ?? "").replace(/\n$/, "");
-			line = line.replace(m[0], subOut);
-		}
-	}
-	return expandVarsSync(line, env, lastExit);
+	return expandAsync(line, env, lastExit, (sub) =>
+		runCommand(sub, ctx.authUser, ctx.hostname, ctx.mode, ctx.cwd, ctx.shell, undefined, ctx.env)
+			.then((r) => r.stdout ?? ""),
+	);
 }
 
 type Block =
@@ -149,6 +132,22 @@ async function runBlocks(blocks: Block[], ctx: CommandContext): Promise<CommandR
 	for (const block of blocks) {
 		if (block.type === "cmd") {
 			const expanded = await expandVars(block.line, ctx.env.vars, ctx.env.lastExitCode, ctx);
+
+			// Bare VAR=val assignment(s) — handle before dispatching to runCommand
+			const assignRe = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)/;
+			const tokens = expanded.trim().split(/\s+/);
+			if (tokens.length > 0 && assignRe.test(tokens[0]!)) {
+				const allAssign = tokens.every((t) => assignRe.test(t));
+				if (allAssign) {
+					for (const tok of tokens) {
+						const m = tok.match(assignRe)!;
+						ctx.env.vars[m[1]!] = m[2]!;
+					}
+					ctx.env.lastExitCode = 0;
+					continue;
+				}
+			}
+
 			const r = await runCommand(expanded, ctx.authUser, ctx.hostname, ctx.mode, ctx.cwd, ctx.shell, undefined, ctx.env);
 			ctx.env.lastExitCode = r.exitCode ?? 0;
 			if (r.stdout) output += `${r.stdout}\n`;
