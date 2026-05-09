@@ -46,7 +46,7 @@ class VirtualShell extends EventEmitter {
 	hostname: string;
 	properties: ShellProperties;
 	/** Unix ms timestamp of shell creation — used for uptime calculation. */
-	_startTime: number;
+	startTime: number;
 	private initialized: Promise<void>;
 
 	/**
@@ -65,7 +65,7 @@ class VirtualShell extends EventEmitter {
 		perf.mark("constructor");
 		this.hostname = hostname;
 		this.properties = properties || defaultShellProperties;
-		this._startTime = Date.now();
+		this.startTime = Date.now();
 		this.vfs = new VirtualFileSystem(vfsOptions ?? {});
 		this.users = new VirtualUserManager(this.vfs, resolveAutoSudoForNewUsers());
 		this.packageManager = new VirtualPackageManager(this.vfs, this.users);
@@ -76,7 +76,7 @@ class VirtualShell extends EventEmitter {
 		const pm = this.packageManager;
 		const shellProps = this.properties;
 		const shellHostname = this.hostname;
-		const startTime = this._startTime;
+		const startTime = this.startTime;
 
 		// Initialize both VFS mirror and users, ensuring all is ready before auth
 		this.initialized = (async () => {
@@ -167,7 +167,7 @@ class VirtualShell extends EventEmitter {
 	 * Refreshes /proc virtual files with current system state.
 	 */
 	public refreshProcFs(): void {
-		refreshProc(this.vfs, this.properties, this.hostname, this._startTime);
+		refreshProc(this.vfs, this.properties, this.hostname, this.startTime);
 	}
 
 	/**
