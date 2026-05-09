@@ -80,6 +80,23 @@ function collectPositionals(
 	return positionals;
 }
 
+/**
+ * Returns `true` when any of the given flags appear in `args`.
+ *
+ * Matches both standalone tokens (`-s`, `--silent`) and inline forms
+ * (`--output=file`). Useful for simple boolean flag checks inside command
+ * `run` handlers.
+ *
+ * @param args  Tokenized argument array from `CommandContext.args`.
+ * @param flags Single flag string or array of equivalent flag strings.
+ * @returns `true` if at least one flag is present, otherwise `false`.
+ *
+ * @example
+ * ```ts
+ * ifFlag(args, "-r")              // single flag
+ * ifFlag(args, ["-r", "--recursive"]) // aliases
+ * ```
+ */
 export function ifFlag(args: string[], flags: string | string[]): boolean {
 	const allFlags = toFlagList(flags);
 
@@ -94,6 +111,25 @@ export function ifFlag(args: string[], flags: string | string[]): boolean {
 	return false;
 }
 
+/**
+ * Returns the value associated with a flag, or `true` if the flag is present
+ * but has no associated value, or `undefined` if the flag is absent.
+ *
+ * Handles three forms:
+ * - `--output file`   → returns `"file"` (next token)
+ * - `--output=file`   → returns `"file"` (inline `=` form)
+ * - `--verbose`       → returns `true` (flag with no value)
+ *
+ * @param args  Tokenized argument array from `CommandContext.args`.
+ * @param flags Single flag string or array of equivalent flag strings.
+ * @returns The flag value string, `true` when valueless, or `undefined`.
+ *
+ * @example
+ * ```ts
+ * const output = getFlag(args, ["-o", "--output"]);
+ * if (typeof output === "string") { /* use path *\/ }
+ * ```
+ */
 export function getFlag(
 	args: string[],
 	flags: string | string[],
@@ -125,6 +161,26 @@ export function getFlag(
 	return undefined;
 }
 
+/**
+ * Returns the positional argument at the given zero-based index, skipping
+ * known flags and their values.
+ *
+ * Flags declared in `options.flags` are treated as boolean and skipped.
+ * Flags declared in `options.flagsWithValue` consume the next token too.
+ * Tokens after `--` are always treated as positionals.
+ *
+ * @param args    Tokenized argument array from `CommandContext.args`.
+ * @param index   Zero-based positional index to retrieve.
+ * @param options Optional flag declarations to skip during positional collection.
+ * @returns The positional value, or `undefined` if the index is out of range.
+ *
+ * @example
+ * ```ts
+ * // args = ["-r", "src", "dest"]
+ * getArg(args, 0, { flags: ["-r"] }) // "src"
+ * getArg(args, 1, { flags: ["-r"] }) // "dest"
+ * ```
+ */
 export function getArg(
 	args: string[],
 	index: number,
@@ -135,10 +191,28 @@ export function getArg(
 }
 
 /**
- * Parse arguments into flags, flags with values, and positionals.
- * @param args - Array of arguments to parse.
- * @param options - Parsing options for flags and flags with values.
- * @returns Parsed arguments as { flags, flagsWithValues, positionals }.
+ * Parses an argument array into structured flags, flag values, and positionals.
+ *
+ * - `options.flags` — boolean flags (e.g. `["-r", "--recursive"]`); collected
+ *   into a `Set<string>` and not treated as positionals.
+ * - `options.flagsWithValue` — flags that consume the next token or an inline
+ *   `=value`; collected into a `Map<string, string>`.
+ * - All remaining tokens are positionals.
+ * - Tokens after `--` are always positionals, regardless of `-` prefix.
+ *
+ * @param args    Tokenized argument array from `CommandContext.args`.
+ * @param options Flag declaration lists.
+ * @returns `{ flags, flagsWithValues, positionals }`.
+ *
+ * @example
+ * ```ts
+ * const { flags, flagsWithValues, positionals } = parseArgs(args, {
+ *   flags:          ["-r", "--recursive"],
+ *   flagsWithValue: ["-o", "--output"],
+ * });
+ * const recursive = flags.has("-r");
+ * const output    = flagsWithValues.get("-o");
+ * ```
  */
 export function parseArgs(
 	args: string[],

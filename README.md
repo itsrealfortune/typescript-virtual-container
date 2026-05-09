@@ -409,11 +409,13 @@ new VirtualShell(
 
 ```typescript
 interface ShellProperties {
-  kernel: string;  // e.g. "1.0.0+itsrealfortune+1-amd64"
-  os: string;      // e.g. "Fortune GNU/Linux x64"
-  arch: string;    // e.g. "x86_64"
+  kernel: string;  // Kernel version string — shown by uname, neofetch, /proc/version
+  os: string;      // Full OS description — shown by neofetch, /etc/os-release, lsb_release
+  arch: string;    // CPU architecture label — shown by uname -m, neofetch
 }
 ```
+
+Fields map directly to the values reported by `uname -a`, `neofetch`, `lsb_release`, `/etc/os-release`, and `/proc/version` inside the shell. Changing them after construction has no effect — pass them to the constructor.
 
 **Example:**
 
@@ -434,12 +436,25 @@ const shell = new VirtualShell("typescript-vm", {
 |--------|-------------|
 | `ensureInitialized(): Promise<void>` | Await this before using the shell programmatically. |
 | `addCommand(name, params, callback)` | Register a custom shell command. |
-| `executeCommand(rawInput, authUser, cwd)` | Run a raw command string. |
-| `startInteractiveSession(stream, authUser, sessionId, remoteAddress, terminalSize)` | Start an SSH interactive session. |
-| `writeFileAsUser(authUser, path, content)` | Write a file with quota enforcement. |
+| `executeCommand(rawInput, authUser, cwd)` | Run a raw command string (supports `&&`, `\|`, `$(cmd)`, aliases). |
+| `startInteractiveSession(stream, authUser, sessionId, remoteAddress, terminalSize)` | Attach an interactive PTY session to this shell. |
+| `writeFileAsUser(authUser, path, content)` | Write a file on behalf of a user with quota enforcement. |
+| `refreshProcFs(): void` | Refresh `/proc/uptime`, `/proc/meminfo`, `/proc/cpuinfo`, etc. from live host data. |
+| `syncPasswd(): void` | Sync `/etc/passwd`, `/etc/group`, `/etc/shadow` from `VirtualUserManager` state. |
 | `getVfs(): VirtualFileSystem \| null` | Access the VFS instance. |
 | `getUsers(): VirtualUserManager \| null` | Access the user manager. |
 | `getHostname(): string` | Returns the configured hostname. |
+
+#### Public fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `vfs` | `VirtualFileSystem` | Backing virtual filesystem — use for direct path operations. |
+| `users` | `VirtualUserManager` | Virtual user database — auth, quotas, and session tracking. |
+| `packageManager` | `VirtualPackageManager` | APT/dpkg package manager backed by the built-in registry. |
+| `hostname` | `string` | Hostname shown in the shell prompt and SSH ident string. |
+| `properties` | `ShellProperties` | Distro identity strings surfaced by `uname`, `neofetch`, etc. |
+| `startTime` | `number` | Unix ms timestamp of shell creation — used by `uptime` and `/proc/uptime`. |
 
 **Custom command example:**
 
@@ -692,25 +707,27 @@ new VirtualUserManager(
 |--------|-------------|
 | `initialize(): Promise<void>` | Load users/sudoers from VFS, ensure root exists. Call once on startup. |
 | `verifyPassword(username, password): boolean` | Check plaintext password against stored hash. |
-| `hasPassword(username): boolean` | Returns true if a password is set for the user. |
-| `hashPassword(password): string` | Hash a password using the configured algorithm. |
+| `hasPassword(username): boolean` | Returns `true` if a non-empty password is set for the user. |
+| `hashPassword(password): string` | Hash a password using scrypt (or SHA-256 with `SSH_MIMIC_FAST_PASSWORD_HASH=1`). |
+| `getPasswordHash(username): string \| null` | Returns the raw stored hash for a user, or `null` if not found. |
 | `addUser(username, password): Promise<void>` | Create user with home directory. |
-| `deleteUser(username): Promise<void>` | Delete user. Cannot delete root. |
-| `setPassword(username, password): Promise<void>` | Update password for an existing user. |
-| `isSudoer(username): boolean` | Check if user has sudo privileges. |
-| `addSudoer(username): Promise<void>` | Grant sudo privileges. |
-| `removeSudoer(username): Promise<void>` | Revoke sudo privileges. Cannot remove root. |
+| `deleteUser(username): Promise<void>` | Delete user. Throws when user is `root` or does not exist. |
+| `setPassword(username, password): Promise<void>` | Update password for an existing user. Throws when user does not exist. |
+| `isSudoer(username): boolean` | Returns `true` when the user has sudo privileges. |
+| `addSudoer(username): Promise<void>` | Grant sudo privileges. Throws when user does not exist. |
+| `removeSudoer(username): Promise<void>` | Revoke sudo privileges. Throws when username is `root`. |
 | `setQuotaBytes(username, maxBytes): Promise<void>` | Set per-user write quota (bytes under `/home/<user>`). |
-| `clearQuota(username): Promise<void>` | Remove quota limit. |
-| `getQuotaBytes(username): number \| null` | Returns quota in bytes, or null if unlimited. |
+| `clearQuota(username): Promise<void>` | Remove quota limit for a user. |
+| `getQuotaBytes(username): number \| null` | Returns quota in bytes, or `null` if unlimited. |
 | `getUsageBytes(username): number` | Returns current usage in bytes under `/home/<user>`. |
 | `assertWriteWithinQuota(username, path, content)` | Throws if the write would exceed the user's quota. |
+| `listUsers(): string[]` | Returns a sorted list of all registered usernames. |
 | `addAuthorizedKey(username, algo, data)` | Register an SSH public key for the user. |
 | `getAuthorizedKeys(username)` | Returns the list of authorized keys for a user. |
 | `removeAuthorizedKeys(username)` | Revoke all authorized keys for a user. |
-| `registerSession(username, remoteAddress): VirtualActiveSession` | Start session tracking, returns session descriptor. |
-| `unregisterSession(sessionId): void` | End session. Safe to call with null. |
-| `updateSession(sessionId, username, remoteAddress): void` | Update session metadata (used by `su`/`sudo`). |
+| `registerSession(username, remoteAddress): VirtualActiveSession` | Register an active session and allocate a virtual TTY. |
+| `unregisterSession(sessionId): void` | Remove a session record on disconnect. Safe to call with `null`. |
+| `updateSession(sessionId, username, remoteAddress): void` | Update session metadata after `su`/`sudo` identity change. |
 | `listActiveSessions(): VirtualActiveSession[]` | Returns all active sessions sorted by start time. |
 
 #### Events
@@ -1037,6 +1054,49 @@ interface VfsSnapshot {
   root: VfsSnapshotDirectoryNode;
 }
 // File nodes store content as base64 in contentBase64.
+```
+
+---
+
+### Command Helpers
+
+Three utility functions are exported from `typescript-virtual-container` to assist with argument parsing inside custom command handlers.
+
+#### `ifFlag(args, flags): boolean`
+
+Returns `true` when any of the given flags appear in the argument array. Matches both standalone tokens (`-s`, `--silent`) and inline forms (`--output=file`).
+
+```typescript
+import { ifFlag } from "typescript-virtual-container";
+
+const recursive = ifFlag(args, ["-r", "--recursive"]);
+const silent    = ifFlag(args, "-s");
+```
+
+#### `getFlag(args, flags): string | true | undefined`
+
+Returns the value of a flag, `true` if the flag has no value, or `undefined` if absent.
+
+```typescript
+import { getFlag } from "typescript-virtual-container";
+
+const output = getFlag(args, ["-o", "--output"]);
+// args = ["--output", "file.txt"] → "file.txt"
+// args = ["--output=file.txt"]    → "file.txt"
+// args = ["--verbose"]            → true  (when "verbose" is in flags list)
+// args = []                       → undefined
+```
+
+#### `getArg(args, index, options?): string | undefined`
+
+Returns the positional argument at a given zero-based index, skipping known flags and their values.
+
+```typescript
+import { getArg } from "typescript-virtual-container";
+
+// args = ["-r", "src", "dest"]
+const src  = getArg(args, 0, { flags: ["-r"] }); // "src"
+const dest = getArg(args, 1, { flags: ["-r"] }); // "dest"
 ```
 
 ---

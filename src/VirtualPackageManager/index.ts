@@ -1,58 +1,80 @@
-/**
- * VirtualPackageManager.ts
- *
- * A pure-TypeScript simulated APT/dpkg package manager.
- * Packages are registered in a virtual registry with metadata,
- * optional file lists, and optional shell command registrations.
- *
- * `apt-get install <pkg>` → populates VFS + dpkg status + registers commands.
- * `apt-get remove <pkg>`  → undoes the above.
- * `dpkg -l`               → lists installed packages.
- */
+
 
 import type VirtualFileSystem from "../VirtualFileSystem";
 import type { VirtualUserManager } from "../VirtualUserManager";
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
+/**
+ * A single file entry written into the VFS when a package is installed.
+ */
 export interface PackageFile {
+	/** Absolute VFS destination path (e.g. `"/usr/bin/vim"`). */
 	path: string;
+	/** Text content to write. */
 	content: string;
+	/** POSIX mode bits (default `0o644`; use `0o755` for executables). */
 	mode?: number;
 }
 
+/**
+ * Metadata and behaviour definition for a single package in the registry.
+ *
+ * Used both for the built-in registry entries and for consumer-supplied custom
+ * packages. `files` are written to the VFS on `install()`, and `onInstall` /
+ * `onRemove` hooks allow arbitrary VFS mutations.
+ */
 export interface PackageDefinition {
-	/** Package name (lowercase, no spaces) */
+	/** Package name — lowercase, no spaces (e.g. `"vim"`, `"build-essential"`). */
 	name: string;
+	/** Debian-style version string (e.g. `"2:9.0.1378-2"`). */
 	version: string;
+	/** CPU architecture label (default `"amd64"`). */
 	architecture?: string;
+	/** Maintainer name and email shown in `apt show` output. */
 	maintainer?: string;
+	/** Full package description. */
 	description: string;
-	/** Short one-line description */
+	/** Short one-line summary shown in `apt search` results. */
 	shortDesc?: string;
-	/** Installed size in KB */
+	/** Installed disk usage in kilobytes (informational). */
 	installedSizeKb?: number;
-	/** Other packages this one depends on */
+	/** Other package names that must be installed first (resolved recursively). */
 	depends?: string[];
-	/** Section, e.g. "utils", "net", "editors" */
+	/** Repository section (e.g. `"utils"`, `"net"`, `"editors"`, `"devel"`). */
 	section?: string;
-	/** Files to write into the VFS on install */
+	/** Files to write into the VFS during installation. */
 	files?: PackageFile[];
-	/** Called after install — register shell commands, create dirs, etc. */
+	/**
+	 * Hook called after all files are written.
+	 * Use to create directories, write config, or register shell commands.
+	 */
 	onInstall?: (vfs: VirtualFileSystem, users: VirtualUserManager) => void;
-	/** Called on removal */
+	/** Hook called before VFS files are removed during uninstall. */
 	onRemove?: (vfs: VirtualFileSystem) => void;
 }
 
+/**
+ * Runtime record of an installed package, persisted to `/var/lib/dpkg/status`.
+ */
 export interface InstalledPackage {
+	/** Package name. */
 	name: string;
+	/** Installed version string. */
 	version: string;
+	/** CPU architecture. */
 	architecture: string;
+	/** Maintainer display string. */
 	maintainer: string;
+	/** Full description. */
 	description: string;
+	/** Repository section. */
 	section: string;
+	/** Installed disk usage in kilobytes. */
 	installedSizeKb: number;
-	installedAt: string; // ISO-8601
+	/** ISO-8601 timestamp of when the package was installed. */
+	installedAt: string;
+	/** Absolute VFS paths written by this package (used by `dpkg -L`). */
 	files: string[];
 }
 
@@ -385,20 +407,44 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 	},
 ];
 
-// ─── VirtualPackageManager class ──────────────────────────────────────────────
-
+/**
+ * Pure-TypeScript APT/dpkg package manager backed by a built-in registry.
+ *
+ * Accessed via `shell.packageManager` — not constructed directly.
+ *
+ * `install()` resolves dependencies recursively, writes declared files to the
+ * VFS, runs `onInstall` hooks, and persists state to `/var/lib/dpkg/status`.
+ * `remove()` reverses the process. All state survives VFS snapshot round-trips.
+ *
+ * @example
+ * ```ts
+ * const pm = shell.packageManager;
+ * pm.install(["vim", "git"]);
+ * console.log(pm.isInstalled("vim")); // true
+ * console.log(pm.installedCount());   // 2
+ * ```
+ */
 export class VirtualPackageManager {
 	private readonly installed = new Map<string, InstalledPackage>();
 	private readonly registryPath = "/var/lib/dpkg/status";
 	private readonly logPath = "/var/log/dpkg.log";
 	private readonly aptLogPath = "/var/log/apt/history.log";
 
+	/**
+	 * @param vfs   Backing virtual filesystem for file I/O and dpkg status persistence.
+	 * @param users User manager reference passed to `onInstall` hooks.
+	 */
 	constructor(
 		private readonly vfs: VirtualFileSystem,
 		private readonly users: VirtualUserManager,
 	) {}
 
-	/** Load installed packages from VFS dpkg status (if any). */
+	/**
+	 * Loads installed package state from `/var/lib/dpkg/status` in the VFS.
+	 *
+	 * Called automatically by `VirtualShell` after `bootstrapLinuxRootfs`.
+	 * Safe to call again to reload state after a snapshot restore.
+	 */
 	public load(): void {
 		if (!this.vfs.exists(this.registryPath)) return;
 		const status = this.vfs.readFile(this.registryPath);
@@ -481,38 +527,69 @@ export class VirtualPackageManager {
 		this.vfs.writeFile(this.aptLogPath, existing + entry);
 	}
 
-	/** Find a package in the registry by name (case-insensitive). */
+	/**
+	 * Looks up a package definition in the built-in registry by name.
+	 *
+	 * @param name Package name (case-insensitive).
+	 * @returns The matching `PackageDefinition`, or `undefined` if not found.
+	 */
 	public findInRegistry(name: string): PackageDefinition | undefined {
 		return PACKAGE_REGISTRY.find(
 			(p) => p.name.toLowerCase() === name.toLowerCase(),
 		);
 	}
 
-	/** List all available packages in the registry. */
+	/**
+	 * Returns all packages in the built-in registry, sorted alphabetically.
+	 *
+	 * @returns Array of `PackageDefinition` entries.
+	 */
 	public listAvailable(): PackageDefinition[] {
 		return [...PACKAGE_REGISTRY].sort((a, b) => a.name.localeCompare(b.name));
 	}
 
-	/** List all installed packages. */
+	/**
+	 * Returns all currently installed packages, sorted alphabetically.
+	 *
+	 * @returns Array of `InstalledPackage` records.
+	 */
 	public listInstalled(): InstalledPackage[] {
 		return [...this.installed.values()].sort((a, b) =>
 			a.name.localeCompare(b.name),
 		);
 	}
 
-	/** Check if a package is installed. */
+	/**
+	 * Returns `true` when the given package is currently installed.
+	 *
+	 * @param name Package name (case-insensitive).
+	 */
 	public isInstalled(name: string): boolean {
 		return this.installed.has(name.toLowerCase());
 	}
 
-	/** Count of installed packages (for neofetch). */
+	/**
+	 * Returns the total number of installed packages.
+	 *
+	 * Used by `neofetch` to populate the `Packages:` field.
+	 */
 	public installedCount(): number {
 		return this.installed.size;
 	}
 
 	/**
-	 * Install one or more packages.
-	 * Returns { output, exitCode }.
+	 * Installs one or more packages from the registry.
+	 *
+	 * Dependencies listed in `PackageDefinition.depends` are resolved and
+	 * installed automatically. Already-installed packages are skipped. Files
+	 * declared in `PackageDefinition.files` are written to the VFS and
+	 * `onInstall` hooks are called in dependency order.
+	 *
+	 * @param names   Package names to install.
+	 * @param opts    Installation options.
+	 * @param opts.quiet  Suppress progress output lines when `true`.
+	 * @returns Terminal-style `output` string and an APT-compatible `exitCode`
+	 *          (`0` on success, `100` when a package is not found).
 	 */
 	public install(
 		names: string[],
@@ -626,7 +703,17 @@ export class VirtualPackageManager {
 	}
 
 	/**
-	 * Remove one or more packages.
+	 * Removes one or more installed packages.
+	 *
+	 * Package files are deleted from the VFS. Config files (paths under
+	 * `/etc/` or ending in `.conf`) are preserved unless `opts.purge` is set.
+	 * The `onRemove` hook is called for each package.
+	 *
+	 * @param names       Package names to remove.
+	 * @param opts        Removal options.
+	 * @param opts.purge  Also delete configuration files when `true`.
+	 * @param opts.quiet  Suppress progress output lines when `true`.
+	 * @returns Terminal-style `output` string and exit code (`0` on success).
 	 */
 	public remove(
 		names: string[],
@@ -689,7 +776,13 @@ export class VirtualPackageManager {
 		return { output: lines.join("\n"), exitCode: 0 };
 	}
 
-	/** apt-cache search <term> */
+	/**
+	 * Searches the registry for packages whose name or description contains
+	 * the given term (case-insensitive). Equivalent to `apt-cache search`.
+	 *
+	 * @param term Search string.
+	 * @returns Matching `PackageDefinition` entries sorted alphabetically.
+	 */
 	public search(term: string): PackageDefinition[] {
 		const t = term.toLowerCase();
 		return PACKAGE_REGISTRY.filter(
@@ -700,7 +793,13 @@ export class VirtualPackageManager {
 		).sort((a, b) => a.name.localeCompare(b.name));
 	}
 
-	/** apt-cache show <pkg> */
+	/**
+	 * Returns a dpkg-style metadata block for a package, including its
+	 * install status. Equivalent to `apt-cache show` / `dpkg -s`.
+	 *
+	 * @param name Package name.
+	 * @returns Multi-line metadata string, or `null` if not in the registry.
+	 */
 	public show(name: string): string | null {
 		const def = this.findInRegistry(name);
 		if (!def) return null;
