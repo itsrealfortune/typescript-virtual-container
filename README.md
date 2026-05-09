@@ -1,6 +1,26 @@
 # `typescript-virtual-container`
 
-> Pure in-memory SSH/SFTP server with a virtual filesystem, a real shell interpreter, and a typed programmatic API for testing, automation, honeypots, and interactive shell scripting in TypeScript/JavaScript.
+> Pure in-memory SSH/SFTP server with a realistic Linux rootfs, a virtual package manager, a real shell interpreter, and a typed programmatic API for testing, automation, honeypots, and interactive shell scripting in TypeScript/JavaScript.
+
+---
+
+> **Release notes — what changed in this drop**
+>
+> **Linux rootfs** — full `/etc`, `/proc`, `/sys`, `/dev`, `/usr`, `/var` hierarchy bootstrapped at init. `neofetch` now shows real uptime and package count. `/proc/meminfo`, `/proc/cpuinfo`, `/proc/version` populated from live system data. `/etc/passwd`, `/etc/group`, `/etc/shadow` synced from `VirtualUserManager`.
+>
+> **Virtual package manager** — `apt install vim git nodejs python3` works. 25 packages in the built-in registry. Dependency resolution, file installation into VFS, `/var/lib/dpkg/status` persistence, `dpkg -l|-s|-L`, `apt-cache search|show|policy`. `neofetch` reflects installed count.
+>
+> **`curl` / `wget` — pure `fetch()`** — host binary no longer spawned. Full flag support (`-o`, `-X`, `-d`, `-H`, `-s`, `-I`, `-L`, `-v` for curl; `-O`, `-P`, `-q` for wget). Zero host filesystem access.
+>
+> **New commands** — `which`, `type`, `man` (with built-in pages), `uptime`, `free`, `lsb_release`, `alias`, `unalias`.
+>
+> **`$(cmd)` command substitution** — `echo $(whoami)`, `mkdir /tmp/$(date +%s)`, nested subs, all work.
+>
+> **Alias expansion** — `alias ll='ls -la'` then `ll /etc` resolves transparently in the dispatcher.
+>
+> *— written by Claude because explaining every change manually is a waste of everyone's time*
+
+---
 
 [![npm version](https://badge.fury.io/js/typescript-virtual-container.svg)](https://www.npmjs.com/package/typescript-virtual-container)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -23,10 +43,13 @@
   - [VirtualFileSystem](#virtualfilesystem)
   - [VFSB Binary Format](#vfsb-binary-format)
   - [VirtualUserManager](#virtualusermanager)
+  - [VirtualPackageManager](#virtualpackagemanager)
   - [HoneyPot](#honeypot)
   - [SshClient](#sshclient-programmatic-api)
   - [Key Types](#key-types)
 - [Usage Examples](#usage-examples)
+- [Linux Rootfs](#linux-rootfs)
+- [Package Manager (apt/dpkg)](#package-manager-aptdpkg)
 - [Built-in Commands](#built-in-commands)
 - [Shell Scripting](#shell-scripting)
 - [Configuration](#configuration)
@@ -57,7 +80,11 @@
 - **`.bashrc` support**: Loaded automatically at interactive session start from `/home/<user>/.bashrc`.
 - **Event-Driven Architecture**: All core classes extend `EventEmitter` for lifecycle and operation tracking.
 - **Security Auditing**: Built-in `HoneyPot` utility for comprehensive activity logging, event tracking, statistics collection, and anomaly detection across all components.
-- **60+ Built-in Commands**: Full navigation, text processing, archiving, system info, and user management commands — grouped and documented in the interactive `help` system.
+- **Linux rootfs on boot**: Realistic `/etc`, `/proc`, `/sys`, `/dev`, `/usr`, `/var` hierarchy populated at startup — `os-release`, `passwd`, `hosts`, `resolv.conf`, `/proc/meminfo`, `/proc/cpuinfo`, and more.
+- **Virtual package manager**: `apt install`, `apt remove`, `apt search`, `dpkg -l`, `dpkg -s` — 25 packages in the built-in registry (vim, git, nodejs, python3, curl, openssh, gcc…). Writes files into VFS, tracks state in `/var/lib/dpkg/status`.
+- **80+ Built-in Commands**: Full navigation, text processing, archiving, system info, package management, and user management commands — grouped and documented in the interactive `help` system.
+- **`$(cmd)` command substitution**: Nested command execution in any argument position.
+- **Alias support**: `alias`, `unalias` — persisted in session environment.
 - **Full TypeScript Support**: Complete JSDoc coverage, exported types, and first-class async/await for all operations.
 
 ---
@@ -74,10 +101,10 @@
 ### What This Is Not
 
 - Not a fully isolated container runtime.
-- Not a security sandbox — the VFS does not sandbox host filesystem access by spawned child processes (e.g. `wget`, `curl` delegate to the host binary).
 - Not a kernel-level isolation boundary (unlike Docker/VM-based isolation).
+- Package stubs (e.g. `node`, `python3`) write files into the VFS and are visible to `which`/`dpkg -L`, but do not execute real binaries — the shell is pure TypeScript with no `execvp`.
 
-This project emulates shell behavior for developer workflows. It is designed for realism and productivity, not hard security isolation.
+This project emulates shell behavior for developer workflows. `curl` and `wget` use the native `fetch()` API (no host binary). All other network and execution primitives are simulated. It is designed for realism and deployability, not kernel-level security isolation.
 
 ---
 
@@ -712,6 +739,54 @@ users.on("session:register", ({ sessionId, username, remoteAddress }) => {
 
 ---
 
+
+### `VirtualPackageManager`
+
+Simulates APT/dpkg package management backed by a built-in registry. Accessed via `shell.packageManager`.
+
+#### Constructor
+
+Instantiated automatically by `VirtualShell`. Not constructed directly.
+
+#### Methods
+
+| Method | Description |
+|--------|-------------|
+| `load()` | Load installed packages from `/var/lib/dpkg/status` (called on shell init) |
+| `install(names, opts?)` | Install packages (resolves deps, writes files to VFS). Returns `{ output, exitCode }` |
+| `remove(names, opts?)` | Remove packages. `opts.purge` also removes config files |
+| `search(term)` | Search available packages by name or description |
+| `show(name)` | Show dpkg-style metadata block for a package |
+| `listInstalled()` | List all installed packages as `InstalledPackage[]` |
+| `listAvailable()` | List all packages in the registry |
+| `isInstalled(name)` | Returns `true` if package is installed |
+| `installedCount()` | Count of installed packages (used by `neofetch`) |
+| `findInRegistry(name)` | Look up a `PackageDefinition` by name |
+
+#### Types
+
+```ts
+interface PackageDefinition {
+  name: string;
+  version: string;
+  description: string;
+  files?: PackageFile[];          // written to VFS on install
+  depends?: string[];             // resolved recursively
+  onInstall?: (vfs, users) => void;
+  onRemove?: (vfs) => void;
+}
+
+interface InstalledPackage {
+  name: string;
+  version: string;
+  architecture: string;
+  installedAt: string;            // ISO-8601
+  files: string[];                // paths written to VFS
+}
+```
+
+---
+
 ### `HoneyPot`
 
 Comprehensive security auditing and event tracking utility. Attaches listeners to all core components to log activity, track statistics, and detect anomalies.
@@ -1318,6 +1393,145 @@ const [r1, r2] = await Promise.all([
 
 ---
 
+## Linux Rootfs
+
+On every `VirtualShell` init, a realistic Linux directory hierarchy is bootstrapped into the VFS. All paths are created idempotently — FS-mode snapshots survive restarts without duplication.
+
+### Directory layout
+
+```
+/
+├── bin -> /usr/bin          (symlink, Debian-style)
+├── dev/                     null, zero, random, urandom, pts/, shm/
+├── etc/
+│   ├── apt/sources.list     Fortune package sources
+│   ├── debian_version
+│   ├── group                synced from VirtualUserManager
+│   ├── hostname
+│   ├── hosts                127.0.0.1 localhost + VM hostname
+│   ├── motd
+│   ├── os-release           NAME="Fortune GNU/Linux" + ShellProperties
+│   ├── passwd               synced from VirtualUserManager
+│   ├── resolv.conf          1.1.1.1 + 8.8.8.8
+│   └── shadow               (mode 0o640)
+├── proc/
+│   ├── cpuinfo              real host CPU info
+│   ├── loadavg
+│   ├── meminfo              real host memory
+│   ├── net/dev              eth0 + lo
+│   ├── uptime               shell uptime in seconds
+│   └── version              kernel from ShellProperties
+├── root/                    root home + .bashrc
+├── sys/devices/virtual/dmi/id/
+│   ├── sys_vendor           "Fortune Systems"
+│   └── product_name         "VirtualContainer v1"
+├── tmp/                     (mode 0o1777 sticky)
+├── usr/bin/                 stubs for all built-in commands
+├── var/
+│   ├── lib/dpkg/status      managed by VirtualPackageManager
+│   └── log/                 syslog, auth.log, dpkg.log, apt/
+└── ...
+```
+
+### API
+
+```ts
+shell.refreshProcFs();   // refresh /proc/* with current system state
+shell.syncPasswd();      // sync /etc/passwd|group|shadow from VirtualUserManager
+```
+
+`syncPasswd()` is called automatically on `bootstrapLinuxRootfs`. Call it again after `users.addUser()` / `users.deleteUser()` to keep `/etc/passwd` consistent.
+
+---
+
+## Package Manager (apt/dpkg)
+
+A pure-TypeScript APT/dpkg simulation backed by a built-in package registry. No external process is spawned.
+
+### Workflow
+
+```
+apt install <pkg>   → resolves deps → writes files to VFS → updates /var/lib/dpkg/status
+apt remove <pkg>    → removes VFS files → updates status
+dpkg -l             → reads installed packages from VirtualPackageManager
+```
+
+### Built-in package registry (25 packages)
+
+| Package | Version | Section |
+|---------|---------|---------|
+| `vim` | 2:9.0.1378-2 | editors |
+| `git` | 1:2.39.2-1 | vcs |
+| `python3` | 3.11.2-1 | python |
+| `nodejs` | 18.19.0 | javascript |
+| `npm` | 9.2.0 | javascript |
+| `curl` | 7.88.1-10 | web |
+| `wget` | 1.21.3-1 | web |
+| `htop` | 3.2.2-2 | utils |
+| `openssh-client` | 1:9.2p1-2 | net |
+| `openssh-server` | 1:9.2p1-2 | net |
+| `net-tools` | 2.10-0.1 | net |
+| `iputils-ping` | 3:20221126-1 | net |
+| `jq` | 1.6-2.1 | utils |
+| `build-essential` | 12.9 | devel |
+| `gcc` | 4:12.2.0-3 | devel |
+| `g++` | 4:12.2.0-3 | devel |
+| `make` | 4.3-4.1 | devel |
+| `less` | 590-2 | text |
+| `unzip` | 6.0-28 | utils |
+| `rsync` | 3.2.7-1 | net |
+| `tmux` | 3.3a-3 | utils |
+| `tree` | 2.1.0-1 | utils |
+| `ca-certificates` | 20230311 | misc |
+| `sudo` | 1.9.13p3-1 | admin |
+| `systemd` | 252.22-1 | admin |
+
+> **Note on package stubs**: installing `nodejs` or `python3` writes stubs into `/usr/bin/` and makes them discoverable via `which` and `dpkg -L`. The stubs print a version line but do not execute real binaries — the shell runtime is pure TypeScript with no `execvp`. This makes them useful for testing install workflows and `which`/`dpkg -L` queries, not for running actual scripts.
+
+### `VirtualPackageManager` API
+
+```ts
+// Access via shell instance
+const pm = shell.packageManager;
+
+pm.install(["vim", "git"], { quiet: false })   // → { output, exitCode }
+pm.remove(["vim"], { purge: false })           // → { output, exitCode }
+pm.search("editor")                            // → PackageDefinition[]
+pm.show("vim")                                 // → string (dpkg-style block)
+pm.listInstalled()                             // → InstalledPackage[]
+pm.listAvailable()                             // → PackageDefinition[]
+pm.isInstalled("vim")                          // → boolean
+pm.installedCount()                            // → number
+pm.findInRegistry("nodejs")                    // → PackageDefinition | undefined
+```
+
+### Registering custom packages
+
+```ts
+import { VirtualPackageManager } from "typescript-virtual-container";
+
+// Custom packages can be added to the registry before shell init
+// by extending PACKAGE_REGISTRY or by calling install() with custom defs.
+
+// Or: register a post-install hook via onInstall
+const customPkg = {
+  name: "myapp",
+  version: "1.0.0",
+  description: "My application",
+  files: [
+    { path: "/usr/bin/myapp", content: "#!/bin/sh\necho myapp v1.0.0\n", mode: 0o755 },
+    { path: "/etc/myapp/config.json", content: JSON.stringify({ port: 3000 }) },
+  ],
+  onInstall: (vfs) => {
+    vfs.mkdir("/var/lib/myapp", 0o755);
+    vfs.mkdir("/var/log/myapp", 0o755);
+  },
+};
+```
+
+
+---
+
 ## Built-in Commands
 
 All commands are available in SSH shell mode and via `SshClient.exec()`. Type `help` in the shell for a grouped, colorized listing. Type `help <command>` for detailed usage.
@@ -1384,7 +1598,10 @@ All commands are available in SSH shell mode and via `SshClient.exec()`. Type `h
 | `htop` | | System monitor (mock) |
 | `id [user]` | | Print user identity (uid/gid/groups) |
 | `kill [-9] <pid>` | | Send signal to process (mock) |
-| `neofetch` | | System info display (mock) |
+| `free` | `-h` `-m` `-g` | Display free and used memory |
+| `lsb_release` | `-a` `-i` `-d` `-r` `-c` | Print distribution information |
+| `neofetch` | | System info display (shows real packages/uptime) |
+| `uptime` | `-p` `-s` | Tell how long the system has been running |
 | `ping [-c <n>] <host>` | | Send ICMP ECHO_REQUEST (mock) |
 | `ps` | `-a` `-u` `-x` | Report process status |
 | `sleep <seconds>` | | Delay execution |
@@ -1396,8 +1613,8 @@ All commands are available in SSH shell mode and via `SshClient.exec()`. Type `h
 
 | Command | Flags | Description |
 |---------|-------|-------------|
-| `curl <url>` | | HTTP client (delegates to host binary) |
-| `wget <url>` | | File downloader (delegates to host binary) |
+| `curl <url>` | `-o` `-X` `-d` `-H` `-s` `-I` `-L` `-v` | HTTP client (pure `fetch()`, no host binary) |
+| `wget <url>` | `-O` `-P` `-q` | File downloader (pure `fetch()`, no host binary) |
 
 ### Shell
 
@@ -1412,6 +1629,26 @@ All commands are available in SSH shell mode and via `SshClient.exec()`. Type `h
 | `set [VAR=val]` | | Display or set shell variables |
 | `sh` | `-c <script>` `[file]` | Execute shell script (supports if/for/while) |
 | `unset <VAR>` | | Remove shell variable |
+
+### Package Management
+
+| Command | Flags | Description |
+|---------|-------|-------------|
+| `apt <cmd> [pkg...]` | | Package manager (`install`, `remove`, `purge`, `update`, `upgrade`, `search`, `show`, `list`) |
+| `apt-get <cmd>` | | Alias for `apt` |
+| `apt-cache <cmd>` | | Query package cache (`search`, `show`, `policy`) |
+| `dpkg` | `-l` `-s` `-L` `-r` `-P` | Debian package manager low-level tool |
+| `dpkg-query` | `-W` `-l` | Show information about installed packages |
+
+### Shell (extended)
+
+| Command | Flags | Description |
+|---------|-------|-------------|
+| `alias [name=value]` | | Define or display aliases |
+| `man <command>` | | Display command manual page |
+| `type <command>` | | Describe how command is interpreted |
+| `unalias <name>` | `-a` | Remove alias definitions |
+| `which <command>` | | Locate command in PATH |
 
 ### Users & Permissions
 
@@ -1789,9 +2026,18 @@ MIT — see [LICENSE](./LICENSE).
 - [x] New commands: `sort`, `uniq`, `tee`, `cut`, `tr`, `xargs`, `diff`, `sed`, `awk`, `tar`, `gzip`, `gunzip`, `base64`, `date`, `sleep`, `id`, `groups`, `uname`, `ps`, `kill`, `df`, `du`, `ping`
 - [x] Structured event hooks (session open/close, file write, sudo challenge)
 - [x] Binary snapshot format (VFSB) — replaces JSON+base64, ~27% smaller, no string parsing overhead, backward-compatible JSON migration
+- [x] Linux rootfs on boot — `/etc`, `/proc`, `/sys`, `/dev`, `/usr`, `/var` populated at init; `os-release`, `passwd`, `hosts`, `/proc/meminfo`, `/proc/cpuinfo`, `/proc/version`, `/proc/uptime`, `/sys/devices/virtual/dmi/`, symlinks `/bin`→`/usr/bin`
+- [x] Virtual package manager — `apt install/remove/purge/update/upgrade/search/show/list`, `apt-get`, `apt-cache`, `dpkg`, `dpkg-query`; 25 packages in registry; writes files to VFS; `/var/lib/dpkg/status` persistence
+- [x] `curl` / `wget` reimplemented as pure `fetch()` — no host binary spawned, full isolation
+- [x] New commands: `which`, `type`, `man`, `uptime`, `free`, `lsb_release`, `alias`, `unalias`
+- [x] `$(cmd)` command substitution in variable expansion
+- [x] Alias expansion in command dispatch
+- [x] `neofetch` shows real package count and shell uptime
+- [x] `syncPasswd()` / `refreshProcFs()` public API on `VirtualShell`
 - [ ] Snapshot diff tooling for test assertions
 - [ ] WebSocket-based remote shell client (experimental)
-- [ ] `$(cmd)` command substitution in variable expansion
+- [ ] Package stubs that simulate REPL behavior (node, python3)
+- [ ] `/proc/self` and `/proc/<pid>` per-session process entries
 
 ---
 
