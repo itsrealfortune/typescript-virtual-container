@@ -82,7 +82,7 @@
 - **Security Auditing**: Built-in `HoneyPot` utility for comprehensive activity logging, event tracking, statistics collection, and anomaly detection across all components.
 - **Linux rootfs on boot**: Realistic `/etc`, `/proc`, `/sys`, `/dev`, `/usr`, `/var` hierarchy populated at startup — `os-release`, `passwd`, `hosts`, `resolv.conf`, `/proc/meminfo`, `/proc/cpuinfo`, and more.
 - **Virtual package manager**: `apt install`, `apt remove`, `apt search`, `dpkg -l`, `dpkg -s` — 25 packages in the built-in registry (vim, git, nodejs, python3, curl, openssh, gcc…). Writes files into VFS, tracks state in `/var/lib/dpkg/status`.
-- **83 Built-in Commands**: Full navigation, text processing, archiving, system info, package management, and user management commands — grouped and documented in the interactive `help` system.
+- **85 Built-in Commands**: Full navigation, text processing, archiving, system info, package management, and user management commands — grouped and documented in the interactive `help` system.
 - **`$(cmd)` command substitution**: Nested command execution in any argument position.
 - **Alias support**: `alias`, `unalias` — persisted in session environment.
 - **Full TypeScript Support**: Complete JSDoc coverage, exported types, and first-class async/await for all operations.
@@ -1695,13 +1695,15 @@ All commands are available in SSH shell mode and via `SshClient.exec()`. Type `h
 | `read [-r] <var...>` | `-r` `-p` | Read a line from stdin into variable(s) |
 | `return [n]` | | Return from a shell function with optional exit code |
 | `set [VAR=val]` | | Display or set shell variables |
-| `sh` | `-c <script>` `[file]` | Execute shell script — supports `if`/`for`/`while`/`case`/functions; `$(cmd)` substitution respects single quotes |
+| `sh` | `-c <script>` `[file]` | Execute shell script — supports `if`/`for`/`while`/`case`/functions, bare `VAR=val` assignments, `$((expr))` arithmetic; single-quoted args are never expanded |
 | `shift [n]` | | Shift positional parameters left by n (default 1) |
 | `source <file>` | | Execute file in current shell environment; aliases and exports persist |
 | `. <file>` | | Alias for `source` |
 | `test <expr>` | | Evaluate POSIX conditional expression |
 | `[ <expr> ]` | | Alias for `test`; supports `-f` `-d` `-e` `-z` `-n` `-x` `-s` `=` `!=` `-eq` `-lt` `-gt` `-le` `-ge` `!` `-a` `-o` |
 | `trap [action] [signal]` | | Register handler for shell signals; supports `EXIT` |
+| `true` | | Return success exit code (0) |
+| `false` | | Return failure exit code (1) |
 | `type <command>` | | Describe how a command would be interpreted (builtin vs PATH) |
 | `unalias <name>` | `-a` | Remove alias definitions |
 | `unset <VAR>` | | Remove shell variable |
@@ -1758,10 +1760,33 @@ cat /tmp/out.txt >> /tmp/log.txt
 ```bash
 export NAME=world
 echo "Hello $NAME"           # Hello world
+echo "${NAME}"               # world (braced form)
 echo "${NAME:-fallback}"     # world (or fallback if unset)
-echo "${UNSET:-default}"     # default
-echo "Exit: $?"              # last exit code
+echo "${UNSET:-default}"     # default (assign-on-read: use ${UNSET:=default})
+echo "${NAME:+alternate}"    # alternate (only if NAME is set)
+echo "${#NAME}"              # 5 (string length)
+echo "$?"                    # last exit code
+echo "~"                     # /home/<user> (tilde expansion)
 ```
+
+### Arithmetic Expansion
+
+```bash
+echo $((2 + 3))              # 5
+echo $((10 % 3))             # 1
+X=4; echo $((X * 2))         # 8
+i=0; i=$((i + 1)); echo $i   # 1
+
+# In loops (via sh):
+sh -c 'i=0
+while [ $i -lt 5 ]; do
+  echo $i
+  i=$((i + 1))
+done'
+```
+
+> **Single-quote isolation** — variable and arithmetic expansion never occurs inside single quotes.
+> `echo '$NAME'` always outputs the literal string `$NAME`.
 
 ### Conditionals
 
@@ -2126,6 +2151,13 @@ MIT — see [LICENSE](./LICENSE).
 - [x] `exit [code]` — optional exit code
 - [x] `help` rewrite — Package Management category, aliases shown inline, `help <cmd>` shows category
 - [x] Category corrections — `neofetch`→system, `nano`→files, `apt`/`dpkg`→package
+- [x] `src/utils/expand.ts` — centralised expansion module used by `runCommand`, `echo`, and `sh.ts`
+- [x] `${#VAR}` string length, `$((expr))` arithmetic, `~` tilde expansion
+- [x] `${VAR:=assign}` assign-on-read, `${VAR:+alternate}` alternate-if-set
+- [x] Single-quote isolation in expansion — `$VAR` never expanded inside `'...'`
+- [x] `true` / `false` builtins
+- [x] Bare `VAR=val` assignments in `sh` scripts (`i=0`, `i=$((i+1))`)
+- [x] `$?` reflects last command exit code correctly across `&&` / `;` chains
 - [ ] Package stubs that simulate REPL behavior (node, python3)
 - [ ] `/proc/self` and `/proc/<pid>` per-session process entries
 
