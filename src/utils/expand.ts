@@ -1,10 +1,14 @@
 /**
  * expand.ts
  *
- * Centralised shell variable and expression expansion.
- * Used by runCommand, echo, sh.ts, and anywhere $VAR / ${...} / $((...)) appear.
+ * Centralised shell variable and expression expansion utilities.
+ * Intended to be used by runCommand, echo, and sh.ts to replace
+ * the per-file expansion logic with a single shared implementation.
  *
- * Handles (in order):
+ * Currently available but not yet wired into the main runtime —
+ * integration is the next expansion phase.
+ *
+ * Handles:
  *   ~             tilde to $HOME
  *   $?            last exit code
  *   $$            mock PID
