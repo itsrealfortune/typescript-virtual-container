@@ -1,6 +1,8 @@
 import { spawn } from "node:child_process";
 import * as path from "node:path";
 import type VirtualFileSystem from "../VirtualFileSystem";
+import type { VirtualPackageManager } from "../VirtualPackageManager";
+import type { VirtualShell } from "../VirtualShell";
 
 const PROTECTED_PREFIXES = ["/virtual-env-js/.auth"] as const;
 
@@ -219,4 +221,10 @@ export function joinListWithType(
 			return stats.type === "directory" ? `${name}/` : name;
 		})
 		.join("  ");
+}
+
+export function getPackageManager(
+	shell: VirtualShell,
+): VirtualPackageManager | undefined {
+	return shell.packageManager;
 }
