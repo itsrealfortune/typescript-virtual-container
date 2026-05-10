@@ -1,5 +1,5 @@
 import type { ShellModule } from "../types/commands";
-import { runCommand } from "./index";
+import { runCommand } from "./runtime";
 
 export const xargsCommand: ShellModule = {
 	name: "xargs",

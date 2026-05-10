@@ -1,6 +1,6 @@
 import type { ShellModule } from "../types/commands";
 import { resolvePath } from "./helpers";
-import { runCommand } from ".";
+import { runCommand } from "./runtime";
 
 export const sourceCommand: ShellModule = {
 	name: "source",

@@ -1,5 +1,5 @@
 import type { ShellModule } from "../types/commands";
-import { getCommandModulesPublic } from "./index";
+import { getCommandModulesPublic } from "./registry";
 
 // ─── category config ──────────────────────────────────────────────────────────
 

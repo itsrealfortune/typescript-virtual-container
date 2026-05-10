@@ -1,6 +1,6 @@
 import type { ShellModule } from "../types/commands";
 import { parseArgs } from "./command-helpers";
-import { runCommand } from "./index";
+import { runCommand } from "./runtime";
 
 function parseSudoArgs(args: string[]): {
 	targetUser: string;

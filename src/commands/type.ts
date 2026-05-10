@@ -1,5 +1,5 @@
-import { resolveModule } from ".";
 import type { ShellModule } from "../types/commands";
+import { resolveModule } from "./registry";
 
 export const typeCommand: ShellModule = {
 	name: "type",

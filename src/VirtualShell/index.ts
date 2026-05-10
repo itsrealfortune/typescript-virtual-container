@@ -1,17 +1,18 @@
 import { EventEmitter } from "node:events";
-import { createCustomCommand, registerCommand, runCommand } from "../commands";
-import type { CommandContext, CommandResult } from "../types/commands";
-import type { ShellStream } from "../types/streams";
-import type { PerfLogger } from "../utils/perfLogger";
-import { createPerfLogger } from "../utils/perfLogger";
-import VirtualFileSystem, { type VfsOptions } from "../VirtualFileSystem";
-import { VirtualUserManager } from "../VirtualUserManager";
-import { VirtualPackageManager } from "../VirtualPackageManager";
+import { createCustomCommand, registerCommand } from "../commands/registry";
+import { runCommand } from "../commands/runtime";
 import {
 	bootstrapLinuxRootfs,
 	refreshProc,
 	syncEtcPasswd,
 } from "../modules/linuxRootfs";
+import type { CommandContext, CommandResult } from "../types/commands";
+import type { ShellStream } from "../types/streams";
+import type { PerfLogger } from "../utils/perfLogger";
+import { createPerfLogger } from "../utils/perfLogger";
+import VirtualFileSystem, { type VfsOptions } from "../VirtualFileSystem";
+import { VirtualPackageManager } from "../VirtualPackageManager";
+import { VirtualUserManager } from "../VirtualUserManager";
 import { startShell } from "./shell";
 
 /**

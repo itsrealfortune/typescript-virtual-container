@@ -6,7 +6,7 @@ import type {
 import { expandAsync } from "../utils/expand";
 import { ifFlag } from "./command-helpers";
 import { resolvePath } from "./helpers";
-import { runCommand } from "./index";
+import { runCommand } from "./runtime";
 
 /** Alias for clarity inside sh.ts */
 type ShellContext = CommandContext;
