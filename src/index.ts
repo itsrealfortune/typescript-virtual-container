@@ -1,14 +1,14 @@
-import { HoneyPot } from "./Honeypot/index";
-import { SshClient } from "./SSHClient/index";
-import { SftpMimic, SshMimic } from "./SSHMimic/index";
-import VirtualFileSystem from "./VirtualFileSystem/index";
-import { VirtualShell } from "./VirtualShell/index";
-import { VirtualUserManager } from "./VirtualUserManager/index";
-import { VirtualPackageManager } from "./VirtualPackageManager/index";
+export { HoneyPot } from "./Honeypot/index";
+export { SshClient } from "./SSHClient/index";
+export { SftpMimic as VirtualSftpServer, SshMimic as VirtualSshServer } from "./SSHMimic/index";
+export { default as VirtualFileSystem } from "./VirtualFileSystem/index";
+export { VirtualPackageManager } from "./VirtualPackageManager/index";
+export { VirtualShell } from "./VirtualShell/index";
+export { VirtualUserManager } from "./VirtualUserManager/index";
 
 export type {
 	AuditLogEntry,
-	HoneyPotStats,
+	HoneyPotStats
 } from "./Honeypot/index";
 export type {
 	CommandContext,
@@ -18,9 +18,8 @@ export type {
 	NanoEditorSession,
 	ShellEnv,
 	ShellModule,
-	SudoChallenge,
+	SudoChallenge
 } from "./types/commands";
-export type { ShellProperties } from "./VirtualShell/index";
 export type { ExecStream, ShellStream } from "./types/streams";
 export type {
 	RemoveOptions,
@@ -34,40 +33,29 @@ export type {
 	VfsSnapshotDirectoryNode,
 	VfsSnapshotFileNode,
 	VfsSnapshotNode,
-	WriteFileOptions,
+	WriteFileOptions
 } from "./types/vfs";
 export type { VfsOptions, VfsPersistenceMode } from "./VirtualFileSystem/index";
+export type { ShellProperties } from "./VirtualShell/index";
 
 export type {
-	PackageDefinition,
-	PackageFile,
-	InstalledPackage,
+	InstalledPackage, PackageDefinition,
+	PackageFile
 } from "./VirtualPackageManager/index";
 
 export {
-	diffSnapshots,
-	formatDiff,
-	assertDiff,
+	assertDiff, diffSnapshots,
+	formatDiff
 } from "./utils/vfsDiff";
 export type {
 	VfsDiff,
 	VfsDiffEntry,
-	VfsDiffModified,
+	VfsDiffModified
 } from "./utils/vfsDiff";
-
-export {
-	HoneyPot,
-	SshClient,
-	VirtualFileSystem,
-	SftpMimic as VirtualSftpServer,
-	VirtualShell,
-	SshMimic as VirtualSshServer,
-	VirtualUserManager,
-	VirtualPackageManager,
-};
 
 export {
 	getArg,
 	getFlag,
-	ifFlag,
+	ifFlag
 } from "./commands/command-helpers";
+
