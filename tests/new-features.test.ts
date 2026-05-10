@@ -787,6 +787,7 @@ describe("node and python3 REPL stubs", () => {
 		shell6 = new VirtualShell("repl-vm");
 		await shell6.ensureInitialized();
 		c6 = new SshClient(shell6, "root");
+		await c6.exec("apt install nodejs python3");
 	});
 
 	test("node --version returns v18", async () => {
@@ -867,6 +868,7 @@ describe("node enhanced REPL", () => {
 		shell7 = new VirtualShell("node-vm");
 		await shell7.ensureInitialized();
 		c7 = new SshClient(shell7, "root");
+		await c7.exec("apt install nodejs");
 	});
 
 	test("node -e string methods", async () => {
@@ -923,6 +925,7 @@ describe("python3 enhanced interpreter", () => {
 		shell8 = new VirtualShell("python-vm");
 		await shell8.ensureInitialized();
 		c8 = new SshClient(shell8, "root");
+		await c8.exec("apt install python3");
 	});
 
 	const py = async (code: string) => {
