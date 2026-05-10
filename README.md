@@ -82,7 +82,7 @@
 - **Security Auditing**: Built-in `HoneyPot` utility for comprehensive activity logging, event tracking, statistics collection, and anomaly detection across all components.
 - **Linux rootfs on boot**: Realistic `/etc`, `/proc`, `/sys`, `/dev`, `/usr`, `/var` hierarchy populated at startup — `os-release`, `passwd`, `hosts`, `resolv.conf`, `/proc/meminfo`, `/proc/cpuinfo`, and more.
 - **Virtual package manager**: `apt install`, `apt remove`, `apt search`, `dpkg -l`, `dpkg -s` — 25 packages in the built-in registry (vim, git, nodejs, python3, curl, openssh, gcc…). Writes files into VFS, tracks state in `/var/lib/dpkg/status`.
-- **85 Built-in Commands**: Full navigation, text processing, archiving, system info, package management, and user management commands — grouped and documented in the interactive `help` system.
+- **87 Built-in Commands**: Full navigation, text processing, archiving, system info, package management, and user management commands — grouped and documented in the interactive `help` system.
 - **`$(cmd)` command substitution**: Nested command execution in any argument position.
 - **Alias support**: `alias`, `unalias` — persisted in session environment.
 - **Full TypeScript Support**: Complete JSDoc coverage, exported types, and first-class async/await for all operations.
@@ -804,6 +804,77 @@ interface InstalledPackage {
 
 ---
 
+### Snapshot Diff Tooling
+
+Three utility functions for comparing VFS snapshots in tests and deployment verification.
+
+```typescript
+import {
+  diffSnapshots,
+  formatDiff,
+  assertDiff,
+} from "typescript-virtual-container";
+```
+
+#### `diffSnapshots(before, after, options?): VfsDiff`
+
+Compares two snapshots and returns structured diff results.
+
+```ts
+const before = shell.vfs.toSnapshot();
+await client.exec("apt install vim && mkdir -p /app");
+const after = shell.vfs.toSnapshot();
+
+const diff = diffSnapshots(before, after, {
+  ignore: ["/proc", "/var/log"],  // skip volatile paths
+});
+
+diff.clean;       // false
+diff.added;       // [{ path: "/usr/bin/vim", type: "file" }, ...]
+diff.removed;     // []
+diff.modified;    // [{ path: "/var/lib/dpkg/status", before: "...", after: "..." }]
+```
+
+#### `formatDiff(diff, options?): string`
+
+Human-readable output similar to `git diff --stat`.
+
+```ts
+console.log(formatDiff(diff));
+// + /app  [directory]
+// + /usr/bin/vim  [file]
+// ~ /var/lib/dpkg/status  [modified]
+//
+// 2 added, 1 modified
+
+console.log(formatDiff(diff, { showContent: true, maxContentChars: 80 }));
+```
+
+#### `assertDiff(diff, expected): void`
+
+Throws on mismatch — designed for test suites.
+
+```ts
+assertDiff(diff, {
+  added:    ["/app", "/usr/bin/vim"],
+  modified: ["/var/lib/dpkg/status"],
+});
+// throws if any expected path is not in the diff
+```
+
+#### Types
+
+```ts
+interface VfsDiff {
+  added:    VfsDiffEntry[];      // { path, type }
+  removed:  VfsDiffEntry[];      // { path, type }
+  modified: VfsDiffModified[];   // { path, type, before, after }
+  clean:    boolean;
+}
+```
+
+---
+
 ### `HoneyPot`
 
 Comprehensive security auditing and event tracking utility. Attaches listeners to all core components to log activity, track statistics, and detect anomalies.
@@ -1475,6 +1546,9 @@ On every `VirtualShell` init, a realistic Linux directory hierarchy is bootstrap
 │   ├── resolv.conf          1.1.1.1 + 8.8.8.8
 │   └── shadow               (mode 0o640)
 ├── proc/
+│   ├── 1/                   init process (cmdline, status, comm, environ, fd/)
+│   ├── <pid>/               one entry per active session (based on pts/* TTY)
+│   ├── self/                mirrors the most recent session's /proc/<pid>/
 │   ├── cpuinfo              real host CPU info
 │   ├── loadavg
 │   ├── meminfo              real host memory
@@ -1662,6 +1736,8 @@ All commands are available in SSH shell mode and via `SshClient.exec()`. Type `h
 | `free` | `-h` `-m` `-g` | Display free and used memory |
 | `lsb_release` | `-a` `-i` `-d` `-r` `-c` | Print distribution information |
 | `neofetch` | | System info display (shows real packages/uptime) |
+| `node` | `--version` `-e` `-p` | JavaScript runtime (virtual REPL — evaluates expressions and VFS `.js` files) |
+| `python3` | `--version` `-c` `-V` | Python 3 interpreter (virtual REPL — evaluates expressions and VFS `.py` files); alias `python` |
 | `uptime` | `-p` `-s` | Tell how long the system has been running |
 | `ping [-c <n>] <host>` | | Send ICMP ECHO_REQUEST (mock) |
 | `ps` | `-a` `-u` `-x` `aux` | Report process status; `-u` / `aux` shows USER/PID/%CPU/%MEM columns |
@@ -2156,7 +2232,7 @@ MIT — see [LICENSE](./LICENSE).
 - [x] `true` / `false` builtins
 - [x] Bare `VAR=val` assignments in `sh` scripts (`i=0`, `i=$((i+1))`)
 - [x] `$?` reflects last command exit code correctly across `&&` / `;` chains
-- [ ] Package stubs that simulate REPL behavior (node, python3)
-- [ ] `/proc/self` and `/proc/<pid>` per-session process entries
-- [ ] Snapshot diff tooling for test assertions
+- [x] `node` / `python3` virtual REPL stubs — `node -e`, `node <file>`, `python3 -c`, `python3 <file>`, `--version` flags
+- [x] `/proc/self` and `/proc/<pid>` per-session process entries — `comm`, `status`, `cmdline`, `environ`, `cwd`, `exe`, `fd/`
+- [x] Snapshot diff tooling — `diffSnapshots()`, `formatDiff()`, `assertDiff()` exported from `typescript-virtual-container`
 - [ ] WebSocket-based remote shell client (experimental)
