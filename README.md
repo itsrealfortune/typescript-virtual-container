@@ -2,26 +2,6 @@
 
 > Pure in-memory SSH/SFTP server with a realistic Linux rootfs, a virtual package manager, a real shell interpreter, and a typed programmatic API for testing, automation, honeypots, and interactive shell scripting in TypeScript/JavaScript.
 
----
-
-> **Release notes — what changed in this drop**
->
-> **Linux rootfs** — full `/etc`, `/proc`, `/sys`, `/dev`, `/usr`, `/var` hierarchy bootstrapped at init. `neofetch` now shows real uptime and package count. `/proc/meminfo`, `/proc/cpuinfo`, `/proc/version` populated from live system data. `/etc/passwd`, `/etc/group`, `/etc/shadow` synced from `VirtualUserManager`.
->
-> **Virtual package manager** — `apt install vim git nodejs python3` works. 25 packages in the built-in registry. Dependency resolution, file installation into VFS, `/var/lib/dpkg/status` persistence, `dpkg -l|-s|-L`, `apt-cache search|show|policy`. `neofetch` reflects installed count.
->
-> **`curl` / `wget` — pure `fetch()`** — host binary no longer spawned. Full flag support (`-o`, `-X`, `-d`, `-H`, `-s`, `-I`, `-L`, `-v` for curl; `-O`, `-P`, `-q` for wget). Zero host filesystem access.
->
-> **New commands** — `which`, `type`, `man` (with built-in pages), `uptime`, `free`, `lsb_release`, `alias`, `unalias`.
->
-> **`$(cmd)` command substitution** — `echo $(whoami)`, `mkdir /tmp/$(date +%s)`, nested subs, all work.
->
-> **Alias expansion** — `alias ll='ls -la'` then `ll /etc` resolves transparently in the dispatcher.
->
-> *— written by Claude because explaining every change manually is a waste of everyone's time*
-
----
-
 [![npm version](https://badge.fury.io/js/typescript-virtual-container.svg)](https://www.npmjs.com/package/typescript-virtual-container)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
