@@ -31,10 +31,11 @@
     "bench": "rm -rf .benchmark-shells/ && bun benchmark-virtualshell.ts",
     "standalone-build:wo-sftp": "bunx esbuild src/standalone-wo-sftp.ts --bundle --platform=node --target=node18 --outfile=builds/standalone-wo-sftp.js --tree-shaking=true --minify --sourcemap",
     "web-build": "bunx esbuild src/web.ts --bundle --platform=browser --target=es2020 --outfile=builds/web.min.js --tree-shaking=true --minify --sourcemap",
-    "example-build": "bun run web-build && cp builds/web.min.js example/web.min.js",
+    "example-build": "bun run web-build && cp builds/web.min.js examples/web.min.js",
     "web-full-build": "bunx esbuild src/web-api.ts --bundle --platform=browser --target=es2020 --outfile=builds/web-full-api.min.js --tree-shaking=true --minify --sourcemap --alias:node:events=./polyfills/node:events/index.js --alias:node:path=./polyfills/node:path/index.js --alias:node:os=./polyfills/node:os/index.js --alias:node:fs=./polyfills/node:fs/index.js --alias:node:fs/promises=./polyfills/node:fs/promises.js --alias:node:crypto=./polyfills/node:crypto/index.js --alias:node:child_process=./polyfills/node:child_process/index.js --alias:node:zlib=./polyfills/node:zlib/index.js --alias:node:vm=./polyfills/node:vm/index.js",
     "publish-package": "bash ./scripts/publish-package.sh",
-    "standalone-build": "bunx esbuild src/standalone.ts --bundle --platform=node --target=node18 --outfile=builds/standalone.js --tree-shaking=true --minify --sourcemap"
+    "standalone-build": "bunx esbuild src/standalone.ts --bundle --platform=node --target=node18 --outfile=builds/standalone.js --tree-shaking=true --minify --sourcemap",
+    "build-all": "bun run standalone-build && bun run standalone-build:wo-sftp && bun run web-build && bun run web-full-build && bun run example-build"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.13",
