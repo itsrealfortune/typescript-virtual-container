@@ -1,4 +1,8 @@
 {
+    "files": {
+        "includes": ["**/*.ts", "**/*.tsx"],
+        "excludes": ["**/node_modules/**", "**/dist/**"]
+    },
     "assist": {
         "actions": {
             "source": {
