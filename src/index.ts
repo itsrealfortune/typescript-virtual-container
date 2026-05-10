@@ -45,6 +45,17 @@ export type {
 } from "./VirtualPackageManager/index";
 
 export {
+	diffSnapshots,
+	formatDiff,
+	assertDiff,
+} from "./utils/vfsDiff";
+export type {
+	VfsDiff,
+	VfsDiffEntry,
+	VfsDiffModified,
+} from "./utils/vfsDiff";
+
+export {
 	HoneyPot,
 	SshClient,
 	VirtualFileSystem,
