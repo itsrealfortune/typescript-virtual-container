@@ -1,8 +1,4 @@
 {
-    "files": {
-        "includes": ["**/*.ts", "**/*.tsx"],
-        "excludes": ["**/node_modules/**", "**/dist/**"]
-    },
     "assist": {
         "actions": {
             "source": {
@@ -30,5 +26,8 @@
         "indentWidth": 2,
         "lineWidth": 80,
         "lineEnding": "lf"
+    },
+    "files": {
+        "ignoreUnknown": true
     }
 }
