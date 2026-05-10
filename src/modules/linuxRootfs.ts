@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/style/useNamingConvention: ENV VAR KEYS */
 /**
  * linuxRootfs.ts
  *
@@ -175,11 +176,72 @@ export function syncEtcPasswd(
 
 // ─── /proc ───────────────────────────────────────────────────────────────────
 
+/** Derive a stable virtual PID from a tty string like "pts/0" → 1000, "pts/1" → 1001 */
+function ttyToPid(tty: string): number {
+	const match = tty.match(/(\d+)$/);
+	return 1000 + (match?.[1] ? parseInt(match[1], 10) : 0);
+}
+
+/** Write /proc/<pid>/ subtree for a single virtual process */
+function writeProcPid(
+	vfs: VirtualFileSystem,
+	pid: number,
+	username: string,
+	_tty: string,
+	cmdline: string,
+	startedAt: string,
+	env: Record<string, string>,
+): void {
+	const dir = `/proc/${pid}`;
+	ensureDir(vfs, dir);
+	ensureDir(vfs, `${dir}/fd`);
+	ensureDir(vfs, `${dir}/fdinfo`);
+
+	const uptimeSec = Math.floor(
+		(Date.now() - new Date(startedAt).getTime()) / 1000,
+	);
+
+	vfs.writeFile(`${dir}/cmdline`, `${cmdline.replace(/\s+/g, "\0")}\0`);
+	vfs.writeFile(`${dir}/comm`, cmdline.split(/\s+/)[0] ?? "bash");
+	vfs.writeFile(
+		`${dir}/status`,
+		`${[
+			`Name:   ${cmdline.split(/\s+/)[0] ?? "bash"}`,
+			`State:  S (sleeping)`,
+			`Pid:    ${pid}`,
+			`PPid:   1`,
+			`Uid:    0\t0\t0\t0`,
+			`Gid:    0\t0\t0\t0`,
+			`VmRSS:  4096 kB`,
+			`VmSize: 16384 kB`,
+			`Threads: 1`,
+		].join("\n")}\n`,
+	);
+	vfs.writeFile(
+		`${dir}/stat`,
+		`${pid} (${cmdline.split(/\s+/)[0] ?? "bash"}) S 1 ${pid} ${pid} 0 -1 4194304 0 0 0 0 ${uptimeSec} 0 0 0 20 0 1 0 0 16384 4096 0\n`,
+	);
+	vfs.writeFile(
+		`${dir}/environ`,
+		`${Object.entries(env)
+			.map(([k, v]) => `${k}=${v}`)
+			.join("\0")}\0`,
+	);
+	vfs.writeFile(`${dir}/cwd`, `/home/${username}\0`);
+	vfs.writeFile(`${dir}/exe`, "/bin/bash\0");
+
+	// Standard fd entries
+	vfs.writeFile(`${dir}/fd/0`, "");
+	vfs.writeFile(`${dir}/fd/1`, "");
+	vfs.writeFile(`${dir}/fd/2`, "");
+}
+
 export function refreshProc(
 	vfs: VirtualFileSystem,
 	props: ShellProperties,
 	hostname: string,
 	shellStartTime: number,
+	sessions?: import("../VirtualUserManager").VirtualActiveSession[],
 ): void {
 	ensureDir(vfs, "/proc");
 
@@ -227,7 +289,8 @@ export function refreshProc(
 
 	// /proc/loadavg
 	const load = (Math.random() * 0.5).toFixed(2);
-	vfs.writeFile("/proc/loadavg", `${load} ${load} ${load} 1/1 1\n`);
+	const numProcs = 1 + (sessions?.length ?? 0);
+	vfs.writeFile("/proc/loadavg", `${load} ${load} ${load} ${numProcs}/${numProcs} 1\n`);
 
 	// /proc/net stubs
 	ensureDir(vfs, "/proc/net");
@@ -241,6 +304,60 @@ export function refreshProc(
 			"  eth0:  131072    1024    0    0    0     0          0         0    65536     512    0    0    0     0       0          0",
 		].join("\n")}\n`,
 	);
+
+	// ── /proc/1 — init process ────────────────────────────────────────────────
+	writeProcPid(vfs, 1, "root", "pts/0", "/sbin/init", new Date(shellStartTime).toISOString(), {});
+
+	// ── /proc/<pid> per session ───────────────────────────────────────────────
+	const activeSessions = sessions ?? [];
+	for (const session of activeSessions) {
+		const pid = ttyToPid(session.tty);
+		writeProcPid(vfs, pid, session.username, session.tty, "bash", session.startedAt, {
+			USER: session.username,
+			HOME: `/home/${session.username}`,
+			TERM: "xterm-256color",
+			SHELL: "/bin/bash",
+		});
+	}
+
+	// ── /proc/self — symlink to current session PID or 1 ────────────────────
+	// We can't know which session is "current" at populate time,
+	// so /proc/self is a directory that mirrors the most recent session,
+	// or init if no sessions. Commands that read /proc/self get consistent data.
+	const selfPid = activeSessions.length > 0
+		? ttyToPid(activeSessions[activeSessions.length - 1]!.tty)
+		: 1;
+
+	// Remove existing /proc/self and recreate as content copy
+	if (vfs.exists("/proc/self")) {
+		try { vfs.remove("/proc/self"); } catch {}
+	}
+	// /proc/self is a real directory (not a symlink, which VFS may not support for dirs)
+	const selfSrc = `/proc/${selfPid}`;
+	if (vfs.exists(selfSrc)) {
+		ensureDir(vfs, "/proc/self");
+		ensureDir(vfs, "/proc/self/fd");
+		for (const entry of vfs.list(selfSrc)) {
+			const srcPath = `${selfSrc}/${entry}`;
+			const dstPath = `/proc/self/${entry}`;
+			try {
+				const st = vfs.stat(srcPath);
+				if (st.type === "file") {
+					vfs.writeFile(dstPath, vfs.readFile(srcPath));
+				}
+			} catch {}
+		}
+		vfs.writeFile("/proc/self/status", vfs.exists(`${selfSrc}/status`) ? vfs.readFile(`${selfSrc}/status`) : "");
+	} else {
+		// Fallback minimal /proc/self
+		ensureDir(vfs, "/proc/self");
+		vfs.writeFile("/proc/self/cmdline", "bash\0");
+		vfs.writeFile("/proc/self/comm", "bash");
+		vfs.writeFile("/proc/self/status", "Name:\tbash\nState:\tS (sleeping)\nPid:\t1\nPPid:\t0\n");
+		vfs.writeFile("/proc/self/environ", "");
+		vfs.writeFile("/proc/self/cwd", "/root\0");
+		vfs.writeFile("/proc/self/exe", "/bin/bash\0");
+	}
 }
 
 // ─── /sys ─────────────────────────────────────────────────────────────────────
@@ -434,6 +551,6 @@ export function bootstrapLinuxRootfs(
 	bootstrapTmp(vfs);
 	bootstrapRoot(vfs);
 	bootstrapMisc(vfs);
-	refreshProc(vfs, props, hostname, shellStartTime);
+	refreshProc(vfs, props, hostname, shellStartTime, []);
 	syncEtcPasswd(vfs, users);
 }
