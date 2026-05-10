@@ -28,6 +28,10 @@
         "lineEnding": "lf"
     },
     "files": {
-        "ignoreUnknown": true
+        "ignoreUnknown": true,
+        "includes": [
+            "**/*.ts",
+            "**/*.tsx"
+        ]
     }
 }
