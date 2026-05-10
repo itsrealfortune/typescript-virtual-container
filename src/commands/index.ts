@@ -20,6 +20,7 @@ import { readCommand } from "./read";
 import { declareCommand } from "./declare";
 import { shiftCommand, trapCommand, returnCommand } from "./shift";
 import { trueCommand, falseCommand } from "./true";
+import { npmCommand, npxCommand } from "./npm";
 import { nodeCommand } from "./node";
 import { python3Command } from "./python";
 import { aptCacheCommand, aptCommand } from "./apt";
@@ -125,6 +126,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	printfCommand, readCommand, declareCommand,
 	shiftCommand, trapCommand, returnCommand,
 	trueCommand, falseCommand,
+	npmCommand, npxCommand,
 	nodeCommand, python3Command,
 	// System (extended)
 	uptimeCommand, freeCommand, lsbReleaseCommand,
@@ -230,6 +232,45 @@ export function makeDefaultEnv(authUser: string, hostname: string): ShellEnv {
 }
 
 /**
+ * Search $PATH in the VFS for an executable file matching `name`.
+ *
+ * - Directories in `env.vars.PATH` are searched left-to-right.
+ * - `/sbin` and `/usr/sbin` are only accessible to root or via sudo.
+ * - Returns the absolute VFS path of the first match, or `null`.
+ */
+function resolveVfsBinary(
+	name: string,
+	env: ShellEnv,
+	shell: VirtualShell,
+	authUser: string,
+): string | null {
+	if (name.startsWith("/")) {
+		if (!shell.vfs.exists(name)) return null;
+		try {
+			const st = shell.vfs.stat(name);
+			if (st.type !== "file") return null;
+			if (!(st.mode & 0o111)) return null;
+			if ((name.startsWith("/sbin/") || name.startsWith("/usr/sbin/")) && authUser !== "root") return null;
+			return name;
+		} catch { return null; }
+	}
+
+	const pathDirs = (env.vars.PATH ?? "/usr/local/bin:/usr/bin:/bin").split(":");
+	for (const dir of pathDirs) {
+		if ((dir === "/sbin" || dir === "/usr/sbin") && authUser !== "root") continue;
+		const full = `${dir}/${name}`;
+		if (!shell.vfs.exists(full)) continue;
+		try {
+			const st = shell.vfs.stat(full);
+			if (st.type !== "file") continue;
+			if (!(st.mode & 0o111)) continue;
+			return full;
+		} catch { }
+	}
+	return null;
+}
+
+/**
  * Execute a pre-parsed command directly by name and argument list.
  *
  * Unlike `runCommand`, this function does NOT re-join name+args into a string
@@ -259,7 +300,36 @@ export async function runCommandDirect(
 	}
 
 	const mod = resolveModule(name);
-	if (!mod) return { stderr: `${name}: command not found`, exitCode: 127 };
+	if (!mod) {
+		// VFS PATH fallback
+		const vfsBinary = resolveVfsBinary(name, env, shell, authUser);
+		if (vfsBinary) {
+			const stubContent = shell.vfs.readFile(vfsBinary);
+			const builtinMatch = stubContent.match(/exec\s+builtin\s+(\S+)/);
+			if (builtinMatch) {
+				const builtinMod = resolveModule(builtinMatch[1]!);
+				if (builtinMod) {
+					return await builtinMod.run({
+						authUser, hostname,
+						activeSessions: shell.users.listActiveSessions(),
+						rawInput: [name, ...args].join(" "),
+						mode, args, stdin, cwd, shell, env,
+					});
+				}
+			}
+			const shMod = resolveModule("sh");
+			if (shMod) {
+				return await shMod.run({
+					authUser, hostname,
+					activeSessions: shell.users.listActiveSessions(),
+					rawInput: `sh -c ${JSON.stringify(stubContent)}`,
+					mode, args: ["-c", stubContent, "--", ...args],
+					stdin, cwd, shell, env,
+				});
+			}
+		}
+		return { stderr: `${name}: command not found`, exitCode: 127 };
+	}
 
 	try {
 		return await mod.run({
@@ -337,7 +407,44 @@ export async function runCommand(
 	const { commandName, args } = parseInput(expanded);
 	const mod = resolveModule(commandName);
 
-	if (!mod) return { stderr: `${commandName}: command not found`, exitCode: 127 };
+	if (!mod) {
+		// ── VFS PATH resolution ───────────────────────────────────────────────
+		// Before giving up, search $PATH in the VFS for an executable file.
+		// Mirrors real shell behaviour: unknown builtins fall through to PATH.
+		const vfsBinary = resolveVfsBinary(commandName, shellEnv, shell, authUser);
+		if (vfsBinary) {
+			// Execute stub content via sh interpreter
+			const stubContent = shell.vfs.readFile(vfsBinary);
+			// If stub delegates to a builtin ("exec builtin xxx"), run that builtin
+			const builtinMatch = stubContent.match(/exec\s+builtin\s+(\S+)/);
+			if (builtinMatch) {
+				const builtinName = builtinMatch[1]!;
+				const builtinMod = resolveModule(builtinName);
+				if (builtinMod) {
+					return await builtinMod.run({
+						authUser, hostname,
+						activeSessions: shell.users.listActiveSessions(),
+						rawInput: [commandName, ...args].join(" "),
+						mode, args, stdin, cwd, shell, env: shellEnv,
+					});
+				}
+			}
+			// Otherwise execute the stub as a sh script
+			const shMod = resolveModule("sh");
+			if (shMod) {
+				return await shMod.run({
+					authUser, hostname,
+					activeSessions: shell.users.listActiveSessions(),
+					rawInput: `sh -c ${JSON.stringify(stubContent)}`,
+					mode,
+					args: ["-c", stubContent, "--", ...args],
+					stdin, cwd, shell, env: shellEnv,
+				});
+			}
+		}
+
+		return { stderr: `${commandName}: command not found`, exitCode: 127 };
+	}
 
 	try {
 		return await mod.run({

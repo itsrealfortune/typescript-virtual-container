@@ -153,7 +153,8 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		installedSizeKb: 9814,
 		depends: ["nodejs"],
 		files: [
-			{ path: "/usr/bin/npm", content: "#!/bin/sh\necho 'npm 9.2.0 (virtual)'\n", mode: 0o755 },
+			{ path: "/usr/bin/npm", content: "#!/bin/sh\nexec builtin npm \"$@\"\n", mode: 0o755 },
+			{ path: "/usr/bin/npx", content: "#!/bin/sh\nexec builtin npx \"$@\"\n", mode: 0o755 },
 		],
 	},
 	{
