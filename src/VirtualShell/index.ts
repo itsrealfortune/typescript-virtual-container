@@ -211,20 +211,43 @@ class VirtualShell extends EventEmitter {
 			terminalSize,
 			this,
 		);
+		// Refresh /proc/<pid> and /proc/self after session is registered
+		this.refreshProcSessions();
 	}
 
 	/**
 	 * Refreshes the `/proc` virtual filesystem with current system state.
 	 *
 	 * Updates `/proc/uptime`, `/proc/meminfo`, `/proc/cpuinfo`,
-	 * `/proc/version`, and `/proc/loadavg` from live host data.
+	 * `/proc/version`, `/proc/loadavg`, `/proc/self`, and per-session
+	 * `/proc/<pid>` entries from live session and host data.
 	 *
 	 * Called automatically during `bootstrapLinuxRootfs`. Call again before
-	 * reading `/proc` files for up-to-date values (e.g. before `neofetch`
-	 * or `free` in long-running processes).
+	 * reading `/proc` files for up-to-date values.
 	 */
 	public refreshProcFs(): void {
-		refreshProc(this.vfs, this.properties, this.hostname, this.startTime);
+		refreshProc(
+			this.vfs,
+			this.properties,
+			this.hostname,
+			this.startTime,
+			this.users.listActiveSessions(),
+		);
+	}
+
+	/**
+	 * Updates only the session-dependent `/proc` entries (`/proc/<pid>`,
+	 * `/proc/self`). Cheaper than a full `refreshProcFs()` — call this
+	 * whenever a session is registered or unregistered.
+	 */
+	public refreshProcSessions(): void {
+		refreshProc(
+			this.vfs,
+			this.properties,
+			this.hostname,
+			this.startTime,
+			this.users.listActiveSessions(),
+		);
 	}
 
 	/**
