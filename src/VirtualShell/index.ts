@@ -7,7 +7,11 @@ import { createPerfLogger } from "../utils/perfLogger";
 import VirtualFileSystem, { type VfsOptions } from "../VirtualFileSystem";
 import { VirtualUserManager } from "../VirtualUserManager";
 import { VirtualPackageManager } from "../VirtualPackageManager";
-import { bootstrapLinuxRootfs, refreshProc, syncEtcPasswd } from "../modules/linuxRootfs";
+import {
+	bootstrapLinuxRootfs,
+	refreshProc,
+	syncEtcPasswd,
+} from "../modules/linuxRootfs";
 import { startShell } from "./shell";
 
 /**

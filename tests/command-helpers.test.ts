@@ -1,9 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-    getArg,
-    getFlag,
-    ifFlag,
-} from "../src/commands/command-helpers";
+import { getArg, getFlag, ifFlag } from "../src/commands/command-helpers";
 
 describe("command-helpers", () => {
 	test("ifFlag detects plain and inline flag forms", () => {

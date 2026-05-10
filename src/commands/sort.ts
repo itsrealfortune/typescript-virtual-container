@@ -15,12 +15,16 @@ export const sortCommand: ShellModule = {
 
 		const getContent = (): string => {
 			if (files.length > 0) {
-				return files.map((f) => {
-					try {
-						assertPathAccess(authUser, resolvePath(cwd, f), "sort");
-						return shell.vfs.readFile(resolvePath(cwd, f));
-					} catch { return ""; }
-				}).join("\n");
+				return files
+					.map((f) => {
+						try {
+							assertPathAccess(authUser, resolvePath(cwd, f), "sort");
+							return shell.vfs.readFile(resolvePath(cwd, f));
+						} catch {
+							return "";
+						}
+					})
+					.join("\n");
 			}
 			return stdin ?? "";
 		};

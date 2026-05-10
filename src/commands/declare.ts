@@ -10,13 +10,15 @@ export const declareCommand: ShellModule = {
 	run: ({ args, env }) => {
 		if (!env) return { exitCode: 0 };
 
-		const integer  = ifFlag(args, ["-i"]);
+		const integer = ifFlag(args, ["-i"]);
 		const _readonly = ifFlag(args, ["-r"]);
-		const _export_  = ifFlag(args, ["-x"]);
+		const _export_ = ifFlag(args, ["-x"]);
 		const printAll = args.filter((a) => !a.startsWith("-")).length === 0;
 
 		if (printAll) {
-			const lines = Object.entries(env.vars).map(([k, v]) => `declare -- ${k}="${v}"`);
+			const lines = Object.entries(env.vars).map(
+				([k, v]) => `declare -- ${k}="${v}"`,
+			);
 			return { stdout: lines.join("\n"), exitCode: 0 };
 		}
 
@@ -28,7 +30,7 @@ export const declareCommand: ShellModule = {
 				if (!(token in env.vars)) env.vars[token] = "";
 			} else {
 				const name = token.slice(0, eq);
-				let val    = token.slice(eq + 1);
+				let val = token.slice(eq + 1);
 				if (integer) {
 					const n = parseInt(val, 10);
 					val = Number.isNaN(n) ? "0" : String(n);

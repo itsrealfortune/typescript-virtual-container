@@ -94,49 +94,115 @@ import { xargsCommand } from "./xargs";
 
 const BASE_COMMANDS: ShellModule[] = [
 	// Navigation
-	pwdCommand, cdCommand, lsCommand, treeCommand,
+	pwdCommand,
+	cdCommand,
+	lsCommand,
+	treeCommand,
 	// Files
-	catCommand, touchCommand, rmCommand, mkdirCommand, cpCommand, mvCommand, lnCommand,
-	chmodCommand, findCommand,
+	catCommand,
+	touchCommand,
+	rmCommand,
+	mkdirCommand,
+	cpCommand,
+	mvCommand,
+	lnCommand,
+	chmodCommand,
+	findCommand,
 	// Text processing
-	grepCommand, sedCommand, awkCommand, sortCommand, uniqCommand, wcCommand,
-	headCommand, tailCommand, cutCommand, trCommand, teeCommand, xargsCommand,
+	grepCommand,
+	sedCommand,
+	awkCommand,
+	sortCommand,
+	uniqCommand,
+	wcCommand,
+	headCommand,
+	tailCommand,
+	cutCommand,
+	trCommand,
+	teeCommand,
+	xargsCommand,
 	diffCommand,
 	// Archives
-	tarCommand, gzipCommand, gunzipCommand, base64Command,
+	tarCommand,
+	gzipCommand,
+	gunzipCommand,
+	base64Command,
 	// System info
-	whoamiCommand, whoCommand, hostnameCommand, idCommand, groupsCommand, unameCommand,
-	psCommand, killCommand, dfCommand, duCommand, dateCommand, sleepCommand, pingCommand,
+	whoamiCommand,
+	whoCommand,
+	hostnameCommand,
+	idCommand,
+	groupsCommand,
+	unameCommand,
+	psCommand,
+	killCommand,
+	dfCommand,
+	duCommand,
+	dateCommand,
+	sleepCommand,
+	pingCommand,
 	// Shell
-	echoCommand, envCommand, exportCommand, setCommand, unsetCommand, shCommand,
-	clearCommand, exitCommand,
+	echoCommand,
+	envCommand,
+	exportCommand,
+	setCommand,
+	unsetCommand,
+	shCommand,
+	clearCommand,
+	exitCommand,
 	// Editors
-	nanoCommand, htopCommand,
+	nanoCommand,
+	htopCommand,
 	// Network
-	curlCommand, wgetCommand,
+	curlCommand,
+	wgetCommand,
 	// Users
-	adduserCommand, passwdCommand, deluserCommand, sudoCommand, suCommand,
+	adduserCommand,
+	passwdCommand,
+	deluserCommand,
+	sudoCommand,
+	suCommand,
 	// Misc
 	neofetchCommand,
 	// Package management
-	aptCommand, aptCacheCommand, dpkgCommand, dpkgQueryCommand,
+	aptCommand,
+	aptCacheCommand,
+	dpkgCommand,
+	dpkgQueryCommand,
 	// Shell (extended)
-	whichCommand, typeCommand, manCommand, aliasCommand, unaliasCommand,
-	testCommand, sourceCommand, historyCommand,
-	printfCommand, readCommand, declareCommand,
-	shiftCommand, trapCommand, returnCommand,
-	trueCommand, falseCommand,
-	npmCommand, npxCommand,
-	nodeCommand, python3Command,
+	whichCommand,
+	typeCommand,
+	manCommand,
+	aliasCommand,
+	unaliasCommand,
+	testCommand,
+	sourceCommand,
+	historyCommand,
+	printfCommand,
+	readCommand,
+	declareCommand,
+	shiftCommand,
+	trapCommand,
+	returnCommand,
+	trueCommand,
+	falseCommand,
+	npmCommand,
+	npxCommand,
+	nodeCommand,
+	python3Command,
 	// System (extended)
-	uptimeCommand, freeCommand, lsbReleaseCommand,
+	uptimeCommand,
+	freeCommand,
+	lsbReleaseCommand,
 ];
 
 const customCommands: ShellModule[] = [];
 const commandRegistry = new Map<string, ShellModule>();
 let cachedCommandNames: string[] | null = null;
 
-const helpCommand = createHelpCommand(() => getCommandModules().map((cmd) => cmd.name));
+const helpCommand = createHelpCommand(() =>
+	getCommandModules().map((cmd) => cmd.name),
+);
 
 function buildCache(): void {
 	commandRegistry.clear();
@@ -197,11 +263,22 @@ function splitArgsRespectingQuotes(input: string): string[] {
 		const ch = input[i] || "";
 		const prev = i > 0 ? input[i - 1] : "";
 		if ((ch === '"' || ch === "'") && prev !== "\\") {
-			if (!inQuotes) { inQuotes = true; quoteChar = ch; continue; }
-			if (ch === quoteChar) { inQuotes = false; quoteChar = ""; continue; }
+			if (!inQuotes) {
+				inQuotes = true;
+				quoteChar = ch;
+				continue;
+			}
+			if (ch === quoteChar) {
+				inQuotes = false;
+				quoteChar = "";
+				continue;
+			}
 		}
 		if (/\s/.test(ch) && !inQuotes) {
-			if (current.length > 0) { tokens.push(current); current = ""; }
+			if (current.length > 0) {
+				tokens.push(current);
+				current = "";
+			}
 			continue;
 		}
 		current += ch;
@@ -250,14 +327,21 @@ function resolveVfsBinary(
 			const st = shell.vfs.stat(name);
 			if (st.type !== "file") return null;
 			if (!(st.mode & 0o111)) return null;
-			if ((name.startsWith("/sbin/") || name.startsWith("/usr/sbin/")) && authUser !== "root") return null;
+			if (
+				(name.startsWith("/sbin/") || name.startsWith("/usr/sbin/")) &&
+				authUser !== "root"
+			)
+				return null;
 			return name;
-		} catch { return null; }
+		} catch {
+			return null;
+		}
 	}
 
 	const pathDirs = (env.vars.PATH ?? "/usr/local/bin:/usr/bin:/bin").split(":");
 	for (const dir of pathDirs) {
-		if ((dir === "/sbin" || dir === "/usr/sbin") && authUser !== "root") continue;
+		if ((dir === "/sbin" || dir === "/usr/sbin") && authUser !== "root")
+			continue;
 		const full = `${dir}/${name}`;
 		if (!shell.vfs.exists(full)) continue;
 		try {
@@ -265,7 +349,7 @@ function resolveVfsBinary(
 			if (st.type !== "file") continue;
 			if (!(st.mode & 0o111)) continue;
 			return full;
-		} catch { }
+		} catch {}
 	}
 	return null;
 }
@@ -296,7 +380,16 @@ export async function runCommandDirect(
 	const aliasVal = env.vars[`__alias_${name}`];
 	if (aliasVal) {
 		// Alias may expand to a multi-word command — re-route through runCommand
-		return runCommand(`${aliasVal} ${args.join(" ")}`, authUser, hostname, mode, cwd, shell, stdin, env);
+		return runCommand(
+			`${aliasVal} ${args.join(" ")}`,
+			authUser,
+			hostname,
+			mode,
+			cwd,
+			shell,
+			stdin,
+			env,
+		);
 	}
 
 	const mod = resolveModule(name);
@@ -310,21 +403,32 @@ export async function runCommandDirect(
 				const builtinMod = resolveModule(builtinMatch[1]!);
 				if (builtinMod) {
 					return await builtinMod.run({
-						authUser, hostname,
+						authUser,
+						hostname,
 						activeSessions: shell.users.listActiveSessions(),
 						rawInput: [name, ...args].join(" "),
-						mode, args, stdin, cwd, shell, env,
+						mode,
+						args,
+						stdin,
+						cwd,
+						shell,
+						env,
 					});
 				}
 			}
 			const shMod = resolveModule("sh");
 			if (shMod) {
 				return await shMod.run({
-					authUser, hostname,
+					authUser,
+					hostname,
 					activeSessions: shell.users.listActiveSessions(),
 					rawInput: `sh -c ${JSON.stringify(stubContent)}`,
-					mode, args: ["-c", stubContent, "--", ...args],
-					stdin, cwd, shell, env,
+					mode,
+					args: ["-c", stubContent, "--", ...args],
+					stdin,
+					cwd,
+					shell,
+					env,
 				});
 			}
 		}
@@ -345,7 +449,10 @@ export async function runCommandDirect(
 			env,
 		});
 	} catch (error: unknown) {
-		return { stderr: error instanceof Error ? error.message : "Command failed", exitCode: 1 };
+		return {
+			stderr: error instanceof Error ? error.message : "Command failed",
+			exitCode: 1,
+		};
 	}
 }
 
@@ -385,11 +492,23 @@ export async function runCommand(
 
 	if (hasOperators) {
 		const script = parseScript(aliasExpanded);
-		if (!script.isValid) return { stderr: script.error || "Syntax error", exitCode: 1 };
+		if (!script.isValid)
+			return { stderr: script.error || "Syntax error", exitCode: 1 };
 		try {
-			return await executeStatements(script.statements, authUser, hostname, mode, cwd, shell, shellEnv);
+			return await executeStatements(
+				script.statements,
+				authUser,
+				hostname,
+				mode,
+				cwd,
+				shell,
+				shellEnv,
+			);
 		} catch (error: unknown) {
-			return { stderr: error instanceof Error ? error.message : "Execution failed", exitCode: 1 };
+			return {
+				stderr: error instanceof Error ? error.message : "Execution failed",
+				exitCode: 1,
+			};
 		}
 	}
 
@@ -400,8 +519,17 @@ export async function runCommand(
 		aliasExpanded,
 		shellEnv.vars,
 		shellEnv.lastExitCode,
-		(sub) => runCommand(sub, authUser, hostname, mode, cwd, shell, undefined, shellEnv)
-			.then((r) => r.stdout ?? ""),
+		(sub) =>
+			runCommand(
+				sub,
+				authUser,
+				hostname,
+				mode,
+				cwd,
+				shell,
+				undefined,
+				shellEnv,
+			).then((r) => r.stdout ?? ""),
 	);
 
 	const { commandName, args } = parseInput(expanded);
@@ -422,10 +550,16 @@ export async function runCommand(
 				const builtinMod = resolveModule(builtinName);
 				if (builtinMod) {
 					return await builtinMod.run({
-						authUser, hostname,
+						authUser,
+						hostname,
 						activeSessions: shell.users.listActiveSessions(),
 						rawInput: [commandName, ...args].join(" "),
-						mode, args, stdin, cwd, shell, env: shellEnv,
+						mode,
+						args,
+						stdin,
+						cwd,
+						shell,
+						env: shellEnv,
 					});
 				}
 			}
@@ -433,12 +567,16 @@ export async function runCommand(
 			const shMod = resolveModule("sh");
 			if (shMod) {
 				return await shMod.run({
-					authUser, hostname,
+					authUser,
+					hostname,
 					activeSessions: shell.users.listActiveSessions(),
 					rawInput: `sh -c ${JSON.stringify(stubContent)}`,
 					mode,
 					args: ["-c", stubContent, "--", ...args],
-					stdin, cwd, shell, env: shellEnv,
+					stdin,
+					cwd,
+					shell,
+					env: shellEnv,
 				});
 			}
 		}
@@ -460,6 +598,9 @@ export async function runCommand(
 			env: shellEnv,
 		});
 	} catch (error: unknown) {
-		return { stderr: error instanceof Error ? error.message : "Command failed", exitCode: 1 };
+		return {
+			stderr: error instanceof Error ? error.message : "Command failed",
+			exitCode: 1,
+		};
 	}
 }

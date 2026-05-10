@@ -11,6 +11,9 @@ export const idCommand: ShellModule = {
 		const gid = uid;
 		const isSudo = shell.users.isSudoer(target);
 		const groups = isSudo ? `${gid}(${target}),0(root)` : `${gid}(${target})`;
-		return { stdout: `uid=${uid}(${target}) gid=${gid}(${target}) groups=${groups}`, exitCode: 0 };
+		return {
+			stdout: `uid=${uid}(${target}) gid=${gid}(${target}) groups=${groups}`,
+			exitCode: 0,
+		};
 	},
 };

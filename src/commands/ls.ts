@@ -32,9 +32,11 @@ export const lsCommand: ShellModule = {
 	category: "navigation",
 	params: ["[-la] [path]"],
 	run: ({ authUser, shell, cwd, args }) => {
-		const longFormat  = ifFlag(args, ["-l", "--long"]);
-		const showHidden  = ifFlag(args, ["-a", "--all"]);
-		const targetArg   = getArg(args, 0, { flags: ["-l", "--long", "-a", "--all", "-la", "-al"] });
+		const longFormat = ifFlag(args, ["-l", "--long"]);
+		const showHidden = ifFlag(args, ["-a", "--all"]);
+		const targetArg = getArg(args, 0, {
+			flags: ["-l", "--long", "-a", "--all", "-la", "-al"],
+		});
 		const target = resolvePath(cwd, targetArg ?? cwd);
 		assertPathAccess(authUser, target, "ls");
 		const items = shell.vfs

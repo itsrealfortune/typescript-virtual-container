@@ -24,7 +24,12 @@
  * ```
  */
 
-import type { VfsSnapshot, VfsSnapshotNode, VfsSnapshotFileNode, VfsSnapshotDirectoryNode } from "../types/vfs";
+import type {
+	VfsSnapshot,
+	VfsSnapshotNode,
+	VfsSnapshotFileNode,
+	VfsSnapshotDirectoryNode,
+} from "../types/vfs";
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
@@ -102,16 +107,18 @@ export function diffSnapshots(
 	const ignorePrefixes = options.ignore ?? [];
 
 	const shouldIgnore = (path: string): boolean =>
-		ignorePrefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
+		ignorePrefixes.some(
+			(prefix) => path === prefix || path.startsWith(`${prefix}/`),
+		);
 
 	const beforeMap = new Map<string, VfsSnapshotNode>();
-	const afterMap  = new Map<string, VfsSnapshotNode>();
+	const afterMap = new Map<string, VfsSnapshotNode>();
 
 	flattenSnapshot(before.root, "", beforeMap);
-	flattenSnapshot(after.root,  "", afterMap);
+	flattenSnapshot(after.root, "", afterMap);
 
-	const added:    VfsDiffEntry[]    = [];
-	const removed:  VfsDiffEntry[]    = [];
+	const added: VfsDiffEntry[] = [];
+	const removed: VfsDiffEntry[] = [];
 	const modified: VfsDiffModified[] = [];
 
 	// Added — in after, not in before
@@ -139,8 +146,8 @@ export function diffSnapshots(
 
 		if (afterNode.type === "file" && beforeNode.type === "file") {
 			const beforeContent = decodeContent(beforeNode as VfsSnapshotFileNode);
-			const afterContent  = decodeContent(afterNode  as VfsSnapshotFileNode);
-			const modeChanged   = afterNode.mode !== beforeNode.mode;
+			const afterContent = decodeContent(afterNode as VfsSnapshotFileNode);
+			const modeChanged = afterNode.mode !== beforeNode.mode;
 			if (beforeContent !== afterContent || modeChanged) {
 				modified.push({
 					path,
@@ -200,17 +207,23 @@ export function formatDiff(
 		lines.push(`~ ${entry.path}  [modified]`);
 		if (showContent) {
 			const before = entry.before.slice(0, maxContentChars);
-			const after  = entry.after.slice(0, maxContentChars);
-			lines.push(`  before: ${JSON.stringify(before)}${entry.before.length > maxContentChars ? "…" : ""}`);
-			lines.push(`  after:  ${JSON.stringify(after)}${entry.after.length > maxContentChars ? "…" : ""}`);
+			const after = entry.after.slice(0, maxContentChars);
+			lines.push(
+				`  before: ${JSON.stringify(before)}${entry.before.length > maxContentChars ? "…" : ""}`,
+			);
+			lines.push(
+				`  after:  ${JSON.stringify(after)}${entry.after.length > maxContentChars ? "…" : ""}`,
+			);
 		}
 	}
 
 	const summary = [
-		diff.added.length    > 0 ? `${diff.added.length} added`    : "",
-		diff.removed.length  > 0 ? `${diff.removed.length} removed`  : "",
+		diff.added.length > 0 ? `${diff.added.length} added` : "",
+		diff.removed.length > 0 ? `${diff.removed.length} removed` : "",
 		diff.modified.length > 0 ? `${diff.modified.length} modified` : "",
-	].filter(Boolean).join(", ");
+	]
+		.filter(Boolean)
+		.join(", ");
 
 	lines.push(`\n${summary}`);
 	return lines.join("\n");
@@ -227,30 +240,36 @@ export function formatDiff(
 export function assertDiff(
 	diff: VfsDiff,
 	expect: {
-		added?:    string[];
-		removed?:  string[];
+		added?: string[];
+		removed?: string[];
 		modified?: string[];
 	},
 ): void {
-	const addedPaths    = diff.added.map((e)    => e.path);
-	const removedPaths  = diff.removed.map((e)  => e.path);
+	const addedPaths = diff.added.map((e) => e.path);
+	const removedPaths = diff.removed.map((e) => e.path);
 	const modifiedPaths = diff.modified.map((e) => e.path);
 
 	for (const path of expect.added ?? []) {
 		if (!addedPaths.includes(path)) {
-			throw new Error(`assertDiff: expected "${path}" to be added, but it was not.\nAdded: ${JSON.stringify(addedPaths)}`);
+			throw new Error(
+				`assertDiff: expected "${path}" to be added, but it was not.\nAdded: ${JSON.stringify(addedPaths)}`,
+			);
 		}
 	}
 
 	for (const path of expect.removed ?? []) {
 		if (!removedPaths.includes(path)) {
-			throw new Error(`assertDiff: expected "${path}" to be removed, but it was not.\nRemoved: ${JSON.stringify(removedPaths)}`);
+			throw new Error(
+				`assertDiff: expected "${path}" to be removed, but it was not.\nRemoved: ${JSON.stringify(removedPaths)}`,
+			);
 		}
 	}
 
 	for (const path of expect.modified ?? []) {
 		if (!modifiedPaths.includes(path)) {
-			throw new Error(`assertDiff: expected "${path}" to be modified, but it was not.\nModified: ${JSON.stringify(modifiedPaths)}`);
+			throw new Error(
+				`assertDiff: expected "${path}" to be modified, but it was not.\nModified: ${JSON.stringify(modifiedPaths)}`,
+			);
 		}
 	}
 }

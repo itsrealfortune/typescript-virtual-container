@@ -8,13 +8,17 @@ export const readCommand: ShellModule = {
 	params: ["[-r] [-p prompt] <var...>"],
 	run: ({ args, stdin, env }) => {
 		const _promptIdx = args.indexOf("-p");
-		const varNames  = args.filter((a, i) => a !== "-r" && a !== "-p" && args[i - 1] !== "-p");
+		const varNames = args.filter(
+			(a, i) => a !== "-r" && a !== "-p" && args[i - 1] !== "-p",
+		);
 
 		// In non-interactive context, read from stdin pipe
 		const input = (stdin ?? "").split("\n")[0] ?? "";
-		const line  = ifFlag(args, ["-r"])
+		const line = ifFlag(args, ["-r"])
 			? input
-			: input.replace(/\\(?:\r?\n|.)/g, (m) => (m[1] === "\n" || m[1] === "\r" ? "" : m[1]!));
+			: input.replace(/\\(?:\r?\n|.)/g, (m) =>
+					m[1] === "\n" || m[1] === "\r" ? "" : m[1]!,
+				);
 
 		if (!env) return { exitCode: 0 };
 
@@ -27,9 +31,8 @@ export const readCommand: ShellModule = {
 			// Split on whitespace, last var gets remainder
 			const parts = line.split(/\s+/);
 			for (let i = 0; i < varNames.length; i++) {
-				env.vars[varNames[i]!] = i < varNames.length - 1
-					? (parts[i] ?? "")
-					: parts.slice(i).join(" ");
+				env.vars[varNames[i]!] =
+					i < varNames.length - 1 ? (parts[i] ?? "") : parts.slice(i).join(" ");
 			}
 		}
 

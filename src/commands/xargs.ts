@@ -12,6 +12,15 @@ export const xargsCommand: ShellModule = {
 		const items = (stdin ?? "").trim().split(/\s+/).filter(Boolean);
 		if (items.length === 0) return { exitCode: 0 };
 		const fullCmd = [baseCmd, ...extraArgs, ...items].join(" ");
-		return runCommand(fullCmd, authUser, hostname, mode, cwd, shell, undefined, env);
+		return runCommand(
+			fullCmd,
+			authUser,
+			hostname,
+			mode,
+			cwd,
+			shell,
+			undefined,
+			env,
+		);
 	},
 };

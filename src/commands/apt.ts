@@ -1,5 +1,5 @@
 import type { ShellModule } from "../types/commands";
-import { ifFlag, } from "./command-helpers";
+import { ifFlag } from "./command-helpers";
 import { getPackageManager } from "./helpers";
 
 /**
@@ -15,7 +15,8 @@ export const aptCommand: ShellModule = {
 	params: ["<install|remove|update|upgrade|search|show|list> [pkg...]"],
 	run: ({ args, shell, authUser }) => {
 		const pm = getPackageManager(shell);
-		if (!pm) return { stderr: "apt: package manager not initialised", exitCode: 1 };
+		if (!pm)
+			return { stderr: "apt: package manager not initialised", exitCode: 1 };
 
 		const sub = args[0]?.toLowerCase();
 		const rest = args.slice(1);
@@ -28,7 +29,8 @@ export const aptCommand: ShellModule = {
 		const restricted = ["install", "remove", "purge", "upgrade", "update"];
 		if (restricted.includes(sub ?? "") && authUser !== "root") {
 			return {
-				stderr: "E: Could not open lock file /var/lib/dpkg/lock-frontend - open (13: Permission denied)\nE: Unable to acquire the dpkg frontend lock, are you root?",
+				stderr:
+					"E: Could not open lock file /var/lib/dpkg/lock-frontend - open (13: Permission denied)\nE: Unable to acquire the dpkg frontend lock, are you root?",
 				exitCode: 100,
 			};
 		}
@@ -90,7 +92,8 @@ export const aptCommand: ShellModule = {
 						exitCode: 0,
 					};
 				const lines = results.map(
-					(p) => `${p.name}/${p.section ?? "misc"} ${p.version} amd64\n  ${p.shortDesc ?? p.description}`,
+					(p) =>
+						`${p.name}/${p.section ?? "misc"} ${p.version} amd64\n  ${p.shortDesc ?? p.description}`,
 				);
 				return {
 					stdout: `Sorting... Done\nFull Text Search... Done\n${lines.join("\n")}`,
@@ -100,10 +103,14 @@ export const aptCommand: ShellModule = {
 
 			case "show": {
 				const name = pkgs[0];
-				if (!name) return { stderr: "apt: show requires a package name", exitCode: 1 };
+				if (!name)
+					return { stderr: "apt: show requires a package name", exitCode: 1 };
 				const info = pm.show(name);
 				if (!info)
-					return { stderr: `N: Unable to locate package ${name}`, exitCode: 100 };
+					return {
+						stderr: `N: Unable to locate package ${name}`,
+						exitCode: 100,
+					};
 				return { stdout: info, exitCode: 0 };
 			}
 
@@ -112,11 +119,18 @@ export const aptCommand: ShellModule = {
 				if (installedFlag) {
 					const pkgList = pm.listInstalled();
 					if (pkgList.length === 0)
-						return { stdout: "Listing... Done\n(no packages installed)", exitCode: 0 };
+						return {
+							stdout: "Listing... Done\n(no packages installed)",
+							exitCode: 0,
+						};
 					const lines = pkgList.map(
-						(p) => `${p.name}/${p.section} ${p.version} ${p.architecture} [installed]`,
+						(p) =>
+							`${p.name}/${p.section} ${p.version} ${p.architecture} [installed]`,
 					);
-					return { stdout: `Listing... Done\n${lines.join("\n")}`, exitCode: 0 };
+					return {
+						stdout: `Listing... Done\n${lines.join("\n")}`,
+						exitCode: 0,
+					};
 				}
 				// all available
 				const all = pm.listAvailable();
@@ -155,7 +169,11 @@ export const aptCacheCommand: ShellModule = {
 	params: ["<search|show|policy> [pkg]"],
 	run: ({ args, shell }) => {
 		const pm = getPackageManager(shell);
-		if (!pm) return { stderr: "apt-cache: package manager not initialised", exitCode: 1 };
+		if (!pm)
+			return {
+				stderr: "apt-cache: package manager not initialised",
+				exitCode: 1,
+			};
 
 		const sub = args[0]?.toLowerCase();
 		const pkgName = args[1];
@@ -165,9 +183,10 @@ export const aptCacheCommand: ShellModule = {
 				if (!pkgName) return { stderr: "Need a search term", exitCode: 1 };
 				const results = pm.search(pkgName);
 				return {
-					stdout: results
-						.map((p) => `${p.name} - ${p.shortDesc ?? p.description}`)
-						.join("\n") || "(no results)",
+					stdout:
+						results
+							.map((p) => `${p.name} - ${p.shortDesc ?? p.description}`)
+							.join("\n") || "(no results)",
 					exitCode: 0,
 				};
 			}
@@ -182,7 +201,10 @@ export const aptCacheCommand: ShellModule = {
 				if (!pkgName) return { stderr: "Need a package name", exitCode: 1 };
 				const def = pm.findInRegistry(pkgName);
 				if (!def)
-					return { stderr: `N: Unable to locate package ${pkgName}`, exitCode: 100 };
+					return {
+						stderr: `N: Unable to locate package ${pkgName}`,
+						exitCode: 100,
+					};
 				const inst = pm.isInstalled(pkgName);
 				return {
 					stdout: [
@@ -197,7 +219,10 @@ export const aptCacheCommand: ShellModule = {
 				};
 			}
 			default:
-				return { stderr: `apt-cache: unknown command '${sub ?? ""}'`, exitCode: 1 };
+				return {
+					stderr: `apt-cache: unknown command '${sub ?? ""}'`,
+					exitCode: 1,
+				};
 		}
 	},
 };

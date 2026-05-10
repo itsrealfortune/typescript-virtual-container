@@ -13,7 +13,7 @@ export const catCommand: ShellModule = {
 	category: "files",
 	params: ["[-n] [-b] <file...>"],
 	run: ({ authUser, shell, cwd, args, stdin }) => {
-		const numberAll    = ifFlag(args, ["-n", "--number"]);
+		const numberAll = ifFlag(args, ["-n", "--number"]);
 		const numberNonBlank = ifFlag(args, ["-b", "--number-nonblank"]);
 		const fileArgs = args.filter((a) => !a.startsWith("-"));
 
@@ -39,10 +39,13 @@ export const catCommand: ShellModule = {
 		}
 
 		let lineNum = 1;
-		const numbered = combined.split("\n").map((line) => {
-			if (numberNonBlank && line.trim() === "") return line;
-			return `${String(lineNum++).padStart(6)}\t${line}`;
-		}).join("\n");
+		const numbered = combined
+			.split("\n")
+			.map((line) => {
+				if (numberNonBlank && line.trim() === "") return line;
+				return `${String(lineNum++).padStart(6)}\t${line}`;
+			})
+			.join("\n");
 
 		return { stdout: numbered, exitCode: 0 };
 	},

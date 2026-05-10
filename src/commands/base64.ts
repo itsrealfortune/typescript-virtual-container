@@ -15,8 +15,14 @@ export const base64Command: ShellModule = {
 		const decode = ifFlag(args, ["-d", "--decode"]);
 		const input = stdin ?? "";
 		if (decode) {
-			try { return { stdout: Buffer.from(input.trim(), "base64").toString("utf8"), exitCode: 0 }; }
-			catch { return { stderr: "base64: invalid input", exitCode: 1 }; }
+			try {
+				return {
+					stdout: Buffer.from(input.trim(), "base64").toString("utf8"),
+					exitCode: 0,
+				};
+			} catch {
+				return { stderr: "base64: invalid input", exitCode: 1 };
+			}
 		}
 		return { stdout: Buffer.from(input).toString("base64"), exitCode: 0 };
 	},

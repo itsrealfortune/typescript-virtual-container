@@ -15,17 +15,24 @@ export const gzipCommand: ShellModule = {
 		const file = args[0];
 		if (!file) return { stderr: "gzip: no file specified", exitCode: 1 };
 		const p = resolvePath(cwd, file);
-		try { shell.vfs.compressFile(p); return { exitCode: 0 }; }
-		catch { return { stderr: `gzip: ${file}: No such file or directory`, exitCode: 1 }; }
+		try {
+			shell.vfs.compressFile(p);
+			return { exitCode: 0 };
+		} catch {
+			return {
+				stderr: `gzip: ${file}: No such file or directory`,
+				exitCode: 1,
+			};
+		}
 	},
 };
 
 export const gunzipCommand: ShellModule = {
-/**
- * Decompress gzip files (or zcat alias).
- * @category archive
- * @params ["<file>"]
- */
+	/**
+	 * Decompress gzip files (or zcat alias).
+	 * @category archive
+	 * @params ["<file>"]
+	 */
 	name: "gunzip",
 	description: "Decompress files",
 	category: "archive",
@@ -35,7 +42,14 @@ export const gunzipCommand: ShellModule = {
 		const file = args[0];
 		if (!file) return { stderr: "gunzip: no file specified", exitCode: 1 };
 		const p = resolvePath(cwd, file);
-		try { shell.vfs.decompressFile(p); return { exitCode: 0 }; }
-		catch { return { stderr: `gunzip: ${file}: No such file or directory`, exitCode: 1 }; }
+		try {
+			shell.vfs.decompressFile(p);
+			return { exitCode: 0 };
+		} catch {
+			return {
+				stderr: `gunzip: ${file}: No such file or directory`,
+				exitCode: 1,
+			};
+		}
 	},
 };

@@ -13,22 +13,34 @@ export const duCommand: ShellModule = {
 		const target = args.find((a) => !a.startsWith("-")) ?? ".";
 		const p = resolvePath(cwd, target);
 
-		const fmt = (b: number) => human ? `${(b / 1024).toFixed(1)}K` : String(Math.ceil(b / 1024));
+		const fmt = (b: number) =>
+			human ? `${(b / 1024).toFixed(1)}K` : String(Math.ceil(b / 1024));
 
-		if (!shell.vfs.exists(p)) return { stderr: `du: ${target}: No such file or directory`, exitCode: 1 };
+		if (!shell.vfs.exists(p))
+			return {
+				stderr: `du: ${target}: No such file or directory`,
+				exitCode: 1,
+			};
 
 		if (summary || shell.vfs.stat(p).type === "file") {
-			return { stdout: `${fmt(shell.vfs.getUsageBytes(p))}\t${target}`, exitCode: 0 };
+			return {
+				stdout: `${fmt(shell.vfs.getUsageBytes(p))}\t${target}`,
+				exitCode: 0,
+			};
 		}
 
 		const lines: string[] = [];
 		const walk = (dir: string, rel: string) => {
 			let total = 0;
 			for (const e of shell.vfs.list(dir)) {
-				const full = `${dir}/${e}`, r = `${rel}/${e}`;
+				const full = `${dir}/${e}`,
+					r = `${rel}/${e}`;
 				const st = shell.vfs.stat(full);
 				if (st.type === "directory") total += walk(full, r);
-				else { total += st.size; if (!summary) lines.push(`${fmt(st.size)}\t${r}`); }
+				else {
+					total += st.size;
+					if (!summary) lines.push(`${fmt(st.size)}\t${r}`);
+				}
 			}
 			lines.push(`${fmt(total)}\t${rel}`);
 			return total;

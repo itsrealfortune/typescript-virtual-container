@@ -6,7 +6,7 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
-const NPM_VERSION  = "9.2.0";
+const NPM_VERSION = "9.2.0";
 const NODE_VERSION = "18.19.0";
 
 /**
@@ -23,7 +23,8 @@ export const npmCommand: ShellModule = {
 		// Require explicit installation
 		if (!shell.packageManager.isInstalled("npm")) {
 			return {
-				stderr: "bash: npm: command not found\nHint: install it with: apt install npm\n",
+				stderr:
+					"bash: npm: command not found\nHint: install it with: apt install npm\n",
 				exitCode: 127,
 			};
 		}
@@ -46,7 +47,8 @@ export const npmCommand: ShellModule = {
 			case "i":
 			case "add":
 				return {
-					stderr: "npm warn: package installation is not available in the virtual runtime.\nnpm warn: This environment simulates npm CLI behaviour only.\n",
+					stderr:
+						"npm warn: package installation is not available in the virtual runtime.\nnpm warn: This environment simulates npm CLI behaviour only.\n",
 					exitCode: 1,
 				};
 
@@ -112,7 +114,8 @@ export const npxCommand: ShellModule = {
 	run: ({ args, shell }) => {
 		if (!shell.packageManager.isInstalled("npm")) {
 			return {
-				stderr: "bash: npx: command not found\nHint: install it with: apt install npm\n",
+				stderr:
+					"bash: npx: command not found\nHint: install it with: apt install npm\n",
 				exitCode: 127,
 			};
 		}

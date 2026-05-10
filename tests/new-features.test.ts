@@ -254,7 +254,7 @@ describe("curl / wget (pure fetch)", () => {
 	test("curl fetches real URL and returns body", async () => {
 		const r = await client.exec("curl https://httpbin.org/get");
 		// In sandboxed env network may be blocked — accept 0 (ok), 6 (dns), 22 (http err), or 1 (fetch error)
-		expect([0, 1, 6, 22]).toContain(r.exitCode);
+		expect([0, 1, 6, 22]).toContain(r.exitCode ?? -1);
 	});
 
 	test("curl -o saves to VFS", async () => {
@@ -479,7 +479,7 @@ describe("Bug fixes", () => {
 	test("ls -a shows dotfiles", async () => {
 		await c.exec("touch /tmp/.hidden && touch /tmp/visible");
 		const normal = await c.exec("ls /tmp");
-		const all    = await c.exec("ls -a /tmp");
+		const all = await c.exec("ls -a /tmp");
 		expect(normal.stdout).not.toContain(".hidden");
 		expect(all.stdout).toContain(".hidden");
 		expect(all.stdout).toContain("visible");
@@ -500,7 +500,7 @@ describe("Bug fixes", () => {
 		await c.exec("chmod u+x /tmp/u.sh");
 		const mode = shell2.vfs.stat("/tmp/u.sh").mode;
 		expect(mode & 0o100).toBe(0o100); // user x set
-		expect(mode & 0o010).toBe(0);     // group x not set
+		expect(mode & 0o010).toBe(0); // group x not set
 	});
 
 	test("chmod go-r removes group+other read", async () => {
@@ -521,7 +521,9 @@ describe("Bug fixes", () => {
 	// ping -c
 	test("ping -c 2 sends exactly 2 packets", async () => {
 		const r = await c.exec("ping -c 2 localhost");
-		const dataLines = r.stdout?.split("\n").filter((l) => l.includes("icmp_seq="));
+		const dataLines = r.stdout
+			?.split("\n")
+			.filter((l) => l.includes("icmp_seq="));
 		expect(dataLines?.length).toBe(2);
 	});
 
@@ -538,7 +540,9 @@ describe("Bug fixes", () => {
 	});
 
 	test("[ -f path ] returns 1 for non-existent file", async () => {
-		const r = await c.exec("[ -f /tmp/doesnotexist999 ] && echo yes || echo no");
+		const r = await c.exec(
+			"[ -f /tmp/doesnotexist999 ] && echo yes || echo no",
+		);
 		expect(r.stdout?.trim()).toBe("no");
 	});
 
@@ -889,13 +893,19 @@ describe("node enhanced REPL", () => {
 	});
 
 	test("node require path works", async () => {
-		shell7.vfs.writeFile("/tmp/path.js", "const p = require('path'); console.log(p.join('a', 'b'))");
+		shell7.vfs.writeFile(
+			"/tmp/path.js",
+			"const p = require('path'); console.log(p.join('a', 'b'))",
+		);
 		const r = await c7.exec("node /tmp/path.js");
 		expect(r.stdout?.trim()).toBe("a/b");
 	});
 
 	test("node require fs throws gracefully", async () => {
-		shell7.vfs.writeFile("/tmp/fs.js", "try { require('fs') } catch(e) { console.log('blocked') }");
+		shell7.vfs.writeFile(
+			"/tmp/fs.js",
+			"try { require('fs') } catch(e) { console.log('blocked') }",
+		);
 		const r = await c7.exec("node /tmp/fs.js");
 		expect(r.stdout?.trim()).toBe("blocked");
 	});
@@ -966,13 +976,15 @@ describe("python3 enhanced interpreter", () => {
 
 	test("class with __init__ and methods", async () => {
 		const r = await py(
-			"class Dog:\n    def __init__(self, name):\n        self.name = name\n    def bark(self):\n        return f'Woof! I am {self.name}'\nd = Dog('Rex')\nprint(d.bark())"
+			"class Dog:\n    def __init__(self, name):\n        self.name = name\n    def bark(self):\n        return f'Woof! I am {self.name}'\nd = Dog('Rex')\nprint(d.bark())",
 		);
 		expect(r.stdout?.trim()).toBe("Woof! I am Rex");
 	});
 
 	test("import math and use functions", async () => {
-		const r = await py("import math\nprint(math.floor(3.9))\nprint(round(math.sqrt(16), 0))");
+		const r = await py(
+			"import math\nprint(math.floor(3.9))\nprint(round(math.sqrt(16), 0))",
+		);
 		expect(r.stdout).toContain("3");
 		expect(r.stdout).toContain("4");
 	});
@@ -989,13 +1001,17 @@ describe("python3 enhanced interpreter", () => {
 	});
 
 	test("import json dumps/loads", async () => {
-		const r = await py("import json\nd={'x':1}\nprint(json.dumps(d))\nprint(json.loads('{\"a\":2}')['a'])");
+		const r = await py(
+			"import json\nd={'x':1}\nprint(json.dumps(d))\nprint(json.loads('{\"a\":2}')['a'])",
+		);
 		expect(r.stdout).toContain('"x"');
 		expect(r.stdout).toContain("2");
 	});
 
 	test("try/except handles errors", async () => {
-		const r = await py("try:\n    x = 1/0\nexcept ZeroDivisionError:\n    print('caught')");
+		const r = await py(
+			"try:\n    x = 1/0\nexcept ZeroDivisionError:\n    print('caught')",
+		);
 		expect(r.stdout?.trim()).toBe("caught");
 	});
 
@@ -1005,7 +1021,9 @@ describe("python3 enhanced interpreter", () => {
 	});
 
 	test("sorted() and reversed()", async () => {
-		const r = await py("print(sorted([3,1,2]))\nprint(list(reversed([1,2,3])))");
+		const r = await py(
+			"print(sorted([3,1,2]))\nprint(list(reversed([1,2,3])))",
+		);
 		expect(r.stdout).toContain("[1, 2, 3]");
 		expect(r.stdout).toContain("[3, 2, 1]");
 	});

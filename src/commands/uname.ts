@@ -12,7 +12,11 @@ export const unameCommand: ShellModule = {
 		const release = shell.properties?.kernel ?? "5.15.0";
 		const machine = shell.properties?.arch ?? "x86_64";
 		const hostname = shell.hostname;
-		if (all) return { stdout: `${sysname} ${hostname} ${release} #1 SMP ${machine} GNU/Linux`, exitCode: 0 };
+		if (all)
+			return {
+				stdout: `${sysname} ${hostname} ${release} #1 SMP ${machine} GNU/Linux`,
+				exitCode: 0,
+			};
 		if (ifFlag(args, ["-r"])) return { stdout: release, exitCode: 0 };
 		if (ifFlag(args, ["-m"])) return { stdout: machine, exitCode: 0 };
 		return { stdout: sysname, exitCode: 0 };

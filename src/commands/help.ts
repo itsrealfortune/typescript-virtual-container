@@ -18,24 +18,24 @@ const CATEGORY_ORDER = [
 
 const CATEGORY_LABELS: Record<string, string> = {
 	navigation: "Navigation",
-	files:      "Files & Filesystem",
-	text:       "Text Processing",
-	archive:    "Archive & Compression",
-	system:     "System",
-	package:    "Package Management",
-	network:    "Network",
-	shell:      "Shell & Scripting",
-	users:      "Users & Permissions",
-	misc:       "Miscellaneous",
+	files: "Files & Filesystem",
+	text: "Text Processing",
+	archive: "Archive & Compression",
+	system: "System",
+	package: "Package Management",
+	network: "Network",
+	shell: "Shell & Scripting",
+	users: "Users & Permissions",
+	misc: "Miscellaneous",
 };
 
 // ─── formatting helpers ───────────────────────────────────────────────────────
 
-const BOLD  = "\x1b[1m";
+const BOLD = "\x1b[1m";
 const RESET = "\x1b[0m";
-const CYAN  = "\x1b[36m";
-const YLW   = "\x1b[33m";
-const DIM   = "\x1b[2m";
+const CYAN = "\x1b[36m";
+const YLW = "\x1b[33m";
+const DIM = "\x1b[2m";
 const GREEN = "\x1b[32m";
 
 function pad(s: string, n: number): string {
@@ -67,7 +67,9 @@ function renderFull(modules: ShellModule[]): string {
 
 	const cats = [
 		...CATEGORY_ORDER.filter((c) => grouped[c]),
-		...Object.keys(grouped).filter((c) => !CATEGORY_ORDER.includes(c)).sort(),
+		...Object.keys(grouped)
+			.filter((c) => !CATEGORY_ORDER.includes(c))
+			.sort(),
 	];
 
 	for (const cat of cats) {
@@ -93,7 +95,9 @@ function renderFull(modules: ShellModule[]): string {
 function renderDetail(mod: ShellModule): string {
 	const lines: string[] = [];
 
-	lines.push(`${BOLD}${mod.name}${RESET} — ${mod.description ?? "no description"}`);
+	lines.push(
+		`${BOLD}${mod.name}${RESET} — ${mod.description ?? "no description"}`,
+	);
 
 	if (mod.aliases?.length) {
 		lines.push(`${DIM}Aliases: ${mod.aliases.join(", ")}${RESET}`);
@@ -109,7 +113,8 @@ function renderDetail(mod: ShellModule): string {
 		lines.push(`  ${mod.name}`);
 	}
 
-	const catLabel = CATEGORY_LABELS[mod.category ?? "misc"] ?? mod.category ?? "misc";
+	const catLabel =
+		CATEGORY_LABELS[mod.category ?? "misc"] ?? mod.category ?? "misc";
 	lines.push("");
 	lines.push(`${DIM}Category: ${catLabel}${RESET}`);
 
@@ -133,7 +138,10 @@ export function createHelpCommand(_getNames: () => string[]): ShellModule {
 					(m) => m.name === target || m.aliases?.includes(target),
 				);
 				if (!mod) {
-					return { stderr: `help: no help entry for '${args[0]}'`, exitCode: 1 };
+					return {
+						stderr: `help: no help entry for '${args[0]}'`,
+						exitCode: 1,
+					};
 				}
 				return { stdout: renderDetail(mod), exitCode: 0 };
 			}

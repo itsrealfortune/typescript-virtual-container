@@ -16,7 +16,9 @@ export const trCommand: ShellModule = {
 			for (const c of set1) input = input.split(c).join("");
 		} else if (set2) {
 			for (let i = 0; i < set1.length; i++) {
-				input = input.split(set1[i]!).join(set2[i] ?? set2[set2.length - 1] ?? "");
+				input = input
+					.split(set1[i]!)
+					.join(set2[i] ?? set2[set2.length - 1] ?? "");
 			}
 		}
 		return { stdout: input, exitCode: 0 };

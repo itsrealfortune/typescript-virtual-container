@@ -17,7 +17,10 @@ export const uptimeCommand: ShellModule = {
 
 		if (since) {
 			return {
-				stdout: new Date(shell.startTime).toISOString().slice(0, 19).replace("T", " "),
+				stdout: new Date(shell.startTime)
+					.toISOString()
+					.slice(0, 19)
+					.replace("T", " "),
 				exitCode: 0,
 			};
 		}

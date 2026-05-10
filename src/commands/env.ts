@@ -13,6 +13,11 @@ export const envCommand: ShellModule = {
 	params: [],
 	run: ({ env, authUser }) => {
 		const vars = { ...env.vars, USER: authUser, HOME: `/home/${authUser}` };
-		return { stdout: Object.entries(vars).map(([k, v]) => `${k}=${v}`).join("\n"), exitCode: 0 };
+		return {
+			stdout: Object.entries(vars)
+				.map(([k, v]) => `${k}=${v}`)
+				.join("\n"),
+			exitCode: 0,
+		};
 	},
 };

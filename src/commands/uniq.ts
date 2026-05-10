@@ -18,8 +18,14 @@ export const uniqCommand: ShellModule = {
 			while (j < lines.length && lines[j] === lines[i]) j++;
 			const n = j - i;
 			const line = lines[i]!;
-			if (dupOnly && n === 1) { i = j; continue; }
-			if (uniqOnly && n > 1) { i = j; continue; }
+			if (dupOnly && n === 1) {
+				i = j;
+				continue;
+			}
+			if (uniqOnly && n > 1) {
+				i = j;
+				continue;
+			}
 			out.push(count ? `${String(n).padStart(4)} ${line}` : line);
 			i = j;
 		}

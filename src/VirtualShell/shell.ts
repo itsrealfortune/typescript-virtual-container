@@ -73,9 +73,20 @@ export function startShell(
 				for (const line of bashrc.split("\n")) {
 					const l = line.trim();
 					if (!l || l.startsWith("#")) continue;
-					await runCommand(l, authUser, hostname, "shell", cwd, shell, undefined, shellEnv);
+					await runCommand(
+						l,
+						authUser,
+						hostname,
+						"shell",
+						cwd,
+						shell,
+						undefined,
+						shellEnv,
+					);
 				}
-			} catch { /* ignore bashrc errors */ }
+			} catch {
+				/* ignore bashrc errors */
+			}
 		}
 	})();
 
@@ -585,7 +596,16 @@ export function startShell(
 
 				if (line.length > 0) {
 					const result = await Promise.resolve(
-						runCommand(line, authUser, hostname, "shell", cwd, shell, undefined, shellEnv),
+						runCommand(
+							line,
+							authUser,
+							hostname,
+							"shell",
+							cwd,
+							shell,
+							undefined,
+							shellEnv,
+						),
 					);
 
 					pushHistory(line);

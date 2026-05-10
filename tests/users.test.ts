@@ -2,7 +2,9 @@ import { describe, expect, test } from "bun:test";
 import VirtualFileSystem from "../src/VirtualFileSystem";
 import { VirtualUserManager } from "../src/VirtualUserManager";
 
-function makeVfs() { return new VirtualFileSystem(); }
+function makeVfs() {
+	return new VirtualFileSystem();
+}
 
 describe("VirtualUserManager auto sudo", () => {
 	test("adds new users to sudoers by default", async () => {
@@ -40,9 +42,17 @@ describe("VirtualUserManager quotas", () => {
 		await users.addUser("alice", "alice-pass");
 		const startingUsage = users.getUsageBytes("alice");
 		await users.setQuotaBytes("alice", startingUsage + 5);
-		expect(() => { users.assertWriteWithinQuota("alice", "/home/alice/note.txt", "hello"); }).not.toThrow();
+		expect(() => {
+			users.assertWriteWithinQuota("alice", "/home/alice/note.txt", "hello");
+		}).not.toThrow();
 		vfs.writeFile("/home/alice/note.txt", "hello");
-		expect(() => { users.assertWriteWithinQuota("alice", "/home/alice/note.txt", "this exceeds the configured quota"); }).toThrow("quota exceeded for 'alice'");
+		expect(() => {
+			users.assertWriteWithinQuota(
+				"alice",
+				"/home/alice/note.txt",
+				"this exceeds the configured quota",
+			);
+		}).toThrow("quota exceeded for 'alice'");
 	});
 
 	test("does not enforce home quota outside user home", async () => {
@@ -51,7 +61,9 @@ describe("VirtualUserManager quotas", () => {
 		await users.initialize();
 		await users.addUser("bob", "bob-pass");
 		await users.setQuotaBytes("bob", 1);
-		expect(() => { users.assertWriteWithinQuota("bob", "/tmp/shared.txt", "large-content"); }).not.toThrow();
+		expect(() => {
+			users.assertWriteWithinQuota("bob", "/tmp/shared.txt", "large-content");
+		}).not.toThrow();
 	});
 
 	test("clearQuota removes enforced limit", async () => {
@@ -63,6 +75,12 @@ describe("VirtualUserManager quotas", () => {
 		expect(users.getQuotaBytes("charlie")).toBe(2);
 		await users.clearQuota("charlie");
 		expect(users.getQuotaBytes("charlie")).toBeNull();
-		expect(() => { users.assertWriteWithinQuota("charlie", "/home/charlie/file.txt", "long-content"); }).not.toThrow();
+		expect(() => {
+			users.assertWriteWithinQuota(
+				"charlie",
+				"/home/charlie/file.txt",
+				"long-content",
+			);
+		}).not.toThrow();
 	});
 });

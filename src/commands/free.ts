@@ -27,8 +27,10 @@ export const freeCommand: ShellModule = {
 
 		const fmt = (bytes: number): string => {
 			if (human) {
-				if (bytes >= 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)}G`;
-				if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)}M`;
+				if (bytes >= 1024 * 1024 * 1024)
+					return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)}G`;
+				if (bytes >= 1024 * 1024)
+					return `${(bytes / (1024 * 1024)).toFixed(1)}M`;
 				return `${(bytes / 1024).toFixed(1)}K`;
 			}
 			if (gb) return String(Math.floor(bytes / (1024 * 1024 * 1024)));

@@ -15,11 +15,17 @@ export const lsbReleaseCommand: ShellModule = {
 			const content = shell.vfs.readFile("/etc/os-release");
 			for (const line of content.split("\n")) {
 				if (line.startsWith("PRETTY_NAME="))
-					osName = line.slice("PRETTY_NAME=".length).replace(/^"|"$/g, "").trim();
+					osName = line
+						.slice("PRETTY_NAME=".length)
+						.replace(/^"|"$/g, "")
+						.trim();
 				if (line.startsWith("VERSION_CODENAME="))
 					codename = line.slice("VERSION_CODENAME=".length).trim();
 				if (line.startsWith("VERSION_ID="))
-					version = line.slice("VERSION_ID=".length).replace(/^"|"$/g, "").trim();
+					version = line
+						.slice("VERSION_ID=".length)
+						.replace(/^"|"$/g, "")
+						.trim();
 			}
 		} catch {}
 

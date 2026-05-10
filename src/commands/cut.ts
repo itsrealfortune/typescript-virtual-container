@@ -16,7 +16,9 @@ export const cutCommand: ShellModule = {
 		const fields = (getFlag(args, ["-f"]) as string | undefined) ?? "1";
 		const cols = fields.split(",").map((f) => {
 			const [a, b] = f.split("-").map(Number);
-			return b !== undefined ? { from: (a ?? 1) - 1, to: b - 1 } : { from: (a ?? 1) - 1, to: (a ?? 1) - 1 };
+			return b !== undefined
+				? { from: (a ?? 1) - 1, to: b - 1 }
+				: { from: (a ?? 1) - 1, to: (a ?? 1) - 1 };
 		});
 		const lines = (stdin ?? "").split("\n");
 		const out = lines.map((line) => {
