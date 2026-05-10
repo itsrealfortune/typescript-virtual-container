@@ -2,6 +2,11 @@ import type { ShellModule } from "../types/commands";
 import { parseArgs } from "./command-helpers";
 import { assertPathAccess, resolvePath } from "./helpers";
 
+/**
+ * Search for a regex pattern in files or stdin with common flags.
+ * @category text
+ * @params ["[-i] [-v] [-n] [-r] <pattern> [file...]"]
+ */
 export const grepCommand: ShellModule = {
 	name: "grep",
 	description: "Search text patterns",

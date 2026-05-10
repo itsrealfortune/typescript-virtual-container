@@ -1446,6 +1446,13 @@ declare global { interface Map<K,V> { also?: ((fn: (m: Map<K,V>) => void) => Map
 
 // ─── command ──────────────────────────────────────────────────────────────────
 
+/**
+ * Virtual Python 3 interpreter command. Implements a small Python subset
+ * for scripts and `-c` invocations. Requires `apt install python3` in the
+ * virtual package manager to be available.
+ * @category system
+ * @params ["[--version] [-c <code>] [-V] [file]"]
+ */
 export const python3Command: ShellModule = {
 	name: "python3",
 	aliases: ["python"],

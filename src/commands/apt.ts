@@ -2,6 +2,11 @@ import type { ShellModule } from "../types/commands";
 import { ifFlag, } from "./command-helpers";
 import { getPackageManager } from "./helpers";
 
+/**
+ * APT package manager front-end (simulated).
+ * @category package
+ * @params ["<install|remove|update|upgrade|search|show|list> [pkg...]"]
+ */
 export const aptCommand: ShellModule = {
 	name: "apt",
 	aliases: ["apt-get"],

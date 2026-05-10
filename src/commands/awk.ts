@@ -1,6 +1,18 @@
 import type { ShellModule } from "../types/commands";
 import { getFlag } from "./command-helpers";
 
+
+/**
+ * Minimal `awk`-like pattern scanner (supports simple print patterns).
+ * @category text
+ * @params ["[-F <sep>] '<program>' [file]"]
+ * 
+ * Supported program patterns:
+ * - `print $N` (e.g. `print $1`, `print $2, $3`, `print $0`)
+ * - `{print $N}` (e.g. `{print $1}`, `{print $2, $3}`, `{print $0}`)
+ * 
+ * The field separator can be set with `-F` (default is space, which splits on any whitespace).
+ */
 export const awkCommand: ShellModule = {
 	name: "awk",
 	description: "Pattern scanning and processing language (minimal)",

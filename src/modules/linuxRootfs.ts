@@ -131,6 +131,12 @@ function bootstrapEtc(
 
 // ─── /etc/passwd + /etc/group + /etc/shadow ─────────────────────────────────
 
+/**
+ * Sync `/etc/passwd`, `/etc/group`, and `/etc/shadow` from the
+ * VirtualUserManager's current user list into the VFS.
+ * @param vfs VirtualFileSystem instance to write files into
+ * @param users VirtualUserManager to source users from
+ */
 export function syncEtcPasswd(
 	vfs: VirtualFileSystem,
 	users: VirtualUserManager,
@@ -236,6 +242,16 @@ function writeProcPid(
 	vfs.writeFile(`${dir}/fd/2`, "");
 }
 
+/**
+ * Populate and refresh `/proc` virtual entries based on host stats and
+ * provided active sessions. Rewrites `/proc/uptime`, `/proc/meminfo`,
+ * `/proc/cpuinfo`, `/proc/<pid>` entries and `/proc/self` content.
+ * @param vfs VirtualFileSystem instance
+ * @param props ShellProperties used for version strings
+ * @param hostname Hostname to write into /proc/hostname
+ * @param shellStartTime Start time used to compute uptime
+ * @param sessions Optional active sessions list to populate per-pid entries
+ */
 export function refreshProc(
 	vfs: VirtualFileSystem,
 	props: ShellProperties,

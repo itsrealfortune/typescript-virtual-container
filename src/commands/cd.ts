@@ -1,6 +1,11 @@
 import type { ShellModule } from "../types/commands";
 import { assertPathAccess, resolvePath } from "./helpers";
 
+/**
+ * Change current working directory.
+ * @category navigation
+ * @params ["[path]"]
+ */
 export const cdCommand: ShellModule = {
 	name: "cd",
 	description: "Change directory",

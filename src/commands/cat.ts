@@ -2,6 +2,11 @@ import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 import { assertPathAccess, resolveReadablePath } from "./helpers";
 
+/**
+ * Concatenate and print files to stdout.
+ * @category files
+ * @params ["[-n] [-b] <file...>"]
+ */
 export const catCommand: ShellModule = {
 	name: "cat",
 	description: "Concatenate and print files",

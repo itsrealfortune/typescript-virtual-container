@@ -1,6 +1,11 @@
 /** biome-ignore-all lint/style/useNamingConvention: ENV VARS */
 import type { ShellModule } from "../types/commands";
 
+/**
+ * Print environment variables for the current session.
+ * @category shell
+ * @params []
+ */
 export const envCommand: ShellModule = {
 	name: "env",
 	description: "Print environment variables",

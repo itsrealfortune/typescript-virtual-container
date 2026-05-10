@@ -1,6 +1,11 @@
 import type { ShellModule } from "../types/commands";
 import { resolvePath } from "./helpers";
 
+/**
+ * Compress files using gzip (stores in VFS as compressed content).
+ * @category archive
+ * @params ["<file>"]
+ */
 export const gzipCommand: ShellModule = {
 	name: "gzip",
 	description: "Compress files",
@@ -16,6 +21,11 @@ export const gzipCommand: ShellModule = {
 };
 
 export const gunzipCommand: ShellModule = {
+/**
+ * Decompress gzip files (or zcat alias).
+ * @category archive
+ * @params ["<file>"]
+ */
 	name: "gunzip",
 	description: "Decompress files",
 	category: "archive",

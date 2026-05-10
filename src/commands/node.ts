@@ -185,7 +185,12 @@ function runJsFile(code: string): { stdout: string; stderr: string; exitCode: nu
 }
 
 // ─── command ──────────────────────────────────────────────────────────────────
-
+/**
+ * `node` virtual runtime command. Executes JS in a safe sandbox with
+ * limited globals and no host FS/child process access.
+ * @category system
+ * @params []
+ */
 export const nodeCommand: ShellModule = {
 	name: "node",
 	description: "JavaScript runtime (virtual)",

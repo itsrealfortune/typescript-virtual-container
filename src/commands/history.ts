@@ -1,5 +1,10 @@
 import type { ShellModule } from "../types/commands";
 
+/**
+ * Display persisted command history for the session (from VFS).
+ * @category shell
+ * @params ["[n]"]
+ */
 export const historyCommand: ShellModule = {
 	name: "history",
 	description: "Display command history",

@@ -1,5 +1,10 @@
 import type { ShellModule } from "../types/commands";
 
+/**
+ * Exit the current shell session (closeSession flag).
+ * @category shell
+ * @params ["[code]"]
+ */
 export const exitCommand: ShellModule = {
 	name: "exit",
 	aliases: ["bye"],

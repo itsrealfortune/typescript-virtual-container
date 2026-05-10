@@ -2,6 +2,11 @@ import type { ShellModule } from "../types/commands";
 import { ifFlag, parseArgs } from "./command-helpers";
 import { assertPathAccess, resolvePath } from "./helpers";
 
+/**
+ * HTTP client wrapper using `fetch()` semantics (virtual curl).
+ * @category network
+ * @params ["[options] <url>"]
+ */
 export const curlCommand: ShellModule = {
 	name: "curl",
 	description: "Transfer data from or to a server (pure fetch)",

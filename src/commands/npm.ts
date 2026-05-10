@@ -9,6 +9,11 @@ import { ifFlag } from "./command-helpers";
 const NPM_VERSION  = "9.2.0";
 const NODE_VERSION = "18.19.0";
 
+/**
+ * `npm` virtual CLI. Requires `apt install npm` in the virtual package manager.
+ * @category system
+ * @params ["<command> [args]"]
+ */
 export const npmCommand: ShellModule = {
 	name: "npm",
 	description: "Node.js package manager (virtual)",
@@ -94,6 +99,11 @@ export const npmCommand: ShellModule = {
 	},
 };
 
+/**
+ * `npx` virtual runner. Requires `apt install npm` in the virtual package manager.
+ * @category system
+ * @params ["<package> [args]"]
+ */
 export const npxCommand: ShellModule = {
 	name: "npx",
 	description: "Node.js package runner (virtual)",

@@ -1,6 +1,11 @@
 import type { ShellModule } from "../types/commands";
 import { getFlag } from "./command-helpers";
 
+/**
+ * Extract selected fields from each line of input.
+ * @category text
+ * @params ["-d <delim> -f <fields> [file]"]
+ */
 export const cutCommand: ShellModule = {
 	name: "cut",
 	description: "Remove sections from lines",

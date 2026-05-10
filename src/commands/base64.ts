@@ -1,6 +1,11 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/**
+ * Encode or decode base64 data.
+ * @category text
+ * @params ["[-d] [file]"]
+ */
 export const base64Command: ShellModule = {
 	name: "base64",
 	description: "Encode/decode base64",

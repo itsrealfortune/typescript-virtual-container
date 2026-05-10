@@ -2,6 +2,11 @@ import type { ShellModule } from "../types/commands";
 import { ifFlag, parseArgs } from "./command-helpers";
 import { getPackageManager } from "./helpers";
 
+/**
+ * dpkg compatibility command (query/remove/list) backed by the virtual package manager.
+ * @category package
+ * @params ["[-l] [-s pkg] [-L pkg] [-i pkg] [--remove pkg]"]
+ */
 export const dpkgCommand: ShellModule = {
 	name: "dpkg",
 	description: "Debian package manager low-level tool",

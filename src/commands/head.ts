@@ -2,6 +2,11 @@ import type { ShellModule } from "../types/commands";
 import { getFlag } from "./command-helpers";
 import { assertPathAccess, resolvePath } from "./helpers";
 
+/**
+ * Output the first part of files or stdin (head).
+ * @category text
+ * @params ["[-n <lines>] [file...]"]
+ */
 export const headCommand: ShellModule = {
 	name: "head",
 	description: "Output first lines",

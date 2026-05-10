@@ -19,6 +19,11 @@ function expandEscapes(text: string): string {
 		.replace(/\\0(\d{1,3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)));
 }
 
+/**
+ * Echo text to stdout with shell-style expansion and escape support.
+ * @category shell
+ * @params ["[-n] [-e] [text...]"]
+ */
 export const echoCommand: ShellModule = {
 	name: "echo",
 	description: "Display text",

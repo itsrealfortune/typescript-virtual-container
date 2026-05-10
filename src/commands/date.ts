@@ -1,5 +1,10 @@
 import type { ShellModule } from "../types/commands";
 
+/**
+ * Print the current date/time or a formatted representation.
+ * @category system
+ * @params ["[+format]"]
+ */
 export const dateCommand: ShellModule = {
 	name: "date",
 	description: "Print current date and time",

@@ -1,6 +1,11 @@
 import type { ShellModule } from "../types/commands";
 import { resolvePath } from "./helpers";
 
+/**
+ * Compare files line-by-line and print differing lines.
+ * @category text
+ * @params ["<file1> <file2>"]
+ */
 export const diffCommand: ShellModule = {
 	name: "diff",
 	description: "Compare files line by line",

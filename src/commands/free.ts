@@ -2,6 +2,11 @@ import * as os from "node:os";
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/**
+ * Display memory usage information (human / MB / GB options).
+ * @category system
+ * @params ["[-h] [-m] [-g]"]
+ */
 export const freeCommand: ShellModule = {
 	name: "free",
 	description: "Display amount of free and used memory",
