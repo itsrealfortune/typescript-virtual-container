@@ -20,6 +20,8 @@ import { readCommand } from "./read";
 import { declareCommand } from "./declare";
 import { shiftCommand, trapCommand, returnCommand } from "./shift";
 import { trueCommand, falseCommand } from "./true";
+import { nodeCommand } from "./node";
+import { python3Command } from "./python";
 import { aptCacheCommand, aptCommand } from "./apt";
 import { awkCommand } from "./awk";
 import { base64Command } from "./base64";
@@ -123,6 +125,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	printfCommand, readCommand, declareCommand,
 	shiftCommand, trapCommand, returnCommand,
 	trueCommand, falseCommand,
+	nodeCommand, python3Command,
 	// System (extended)
 	uptimeCommand, freeCommand, lsbReleaseCommand,
 ];
