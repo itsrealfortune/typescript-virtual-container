@@ -140,7 +140,11 @@ class SshMimic extends EventEmitter {
 
 					// Rate-limit check
 					if (this.isLockedOut(remoteAddress)) {
-						this.emit("auth:failure", { username: candidateUser, remoteAddress, reason: "lockout" });
+						this.emit("auth:failure", {
+							username: candidateUser,
+							remoteAddress,
+							reason: "lockout",
+						});
 						ctx.reject();
 						return;
 					}
@@ -152,7 +156,10 @@ class SshMimic extends EventEmitter {
 								`User ${candidateUser} has no password set, allowing login without verification`,
 							);
 							authUser = candidateUser;
-							sessionId = shell.users.registerSession(authUser, remoteAddress).id;
+							sessionId = shell.users.registerSession(
+								authUser,
+								remoteAddress,
+							).id;
 							this.recordSuccess(remoteAddress);
 							this.emit("auth:success", { username: authUser, remoteAddress });
 							this.ensureHomeDir(authUser);
@@ -166,7 +173,10 @@ class SshMimic extends EventEmitter {
 							!shell.users.verifyPassword(candidateUser, ctx.password)
 						) {
 							this.recordFailure(remoteAddress);
-							this.emit("auth:failure", { username: candidateUser, remoteAddress });
+							this.emit("auth:failure", {
+								username: candidateUser,
+								remoteAddress,
+							});
 							ctx.reject();
 							return;
 						}
@@ -192,13 +202,16 @@ class SshMimic extends EventEmitter {
 						const incomingKey = ctx.key;
 						const keyMatches = authorizedKeys.some(
 							(k) =>
-								k.algo === incomingKey.algo &&
-								k.data.equals(incomingKey.data),
+								k.algo === incomingKey.algo && k.data.equals(incomingKey.data),
 						);
 
 						if (!keyMatches) {
 							this.recordFailure(remoteAddress);
-							this.emit("auth:failure", { username: candidateUser, remoteAddress, method: "publickey" });
+							this.emit("auth:failure", {
+								username: candidateUser,
+								remoteAddress,
+								method: "publickey",
+							});
 							ctx.reject();
 							return;
 						}
@@ -206,9 +219,16 @@ class SshMimic extends EventEmitter {
 						// Key matched — if this is a signature check step, accept
 						if (ctx.signature) {
 							authUser = candidateUser;
-							sessionId = shell.users.registerSession(authUser, remoteAddress).id;
+							sessionId = shell.users.registerSession(
+								authUser,
+								remoteAddress,
+							).id;
 							this.recordSuccess(remoteAddress);
-							this.emit("auth:success", { username: authUser, remoteAddress, method: "publickey" });
+							this.emit("auth:success", {
+								username: authUser,
+								remoteAddress,
+								method: "publickey",
+							});
 							this.ensureHomeDir(authUser);
 							ctx.accept();
 						} else {
@@ -238,20 +258,35 @@ class SshMimic extends EventEmitter {
 							acceptPty();
 						});
 
-						session.on("window-change", (_acceptChange, _rejectChange, info) => {
-							terminalSize.cols = info?.cols ?? terminalSize.cols;
-							terminalSize.rows = info?.rows ?? terminalSize.rows;
-						});
+						session.on(
+							"window-change",
+							(_acceptChange, _rejectChange, info) => {
+								terminalSize.cols = info?.cols ?? terminalSize.cols;
+								terminalSize.rows = info?.rows ?? terminalSize.rows;
+							},
+						);
 
 						session.on("shell", (acceptShell) => {
 							const stream = acceptShell();
-							shell?.startInteractiveSession(stream, authUser, sessionId, remoteAddress, terminalSize);
+							shell?.startInteractiveSession(
+								stream,
+								authUser,
+								sessionId,
+								remoteAddress,
+								terminalSize,
+							);
 						});
 
 						session.on("exec", (acceptExec, _rejectExec, info) => {
 							const stream = acceptExec();
 							if (stream) {
-								runExec(stream, info.command.trim(), authUser, shell.hostname, shell);
+								runExec(
+									stream,
+									info.command.trim(),
+									authUser,
+									shell.hostname,
+									shell,
+								);
 							}
 						});
 					});
@@ -293,4 +328,3 @@ class SshMimic extends EventEmitter {
 
 export { SftpMimic } from "./sftp";
 export { SshMimic };
-

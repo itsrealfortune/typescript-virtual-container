@@ -31,19 +31,25 @@
  *   Binary pack :  ~1.00 MB + ~40 bytes/node header  → ~27% smaller, no string parsing
  */
 
-import type { InternalDirectoryNode, InternalFileNode, InternalNode } from "./internalTypes";
+import type {
+	InternalDirectoryNode,
+	InternalFileNode,
+	InternalNode,
+} from "./internalTypes";
 
 const MAGIC = Buffer.from([0x56, 0x46, 0x53, 0x21]); // "VFS!"
 const VERSION = 0x01;
 const TYPE_FILE = 0x01;
-const TYPE_DIR  = 0x02;
+const TYPE_DIR = 0x02;
 
 // ── Encoder ───────────────────────────────────────────────────────────────────
 
 class Encoder {
 	private chunks: Buffer[] = [];
 
-	write(buf: Buffer): void { this.chunks.push(buf); }
+	write(buf: Buffer): void {
+		this.chunks.push(buf);
+	}
 
 	writeUint8(n: number): void {
 		const b = Buffer.allocUnsafe(1);
@@ -80,7 +86,9 @@ class Encoder {
 		this.chunks.push(bytes);
 	}
 
-	toBuffer(): Buffer { return Buffer.concat(this.chunks); }
+	toBuffer(): Buffer {
+		return Buffer.concat(this.chunks);
+	}
 }
 
 function encodeNode(enc: Encoder, node: InternalNode): void {
@@ -124,7 +132,9 @@ class Decoder {
 	private pos = 0;
 	constructor(private readonly buf: Buffer) {}
 
-	readUint8(): number { return this.buf.readUInt8(this.pos++); }
+	readUint8(): number {
+		return this.buf.readUInt8(this.pos++);
+	}
 
 	readUint16(): number {
 		const v = this.buf.readUInt16LE(this.pos);
@@ -158,7 +168,9 @@ class Decoder {
 		return b;
 	}
 
-	remaining(): number { return this.buf.length - this.pos; }
+	remaining(): number {
+		return this.buf.length - this.pos;
+	}
 }
 
 function decodeNode(dec: Decoder): InternalNode {
@@ -171,7 +183,15 @@ function decodeNode(dec: Decoder): InternalNode {
 	if (type === TYPE_FILE) {
 		const compressed = dec.readUint8() === 0x01;
 		const content = dec.readBytes();
-		return { type: "file", name, mode, createdAt, updatedAt, compressed, content } satisfies InternalFileNode;
+		return {
+			type: "file",
+			name,
+			mode,
+			createdAt,
+			updatedAt,
+			compressed,
+			content,
+		} satisfies InternalFileNode;
 	}
 
 	if (type === TYPE_DIR) {
@@ -181,7 +201,14 @@ function decodeNode(dec: Decoder): InternalNode {
 			const child = decodeNode(dec);
 			children.set(child.name, child);
 		}
-		return { type: "directory", name, mode, createdAt, updatedAt, children } satisfies InternalDirectoryNode;
+		return {
+			type: "directory",
+			name,
+			mode,
+			createdAt,
+			updatedAt,
+			children,
+		} satisfies InternalDirectoryNode;
 	}
 
 	throw new Error(`[VFS binary] Unknown node type: 0x${type.toString(16)}`);

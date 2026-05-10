@@ -1,5 +1,3 @@
-
-
 import type VirtualFileSystem from "../VirtualFileSystem";
 import type { VirtualUserManager } from "../VirtualUserManager";
 
@@ -89,9 +87,21 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		shortDesc: "Vi IMproved",
 		installedSizeKb: 3812,
 		files: [
-			{ path: "/usr/bin/vim", content: "#!/bin/sh\necho 'vim: use nano for editing in this environment'\n", mode: 0o755 },
-			{ path: "/usr/bin/vi", content: "#!/bin/sh\nexec vim \"$@\"\n", mode: 0o755 },
-			{ path: "/usr/share/doc/vim/README", content: "Vim editor — virtual package.\n" },
+			{
+				path: "/usr/bin/vim",
+				content:
+					"#!/bin/sh\necho 'vim: use nano for editing in this environment'\n",
+				mode: 0o755,
+			},
+			{
+				path: "/usr/bin/vi",
+				content: '#!/bin/sh\nexec vim "$@"\n',
+				mode: 0o755,
+			},
+			{
+				path: "/usr/share/doc/vim/README",
+				content: "Vim editor — virtual package.\n",
+			},
 		],
 	},
 	{
@@ -102,8 +112,15 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		shortDesc: "fast distributed version control system",
 		installedSizeKb: 11240,
 		files: [
-			{ path: "/usr/bin/git", content: "#!/bin/sh\necho 'git: virtual stub — no host access'\n", mode: 0o755 },
-			{ path: "/usr/share/doc/git/README.Debian", content: "Git virtual package for Fortune GNU/Linux.\n" },
+			{
+				path: "/usr/bin/git",
+				content: "#!/bin/sh\necho 'git: virtual stub — no host access'\n",
+				mode: 0o755,
+			},
+			{
+				path: "/usr/share/doc/git/README.Debian",
+				content: "Git virtual package for Fortune GNU/Linux.\n",
+			},
 		],
 	},
 	{
@@ -115,8 +132,16 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		installedSizeKb: 512,
 		depends: ["python3-minimal"],
 		files: [
-			{ path: "/usr/bin/python3", content: "#!/bin/sh\necho 'Python 3.11.2 (virtual)'\n", mode: 0o755 },
-			{ path: "/usr/bin/python3.11", content: "#!/bin/sh\nexec python3 \"$@\"\n", mode: 0o755 },
+			{
+				path: "/usr/bin/python3",
+				content: "#!/bin/sh\necho 'Python 3.11.2 (virtual)'\n",
+				mode: 0o755,
+			},
+			{
+				path: "/usr/bin/python3.11",
+				content: '#!/bin/sh\nexec python3 "$@"\n',
+				mode: 0o755,
+			},
 			{ path: "/usr/lib/python3.11/.keep", content: "" },
 		],
 	},
@@ -127,9 +152,7 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		description: "Minimal subset of the Python language (version 3)",
 		shortDesc: "minimal subset of Python language",
 		installedSizeKb: 196,
-		files: [
-			{ path: "/usr/lib/python3-minimal/.keep", content: "" },
-		],
+		files: [{ path: "/usr/lib/python3-minimal/.keep", content: "" }],
 	},
 	{
 		name: "nodejs",
@@ -139,9 +162,20 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		shortDesc: "Node.js JavaScript runtime",
 		installedSizeKb: 15360,
 		files: [
-			{ path: "/usr/bin/node", content: "#!/bin/sh\necho 'node v18.19.0 (virtual)'\n", mode: 0o755 },
-			{ path: "/usr/bin/nodejs", content: "#!/bin/sh\nexec node \"$@\"\n", mode: 0o755 },
-			{ path: "/usr/share/doc/nodejs/README", content: "Node.js virtual package.\n" },
+			{
+				path: "/usr/bin/node",
+				content: "#!/bin/sh\necho 'node v18.19.0 (virtual)'\n",
+				mode: 0o755,
+			},
+			{
+				path: "/usr/bin/nodejs",
+				content: '#!/bin/sh\nexec node "$@"\n',
+				mode: 0o755,
+			},
+			{
+				path: "/usr/share/doc/nodejs/README",
+				content: "Node.js virtual package.\n",
+			},
 		],
 	},
 	{
@@ -153,7 +187,16 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		installedSizeKb: 9814,
 		depends: ["nodejs"],
 		files: [
-			{ path: "/usr/bin/npm", content: "#!/bin/sh\necho 'npm 9.2.0 (virtual)'\n", mode: 0o755 },
+			{
+				path: "/usr/bin/npm",
+				content: '#!/bin/sh\nexec builtin npm "$@"\n',
+				mode: 0o755,
+			},
+			{
+				path: "/usr/bin/npx",
+				content: '#!/bin/sh\nexec builtin npx "$@"\n',
+				mode: 0o755,
+			},
 		],
 	},
 	{
@@ -164,7 +207,11 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		shortDesc: "command line tool for transferring data",
 		installedSizeKb: 368,
 		files: [
-			{ path: "/usr/bin/curl", content: "#!/bin/sh\nexec builtin curl \"$@\"\n", mode: 0o755 },
+			{
+				path: "/usr/bin/curl",
+				content: '#!/bin/sh\nexec builtin curl "$@"\n',
+				mode: 0o755,
+			},
 		],
 	},
 	{
@@ -175,7 +222,11 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		shortDesc: "retrieves files from the web",
 		installedSizeKb: 952,
 		files: [
-			{ path: "/usr/bin/wget", content: "#!/bin/sh\nexec builtin wget \"$@\"\n", mode: 0o755 },
+			{
+				path: "/usr/bin/wget",
+				content: '#!/bin/sh\nexec builtin wget "$@"\n',
+				mode: 0o755,
+			},
 		],
 	},
 	{
@@ -186,7 +237,11 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		shortDesc: "interactive process viewer",
 		installedSizeKb: 412,
 		files: [
-			{ path: "/usr/bin/htop", content: "#!/bin/sh\nexec builtin htop\n", mode: 0o755 },
+			{
+				path: "/usr/bin/htop",
+				content: "#!/bin/sh\nexec builtin htop\n",
+				mode: 0o755,
+			},
 		],
 	},
 	{
@@ -197,9 +252,20 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		shortDesc: "secure shell (SSH) client",
 		installedSizeKb: 4540,
 		files: [
-			{ path: "/usr/bin/ssh", content: "#!/bin/sh\necho 'ssh: virtual stub'\n", mode: 0o755 },
-			{ path: "/usr/bin/ssh-keygen", content: "#!/bin/sh\necho 'ssh-keygen: virtual stub'\n", mode: 0o755 },
-			{ path: "/etc/ssh/ssh_config", content: "Host *\n    StrictHostKeyChecking ask\n" },
+			{
+				path: "/usr/bin/ssh",
+				content: "#!/bin/sh\necho 'ssh: virtual stub'\n",
+				mode: 0o755,
+			},
+			{
+				path: "/usr/bin/ssh-keygen",
+				content: "#!/bin/sh\necho 'ssh-keygen: virtual stub'\n",
+				mode: 0o755,
+			},
+			{
+				path: "/etc/ssh/ssh_config",
+				content: "Host *\n    StrictHostKeyChecking ask\n",
+			},
 		],
 	},
 	{
@@ -211,8 +277,15 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		installedSizeKb: 1732,
 		depends: ["openssh-client"],
 		files: [
-			{ path: "/usr/sbin/sshd", content: "#!/bin/sh\necho 'sshd: virtual — server already running'\n", mode: 0o755 },
-			{ path: "/etc/ssh/sshd_config", content: "Port 22\nPermitRootLogin yes\nPasswordAuthentication yes\n" },
+			{
+				path: "/usr/sbin/sshd",
+				content: "#!/bin/sh\necho 'sshd: virtual — server already running'\n",
+				mode: 0o755,
+			},
+			{
+				path: "/etc/ssh/sshd_config",
+				content: "Port 22\nPermitRootLogin yes\nPasswordAuthentication yes\n",
+			},
 		],
 	},
 	{
@@ -223,9 +296,24 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		shortDesc: "networking toolkit",
 		installedSizeKb: 988,
 		files: [
-			{ path: "/usr/bin/ifconfig", content: "#!/bin/sh\necho 'eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500'\necho '        inet 10.0.0.2  netmask 255.255.255.0  broadcast 10.0.0.255'\necho '        ether 02:42:0a:00:00:02  txqueuelen 0  (Ethernet)'\n", mode: 0o755 },
-			{ path: "/usr/bin/netstat", content: "#!/bin/sh\necho 'Active Internet connections (only servers)'\necho 'Proto Recv-Q Send-Q Local Address Foreign Address State'\n", mode: 0o755 },
-			{ path: "/usr/bin/route", content: "#!/bin/sh\necho 'Kernel IP routing table'\necho 'Destination Gateway Genmask Flags Metric Ref Use Iface'\necho '0.0.0.0 10.0.0.1 0.0.0.0 UG 0 0 0 eth0'\n", mode: 0o755 },
+			{
+				path: "/usr/bin/ifconfig",
+				content:
+					"#!/bin/sh\necho 'eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500'\necho '        inet 10.0.0.2  netmask 255.255.255.0  broadcast 10.0.0.255'\necho '        ether 02:42:0a:00:00:02  txqueuelen 0  (Ethernet)'\n",
+				mode: 0o755,
+			},
+			{
+				path: "/usr/bin/netstat",
+				content:
+					"#!/bin/sh\necho 'Active Internet connections (only servers)'\necho 'Proto Recv-Q Send-Q Local Address Foreign Address State'\n",
+				mode: 0o755,
+			},
+			{
+				path: "/usr/bin/route",
+				content:
+					"#!/bin/sh\necho 'Kernel IP routing table'\necho 'Destination Gateway Genmask Flags Metric Ref Use Iface'\necho '0.0.0.0 10.0.0.1 0.0.0.0 UG 0 0 0 eth0'\n",
+				mode: 0o755,
+			},
 		],
 	},
 	{
@@ -236,7 +324,11 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		shortDesc: "test reachability of network hosts",
 		installedSizeKb: 164,
 		files: [
-			{ path: "/usr/bin/ping", content: "#!/bin/sh\nexec builtin ping \"$@\"\n", mode: 0o755 },
+			{
+				path: "/usr/bin/ping",
+				content: '#!/bin/sh\nexec builtin ping "$@"\n',
+				mode: 0o755,
+			},
 		],
 	},
 	{
@@ -247,7 +339,11 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		shortDesc: "command-line JSON processor",
 		installedSizeKb: 296,
 		files: [
-			{ path: "/usr/bin/jq", content: "#!/bin/sh\necho 'jq: virtual stub — pipe JSON here'\n", mode: 0o755 },
+			{
+				path: "/usr/bin/jq",
+				content: "#!/bin/sh\necho 'jq: virtual stub — pipe JSON here'\n",
+				mode: 0o755,
+			},
 		],
 	},
 	{
@@ -259,7 +355,10 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		installedSizeKb: 12,
 		depends: ["gcc", "g++", "make"],
 		files: [
-			{ path: "/usr/share/doc/build-essential/README", content: "Build-essential virtual meta-package.\n" },
+			{
+				path: "/usr/share/doc/build-essential/README",
+				content: "Build-essential virtual meta-package.\n",
+			},
 		],
 	},
 	{
@@ -270,8 +369,16 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		shortDesc: "GNU C compiler",
 		installedSizeKb: 24448,
 		files: [
-			{ path: "/usr/bin/gcc", content: "#!/bin/sh\necho 'gcc (Fortune GNU/Linux) 12.2.0 (virtual)'\n", mode: 0o755 },
-			{ path: "/usr/bin/gcc-12", content: "#!/bin/sh\nexec gcc \"$@\"\n", mode: 0o755 },
+			{
+				path: "/usr/bin/gcc",
+				content: "#!/bin/sh\necho 'gcc (Fortune GNU/Linux) 12.2.0 (virtual)'\n",
+				mode: 0o755,
+			},
+			{
+				path: "/usr/bin/gcc-12",
+				content: '#!/bin/sh\nexec gcc "$@"\n',
+				mode: 0o755,
+			},
 		],
 	},
 	{
@@ -283,7 +390,11 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		installedSizeKb: 1024,
 		depends: ["gcc"],
 		files: [
-			{ path: "/usr/bin/g++", content: "#!/bin/sh\necho 'g++ (Fortune GNU/Linux) 12.2.0 (virtual)'\n", mode: 0o755 },
+			{
+				path: "/usr/bin/g++",
+				content: "#!/bin/sh\necho 'g++ (Fortune GNU/Linux) 12.2.0 (virtual)'\n",
+				mode: 0o755,
+			},
 		],
 	},
 	{
@@ -294,7 +405,12 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		shortDesc: "build utility",
 		installedSizeKb: 504,
 		files: [
-			{ path: "/usr/bin/make", content: "#!/bin/sh\necho 'make: *** No targets specified and no makefile found. Stop.'\nexit 2\n", mode: 0o755 },
+			{
+				path: "/usr/bin/make",
+				content:
+					"#!/bin/sh\necho 'make: *** No targets specified and no makefile found. Stop.'\nexit 2\n",
+				mode: 0o755,
+			},
 		],
 	},
 	{
@@ -305,7 +421,7 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		shortDesc: "pager program",
 		installedSizeKb: 328,
 		files: [
-			{ path: "/usr/bin/less", content: "#!/bin/sh\ncat \"$@\"\n", mode: 0o755 },
+			{ path: "/usr/bin/less", content: '#!/bin/sh\ncat "$@"\n', mode: 0o755 },
 		],
 	},
 	{
@@ -316,7 +432,11 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		shortDesc: "de-archiver for .zip files",
 		installedSizeKb: 464,
 		files: [
-			{ path: "/usr/bin/unzip", content: "#!/bin/sh\necho 'unzip: virtual stub'\n", mode: 0o755 },
+			{
+				path: "/usr/bin/unzip",
+				content: "#!/bin/sh\necho 'unzip: virtual stub'\n",
+				mode: 0o755,
+			},
 		],
 	},
 	{
@@ -327,7 +447,11 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		shortDesc: "fast remote file copy program",
 		installedSizeKb: 716,
 		files: [
-			{ path: "/usr/bin/rsync", content: "#!/bin/sh\necho 'rsync: virtual stub'\n", mode: 0o755 },
+			{
+				path: "/usr/bin/rsync",
+				content: "#!/bin/sh\necho 'rsync: virtual stub'\n",
+				mode: 0o755,
+			},
 		],
 	},
 	{
@@ -338,7 +462,12 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		shortDesc: "terminal multiplexer",
 		installedSizeKb: 812,
 		files: [
-			{ path: "/usr/bin/tmux", content: "#!/bin/sh\necho 'tmux: terminal multiplexer (virtual stub)'\n", mode: 0o755 },
+			{
+				path: "/usr/bin/tmux",
+				content:
+					"#!/bin/sh\necho 'tmux: terminal multiplexer (virtual stub)'\n",
+				mode: 0o755,
+			},
 		],
 	},
 	{
@@ -349,7 +478,11 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		shortDesc: "list files in tree format",
 		installedSizeKb: 108,
 		files: [
-			{ path: "/usr/bin/tree", content: "#!/bin/sh\nexec builtin tree \"$@\"\n", mode: 0o755 },
+			{
+				path: "/usr/bin/tree",
+				content: '#!/bin/sh\nexec builtin tree "$@"\n',
+				mode: 0o755,
+			},
 		],
 	},
 	{
@@ -378,7 +511,10 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		installedSizeKb: 16484,
 		files: [
 			{ path: "/etc/locale.gen", content: "en_US.UTF-8 UTF-8\n" },
-			{ path: "/etc/default/locale", content: "LANG=en_US.UTF-8\nLANGUAGE=en_US:en\n" },
+			{
+				path: "/etc/default/locale",
+				content: "LANG=en_US.UTF-8\nLANGUAGE=en_US:en\n",
+			},
 		],
 	},
 	{
@@ -389,8 +525,15 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		shortDesc: "super user privilege execution",
 		installedSizeKb: 2304,
 		files: [
-			{ path: "/usr/bin/sudo", content: "#!/bin/sh\nexec builtin sudo \"$@\"\n", mode: 0o755 },
-			{ path: "/etc/sudoers", content: "root ALL=(ALL:ALL) ALL\n%sudo ALL=(ALL:ALL) ALL\n" },
+			{
+				path: "/usr/bin/sudo",
+				content: '#!/bin/sh\nexec builtin sudo "$@"\n',
+				mode: 0o755,
+			},
+			{
+				path: "/etc/sudoers",
+				content: "root ALL=(ALL:ALL) ALL\n%sudo ALL=(ALL:ALL) ALL\n",
+			},
 		],
 	},
 	{
@@ -401,8 +544,17 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		shortDesc: "system and service manager",
 		installedSizeKb: 26624,
 		files: [
-			{ path: "/usr/bin/systemctl", content: "#!/bin/sh\necho 'systemd is not running in this virtual container.'\nexit 1\n", mode: 0o755 },
-			{ path: "/usr/bin/journalctl", content: "#!/bin/sh\necho 'journalctl: virtual stub'\n", mode: 0o755 },
+			{
+				path: "/usr/bin/systemctl",
+				content:
+					"#!/bin/sh\necho 'systemd is not running in this virtual container.'\nexit 1\n",
+				mode: 0o755,
+			},
+			{
+				path: "/usr/bin/journalctl",
+				content: "#!/bin/sh\necho 'journalctl: virtual stub'\n",
+				mode: 0o755,
+			},
 		],
 	},
 ];
@@ -626,7 +778,9 @@ export class VirtualPackageManager {
 
 		if (toInstall.length === 0) {
 			return {
-				output: names.map((n) => `${n} is already the newest version.`).join("\n"),
+				output: names
+					.map((n) => `${n} is already the newest version.`)
+					.join("\n"),
 				exitCode: 0,
 			};
 		}
@@ -692,7 +846,10 @@ export class VirtualPackageManager {
 			this.log(`install ${def.name} ${def.version}`);
 		}
 
-		this.aptLog("install", toInstall.map((p) => p.name));
+		this.aptLog(
+			"install",
+			toInstall.map((p) => p.name),
+		);
 		this.persist();
 
 		if (!opts.quiet) {
@@ -746,8 +903,7 @@ export class VirtualPackageManager {
 		}
 
 		for (const pkg of toRemove) {
-			if (!opts.quiet)
-				lines.push(`Removing ${pkg.name} (${pkg.version}) ...`);
+			if (!opts.quiet) lines.push(`Removing ${pkg.name} (${pkg.version}) ...`);
 
 			// Remove files (if purge, include config files)
 			for (const filePath of pkg.files) {
@@ -770,7 +926,10 @@ export class VirtualPackageManager {
 			this.log(`remove ${pkg.name} ${pkg.version}`);
 		}
 
-		this.aptLog("remove", toRemove.map((p) => p.name));
+		this.aptLog(
+			"remove",
+			toRemove.map((p) => p.name),
+		);
 		this.persist();
 
 		return { output: lines.join("\n"), exitCode: 0 };

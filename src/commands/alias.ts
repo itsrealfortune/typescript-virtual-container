@@ -1,6 +1,10 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
-
+/**
+ * Manage shell aliases (list / set / remove).
+ * @category shell
+ * @params ["[name[=value] ...]"]
+ */
 export const aliasCommand: ShellModule = {
 	name: "alias",
 	description: "Define or display aliases",

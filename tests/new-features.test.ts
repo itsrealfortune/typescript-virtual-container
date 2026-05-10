@@ -254,7 +254,7 @@ describe("curl / wget (pure fetch)", () => {
 	test("curl fetches real URL and returns body", async () => {
 		const r = await client.exec("curl https://httpbin.org/get");
 		// In sandboxed env network may be blocked — accept 0 (ok), 6 (dns), 22 (http err), or 1 (fetch error)
-		expect([0, 1, 6, 22]).toContain(r.exitCode);
+		expect([0, 1, 6, 22]).toContain(r.exitCode ?? -1);
 	});
 
 	test("curl -o saves to VFS", async () => {
@@ -479,7 +479,7 @@ describe("Bug fixes", () => {
 	test("ls -a shows dotfiles", async () => {
 		await c.exec("touch /tmp/.hidden && touch /tmp/visible");
 		const normal = await c.exec("ls /tmp");
-		const all    = await c.exec("ls -a /tmp");
+		const all = await c.exec("ls -a /tmp");
 		expect(normal.stdout).not.toContain(".hidden");
 		expect(all.stdout).toContain(".hidden");
 		expect(all.stdout).toContain("visible");
@@ -500,7 +500,7 @@ describe("Bug fixes", () => {
 		await c.exec("chmod u+x /tmp/u.sh");
 		const mode = shell2.vfs.stat("/tmp/u.sh").mode;
 		expect(mode & 0o100).toBe(0o100); // user x set
-		expect(mode & 0o010).toBe(0);     // group x not set
+		expect(mode & 0o010).toBe(0); // group x not set
 	});
 
 	test("chmod go-r removes group+other read", async () => {
@@ -521,7 +521,9 @@ describe("Bug fixes", () => {
 	// ping -c
 	test("ping -c 2 sends exactly 2 packets", async () => {
 		const r = await c.exec("ping -c 2 localhost");
-		const dataLines = r.stdout?.split("\n").filter((l) => l.includes("icmp_seq="));
+		const dataLines = r.stdout
+			?.split("\n")
+			.filter((l) => l.includes("icmp_seq="));
 		expect(dataLines?.length).toBe(2);
 	});
 
@@ -538,7 +540,9 @@ describe("Bug fixes", () => {
 	});
 
 	test("[ -f path ] returns 1 for non-existent file", async () => {
-		const r = await c.exec("[ -f /tmp/doesnotexist999 ] && echo yes || echo no");
+		const r = await c.exec(
+			"[ -f /tmp/doesnotexist999 ] && echo yes || echo no",
+		);
 		expect(r.stdout?.trim()).toBe("no");
 	});
 
@@ -622,5 +626,411 @@ describe("Bug fixes", () => {
 	test("wc -l counts newlines correctly via pipe", async () => {
 		const r = await c.exec("echo -e 'a\\nb\\nc' | wc -l");
 		expect(r.stdout?.trim()).toBe("3");
+	});
+});
+
+// ─── Roadmap features ────────────────────────────────────────────────────────
+
+describe("/proc/self and /proc/<pid>", () => {
+	let shell4: VirtualShell;
+	let c4: InstanceType<typeof SshClient>;
+
+	beforeAll(async () => {
+		shell4 = new VirtualShell("proc-vm");
+		await shell4.ensureInitialized();
+		c4 = new SshClient(shell4, "root");
+	});
+
+	test("/proc/self exists and has comm file", async () => {
+		expect(shell4.vfs.exists("/proc/self")).toBe(true);
+		expect(shell4.vfs.exists("/proc/self/comm")).toBe(true);
+	});
+
+	test("/proc/self/status has Name field", async () => {
+		const r = await c4.exec("cat /proc/self/status");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout).toContain("Name:");
+	});
+
+	test("/proc/self/cmdline is readable", async () => {
+		const r = await c4.exec("cat /proc/self/cmdline");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("/proc/1 (init) exists", async () => {
+		expect(shell4.vfs.exists("/proc/1")).toBe(true);
+		expect(shell4.vfs.exists("/proc/1/status")).toBe(true);
+	});
+
+	test("/proc/1/status has correct pid", async () => {
+		const r = await c4.exec("cat /proc/1/status");
+		expect(r.stdout).toContain("Pid:");
+		expect(r.stdout).toContain("1");
+	});
+
+	test("refreshProcFs updates /proc contents", () => {
+		shell4.refreshProcFs();
+		expect(shell4.vfs.exists("/proc/uptime")).toBe(true);
+		expect(shell4.vfs.exists("/proc/self")).toBe(true);
+	});
+});
+
+import { diffSnapshots, formatDiff, assertDiff } from "../src";
+
+describe("VFS snapshot diff tooling", () => {
+	let shell5: VirtualShell;
+	let c5: InstanceType<typeof SshClient>;
+
+	beforeAll(async () => {
+		shell5 = new VirtualShell("diff-vm");
+		await shell5.ensureInitialized();
+		c5 = new SshClient(shell5, "root");
+	});
+
+	test("diffSnapshots returns clean diff for identical snapshots", () => {
+		const snap = shell5.vfs.toSnapshot();
+		const diff = diffSnapshots(snap, snap);
+		expect(diff.clean).toBe(true);
+		expect(diff.added).toHaveLength(0);
+		expect(diff.removed).toHaveLength(0);
+		expect(diff.modified).toHaveLength(0);
+	});
+
+	test("diffSnapshots detects added file", async () => {
+		const before = shell5.vfs.toSnapshot();
+		await c5.exec("echo test > /tmp/diff-test.txt");
+		const after = shell5.vfs.toSnapshot();
+		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
+		const paths = diff.added.map((e) => e.path);
+		expect(paths).toContain("/tmp/diff-test.txt");
+		expect(diff.clean).toBe(false);
+	});
+
+	test("diffSnapshots detects added directory", async () => {
+		const before = shell5.vfs.toSnapshot();
+		shell5.vfs.mkdir("/tmp/diff-newdir", 0o755);
+		const after = shell5.vfs.toSnapshot();
+		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
+		const paths = diff.added.map((e) => e.path);
+		expect(paths).toContain("/tmp/diff-newdir");
+	});
+
+	test("diffSnapshots detects modified file", async () => {
+		shell5.vfs.writeFile("/tmp/modtest.txt", "before");
+		const before = shell5.vfs.toSnapshot();
+		shell5.vfs.writeFile("/tmp/modtest.txt", "after");
+		const after = shell5.vfs.toSnapshot();
+		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
+		const mod = diff.modified.find((e) => e.path === "/tmp/modtest.txt");
+		expect(mod).toBeDefined();
+		expect(mod?.before).toBe("before");
+		expect(mod?.after).toBe("after");
+	});
+
+	test("diffSnapshots detects removed file", async () => {
+		shell5.vfs.writeFile("/tmp/toremove.txt", "bye");
+		const before = shell5.vfs.toSnapshot();
+		shell5.vfs.remove("/tmp/toremove.txt");
+		const after = shell5.vfs.toSnapshot();
+		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
+		const paths = diff.removed.map((e) => e.path);
+		expect(paths).toContain("/tmp/toremove.txt");
+	});
+
+	test("diffSnapshots ignores specified prefixes", async () => {
+		shell5.vfs.writeFile("/proc/uptime", "999.00 888.00\n");
+		const before = shell5.vfs.toSnapshot();
+		shell5.vfs.writeFile("/proc/uptime", "1000.00 900.00\n");
+		const after = shell5.vfs.toSnapshot();
+		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
+		expect(diff.modified.map((e) => e.path)).not.toContain("/proc/uptime");
+	});
+
+	test("formatDiff returns (no changes) for clean diff", () => {
+		const snap = shell5.vfs.toSnapshot();
+		const diff = diffSnapshots(snap, snap);
+		expect(formatDiff(diff)).toBe("(no changes)");
+	});
+
+	test("formatDiff includes change summary", async () => {
+		const before = shell5.vfs.toSnapshot();
+		shell5.vfs.writeFile("/tmp/format-test.txt", "x");
+		const after = shell5.vfs.toSnapshot();
+		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
+		const formatted = formatDiff(diff);
+		expect(formatted).toContain("added");
+	});
+
+	test("assertDiff passes when paths match", async () => {
+		shell5.vfs.writeFile("/tmp/assert-test.txt", "hello");
+		const before = shell5.vfs.toSnapshot();
+		shell5.vfs.writeFile("/tmp/assert-new.txt", "new");
+		shell5.vfs.remove("/tmp/assert-test.txt");
+		const after = shell5.vfs.toSnapshot();
+		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
+		expect(() =>
+			assertDiff(diff, {
+				added: ["/tmp/assert-new.txt"],
+				removed: ["/tmp/assert-test.txt"],
+			}),
+		).not.toThrow();
+	});
+
+	test("assertDiff throws when expected path is missing", () => {
+		const snap = shell5.vfs.toSnapshot();
+		const diff = diffSnapshots(snap, snap);
+		expect(() => assertDiff(diff, { added: ["/nonexistent"] })).toThrow();
+	});
+});
+
+describe("node and python3 REPL stubs", () => {
+	let shell6: VirtualShell;
+	let c6: InstanceType<typeof SshClient>;
+
+	beforeAll(async () => {
+		shell6 = new VirtualShell("repl-vm");
+		await shell6.ensureInitialized();
+		c6 = new SshClient(shell6, "root");
+		await c6.exec("apt install nodejs python3");
+	});
+
+	test("node --version returns v18", async () => {
+		const r = await c6.exec("node --version");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.trim()).toBe("v18.19.0");
+	});
+
+	test("node -e evaluates arithmetic", async () => {
+		const r = await c6.exec("node -e '2 + 3'");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.trim()).toBe("5");
+	});
+
+	test("node -e console.log works", async () => {
+		const r = await c6.exec("node -e 'console.log(42)'");
+		expect(r.stdout?.trim()).toBe("42");
+	});
+
+	test("node executes VFS file", async () => {
+		shell6.vfs.writeFile("/tmp/test.js", "console.log(10 + 5);\n");
+		const r = await c6.exec("node /tmp/test.js");
+		expect(r.stdout?.trim()).toBe("15");
+	});
+
+	test("node missing file returns exit 1", async () => {
+		const r = await c6.exec("node /tmp/nonexistent.js");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("No such file or directory");
+	});
+
+	test("python3 --version returns Python 3.11", async () => {
+		const r = await c6.exec("python3 --version");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.trim()).toContain("Python 3.11");
+	});
+
+	test("python3 -c print arithmetic", async () => {
+		const r = await c6.exec("python3 -c 'print(2 + 3)'");
+		expect(r.stdout?.trim()).toBe("5");
+	});
+
+	test("python3 -c f-string", async () => {
+		const r = await c6.exec("python3 -c 'print(f\"result: {1+1}\")'");
+		expect(r.stdout?.trim()).toBe("result: 2");
+	});
+
+	test("python3 executes VFS script", async () => {
+		shell6.vfs.writeFile("/tmp/test.py", "print(10 + 5)\n");
+		const r = await c6.exec("python3 /tmp/test.py");
+		expect(r.stdout?.trim()).toBe("15");
+	});
+
+	test("python alias works", async () => {
+		const r = await c6.exec("python --version");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.trim()).toContain("Python");
+	});
+
+	test("python3 missing file returns exit 2", async () => {
+		const r = await c6.exec("python3 /tmp/nonexistent.py");
+		expect(r.exitCode).toBe(2);
+	});
+
+	test("node is available as a shell command", async () => {
+		const r = await c6.exec("node --version");
+		expect(r.exitCode).toBe(0);
+	});
+});
+
+// ─── Enhanced REPL tests (post-rewrite) ──────────────────────────────────────
+
+describe("node enhanced REPL", () => {
+	let shell7: VirtualShell;
+	let c7: InstanceType<typeof SshClient>;
+
+	beforeAll(async () => {
+		shell7 = new VirtualShell("node-vm");
+		await shell7.ensureInitialized();
+		c7 = new SshClient(shell7, "root");
+		await c7.exec("apt install nodejs");
+	});
+
+	test("node -e string methods", async () => {
+		shell7.vfs.writeFile("/tmp/str.js", "'hello'.toUpperCase()");
+		const r = await c7.exec("node /tmp/str.js");
+		expect(r.stdout?.trim()).toBe("HELLO");
+	});
+
+	test("node -e array methods", async () => {
+		shell7.vfs.writeFile("/tmp/arr.js", "[1,2,3].map(x => x*2).join(',')");
+		const r = await c7.exec("node /tmp/arr.js");
+		expect(r.stdout?.trim()).toBe("2,4,6");
+	});
+
+	test("node process.version is virtual", async () => {
+		const r = await c7.exec("node -e 'process.version'");
+		expect(r.stdout?.trim()).toBe("v18.19.0");
+	});
+
+	test("node require path works", async () => {
+		shell7.vfs.writeFile(
+			"/tmp/path.js",
+			"const p = require('path'); console.log(p.join('a', 'b'))",
+		);
+		const r = await c7.exec("node /tmp/path.js");
+		expect(r.stdout?.trim()).toBe("a/b");
+	});
+
+	test("node require fs throws gracefully", async () => {
+		shell7.vfs.writeFile(
+			"/tmp/fs.js",
+			"try { require('fs') } catch(e) { console.log('blocked') }",
+		);
+		const r = await c7.exec("node /tmp/fs.js");
+		expect(r.stdout?.trim()).toBe("blocked");
+	});
+
+	test("node console.log output", async () => {
+		shell7.vfs.writeFile("/tmp/log.js", "console.log('hello', 'world')");
+		const r = await c7.exec("node /tmp/log.js");
+		expect(r.stdout?.trim()).toBe("hello world");
+	});
+
+	test("node Math methods", async () => {
+		const r = await c7.exec("node -e 'Math.floor(3.9)'");
+		expect(r.stdout?.trim()).toBe("3");
+	});
+
+	test("node JSON.stringify", async () => {
+		const r = await c7.exec("node -e 'JSON.stringify({x:1})'");
+		expect(r.stdout?.trim()).toBe('{"x":1}');
+	});
+});
+
+describe("python3 enhanced interpreter", () => {
+	let shell8: VirtualShell;
+	let c8: InstanceType<typeof SshClient>;
+
+	beforeAll(async () => {
+		shell8 = new VirtualShell("python-vm");
+		await shell8.ensureInitialized();
+		c8 = new SshClient(shell8, "root");
+		await c8.exec("apt install python3");
+	});
+
+	const py = async (code: string) => {
+		shell8.vfs.writeFile("/tmp/t.py", code);
+		return c8.exec("python3 /tmp/t.py");
+	};
+
+	test("str.upper()", async () => {
+		const r = await py("print('hello'.upper())");
+		expect(r.stdout?.trim()).toBe("HELLO");
+	});
+
+	test("str.split()", async () => {
+		const r = await py("print('a,b,c'.split(','))");
+		expect(r.stdout?.trim()).toBe("['a', 'b', 'c']");
+	});
+
+	test("str.join()", async () => {
+		const r = await py("print(','.join(['a','b','c']))");
+		expect(r.stdout?.trim()).toBe("a,b,c");
+	});
+
+	test("list comprehension", async () => {
+		const r = await py("print([x**2 for x in range(5)])");
+		expect(r.stdout?.trim()).toBe("[0, 1, 4, 9, 16]");
+	});
+
+	test("list.sort() in-place", async () => {
+		const r = await py("nums=[3,1,4,1,5]\nnums.sort()\nprint(nums)");
+		expect(r.stdout?.trim()).toBe("[1, 1, 3, 4, 5]");
+	});
+
+	test("dict access and methods", async () => {
+		const r = await py("d={'x':1,'y':2}\nprint(d['x'])\nprint(list(d.keys()))");
+		expect(r.stdout).toContain("1");
+		expect(r.stdout).toContain("x");
+	});
+
+	test("class with __init__ and methods", async () => {
+		const r = await py(
+			"class Dog:\n    def __init__(self, name):\n        self.name = name\n    def bark(self):\n        return f'Woof! I am {self.name}'\nd = Dog('Rex')\nprint(d.bark())",
+		);
+		expect(r.stdout?.trim()).toBe("Woof! I am Rex");
+	});
+
+	test("import math and use functions", async () => {
+		const r = await py(
+			"import math\nprint(math.floor(3.9))\nprint(round(math.sqrt(16), 0))",
+		);
+		expect(r.stdout).toContain("3");
+		expect(r.stdout).toContain("4");
+	});
+
+	test("import os and getcwd", async () => {
+		const r = await py("import os\nprint(os.getcwd())");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.trim().length).toBeGreaterThan(0);
+	});
+
+	test("import sys and version", async () => {
+		const r = await py("import sys\nprint(sys.version[:5])");
+		expect(r.stdout?.trim()).toBe("3.11.");
+	});
+
+	test("import json dumps/loads", async () => {
+		const r = await py(
+			"import json\nd={'x':1}\nprint(json.dumps(d))\nprint(json.loads('{\"a\":2}')['a'])",
+		);
+		expect(r.stdout).toContain('"x"');
+		expect(r.stdout).toContain("2");
+	});
+
+	test("try/except handles errors", async () => {
+		const r = await py(
+			"try:\n    x = 1/0\nexcept ZeroDivisionError:\n    print('caught')",
+		);
+		expect(r.stdout?.trim()).toBe("caught");
+	});
+
+	test("f-string interpolation", async () => {
+		const r = await py("name='world'\nprint(f'hello {name}')");
+		expect(r.stdout?.trim()).toBe("hello world");
+	});
+
+	test("sorted() and reversed()", async () => {
+		const r = await py(
+			"print(sorted([3,1,2]))\nprint(list(reversed([1,2,3])))",
+		);
+		expect(r.stdout).toContain("[1, 2, 3]");
+		expect(r.stdout).toContain("[3, 2, 1]");
+	});
+
+	test("enumerate()", async () => {
+		const r = await py("for i,v in enumerate(['a','b']):\n    print(i, v)");
+		expect(r.stdout).toContain("0 a");
+		expect(r.stdout).toContain("1 b");
 	});
 });

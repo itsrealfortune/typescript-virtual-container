@@ -1,5 +1,11 @@
 import type { ShellModule } from "../types/commands";
 
+/**
+ * Add a new user to the virtual user database.
+ * @category users
+ * @params ["<username> <password>"]
+ * @returns ShellModule
+ */
 export const adduserCommand: ShellModule = {
 	name: "adduser",
 	description: "Add a new user",

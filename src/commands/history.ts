@@ -1,5 +1,10 @@
 import type { ShellModule } from "../types/commands";
 
+/**
+ * Display persisted command history for the session (from VFS).
+ * @category shell
+ * @params ["[n]"]
+ */
 export const historyCommand: ShellModule = {
 	name: "history",
 	description: "Display command history",
@@ -20,8 +25,8 @@ export const historyCommand: ShellModule = {
 		const slice = n && !Number.isNaN(n) ? lines.slice(-n) : lines;
 
 		const offset = lines.length - slice.length + 1;
-		const numbered = slice.map((line, i) =>
-			`${String(offset + i).padStart(5)}  ${line}`
+		const numbered = slice.map(
+			(line, i) => `${String(offset + i).padStart(5)}  ${line}`,
 		);
 
 		return { stdout: numbered.join("\n"), exitCode: 0 };

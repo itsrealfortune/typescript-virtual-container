@@ -1,5 +1,5 @@
-import { resolveModule } from ".";
 import type { ShellModule } from "../types/commands";
+import { resolveModule } from "./registry";
 
 export const typeCommand: ShellModule = {
 	name: "type",
@@ -7,9 +7,12 @@ export const typeCommand: ShellModule = {
 	category: "shell",
 	params: ["<command...>"],
 	run: ({ args, shell, env }) => {
-		if (args.length === 0) return { stderr: "type: missing argument", exitCode: 1 };
+		if (args.length === 0)
+			return { stderr: "type: missing argument", exitCode: 1 };
 
-		const pathDirs = (env?.vars?.PATH ?? "/usr/local/bin:/usr/bin:/bin").split(":");
+		const pathDirs = (env?.vars?.PATH ?? "/usr/local/bin:/usr/bin:/bin").split(
+			":",
+		);
 		const lines: string[] = [];
 		let exitCode = 0;
 

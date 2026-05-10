@@ -1,4 +1,10 @@
-import type { Pipeline, PipelineCommand, Script, Statement, LogicalOp } from "../types/pipeline";
+import type {
+	Pipeline,
+	PipelineCommand,
+	Script,
+	Statement,
+	LogicalOp,
+} from "../types/pipeline";
 
 // ── Public API ───────────────────────────────────────────────────────────────
 
@@ -56,8 +62,9 @@ export function expandToken(
 	token = token.replace(/\$#/g, "0");
 
 	// ${VAR:-default} and ${VAR:+value}
-	token = token.replace(/\$\{([^}:]+):-([^}]*)\}/g, (_, name, def) =>
-		env[name] ?? def,
+	token = token.replace(
+		/\$\{([^}:]+):-([^}]*)\}/g,
+		(_, name, def) => env[name] ?? def,
 	);
 	token = token.replace(/\$\{([^}:]+):\+([^}]*)\}/g, (_, name, val) =>
 		env[name] ? val : "",
@@ -67,8 +74,9 @@ export function expandToken(
 	token = token.replace(/\$\{([^}]+)\}/g, (_, name) => env[name] ?? "");
 
 	// $VAR (greedy: match longest valid identifier)
-	token = token.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, name) =>
-		env[name] ?? "",
+	token = token.replace(
+		/\$([A-Za-z_][A-Za-z0-9_]*)/g,
+		(_, name) => env[name] ?? "",
 	);
 
 	return token;
@@ -120,7 +128,10 @@ function parseStatements(input: string): Statement[] {
 	return statements;
 }
 
-interface Segment { text: string; op?: LogicalOp }
+interface Segment {
+	text: string;
+	op?: LogicalOp;
+}
 
 function splitByLogicalOps(input: string): Segment[] {
 	const segments: Segment[] = [];
@@ -139,19 +150,61 @@ function splitByLogicalOps(input: string): Segment[] {
 		const ch = input[i]!;
 		const ch2 = input.slice(i, i + 2);
 
-		if ((ch === '"' || ch === "'") && !inQ) { inQ = true; qChar = ch; current += ch; i++; continue; }
-		if (inQ && ch === qChar) { inQ = false; current += ch; i++; continue; }
-		if (inQ) { current += ch; i++; continue; }
+		if ((ch === '"' || ch === "'") && !inQ) {
+			inQ = true;
+			qChar = ch;
+			current += ch;
+			i++;
+			continue;
+		}
+		if (inQ && ch === qChar) {
+			inQ = false;
+			current += ch;
+			i++;
+			continue;
+		}
+		if (inQ) {
+			current += ch;
+			i++;
+			continue;
+		}
 
-		if (ch === "(") { depth++; current += ch; i++; continue; }
-		if (ch === ")") { depth--; current += ch; i++; continue; }
-		if (depth > 0) { current += ch; i++; continue; }
+		if (ch === "(") {
+			depth++;
+			current += ch;
+			i++;
+			continue;
+		}
+		if (ch === ")") {
+			depth--;
+			current += ch;
+			i++;
+			continue;
+		}
+		if (depth > 0) {
+			current += ch;
+			i++;
+			continue;
+		}
 
-		if (ch2 === "&&") { flush("&&"); i += 2; continue; }
-		if (ch2 === "||") { flush("||"); i += 2; continue; }
-		if (ch === ";") { flush(";"); i++; continue; }
+		if (ch2 === "&&") {
+			flush("&&");
+			i += 2;
+			continue;
+		}
+		if (ch2 === "||") {
+			flush("||");
+			i += 2;
+			continue;
+		}
+		if (ch === ";") {
+			flush(";");
+			i++;
+			continue;
+		}
 
-		current += ch; i++;
+		current += ch;
+		i++;
 	}
 	flush();
 	return segments;
@@ -170,13 +223,26 @@ function splitByPipe(input: string): string[] {
 
 	for (let i = 0; i < input.length; i++) {
 		const ch = input[i]!;
-		if ((ch === '"' || ch === "'") && !inQ) { inQ = true; qChar = ch; current += ch; continue; }
-		if (inQ && ch === qChar) { inQ = false; current += ch; continue; }
-		if (inQ) { current += ch; continue; }
+		if ((ch === '"' || ch === "'") && !inQ) {
+			inQ = true;
+			qChar = ch;
+			current += ch;
+			continue;
+		}
+		if (inQ && ch === qChar) {
+			inQ = false;
+			current += ch;
+			continue;
+		}
+		if (inQ) {
+			current += ch;
+			continue;
+		}
 
 		// || was already consumed at statement level, bare | is pipe
 		if (ch === "|" && input[i + 1] !== "|") {
-			if (!current.trim()) throw new Error("Syntax error near unexpected token '|'");
+			if (!current.trim())
+				throw new Error("Syntax error near unexpected token '|'");
 			tokens.push(current.trim());
 			current = "";
 		} else {
@@ -185,7 +251,8 @@ function splitByPipe(input: string): string[] {
 	}
 
 	const tail = current.trim();
-	if (!tail && tokens.length > 0) throw new Error("Syntax error near unexpected token '|'");
+	if (!tail && tokens.length > 0)
+		throw new Error("Syntax error near unexpected token '|'");
 	if (tail) tokens.push(tail);
 	return tokens;
 }
@@ -204,19 +271,27 @@ function parseCommandWithRedirections(token: string): PipelineCommand {
 		const part = parts[i]!;
 		if (part === "<") {
 			i++;
-			if (i >= parts.length) throw new Error("Syntax error: expected filename after <");
+			if (i >= parts.length)
+				throw new Error("Syntax error: expected filename after <");
 			inputFile = parts[i];
 			i++;
 		} else if (part === ">>") {
 			i++;
-			if (i >= parts.length) throw new Error("Syntax error: expected filename after >>");
-			outputFile = parts[i]; appendOutput = true; i++;
+			if (i >= parts.length)
+				throw new Error("Syntax error: expected filename after >>");
+			outputFile = parts[i];
+			appendOutput = true;
+			i++;
 		} else if (part === ">") {
 			i++;
-			if (i >= parts.length) throw new Error("Syntax error: expected filename after >");
-			outputFile = parts[i]; appendOutput = false; i++;
+			if (i >= parts.length)
+				throw new Error("Syntax error: expected filename after >");
+			outputFile = parts[i];
+			appendOutput = false;
+			i++;
 		} else {
-			cmdParts.push(part); i++;
+			cmdParts.push(part);
+			i++;
 		}
 	}
 
@@ -236,26 +311,49 @@ function tokenizeCommand(input: string): string[] {
 		const next = input[i + 1];
 
 		if ((ch === '"' || ch === "'") && !inQ) {
-			inQ = true; qChar = ch; i++; continue;
+			inQ = true;
+			qChar = ch;
+			i++;
+			continue;
 		}
 		if (inQ && ch === qChar) {
-			inQ = false; qChar = ""; i++; continue;
+			inQ = false;
+			qChar = "";
+			i++;
+			continue;
 		}
-		if (inQ) { current += ch; i++; continue; }
-
-		if (ch === " ") {
-			if (current) { tokens.push(current); current = ""; }
-			i++; continue;
-		}
-
-		if ((ch === ">" || ch === "<") && !inQ) {
-			if (current) { tokens.push(current); current = ""; }
-			if (ch === ">" && next === ">") { tokens.push(">>"); i += 2; }
-			else { tokens.push(ch); i++; }
+		if (inQ) {
+			current += ch;
+			i++;
 			continue;
 		}
 
-		current += ch; i++;
+		if (ch === " ") {
+			if (current) {
+				tokens.push(current);
+				current = "";
+			}
+			i++;
+			continue;
+		}
+
+		if ((ch === ">" || ch === "<") && !inQ) {
+			if (current) {
+				tokens.push(current);
+				current = "";
+			}
+			if (ch === ">" && next === ">") {
+				tokens.push(">>");
+				i += 2;
+			} else {
+				tokens.push(ch);
+				i++;
+			}
+			continue;
+		}
+
+		current += ch;
+		i++;
 	}
 	if (current) tokens.push(current);
 	return tokens;

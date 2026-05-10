@@ -28,10 +28,13 @@
  */
 export function evalArith(expr: string, env: Record<string, string>): number {
 	// Substitute variable names before evaluating
-	const substituted = expr.replace(/\b([A-Za-z_][A-Za-z0-9_]*)\b/g, (_, name) => {
-		const val = env[name];
-		return val !== undefined && val !== "" ? val : "0";
-	});
+	const substituted = expr.replace(
+		/\b([A-Za-z_][A-Za-z0-9_]*)\b/g,
+		(_, name) => {
+			const val = env[name];
+			return val !== undefined && val !== "" ? val : "0";
+		},
+	);
 
 	// Whitelist: only digits, operators, spaces, parens
 	if (!/^[\d\s+\-*/%()^!&|<>=,. ]+$/.test(substituted)) return NaN;
@@ -39,7 +42,9 @@ export function evalArith(expr: string, env: Record<string, string>): number {
 	try {
 		// Use Function constructor for safe subset (no identifiers remain)
 		// eslint-disable-next-line no-new-func
-		const result = Function(`"use strict"; return (${substituted.replace(/\*\*/g, "**")});`)();
+		const result = Function(
+			`"use strict"; return (${substituted.replace(/\*\*/g, "**")});`,
+		)();
 		return typeof result === "number" ? Math.trunc(result) : NaN;
 	} catch {
 		return NaN;
@@ -102,7 +107,10 @@ export function expandSync(
 		let s = chunk;
 
 		// Tilde expansion — only at start of token or after `:` or whitespace
-		s = s.replace(/(^|[\s:])~(\/|$)/g, (_, pre, post) => `${pre}${homePath}${post}`);
+		s = s.replace(
+			/(^|[\s:])~(\/|$)/g,
+			(_, pre, post) => `${pre}${homePath}${post}`,
+		);
 
 		// $? $$ $#
 		s = s.replace(/\$\?/g, String(lastExit));
@@ -122,22 +130,30 @@ export function expandSync(
 
 		// ${VAR:-default}
 		s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*):-([^}]*)\}/g, (_, name, def) =>
-			(env[name] !== undefined && env[name] !== "") ? (env[name] as string) : def,
+			env[name] !== undefined && env[name] !== "" ? (env[name] as string) : def,
 		);
 
 		// ${VAR:=default} — also assigns to env
-		s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*):=([^}]*)\}/g, (_, name, def) => {
-			if (env[name] === undefined || env[name] === "") env[name] = def;
-			return env[name] as string;
-		});
+		s = s.replace(
+			/\$\{([A-Za-z_][A-Za-z0-9_]*):=([^}]*)\}/g,
+			(_, name, def) => {
+				if (env[name] === undefined || env[name] === "") env[name] = def;
+				return env[name] as string;
+			},
+		);
 
 		// ${VAR:+alternate}
-		s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*):\+([^}]*)\}/g, (_, name, alt) =>
-			(env[name] !== undefined && env[name] !== "") ? alt : "",
+		s = s.replace(
+			/\$\{([A-Za-z_][A-Za-z0-9_]*):\+([^}]*)\}/g,
+			(_, name, alt) =>
+				env[name] !== undefined && env[name] !== "" ? alt : "",
 		);
 
 		// ${VAR}
-		s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g, (_, name) => env[name] ?? "");
+		s = s.replace(
+			/\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g,
+			(_, name) => env[name] ?? "",
+		);
 
 		// $VAR
 		s = s.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, name) => env[name] ?? "");
@@ -174,20 +190,35 @@ export async function expandAsync(
 		while (i < input.length) {
 			const ch = input[i]!;
 
-			if (ch === "'" && !inSingle) { inSingle = true; result += ch; i++; continue; }
-			if (ch === "'" && inSingle)  { inSingle = false; result += ch; i++; continue; }
+			if (ch === "'" && !inSingle) {
+				inSingle = true;
+				result += ch;
+				i++;
+				continue;
+			}
+			if (ch === "'" && inSingle) {
+				inSingle = false;
+				result += ch;
+				i++;
+				continue;
+			}
 
 			if (!inSingle && ch === "$" && input[i + 1] === "(") {
 				// $((expr)) arithmetic — NOT a $(cmd) substitution, skip it
 				if (input[i + 2] === "(") {
-					result += ch; i++; continue;
+					result += ch;
+					i++;
+					continue;
 				}
 				// Find matching ) with depth tracking
 				let depth = 0;
 				let j = i + 1;
 				while (j < input.length) {
 					if (input[j] === "(") depth++;
-					else if (input[j] === ")") { depth--; if (depth === 0) break; }
+					else if (input[j] === ")") {
+						depth--;
+						if (depth === 0) break;
+					}
 					j++;
 				}
 				const sub = input.slice(i + 2, j).trim();
@@ -197,7 +228,8 @@ export async function expandAsync(
 				continue;
 			}
 
-			result += ch; i++;
+			result += ch;
+			i++;
 		}
 		input = result;
 	}

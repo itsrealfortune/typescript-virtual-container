@@ -2,6 +2,11 @@ import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 import { assertPathAccess, resolvePath } from "./helpers";
 
+/**
+ * Copy files or directories inside the virtual filesystem.
+ * @category files
+ * @params ["[-r] <source> <dest>"]
+ */
 export const cpCommand: ShellModule = {
 	name: "cp",
 	description: "Copy files or directories",

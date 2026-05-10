@@ -11,15 +11,42 @@ function renderPrintf(fmt: string, args: string[]): string {
 	while (i < fmt.length) {
 		if (fmt[i] === "\\" && i + 1 < fmt.length) {
 			switch (fmt[i + 1]) {
-				case "n":  out += "\n"; i += 2; continue;
-				case "t":  out += "\t"; i += 2; continue;
-				case "r":  out += "\r"; i += 2; continue;
-				case "\\":  out += "\\"; i += 2; continue;
-				case "a":  out += "\x07"; i += 2; continue;
-				case "b":  out += "\x08"; i += 2; continue;
-				case "f":  out += "\x0C"; i += 2; continue;
-				case "v":  out += "\x0B"; i += 2; continue;
-				default: out += fmt[i]!; i++; continue;
+				case "n":
+					out += "\n";
+					i += 2;
+					continue;
+				case "t":
+					out += "\t";
+					i += 2;
+					continue;
+				case "r":
+					out += "\r";
+					i += 2;
+					continue;
+				case "\\":
+					out += "\\";
+					i += 2;
+					continue;
+				case "a":
+					out += "\x07";
+					i += 2;
+					continue;
+				case "b":
+					out += "\x08";
+					i += 2;
+					continue;
+				case "f":
+					out += "\x0C";
+					i += 2;
+					continue;
+				case "v":
+					out += "\x0B";
+					i += 2;
+					continue;
+				default:
+					out += fmt[i]!;
+					i++;
+					continue;
 			}
 		}
 		if (fmt[i] === "%" && i + 1 < fmt.length) {
@@ -27,19 +54,40 @@ function renderPrintf(fmt: string, args: string[]): string {
 			let j = i + 1;
 			if (fmt[j] === "-") j++;
 			while (j < fmt.length && /\d/.test(fmt[j]!)) j++;
-			if (fmt[j] === ".") { j++; while (j < fmt.length && /\d/.test(fmt[j]!)) j++; }
+			if (fmt[j] === ".") {
+				j++;
+				while (j < fmt.length && /\d/.test(fmt[j]!)) j++;
+			}
 			const spec = fmt[j];
 			const arg = args[argIdx++] ?? "";
 			switch (spec) {
-				case "s": out += arg; break;
+				case "s":
+					out += arg;
+					break;
 				case "d":
-				case "i": out += String(parseInt(arg, 10) || 0); break;
-				case "f": out += String(parseFloat(arg) || 0); break;
-				case "o": out += (parseInt(arg, 10) || 0).toString(8); break;
-				case "x": out += (parseInt(arg, 10) || 0).toString(16); break;
-				case "X": out += (parseInt(arg, 10) || 0).toString(16).toUpperCase(); break;
-				case "%": out += "%"; argIdx--; break;
-				default:  out += fmt[i]!; i++; continue;
+				case "i":
+					out += String(parseInt(arg, 10) || 0);
+					break;
+				case "f":
+					out += String(parseFloat(arg) || 0);
+					break;
+				case "o":
+					out += (parseInt(arg, 10) || 0).toString(8);
+					break;
+				case "x":
+					out += (parseInt(arg, 10) || 0).toString(16);
+					break;
+				case "X":
+					out += (parseInt(arg, 10) || 0).toString(16).toUpperCase();
+					break;
+				case "%":
+					out += "%";
+					argIdx--;
+					break;
+				default:
+					out += fmt[i]!;
+					i++;
+					continue;
 			}
 			i = j + 1;
 			continue;

@@ -1,6 +1,6 @@
 import type { ShellModule } from "../types/commands";
 import { resolvePath } from "./helpers";
-import { runCommand } from ".";
+import { runCommand } from "./runtime";
 
 export const sourceCommand: ShellModule = {
 	name: "source",
@@ -16,7 +16,10 @@ export const sourceCommand: ShellModule = {
 
 		const filePath = resolvePath(cwd, fileArg);
 		if (!shell.vfs.exists(filePath)) {
-			return { stderr: `source: ${fileArg}: No such file or directory`, exitCode: 1 };
+			return {
+				stderr: `source: ${fileArg}: No such file or directory`,
+				exitCode: 1,
+			};
 		}
 
 		const content = shell.vfs.readFile(filePath);
@@ -25,7 +28,16 @@ export const sourceCommand: ShellModule = {
 		for (const line of content.split("\n")) {
 			const l = line.trim();
 			if (!l || l.startsWith("#")) continue;
-			const result = await runCommand(l, authUser, hostname, "shell", cwd, shell, undefined, env);
+			const result = await runCommand(
+				l,
+				authUser,
+				hostname,
+				"shell",
+				cwd,
+				shell,
+				undefined,
+				env,
+			);
 			lastExitCode = result.exitCode ?? 0;
 			if (result.closeSession || result.switchUser) return result;
 		}

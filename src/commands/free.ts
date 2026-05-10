@@ -2,6 +2,11 @@ import * as os from "node:os";
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/**
+ * Display memory usage information (human / MB / GB options).
+ * @category system
+ * @params ["[-h] [-m] [-g]"]
+ */
 export const freeCommand: ShellModule = {
 	name: "free",
 	description: "Display amount of free and used memory",
@@ -22,8 +27,10 @@ export const freeCommand: ShellModule = {
 
 		const fmt = (bytes: number): string => {
 			if (human) {
-				if (bytes >= 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)}G`;
-				if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)}M`;
+				if (bytes >= 1024 * 1024 * 1024)
+					return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)}G`;
+				if (bytes >= 1024 * 1024)
+					return `${(bytes / (1024 * 1024)).toFixed(1)}M`;
 				return `${(bytes / 1024).toFixed(1)}K`;
 			}
 			if (gb) return String(Math.floor(bytes / (1024 * 1024 * 1024)));

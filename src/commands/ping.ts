@@ -7,7 +7,9 @@ export const pingCommand: ShellModule = {
 	category: "network",
 	params: ["[-c <count>] <host>"],
 	run: ({ args }) => {
-		const { flagsWithValues, positionals } = parseArgs(args, { flagsWithValue: ["-c", "-i", "-W"] });
+		const { flagsWithValues, positionals } = parseArgs(args, {
+			flagsWithValue: ["-c", "-i", "-W"],
+		});
 		const host = positionals[0] ?? "localhost";
 		const countArg = flagsWithValues.get("-c");
 		const count = countArg ? Math.max(1, parseInt(countArg, 10) || 4) : 4;
@@ -17,7 +19,9 @@ export const pingCommand: ShellModule = {
 			lines.push(`64 bytes from ${host}: icmp_seq=${i} ttl=64 time=${ms} ms`);
 		}
 		lines.push(`--- ${host} ping statistics ---`);
-		lines.push(`${count} packets transmitted, ${count} received, 0% packet loss`);
+		lines.push(
+			`${count} packets transmitted, ${count} received, 0% packet loss`,
+		);
 		return { stdout: lines.join("\n"), exitCode: 0 };
 	},
 };

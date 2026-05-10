@@ -1,7 +1,12 @@
 import { runCommandDirect } from "../commands";
 import { resolvePath } from "../commands/helpers";
 import type { CommandMode, CommandResult, ShellEnv } from "../types/commands";
-import type { Pipeline, PipelineCommand, Script, Statement } from "../types/pipeline";
+import type {
+	Pipeline,
+	PipelineCommand,
+	Script,
+	Statement,
+} from "../types/pipeline";
 import type { VirtualShell } from "../VirtualShell";
 
 // ── Script executor (handles &&/||/;) ────────────────────────────────────────
@@ -15,17 +20,30 @@ export async function executeScript(
 	shell: VirtualShell,
 	env: ShellEnv,
 ): Promise<CommandResult> {
-	if (!script.isValid) return { stderr: script.error || "Syntax error", exitCode: 1 };
+	if (!script.isValid)
+		return { stderr: script.error || "Syntax error", exitCode: 1 };
 
 	let lastResult: CommandResult = { exitCode: 0 };
 
 	for (const stmt of script.statements) {
 		// Decide whether to run this statement based on previous op
-		lastResult = await executePipeline(stmt.pipeline, authUser, hostname, mode, cwd, shell, env);
+		lastResult = await executePipeline(
+			stmt.pipeline,
+			authUser,
+			hostname,
+			mode,
+			cwd,
+			shell,
+			env,
+		);
 		env.lastExitCode = lastResult.exitCode ?? 0;
 
 		// Propagate session-control signals
-		if (lastResult.closeSession || lastResult.switchUser || lastResult.nextCwd) {
+		if (
+			lastResult.closeSession ||
+			lastResult.switchUser ||
+			lastResult.nextCwd
+		) {
 			break;
 		}
 	}
@@ -48,7 +66,15 @@ export async function executeStatements(
 
 	while (i < statements.length) {
 		const stmt = statements[i]!;
-		last = await executePipeline(stmt.pipeline, authUser, hostname, mode, cwd, shell, env);
+		last = await executePipeline(
+			stmt.pipeline,
+			authUser,
+			hostname,
+			mode,
+			cwd,
+			shell,
+			env,
+		);
 		env.lastExitCode = last.exitCode ?? 0;
 
 		if (last.closeSession || last.switchUser) return last;
@@ -83,7 +109,8 @@ export async function executePipeline(
 	shell: VirtualShell,
 	env?: ShellEnv,
 ): Promise<CommandResult> {
-	if (!pipeline.isValid) return { stderr: pipeline.error || "Syntax error", exitCode: 1 };
+	if (!pipeline.isValid)
+		return { stderr: pipeline.error || "Syntax error", exitCode: 1 };
 	if (pipeline.commands.length === 0) return { exitCode: 0 };
 
 	const shellEnv: ShellEnv = env ?? { vars: {}, lastExitCode: 0 };
@@ -91,13 +118,23 @@ export async function executePipeline(
 	if (pipeline.commands.length === 1) {
 		return executeSingleCommandWithRedirections(
 			pipeline.commands[0] as PipelineCommand,
-			authUser, hostname, mode, cwd, shell, shellEnv,
+			authUser,
+			hostname,
+			mode,
+			cwd,
+			shell,
+			shellEnv,
 		);
 	}
 
 	return executePipelineChain(
 		pipeline.commands as PipelineCommand[],
-		authUser, hostname, mode, cwd, shell, shellEnv,
+		authUser,
+		hostname,
+		mode,
+		cwd,
+		shell,
+		shellEnv,
 	);
 }
 
@@ -113,25 +150,51 @@ async function executeSingleCommandWithRedirections(
 	let stdin: string | undefined;
 	if (cmd.inputFile) {
 		const inputPath = resolvePath(cwd, cmd.inputFile);
-		try { stdin = shell.vfs.readFile(inputPath); }
-		catch { return { stderr: `${cmd.inputFile}: No such file or directory`, exitCode: 1 }; }
+		try {
+			stdin = shell.vfs.readFile(inputPath);
+		} catch {
+			return {
+				stderr: `${cmd.inputFile}: No such file or directory`,
+				exitCode: 1,
+			};
+		}
 	}
 
-	const result = await runCommandDirect(cmd.name, cmd.args, authUser, hostname, mode, cwd, shell, stdin, env);
+	const result = await runCommandDirect(
+		cmd.name,
+		cmd.args,
+		authUser,
+		hostname,
+		mode,
+		cwd,
+		shell,
+		stdin,
+		env,
+	);
 
 	if (cmd.outputFile) {
 		const outputPath = resolvePath(cwd, cmd.outputFile);
 		const output = result.stdout || "";
 		try {
 			if (cmd.appendOutput) {
-				const existing = (() => { try { return shell.vfs.readFile(outputPath); } catch { return ""; } })();
+				const existing = (() => {
+					try {
+						return shell.vfs.readFile(outputPath);
+					} catch {
+						return "";
+					}
+				})();
 				shell.writeFileAsUser(authUser, outputPath, existing + output);
 			} else {
 				shell.writeFileAsUser(authUser, outputPath, output);
 			}
 			return { ...result, stdout: "" };
 		} catch {
-			return { ...result, stderr: `Failed to write to ${cmd.outputFile}`, exitCode: 1 };
+			return {
+				...result,
+				stderr: `Failed to write to ${cmd.outputFile}`,
+				exitCode: 1,
+			};
 		}
 	}
 
@@ -155,11 +218,27 @@ async function executePipelineChain(
 
 		if (i === 0 && cmd.inputFile) {
 			const inputPath = resolvePath(cwd, cmd.inputFile);
-			try { currentOutput = shell.vfs.readFile(inputPath); }
-			catch { return { stderr: `${cmd.inputFile}: No such file or directory`, exitCode: 1 }; }
+			try {
+				currentOutput = shell.vfs.readFile(inputPath);
+			} catch {
+				return {
+					stderr: `${cmd.inputFile}: No such file or directory`,
+					exitCode: 1,
+				};
+			}
 		}
 
-		const result = await runCommandDirect(cmd.name, cmd.args, authUser, hostname, mode, cwd, shell, currentOutput, env);
+		const result = await runCommandDirect(
+			cmd.name,
+			cmd.args,
+			authUser,
+			hostname,
+			mode,
+			cwd,
+			shell,
+			currentOutput,
+			env,
+		);
 		exitCode = result.exitCode ?? 0;
 
 		if (i === commands.length - 1 && cmd.outputFile) {
@@ -167,7 +246,13 @@ async function executePipelineChain(
 			const output = result.stdout || "";
 			try {
 				if (cmd.appendOutput) {
-					const existing = (() => { try { return shell.vfs.readFile(outputPath); } catch { return ""; } })();
+					const existing = (() => {
+						try {
+							return shell.vfs.readFile(outputPath);
+						} catch {
+							return "";
+						}
+					})();
 					shell.writeFileAsUser(authUser, outputPath, existing + output);
 				} else {
 					shell.writeFileAsUser(authUser, outputPath, output);
@@ -180,7 +265,8 @@ async function executePipelineChain(
 			currentOutput = result.stdout || "";
 		}
 
-		if (result.stderr && exitCode !== 0) return { stderr: result.stderr, exitCode };
+		if (result.stderr && exitCode !== 0)
+			return { stderr: result.stderr, exitCode };
 		if (result.closeSession || result.switchUser) return result;
 	}
 

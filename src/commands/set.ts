@@ -11,9 +11,13 @@ const _globalEnv: Record<string, string> = {
 };
 
 /** @deprecated use env.vars from CommandContext */
-export function getEnvVar(name: string): string | undefined { return _globalEnv[name]; }
+export function getEnvVar(name: string): string | undefined {
+	return _globalEnv[name];
+}
 /** @deprecated use env.vars from CommandContext */
-export function setEnvVar(name: string, value: string): void { _globalEnv[name] = value; }
+export function setEnvVar(name: string, value: string): void {
+	_globalEnv[name] = value;
+}
 /** @deprecated use env.vars from CommandContext */
 export function getAllEnvVars(authUser: string): Record<string, string> {
 	_globalEnv.USER = authUser;
@@ -28,7 +32,9 @@ export const setCommand: ShellModule = {
 	params: ["[VAR=value]"],
 	run: ({ args, env }) => {
 		if (args.length === 0) {
-			const out = Object.entries(env.vars).map(([k, v]) => `${k}=${v}`).join("\n");
+			const out = Object.entries(env.vars)
+				.map(([k, v]) => `${k}=${v}`)
+				.join("\n");
 			return { stdout: out, exitCode: 0 };
 		}
 		for (const arg of args) {

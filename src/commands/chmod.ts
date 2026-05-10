@@ -37,6 +37,11 @@ function applySymbolicMode(existing: number, modeStr: string): number | null {
 	return mode;
 }
 
+/**
+ * Change file permissions (octal or symbolic).
+ * @category files
+ * @params ["<mode> <file>"]
+ */
 export const chmodCommand: ShellModule = {
 	name: "chmod",
 	description: "Change file permissions",

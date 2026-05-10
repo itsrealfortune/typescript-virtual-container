@@ -26,5 +26,12 @@
         "indentWidth": 2,
         "lineWidth": 80,
         "lineEnding": "lf"
+    },
+    "files": {
+        "ignoreUnknown": true,
+        "includes": [
+            "**/*.ts",
+            "**/*.tsx"
+        ]
     }
 }

@@ -1,5 +1,10 @@
 import type { ShellModule } from "../types/commands";
 
+/**
+ * Print the current date/time or a formatted representation.
+ * @category system
+ * @params ["[+format]"]
+ */
 export const dateCommand: ShellModule = {
 	name: "date",
 	description: "Print current date and time",
@@ -9,7 +14,8 @@ export const dateCommand: ShellModule = {
 		const now = new Date();
 		const fmt = args[0];
 		if (fmt?.startsWith("+")) {
-			const f = fmt.slice(1)
+			const f = fmt
+				.slice(1)
 				.replace("%Y", String(now.getFullYear()))
 				.replace("%m", String(now.getMonth() + 1).padStart(2, "0"))
 				.replace("%d", String(now.getDate()).padStart(2, "0"))

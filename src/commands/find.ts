@@ -2,6 +2,11 @@ import type { ShellModule } from "../types/commands";
 import { getFlag } from "./command-helpers";
 import { assertPathAccess, resolvePath } from "./helpers";
 
+/**
+ * Find files and directories by name and type with minimal pattern support.
+ * @category files
+ * @params ["[path] [-name <pattern>] [-type f|d]"]
+ */
 export const findCommand: ShellModule = {
 	name: "find",
 	description: "Search for files",

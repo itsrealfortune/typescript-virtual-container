@@ -17,7 +17,16 @@ export function runExec(
 	shell: VirtualShell,
 ): void {
 	Promise.resolve(
-		runCommand(cmd, authUser, hostname, "exec", `/home/${authUser}`, shell, undefined, makeDefaultEnv(authUser, hostname)),
+		runCommand(
+			cmd,
+			authUser,
+			hostname,
+			"exec",
+			`/home/${authUser}`,
+			shell,
+			undefined,
+			makeDefaultEnv(authUser, hostname),
+		),
 	)
 		.then((result) => {
 			if (result.stdout) {

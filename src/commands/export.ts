@@ -7,7 +7,9 @@ export const exportCommand: ShellModule = {
 	params: ["[VAR=value]"],
 	run: ({ args, env }) => {
 		if (args.length === 0) {
-			const out = Object.entries(env.vars).map(([k, v]) => `declare -x ${k}="${v}"`).join("\n");
+			const out = Object.entries(env.vars)
+				.map(([k, v]) => `declare -x ${k}="${v}"`)
+				.join("\n");
 			return { stdout: out, exitCode: 0 };
 		}
 		for (const arg of args) {

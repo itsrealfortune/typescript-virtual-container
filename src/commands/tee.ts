@@ -14,7 +14,13 @@ export const teeCommand: ShellModule = {
 		for (const f of files) {
 			const p = resolvePath(cwd, f);
 			if (append) {
-				const existing = (() => { try { return shell.vfs.readFile(p); } catch { return ""; } })();
+				const existing = (() => {
+					try {
+						return shell.vfs.readFile(p);
+					} catch {
+						return "";
+					}
+				})();
 				shell.writeFileAsUser(authUser, p, existing + input);
 			} else {
 				shell.writeFileAsUser(authUser, p, input);
