@@ -192,6 +192,13 @@ export const nodeCommand: ShellModule = {
 	category: "system",
 	params: ["[--version] [-e <expr>] [-p <expr>] [file]"],
 	run: ({ args, shell, cwd }) => {
+		// Require explicit installation via `apt install nodejs`
+		if (!shell.packageManager.isInstalled("nodejs")) {
+			return {
+				stderr: "bash: node: command not found\nHint: install it with: apt install nodejs\n",
+				exitCode: 127,
+			};
+		}
 		if (ifFlag(args, ["--version", "-v"])) {
 			return { stdout: `${VIRTUAL_VERSION}\n`, exitCode: 0 };
 		}

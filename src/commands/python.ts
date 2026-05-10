@@ -1453,6 +1453,13 @@ export const python3Command: ShellModule = {
 	category: "system",
 	params: ["[--version] [-c <code>] [-V] [file]"],
 	run: ({ args, shell, cwd }) => {
+		// Require explicit installation via `apt install python3`
+		if (!shell.packageManager.isInstalled("python3")) {
+			return {
+				stderr: "bash: python3: command not found\nHint: install it with: apt install python3\n",
+				exitCode: 127,
+			};
+		}
 		if (ifFlag(args, ["--version", "-V"])) {
 			return { stdout: `${VERSION}\n`, exitCode: 0 };
 		}
