@@ -30,6 +30,7 @@
     "deploy:npm": "npm publish --access public",
     "bench": "rm -rf .benchmark-shells/ && bun benchmark-virtualshell.ts",
     "standalone-build:wo-sftp": "bunx esbuild src/standalone-wo-sftp.ts --bundle --platform=node --target=node18 --outfile=standalone-wo-sftp.js --tree-shaking=true --minify --sourcemap",
+    "web-build": "bunx esbuild src/web.ts --bundle --platform=browser --target=es2020 --outfile=web.min.js --tree-shaking=true --minify --sourcemap",
     "publish-package": "bash ./scripts/publish-package.sh",
     "standalone-build": "bunx esbuild src/standalone.ts --bundle --platform=node --target=node18 --outfile=standalone.js --tree-shaking=true --minify --sourcemap"
   },

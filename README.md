@@ -13,6 +13,7 @@
 - [What This Is / What This Is Not](#what-this-is--what-this-is-not)
 - [Why This Package](#why-this-package)
 - [Installation](#installation)
+- [Browser Build (webminjs)](#browser-build-webminjs)
 - [Compatibility](#compatibility)
 - [Quick Start](#quick-start)
 - [Architecture Overview](#architecture-overview)
@@ -78,6 +79,8 @@
 - A practical tool for deterministic testing, automation pipelines, and SSH-like workflows without running real containers.
 - A honeypot framework for capturing and auditing attacker behavior.
 
+TL;DR: this is a shell emulator and virtual environment for developer workflows, not a security sandbox or container runtime.
+
 ### What This Is Not
 
 - Not a fully isolated container runtime.
@@ -85,6 +88,8 @@
 - Package stubs (e.g. `node`, `python3`) write files into the VFS and are visible to `which`/`dpkg -L`, but do not execute real binaries — the shell is pure TypeScript with no `execvp`.
 
 This project emulates shell behavior for developer workflows. `curl` and `wget` use the native `fetch()` API (no host binary). All other network and execution primitives are simulated. It is designed for realism and deployability, not kernel-level security isolation.
+
+TL;DR: this is not a secure sandbox for running untrusted code. Do not expose it to untrusted users or the public internet without additional isolation layers.
 
 ---
 
@@ -131,6 +136,47 @@ To quickly try a standalone demo:
 ```bash
 curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/standalone.js -o standalone.js && node standalone.js && rm -f standalone.js
 ```
+
+---
+
+## Browser Build (web.min.js)
+
+The package includes a browser-only runtime entrypoint in `src/web.ts`.
+It runs the shell fully in-browser and persists the virtual filesystem in IndexedDB.
+
+Build the minified browser bundle:
+
+```bash
+bun run web-build
+```
+
+This generates:
+
+- `web.min.js`
+- `web.min.js.map`
+
+Use it from a browser module script:
+
+```html
+<script type="module">
+  import { createWebShell } from "./web.min.js";
+
+  const shell = await createWebShell({
+    hostname: "web-vm",
+    dbName: "virtual-env-js",
+    storeName: "vfs",
+  });
+
+  const out = await shell.run("pwd && mkdir -p /tmp/demo && cd /tmp/demo && echo hello > file.txt && ls -la");
+  console.log(out.stdout);
+</script>
+```
+
+Notes:
+
+- This build is browser-targeted and does not include SSH/SFTP networking servers.
+- State is mirrored to IndexedDB via the VFS mirror implementation.
+- If you need SSH/SFTP, use the Node standalone builds instead (`standalone.js` or `standalone-wo-sftp.js`).
 
 ---
 
