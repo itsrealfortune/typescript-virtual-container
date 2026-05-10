@@ -104,14 +104,23 @@ class VirtualShell extends EventEmitter {
 	constructor(
 		hostname: string,
 		properties?: ShellProperties,
-		vfsOptions?: VfsOptions,
+		vfsOptions?: VfsOptions | { vfsInstance?: VirtualFileSystem },
 	) {
 		super();
 		perf.mark("constructor");
 		this.hostname = hostname;
 		this.properties = properties || defaultShellProperties;
 		this.startTime = Date.now();
-		this.vfs = new VirtualFileSystem(vfsOptions ?? {});
+		// Allow passing an existing VirtualFileSystem instance (browser integration).
+		function hasVfsInstance(obj: unknown): obj is { vfsInstance: VirtualFileSystem } {
+			return typeof obj === "object" && obj !== null && "vfsInstance" in (obj as Record<string, unknown>) && (obj as Record<string, unknown>).vfsInstance instanceof VirtualFileSystem;
+		}
+
+		if (vfsOptions && hasVfsInstance(vfsOptions)) {
+			this.vfs = vfsOptions.vfsInstance;
+		} else {
+			this.vfs = new VirtualFileSystem((vfsOptions as VfsOptions) ?? {});
+		}
 		this.users = new VirtualUserManager(this.vfs, resolveAutoSudoForNewUsers());
 		this.packageManager = new VirtualPackageManager(this.vfs, this.users);
 
