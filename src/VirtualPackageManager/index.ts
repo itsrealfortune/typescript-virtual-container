@@ -556,7 +556,35 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 				mode: 0o755,
 			},
 		],
-	},
+	},{
+		name: "gzip",
+		version: "1.12-2",
+		section: "utils",
+		description: "GNU compression utility",
+		shortDesc: "compression utility",
+		installedSizeKb: 128,
+		files: [
+			{
+				path: "/usr/bin/gzip",
+				content: "#!/bin/sh\necho 'gzip: virtual stub'\n",
+				mode: 0o755,
+			},
+		]
+	}, {
+		name: "neofetch",
+		version: "7.1.0-1",
+		section: "utils",
+		description: "A command-line system information tool written in bash 3.2+",
+		shortDesc: "command-line system information tool",
+		installedSizeKb: 256,
+		files: [
+			{
+				path: "/usr/bin/neofetch",
+				content: "#!/bin/sh\necho 'neofetch: virtual stub'\n",
+				mode: 0o755,
+			},
+		],
+	}
 ];
 
 /**
