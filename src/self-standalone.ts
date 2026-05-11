@@ -1,12 +1,12 @@
+import { readFile, unlink, writeFile } from "node:fs/promises";
 import { basename } from "node:path";
 import { stdin, stdout } from "node:process";
 import { createInterface, type Interface } from "node:readline";
-import { readFile, unlink, writeFile } from "node:fs/promises";
 
 import { makeDefaultEnv, runCommand } from "./commands/runtime";
+import { spawnNanoEditorProcess } from "./modules/shellInteractive";
 import { buildLoginBanner, type LoginBannerState } from "./SSHMimic/loginBanner";
 import { buildPrompt } from "./SSHMimic/prompt";
-import { spawnNanoEditorProcess } from "./modules/shellInteractive";
 import type { CommandResult, PasswordChallenge, SudoChallenge } from "./types/commands";
 import { VirtualShell } from "./VirtualShell";
 
