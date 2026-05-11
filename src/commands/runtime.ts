@@ -8,68 +8,8 @@ import type {
     ShellEnv,
 } from "../types/commands";
 import { expandAsync } from "../utils/expand";
+import { tokenizeCommand } from "../utils/tokenize";
 import { resolveModule } from "./registry";
-
-// ── Tokenize command input respecting quotes ──────────────────────────────────
-function tokenizeCommand(input: string): string[] {
-	const tokens: string[] = [];
-	let current = "";
-	let inQ = false;
-	let qChar = "";
-	let i = 0;
-
-	while (i < input.length) {
-		const ch = input[i]!;
-		const next = input[i + 1];
-
-		if ((ch === '"' || ch === "'") && !inQ) {
-			inQ = true;
-			qChar = ch;
-			i++;
-			continue;
-		}
-		if (inQ && ch === qChar) {
-			inQ = false;
-			qChar = "";
-			i++;
-			continue;
-		}
-		if (inQ) {
-			current += ch;
-			i++;
-			continue;
-		}
-
-		if (ch === " ") {
-			if (current) {
-				tokens.push(current);
-				current = "";
-			}
-			i++;
-			continue;
-		}
-
-		if ((ch === ">" || ch === "<") && !inQ) {
-			if (current) {
-				tokens.push(current);
-				current = "";
-			}
-			if (ch === ">" && next === ">") {
-				tokens.push(">>");
-				i += 2;
-			} else {
-				tokens.push(ch);
-				i++;
-			}
-			continue;
-		}
-
-		current += ch;
-		i++;
-	}
-	if (current) tokens.push(current);
-	return tokens;
-}
 
 export function makeDefaultEnv(authUser: string, hostname: string): ShellEnv {
 	return {
