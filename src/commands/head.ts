@@ -14,11 +14,21 @@ export const headCommand: ShellModule = {
 	params: ["[-n <lines>] [file...]"],
 	run: ({ authUser, shell, cwd, args, stdin }) => {
 		const nArg = getFlag(args, ["-n"]);
-		const n = typeof nArg === "string" ? parseInt(nArg, 10) : 10;
-		const positionals = args.filter((a) => !a.startsWith("-") && a !== nArg);
+		// Support both -n N and -N shorthand (head -2, head -10)
+		const shortN = args.find((a) => /^-\d+$/.test(a));
+		const n = typeof nArg === "string"
+			? parseInt(nArg, 10)
+			: shortN ? parseInt(shortN.slice(1), 10) : 10;
+		const positionals = args.filter(
+			(a) => !a.startsWith("-") && a !== nArg && a !== String(n),
+		);
 
-		const take = (content: string) =>
-			content.split("\n").slice(0, n).join("\n");
+		const take = (content: string) => {
+			const lines = content.split("\n");
+			// Preserve trailing newline
+			const sliced = lines.slice(0, n);
+			return sliced.join("\n") + (content.endsWith("\n") && sliced.length === lines.slice(0, n).length ? "\n" : "");
+		};
 
 		if (positionals.length === 0) {
 			return { stdout: take(stdin ?? ""), exitCode: 0 };

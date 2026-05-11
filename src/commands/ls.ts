@@ -39,6 +39,23 @@ export const lsCommand: ShellModule = {
 		});
 		const target = resolvePath(cwd, targetArg ?? cwd);
 		assertPathAccess(authUser, target, "ls");
+
+		// If target is a file, show its info directly (ls -l /etc/passwd)
+		if (shell.vfs.exists(target)) {
+			const st = shell.vfs.stat(target);
+			if (st.type === "file" || shell.vfs.isSymlink(target)) {
+				if (longFormat) {
+					const name = target.split("/").pop() ?? target;
+					const size = st.type === "file" ? st.size : 0;
+					return {
+						stdout: `${formatPermissions(st.mode, false)} 1 root root ${size} ${formatDate(st.updatedAt)} ${name}\n`,
+						exitCode: 0,
+					};
+				}
+				return { stdout: target.split("/").pop() ?? target, exitCode: 0 };
+			}
+		}
+
 		const items = shell.vfs
 			.list(target)
 			.filter((name) => showHidden || !name.startsWith("."));
