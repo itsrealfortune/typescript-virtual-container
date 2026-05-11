@@ -1,0 +1,12 @@
+FREE(1)                  User Commands                    FREE(1)
+
+NAME
+       free - display amount of free and used memory in the system
+
+SYNOPSIS
+       free [OPTION]...
+
+OPTIONS
+       -h     show all output fields automatically scaled
+       -m     show output in mebibytes
+       -g     show output in gibibytes

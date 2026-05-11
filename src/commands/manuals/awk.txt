@@ -1,0 +1,13 @@
+AWK(1)                   User Commands                     AWK(1)
+
+NAME
+       awk - pattern scanning and processing language
+
+SYNOPSIS
+       awk [OPTION]... 'PROGRAM' [FILE]...
+
+DESCRIPTION
+       awk scans each input line, applies PROGRAM rules, and prints results.
+
+OPTIONS
+       -F fs    use fs as input field separator

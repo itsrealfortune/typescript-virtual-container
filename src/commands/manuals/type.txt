@@ -1,0 +1,10 @@
+TYPE(1)                   Shell Builtins                  TYPE(1)
+
+NAME
+       type - display how a command name is interpreted
+
+SYNOPSIS
+       type NAME...
+
+DESCRIPTION
+       Indicate whether NAME is a shell builtin, alias, or found in PATH.

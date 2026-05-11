@@ -1,0 +1,10 @@
+XARGS(1)                 User Commands                   XARGS(1)
+
+NAME
+       xargs - build and execute command lines from standard input
+
+SYNOPSIS
+       xargs [COMMAND [INITIAL-ARGS]]
+
+DESCRIPTION
+       Read items from stdin and execute COMMAND with those items as arguments.

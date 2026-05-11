@@ -1,0 +1,10 @@
+PING(8)                   User Commands                   PING(8)
+
+NAME
+       ping - send ICMP ECHO_REQUEST to network hosts
+
+SYNOPSIS
+       ping [-c COUNT] DESTINATION
+
+OPTIONS
+       -c COUNT    stop after sending COUNT packets

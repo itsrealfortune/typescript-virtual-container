@@ -1,0 +1,10 @@
+READLINK(1)               User Commands                READLINK(1)
+
+NAME
+       readlink - print resolved symbolic links or canonical file names
+
+SYNOPSIS
+       readlink [OPTION]... FILE
+
+OPTIONS
+       -f     canonicalize by following every symlink in every component

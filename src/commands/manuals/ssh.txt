@@ -1,0 +1,11 @@
+SSH(1)                   OpenSSH                          SSH(1)
+
+NAME
+       ssh - OpenSSH remote login client
+
+SYNOPSIS
+       ssh [-p port] [user@]hostname [command]
+
+DESCRIPTION
+       ssh (SSH client) is a program for logging into a remote machine and
+       for executing commands on a remote machine.

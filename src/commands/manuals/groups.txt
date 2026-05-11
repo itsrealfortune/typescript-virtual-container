@@ -1,0 +1,10 @@
+GROUPS(1)                User Commands                  GROUPS(1)
+
+NAME
+       groups - print the groups a user is in
+
+SYNOPSIS
+       groups [USER]
+
+DESCRIPTION
+       Print group memberships for USER or current user if omitted.

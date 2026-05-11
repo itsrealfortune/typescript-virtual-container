@@ -1,0 +1,10 @@
+FALSE(1)                 User Commands                   FALSE(1)
+
+NAME
+       false - do nothing, unsuccessfully
+
+SYNOPSIS
+       false
+
+DESCRIPTION
+       Exit with a status code indicating failure (1).

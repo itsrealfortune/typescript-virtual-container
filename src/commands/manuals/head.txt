@@ -1,0 +1,10 @@
+HEAD(1)                  User Commands                    HEAD(1)
+
+NAME
+       head - output the first part of files
+
+SYNOPSIS
+       head [OPTION]... [FILE]...
+
+OPTIONS
+       -n, --lines=[-]NUM    print the first NUM lines

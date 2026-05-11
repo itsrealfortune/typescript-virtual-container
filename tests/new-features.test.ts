@@ -223,7 +223,7 @@ describe("Package manager (apt/dpkg)", () => {
 	});
 
 	test("neofetch shows package count after installs", async () => {
-		await client.exec("apt install curl wget htop");
+		await client.exec("apt install curl wget htop neofetch");
 		const r = await client.exec("neofetch");
 		expect(r.exitCode).toBe(0);
 		expect(r.stdout).toContain("(dpkg)");
@@ -675,7 +675,7 @@ describe("/proc/self and /proc/<pid>", () => {
 	});
 });
 
-import { diffSnapshots, formatDiff, assertDiff } from "../src";
+import { assertDiff, diffSnapshots, formatDiff } from "../src";
 
 describe("VFS snapshot diff tooling", () => {
 	let shell5: VirtualShell;

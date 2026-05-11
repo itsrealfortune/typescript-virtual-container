@@ -1,0 +1,11 @@
+NANO(1)                  User Commands                    NANO(1)
+
+NAME
+       nano - simple terminal text editor
+
+SYNOPSIS
+       nano FILE
+
+DESCRIPTION
+       Open FILE in an interactive editor.
+       Save with Ctrl+O, exit with Ctrl+X.

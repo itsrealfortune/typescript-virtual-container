@@ -1,0 +1,13 @@
+SU(1)                    User Commands                      SU(1)
+
+NAME
+       su - run a command with substitute user and group ID
+
+SYNOPSIS
+       su [OPTION]... [USER]
+
+OPTIONS
+       -           start a login shell
+
+DESCRIPTION
+       Switch to another user account in the current session.

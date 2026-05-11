@@ -1,0 +1,12 @@
+APT-CACHE(8)             APT                        APT-CACHE(8)
+
+NAME
+       apt-cache - query APT package cache
+
+SYNOPSIS
+       apt-cache command [args]
+
+COMMANDS
+       search term    search package names/descriptions
+       show pkg       show package metadata
+       policy pkg     show package policy and candidate versions

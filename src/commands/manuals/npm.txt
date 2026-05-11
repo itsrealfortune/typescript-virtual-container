@@ -1,0 +1,13 @@
+NPM(1)                   User Commands                      NPM(1)
+
+NAME
+       npm - virtual Node.js package manager interface
+
+SYNOPSIS
+       npm [--version] [COMMAND]
+
+DESCRIPTION
+       Manage packages and run scripts in the virtual environment.
+
+NOTES
+       Requires package installation: apt install npm.

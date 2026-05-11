@@ -1,0 +1,11 @@
+PRINTF(1)                User Commands                  PRINTF(1)
+
+NAME
+       printf - format and print data
+
+SYNOPSIS
+       printf FORMAT [ARGUMENT]...
+
+DESCRIPTION
+       Print ARGUMENT(s) according to FORMAT.
+       Supports common conversions like %s, %d, %f, %x and escapes like \n.

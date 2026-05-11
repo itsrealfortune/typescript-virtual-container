@@ -1,0 +1,11 @@
+DU(1)                    User Commands                      DU(1)
+
+NAME
+       du - estimate file space usage
+
+SYNOPSIS
+       du [OPTION]... [FILE]...
+
+OPTIONS
+       -h     print sizes in human readable format
+       -s     display only a total for each argument

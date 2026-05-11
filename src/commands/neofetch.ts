@@ -13,6 +13,13 @@ export const neofetchCommand: ShellModule = {
 	category: "system",
 	params: ["[--off]"],
 	run: ({ args, authUser, hostname, shell, env }) => {
+		if (!shell.packageManager.isInstalled("neofetch")) {
+			return {
+				stderr:
+					"bash: neofetch: command not found\nHint: install it with: apt install neofetch\n",
+				exitCode: 127,
+			};
+		}
 		if (ifFlag(args, "--help")) {
 			return {
 				stdout: "Usage: neofetch [--off]",

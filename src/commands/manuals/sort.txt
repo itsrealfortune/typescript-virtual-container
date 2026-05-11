@@ -1,0 +1,12 @@
+SORT(1)                  User Commands                    SORT(1)
+
+NAME
+       sort - sort lines of text files
+
+SYNOPSIS
+       sort [OPTION]... [FILE]...
+
+OPTIONS
+       -r     reverse the result of comparisons
+       -n     compare according to string numerical value
+       -u     output only the first of an equal run

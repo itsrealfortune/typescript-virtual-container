@@ -1,0 +1,14 @@
+DPKG(1)                  User Commands                    DPKG(1)
+
+NAME
+       dpkg - package manager for Debian-like systems
+
+SYNOPSIS
+       dpkg [OPTION]... ACTION
+
+OPTIONS
+       -l     list installed packages
+       -s     show package status
+       -L     list files in package
+       -r     remove package
+       -P     purge package

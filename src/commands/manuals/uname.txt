@@ -1,0 +1,12 @@
+UNAME(1)                 User Commands                  UNAME(1)
+
+NAME
+       uname - print system information
+
+SYNOPSIS
+       uname [OPTION]...
+
+OPTIONS
+       -a     print all information
+       -r     print kernel release
+       -m     print machine hardware name

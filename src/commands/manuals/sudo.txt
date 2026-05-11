@@ -1,0 +1,11 @@
+SUDO(8)                   User Commands                   SUDO(8)
+
+NAME
+       sudo - execute a command as another user
+
+SYNOPSIS
+       sudo [OPTION]... COMMAND [ARG]...
+
+OPTIONS
+       -i          run login shell as target user
+       -u USER     run command as USER

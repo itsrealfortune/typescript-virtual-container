@@ -1,0 +1,13 @@
+PYTHON3(1)               User Commands                  PYTHON3(1)
+
+NAME
+       python3 - virtual Python 3 interpreter entry point
+
+SYNOPSIS
+       python3 [--version] [-V] [-c COMMAND]
+
+DESCRIPTION
+       Execute Python snippets in the virtual runtime.
+
+NOTES
+       Requires package installation: apt install python3.

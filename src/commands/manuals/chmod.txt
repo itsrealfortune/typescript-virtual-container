@@ -1,0 +1,16 @@
+CHMOD(1)                 User Commands                    CHMOD(1)
+
+NAME
+       chmod - change file mode bits
+
+SYNOPSIS
+       chmod [OPTION]... MODE[,MODE]... FILE...
+       chmod [OPTION]... OCTAL-MODE FILE...
+
+DESCRIPTION
+       Change the file mode bits of each given file according to MODE.
+
+EXAMPLES
+       chmod 755 script.sh      rwxr-xr-x
+       chmod 644 file.txt       rw-r--r--
+       chmod +x script.sh       add execute permission

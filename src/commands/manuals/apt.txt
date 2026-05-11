@@ -1,0 +1,20 @@
+APT(8)                   APT                             APT(8)
+
+NAME
+       apt - command-line interface
+
+SYNOPSIS
+       apt [options] command
+
+DESCRIPTION
+       apt provides a high-level commandline interface for the package
+       management system.
+
+COMMANDS
+       install pkg...   Install packages
+       remove pkg...    Remove packages
+       update           Download package information
+       upgrade          Upgrade installed packages
+       search term      Search in package descriptions
+       show pkg         Show package information
+       list             List packages

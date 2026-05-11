@@ -1,0 +1,10 @@
+DF(1)                    User Commands                      DF(1)
+
+NAME
+       df - report file system disk space usage
+
+SYNOPSIS
+       df [OPTION]... [FILE]...
+
+OPTIONS
+       -h     print sizes in human readable format

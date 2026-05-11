@@ -1,0 +1,10 @@
+CLEAR(1)                 User Commands                   CLEAR(1)
+
+NAME
+       clear - clear the terminal screen
+
+SYNOPSIS
+       clear
+
+DESCRIPTION
+       Clear the display and move cursor to top-left.

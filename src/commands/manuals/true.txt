@@ -1,0 +1,10 @@
+TRUE(1)                  User Commands                    TRUE(1)
+
+NAME
+       true - do nothing, successfully
+
+SYNOPSIS
+       true
+
+DESCRIPTION
+       Exit with a status code indicating success (0).

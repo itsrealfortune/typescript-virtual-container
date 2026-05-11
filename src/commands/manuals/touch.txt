@@ -1,0 +1,11 @@
+TOUCH(1)                 User Commands                  TOUCH(1)
+
+NAME
+       touch - change file timestamps / create file
+
+SYNOPSIS
+       touch FILE...
+
+DESCRIPTION
+       Update access and modification times.
+       If FILE does not exist, create an empty file.

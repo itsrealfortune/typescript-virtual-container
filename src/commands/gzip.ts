@@ -11,6 +11,13 @@ export const gzipCommand: ShellModule = {
 	category: "archive",
 	params: ["[-k] [-d] <file>"],
 	run: ({ shell, cwd, args }) => {
+		if (!shell.packageManager.isInstalled("gzip")) {
+			return {
+				stderr:
+					"bash: gzip: command not found\nHint: install it with: apt install gzip\n",
+				exitCode: 127,
+			};
+		}
 		const keepOrig = args.includes("-k") || args.includes("--keep");
 		const decompress = args.includes("-d");
 		const file = args.find((a) => !a.startsWith("-"));

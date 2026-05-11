@@ -1,0 +1,14 @@
+DATE(1)                  User Commands                    DATE(1)
+
+NAME
+       date - print or set the system date and time
+
+SYNOPSIS
+       date [+FORMAT]
+
+DESCRIPTION
+       Display current date/time, optionally formatted.
+
+EXAMPLES
+       date
+       date +%Y-%m-%d

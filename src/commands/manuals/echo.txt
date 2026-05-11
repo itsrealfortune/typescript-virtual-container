@@ -1,0 +1,11 @@
+ECHO(1)                  User Commands                    ECHO(1)
+
+NAME
+       echo - display a line of text
+
+SYNOPSIS
+       echo [OPTION]... [STRING]...
+
+OPTIONS
+       -n     do not output the trailing newline
+       -e     enable interpretation of backslash escapes

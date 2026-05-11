@@ -1,0 +1,11 @@
+DPKG-QUERY(1)            User Commands              DPKG-QUERY(1)
+
+NAME
+       dpkg-query - tool to query the dpkg database
+
+SYNOPSIS
+       dpkg-query [OPTION]... [ACTION]
+
+OPTIONS
+       -W     list installed packages (show format)
+       -l     list packages

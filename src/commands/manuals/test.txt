@@ -1,0 +1,11 @@
+TEST(1)                   Shell Builtins                  TEST(1)
+
+NAME
+       test - check file types and compare values
+
+SYNOPSIS
+       test EXPRESSION
+       [ EXPRESSION ]
+
+DESCRIPTION
+       Evaluate conditional expressions for scripts and shell logic.

@@ -1,10 +1,10 @@
 {
   "name": "typescript-virtual-container",
-  "description": "In-memory SSH server with virtual filesystem and typed programmatic API",
+  "description": "Scalable Linux emulator with included SSH/SFTP server, virtual filesystem and typed programmatic API for testing, automation, and interactive shell scripting in TypeScript/JavaScript.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "license": "MIT",
   "repository": {
     "type": "git",

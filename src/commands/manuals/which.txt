@@ -1,0 +1,10 @@
+WHICH(1)                 User Commands                  WHICH(1)
+
+NAME
+       which - locate a command
+
+SYNOPSIS
+       which COMMAND...
+
+DESCRIPTION
+       Print the path of COMMAND found in $PATH.

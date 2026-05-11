@@ -1,0 +1,20 @@
+LS(1)                    User Commands                    LS(1)
+
+NAME
+       ls - list directory contents
+
+SYNOPSIS
+       ls [OPTION]... [FILE]...
+
+DESCRIPTION
+       List information about the FILEs (the current directory by default).
+
+OPTIONS
+       -l     use a long listing format
+       -a     do not ignore entries starting with .
+       -h     with -l, print human readable sizes
+       -r     reverse order while sorting
+       -t     sort by modification time
+
+AUTHOR
+       Written by Richard M. Stallman and David MacKenzie.
