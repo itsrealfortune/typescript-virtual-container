@@ -1,10 +1,12 @@
 import { basename } from "node:path";
 import { stdin, stdout } from "node:process";
 import { createInterface, type Interface } from "node:readline";
+import { readFile, unlink, writeFile } from "node:fs/promises";
 
 import { makeDefaultEnv, runCommand } from "./commands/runtime";
 import { buildLoginBanner, type LoginBannerState } from "./SSHMimic/loginBanner";
 import { buildPrompt } from "./SSHMimic/prompt";
+import { spawnNanoEditorProcess } from "./modules/shellInteractive";
 import type { CommandResult, PasswordChallenge, SudoChallenge } from "./types/commands";
 import { VirtualShell } from "./VirtualShell";
 
@@ -116,6 +118,25 @@ async function flushVfs(): Promise<void> {
 	await virtualShell.vfs.flushMirror();
 }
 
+function loadHistory(): string[] {
+	const historyPath = "/virtual-env-js/.bash_history";
+	if (!virtualShell.vfs.exists(historyPath)) {
+		virtualShell.vfs.writeFile(historyPath, "");
+		return [];
+	}
+
+	return virtualShell.vfs
+		.readFile(historyPath)
+		.split("\n")
+		.map((line) => line.trim())
+		.filter((line) => line.length > 0);
+}
+
+function saveHistory(history: string[]): void {
+	const data = history.length > 0 ? `${history.join("\n")}\n` : "";
+	virtualShell.vfs.writeFile("/virtual-env-js/.bash_history", data);
+}
+
 function applySessionState(
 	authUserState: string,
 	cwdState: string,
@@ -150,6 +171,8 @@ virtualShell.addCommand("demo", [], () => {
 async function runReadlineShell() {
 	const rl = createInterface({ input: stdin, output: stdout, terminal: true });
 	await virtualShell.ensureInitialized();
+	let history = loadHistory();
+	(rl as unknown as { history: string[] }).history = [...history].reverse();
 
 	const selectedUser = initialUser.trim() || "root";
 	const userExists = virtualShell.users.getPasswordHash(selectedUser) !== null;
@@ -163,6 +186,55 @@ async function runReadlineShell() {
 	let cwd = `/home/${authUser}`;
 	shellEnv.vars.PWD = cwd;
 	const remoteAddress = "localhost";
+	const terminalSize = {
+		cols: stdout.columns ?? 80,
+		rows: stdout.rows ?? 24,
+	};
+	const nanoStream = {
+		write: stdout.write.bind(stdout),
+		exit: () => undefined,
+		end: () => undefined,
+	} as const;
+
+	async function startNanoEditor(
+		targetPath: string,
+		initialContent: string,
+		tempPath: string,
+	): Promise<void> {
+		if (virtualShell.vfs.exists(targetPath)) {
+			await writeFile(tempPath, initialContent, "utf8");
+		}
+
+		rl.pause();
+		const editor = spawnNanoEditorProcess(
+			tempPath,
+			terminalSize,
+			nanoStream as unknown as Parameters<typeof spawnNanoEditorProcess>[2],
+		);
+
+		await new Promise<void>((resolve) => {
+			editor.on("error", (error: Error) => {
+				stdout.write(`nano: ${error.message}\r\n`);
+				resolve();
+			});
+
+			editor.on("close", async () => {
+				try {
+					const updatedContent = await readFile(tempPath, "utf8");
+					virtualShell.writeFileAsUser(authUser, targetPath, updatedContent);
+					await flushVfs();
+				} catch {
+					// Save skipped or temp file missing.
+				}
+
+				await unlink(tempPath).catch(() => undefined);
+				stdout.write("\r\n");
+				resolve();
+			});
+		});
+
+		rl.resume();
+	}
 
 	async function handleSudoChallenge(challenge: SudoChallenge): Promise<void> {
 		if (challenge.onPassword) {
@@ -251,6 +323,15 @@ async function runReadlineShell() {
 	}
 
 	async function handleCommandResult(result: CommandResult): Promise<void> {
+		if (result.openEditor) {
+			await startNanoEditor(
+				result.openEditor.targetPath,
+				result.openEditor.initialContent,
+				result.openEditor.tempPath,
+			);
+			return;
+		}
+
 		if (result.sudoChallenge) {
 			await handleSudoChallenge(result.sudoChallenge);
 			return;
@@ -328,6 +409,14 @@ async function runReadlineShell() {
 		});
 
 		rl.pause();
+		if (inputLine.trim().length > 0) {
+			history.push(inputLine);
+			if (history.length > 500) {
+				history = history.slice(history.length - 500);
+			}
+			saveHistory(history);
+			(rl as unknown as { history: string[] }).history = [...history].reverse();
+		}
 
 		const result = await runCommand(inputLine, authUser, hostname, "shell", cwd, virtualShell, undefined, shellEnv);
 		await handleCommandResult(result);
