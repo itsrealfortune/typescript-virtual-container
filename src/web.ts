@@ -489,9 +489,9 @@ class WebShell {
 	}
 
 	private register(command: WebCommand): void {
-		this.commands.set(command.name, command);
+		this.commands.set(command.name.toLowerCase(), command);
 		for (const alias of command.aliases ?? []) {
-			this.commands.set(alias, command);
+			this.commands.set(alias.toLowerCase(), command);
 		}
 	}
 
