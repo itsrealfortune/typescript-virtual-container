@@ -49,7 +49,18 @@ export const wgetCommand: ShellModule = {
 			};
 		}
 
-		const url = positionals[0];
+		const urlWithoutProtocol = positionals[0];
+		if (!urlWithoutProtocol) {
+			return {
+				stderr: "wget: missing URL\nUsage: wget [OPTION]... [URL]...",
+				exitCode: 1,
+			};
+		}
+
+		const url = urlWithoutProtocol.startsWith("http://") ||
+			urlWithoutProtocol.startsWith("https://")
+			? urlWithoutProtocol
+			: `http://${urlWithoutProtocol}`;
 		if (!url)
 			return {
 				stderr: "wget: missing URL\nUsage: wget [OPTION]... [URL]...",

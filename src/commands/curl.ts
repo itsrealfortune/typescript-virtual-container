@@ -97,7 +97,8 @@ export const curlCommand: ShellModule = {
 
 		let response: Response;
 		try {
-			response = await fetch(url, fetchOpts);
+			const urlWithHttp = url.startsWith("http://") || url.startsWith("https://") ? url : `http://${url}`;
+			response = await fetch(urlWithHttp, fetchOpts);
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
 			return {
