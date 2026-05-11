@@ -82,6 +82,10 @@ curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-cont
 curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/standalone-wo-sftp.js -o standalone.js && node standalone.js && rm -f standalone.js
 ```
 
+> [!NOTE]
+> The standalone builds are intended for quick demos and testing. For production use, it's recommended to install the package and import the relevant classes directly in your codebase for better performance, stability, and security.
+> It implies command `man` is not available in standalone mode because manuals are not included in the minimal build, but you can always refer to the [API Reference](#api-reference) for detailed documentation.
+
 **`self-standalone.js` options:**
 
 ```bash
