@@ -21,6 +21,8 @@ export async function executeStatements(
 	env: ShellEnv,
 ): Promise<CommandResult> {
 	let last: CommandResult = { exitCode: 0 };
+	const accumulatedStdout: string[] = [];
+	let currentCwd = cwd; // track cwd changes from cd, su, etc.
 	let i = 0;
 
 	while (i < statements.length) {
@@ -30,13 +32,26 @@ export async function executeStatements(
 			authUser,
 			hostname,
 			mode,
-			cwd,
+			currentCwd,
 			shell,
 			env,
 		);
 		env.lastExitCode = last.exitCode ?? 0;
 
-		if (last.closeSession || last.switchUser) return last;
+		// Propagate cwd changes (cd, su -l, etc.)
+		if (last.nextCwd && (last.exitCode ?? 0) === 0) {
+			currentCwd = last.nextCwd;
+		}
+
+		// Collect stdout from each statement (for echo a; echo b → "a\nb\n")
+		if (last.stdout) accumulatedStdout.push(last.stdout);
+
+		if (last.closeSession || last.switchUser) {
+			return {
+				...last,
+				stdout: accumulatedStdout.join("") || last.stdout,
+			};
+		}
 
 		const op = stmt.op;
 		if (!op || op === ";") {
@@ -54,7 +69,10 @@ export async function executeStatements(
 		}
 		i++;
 	}
-	return last;
+	// Merge accumulated stdout (for "echo a; echo b" → "a\nb\n")
+	const merged = accumulatedStdout.join("");
+	// Preserve the deepest cwd change across the whole pipeline
+	return { ...last, stdout: merged || last.stdout, nextCwd: currentCwd !== cwd ? currentCwd : undefined };
 }
 
 // ── Pipeline executor ─────────────────────────────────────────────────────────

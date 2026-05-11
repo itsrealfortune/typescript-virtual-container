@@ -62,11 +62,14 @@ export class SshClient {
 		);
 
 		// Handle async results
-		if (result instanceof Promise) {
-			return await result;
+		const resolved = result instanceof Promise ? await result : result;
+
+		// Propagate cwd changes (cd, su, etc.)
+		if (resolved.nextCwd && (resolved.exitCode ?? 0) === 0) {
+			this.currentCwd = resolved.nextCwd;
 		}
 
-		return result;
+		return resolved;
 	}
 
 	/**
