@@ -152,22 +152,21 @@ bun run web-build
 
 This generates:
 
-- `web.min.js`
-- `web.min.js.map`
+- `builds/web.min.js`
+- `builds/web.min.js.map`
 
 Use it from a browser module script:
 
 ```html
 <script type="module">
-  import { createWebShell } from "./web.min.js";
+  import { createWebShell } from "./builds/web.min.js";
 
-  const shell = await createWebShell({
-    hostname: "web-vm",
-    dbName: "virtual-env-js",
+  const shell = createWebShell("web-vm", {
+    indexedDbName: "virtual-env-js",
     storeName: "vfs",
   });
 
-  const out = await shell.run("pwd && mkdir -p /tmp/demo && cd /tmp/demo && echo hello > file.txt && ls -la");
+  const out = await shell.executeCommandLine("pwd && mkdir -p /tmp/demo && cd /tmp/demo && echo hello > file.txt && ls -la");
   console.log(out.stdout);
 </script>
 ```
