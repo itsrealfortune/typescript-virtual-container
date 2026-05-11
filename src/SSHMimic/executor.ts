@@ -4,54 +4,13 @@ import type { CommandMode, CommandResult, ShellEnv } from "../types/commands";
 import type {
 	Pipeline,
 	PipelineCommand,
-	Script,
 	Statement,
 } from "../types/pipeline";
 import type { VirtualShell } from "../VirtualShell";
 
 // ── Script executor (handles &&/||/;) ────────────────────────────────────────
 
-export async function executeScript(
-	script: Script,
-	authUser: string,
-	hostname: string,
-	mode: CommandMode,
-	cwd: string,
-	shell: VirtualShell,
-	env: ShellEnv,
-): Promise<CommandResult> {
-	if (!script.isValid)
-		return { stderr: script.error || "Syntax error", exitCode: 1 };
 
-	let lastResult: CommandResult = { exitCode: 0 };
-
-	for (const stmt of script.statements) {
-		// Decide whether to run this statement based on previous op
-		lastResult = await executePipeline(
-			stmt.pipeline,
-			authUser,
-			hostname,
-			mode,
-			cwd,
-			shell,
-			env,
-		);
-		env.lastExitCode = lastResult.exitCode ?? 0;
-
-		// Propagate session-control signals
-		if (
-			lastResult.closeSession ||
-			lastResult.switchUser ||
-			lastResult.nextCwd
-		) {
-			break;
-		}
-	}
-
-	return lastResult;
-}
-
-/** Execute statements connected by &&/||/; */
 export async function executeStatements(
 	statements: Statement[],
 	authUser: string,
