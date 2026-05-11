@@ -1,0 +1,10 @@
+STAT(1)                  User Commands                    STAT(1)
+
+NAME
+       stat - display file status
+
+SYNOPSIS
+       stat [OPTION]... FILE...
+
+OPTIONS
+       -c, --format=FORMAT   use the specified output format

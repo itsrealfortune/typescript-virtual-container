@@ -1,0 +1,10 @@
+RETURN(1)                Shell Builtins                 RETURN(1)
+
+NAME
+       return - return from a shell function
+
+SYNOPSIS
+       return [N]
+
+DESCRIPTION
+       Cause a function to exit with status N (default: last status).

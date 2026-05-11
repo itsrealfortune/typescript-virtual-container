@@ -1,0 +1,11 @@
+HISTORY(1)               Shell Builtins               HISTORY(1)
+
+NAME
+       history - command history list
+
+SYNOPSIS
+       history [N]
+
+DESCRIPTION
+       Print recent command history entries.
+       If N is provided, print only the last N entries.

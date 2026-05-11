@@ -1,0 +1,10 @@
+ID(1)                    User Commands                      ID(1)
+
+NAME
+       id - print real and effective user and group IDs
+
+SYNOPSIS
+       id [USER]
+
+DESCRIPTION
+       Print user identity information including uid, gid, and groups.

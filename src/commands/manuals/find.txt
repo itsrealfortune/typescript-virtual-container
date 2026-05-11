@@ -1,0 +1,11 @@
+FIND(1)                  User Commands                    FIND(1)
+
+NAME
+       find - search for files in a directory hierarchy
+
+SYNOPSIS
+       find [PATH] [EXPRESSION]
+
+OPTIONS
+       -name PATTERN   base name matches shell PATTERN
+       -type TYPE      file type, e.g. f for file, d for directory

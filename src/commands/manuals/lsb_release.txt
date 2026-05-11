@@ -1,0 +1,14 @@
+LSB_RELEASE(1)           User Commands             LSB_RELEASE(1)
+
+NAME
+       lsb_release - print distribution-specific information
+
+SYNOPSIS
+       lsb_release [OPTION]...
+
+OPTIONS
+       -a     show all available information
+       -i     show distributor ID
+       -d     show description
+       -r     show release number
+       -c     show codename

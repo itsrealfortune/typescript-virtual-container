@@ -1,0 +1,11 @@
+PASSWD(1)                 User Commands                 PASSWD(1)
+
+NAME
+       passwd - change user password
+
+SYNOPSIS
+       passwd [USER]
+
+DESCRIPTION
+       Update the authentication token (password) for USER.
+       Without USER, change the current user's password.

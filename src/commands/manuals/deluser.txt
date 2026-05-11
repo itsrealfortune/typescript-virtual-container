@@ -1,0 +1,10 @@
+DELUSER(8)                User Commands                DELUSER(8)
+
+NAME
+       deluser - remove a user account
+
+SYNOPSIS
+       deluser [OPTION] USERNAME
+
+OPTIONS
+       -f, --force    remove without interactive confirmation

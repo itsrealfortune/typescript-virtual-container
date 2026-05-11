@@ -1,0 +1,13 @@
+NPX(1)                   User Commands                      NPX(1)
+
+NAME
+       npx - execute package binaries from npm
+
+SYNOPSIS
+       npx [--version] <command>
+
+DESCRIPTION
+       Run package executables in the virtual environment.
+
+NOTES
+       Requires package installation: apt install npm.

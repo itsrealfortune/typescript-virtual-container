@@ -1,0 +1,10 @@
+TEE(1)                   User Commands                     TEE(1)
+
+NAME
+       tee - read from standard input and write to standard output and files
+
+SYNOPSIS
+       tee [OPTION]... [FILE]...
+
+OPTIONS
+       -a     append to the given FILEs, do not overwrite

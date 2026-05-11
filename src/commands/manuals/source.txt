@@ -1,0 +1,11 @@
+SOURCE(1)                 Shell Builtins                SOURCE(1)
+
+NAME
+       source - execute commands from a file in the current shell
+
+SYNOPSIS
+       source FILE
+       . FILE
+
+DESCRIPTION
+       Read and execute commands from FILE in the current shell context.

@@ -1,0 +1,10 @@
+TR(1)                    User Commands                      TR(1)
+
+NAME
+       tr - translate or delete characters
+
+SYNOPSIS
+       tr [OPTION]... SET1 [SET2]
+
+OPTIONS
+       -d     delete characters in SET1 instead of translating

@@ -1,0 +1,10 @@
+SLEEP(1)                 User Commands                   SLEEP(1)
+
+NAME
+       sleep - delay for a specified amount of time
+
+SYNOPSIS
+       sleep NUMBER
+
+DESCRIPTION
+       Pause execution for NUMBER seconds.

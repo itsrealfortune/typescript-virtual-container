@@ -1,0 +1,11 @@
+SET(1)                   Shell Builtins                    SET(1)
+
+NAME
+       set - set or unset shell options and positional parameters
+
+SYNOPSIS
+       set [OPTION]... [ARG]...
+       set [NAME=VALUE]...
+
+DESCRIPTION
+       Display or modify shell variable state.

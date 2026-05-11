@@ -1,0 +1,16 @@
+CD(1)                    Shell Builtins                    CD(1)
+
+NAME
+       cd - change the shell working directory
+
+SYNOPSIS
+       cd [DIRECTORY]
+
+DESCRIPTION
+       Change the current working directory.
+       Without DIRECTORY, changes to $HOME.
+
+EXAMPLES
+       cd /etc
+       cd ..
+       cd ~

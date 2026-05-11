@@ -1,0 +1,20 @@
+CURL(1)                  User Commands                    CURL(1)
+
+NAME
+       curl - transfer a URL
+
+SYNOPSIS
+       curl [options / URLs]
+
+DESCRIPTION
+       curl is a tool for transferring data with URL syntax.
+
+OPTIONS
+       -o, --output <file>     Write output to <file>
+       -X, --request <method>  Specify request method
+       -d, --data <data>       HTTP POST data
+       -H, --header <header>   Pass custom header
+       -s, --silent            Silent mode
+       -I, --head              Show document info only
+       -L, --location          Follow redirects
+       -v, --verbose           Make the operation more talkative

@@ -1,0 +1,13 @@
+GREP(1)                  User Commands                    GREP(1)
+
+NAME
+       grep, egrep, fgrep - print lines that match patterns
+
+SYNOPSIS
+       grep [OPTION]... PATTERNS [FILE]...
+
+OPTIONS
+       -i, --ignore-case     ignore case distinctions in patterns and data
+       -v, --invert-match    select non-matching lines
+       -n, --line-number     print line number with output lines
+       -r, --recursive       read all files under each directory, recursively

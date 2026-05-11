@@ -1,0 +1,11 @@
+ADDUSER(8)                User Commands                ADDUSER(8)
+
+NAME
+       adduser - add a user to the system
+
+SYNOPSIS
+       adduser USERNAME
+
+DESCRIPTION
+       Create a new user account with a home directory.
+       In this environment, prompts for a password interactively.

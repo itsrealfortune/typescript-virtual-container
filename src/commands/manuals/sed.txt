@@ -1,0 +1,11 @@
+SED(1)                   User Commands                      SED(1)
+
+NAME
+       sed - stream editor for filtering and transforming text
+
+SYNOPSIS
+       sed [OPTION]... {-e script} [FILE]...
+
+OPTIONS
+       -e SCRIPT   add SCRIPT to commands to be executed
+       -i          edit files in place

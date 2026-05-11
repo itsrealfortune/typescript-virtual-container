@@ -1,0 +1,12 @@
+WGET(1)                  User Commands                    WGET(1)
+
+NAME
+       wget - non-interactive network downloader
+
+SYNOPSIS
+       wget [OPTION]... [URL]...
+
+OPTIONS
+       -O FILE    write documents to FILE
+       -P DIR     save files to DIR
+       -q         quiet mode

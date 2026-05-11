@@ -1,0 +1,10 @@
+NEOFETCH(1)              User Commands                NEOFETCH(1)
+
+NAME
+       neofetch - display system information
+
+SYNOPSIS
+       neofetch
+
+DESCRIPTION
+       Print OS, kernel, uptime, package count, and related system details.

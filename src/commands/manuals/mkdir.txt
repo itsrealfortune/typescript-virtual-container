@@ -1,0 +1,10 @@
+MKDIR(1)                 User Commands                  MKDIR(1)
+
+NAME
+       mkdir - make directories
+
+SYNOPSIS
+       mkdir [OPTION]... DIRECTORY...
+
+OPTIONS
+       -p     no error if existing, make parent directories as needed

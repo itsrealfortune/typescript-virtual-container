@@ -1,0 +1,10 @@
+TAIL(1)                  User Commands                    TAIL(1)
+
+NAME
+       tail - output the last part of files
+
+SYNOPSIS
+       tail [OPTION]... [FILE]...
+
+OPTIONS
+       -n, --lines=[+]NUM    output the last NUM lines

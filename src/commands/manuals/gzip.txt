@@ -1,0 +1,11 @@
+GZIP(1)                  User Commands                    GZIP(1)
+
+NAME
+       gzip, gunzip - compress or expand files
+
+SYNOPSIS
+       gzip FILE...
+       gunzip FILE...
+
+DESCRIPTION
+       Compress or decompress files in place.

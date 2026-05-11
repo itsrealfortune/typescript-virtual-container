@@ -1,0 +1,12 @@
+DECLARE(1)               Shell Builtins               DECLARE(1)
+
+NAME
+       declare - set variable values and attributes
+
+SYNOPSIS
+       declare [OPTION]... [NAME[=VALUE]...]
+
+OPTIONS
+       -i     variable has integer attribute
+       -r     make NAMEs readonly
+       -x     export NAMEs to environment

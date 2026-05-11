@@ -1,0 +1,13 @@
+KILL(1)                  User Commands                    KILL(1)
+
+NAME
+       kill - send signals to processes
+
+SYNOPSIS
+       kill [-SIGNAL] PID...
+
+DESCRIPTION
+       Send a signal to one or more process IDs.
+
+NOTES
+       This environment provides a mock process model.

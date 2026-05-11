@@ -1,0 +1,10 @@
+TRAP(1)                  Shell Builtins                   TRAP(1)
+
+NAME
+       trap - trap signals and other events
+
+SYNOPSIS
+       trap [ACTION] [SIGNAL]...
+
+DESCRIPTION
+       Define or clear handlers for shell signals and EXIT.

@@ -1,0 +1,13 @@
+NODE(1)                  User Commands                    NODE(1)
+
+NAME
+       node - virtual JavaScript runtime entry point
+
+SYNOPSIS
+       node [--version] [-e SCRIPT] [-p EXPR]
+
+DESCRIPTION
+       Execute JavaScript snippets in the virtual runtime.
+
+NOTES
+       Requires package installation: apt install nodejs.

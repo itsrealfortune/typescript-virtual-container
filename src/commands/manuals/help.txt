@@ -1,0 +1,11 @@
+HELP(1)                   Shell Builtins                  HELP(1)
+
+NAME
+       help - display information about builtin commands
+
+SYNOPSIS
+       help [COMMAND]
+
+DESCRIPTION
+       With no arguments, list available commands.
+       With COMMAND, show usage details for that command.

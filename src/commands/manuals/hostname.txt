@@ -1,0 +1,10 @@
+HOSTNAME(1)              User Commands                HOSTNAME(1)
+
+NAME
+       hostname - show or set the system host name
+
+SYNOPSIS
+       hostname
+
+DESCRIPTION
+       Print the current host name.

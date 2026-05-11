@@ -1,0 +1,10 @@
+PS(1)                    User Commands                      PS(1)
+
+NAME
+       ps - report a snapshot of current processes
+
+SYNOPSIS
+       ps [OPTION]
+
+DESCRIPTION
+       Show process information for active sessions and commands.

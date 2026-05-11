@@ -1,0 +1,10 @@
+UNSET(1)                 Shell Builtins                  UNSET(1)
+
+NAME
+       unset - unset values and attributes of shell variables
+
+SYNOPSIS
+       unset NAME...
+
+DESCRIPTION
+       Remove one or more shell variables from the current environment.

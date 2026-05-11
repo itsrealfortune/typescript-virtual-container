@@ -1,0 +1,12 @@
+WC(1)                    User Commands                      WC(1)
+
+NAME
+       wc - print newline, word, and byte counts for each file
+
+SYNOPSIS
+       wc [OPTION]... [FILE]...
+
+OPTIONS
+       -l     print the newline counts
+       -w     print the word counts
+       -c     print the byte counts

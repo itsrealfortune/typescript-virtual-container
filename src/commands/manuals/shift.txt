@@ -1,0 +1,10 @@
+SHIFT(1)                 Shell Builtins                  SHIFT(1)
+
+NAME
+       shift - shift positional parameters
+
+SYNOPSIS
+       shift [N]
+
+DESCRIPTION
+       Rename positional parameters by discarding the first N arguments.
