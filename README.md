@@ -1,6 +1,6 @@
 # `typescript-virtual-container`
 
-> Pure in-memory SSH/SFTP server with a realistic Linux rootfs, a virtual package manager, a real shell interpreter, and a typed programmatic API for testing, automation, honeypots, and interactive shell scripting in TypeScript/JavaScript.
+> A complete virtual Linux environment in pure TypeScript — runs as an SSH/SFTP server, a browser-based web shell, or a standalone CLI. Ships with a realistic Linux rootfs, a virtual package manager, a full shell interpreter, and a typed programmatic API for testing, automation, honeypots, and embedded shell experiences.
 
 [![npm version](https://badge.fury.io/js/typescript-virtual-container.svg)](https://www.npmjs.com/package/typescript-virtual-container)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -49,21 +49,25 @@
 
 ## Overview
 
-`typescript-virtual-container` is a lightweight, fully-typed SSH/SFTP runtime written in TypeScript that provides:
+`typescript-virtual-container` is a complete virtual Linux environment written in pure TypeScript that runs in three modes:
+
+- **SSH/SFTP server** — a real SSH server (port-configurable) with shell + exec sessions, SFTP file operations, password and public-key auth, rate limiting, and brute-force protection.
+- **Web shell** — a self-contained browser bundle (`web.min.js`, IIFE) with in-memory or IndexedDB-backed VFS, ready to embed in any frontend.
+- **Standalone CLI** — a single-file Node.js script (`self-standalone.js`) that boots a local interactive shell with readline, login banner, and optional VFS persistence on disk.
+
+All three modes share the same core:
 
 - **Pure in-memory filesystem**: No disk I/O at runtime. All state lives in a fast recursive in-memory tree. Persist via a compact binary snapshot format (`.vfsb`) or JSON for interoperability.
-- **SSH + SFTP Protocol Support**: Serve SSH shell/exec sessions and SFTP file operations on configurable ports.
-- **Password & public-key authentication**: Register SSH public keys per user alongside (or instead of) password auth.
-- **Rate limiting / brute-force protection**: Configurable per-IP lockout after N failed auth attempts.
 - **User Management**: Create, authenticate, and manage virtual users with scrypt password hashing, sudo-like privilege elevation, and optional per-user disk quotas.
 - **Programmatic Shell API**: Execute shell commands and query filesystem state directly from TypeScript without SSH overhead.
-- **Real shell interpreter**: `&&` / `||` / `;` operators, `if`/`elif`/`else`/`fi`, `for`/`do`/`done`, `while`/`do`/`done`, variable expansion (`$VAR`, `${VAR:-default}`), `$?`, per-session environment.
+- **Real shell interpreter**: `&&` / `||` / `;` operators, `if`/`elif`/`else`/`fi`, `for`/`do`/`done`, `while`/`do`/`done`, `case`/`esac`, function definitions, variable expansion (`$VAR`, `${VAR:-default}`, `${#VAR}`, `$((expr))`), `$?`, per-session environment.
 - **`.bashrc` support**: Loaded automatically at interactive session start from `/home/<user>/.bashrc`.
 - **Event-Driven Architecture**: All core classes extend `EventEmitter` for lifecycle and operation tracking.
 - **Security Auditing**: Built-in `HoneyPot` utility for comprehensive activity logging, event tracking, statistics collection, and anomaly detection across all components.
-- **Linux rootfs on boot**: Realistic `/etc`, `/proc`, `/sys`, `/dev`, `/usr`, `/var` hierarchy populated at startup — `os-release`, `passwd`, `hosts`, `resolv.conf`, `/proc/meminfo`, `/proc/cpuinfo`, and more.
+- **Linux rootfs on boot**: Realistic `/etc`, `/proc`, `/sys`, `/dev`, `/usr`, `/var` hierarchy populated at startup — `os-release`, `passwd`, `hosts`, `resolv.conf`, `/proc/meminfo`, `/proc/cpuinfo`, per-session `/proc/<pid>`, and more.
 - **Virtual package manager**: `apt install`, `apt remove`, `apt search`, `dpkg -l`, `dpkg -s` — 25 packages in the built-in registry (vim, git, nodejs, python3, curl, openssh, gcc…). Writes files into VFS, tracks state in `/var/lib/dpkg/status`.
 - **89 Built-in Commands**: Full navigation, text processing, archiving, system info, package management, and user management commands — grouped and documented in the interactive `help` system.
+- **VFS PATH resolution**: Unknown commands are resolved from `$PATH` in the VFS — binaries installed by `apt` become immediately accessible. `/sbin`/`/usr/sbin` are root-only.
 - **`$(cmd)` command substitution**: Nested command execution in any argument position.
 - **Alias support**: `alias`, `unalias` — persisted in session environment.
 - **Full TypeScript Support**: Complete JSDoc coverage, exported types, and first-class async/await for all operations.
@@ -74,10 +78,12 @@
 
 ### What This Is
 
-- A virtual shell runtime written in TypeScript with a **pure in-memory filesystem**.
+- A virtual Linux environment written in pure TypeScript with a **pure in-memory filesystem**.
 - A virtual environment with its own filesystem, user management, and a real shell interpreter.
 - A practical tool for deterministic testing, automation pipelines, and SSH-like workflows without running real containers.
 - A honeypot framework for capturing and auditing attacker behavior.
+- An embeddable web shell for browser-based terminal experiences.
+- A zero-dependency standalone CLI shell that boots from a single file (`node self-standalone.js`).
 
 TL;DR: this is a shell emulator and virtual environment for developer workflows, not a security sandbox or container runtime.
 
@@ -95,13 +101,15 @@ TL;DR: this is not a secure sandbox for running untrusted code. Do not expose it
 
 ## Why This Package
 
-This package is designed for teams that need a realistic SSH-like runtime without spinning up real containers or VMs.
+This package is designed for teams and developers that need a realistic shell runtime without spinning up real containers or VMs.
 
 - **Zero disk footprint by default**: The VFS operates entirely in memory. Opt into binary snapshot persistence (`.vfsb`) when you need durability — ~27% smaller and significantly faster than JSON+base64.
 - **Deterministic test environments**: Repeatable state for CI pipelines and integration tests. Build a fixture snapshot once, hydrate for each test.
 - **Low operational overhead**: No Docker daemon, no kernel namespaces, no privileged setup.
 - **Fast feedback loops**: Programmatic API for command execution and filesystem assertions.
-- **Real shell scripting**: `&&`/`||`/`;`, `if`/`for`/`while`, variable expansion — not just command dispatch.
+- **Real shell scripting**: `&&`/`||`/`;`, `if`/`for`/`while`/`case`, variable expansion — not just command dispatch.
+- **Browser-ready**: Ship a fully functional shell in a web app with a single `<script>` tag. No server required.
+- **Instant standalone shell**: One `curl` + `node` invocation to get a persistent, interactive Linux-like shell anywhere Node.js runs.
 - **Developer-friendly internals**: Typed APIs, clear boundaries, composable building blocks, and full JSDoc.
 
 ---
