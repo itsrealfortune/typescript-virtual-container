@@ -1,10 +1,33 @@
+import { basename } from "node:path";
 import { stdin, stdout } from "node:process";
 import { createInterface } from "node:readline/promises";
 
 import { VirtualShell } from ".";
 import { makeDefaultEnv, runCommand } from "./commands/runtime";
+import { buildPrompt } from "./SSHMimic/prompt";
 
 const hostname = process.env.SSH_MIMIC_HOSTNAME ?? "typescript-vm";
+const argv = process.argv.slice(2);
+
+function readUserArg(): string {
+	for (let index = 0; index < argv.length; index += 1) {
+		const current = argv[index];
+		if (current === "--user") {
+			const next = argv[index + 1];
+			if (!next || next.startsWith("--")) {
+				throw new Error("self-standalone: --user requires a value");
+			}
+			return next;
+		}
+		if (current?.startsWith("--user=")) {
+			return current.slice("--user=".length) || "root";
+		}
+	}
+
+	return "root";
+}
+
+const initialUser = readUserArg();
 const virtualShell = new VirtualShell(hostname, undefined, {
 	mode: "fs",
 	snapshotPath: ".vfs",
@@ -20,19 +43,37 @@ virtualShell.addCommand("demo", [], () => {
 async function runReadlineShell() {
 	const rl = createInterface({ input: stdin, output: stdout, terminal: true });
 	await virtualShell.ensureInitialized();
-	const shellEnv = makeDefaultEnv("root", hostname);
-	let authUser = "root";
-	let cwd = "/home/root";
+
+	const selectedUser = initialUser.trim() || "root";
+	const userExists = virtualShell.users.getPasswordHash(selectedUser) !== null;
+	if (!userExists) {
+		process.stderr.write(`self-standalone: user '${selectedUser}' does not exist\n`);
+		process.exit(1);
+	}
+
+	const shellEnv = makeDefaultEnv(selectedUser, hostname);
+	let authUser = selectedUser;
+	let cwd = `/home/${authUser}`;
+	shellEnv.vars.PWD = cwd;
+
+	if (process.env.USER !== "root" && virtualShell.users.hasPassword(authUser)) {
+		const password = await rl.question(`Password for ${authUser}: `);
+		if (!virtualShell.users.verifyPassword(authUser, password)) {
+			process.stderr.write("self-standalone: authentication failed\n");
+			process.exit(1);
+		}
+	}
 
 	rl.on("SIGINT", () => {
 		rl.close();
 		process.exit(130);
 	});
 
-	console.log(`Connected to ${hostname}. Type "exit" to quit.`);
+	console.log(`Connected to ${hostname} as ${authUser}. Type "exit" to quit.`);
 
 	while (true) {
-		const prompt = `${hostname}:${cwd}$ `;
+		const cwdLabel = cwd === `/home/${authUser}` ? "~" : basename(cwd) || "/";
+		const prompt = buildPrompt(authUser, hostname, cwdLabel);
 		let inputLine: string;
 
 		try {
