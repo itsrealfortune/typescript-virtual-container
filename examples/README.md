@@ -1,10 +1,88 @@
-# HoneyPot Examples
+# Examples
+
+## Web Shell Demo
+
+### Browser-based Virtual Shell
+
+A fully functional virtual shell that runs in the browser with IndexedDB persistence.
+
+**Two versions available:**
+
+#### 1. ESM Version (Recommended for local development)
+**Files:** `index.html` + `app.js` + `web.min.js`
+
+Standard ES6 module format. Works perfectly locally over HTTP.
+
+```bash
+bun run example-serve
+# or manually: cd examples && node server.js
+```
+
+Then open: **`http://localhost:8787/index.html`**
+
+**Note:** Requires HTTP server (browsers block ES6 imports via `file://` protocol)
+
+#### 2. IIFE Version (Cloudflare & third-party proxy compatible)
+**Files:** `index-cf.html` + `app-iife.js` + `web-iife.min.js`
+
+Self-contained IIFE bundle that bypasses Cloudflare challenges and works through reverse proxies.
+
+```bash
+bun run example-serve
+```
+
+Then open: **`http://localhost:8787/index-cf.html`**
+
+Or via Cloudflare proxy: **`https://dev.fox3000foxy.com/index-cf.html`**
+
+### Supported Shell Commands
+
+The virtual shell includes ~20 built-in commands:
+
+- **Navigation**: `pwd`, `cd`
+- **File Operations**: `ls`, `cat`, `mkdir`, `touch`, `cp`, `mv`, `rm`
+- **Text**: `echo`, `tee`
+- **Environment**: `env`, `export`, `unset`
+- **Network**: `curl`, `wget`
+- **System**: `true`, `false`, `help`
+
+All file operations are persisted to IndexedDB (survives page reload).
+
+### How It Works
+
+**Architecture:**
+- `src/web.ts` → WebShell class (browser-compatible shell runtime)
+- `src/VirtualFileSystem/` → IndexedDB-backed virtual filesystem
+- esbuild bundles with NodeJS polyfills for browser compatibility
+
+**Build Commands:**
+```bash
+# ESM version for HTTP servers
+bun run web-build
+
+# IIFE version for Cloudflare/proxies
+bun run web-build-iife
+
+# Both + copy to examples
+bun run example-build
+```
+
+**Cloudflare Issues & Solutions:**
+
+Cloudflare's security challenge interferes with ES6 module loading. The IIFE version solves this by:
+- Using IIFE format (no module imports needed)
+- Dynamically loading the bundle via script tag
+- Fully self-contained, no external dependencies
+
+---
+
+## HoneyPot Examples
 
 This directory contains practical examples demonstrating how to use the `HoneyPot` auditing and event tracking utility.
 
-## Quick Start with HoneyPot
+### Quick Start with HoneyPot
 
-### 1. Basic Introduction (Recommended First)
+#### 1. Basic Introduction (Recommended First)
 
 **File:** `honeypot-quickstart.ts`
 

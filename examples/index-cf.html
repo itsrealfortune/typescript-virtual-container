@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Virtual Shell — Web Demo (CF)</title>
+    <style>
+      html,body{height:100%;margin:0}
+      body{display:flex;flex-direction:column;font-family:monospace;background:#0b0f14;color:#e6eef6}
+      #terminal{flex:1;display:flex;flex-direction:column;padding:12px;box-sizing:border-box}
+      #output{flex:1;overflow:auto;white-space:pre-wrap}
+      #inputRow{display:flex;border-top:1px solid rgba(255,255,255,0.04);padding-top:8px}
+      #prompt{padding-right:8px}
+      #cmd{flex:1;background:transparent;border:0;color:inherit;outline:none;font-family:inherit}
+    </style>
+  </head>
+  <body>
+    <div id="terminal">
+      <div id="output">Welcome to Virtual Shell (web build - Cloudflare compatible)\n</div>
+      <div id="inputRow">
+        <div id="prompt">$</div>
+        <input id="cmd" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+      </div>
+    </div>
+    <script src="./app-iife.js"></script>
+  </body>
+</html>
