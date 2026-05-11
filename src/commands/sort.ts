@@ -2,6 +2,11 @@ import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 import { assertPathAccess, resolvePath } from "./helpers";
 
+/**
+ * Sort lines of text with various options (reverse, numeric, unique).
+ * @category text
+ * @params ["[-r] [-n] [-u] [-k <col>] [file...]"]
+ */
 export const sortCommand: ShellModule = {
 	name: "sort",
 	description: "Sort lines of text",

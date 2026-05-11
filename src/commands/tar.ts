@@ -1,6 +1,11 @@
 import type { ShellModule } from "../types/commands";
 import { resolvePath } from "./helpers";
 
+/**
+ * Archive or extract files with tar and optional gzip compression.
+ * @category archive
+ * @params ["[-czf|-xzf|-tf] <archive> [files...]"]
+ */
 export const tarCommand: ShellModule = {
 	name: "tar",
 	description: "Archive utility",

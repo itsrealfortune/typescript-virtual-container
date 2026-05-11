@@ -1,5 +1,10 @@
 import type { ShellModule } from "../types/commands";
 
+/**
+ * Clear the terminal screen.
+ * @category shell
+ * @params []
+ */
 export const clearCommand: ShellModule = {
 	name: "clear",
 	description: "Clear the terminal screen",

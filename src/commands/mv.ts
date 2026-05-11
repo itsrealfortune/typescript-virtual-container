@@ -1,6 +1,11 @@
 import type { ShellModule } from "../types/commands";
 import { assertPathAccess, resolvePath } from "./helpers";
 
+/**
+ * Move or rename files and directories.
+ * @category files
+ * @params ["<source> <dest>"]
+ */
 export const mvCommand: ShellModule = {
 	name: "mv",
 	description: "Move or rename files",

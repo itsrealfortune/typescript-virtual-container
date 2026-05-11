@@ -1,6 +1,11 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/**
+ * Declare variables and give them attributes (integer, readonly, export, array).
+ * @category shell
+ * @params ["[-i] [-r] [-x] [-a] [name[=value]...]"]
+ */
 export const declareCommand: ShellModule = {
 	name: "declare",
 	aliases: ["local", "typeset"],

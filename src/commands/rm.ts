@@ -2,6 +2,11 @@ import type { ShellModule } from "../types/commands";
 import { getArg, ifFlag } from "./command-helpers";
 import { assertPathAccess, resolvePath } from "./helpers";
 
+/**
+ * Remove files or directories from the filesystem.
+ * @category files
+ * @params ["[-r|-rf] <path>"]
+ */
 export const rmCommand: ShellModule = {
 	name: "rm",
 	description: "Remove files or directories",

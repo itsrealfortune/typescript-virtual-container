@@ -1,6 +1,11 @@
 /** biome-ignore-all lint/style/useNamingConvention: env variables */
 import type { ShellModule } from "../types/commands";
 
+/**
+ * Display or set shell variables and options.
+ * @category shell
+ * @params ["[VAR=value]"]
+ */
 export const setCommand: ShellModule = {
 	name: "set",
 	description: "Display or set shell variables",

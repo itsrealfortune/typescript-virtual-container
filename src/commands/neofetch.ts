@@ -2,6 +2,11 @@ import { buildNeofetchOutput } from "../modules/neofetch";
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/**
+ * Display system information in a decorative format.
+ * @category system
+ * @params ["[--off]"]
+ */
 export const neofetchCommand: ShellModule = {
 	name: "neofetch",
 	description: "System info display",

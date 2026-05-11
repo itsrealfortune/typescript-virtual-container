@@ -2,6 +2,11 @@ import type { ShellModule } from "../types/commands";
 import { getArg } from "./command-helpers";
 import { assertPathAccess, resolvePath } from "./helpers";
 
+/**
+ * Create one or more directories.
+ * @category files
+ * @params ["<dir>"]
+ */
 export const mkdirCommand: ShellModule = {
 	name: "mkdir",
 	description: "Make directories",

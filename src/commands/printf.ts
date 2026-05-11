@@ -110,6 +110,11 @@ function renderPrintf(fmt: string, args: string[]): string {
 	return out;
 }
 
+/**
+ * Format and print data to stdout.
+ * @category shell
+ * @params ["<format> [args...]"]
+ */
 export const printfCommand: ShellModule = {
 	name: "printf",
 	description: "Format and print data",

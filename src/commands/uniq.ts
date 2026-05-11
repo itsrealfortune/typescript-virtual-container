@@ -1,6 +1,11 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/**
+ * Report or filter out repeated consecutive lines.
+ * @category text
+ * @params ["[-c] [-d] [-u] [file]"]
+ */
 export const uniqCommand: ShellModule = {
 	name: "uniq",
 	description: "Report or filter out repeated lines",

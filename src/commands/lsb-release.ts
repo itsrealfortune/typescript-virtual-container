@@ -1,6 +1,11 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/**
+ * Print Linux distribution information.
+ * @category system
+ * @params ["[-a] [-i] [-d] [-r] [-c]"]
+ */
 export const lsbReleaseCommand: ShellModule = {
 	name: "lsb_release",
 	description: "Print distribution-specific information",

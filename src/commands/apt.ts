@@ -162,6 +162,11 @@ export const aptCommand: ShellModule = {
 	},
 };
 
+/**
+ * Query the package cache and retrieve package information.
+ * @category package
+ * @params ["<search|show|policy> [pkg]"]
+ */
 export const aptCacheCommand: ShellModule = {
 	name: "apt-cache",
 	description: "Query the package cache",

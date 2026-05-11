@@ -1,5 +1,10 @@
 import type { ShellModule } from "../types/commands";
 
+/**
+ * Delay execution for a specified number of seconds.
+ * @category system
+ * @params ["<seconds>"]
+ */
 export const sleepCommand: ShellModule = {
 	name: "sleep",
 	description: "Delay execution",

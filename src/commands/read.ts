@@ -1,6 +1,11 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/**
+ * Read a line from stdin into one or more variables.
+ * @category shell
+ * @params ["[-r] [-p prompt] <var...>"]
+ */
 export const readCommand: ShellModule = {
 	name: "read",
 	description: "Read a line from stdin into variables",

@@ -2,6 +2,11 @@ import type { ShellModule } from "../types/commands";
 import { getFlag } from "./command-helpers";
 import { assertPathAccess, resolvePath } from "./helpers";
 
+/**
+ * Output the last part of files or stdin.
+ * @category text
+ * @params ["[-n <lines>] [file...]"]
+ */
 export const tailCommand: ShellModule = {
 	name: "tail",
 	description: "Output last lines",

@@ -286,6 +286,12 @@ async function runBlocks(
 	return { ...lastResult, stdout: output.trim() || lastResult.stdout };
 }
 
+/**
+ * Execute shell scripts or commands with a minimal shell interpreter.
+ * Supports if/elif/else, for loops, while loops, and variable expansion.
+ * @category shell
+ * @params ["-c <script>", "[<file>]"]
+ */
 export const shCommand: ShellModule = {
 	name: "sh",
 	aliases: ["bash"],

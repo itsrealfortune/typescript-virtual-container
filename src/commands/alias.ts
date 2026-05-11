@@ -41,6 +41,11 @@ export const aliasCommand: ShellModule = {
 	},
 };
 
+/**
+ * Remove shell aliases.
+ * @category shell
+ * @params ["<name...>"]
+ */
 export const unaliasCommand: ShellModule = {
 	name: "unalias",
 	description: "Remove alias definitions",

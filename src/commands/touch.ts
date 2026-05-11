@@ -1,6 +1,11 @@
 import type { ShellModule } from "../types/commands";
 import { assertPathAccess, resolvePath } from "./helpers";
 
+/**
+ * Create empty files or update file timestamps.
+ * @category files
+ * @params ["<file>"]
+ */
 export const touchCommand: ShellModule = {
 	name: "touch",
 	description: "Create or update files",

@@ -2,6 +2,11 @@ import type { ShellModule } from "../types/commands";
 import { resolvePath } from "./helpers";
 import { runCommand } from "./runtime";
 
+/**
+ * Execute commands from a file in the current shell environment.
+ * @category shell
+ * @params ["<file> [args...]"]
+ */
 export const sourceCommand: ShellModule = {
 	name: "source",
 	aliases: ["."],

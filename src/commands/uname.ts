@@ -1,6 +1,11 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/**
+ * Print system information (kernel name, version, machine type).
+ * @category system
+ * @params ["[-a] [-s] [-r] [-m]"]
+ */
 export const unameCommand: ShellModule = {
 	name: "uname",
 	description: "Print system information",

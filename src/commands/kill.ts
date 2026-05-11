@@ -1,5 +1,10 @@
 import type { ShellModule } from "../types/commands";
 
+/**
+ * Send a signal to a process by PID.
+ * @category system
+ * @params ["[-9] <pid>"]
+ */
 export const killCommand: ShellModule = {
 	name: "kill",
 	description: "Send signal to process",

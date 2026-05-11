@@ -2,6 +2,11 @@ import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 import { assertPathAccess, resolvePath } from "./helpers";
 
+/**
+ * Count words, lines, and/or bytes in files or stdin.
+ * @category text
+ * @params ["[-l] [-w] [-c] [file...]"]
+ */
 export const wcCommand: ShellModule = {
 	name: "wc",
 	description: "Count words/lines/bytes",

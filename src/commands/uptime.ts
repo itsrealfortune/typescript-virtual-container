@@ -1,6 +1,11 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/**
+ * Tell how long the system has been running.
+ * @category system
+ * @params ["[-p] [-s]"]
+ */
 export const uptimeCommand: ShellModule = {
 	name: "uptime",
 	description: "Tell how long the system has been running",

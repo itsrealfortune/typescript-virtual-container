@@ -2,6 +2,11 @@ import * as path from "node:path";
 import type { ShellModule } from "../types/commands";
 import { assertPathAccess, resolvePath } from "./helpers";
 
+/**
+ * Simple text editor for editing files.
+ * @category files
+ * @params ["<file>"]
+ */
 export const nanoCommand: ShellModule = {
 	name: "nano",
 	description: "Text editor",

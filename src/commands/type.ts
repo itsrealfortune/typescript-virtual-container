@@ -1,6 +1,11 @@
 import type { ShellModule } from "../types/commands";
 import { resolveModule } from "./registry";
 
+/**
+ * Describe how a command name would be interpreted (builtin, function, or file).
+ * @category shell
+ * @params ["<command...>"]
+ */
 export const typeCommand: ShellModule = {
 	name: "type",
 	description: "Describe how a command would be interpreted",

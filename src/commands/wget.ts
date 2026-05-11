@@ -2,6 +2,11 @@ import type { ShellModule } from "../types/commands";
 import { ifFlag, parseArgs } from "./command-helpers";
 import { assertPathAccess, resolvePath, stripUrlFilename } from "./helpers";
 
+/**
+ * Download files from the web (fetch-based implementation).
+ * @category network
+ * @params ["[options] <url>"]
+ */
 export const wgetCommand: ShellModule = {
 	name: "wget",
 	description: "File downloader (pure fetch)",

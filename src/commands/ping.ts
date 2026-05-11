@@ -1,6 +1,11 @@
 import type { ShellModule } from "../types/commands";
 import { parseArgs } from "./command-helpers";
 
+/**
+ * Send ICMP ECHO_REQUEST packets (mock implementation).
+ * @category network
+ * @params ["[-c <count>] <host>"]
+ */
 export const pingCommand: ShellModule = {
 	name: "ping",
 	description: "Send ICMP ECHO_REQUEST (mock)",
