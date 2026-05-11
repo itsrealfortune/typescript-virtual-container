@@ -2,6 +2,11 @@ import type { ShellModule } from "../types/commands";
 import { parseArgs } from "./command-helpers";
 import { runCommand } from "./runtime";
 
+/**
+ * Execute a command as another user (superuser by default).
+ * @category users
+ * @params ["[-u user] [-c cmd] [command]"]
+ */
 function parseSudoArgs(args: string[]): {
 	targetUser: string;
 	loginShell: boolean;

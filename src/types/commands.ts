@@ -31,6 +31,8 @@ export interface CommandResult {
 	openHtop?: boolean;
 	/** Request sudo password challenge flow. */
 	sudoChallenge?: SudoChallenge;
+	/** Request a generic password challenge (adduser, passwd). */
+	passwordChallenge?: PasswordChallenge;
 }
 
 /** Deferred sudo challenge metadata returned by sudo command. */
@@ -45,6 +47,41 @@ export interface SudoChallenge {
 	loginShell: boolean;
 	/** Prompt text shown before password input. */
 	prompt: string;
+	/**
+	 * Challenge mode.
+	 * - `"sudo"` (default): verify `username`'s password, then run `commandLine`.
+	 * - `"passwd"`: multi-step new-password flow; `onPassword` handles each step.
+	 * - `"confirm"`: text confirmation flow (e.g. deluser); `onPassword` receives typed text.
+	 */
+	mode?: "sudo" | "passwd" | "confirm";
+	/**
+	 * Optional async handler called when the user submits input.
+	 * Receives the typed text and the shell instance.
+	 * Returns a `CommandResult` written to the terminal, or `null` to show
+	 * another prompt (pass `nextPrompt` to change the prompt text).
+	 */
+	onPassword?: (input: string, shell: import("../VirtualShell").VirtualShell) => Promise<{
+		result: CommandResult | null;
+		nextPrompt?: string;
+	}>;
+}
+
+/** Generic password challenge — used by adduser, passwd, deluser. */
+export interface PasswordChallenge {
+	/** Lines to print before the first prompt. */
+	preamble?: string;
+	/** Primary prompt text (e.g. "New password: "). */
+	prompt: string;
+	/** If set, a second prompt is shown for confirmation. */
+	confirmPrompt?: string;
+	/** Prompt shown for a destructive confirmation (y/N). */
+	confirmText?: string;
+	/** Tag identifying what to do with the entered value. */
+	action: "adduser" | "passwd" | "deluser" | "su";
+	/** Username targeted by the action. */
+	targetUsername: string;
+	/** For adduser: the new user's username (already validated). */
+	newUsername?: string;
 }
 
 /** State payload used by nano command interactive editor flow. */

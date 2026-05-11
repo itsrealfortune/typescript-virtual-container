@@ -1,32 +1,55 @@
 import type { ShellModule } from "../types/commands";
-import { ifFlag } from "./command-helpers";
 import { resolvePath } from "./helpers";
 
+/**
+ * Archive or extract files with tar and optional gzip compression.
+ * @category archive
+ * @params ["[-czf|-xzf|-tf] <archive> [files...]"]
+ */
 export const tarCommand: ShellModule = {
 	name: "tar",
 	description: "Archive utility",
 	category: "archive",
 	params: ["[-czf|-xzf|-tf] <archive> [files...]"],
 	run: ({ authUser, shell, cwd, args }) => {
-		const create = ifFlag(args, ["-c"]);
-		const extract = ifFlag(args, ["-x"]);
-		const list = ifFlag(args, ["-t"]);
-		const fFlag = args.findIndex((a) => a.includes("f"));
-		const archiveName =
-			fFlag !== -1
-				? args[fFlag + 1]
-				: args.find(
-						(a) =>
-							a.endsWith(".tar") || a.endsWith(".tar.gz") || a.endsWith(".tgz"),
-					);
+		// Expand combined flags: -czf or czf (bare mode string) → ["-c", "-z", "-f"]
+		const expanded: string[] = [];
+		let foundModeStr = false;
+		for (const a of args) {
+			if (/^-[a-zA-Z]{2,}$/.test(a)) {
+				// -czf style
+				for (const ch of a.slice(1)) expanded.push(`-${ch}`);
+			} else if (!foundModeStr && /^[cxtdru]{1,}[a-zA-Z]*$/.test(a) && !a.includes("/") && !a.startsWith("-")) {
+				// czf bare style (first non-path arg)
+				foundModeStr = true;
+				for (const ch of a) expanded.push(`-${ch}`);
+			} else {
+				expanded.push(a);
+			}
+		}
+
+		const create  = expanded.includes("-c");
+		const extract = expanded.includes("-x");
+		const list    = expanded.includes("-t");
+		const fIdx    = expanded.indexOf("-f");
+		const archiveName = fIdx !== -1
+			? expanded[fIdx + 1]
+			: expanded.find((a) => a.endsWith(".tar") || a.endsWith(".tar.gz") || a.endsWith(".tgz"));
+
+		if (!create && !extract && !list) {
+			return { stderr: "tar: must specify -c, -x, or -t\n", exitCode: 1 };
+		}
 
 		if (!archiveName)
-			return { stderr: "tar: no archive specified", exitCode: 1 };
+			return { stderr: "tar: no archive specified\n", exitCode: 1 };
 		const archivePath = resolvePath(cwd, archiveName);
 
 		if (create) {
-			const fileArgs = args.filter(
-				(a) => !a.startsWith("-") && a !== archiveName,
+			// Skip flags and archive name from file list
+			const skipNext2 = new Set<number>();
+			if (fIdx !== -1) skipNext2.add(fIdx + 1);
+			const fileArgs = expanded.filter((a, i) =>
+				!a.startsWith("-") && a !== archiveName && !skipNext2.has(i),
 			);
 			const entries: Record<string, string> = {};
 			for (const f of fileArgs) {

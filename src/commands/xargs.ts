@@ -1,6 +1,11 @@
 import type { ShellModule } from "../types/commands";
 import { runCommand } from "./runtime";
 
+/**
+ * Build and execute commands from stdin arguments.
+ * @category text
+ * @params ["[command] [args...]"]
+ */
 export const xargsCommand: ShellModule = {
 	name: "xargs",
 	description: "Build and execute command lines from stdin",

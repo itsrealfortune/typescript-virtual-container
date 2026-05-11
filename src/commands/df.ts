@@ -1,5 +1,10 @@
 import type { ShellModule } from "../types/commands";
 
+/**
+ * Report filesystem disk space usage.
+ * @category system
+ * @params ["[-h]"]
+ */
 export const dfCommand: ShellModule = {
 	name: "df",
 	description: "Report filesystem disk space usage",

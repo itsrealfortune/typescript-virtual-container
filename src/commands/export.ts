@@ -1,5 +1,10 @@
 import type { ShellModule } from "../types/commands";
 
+/**
+ * Set or display shell environment variables for child processes.
+ * @category shell
+ * @params ["[VAR=value]"]
+ */
 export const exportCommand: ShellModule = {
 	name: "export",
 	description: "Set shell environment variable",

@@ -35,7 +35,8 @@ import { hostnameCommand } from "./hostname";
 import { htopCommand } from "./htop";
 import { idCommand } from "./id";
 import { killCommand } from "./kill";
-import { lnCommand } from "./ln";
+import { lnCommand, readlinkCommand } from "./ln";
+import { statCommand } from "./stat";
 import { lsCommand } from "./ls";
 import { lsbReleaseCommand } from "./lsb-release";
 import { manCommand } from "./man";
@@ -96,7 +97,9 @@ const BASE_COMMANDS: ShellModule[] = [
 	cpCommand,
 	mvCommand,
 	lnCommand,
+	readlinkCommand,
 	chmodCommand,
+	statCommand,
 	findCommand,
 	// Text processing
 	grepCommand,

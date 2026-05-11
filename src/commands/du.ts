@@ -2,6 +2,11 @@ import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 import { resolvePath } from "./helpers";
 
+/**
+ * Estimate file and directory space usage.
+ * @category system
+ * @params ["[-h] [-s] [path]"]
+ */
 export const duCommand: ShellModule = {
 	name: "du",
 	description: "Estimate file space usage",

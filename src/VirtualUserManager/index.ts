@@ -1,4 +1,4 @@
-import { createHash, randomBytes, randomUUID, scryptSync } from "node:crypto";
+import { createHash, randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
 import { EventEmitter } from "node:events";
 import * as path from "node:path";
 import type { PerfLogger } from "../utils/perfLogger";
@@ -101,14 +101,14 @@ export class VirtualUserManager extends EventEmitter {
 		// 	changed = true;
 		// }
 		
-		const homePath = `/home/root`;
-		if (!this.vfs.exists(homePath)) {
-			this.vfs.mkdir(homePath, 0o755);
-			this.vfs.writeFile(
-				`${homePath}/README.txt`,
-				`Welcome to the virtual environment, root`,
-			);
-		}
+		// const homePath = `/home/root`;
+		// if (!this.vfs.exists(homePath)) {
+		// 	this.vfs.mkdir(homePath, 0o755);
+		// 	this.vfs.writeFile(
+		// 		`${homePath}/README.txt`,
+		// 		`Welcome to the virtual environment, root`,
+		// 	);
+		// }
 
 		if (changed) {
 			await this.persist();
@@ -239,10 +239,22 @@ export class VirtualUserManager extends EventEmitter {
 		perf.mark("verifyPassword");
 		const record = this.users.get(username);
 		if (!record) {
+			// Perform a dummy hash to avoid timing leakage on unknown usernames
+			this.hashPassword(password, "");
 			return false;
 		}
 
-		return this.hashPassword(password) === record.passwordHash;
+		const computed = this.hashPassword(password, record.salt);
+		const expected = record.passwordHash;
+		// timingSafeEqual prevents timing-based password oracle attacks
+		try {
+			const a = Buffer.from(computed, "hex");
+			const b = Buffer.from(expected, "hex");
+			if (a.length !== b.length) return false;
+			return timingSafeEqual(a, b);
+		} catch {
+			return computed === expected;
+		}
 	}
 
 	/**
@@ -617,7 +629,8 @@ export class VirtualUserManager extends EventEmitter {
 	}
 
 	private createRecord(username: string, password: string): VirtualUserRecord {
-		const cacheKey = `${username}:${password}`;
+		// Cache key is a hash of the inputs — never store plaintext password in memory
+		const cacheKey = createHash("sha256").update(username).update(":").update(password).digest("hex");
 		const cached = VirtualUserManager.recordCache.get(cacheKey);
 		if (cached) {
 			return cached;
@@ -627,7 +640,8 @@ export class VirtualUserManager extends EventEmitter {
 		const record = {
 			username,
 			salt,
-			passwordHash: this.hashPassword(password),
+			// Hash uses the generated salt — verifyPassword must use record.salt
+			passwordHash: this.hashPassword(password, salt),
 		};
 
 		VirtualUserManager.recordCache.set(cacheKey, record);
@@ -644,11 +658,12 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public hasPassword(username: string): boolean {
 		perf.mark("hasPassword");
-		if (this.getPasswordHash(username) === this.hashPassword("")) {
-			return false;
-		}
 		const record = this.users.get(username);
-		return !!record && !!record.passwordHash;
+		if (!record) return false;
+		// Empty password hash computed with the record's own salt
+		const emptyHash = this.hashPassword("", record.salt);
+		if (record.passwordHash === emptyHash) return false;
+		return !!record.passwordHash;
 	}
 
 	/**
@@ -660,12 +675,21 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param password Plaintext password string.
 	 * @returns Hex-encoded hash string.
 	 */
-	public hashPassword(password: string): string {
+	/**
+	 * Hash a password with an optional salt.
+	 * When salt is provided (verify path), the same salt is used for a
+	 * deterministic hash. When omitted (create path), an empty salt is used
+	 * for backward compat — callers should pass the stored salt on verify.
+	 */
+	public hashPassword(password: string, salt = ""): string {
 		if (VirtualUserManager.fastPasswordHash) {
-			return createHash("sha256").update(`${password}`).digest("hex");
+			return createHash("sha256")
+				.update(salt)
+				.update(password)
+				.digest("hex");
 		}
 
-		return scryptSync(password, "", 32).toString("hex");
+		return scryptSync(password, salt || "", 32).toString("hex");
 	}
 
 	private validateUsername(username: string): void {

@@ -2,6 +2,11 @@ import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 import { resolvePath } from "./helpers";
 
+/**
+ * Read stdin and write to stdout and files simultaneously.
+ * @category text
+ * @params ["[-a] <file...>"]
+ */
 export const teeCommand: ShellModule = {
 	name: "tee",
 	description: "Read stdin, write to stdout and files",

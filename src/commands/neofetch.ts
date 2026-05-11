@@ -1,16 +1,18 @@
 import { buildNeofetchOutput } from "../modules/neofetch";
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
-import { getAllEnvVars } from "./set";
 
+/**
+ * Display system information in a decorative format.
+ * @category system
+ * @params ["[--off]"]
+ */
 export const neofetchCommand: ShellModule = {
 	name: "neofetch",
 	description: "System info display",
 	category: "system",
 	params: ["[--off]"],
-	run: ({ args, authUser, hostname, shell }) => {
-		const env = getAllEnvVars(authUser);
-
+	run: ({ args, authUser, hostname, shell, env }) => {
 		if (ifFlag(args, "--help")) {
 			return {
 				stdout: "Usage: neofetch [--off]",
@@ -29,9 +31,9 @@ export const neofetchCommand: ShellModule = {
 			stdout: buildNeofetchOutput({
 				user: authUser,
 				host: hostname,
-				shell: env.SHELL,
+				shell: env.vars.SHELL,
 				shellProps: shell.properties,
-				terminal: env.TERM,
+				terminal: env.vars.TERM,
 				uptimeSeconds: Math.floor((Date.now() - shell.startTime) / 1000),
 				packages: (() => {
 					const count = shell.packageManager?.installedCount() ?? 0;

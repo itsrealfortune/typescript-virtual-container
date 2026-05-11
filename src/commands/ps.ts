@@ -1,6 +1,11 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/**
+ * Report process status with various formatting options.
+ * @category system
+ * @params ["[-a] [-u] [-x] [aux]"]
+ */
 export const psCommand: ShellModule = {
 	name: "ps",
 	description: "Report process status",

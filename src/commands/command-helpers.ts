@@ -15,9 +15,18 @@ function matchFlagToken(
 		return { matched: true, inlineValue: null };
 	}
 
+	// --flag=value style
 	const prefix = `${flag}=`;
 	if (token.startsWith(prefix)) {
 		return { matched: true, inlineValue: token.slice(prefix.length) };
+	}
+
+	// Short flag inline value: -f2, -d: (single char flag like -f, -d, -n)
+	// Only applies to single-char flags (-X), not long flags (--flag)
+	if (flag.length === 2 && flag.startsWith("-") && !flag.startsWith("--")) {
+		if (token.startsWith(flag) && token.length > flag.length) {
+			return { matched: true, inlineValue: token.slice(flag.length) };
+		}
 	}
 
 	return { matched: false, inlineValue: null };

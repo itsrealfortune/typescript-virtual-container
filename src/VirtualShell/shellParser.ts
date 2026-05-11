@@ -5,6 +5,7 @@ import type {
 	Statement,
 	LogicalOp,
 } from "../types/pipeline";
+import { tokenizeCommand } from "../utils/tokenize";
 
 // ── Public API ───────────────────────────────────────────────────────────────
 
@@ -25,7 +26,7 @@ export function parseScript(rawInput: string): Script {
 	}
 }
 
-/** Legacy compat: parse a single pipeline (no &&/||/;) */
+/** Parse a single pipeline string (no &&/||/;) into a `Pipeline` object. */
 export function parseShellPipeline(rawInput: string): Pipeline {
 	const trimmed = rawInput.trim();
 	if (!trimmed) return { commands: [], isValid: true };
@@ -38,49 +39,6 @@ export function parseShellPipeline(rawInput: string): Pipeline {
 }
 
 // ── Variable & tilde expansion ────────────────────────────────────────────────
-
-/**
- * Expand ~ and $VAR / ${VAR} / ${VAR:-default} / $(cmd placeholder) in a
- * token, given the current env vars and home path.
- * Command substitution $(…) is NOT executed here — it's left as a marker so
- * the executor can handle it.
- */
-export function expandToken(
-	token: string,
-	env: Record<string, string>,
-	authUser: string,
-	lastExitCode = 0,
-): string {
-	// tilde expansion
-	token = token.replace(/^~(\/|$)/, `/home/${authUser}$1`);
-
-	// $? special var
-	token = token.replace(/\$\?/g, String(lastExitCode));
-	// $$ PID (mock)
-	token = token.replace(/\$\$/g, "1");
-	// $# argc (0 for interactive)
-	token = token.replace(/\$#/g, "0");
-
-	// ${VAR:-default} and ${VAR:+value}
-	token = token.replace(
-		/\$\{([^}:]+):-([^}]*)\}/g,
-		(_, name, def) => env[name] ?? def,
-	);
-	token = token.replace(/\$\{([^}:]+):\+([^}]*)\}/g, (_, name, val) =>
-		env[name] ? val : "",
-	);
-
-	// ${VAR}
-	token = token.replace(/\$\{([^}]+)\}/g, (_, name) => env[name] ?? "");
-
-	// $VAR (greedy: match longest valid identifier)
-	token = token.replace(
-		/\$([A-Za-z_][A-Za-z0-9_]*)/g,
-		(_, name) => env[name] ?? "",
-	);
-
-	return token;
-}
 
 /**
  * Expand glob patterns (*, ?, [abc]) against a list of entries.
@@ -299,62 +257,3 @@ function parseCommandWithRedirections(token: string): PipelineCommand {
 	return { name, args: cmdParts.slice(1), inputFile, outputFile, appendOutput };
 }
 
-function tokenizeCommand(input: string): string[] {
-	const tokens: string[] = [];
-	let current = "";
-	let inQ = false;
-	let qChar = "";
-	let i = 0;
-
-	while (i < input.length) {
-		const ch = input[i]!;
-		const next = input[i + 1];
-
-		if ((ch === '"' || ch === "'") && !inQ) {
-			inQ = true;
-			qChar = ch;
-			i++;
-			continue;
-		}
-		if (inQ && ch === qChar) {
-			inQ = false;
-			qChar = "";
-			i++;
-			continue;
-		}
-		if (inQ) {
-			current += ch;
-			i++;
-			continue;
-		}
-
-		if (ch === " ") {
-			if (current) {
-				tokens.push(current);
-				current = "";
-			}
-			i++;
-			continue;
-		}
-
-		if ((ch === ">" || ch === "<") && !inQ) {
-			if (current) {
-				tokens.push(current);
-				current = "";
-			}
-			if (ch === ">" && next === ">") {
-				tokens.push(">>");
-				i += 2;
-			} else {
-				tokens.push(ch);
-				i++;
-			}
-			continue;
-		}
-
-		current += ch;
-		i++;
-	}
-	if (current) tokens.push(current);
-	return tokens;
-}

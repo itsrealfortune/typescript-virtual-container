@@ -2,6 +2,11 @@ import type { ShellModule } from "../types/commands";
 import { getArg } from "./command-helpers";
 import { assertPathAccess, resolvePath } from "./helpers";
 
+/**
+ * Display directory structure in a tree format.
+ * @category navigation
+ * @params ["[path]"]
+ */
 export const treeCommand: ShellModule = {
 	name: "tree",
 	description: "Display directory tree",

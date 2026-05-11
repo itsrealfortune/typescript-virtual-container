@@ -1,6 +1,11 @@
 import { formatLoginDate } from "../SSHMimic/loginFormat";
 import type { ShellModule } from "../types/commands";
 
+/**
+ * Show active user sessions.
+ * @category system
+ * @params []
+ */
 export const whoCommand: ShellModule = {
 	name: "who",
 	description: "Show active sessions",

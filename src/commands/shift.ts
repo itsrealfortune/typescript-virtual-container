@@ -1,5 +1,10 @@
 import type { ShellModule } from "../types/commands";
 
+/**
+ * Shift positional parameters (remove first N arguments).
+ * @category shell
+ * @params ["[n]"]
+ */
 export const shiftCommand: ShellModule = {
 	name: "shift",
 	description: "Shift positional parameters",
@@ -22,6 +27,11 @@ export const shiftCommand: ShellModule = {
 	},
 };
 
+/**
+ * Trap signals and execute actions on signal receipt or shell exit.
+ * @category shell
+ * @params ["[action] [signal...]"]
+ */
 export const trapCommand: ShellModule = {
 	name: "trap",
 	description: "Trap signals and events",

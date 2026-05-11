@@ -50,35 +50,47 @@ function renderPrintf(fmt: string, args: string[]): string {
 			}
 		}
 		if (fmt[i] === "%" && i + 1 < fmt.length) {
-			// Optional width/precision: %[-][width][.prec]spec
 			let j = i + 1;
-			if (fmt[j] === "-") j++;
-			while (j < fmt.length && /\d/.test(fmt[j]!)) j++;
+			let leftAlign = false; if (fmt[j] === "-") { leftAlign = true; j++; }
+			let zeroPad = false; if (fmt[j] === "0") { zeroPad = true; j++; }
+			let width = 0;
+			while (j < fmt.length && /\d/.test(fmt[j]!)) { width = width * 10 + parseInt(fmt[j]!, 10); j++; }
+			let precision = -1;
 			if (fmt[j] === ".") {
-				j++;
-				while (j < fmt.length && /\d/.test(fmt[j]!)) j++;
+				j++; precision = 0;
+				while (j < fmt.length && /\d/.test(fmt[j]!)) { precision = precision * 10 + parseInt(fmt[j]!, 10); j++; }
 			}
 			const spec = fmt[j];
 			const arg = args[argIdx++] ?? "";
+			const pad = (s: string, ch = " "): string => {
+				if (width <= 0 || s.length >= width) return s;
+				const fill = ch.repeat(width - s.length);
+				return leftAlign ? s + fill : fill + s;
+			};
 			switch (spec) {
-				case "s":
-					out += arg;
+				case "s": {
+					let val = String(arg);
+					if (precision >= 0) val = val.slice(0, precision);
+					out += pad(val);
 					break;
+				}
 				case "d":
 				case "i":
-					out += String(parseInt(arg, 10) || 0);
+					out += pad(String(parseInt(arg, 10) || 0), zeroPad ? "0" : " ");
 					break;
-				case "f":
-					out += String(parseFloat(arg) || 0);
+				case "f": {
+					const prec = precision >= 0 ? precision : 6;
+					out += pad((parseFloat(arg) || 0).toFixed(prec));
 					break;
+				}
 				case "o":
-					out += (parseInt(arg, 10) || 0).toString(8);
+					out += pad((parseInt(arg, 10) || 0).toString(8), zeroPad ? "0" : " ");
 					break;
 				case "x":
-					out += (parseInt(arg, 10) || 0).toString(16);
+					out += pad((parseInt(arg, 10) || 0).toString(16), zeroPad ? "0" : " ");
 					break;
 				case "X":
-					out += (parseInt(arg, 10) || 0).toString(16).toUpperCase();
+					out += pad((parseInt(arg, 10) || 0).toString(16).toUpperCase(), zeroPad ? "0" : " ");
 					break;
 				case "%":
 					out += "%";
@@ -98,6 +110,11 @@ function renderPrintf(fmt: string, args: string[]): string {
 	return out;
 }
 
+/**
+ * Format and print data to stdout.
+ * @category shell
+ * @params ["<format> [args...]"]
+ */
 export const printfCommand: ShellModule = {
 	name: "printf",
 	description: "Format and print data",

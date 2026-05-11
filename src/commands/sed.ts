@@ -2,6 +2,11 @@ import type { ShellModule } from "../types/commands";
 import { getFlag, ifFlag } from "./command-helpers";
 import { resolvePath } from "./helpers";
 
+/**
+ * Stream editor for filtering and transforming text lines.
+ * @category text
+ * @params ["-e <expr> [file]", "s/pattern/replace/[g]"]
+ */
 export const sedCommand: ShellModule = {
 	name: "sed",
 	description: "Stream editor for filtering and transforming text",

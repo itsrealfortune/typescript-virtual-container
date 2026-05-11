@@ -1,5 +1,10 @@
 import type { ShellModule } from "../types/commands";
 
+/**
+ * Interactive system monitor (requires terminal interaction).
+ * @category system
+ * @params []
+ */
 export const htopCommand: ShellModule = {
 	name: "htop",
 	description: "System monitor",

@@ -1,5 +1,10 @@
 import type { ShellModule } from "../types/commands";
 
+/**
+ * Print group memberships for a user.
+ * @category system
+ * @params ["[user]"]
+ */
 export const groupsCommand: ShellModule = {
 	name: "groups",
 	description: "Print group memberships",
