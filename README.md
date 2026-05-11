@@ -134,7 +134,7 @@ bun run build
 To quickly try a standalone demo:
 
 ```bash
-curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/standalone.js -o standalone.js && node standalone.js && rm -f standalone.js
+curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/standalone.js -o standalone.js && node standalone.js && rm -f standalone.js
 ```
 
 ---
