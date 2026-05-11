@@ -32,7 +32,7 @@
   - [Key Types](#key-types)
   - [Command Helpers](#command-helpers)
 - [Examples](#examples)
-- [Built-in Commands (89)](#built-in-commands-89)
+- [Built-in Commands (91)](#built-in-commands-91)
 - [Shell Scripting](#shell-scripting)
 - [Linux Rootfs & VFS PATH Resolution](#linux-rootfs--vfs-path-resolution)
 - [Configuration](#configuration)
@@ -926,7 +926,7 @@ echo "Welcome back, root!"
 ---
 
 <details>
-<summary><strong>Built-in Commands (89)</strong></summary>
+<summary><strong>Built-in Commands (91)</strong></summary>
 
 Type `help` in the shell for a grouped, colorized listing. Type `help <command>` for detailed usage.
 
@@ -948,10 +948,12 @@ Type `help` in the shell for a grouped, colorized listing. Type `help <command>`
 | `cp <src> <dest>` | `-r` | Copy file or directory |
 | `find [path]` | `-name` `-type` | Search for files |
 | `ln <target> <link>` | `-s` | Hard or symbolic link |
+| `readlink <path>` | `-f` | Print resolved path of symbolic link |
 | `mkdir <path>` | `-p` | Create directory |
 | `mv <src> <dest>` | | Move or rename |
 | `nano <path>` | | Interactive text editor |
 | `rm <path>` | `-r` | Remove file or directory |
+| `stat <path>` | `-c <format>` | Display file status (inode, size, mode, timestamps) |
 | `touch <path>` | | Create or update file |
 
 ### Text Processing
@@ -1064,7 +1066,7 @@ Type `help` in the shell for a grouped, colorized listing. Type `help <command>`
 | `su [user]` | | Switch user |
 | `sudo <cmd>` | `-i` | Run as root |
 
-**ℹ️ All 89 built-in commands include complete JSDoc documentation** with `@category` and `@params` tags. See [src/commands/](src/commands/) for source code and inline documentation.
+**ℹ️ All 91 built-in commands include complete JSDoc documentation** with `@category` and `@params` tags. See [src/commands/](src/commands/) for source code and inline documentation.
 
 Custom commands: `shell.addCommand(name, params, callback)`.
 
@@ -1434,7 +1436,7 @@ Open:
 - [x] Pure in-memory VFS · symlinks · binary snapshot format (VFSB, ~27% smaller than JSON+base64)
 - [x] Linux rootfs on boot — `/etc`, `/proc`, `/sys`, `/dev`, `/usr`, `/var`
 - [x] Virtual package manager — `apt`/`dpkg`, 25 packages, VFS file writes
-- [x] 89 built-in commands across 9 categories
+- [x] 91 built-in commands across 9 categories
 - [x] Real shell interpreter — `if`/`for`/`while`/`case`/functions, `$(cmd)`, `$((expr))`, `${#VAR}`, single-quote isolation
 - [x] `curl`/`wget` as pure `fetch()` · VFS PATH resolution · `/sbin` root-only
 - [x] `/proc/self` and `/proc/<pid>` per-session entries
