@@ -33,6 +33,7 @@ interface PendingSudo {
 	loginShell: boolean;
 	prompt: string;
 	buffer: string;
+	mode?: "sudo" | "passwd" | "confirm";
 	onPassword?: (input: string, shell: VirtualShell) => Promise<{
 		result: CommandResult | null;
 		nextPrompt?: string;
@@ -114,6 +115,11 @@ export function startShell(
 		commandLine: string | null;
 		loginShell: boolean;
 		prompt: string;
+		mode?: "sudo" | "passwd" | "confirm";
+		onPassword?: (input: string, shell: VirtualShell) => Promise<{
+			result: CommandResult | null;
+			nextPrompt?: string;
+		}>;
 	}): void {
 		pendingSudo = {
 			...challenge,

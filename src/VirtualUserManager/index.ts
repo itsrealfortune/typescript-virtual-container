@@ -101,14 +101,14 @@ export class VirtualUserManager extends EventEmitter {
 		// 	changed = true;
 		// }
 		
-		const homePath = `/home/root`;
-		if (!this.vfs.exists(homePath)) {
-			this.vfs.mkdir(homePath, 0o755);
-			this.vfs.writeFile(
-				`${homePath}/README.txt`,
-				`Welcome to the virtual environment, root`,
-			);
-		}
+		// const homePath = `/home/root`;
+		// if (!this.vfs.exists(homePath)) {
+		// 	this.vfs.mkdir(homePath, 0o755);
+		// 	this.vfs.writeFile(
+		// 		`${homePath}/README.txt`,
+		// 		`Welcome to the virtual environment, root`,
+		// 	);
+		// }
 
 		if (changed) {
 			await this.persist();
