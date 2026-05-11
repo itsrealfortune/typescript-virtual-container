@@ -52,7 +52,7 @@ export function startShell(
 ): void {
 	let lineBuffer = "";
 	let cursorPos = 0;
-	let history = loadHistory(shell.vfs);
+	let history = loadHistory(shell.vfs, authUser);
 	let historyIndex: number | null = null;
 	let historyDraft = "";
 	let cwd = `/home/${authUser}`;
@@ -388,11 +388,11 @@ export function startShell(
 		}
 
 		const data = history.length > 0 ? `${history.join("\n")}\n` : "";
-		shell.vfs.writeFile("/virtual-env-js/.bash_history", data);
+		shell.vfs.writeFile(`/home/${authUser}/.bash_history`, data);
 	}
 
 	function readLastLogin(): { at: string; from: string } | null {
-		const lastlogPath = `/virtual-env-js/.lastlog/${authUser}.json`;
+		const lastlogPath = `/home/${authUser}/.lastlog.json`;
 		if (!shell.vfs.exists(lastlogPath)) {
 			return null;
 		}
@@ -408,12 +408,7 @@ export function startShell(
 	}
 
 	function writeLastLogin(nowIso: string): void {
-		const dir = "/virtual-env-js/.lastlog";
-		if (!shell.vfs.exists(dir)) {
-			shell.vfs.mkdir(dir, 0o700);
-		}
-
-		const lastlogPath = `${dir}/${authUser}.json`;
+		const lastlogPath = `/home/${authUser}/.lastlog`;
 		shell.vfs.writeFile(
 			lastlogPath,
 			JSON.stringify({ at: nowIso, from: remoteAddress }),
@@ -690,8 +685,8 @@ export function startShell(
 	});
 }
 
-function loadHistory(vfs: VirtualFileSystem): string[] {
-	const historyPath = "/virtual-env-js/.bash_history";
+function loadHistory(vfs: VirtualFileSystem, authUser: string): string[] {
+	const historyPath = `/home/${authUser}/.bash_history`;
 	if (!vfs.exists(historyPath)) {
 		vfs.writeFile(historyPath, "");
 		return [];

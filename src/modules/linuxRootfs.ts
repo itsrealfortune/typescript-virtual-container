@@ -8,8 +8,8 @@
  */
 
 import * as os from "node:os";
-import type { ShellProperties } from "../VirtualShell";
 import type VirtualFileSystem from "../VirtualFileSystem";
+import type { ShellProperties } from "../VirtualShell";
 import type { VirtualUserManager } from "../VirtualUserManager";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -584,7 +584,7 @@ function bootstrapRoot(vfs: VirtualFileSystem): void {
 	ensureDir(vfs, "/root", 0o700);
 	ensureFile(
 		vfs,
-		"/root/.bashrc",
+		"/home/root/.bashrc",
 		`${[
 			"# root .bashrc",
 			"export PS1='\\[\\033[0;31m\\]\\u@\\h\\[\\033[0m\\]:\\[\\033[0;34m\\]\\w\\[\\033[0m\\]# '",
@@ -593,11 +593,11 @@ function bootstrapRoot(vfs: VirtualFileSystem): void {
 			"alias la='ls -A'",
 		].join("\n")}\n`,
 	);
-	ensureFile(vfs, "/root/.profile", "[ -f ~/.bashrc ] && . ~/.bashrc\n");
+	ensureFile(vfs, "/home/root/.profile", "[ -f ~/.bashrc ] && . ~/.bashrc\n");
 	// Fix: /home/root should map to /root for root user
-	if (!vfs.exists("/home/root")) {
-		vfs.symlink("/root", "/home/root");
-	}
+	// if (!vfs.exists("/home/root")) {
+	// 	vfs.symlink("/root", "/home/root");
+	// }
 }
 
 // ─── /opt + /srv + /mnt + /media ─────────────────────────────────────────────

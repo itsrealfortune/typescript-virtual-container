@@ -1,17 +1,23 @@
 import { readFile, unlink, writeFile } from "node:fs/promises";
+import * as path from "node:path";
 import { basename } from "node:path";
 import { stdin, stdout } from "node:process";
 import { createInterface, type Interface } from "node:readline";
 
+import { getCommandNames } from "./commands/registry";
 import { makeDefaultEnv, runCommand } from "./commands/runtime";
 import { spawnNanoEditorProcess } from "./modules/shellInteractive";
+import { resolvePath } from "./modules/shellRuntime";
 import { buildLoginBanner, type LoginBannerState } from "./SSHMimic/loginBanner";
 import { buildPrompt } from "./SSHMimic/prompt";
 import type { CommandResult, PasswordChallenge, SudoChallenge } from "./types/commands";
+import type VirtualFileSystem from "./VirtualFileSystem";
 import { VirtualShell } from "./VirtualShell";
 
 const hostname = process.env.SSH_MIMIC_HOSTNAME ?? "typescript-vm";
 const argv = process.argv.slice(2);
+
+// ── CLI args ──────────────────────────────────────────────────────────────────
 
 function readUserArg(): string {
 	for (let index = 0; index < argv.length; index += 1) {
@@ -27,7 +33,6 @@ function readUserArg(): string {
 			return current.slice("--user=".length) || "root";
 		}
 	}
-
 	return "root";
 }
 
@@ -37,18 +42,84 @@ const virtualShell = new VirtualShell(hostname, undefined, {
 	snapshotPath: ".vfs",
 });
 
-function readLastLogin(username: string): LoginBannerState | null {
-	const lastlogPath = `/virtual-env-js/.lastlog/${username}.json`;
-	if (!virtualShell.vfs.exists(lastlogPath)) {
-		return null;
-	}
+// ── VFS helpers ───────────────────────────────────────────────────────────────
 
+function readLastLogin(username: string): LoginBannerState | null {
+	const lastlogPath = `/home/${username}/.lastlog`;
+	if (!virtualShell.vfs.exists(lastlogPath)) return null;
 	try {
 		return JSON.parse(virtualShell.vfs.readFile(lastlogPath)) as LoginBannerState;
 	} catch {
 		return null;
 	}
 }
+
+function writeLastLogin(username: string, from: string): void {
+	virtualShell.vfs.writeFile(
+		`/home/${username}/.lastlog`,
+		JSON.stringify({ at: new Date().toISOString(), from }),
+	);
+}
+
+async function flushVfs(): Promise<void> {
+	await virtualShell.vfs.flushMirror();
+}
+
+function loadHistory(authUser: string): string[] {
+	const historyPath = `/home/${authUser}/.bash_history`;
+	if (!virtualShell.vfs.exists(historyPath)) {
+		virtualShell.vfs.writeFile(historyPath, "");
+		return [];
+	}
+	return virtualShell.vfs
+		.readFile(historyPath)
+		.split("\n")
+		.map((line) => line.trim())
+		.filter((line) => line.length > 0);
+}
+
+function saveHistory(history: string[], authUser: string): void {
+	const data = history.length > 0 ? `${history.join("\n")}\n` : "";
+	virtualShell.vfs.writeFile(`/home/${authUser}/.bash_history`, data);
+}
+
+// ── Tab completion ────────────────────────────────────────────────────────────
+
+function listPathCompletions(vfs: VirtualFileSystem, cwd: string, prefix: string): string[] {
+	const slashIndex = prefix.lastIndexOf("/");
+	const dirPart = slashIndex >= 0 ? prefix.slice(0, slashIndex + 1) : "";
+	const namePart = slashIndex >= 0 ? prefix.slice(slashIndex + 1) : prefix;
+	const basePath = resolvePath(cwd, dirPart || ".");
+	try {
+		return vfs
+			.list(basePath)
+			.filter((e) => !e.startsWith(".") && e.startsWith(namePart))
+			.map((e) => {
+				const fullPath = path.posix.join(basePath, e);
+				const st = vfs.stat(fullPath);
+				return `${dirPart}${e}${st.type === "directory" ? "/" : ""}`;
+			})
+			.sort();
+	} catch {
+		return [];
+	}
+}
+
+function makeCompleter(getState: () => { cwd: string }) {
+	const commandNames = Array.from(new Set(getCommandNames())).sort();
+	return (line: string, cb: (err: null, result: [string[], string]) => void): void => {
+		const { cwd } = getState();
+		// Extract the token under/before cursor (last whitespace-separated word)
+		const token = line.split(/\s+/).at(-1) ?? "";
+		const isFirstToken = line.trimStart() === token;
+		const cmdHits = isFirstToken ? commandNames.filter((n) => n.startsWith(token)) : [];
+		const pathHits = listPathCompletions(virtualShell.vfs, cwd, token);
+		const hits = Array.from(new Set([...cmdHits, ...pathHits])).sort();
+		cb(null, [hits, token]);
+	};
+}
+
+// ── Hidden password input ─────────────────────────────────────────────────────
 
 function askHiddenQuestion(rl: Interface, promptText: string): Promise<string> {
 	return new Promise((resolve) => {
@@ -62,10 +133,7 @@ function askHiddenQuestion(rl: Interface, promptText: string): Promise<string> {
 
 		const cleanup = (): void => {
 			stdin.off("data", onData);
-			if (!wasRawMode) {
-				stdin.setRawMode(false);
-			}
-			rl.resume();
+			if (!wasRawMode) stdin.setRawMode(false);
 		};
 
 		const finish = (value: string): void => {
@@ -76,66 +144,24 @@ function askHiddenQuestion(rl: Interface, promptText: string): Promise<string> {
 
 		const onData = (chunk: Buffer): void => {
 			const input = chunk.toString("utf8");
-			for (let index = 0; index < input.length; index += 1) {
-				const ch = input[index]!;
-				if (ch === "\r" || ch === "\n") {
-					finish(buffer);
-					return;
-				}
-				if (ch === "\u007f" || ch === "\b") {
-					buffer = buffer.slice(0, -1);
-					continue;
-				}
-				if (ch >= " ") {
-					buffer += ch;
-				}
+			for (let i = 0; i < input.length; i += 1) {
+				const ch = input[i]!;
+				if (ch === "\r" || ch === "\n") { finish(buffer); return; }
+				if (ch === "\u007f" || ch === "\b") { buffer = buffer.slice(0, -1); continue; }
+				if (ch >= " ") buffer += ch;
 			}
 		};
 
+		// Pause readline so it doesn't eat our raw keystrokes
 		rl.pause();
 		stdout.write(promptText);
-		if (!wasRawMode) {
-			stdin.setRawMode(true);
-		}
+		if (!wasRawMode) stdin.setRawMode(true);
 		stdin.resume();
 		stdin.on("data", onData);
 	});
 }
 
-function writeLastLogin(username: string, from: string): void {
-	const dir = "/virtual-env-js/.lastlog";
-	if (!virtualShell.vfs.exists(dir)) {
-		virtualShell.vfs.mkdir(dir, 0o700);
-	}
-
-	virtualShell.vfs.writeFile(
-		`/virtual-env-js/.lastlog/${username}.json`,
-		JSON.stringify({ at: new Date().toISOString(), from }),
-	);
-}
-
-async function flushVfs(): Promise<void> {
-	await virtualShell.vfs.flushMirror();
-}
-
-function loadHistory(): string[] {
-	const historyPath = "/virtual-env-js/.bash_history";
-	if (!virtualShell.vfs.exists(historyPath)) {
-		virtualShell.vfs.writeFile(historyPath, "");
-		return [];
-	}
-
-	return virtualShell.vfs
-		.readFile(historyPath)
-		.split("\n")
-		.map((line) => line.trim())
-		.filter((line) => line.length > 0);
-}
-
-function saveHistory(history: string[]): void {
-	const data = history.length > 0 ? `${history.join("\n")}\n` : "";
-	virtualShell.vfs.writeFile("/virtual-env-js/.bash_history", data);
-}
+// ── Session state helper ──────────────────────────────────────────────────────
 
 function applySessionState(
 	authUserState: string,
@@ -145,7 +171,6 @@ function applySessionState(
 ): { authUser: string; cwd: string } {
 	let authUser = authUserState;
 	let cwd = cwdState;
-
 	if (result.switchUser) {
 		authUser = result.switchUser;
 		cwd = result.nextCwd ?? `/home/${authUser}`;
@@ -157,27 +182,23 @@ function applySessionState(
 		cwd = result.nextCwd;
 		shellEnvState.vars.PWD = cwd;
 	}
-
 	return { authUser, cwd };
 }
 
-virtualShell.addCommand("demo", [], () => {
-	return {
-		stdout: "This is a demo command. It does nothing useful.",
-		exitCode: 0,
-	};
-});
+// ── Demo command ──────────────────────────────────────────────────────────────
 
-async function runReadlineShell() {
-	const rl = createInterface({ input: stdin, output: stdout, terminal: true });
+virtualShell.addCommand("demo", [], () => ({
+	stdout: "This is a demo command. It does nothing useful.",
+	exitCode: 0,
+}));
+
+// ── Main shell ────────────────────────────────────────────────────────────────
+
+async function runReadlineShell(): Promise<void> {
 	await virtualShell.ensureInitialized();
-	let history = loadHistory();
-	const rlWithHistory = rl as Interface & { history: string[] };
-	rlWithHistory.history = [...history].reverse();
 
 	const selectedUser = initialUser.trim() || "root";
-	const userExists = virtualShell.users.getPasswordHash(selectedUser) !== null;
-	if (!userExists) {
+	if (virtualShell.users.getPasswordHash(selectedUser) === null) {
 		process.stderr.write(`self-standalone: user '${selectedUser}' does not exist\n`);
 		process.exit(1);
 	}
@@ -187,10 +208,23 @@ async function runReadlineShell() {
 	let cwd = `/home/${authUser}`;
 	shellEnv.vars.PWD = cwd;
 	const remoteAddress = "localhost";
-	const terminalSize = {
-		cols: stdout.columns ?? 80,
-		rows: stdout.rows ?? 24,
-	};
+	const terminalSize = { cols: stdout.columns ?? 80, rows: stdout.rows ?? 24 };
+
+	let history = loadHistory(authUser);
+
+	// completer reads cwd via closure — always current
+	const rl = createInterface({
+		input: stdin,
+		output: stdout,
+		terminal: true,
+		completer: makeCompleter(() => ({ cwd })),
+	});
+
+	// Sync readline's internal history with our VFS history
+	const rlWithHistory = rl as Interface & { history: string[] };
+	rlWithHistory.history = [...history].reverse();
+
+	// ── nano editor ────────────────────────────────────────────────────────────
 
 	async function startNanoEditor(
 		targetPath: string,
@@ -202,6 +236,7 @@ async function runReadlineShell() {
 		}
 
 		rl.pause();
+
 		const editor = spawnNanoEditorProcess(
 			tempPath,
 			terminalSize,
@@ -213,22 +248,16 @@ async function runReadlineShell() {
 		);
 
 		const wasRawMode = Boolean(stdin.isRaw);
-		const forwardInput = (chunk: Buffer): void => {
-			editor.stdin.write(chunk);
-		};
+		const forwardInput = (chunk: Buffer): void => { editor.stdin.write(chunk); };
 
 		stdin.resume();
-		if (!wasRawMode) {
-			stdin.setRawMode(true);
-		}
+		if (!wasRawMode) stdin.setRawMode(true);
 		stdin.on("data", forwardInput);
 
 		await new Promise<void>((resolve) => {
 			const cleanup = (): void => {
 				stdin.off("data", forwardInput);
-				if (!wasRawMode) {
-					stdin.setRawMode(false);
-				}
+				if (!wasRawMode) stdin.setRawMode(false);
 				rl.resume();
 			};
 
@@ -246,15 +275,16 @@ async function runReadlineShell() {
 					virtualShell.writeFileAsUser(authUser, targetPath, updatedContent);
 					await flushVfs();
 				} catch {
-					// Save skipped or temp file missing.
+					// save skipped or temp file missing
 				}
-
 				await unlink(tempPath).catch(() => undefined);
 				stdout.write("\r\n");
 				resolve();
 			});
 		});
 	}
+
+	// ── challenge handlers ─────────────────────────────────────────────────────
 
 	async function handleSudoChallenge(challenge: SudoChallenge): Promise<void> {
 		if (challenge.onPassword) {
@@ -266,7 +296,6 @@ async function runReadlineShell() {
 					promptText = step.nextPrompt ?? promptText;
 					continue;
 				}
-
 				await handleCommandResult(step.result);
 				return;
 			}
@@ -302,9 +331,7 @@ async function runReadlineShell() {
 		await handleCommandResult(nestedResult);
 	}
 
-	async function handlePasswordChallenge(
-		challenge: PasswordChallenge,
-	): Promise<void> {
+	async function handlePasswordChallenge(challenge: PasswordChallenge): Promise<void> {
 		const first = await askHiddenQuestion(rl, challenge.prompt);
 		if (challenge.confirmPrompt) {
 			const second = await askHiddenQuestion(rl, challenge.confirmPrompt);
@@ -342,6 +369,7 @@ async function runReadlineShell() {
 		}
 	}
 
+	// handleCommandResult must be declared before the "line" handler
 	async function handleCommandResult(result: CommandResult): Promise<void> {
 		if (result.openEditor) {
 			await startNanoEditor(
@@ -362,6 +390,11 @@ async function runReadlineShell() {
 			return;
 		}
 
+		if (result.clearScreen) {
+			stdout.write("\u001b[2J\u001b[H");
+			console.clear();
+		}
+
 		if (result.stdout) {
 			stdout.write(result.stdout.endsWith("\n") ? result.stdout : `${result.stdout}\n`);
 		}
@@ -370,14 +403,9 @@ async function runReadlineShell() {
 			process.stderr.write(result.stderr.endsWith("\n") ? result.stderr : `${result.stderr}\n`);
 		}
 
-		if (result.clearScreen) {
-			stdout.write("\u001b[2J\u001b[H");
-			console.clear();
-		}
-
-		const updatedState = applySessionState(authUser, cwd, result, shellEnv);
-		authUser = updatedState.authUser;
-		cwd = updatedState.cwd;
+		const updated = applySessionState(authUser, cwd, result, shellEnv);
+		authUser = updated.authUser;
+		cwd = updated.cwd;
 
 		if (result.closeSession) {
 			await flushVfs();
@@ -386,13 +414,7 @@ async function runReadlineShell() {
 		}
 	}
 
-	if (process.env.USER !== "root" && virtualShell.users.hasPassword(authUser)) {
-		const password = await askHiddenQuestion(rl, `Password for ${authUser}: `);
-		if (!virtualShell.users.verifyPassword(authUser, password)) {
-			process.stderr.write("self-standalone: authentication failed\n");
-			process.exit(1);
-		}
-	}
+	// ── Prompt helper ──────────────────────────────────────────────────────────
 
 	const renderPrompt = (): string => {
 		const cwdLabel = cwd === `/home/${authUser}` ? "~" : basename(cwd) || "/";
@@ -404,6 +426,64 @@ async function runReadlineShell() {
 		rl.prompt();
 	};
 
+	// ── Auth (password gate) ───────────────────────────────────────────────────
+
+	if (process.env.USER !== "root" && virtualShell.users.hasPassword(authUser)) {
+		const password = await askHiddenQuestion(rl, `Password for ${authUser}: `);
+		if (!virtualShell.users.verifyPassword(authUser, password)) {
+			process.stderr.write("self-standalone: authentication failed\n");
+			process.exit(1);
+		}
+	}
+
+	// ── Login banner ───────────────────────────────────────────────────────────
+
+	stdout.write(buildLoginBanner(hostname, virtualShell.properties, readLastLogin(authUser)));
+	writeLastLogin(authUser, remoteAddress);
+	await flushVfs();
+
+	// ── Event-driven line handler (enables completer) ──────────────────────────
+	//
+	// Key insight: readline's completer only fires when readline itself owns
+	// stdin (i.e. rl is not paused). We use the event-driven "line" pattern
+	// instead of a while(true)+rl.once("line") loop so readline stays active
+	// between commands. We pause only while awaiting async work, then resume
+	// immediately before re-prompting so the next Tab press is caught.
+
+	let busy = false;
+
+	rl.on("line", async (inputLine: string) => {
+		if (busy) return; // shouldn't happen but guard re-entrancy
+		busy = true;
+		rl.pause();
+
+		const trimmed = inputLine.trim();
+		if (trimmed.length > 0) {
+			history.push(inputLine);
+			if (history.length > 500) history = history.slice(history.length - 500);
+			saveHistory(history, authUser);
+			rlWithHistory.history = [...history].reverse();
+		}
+
+		const result = await runCommand(
+			inputLine,
+			authUser,
+			hostname,
+			"shell",
+			cwd,
+			virtualShell,
+			undefined,
+			shellEnv,
+		);
+		await handleCommandResult(result);
+		await flushVfs();
+
+		busy = false;
+		// Resume before prompt so readline can handle Tab on the next input
+		rl.resume();
+		prompt();
+	});
+
 	rl.on("SIGINT", () => {
 		stdout.write("^C\n");
 		rl.write("", { ctrl: true, name: "u" });
@@ -411,41 +491,14 @@ async function runReadlineShell() {
 	});
 
 	rl.on("close", () => {
-		void (async () => {
-			await flushVfs();
+		void flushVfs().then(() => {
 			console.log("");
 			process.exit(0);
-		})();
+		});
 	});
 
-	stdout.write(buildLoginBanner(hostname, virtualShell.properties, readLastLogin(authUser)));
-	writeLastLogin(authUser, remoteAddress);
-	await flushVfs();
+	// Initial prompt — readline is already active, completer live from first keystroke
 	prompt();
-
-	while (true) {
-		const inputLine = await new Promise<string>((resolve) => {
-			rl.once("line", (line) => resolve(line));
-		});
-
-		rl.pause();
-		if (inputLine.trim().length > 0) {
-			history.push(inputLine);
-			if (history.length > 500) {
-				history = history.slice(history.length - 500);
-			}
-			saveHistory(history);
-			rlWithHistory.history = [...history].reverse();
-		}
-
-		const result = await runCommand(inputLine, authUser, hostname, "shell", cwd, virtualShell, undefined, shellEnv);
-		await handleCommandResult(result);
-
-		await flushVfs();
-
-		prompt();
-		rl.resume();
-	}
 }
 
 runReadlineShell().catch((error: unknown) => {
@@ -454,13 +507,9 @@ runReadlineShell().catch((error: unknown) => {
 });
 
 process.on("uncaughtException", (error) => {
-	console.log("Oh my god, something terrible happened: ", error);
+	console.error("Uncaught exception:", error);
 });
 
 process.on("unhandledRejection", (error, promise) => {
-	console.log(
-		" Oh Lord! We forgot to handle a promise rejection here: ",
-		promise,
-	);
-	console.log(" The error was: ", error);
+	console.error("Unhandled rejection at:", promise, "error:", error);
 });

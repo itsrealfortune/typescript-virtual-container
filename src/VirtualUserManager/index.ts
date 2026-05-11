@@ -47,10 +47,10 @@ const perf: PerfLogger = createPerfLogger("VirtualUserManager");
 export class VirtualUserManager extends EventEmitter {
 	private static readonly recordCache = new Map<string, VirtualUserRecord>();
 	private static readonly fastPasswordHash = resolveFastPasswordHash();
-	private readonly usersPath = "/virtual-env-js/.auth/htpasswd";
-	private readonly sudoersPath = "/virtual-env-js/.auth/sudoers";
-	private readonly quotasPath = "/virtual-env-js/.auth/quotas";
-	private readonly authDirPath = "/virtual-env-js/.auth";
+	private readonly usersPath = "/etc/htpasswd";
+	private readonly sudoersPath = "/etc/sudoers";
+	private readonly quotasPath = "/etc/quotas";
+	private readonly authDirPath = "/.virtual-env-js/.auth";
 	private readonly users = new Map<string, VirtualUserRecord>();
 	private readonly sudoers = new Set<string>();
 	private readonly quotas = new Map<string, number>();

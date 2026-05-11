@@ -1,20 +1,16 @@
 #!/usr/bin/env bun
-
-import { mkdirSync, rmSync } from "node:fs";
-import { join } from "node:path";
 import { VirtualShell } from "./src/index.ts";
 
 const counts = [1, 2, 5, 10, 20, 50, 100];
-const rootBenchmarkPath = join(process.cwd(), ".benchmark-shells");
 
 function bytesToMb(bytes: number): string {
 	return `${Math.round(bytes / 1024 / 1024)} MB`;
 }
 
 async function createShell(baseName: string, index: number): Promise<VirtualShell> {
-	const basePath = join(rootBenchmarkPath, `${baseName}-${index}`);
-	mkdirSync(basePath, { recursive: true });
-	const shell = new VirtualShell(`${baseName}-${index}`, undefined, basePath);
+	const shell = new VirtualShell(`${baseName}-${index}`, undefined, {
+		mode: "memory",
+	});
 	await shell.ensureInitialized();
 	return shell;
 }
@@ -59,8 +55,6 @@ async function runSingleBenchmark(count: number) {
 }
 
 async function main() {
-	rmSync(rootBenchmarkPath, { recursive: true, force: true });
-	mkdirSync(rootBenchmarkPath, { recursive: true });
 
 	console.log("Benchmarking VirtualShell concurrency:\n");
 	const results = [];
@@ -86,8 +80,6 @@ async function main() {
 			`${row.count}\t${row.initMs}\t${row.commandMs}\t${bytesToMb(row.initRss)}\t${bytesToMb(row.finalRss)}\t${bytesToMb(row.deltaRss)}`,
 		);
 	}
-
-	console.log(`\nBenchmark data stored under ${rootBenchmarkPath}`);
 }
 
 main().catch((error) => {

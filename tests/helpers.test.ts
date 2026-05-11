@@ -4,13 +4,13 @@ import { assertPathAccess } from "../src/commands/helpers";
 describe("assertPathAccess", () => {
 	test("blocks non-root access to auth store", () => {
 		expect(() =>
-			assertPathAccess("alice", "/virtual-env-js/.auth/htpasswd", "cat"),
-		).toThrow("cat: permission denied: /virtual-env-js/.auth/htpasswd");
+			assertPathAccess("alice", "/etc/htpasswd", "cat"),
+		).toThrow("cat: permission denied: /etc/htpasswd");
 	});
 
 	test("allows root access to auth store", () => {
 		expect(() =>
-			assertPathAccess("root", "/virtual-env-js/.auth/htpasswd", "cat"),
+			assertPathAccess("root", "/etc/htpasswd", "cat"),
 		).not.toThrow();
 	});
 
