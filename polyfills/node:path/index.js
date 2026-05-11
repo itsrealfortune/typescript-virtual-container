@@ -10,4 +10,5 @@ export const posix = {
 };
 export function basename(p){ return posix.basename(p); }
 export function dirname(p){ return posix.dirname(p); }
-export default { posix, basename, dirname };
+export function resolve(...parts){ return posix.resolve(...parts); }
+export default { posix, basename, dirname, resolve };

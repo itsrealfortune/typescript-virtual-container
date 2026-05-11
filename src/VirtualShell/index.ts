@@ -8,6 +8,7 @@ import {
 } from "../modules/linuxRootfs";
 import type { CommandContext, CommandResult } from "../types/commands";
 import type { ShellStream } from "../types/streams";
+import type { VfsNodeStats } from "../types/vfs";
 import type { PerfLogger } from "../utils/perfLogger";
 import { createPerfLogger } from "../utils/perfLogger";
 import VirtualFileSystem, { type VfsOptions } from "../VirtualFileSystem";
@@ -38,6 +39,56 @@ export interface ShellProperties {
 	os: string;
 	/** CPU architecture label (e.g. `"x86_64"`, `"aarch64"`). */
 	arch: string;
+}
+
+export interface VirtualShellVfsLike {
+	restoreMirror(): Promise<void>;
+	flushMirror(): Promise<void>;
+	writeFile(targetPath: string, content: string | Uint8Array): void;
+	readFile(targetPath: string): string;
+	mkdir(targetPath: string, mode?: number): void;
+	exists(targetPath: string): boolean;
+	stat(targetPath: string): VfsNodeStats;
+	list(targetPath: string): string[];
+	remove(targetPath: string, options?: { recursive?: boolean }): void;
+	chmod?(targetPath: string, mode: number): void;
+	symlink?(targetPath: string, linkPath: string): void;
+	getUsageBytes?(targetPath?: string): number;
+}
+
+export interface VirtualShellVfsOptions {
+	vfsInstance?: VirtualShellVfsLike;
+}
+
+function hasVfsInstance(obj: unknown): obj is { vfsInstance: VirtualShellVfsLike } {
+	return (
+		typeof obj === "object" &&
+		obj !== null &&
+		"vfsInstance" in obj &&
+		isVirtualShellVfsLike((obj as Record<string, unknown>).vfsInstance)
+	);
+}
+
+function isVirtualShellVfsLike(value: unknown): value is VirtualShellVfsLike {
+	if (typeof value !== "object" || value === null) {
+		return false;
+	}
+
+	const candidate = value as Record<string, unknown>;
+	return (
+		typeof candidate.restoreMirror === "function" &&
+		typeof candidate.flushMirror === "function" &&
+		typeof candidate.writeFile === "function" &&
+		typeof candidate.readFile === "function" &&
+		typeof candidate.mkdir === "function" &&
+		typeof candidate.exists === "function" &&
+		typeof candidate.stat === "function" &&
+		typeof candidate.list === "function" &&
+		typeof candidate.remove === "function" &&
+		typeof candidate.copy === "function" &&
+		typeof candidate.move === "function" &&
+		typeof candidate.touch === "function"
+	);
 }
 
 const defaultShellProperties: ShellProperties = {
@@ -104,22 +155,20 @@ class VirtualShell extends EventEmitter {
 	constructor(
 		hostname: string,
 		properties?: ShellProperties,
-		vfsOptions?: VfsOptions | { vfsInstance?: VirtualFileSystem },
+		vfsOptionsOrInstance?: VfsOptions | VirtualShellVfsLike | VirtualShellVfsOptions,
 	) {
 		super();
 		perf.mark("constructor");
 		this.hostname = hostname;
 		this.properties = properties || defaultShellProperties;
 		this.startTime = Date.now();
-		// Allow passing an existing VirtualFileSystem instance (browser integration).
-		function hasVfsInstance(obj: unknown): obj is { vfsInstance: VirtualFileSystem } {
-			return typeof obj === "object" && obj !== null && "vfsInstance" in (obj as Record<string, unknown>) && (obj as Record<string, unknown>).vfsInstance instanceof VirtualFileSystem;
-		}
 
-		if (vfsOptions && hasVfsInstance(vfsOptions)) {
-			this.vfs = vfsOptions.vfsInstance;
+		if (isVirtualShellVfsLike(vfsOptionsOrInstance)) {
+			this.vfs = vfsOptionsOrInstance as unknown as VirtualFileSystem;
+		} else if (hasVfsInstance(vfsOptionsOrInstance)) {
+			this.vfs = vfsOptionsOrInstance.vfsInstance as unknown as VirtualFileSystem;
 		} else {
-			this.vfs = new VirtualFileSystem((vfsOptions as VfsOptions) ?? {});
+			this.vfs = new VirtualFileSystem((vfsOptionsOrInstance as VfsOptions) ?? {});
 		}
 		this.users = new VirtualUserManager(this.vfs, resolveAutoSudoForNewUsers());
 		this.packageManager = new VirtualPackageManager(this.vfs, this.users);

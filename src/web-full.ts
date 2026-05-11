@@ -1,13 +1,11 @@
-import type VirtualFileSystem from "./VirtualFileSystem";
+import VirtualFileSystem from "./VirtualFileSystem";
 import { VirtualShell } from "./VirtualShell";
-import { IndexedDbMirrorVfs } from "./web";
 
 export function createFullWebShell(hostname = "typescript-vm") {
-  const vfs = new IndexedDbMirrorVfs({});
-  // Wrap the in-memory-like VFS so VirtualShell can use its restore/flush API
-  // VirtualShell supports receiving a `vfsInstance` via the third constructor arg.
-  const shell = new VirtualShell(hostname, undefined, { vfsInstance: vfs as unknown as VirtualFileSystem });
-  return shell;
+  // Use the real VirtualFileSystem so the existing shell runtime gets the full
+  // API surface it expects. The default persistence mode is in-memory, which
+  // keeps this usable in browser bundles without a host filesystem.
+  return new VirtualShell(hostname, undefined, new VirtualFileSystem({}));
 }
 
 export type { VirtualShell } from "./VirtualShell";
