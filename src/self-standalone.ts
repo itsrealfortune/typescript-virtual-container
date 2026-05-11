@@ -65,6 +65,10 @@ function writeLastLogin(username: string, from: string): void {
 	);
 }
 
+async function flushVfs(): Promise<void> {
+	await virtualShell.vfs.flushMirror();
+}
+
 virtualShell.addCommand("demo", [], () => {
 	return {
 		stdout: "This is a demo command. It does nothing useful.",
@@ -114,12 +118,16 @@ async function runReadlineShell() {
 	});
 
 	rl.on("close", () => {
-		console.log("")
-		process.exit(0);
+		void (async () => {
+			await flushVfs();
+			console.log("");
+			process.exit(0);
+		})();
 	});
 
 	stdout.write(buildLoginBanner(hostname, virtualShell.properties, readLastLogin(authUser)));
 	writeLastLogin(authUser, remoteAddress);
+	await flushVfs();
 	prompt();
 
 	while (true) {
@@ -157,9 +165,12 @@ async function runReadlineShell() {
 		}
 
 		if (result.closeSession) {
+			await flushVfs();
 			rl.close();
 			process.exit(result.exitCode ?? 0);
 		}
+
+		await flushVfs();
 
 		prompt();
 		rl.resume();
