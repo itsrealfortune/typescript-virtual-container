@@ -3,7 +3,6 @@ import { readFile, unlink, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import type { ShellProperties, VirtualShell } from ".";
 import { getCommandNames, makeDefaultEnv, runCommand } from "../commands";
-import type { ShellEnv } from "../types/commands";
 import {
 	spawnHtopProcess,
 	spawnNanoEditorProcess,
@@ -14,8 +13,9 @@ import {
 	type TerminalSize,
 	toTtyLines,
 } from "../modules/shellRuntime";
-import { formatLoginDate } from "../SSHMimic/loginFormat";
+import { buildLoginBanner } from "../SSHMimic/loginBanner";
 import { buildPrompt } from "../SSHMimic/prompt";
+import type { ShellEnv } from "../types/commands";
 import type { ShellStream } from "../types/streams";
 import type VirtualFileSystem from "../VirtualFileSystem";
 
@@ -411,35 +411,7 @@ export function startShell(
 	function renderLoginBanner(): void {
 		const last = readLastLogin();
 		const nowIso = new Date().toISOString();
-
-		stream.write(
-			`Linux ${hostname} ${properties.kernel} ${properties.arch}\r\n`,
-		);
-		stream.write("\r\n");
-		stream.write(
-			"The programs included with the Fortune GNU/Linux system are free software;\r\n",
-		);
-		stream.write(
-			"the exact distribution terms for each program are described in the\r\n",
-		);
-		stream.write("individual files in /usr/share/doc/*/copyright.\r\n");
-		stream.write("\r\n");
-		stream.write(
-			"Fortune GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent\r\n",
-		);
-		stream.write("permitted by applicable law.\r\n");
-
-		if (last) {
-			const when = new Date(last.at);
-			const displayed = Number.isNaN(when.getTime())
-				? last.at
-				: formatLoginDate(when);
-			stream.write(
-				`Last login: ${displayed} from ${last.from || "unknown"}\r\n`,
-			);
-		}
-
-		stream.write("\r\n");
+		stream.write(buildLoginBanner(hostname, properties, last));
 		writeLastLogin(nowIso);
 	}
 
