@@ -21,6 +21,11 @@ import { loadOrCreateHostKey } from "./hostKey";
  */
 const perf: PerfLogger = createPerfLogger("SshMimic");
 
+// ── Dev-mode logger ───────────────────────────────────────────────────────────
+const DEV = !!process.env.DEV_MODE;
+const devLog = DEV ? console.log.bind(console) : () => {};
+
+
 interface RateLimitEntry {
 	attempts: number;
 	lockedUntil: number;
@@ -152,9 +157,6 @@ class SshMimic extends EventEmitter {
 					// ── Password auth ──────────────────────────────────────
 					if (ctx.method === "password") {
 						if (!shell.users.hasPassword(candidateUser)) {
-							console.log(
-								`User ${candidateUser} has no password set, allowing login without verification`,
-							);
 							authUser = candidateUser;
 							sessionId = shell.users.registerSession(
 								authUser,
@@ -297,7 +299,7 @@ class SshMimic extends EventEmitter {
 		return new Promise<number>((resolve, reject) => {
 			this.server?.once("error", (err: unknown) => reject(err));
 			this.server?.listen(this.port, "0.0.0.0", () => {
-				console.log(`SSH Mimic listening on port ${this.port}`);
+				devLog(`SSH Mimic listening on port ${this.port}`);
 				this.emit("start", { port: this.port });
 				resolve(this.port);
 			});
@@ -311,7 +313,7 @@ class SshMimic extends EventEmitter {
 		perf.mark("stop");
 		if (this.server) {
 			this.server.close(() => {
-				console.log("SSH Mimic stopped");
+				devLog("SSH Mimic stopped");
 				this.emit("stop");
 			});
 		}
