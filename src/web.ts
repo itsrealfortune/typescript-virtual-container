@@ -910,12 +910,17 @@ class WebShell {
 			shell: this,
 		};
 
-		const result = await command.run(context);
-		if (result.nextCwd) {
-			this.cwd = result.nextCwd;
-			this.env.vars.PWD = result.nextCwd;
+		try {
+			const result = await command.run(context);
+			if (result.nextCwd) {
+				this.cwd = result.nextCwd;
+				this.env.vars.PWD = result.nextCwd;
+			}
+			return result;
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			return { stderr: message, exitCode: 1 };
 		}
-		return result;
 	}
 }
 
