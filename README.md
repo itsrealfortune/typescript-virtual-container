@@ -13,7 +13,7 @@
 - [What This Is / What This Is Not](#what-this-is--what-this-is-not)
 - [Why This Package](#why-this-package)
 - [Installation](#installation)
-- [Browser Build (webminjs)](#browser-build-webminjs)
+- [Browser Build (web.min.js)](#browser-build-webminjs)
 - [Compatibility](#compatibility)
 - [Quick Start](#quick-start)
 - [Architecture Overview](#architecture-overview)
