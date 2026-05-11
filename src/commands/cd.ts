@@ -19,10 +19,6 @@ export const cdCommand: ShellModule = {
 			return { stderr: `cd: not a directory: ${target}`, exitCode: 1 };
 		}
 
-		if (mode === "exec") {
-			return { exitCode: 0 };
-		}
-
 		return { nextCwd: target, exitCode: 0 };
 	},
 };

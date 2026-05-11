@@ -14,12 +14,15 @@ export const grepCommand: ShellModule = {
 	params: ["[-i] [-v] [-n] [-r] <pattern> [file...]"],
 	run: ({ authUser, shell, cwd, args, stdin }) => {
 		const { flags, positionals } = parseArgs(args, {
-			flags: ["-i", "-v", "-n", "-r"],
+			flags: ["-i", "-v", "-n", "-r", "-c", "-l", "-L", "-q", "--quiet", "--silent"],
 		});
-		const caseInsensitive = flags.has("-i");
-		const invertMatch = flags.has("-v");
-		const showLineNumbers = flags.has("-n");
-		const recursive = flags.has("-r");
+		const caseInsensitive  = flags.has("-i");
+		const invertMatch      = flags.has("-v");
+		const showLineNumbers  = flags.has("-n");
+		const recursive        = flags.has("-r");
+		const countOnly        = flags.has("-c");
+		const filesWithMatches = flags.has("-l");
+		const quiet            = flags.has("-q") || flags.has("--quiet") || flags.has("--silent");
 		const pattern = positionals[0];
 		const files = positionals.slice(1);
 
@@ -73,7 +76,10 @@ export const grepCommand: ShellModule = {
 
 		if (files.length === 0) {
 			if (!stdin) return { stdout: "", exitCode: 1 };
-			results.push(...matchLines(stdin));
+			const matched = matchLines(stdin);
+			if (countOnly) return { stdout: `${matched.length}\n`, exitCode: matched.length > 0 ? 0 : 1 };
+			if (quiet) return { exitCode: matched.length > 0 ? 0 : 1 };
+			results.push(...matched);
 		} else {
 			const resolvedPaths = files.flatMap((f) => {
 				const target = resolvePath(cwd, f);
@@ -85,7 +91,14 @@ export const grepCommand: ShellModule = {
 					assertPathAccess(authUser, filePath, "grep");
 					const content = shell.vfs.readFile(filePath);
 					const prefix = resolvedPaths.length > 1 ? `${file}:` : "";
-					results.push(...matchLines(content, prefix));
+					const matched = matchLines(content, prefix);
+					if (countOnly) {
+						results.push(resolvedPaths.length > 1 ? `${file}:${matched.length}` : String(matched.length));
+					} else if (filesWithMatches) {
+						if (matched.length > 0) results.push(file);
+					} else {
+						results.push(...matched);
+					}
 				} catch {
 					return {
 						stderr: `grep: ${file}: No such file or directory`,
@@ -96,7 +109,7 @@ export const grepCommand: ShellModule = {
 		}
 
 		return {
-			stdout: results.length > 0 ? results.join("\n") : "",
+			stdout: results.length > 0 ? `${results.join("\n")}\n` : "",
 			exitCode: results.length > 0 ? 0 : 1,
 		};
 	},
