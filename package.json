@@ -36,8 +36,9 @@
     "example-serve": "cd examples && node server.js",
     "web-full-build": "bunx esbuild src/web-api.ts --bundle --platform=browser --format=esm --target=es2020 --outfile=builds/web-full-api.min.js --tree-shaking=true --minify --sourcemap --alias:node:events=./polyfills/node:events/index.js --alias:node:path=./polyfills/node:path/index.js --alias:node:os=./polyfills/node:os/index.js --alias:node:fs=./polyfills/node:fs/index.js --alias:node:fs/promises=./polyfills/node:fs/promises.js --alias:node:crypto=./polyfills/node:crypto/index.js --alias:node:child_process=./polyfills/node:child_process/index.js --alias:node:zlib=./polyfills/node:zlib/index.js --alias:node:vm=./polyfills/node:vm/index.js",
     "publish-package": "bash ./scripts/publish-package.sh",
+    "self-standalone-build": "bunx esbuild src/self-standalone.ts --bundle --platform=node --format=esm --target=node18 --outfile=builds/self-standalone.js --tree-shaking=true --minify --sourcemap",
     "standalone-build": "bunx esbuild src/standalone.ts --bundle --platform=node --target=node18 --outfile=builds/standalone.js --tree-shaking=true --minify --sourcemap",
-    "build-all": "bun run standalone-build && bun run standalone-build:wo-sftp && bun run web-build && bun run web-full-build && bun run example-build"
+    "build-all": "bun run self-standalone-build && bun run standalone-build && bun run standalone-build:wo-sftp && bun run web-build && bun run web-full-build && bun run example-build"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.13",

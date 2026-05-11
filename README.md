@@ -137,6 +137,21 @@ To quickly try a standalone demo:
 curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/standalone.js -o standalone.js && node standalone.js && rm -f standalone.js
 ```
 
+### Interactive Readline Demo
+
+Build the local readline-based SSH mimic and connect as a specific user:
+
+```bash
+bun run self-standalone-build
+node builds/self-standalone.js --user root
+```
+
+If the selected user exists and has a password, the demo prompts for it. Root skips the password prompt.
+
+Standalone JS build is executable from:
+```bash
+curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/self-standalone.js -o self-standalone.js && node self-standalone.js && rm -f self-standalone.js
+```
 ---
 
 ## Browser Build (web.min.js)
@@ -175,7 +190,7 @@ Notes:
 
 - This build is browser-targeted and does not include SSH/SFTP networking servers.
 - State is mirrored to IndexedDB via the VFS mirror implementation.
-- If you need SSH/SFTP, use the Node standalone builds instead (`standalone.js` or `standalone-wo-sftp.js`).
+- If you need SSH/SFTP, use the Node standalone builds instead (`standalone.js` or `standalone-wo-sftp.js`). For a local SSH-like terminal, use `builds/self-standalone.js`.
 
 ---
 
