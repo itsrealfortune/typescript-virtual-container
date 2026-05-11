@@ -1,7 +1,7 @@
 import type {
-    CommandContext,
-    CommandResult,
-    ShellModule,
+	CommandContext,
+	CommandResult,
+	ShellModule,
 } from "../types/commands";
 import { expandAsync } from "../utils/expand";
 import { ifFlag } from "./command-helpers";
