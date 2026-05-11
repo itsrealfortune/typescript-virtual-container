@@ -103,11 +103,6 @@ function askHiddenQuestion(rl: Interface, promptText: string): Promise<string> {
 }
 
 function writeLastLogin(username: string, from: string): void {
-	const dir = `/home/${username}/.lastlog`;
-	if (!virtualShell.vfs.exists(dir)) {
-		virtualShell.vfs.mkdir(dir, 0o700);
-	}
-
 	virtualShell.vfs.writeFile(
 		`/home/${username}/.lastlog`,
 		JSON.stringify({ at: new Date().toISOString(), from }),

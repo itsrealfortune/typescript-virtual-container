@@ -408,12 +408,7 @@ export function startShell(
 	}
 
 	function writeLastLogin(nowIso: string): void {
-		const dir = `/home/${authUser}/.lastlog`;
-		if (!shell.vfs.exists(dir)) {
-			shell.vfs.mkdir(dir, 0o700);
-		}
-
-		const lastlogPath = `${dir}/${authUser}.json`;
+		const lastlogPath = `/home/${authUser}/.lastlog`;
 		shell.vfs.writeFile(
 			lastlogPath,
 			JSON.stringify({ at: nowIso, from: remoteAddress }),
