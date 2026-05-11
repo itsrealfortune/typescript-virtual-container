@@ -1,40 +1,40 @@
 Benchmarking VirtualShell concurrency:
 
 Running 1 shells...
-  Initialized 1 shells in 67ms, RSS 82 MB
-  Executed shell commands in 2ms, RSS now 82 MB (+0 MB)
+  Initialized 1 shells in 89ms, RSS 85 MB
+  Executed shell commands in 9ms, RSS now 86 MB (+1 MB)
 
 Running 2 shells...
-  Initialized 2 shells in 2ms, RSS 82 MB
-  Executed shell commands in 0ms, RSS now 82 MB (+0 MB)
+  Initialized 2 shells in 19ms, RSS 89 MB
+  Executed shell commands in 1ms, RSS now 89 MB (+0 MB)
 
 Running 5 shells...
-  Initialized 5 shells in 1ms, RSS 82 MB
-  Executed shell commands in 1ms, RSS now 82 MB (+0 MB)
+  Initialized 5 shells in 21ms, RSS 93 MB
+  Executed shell commands in 1ms, RSS now 93 MB (+0 MB)
 
 Running 10 shells...
-  Initialized 10 shells in 4ms, RSS 83 MB
-  Executed shell commands in 3ms, RSS now 84 MB (+0 MB)
+  Initialized 10 shells in 40ms, RSS 102 MB
+  Executed shell commands in 6ms, RSS now 103 MB (+1 MB)
 
 Running 20 shells...
-  Initialized 20 shells in 5ms, RSS 84 MB
-  Executed shell commands in 3ms, RSS now 86 MB (+1 MB)
+  Initialized 20 shells in 72ms, RSS 116 MB
+  Executed shell commands in 4ms, RSS now 117 MB (+1 MB)
 
 Running 50 shells...
-  Initialized 50 shells in 10ms, RSS 88 MB
-  Executed shell commands in 7ms, RSS now 89 MB (+1 MB)
+  Initialized 50 shells in 140ms, RSS 142 MB
+  Executed shell commands in 8ms, RSS now 142 MB (+0 MB)
 
 Running 100 shells...
-  Initialized 100 shells in 18ms, RSS 92 MB
-  Executed shell commands in 9ms, RSS now 95 MB (+3 MB)
+  Initialized 100 shells in 315ms, RSS 160 MB
+  Executed shell commands in 18ms, RSS now 160 MB (+0 MB)
 
 Summary:
 
 count   init_ms cmd_ms  init_rss        final_rss       delta_rss
-1       67      2       82 MB           82 MB           0 MB
-2       2       0       82 MB           82 MB           0 MB
-5       1       1       82 MB           82 MB           0 MB
-10      4       3       83 MB           84 MB           0 MB
-20      5       3       84 MB           86 MB           1 MB
-50      10      7       88 MB           89 MB           1 MB
-100     18      9       92 MB           95 MB           3 MB
+1       89      9       85 MB           86 MB           1 MB
+2       19      1       89 MB           89 MB           0 MB
+5       21      1       93 MB           93 MB           0 MB
+10      40      6       102 MB          103 MB          1 MB
+20      72      4       116 MB          117 MB          1 MB
+50      140     8       142 MB          142 MB          0 MB
+100     315     18      160 MB          160 MB          0 MB
