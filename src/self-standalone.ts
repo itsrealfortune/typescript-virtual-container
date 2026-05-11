@@ -172,7 +172,8 @@ async function runReadlineShell() {
 	const rl = createInterface({ input: stdin, output: stdout, terminal: true });
 	await virtualShell.ensureInitialized();
 	let history = loadHistory();
-	(rl as unknown as { history: string[] }).history = [...history].reverse();
+	const rlWithHistory = rl as Interface & { history: string[] };
+	rlWithHistory.history = [...history].reverse();
 
 	const selectedUser = initialUser.trim() || "root";
 	const userExists = virtualShell.users.getPasswordHash(selectedUser) !== null;
@@ -190,11 +191,6 @@ async function runReadlineShell() {
 		cols: stdout.columns ?? 80,
 		rows: stdout.rows ?? 24,
 	};
-	const nanoStream = {
-		write: stdout.write.bind(stdout),
-		exit: () => undefined,
-		end: () => undefined,
-	} as const;
 
 	async function startNanoEditor(
 		targetPath: string,
@@ -209,16 +205,41 @@ async function runReadlineShell() {
 		const editor = spawnNanoEditorProcess(
 			tempPath,
 			terminalSize,
-			nanoStream as unknown as Parameters<typeof spawnNanoEditorProcess>[2],
+			{
+				write: stdout.write.bind(stdout),
+				exit: () => undefined,
+				end: () => undefined,
+			} as unknown as Parameters<typeof spawnNanoEditorProcess>[2],
 		);
 
+		const wasRawMode = Boolean(stdin.isRaw);
+		const forwardInput = (chunk: Buffer): void => {
+			editor.stdin.write(chunk);
+		};
+
+		stdin.resume();
+		if (!wasRawMode) {
+			stdin.setRawMode(true);
+		}
+		stdin.on("data", forwardInput);
+
 		await new Promise<void>((resolve) => {
+			const cleanup = (): void => {
+				stdin.off("data", forwardInput);
+				if (!wasRawMode) {
+					stdin.setRawMode(false);
+				}
+				rl.resume();
+			};
+
 			editor.on("error", (error: Error) => {
+				cleanup();
 				stdout.write(`nano: ${error.message}\r\n`);
 				resolve();
 			});
 
 			editor.on("close", async () => {
+				cleanup();
 				try {
 					const updatedContent = await readFile(tempPath, "utf8");
 					virtualShell.writeFileAsUser(authUser, targetPath, updatedContent);
@@ -232,8 +253,6 @@ async function runReadlineShell() {
 				resolve();
 			});
 		});
-
-		rl.resume();
 	}
 
 	async function handleSudoChallenge(challenge: SudoChallenge): Promise<void> {
@@ -415,7 +434,7 @@ async function runReadlineShell() {
 				history = history.slice(history.length - 500);
 			}
 			saveHistory(history);
-			(rl as unknown as { history: string[] }).history = [...history].reverse();
+			rlWithHistory.history = [...history].reverse();
 		}
 
 		const result = await runCommand(inputLine, authUser, hostname, "shell", cwd, virtualShell, undefined, shellEnv);
