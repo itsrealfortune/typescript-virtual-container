@@ -5,6 +5,7 @@ import { createInterface, type Interface } from "node:readline";
 import { makeDefaultEnv, runCommand } from "./commands/runtime";
 import { buildLoginBanner, type LoginBannerState } from "./SSHMimic/loginBanner";
 import { buildPrompt } from "./SSHMimic/prompt";
+import type { CommandResult, PasswordChallenge, SudoChallenge } from "./types/commands";
 import { VirtualShell } from "./VirtualShell";
 
 const hostname = process.env.SSH_MIMIC_HOSTNAME ?? "typescript-vm";
@@ -69,6 +70,30 @@ async function flushVfs(): Promise<void> {
 	await virtualShell.vfs.flushMirror();
 }
 
+function applySessionState(
+	authUserState: string,
+	cwdState: string,
+	result: CommandResult,
+	shellEnvState: ReturnType<typeof makeDefaultEnv>,
+): { authUser: string; cwd: string } {
+	let authUser = authUserState;
+	let cwd = cwdState;
+
+	if (result.switchUser) {
+		authUser = result.switchUser;
+		cwd = result.nextCwd ?? `/home/${authUser}`;
+		shellEnvState.vars.USER = authUser;
+		shellEnvState.vars.LOGNAME = authUser;
+		shellEnvState.vars.HOME = `/home/${authUser}`;
+		shellEnvState.vars.PWD = cwd;
+	} else if (result.nextCwd) {
+		cwd = result.nextCwd;
+		shellEnvState.vars.PWD = cwd;
+	}
+
+	return { authUser, cwd };
+}
+
 virtualShell.addCommand("demo", [], () => {
 	return {
 		stdout: "This is a demo command. It does nothing useful.",
@@ -92,6 +117,127 @@ async function runReadlineShell() {
 	let cwd = `/home/${authUser}`;
 	shellEnv.vars.PWD = cwd;
 	const remoteAddress = "localhost";
+
+	async function handleSudoChallenge(challenge: SudoChallenge): Promise<void> {
+		if (challenge.onPassword) {
+			let promptText = challenge.prompt;
+			while (true) {
+				const typed = await askQuestion(rl, promptText);
+				const step = await challenge.onPassword(typed, virtualShell);
+				if (step.result === null) {
+					promptText = step.nextPrompt ?? promptText;
+					continue;
+				}
+
+				await handleCommandResult(step.result);
+				return;
+			}
+		}
+
+		const password = await askQuestion(rl, challenge.prompt);
+		if (!virtualShell.users.verifyPassword(challenge.username, password)) {
+			process.stderr.write("Sorry, try again.\n");
+			return;
+		}
+
+		if (!challenge.commandLine) {
+			authUser = challenge.targetUser;
+			cwd = `/home/${authUser}`;
+			shellEnv.vars.USER = authUser;
+			shellEnv.vars.LOGNAME = authUser;
+			shellEnv.vars.HOME = `/home/${authUser}`;
+			shellEnv.vars.PWD = cwd;
+			return;
+		}
+
+		const runCwd = challenge.loginShell ? `/home/${challenge.targetUser}` : cwd;
+		const nestedResult = await runCommand(
+			challenge.commandLine,
+			challenge.targetUser,
+			hostname,
+			"shell",
+			runCwd,
+			virtualShell,
+			undefined,
+			shellEnv,
+		);
+		await handleCommandResult(nestedResult);
+	}
+
+	async function handlePasswordChallenge(
+		challenge: PasswordChallenge,
+	): Promise<void> {
+		const first = await askQuestion(rl, challenge.prompt);
+		if (challenge.confirmPrompt) {
+			const second = await askQuestion(rl, challenge.confirmPrompt);
+			if (second !== first) {
+				process.stderr.write("passwords do not match\n");
+				return;
+			}
+		}
+
+		switch (challenge.action) {
+			case "passwd":
+				await virtualShell.users.setPassword(challenge.targetUsername, first);
+				stdout.write("passwd: password updated successfully\n");
+				break;
+			case "adduser":
+				if (!challenge.newUsername) {
+					process.stderr.write("adduser: missing username\n");
+					return;
+				}
+				await virtualShell.users.addUser(challenge.newUsername, first);
+				stdout.write(`adduser: user '${challenge.newUsername}' created\n`);
+				break;
+			case "deluser":
+				await virtualShell.users.deleteUser(challenge.targetUsername);
+				stdout.write(`Removing user '${challenge.targetUsername}' ...\ndeluser: done.\n`);
+				break;
+			case "su":
+				authUser = challenge.targetUsername;
+				cwd = `/home/${authUser}`;
+				shellEnv.vars.USER = authUser;
+				shellEnv.vars.LOGNAME = authUser;
+				shellEnv.vars.HOME = `/home/${authUser}`;
+				shellEnv.vars.PWD = cwd;
+				break;
+		}
+	}
+
+	async function handleCommandResult(result: CommandResult): Promise<void> {
+		if (result.sudoChallenge) {
+			await handleSudoChallenge(result.sudoChallenge);
+			return;
+		}
+
+		if (result.passwordChallenge) {
+			await handlePasswordChallenge(result.passwordChallenge);
+			return;
+		}
+
+		if (result.stdout) {
+			stdout.write(result.stdout.endsWith("\n") ? result.stdout : `${result.stdout}\n`);
+		}
+
+		if (result.stderr) {
+			process.stderr.write(result.stderr.endsWith("\n") ? result.stderr : `${result.stderr}\n`);
+		}
+
+		if (result.clearScreen) {
+			stdout.write("\u001b[2J\u001b[H");
+			console.clear();
+		}
+
+		const updatedState = applySessionState(authUser, cwd, result, shellEnv);
+		authUser = updatedState.authUser;
+		cwd = updatedState.cwd;
+
+		if (result.closeSession) {
+			await flushVfs();
+			rl.close();
+			process.exit(result.exitCode ?? 0);
+		}
+	}
 
 	if (process.env.USER !== "root" && virtualShell.users.hasPassword(authUser)) {
 		const password = await askQuestion(rl, `Password for ${authUser}: `);
@@ -138,37 +284,7 @@ async function runReadlineShell() {
 		rl.pause();
 
 		const result = await runCommand(inputLine, authUser, hostname, "shell", cwd, virtualShell, undefined, shellEnv);
-
-		if (result.stdout) {
-			stdout.write(result.stdout.endsWith("\n") ? result.stdout : `${result.stdout}\n`);
-		}
-
-		if (result.stderr) {
-			process.stderr.write(result.stderr.endsWith("\n") ? result.stderr : `${result.stderr}\n`);
-		}
-
-		if (result.clearScreen) {
-			stdout.write("\u001b[2J\u001b[H");
-			console.clear();
-		}
-
-		if (result.switchUser) {
-			authUser = result.switchUser;
-			cwd = result.nextCwd ?? `/home/${authUser}`;
-			shellEnv.vars.USER = authUser;
-			shellEnv.vars.LOGNAME = authUser;
-			shellEnv.vars.HOME = `/home/${authUser}`;
-			shellEnv.vars.PWD = cwd;
-		} else if (result.nextCwd) {
-			cwd = result.nextCwd;
-			shellEnv.vars.PWD = cwd;
-		}
-
-		if (result.closeSession) {
-			await flushVfs();
-			rl.close();
-			process.exit(result.exitCode ?? 0);
-		}
+		await handleCommandResult(result);
 
 		await flushVfs();
 
