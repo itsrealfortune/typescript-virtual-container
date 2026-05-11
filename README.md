@@ -3,7 +3,7 @@
 > A complete virtual Linux environment in pure TypeScript — runs as an SSH/SFTP server, a browser-based web shell, or a standalone CLI. Ships with a realistic Linux rootfs, a virtual package manager, a full shell interpreter, and a typed programmatic API for testing, automation, honeypots, and embedded shell experiences.
 
 [![npm version](https://badge.fury.io/js/typescript-virtual-container.svg)](https://www.npmjs.com/package/typescript-virtual-container)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-red.svg)](https://www.gnu.org/licenses/agpl-3.0.en.html)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Runtime](https://img.shields.io/badge/runtime-Node.js%20%7C%20Bun-43853D.svg)](https://nodejs.org/)
 
@@ -1415,7 +1415,7 @@ Vulnerability reports: contact maintainers privately before public disclosure �
 
 ## License
 
-MIT — see [LICENSE](./LICENSE).
+AGPL-3.0-only — see [LICENSE](./LICENSE).
 
 ---
 
