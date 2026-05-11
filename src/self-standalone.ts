@@ -240,6 +240,7 @@ async function runReadlineShell() {
 
 			editor.on("close", async () => {
 				cleanup();
+				rl.write("", { ctrl: true, name: "u" });
 				try {
 					const updatedContent = await readFile(tempPath, "utf8");
 					virtualShell.writeFileAsUser(authUser, targetPath, updatedContent);
