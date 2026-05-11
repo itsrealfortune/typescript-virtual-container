@@ -15,7 +15,7 @@ import {
 } from "../modules/shellRuntime";
 import { buildLoginBanner } from "../SSHMimic/loginBanner";
 import { buildPrompt } from "../SSHMimic/prompt";
-import type { ShellEnv } from "../types/commands";
+import type { CommandResult, ShellEnv } from "../types/commands";
 import type { ShellStream } from "../types/streams";
 import type VirtualFileSystem from "../VirtualFileSystem";
 
@@ -33,6 +33,10 @@ interface PendingSudo {
 	loginShell: boolean;
 	prompt: string;
 	buffer: string;
+	onPassword?: (input: string, shell: VirtualShell) => Promise<{
+		result: CommandResult | null;
+		nextPrompt?: string;
+	}>;
 }
 
 export function startShell(
@@ -135,7 +139,9 @@ export function startShell(
 
 		if (!challenge.commandLine) {
 			authUser = challenge.targetUser;
-			cwd = `/home/${authUser}`;
+			if (challenge.loginShell) {
+				cwd = `/home/${authUser}`;
+			}
 			shell.users.updateSession(sessionId, authUser, remoteAddress);
 			stream.write("\r\n");
 			renderLine();
@@ -443,11 +449,29 @@ export function startShell(
 				}
 
 				if (ch === "\r" || ch === "\n") {
-					const password = pendingSudo.buffer;
+					const typed = pendingSudo.buffer;
 					pendingSudo.buffer = "";
+
+					// ── Generic onPassword handler (passwd / confirm modes) ────
+					if (pendingSudo.onPassword) {
+						const { result, nextPrompt } = await pendingSudo.onPassword(typed, shell);
+						stream.write("\r\n");
+						if (result !== null) {
+							pendingSudo = null;
+							if (result.stdout) stream.write(result.stdout.replace(/\n/g, "\r\n"));
+							if (result.stderr) stream.write(result.stderr.replace(/\n/g, "\r\n"));
+							renderLine();
+						} else {
+							if (nextPrompt) pendingSudo.prompt = nextPrompt;
+							stream.write(pendingSudo.prompt);
+						}
+						return;
+					}
+
+					// ── Default sudo mode — verify current user's password ─────
 					const valid = shell.users.verifyPassword(
 						pendingSudo.username,
-						password,
+						typed,
 					);
 					await finishSudoPrompt(valid);
 					return;
