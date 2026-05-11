@@ -99,16 +99,16 @@ export class VirtualUserManager extends EventEmitter {
 		// 	this.users.set(currentUser, this.createRecord(currentUser, userPassword));
 		// 	this.sudoers.add(currentUser);
 		// 	changed = true;
-
-		// 	const homePath = `/home/${currentUser}`;
-		// 	if (!this.vfs.exists(homePath)) {
-		// 		this.vfs.mkdir(homePath, 0o755);
-		// 		this.vfs.writeFile(
-		// 			`${homePath}/README.txt`,
-		// 			`Welcome to the virtual environment, ${currentUser}`,
-		// 		);
-		// 	}
 		// }
+		
+		const homePath = `/home/root`;
+		if (!this.vfs.exists(homePath)) {
+			this.vfs.mkdir(homePath, 0o755);
+			this.vfs.writeFile(
+				`${homePath}/README.txt`,
+				`Welcome to the virtual environment, root`,
+			);
+		}
 
 		if (changed) {
 			await this.persist();
