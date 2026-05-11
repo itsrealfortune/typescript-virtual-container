@@ -10,9 +10,9 @@ export const historyCommand: ShellModule = {
 	description: "Display command history",
 	category: "shell",
 	params: ["[n]"],
-	run: ({ args, shell }) => {
+	run: ({ args, shell, authUser }) => {
 		// History is persisted in the VFS by the interactive shell
-		const histPath = "/virtual-env-js/.bash_history";
+		const histPath = `/home/${authUser}/.bash_history`;
 		if (!shell.vfs.exists(histPath)) {
 			return { stdout: "", exitCode: 0 };
 		}

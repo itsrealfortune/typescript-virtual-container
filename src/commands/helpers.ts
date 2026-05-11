@@ -4,7 +4,7 @@ import type VirtualFileSystem from "../VirtualFileSystem";
 import type { VirtualPackageManager } from "../VirtualPackageManager";
 import type { VirtualShell } from "../VirtualShell";
 
-const PROTECTED_PREFIXES = ["/virtual-env-js/.auth"] as const;
+const PROTECTED_PREFIXES = ["/.virtual-env-js/.auth"] as const;
 
 function normalizeFetchUrl(input: string): string {
 	if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(input)) {

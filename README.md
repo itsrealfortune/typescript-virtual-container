@@ -431,7 +431,7 @@ new VirtualUserManager(
 )
 ```
 
-Auth data is stored at `/virtual-env-js/.auth/` inside the VFS.
+Auth data is stored at `/etc/` inside the VFS.
 
 **Methods**
 

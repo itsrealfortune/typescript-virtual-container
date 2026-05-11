@@ -38,7 +38,7 @@ const virtualShell = new VirtualShell(hostname, undefined, {
 });
 
 function readLastLogin(username: string): LoginBannerState | null {
-	const lastlogPath = `/virtual-env-js/.lastlog/${username}.json`;
+	const lastlogPath = `/home/${username}/.lastlog`;
 	if (!virtualShell.vfs.exists(lastlogPath)) {
 		return null;
 	}
@@ -103,13 +103,13 @@ function askHiddenQuestion(rl: Interface, promptText: string): Promise<string> {
 }
 
 function writeLastLogin(username: string, from: string): void {
-	const dir = "/virtual-env-js/.lastlog";
+	const dir = `/home/${username}/.lastlog`;
 	if (!virtualShell.vfs.exists(dir)) {
 		virtualShell.vfs.mkdir(dir, 0o700);
 	}
 
 	virtualShell.vfs.writeFile(
-		`/virtual-env-js/.lastlog/${username}.json`,
+		`/home/${username}/.lastlog`,
 		JSON.stringify({ at: new Date().toISOString(), from }),
 	);
 }
@@ -118,8 +118,8 @@ async function flushVfs(): Promise<void> {
 	await virtualShell.vfs.flushMirror();
 }
 
-function loadHistory(): string[] {
-	const historyPath = "/virtual-env-js/.bash_history";
+function loadHistory(authUser: string): string[] {
+	const historyPath = `/home/${authUser}/.bash_history`;
 	if (!virtualShell.vfs.exists(historyPath)) {
 		virtualShell.vfs.writeFile(historyPath, "");
 		return [];
@@ -132,9 +132,9 @@ function loadHistory(): string[] {
 		.filter((line) => line.length > 0);
 }
 
-function saveHistory(history: string[]): void {
+function saveHistory(history: string[], authUser: string): void {
 	const data = history.length > 0 ? `${history.join("\n")}\n` : "";
-	virtualShell.vfs.writeFile("/virtual-env-js/.bash_history", data);
+	virtualShell.vfs.writeFile(`/home/${authUser}/.bash_history`, data);
 }
 
 function applySessionState(
@@ -171,7 +171,7 @@ virtualShell.addCommand("demo", [], () => {
 async function runReadlineShell() {
 	const rl = createInterface({ input: stdin, output: stdout, terminal: true });
 	await virtualShell.ensureInitialized();
-	let history = loadHistory();
+	let history = loadHistory(initialUser);
 	const rlWithHistory = rl as Interface & { history: string[] };
 	rlWithHistory.history = [...history].reverse();
 
@@ -434,7 +434,7 @@ async function runReadlineShell() {
 			if (history.length > 500) {
 				history = history.slice(history.length - 500);
 			}
-			saveHistory(history);
+			saveHistory(history, authUser);
 			rlWithHistory.history = [...history].reverse();
 		}
 
