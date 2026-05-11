@@ -48,9 +48,55 @@ function readLastLogin(username: string): LoginBannerState | null {
 	}
 }
 
-function askQuestion(rl: Interface, promptText: string): Promise<string> {
+function askHiddenQuestion(rl: Interface, promptText: string): Promise<string> {
 	return new Promise((resolve) => {
-		rl.question(promptText, resolve);
+		if (!stdin.isTTY || !stdout.isTTY) {
+			rl.question(promptText, resolve);
+			return;
+		}
+
+		const wasRawMode = Boolean(stdin.isRaw);
+		let buffer = "";
+
+		const cleanup = (): void => {
+			stdin.off("data", onData);
+			if (!wasRawMode) {
+				stdin.setRawMode(false);
+			}
+			rl.resume();
+		};
+
+		const finish = (value: string): void => {
+			cleanup();
+			stdout.write("\n");
+			resolve(value);
+		};
+
+		const onData = (chunk: Buffer): void => {
+			const input = chunk.toString("utf8");
+			for (let index = 0; index < input.length; index += 1) {
+				const ch = input[index]!;
+				if (ch === "\r" || ch === "\n") {
+					finish(buffer);
+					return;
+				}
+				if (ch === "\u007f" || ch === "\b") {
+					buffer = buffer.slice(0, -1);
+					continue;
+				}
+				if (ch >= " ") {
+					buffer += ch;
+				}
+			}
+		};
+
+		rl.pause();
+		stdout.write(promptText);
+		if (!wasRawMode) {
+			stdin.setRawMode(true);
+		}
+		stdin.resume();
+		stdin.on("data", onData);
 	});
 }
 
@@ -122,7 +168,7 @@ async function runReadlineShell() {
 		if (challenge.onPassword) {
 			let promptText = challenge.prompt;
 			while (true) {
-				const typed = await askQuestion(rl, promptText);
+				const typed = await askHiddenQuestion(rl, promptText);
 				const step = await challenge.onPassword(typed, virtualShell);
 				if (step.result === null) {
 					promptText = step.nextPrompt ?? promptText;
@@ -134,7 +180,7 @@ async function runReadlineShell() {
 			}
 		}
 
-		const password = await askQuestion(rl, challenge.prompt);
+		const password = await askHiddenQuestion(rl, challenge.prompt);
 		if (!virtualShell.users.verifyPassword(challenge.username, password)) {
 			process.stderr.write("Sorry, try again.\n");
 			return;
@@ -167,9 +213,9 @@ async function runReadlineShell() {
 	async function handlePasswordChallenge(
 		challenge: PasswordChallenge,
 	): Promise<void> {
-		const first = await askQuestion(rl, challenge.prompt);
+		const first = await askHiddenQuestion(rl, challenge.prompt);
 		if (challenge.confirmPrompt) {
-			const second = await askQuestion(rl, challenge.confirmPrompt);
+			const second = await askHiddenQuestion(rl, challenge.confirmPrompt);
 			if (second !== first) {
 				process.stderr.write("passwords do not match\n");
 				return;
@@ -240,7 +286,7 @@ async function runReadlineShell() {
 	}
 
 	if (process.env.USER !== "root" && virtualShell.users.hasPassword(authUser)) {
-		const password = await askQuestion(rl, `Password for ${authUser}: `);
+		const password = await askHiddenQuestion(rl, `Password for ${authUser}: `);
 		if (!virtualShell.users.verifyPassword(authUser, password)) {
 			process.stderr.write("self-standalone: authentication failed\n");
 			process.exit(1);
