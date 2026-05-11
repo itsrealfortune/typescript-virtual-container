@@ -56,7 +56,6 @@ interface WebVfsOptions {
 }
 
 interface WebShellOptions {
-	hostname?: string;
 	cwd?: string;
 	vfs?: WebVfsOptions;
 }
