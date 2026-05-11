@@ -141,6 +141,7 @@ async function runReadlineShell() {
 
 		if (result.clearScreen) {
 			stdout.write("\u001b[2J\u001b[H");
+			console.clear();
 		}
 
 		if (result.switchUser) {
