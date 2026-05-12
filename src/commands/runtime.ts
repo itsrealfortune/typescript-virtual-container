@@ -7,7 +7,7 @@ import type {
     CommandResult,
     ShellEnv,
 } from "../types/commands";
-import { expandAsync } from "../utils/expand";
+import { expandAsync, expandBraces } from "../utils/expand";
 import { tokenizeCommand } from "../utils/tokenize";
 import { resolveModule } from "./registry";
 
@@ -176,6 +176,15 @@ export async function runCommand(
 		? trimmed.replace(rawFirstWord, aliasVal)
 		: trimmed;
 
+	// Detect sh-syntax constructs that must be handled by the sh interpreter
+	const isShScript =
+		/\bfor\s+\w+\s+in\b/.test(aliasExpanded) ||
+		/\bwhile\s+/.test(aliasExpanded) ||
+		/\bif\s+/.test(aliasExpanded) ||
+		/\w+\s*\(\s*\)\s*\{/.test(aliasExpanded) ||
+		/\bfunction\s+\w+/.test(aliasExpanded) ||
+		/\(\(\s*.+\s*\)\)/.test(aliasExpanded);
+
 	const hasOperators =
 		/(?<![|&])[|](?![|])/.test(aliasExpanded) ||
 		aliasExpanded.includes(">") ||
@@ -184,7 +193,24 @@ export async function runCommand(
 		aliasExpanded.includes("||") ||
 		aliasExpanded.includes(";");
 
-	if (hasOperators) {
+	if ((isShScript && rawFirstWord !== "sh" && rawFirstWord !== "bash") || hasOperators) {
+		// sh-syntax: route through sh interpreter to handle for/while/functions
+		if (isShScript && rawFirstWord !== "sh" && rawFirstWord !== "bash") {
+			const shMod = resolveModule("sh");
+			if (shMod) {
+				return await shMod.run({
+					authUser, hostname,
+					activeSessions: shell.users.listActiveSessions(),
+					rawInput: aliasExpanded,
+					mode,
+					args: ["-c", aliasExpanded],
+					stdin: undefined,
+					cwd,
+					shell,
+					env: shellEnv,
+				});
+			}
+		}
 		const script = parseScript(aliasExpanded);
 		if (!script.isValid)
 			return { stderr: script.error || "Syntax error", exitCode: 1 };
@@ -225,7 +251,8 @@ export async function runCommand(
 
 	const parts = tokenizeCommand(expanded.trim());
 	const commandName = parts[0]?.toLowerCase() ?? "";
-	const args = parts.slice(1);
+	// Apply brace expansion to each arg token
+	const args = parts.slice(1).flatMap(expandBraces);
 	const mod = resolveModule(commandName);
 
 	if (!mod) {

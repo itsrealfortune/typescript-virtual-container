@@ -36,6 +36,7 @@ import { htopCommand } from "./htop";
 import { idCommand } from "./id";
 import { killCommand } from "./kill";
 import { lnCommand, readlinkCommand } from "./ln";
+import { seqCommand } from "./seq";
 import { statCommand } from "./stat";
 import { lsCommand } from "./ls";
 import { lsbReleaseCommand } from "./lsb-release";
@@ -99,6 +100,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	lnCommand,
 	readlinkCommand,
 	chmodCommand,
+	seqCommand,
 	statCommand,
 	findCommand,
 	// Text processing
