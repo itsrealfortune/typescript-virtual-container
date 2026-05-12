@@ -222,67 +222,85 @@ function outsideSingleQuotes(
  * Returns a single-element array when no brace expansion applies.
  */
 export function expandBraces(token: string): string[] {
-	// Find the first { not preceded by $
-	let depth = 0;
-	let start = -1;
-	for (let i = 0; i < token.length; i++) {
-		const ch = token[i]!;
-		if (ch === "{" && token[i - 1] !== "$") {
-			if (depth === 0) start = i;
-			depth++;
-		} else if (ch === "}") {
-			depth--;
-			if (depth === 0 && start !== -1) {
-				const prefix  = token.slice(0, start);
-				const inner   = token.slice(start + 1, i);
-				const suffix  = token.slice(i + 1);
+	const MaxBraceDepth = 8;
+	const MaxBraceExpansions = 256;
 
-				// Range: {1..5} or {a..e}
-				const rangeMatch = inner.match(/^(-?\d+)\.\.(-?\d+)(?:\.\.-?(\d+))?$/) ||
-				                   inner.match(/^([a-z])\.\.([a-z])$/);
-				if (rangeMatch) {
-					const items: string[] = [];
-					if (/\d/.test(rangeMatch[1]!)) {
-						const from = parseInt(rangeMatch[1]!, 10);
-						const to   = parseInt(rangeMatch[2]!, 10);
-						const step = rangeMatch[3] ? parseInt(rangeMatch[3], 10) : 1;
-						const inc  = from <= to ? step : -step;
-						for (let n = from; from <= to ? n <= to : n >= to; n += inc) {
-							items.push(String(n));
+	function expandBracesInternal(value: string, depth: number): string[] {
+		if (depth > MaxBraceDepth) return [value];
+		// Find the first { not preceded by $
+		let braceDepth = 0;
+		let start = -1;
+		for (let i = 0; i < value.length; i++) {
+			const ch = value[i]!;
+			if (ch === "{" && value[i - 1] !== "$") {
+				if (braceDepth === 0) start = i;
+				braceDepth++;
+			} else if (ch === "}") {
+				braceDepth--;
+				if (braceDepth === 0 && start !== -1) {
+					const prefix = value.slice(0, start);
+					const inner = value.slice(start + 1, i);
+					const suffix = value.slice(i + 1);
+
+					// Range: {1..5} or {a..e}
+					const rangeMatch = inner.match(/^(-?\d+)\.\.(-?\d+)(?:\.\.-?(\d+))?$/) ||
+					                   inner.match(/^([a-z])\.\.([a-z])$/);
+					if (rangeMatch) {
+						const items: string[] = [];
+						if (/\d/.test(rangeMatch[1]!)) {
+							const from = parseInt(rangeMatch[1]!, 10);
+							const to = parseInt(rangeMatch[2]!, 10);
+							const step = rangeMatch[3] ? parseInt(rangeMatch[3], 10) : 1;
+							const inc = from <= to ? step : -step;
+							for (let n = from; from <= to ? n <= to : n >= to; n += inc) {
+								items.push(String(n));
+							}
+						} else {
+							const from = rangeMatch[1]!.charCodeAt(0);
+							const to = rangeMatch[2]!.charCodeAt(0);
+							const inc = from <= to ? 1 : -1;
+							for (let c = from; from <= to ? c <= to : c >= to; c += inc) {
+								items.push(String.fromCharCode(c));
+							}
 						}
-					} else {
-						const from = rangeMatch[1]!.charCodeAt(0);
-						const to   = rangeMatch[2]!.charCodeAt(0);
-						const inc  = from <= to ? 1 : -1;
-						for (let c = from; from <= to ? c <= to : c >= to; c += inc) {
-							items.push(String.fromCharCode(c));
+
+						const expanded = items.map((v) => `${prefix}${v}${suffix}`);
+						const output: string[] = [];
+						for (const item of expanded) {
+							output.push(...expandBracesInternal(item, depth + 1));
+							if (output.length > MaxBraceExpansions) return [value];
 						}
+						return output;
 					}
-					const expanded = items.map((v) => `${prefix}${v}${suffix}`);
-					return expanded.flatMap(expandBraces);
-				}
 
-				// Comma list: {a,b,c} — split respecting nested braces
-				const parts: string[] = [];
-				let cur = "";
-				let d2 = 0;
-				for (const ch2 of inner) {
-					if (ch2 === "{") { d2++; cur += ch2; }
-					else if (ch2 === "}") { d2--; cur += ch2; }
-					else if (ch2 === "," && d2 === 0) { parts.push(cur); cur = ""; }
-					else { cur += ch2; }
-				}
-				parts.push(cur);
+					// Comma list: {a,b,c} — split respecting nested braces
+					const parts: string[] = [];
+					let cur = "";
+					let innerDepth = 0;
+					for (const ch2 of inner) {
+						if (ch2 === "{") { innerDepth++; cur += ch2; }
+						else if (ch2 === "}") { innerDepth--; cur += ch2; }
+						else if (ch2 === "," && innerDepth === 0) { parts.push(cur); cur = ""; }
+						else { cur += ch2; }
+					}
+					parts.push(cur);
 
-				if (parts.length > 1) {
-					const expanded = parts.map((p) => `${prefix}${p}${suffix}`);
-					return expanded.flatMap(expandBraces);
+					if (parts.length > 1) {
+						const output: string[] = [];
+						for (const part of parts) {
+							output.push(...expandBracesInternal(`${prefix}${part}${suffix}`, depth + 1));
+							if (output.length > MaxBraceExpansions) return [value];
+						}
+						return output;
+					}
+					break;
 				}
-				break;
 			}
 		}
+		return [value];
 	}
-	return [token];
+
+	return expandBracesInternal(token, 0);
 }
 
 function expandArithmeticChunks(input: string, env: Record<string, string>): string {
@@ -404,6 +422,14 @@ export async function expandAsync(
 	lastExit: number,
 	runCmd: (cmd: string) => Promise<string>,
 ): Promise<string> {
+	const depthKey = "__shellExpandDepth";
+	const maxDepth = 8;
+	const currentDepth = Number(env[depthKey] ?? "0");
+	if (currentDepth >= maxDepth) {
+		return expandSync(input, env, lastExit);
+	}
+	env[depthKey] = String(currentDepth + 1);
+	try {
 	// $(cmd) substitution — skip content inside single quotes
 	if (input.includes("$(")) {
 		let result = "";
@@ -458,4 +484,8 @@ export async function expandAsync(
 	}
 
 	return expandSync(input, env, lastExit);
+	} finally {
+		if (currentDepth <= 0) delete env[depthKey];
+		else env[depthKey] = String(currentDepth);
+	}
 }
