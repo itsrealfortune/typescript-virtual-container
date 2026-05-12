@@ -471,29 +471,30 @@ describe("wc command", () => {
 		createTestFile(shell, "/tmp/wc-test.txt", "line1\nline2\nline3");
 		const r = await runCmd(client, "wc -l /tmp/wc-test.txt");
 		expect(r.exitCode).toBe(0);
-		expect(r.stdout).toContain("3");
+		expect(r.stdout?.trim()).toContain("3 /tmp/wc-test.txt");
 	});
 
 	test("wc counts words", async () => {
 		createTestFile(shell, "/tmp/wc-words.txt", "one two three");
 		const r = await runCmd(client, "wc -w /tmp/wc-words.txt");
 		expect(r.exitCode).toBe(0);
-		expect(r.stdout).toContain("3");
+		expect(r.stdout?.trim()).toContain("3 /tmp/wc-words.txt");
 	});
 
 	test("wc counts chars", async () => {
 		createTestFile(shell, "/tmp/wc-chars.txt", "hello");
 		const r = await runCmd(client, "wc -c /tmp/wc-chars.txt");
 		expect(r.exitCode).toBe(0);
-		expect(r.stdout).toContain("5");
+		expect(r.stdout?.trim()).toContain("5 /tmp/wc-chars.txt");
 	});
 
 	test("wc default (lines words chars)", async () => {
 		createTestFile(shell, "/tmp/wc-all.txt", "hello world\ntest");
 		const r = await runCmd(client, "wc /tmp/wc-all.txt");
 		expect(r.exitCode).toBe(0);
-		expect(r.stdout).toContain("2");
-		expect(r.stdout).toContain("3");
+		expect(r.stdout?.trim()).toContain("2");
+		expect(r.stdout?.trim()).toContain("3");
+		expect(r.stdout?.trim()).toContain("/tmp/wc-all.txt");
 	});
 });
 
@@ -549,7 +550,7 @@ describe("uniq command", () => {
 		createTestFile(shell, "/tmp/uniq-count2.txt", "a\na\na\nb\nb");
 		const r = await runCmd(client, "uniq -c /tmp/uniq-count2.txt");
 		expect(r.exitCode).toBe(0);
-		expect(r.stdout?.length).toBeGreaterThan(0);
+		expect(r.stdout?.trim().length).toBeGreaterThan(0);
 	});
 
 	test("uniq from pipe", async () => {

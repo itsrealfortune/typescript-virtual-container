@@ -11,8 +11,8 @@ export const cdCommand: ShellModule = {
 	description: "Change directory",
 	category: "navigation",
 	params: ["[path]"],
-	run: ({ authUser, shell, cwd, args, mode }) => {
-		const target = resolvePath(cwd, args[0] ?? "/virtual-env-js");
+	run: ({ authUser, shell, cwd, args }) => {
+		const target = resolvePath(cwd, args[0] ?? `/home/${authUser}`);
 		assertPathAccess(authUser, target, "cd");
 		const stats = shell.vfs.stat(target);
 		if (stats.type !== "directory") {

@@ -212,7 +212,7 @@ describe("command chaining and sequencing", () => {
 	test("OR operator (||) success", async () => {
 		const r = await runCmd(client, "true || echo 'should not print'");
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
-		expect(r.stdout?.length).toBeGreaterThanOrEqual(0);
+		expect(r.stdout).toBeUndefined();
 	});
 
 	test("OR operator (||) with failure", async () => {
@@ -232,7 +232,7 @@ describe("command chaining and sequencing", () => {
 	test("background execution (&)", async () => {
 		const r = await runCmd(client, "sleep 0.01 & echo 'foreground' || echo 'done'");
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
-		expect(r.stdout?.length).toBeGreaterThanOrEqual(0);
+		expect(r.stdout).toBeUndefined();
 	});
 });
 
