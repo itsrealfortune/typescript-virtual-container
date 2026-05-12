@@ -1,0 +1,19 @@
+{
+    "files.exclude": {
+        "**/.git": true,
+        "**/.hg": true,
+        "**/.svn": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/node_modules": true,
+
+        ".ssh-mimic": true,
+        ".vfs": true,
+        "builds": true,
+        "examples": true,
+        
+        "LICENSE": true,
+        "tsconfig.tsbuildinfo": true
+    },
+    "js/ts.tsdk.path": "node_modules/typescript/lib"
+}
