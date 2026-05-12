@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, test } from "bun:test";
-import type { SshClient } from "../src";
+import { SshClient } from "../src";
 import { createTestEnv, runCmd } from "./test-helper";
 
 let client: InstanceType<typeof SshClient>;
@@ -35,7 +35,7 @@ describe("useradd command", () => {
 
 	test("useradd non-root fails", async () => {
 		const env = await createTestEnv("test-admin-nonroot");
-		const nonrootClient = new (await import("../src")).SshClient(env.shell, "testuser");
+		const nonrootClient = new SshClient(env.shell, "testuser");
 		const r = await runCmd(nonrootClient, "useradd -m newuser");
 		expect(r.exitCode).not.toBe(0);
 	});

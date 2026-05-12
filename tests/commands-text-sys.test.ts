@@ -259,7 +259,7 @@ describe("date command", () => {
 	test("date +format custom format", async () => {
 		const r = await runCmd(client, "date +%Y");
 		expect(r.exitCode).toBe(0);
-		const year = parseInt(r.stdout?.trim() || "");
+		const year = parseInt(r.stdout?.trim() || "", 10);
 		expect(year).toBeGreaterThanOrEqual(2020);
 	});
 
