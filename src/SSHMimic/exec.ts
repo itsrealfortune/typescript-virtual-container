@@ -38,7 +38,6 @@ export function runExec(
 			}
 
 			stream.exit(result.exitCode ?? 0);
-			void shell.vfs.flushMirror();
 			stream.end();
 		})
 		.catch((error) => {

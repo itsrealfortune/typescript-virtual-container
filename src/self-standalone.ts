@@ -62,7 +62,7 @@ function writeLastLogin(username: string, from: string): void {
 }
 
 async function flushVfs(): Promise<void> {
-	await virtualShell.vfs.flushMirror();
+	await virtualShell.vfs.stopAutoFlush();
 }
 
 function loadHistory(authUser: string): string[] {

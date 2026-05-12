@@ -7,7 +7,7 @@ const MANUAL_ALIASES: Record<string, string> = {
 const __dirname = import.meta.dirname;
 
 const manualCache = new Map<string, string | null>();
-const manualsBaseUrl = `${__dirname}/manuals/`;
+const manualsBaseUrl = new URL("./manuals/", import.meta.url);
 
 async function dynamicImport(specifier: string): Promise<unknown> {
 	const importer = new Function(

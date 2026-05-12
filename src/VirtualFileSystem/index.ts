@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/style/useNamingConvention: NW ? */
 import { EventEmitter } from "node:events";
 import * as fsSync from "node:fs";
 import * as path from "node:path";
@@ -19,6 +20,7 @@ import type {
 	InternalFileNode,
 	InternalNode,
 } from "./internalTypes";
+import { appendJournalEntry, JournalOp, readJournal, truncateJournal } from "./journal";
 import { getNode, getParentDirectory, normalizePath } from "./path";
 
 // ── Persistence options ───────────────────────────────────────────────────────
@@ -46,6 +48,26 @@ export interface VfsOptions {
 	 * Required when `mode` is `"fs"`.
 	 */
 	snapshotPath?: string;
+	/**
+	 * Interval in milliseconds between automatic checkpoints in `"fs"` mode.
+	 * Set to `0` to disable automatic flushing (manual `flushMirror()` only).
+	 * Default: 30_000 (30 seconds).
+	 */
+	flushIntervalMs?: number;
+	/**
+	 * Trigger a checkpoint after this many write operations, regardless of the
+	 * timer interval. Prevents unbounded journal growth during bulk operations
+	 * (e.g. a 15 000-file SFTP transfer). Default: 500.
+	 * Set to `0` to disable write-count flushing.
+	 */
+	flushAfterNWrites?: number;
+	/**
+	 * Files larger than this threshold (bytes) are evicted from RAM after each
+	 * `flushMirror()` and reloaded on demand from the snapshot.
+	 * Default: 65536 (64 KB). Set to `0` to disable eviction.
+	 * Only applies to `"fs"` mode.
+	 */
+	evictionThresholdBytes?: number;
 }
 
 // ── VirtualFileSystem ─────────────────────────────────────────────────────────
@@ -77,6 +99,18 @@ class VirtualFileSystem extends EventEmitter {
 	private root: InternalDirectoryNode;
 	private readonly mode: VfsPersistenceMode;
 	private readonly snapshotFile: string | null;
+	/** Path to the WAL journal file (null in memory mode). */
+	private readonly journalFile: string | null;
+	/** Eviction threshold in bytes (0 = disabled). Files above this are purged after flush. */
+	private readonly evictionThreshold: number;
+	/** Max writes between forced flushes (0 = disabled). */
+	private readonly flushAfterNWrites: number;
+	/** Pending write counter since last checkpoint. */
+	private _writesSinceFlush = 0;
+	/** NodeJS timer handle for periodic auto-flush (null = disabled or stopped). */
+	private _flushTimer: ReturnType<typeof setInterval> | null = null;
+	/** True if the VFS has unflushed changes. */
+	private _dirty = false;
 	/** Active host-directory mounts: vPath → { hostPath, readOnly } */
 	private readonly mounts = new Map<string, { hostPath: string; readOnly: boolean }>();
 	/** True when running in a browser environment (no host FS access). */
@@ -96,8 +130,24 @@ class VirtualFileSystem extends EventEmitter {
 				options.snapshotPath,
 				"vfs-snapshot.vfsb",
 			);
+			this.journalFile = path.resolve(options.snapshotPath, "vfs-journal.bin");
+			this.evictionThreshold = options.evictionThresholdBytes ?? 64 * 1024; // 64 KB default
+			this.flushAfterNWrites = options.flushAfterNWrites ?? 500;
+			const intervalMs = options.flushIntervalMs ?? 30_000;
+			if (intervalMs > 0) {
+				this._flushTimer = setInterval(() => {
+					if (this._dirty) void this._autoFlush();
+				}, intervalMs);
+				// Don't block process exit on this timer
+				if (typeof this._flushTimer === "object" && this._flushTimer !== null && "unref" in this._flushTimer) {
+					(this._flushTimer as NodeJS.Timeout).unref();
+				}
+			}
 		} else {
 			this.snapshotFile = null;
+			this.journalFile = null;
+			this.evictionThreshold = 0; // disabled in memory mode
+			this.flushAfterNWrites = 0;
 		}
 		this.root = this.makeDir("", 0o755);
 	}
@@ -147,6 +197,7 @@ class VirtualFileSystem extends EventEmitter {
 				child = this.makeDir(part, mode);
 				current.children.set(part, child);
 				this.emit("dir:create", { path: builtPath, mode });
+				this._journal({ op: JournalOp.MKDIR, path: builtPath, mode });
 			} else if (child.type !== "directory") {
 				throw new Error(
 					`Cannot create directory '${builtPath}': path is a file.`,
@@ -168,7 +219,14 @@ class VirtualFileSystem extends EventEmitter {
 	public async restoreMirror(): Promise<void> {
 		if (this.mode !== "fs" || !this.snapshotFile) return;
 
-		if (!fsSync.existsSync(this.snapshotFile)) return;
+		if (!fsSync.existsSync(this.snapshotFile)) {
+			// No snapshot yet — but replay journal if it exists (crash after writes, before first flush)
+			if (this.journalFile) {
+				const entries = readJournal(this.journalFile);
+				if (entries.length > 0) this._replayJournal(entries);
+			}
+			return;
+		}
 
 		try {
 			const raw = fsSync.readFileSync(this.snapshotFile);
@@ -184,6 +242,11 @@ class VirtualFileSystem extends EventEmitter {
 				);
 			}
 			this.emit("snapshot:restore", { path: this.snapshotFile });
+			// Replay WAL journal on top of the loaded snapshot
+			if (this.journalFile) {
+				const entries = readJournal(this.journalFile);
+				if (entries.length > 0) this._replayJournal(entries);
+			}
 		} catch (err) {
 			// Corrupt or unreadable snapshot — start fresh and warn
 			console.warn(
@@ -210,7 +273,13 @@ class VirtualFileSystem extends EventEmitter {
 		fsSync.mkdirSync(dir, { recursive: true });
 		const binary = encodeVfs(this.root);
 		fsSync.writeFileSync(this.snapshotFile, binary);
+		// Checkpoint complete — truncate the journal (entries are now in the snapshot)
+		if (this.journalFile) truncateJournal(this.journalFile);
+		this._dirty = false;
+		this._writesSinceFlush = 0;
 		this.emit("mirror:flush", { path: this.snapshotFile });
+		// Evict large files from RAM now that the snapshot is on disk
+		this.evictLargeFiles();
 	}
 
 	/** Returns the current persistence mode. */
@@ -226,6 +295,147 @@ class VirtualFileSystem extends EventEmitter {
 	// ── Public filesystem API ─────────────────────────────────────────────────
 
 	/** Creates a directory (and any missing parents). */
+
+
+
+	// ── Auto-flush scheduler ──────────────────────────────────────────────────
+
+	/** Internal: flush triggered by timer or write-count threshold. */
+	private async _autoFlush(): Promise<void> {
+		if (!this._dirty) return;
+		await this.flushMirror();
+	}
+
+	/** Mark VFS as having unflushed writes and trigger threshold flush if needed. */
+	private _markDirty(): void {
+		this._dirty = true;
+		if (this.flushAfterNWrites > 0) {
+			this._writesSinceFlush++;
+			if (this._writesSinceFlush >= this.flushAfterNWrites) {
+				this._writesSinceFlush = 0;
+				void this._autoFlush();
+			}
+		}
+	}
+
+	/**
+	 * Stop the automatic flush timer and perform a final checkpoint.
+	 * Call this when shutting down to ensure all data is persisted.
+	 *
+	 * @example
+	 * ```ts
+	 * process.on("SIGINT", async () => {
+	 *   await shell.vfs.stopAutoFlush();
+	 *   process.exit(0);
+	 * });
+	 * ```
+	 */
+	public async stopAutoFlush(): Promise<void> {
+		if (this._flushTimer !== null) {
+			clearInterval(this._flushTimer);
+			this._flushTimer = null;
+		}
+		if (this._dirty) await this.flushMirror();
+	}
+
+	// ── WAL Journal helpers ───────────────────────────────────────────────────
+
+	/** Set to true during journal replay to suppress re-journaling. */
+	private _replayMode = false;
+
+	/** Append a journal entry if in fs mode and not replaying. */
+	private _journal(entry: Parameters<typeof appendJournalEntry>[1]): void {
+		if (this.journalFile && !this._replayMode) {
+			appendJournalEntry(this.journalFile, entry);
+			this._markDirty();
+		}
+	}
+
+	/** Replay a list of journal entries onto the in-memory tree. */
+	private _replayJournal(entries: ReturnType<typeof readJournal>): void {
+		this._replayMode = true;
+		try {
+			for (const e of entries) {
+				try {
+					if (e.op === JournalOp.WRITE) {
+						this.writeFile(e.path, e.content ?? Buffer.alloc(0), { mode: e.mode });
+					} else if (e.op === JournalOp.MKDIR) {
+						this.mkdir(e.path, e.mode);
+					} else if (e.op === JournalOp.REMOVE) {
+						if (this.exists(e.path)) this.remove(e.path, { recursive: true });
+					} else if (e.op === JournalOp.CHMOD) {
+						if (this.exists(e.path)) this.chmod(e.path, e.mode ?? 0o644);
+					} else if (e.op === JournalOp.MOVE) {
+						if (this.exists(e.path) && e.dest) this.move(e.path, e.dest);
+					} else if (e.op === JournalOp.SYMLINK) {
+						if (e.dest) this.symlink(e.dest, e.path);
+					}
+				} catch { /* ignore individual replay errors — best-effort */ }
+			}
+		} finally {
+			this._replayMode = false;
+		}
+	}
+
+
+	// ── RAM eviction ──────────────────────────────────────────────────────────
+
+	/**
+	 * Walk the in-memory tree and evict file contents that exceed
+	 * `evictionThreshold`. Called automatically after `flushMirror()`.
+	 * Safe to call at any time — evicted files are reloaded on demand.
+	 */
+	public evictLargeFiles(): void {
+		if (!this.snapshotFile || this.evictionThreshold === 0) return;
+		if (!fsSync.existsSync(this.snapshotFile)) return;
+		this._evictDir(this.root);
+	}
+
+	private _evictDir(dir: InternalDirectoryNode): void {
+		for (const node of dir.children.values()) {
+			if (node.type === "directory") {
+				this._evictDir(node);
+			} else if (!node.evicted) {
+				const rawSize = node.compressed
+					? (node.size ?? node.content.length * 2) // estimate uncompressed
+					: node.content.length;
+				if (rawSize > this.evictionThreshold) {
+					node.size    = rawSize;
+					node.content = Buffer.alloc(0); // free heap
+					node.evicted = true;
+				}
+			}
+		}
+	}
+
+	/**
+	 * Reload a single evicted file node's content from the current snapshot.
+	 * No-op if the node is not evicted.
+	 */
+	private _reloadEvicted(node: InternalFileNode, normalizedPath: string): void {
+		if (!node.evicted || !this.snapshotFile) return;
+		if (!fsSync.existsSync(this.snapshotFile)) return;
+		try {
+			// Load and parse the snapshot to find this specific node
+			const raw = fsSync.readFileSync(this.snapshotFile);
+			const tmpRoot = decodeVfs(raw);
+			const parts = normalizedPath.split("/").filter(Boolean);
+			let cur: InternalNode = tmpRoot;
+			for (const part of parts) {
+				if (cur.type !== "directory") return;
+				const next = cur.children.get(part);
+				if (!next) return;
+				cur = next;
+			}
+			if (cur.type === "file") {
+				node.content = cur.content;
+				node.compressed = cur.compressed;
+				node.evicted = undefined;
+			}
+		} catch {
+			// Snapshot unreadable — leave evicted; caller will get empty content
+		}
+	}
 
 	// ── Mount API ─────────────────────────────────────────────────────────────
 
@@ -387,6 +597,7 @@ class VirtualFileSystem extends EventEmitter {
 		}
 
 		this.emit("file:write", { path: normalized, size: storedContent.length });
+		this._journal({ op: JournalOp.WRITE, path: normalized, content: rawContent, mode });
 	}
 
 	/**
@@ -405,6 +616,7 @@ class VirtualFileSystem extends EventEmitter {
 			throw new Error(`Cannot read '${targetPath}': not a file.`);
 		}
 		const f = node as InternalFileNode;
+		if (f.evicted) this._reloadEvicted(f, normalized);
 		const raw = f.compressed ? gunzipSync(f.content) : f.content;
 		this.emit("file:read", { path: normalized, size: raw.length });
 		return raw.toString("utf8");
@@ -423,6 +635,7 @@ class VirtualFileSystem extends EventEmitter {
 			throw new Error(`Cannot read '${targetPath}': not a file.`);
 		}
 		const f = node as InternalFileNode;
+		if (f.evicted) this._reloadEvicted(f, normalized);
 		const raw = f.compressed ? gunzipSync(f.content) : f.content;
 		this.emit("file:read", { path: normalized, size: raw.length });
 		return raw;
@@ -442,7 +655,9 @@ class VirtualFileSystem extends EventEmitter {
 
 	/** Updates mode bits on a node. */
 	public chmod(targetPath: string, mode: number): void {
-		getNode(this.root, normalizePath(targetPath)).mode = mode;
+		const normalized = normalizePath(targetPath);
+		getNode(this.root, normalized).mode = mode;
+		this._journal({ op: JournalOp.CHMOD, path: normalized, mode });
 	}
 
 	/** Returns metadata for a file or directory. */
@@ -488,7 +703,7 @@ class VirtualFileSystem extends EventEmitter {
 				createdAt: f.createdAt,
 				updatedAt: f.updatedAt,
 				compressed: f.compressed,
-				size: f.content.length,
+				size: f.evicted ? (f.size ?? 0) : f.content.length,
 			};
 		}
 		const d = node as InternalDirectoryNode;
@@ -617,6 +832,8 @@ class VirtualFileSystem extends EventEmitter {
 			updatedAt: new Date(),
 		};
 		parent.children.set(name, symNode);
+		// Journal before emit
+		this._journal({ op: JournalOp.SYMLINK, path: normalizedLink, dest: normalizedTarget });
 		this.emit("symlink:create", {
 			link: normalizedLink,
 			target: normalizedTarget,
@@ -692,6 +909,7 @@ class VirtualFileSystem extends EventEmitter {
 		);
 		parent.children.delete(name);
 		this.emit("node:remove", { path: normalized });
+		this._journal({ op: JournalOp.REMOVE, path: normalized });
 	}
 
 	/** Moves or renames a node. */
@@ -721,6 +939,7 @@ class VirtualFileSystem extends EventEmitter {
 		srcParent.children.delete(srcName);
 		node.name = destName;
 		destParent.children.set(destName, node);
+		this._journal({ op: JournalOp.MOVE, path: fromNormalized, dest: toNormalized });
 	}
 
 	// ── Snapshot serialisation ─────────────────────────────────────────────────

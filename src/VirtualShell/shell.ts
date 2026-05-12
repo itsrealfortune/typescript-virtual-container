@@ -202,7 +202,7 @@ export function startShell(
 			cwd = result.nextCwd;
 		}
 
-		await shell.vfs.flushMirror();
+		// WAL: checkpoint handled by auto-flush timer
 		renderLine();
 	}
 
@@ -221,7 +221,7 @@ export function startShell(
 					activeSession.targetPath,
 					updatedContent,
 				);
-				await shell.vfs.flushMirror();
+				// WAL: checkpoint handled by auto-flush timer
 			} catch {
 				// If temp file does not exist, nano exited without writing.
 			}
@@ -498,7 +498,7 @@ export function startShell(
 				historyDraft = "";
 				stream.write("bye\r\n");
 				pushHistory("bye");
-				await shell.vfs.flushMirror();
+				// WAL: checkpoint handled by auto-flush timer
 				stream.write("logout\r\n");
 				stream.exit(0);
 				stream.end();
@@ -657,7 +657,7 @@ export function startShell(
 						cursorPos = 0;
 					}
 
-					await shell.vfs.flushMirror();
+					// WAL: checkpoint handled by auto-flush timer
 				}
 
 				renderLine();

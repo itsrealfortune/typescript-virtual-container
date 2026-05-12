@@ -109,7 +109,7 @@ class SshMimic extends EventEmitter {
 				`${homePath}/README.txt`,
 				`Welcome to ${this.shell.hostname}\n`,
 			);
-			void this.shell.vfs.flushMirror();
+			void this.shell.vfs.stopAutoFlush();
 		}
 	}
 
