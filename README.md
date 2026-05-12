@@ -1231,34 +1231,57 @@ On every `VirtualShell` init, a realistic Linux hierarchy is bootstrapped idempo
 
 ```
 /
-├── bin -> /usr/bin            (symlink, Debian-style)
-├── sbin -> /usr/sbin          (symlink, Debian-style)
+├── bin -> usr/bin             (symlink, Debian-style)
+├── sbin -> usr/sbin           (symlink, Debian-style)
 ├── lib/                       (ELF stub)
-├── lib64/                     (ELF stub)
+├── lib/modules/
+├── lib/x86_64-linux-gnu/
+├── lib64 -> usr/lib64         (symlink, Debian-style)
+├── initrd.img -> boot/initrd.img-<kernel>
+├── initrd.img.old -> boot/initrd.img-<prev>
+├── vmlinuz -> boot/vmlinuz-<kernel>
+├── vmlinuz.old -> boot/vmlinuz-<prev>
+├── lost+found/                (mode 0o700, ext4 fsck dir)
+│
+├── boot/
+│   ├── grub/
+│   │   └── grub.cfg           virtual bootloader config
+│   ├── vmlinuz-<kernel>       kernel stub
+│   ├── initrd.img-<kernel>    initrd stub
+│   ├── System.map-<kernel>
+│   └── config-<kernel>
 │
 ├── dev/
-│   ├── null                   (0o666)
-│   ├── zero                   (0o666)
-│   ├── random                 (0o444)
-│   ├── urandom                (0o444)
-│   ├── pts/                   (terminal devices)
-│   └── shm/                   (shared memory)
+│   ├── null / zero / full     (0o666)
+│   ├── random / urandom       (0o444)
+│   ├── mem                    (0o640)
+│   ├── console / tty / tty0 / tty1 / ttyS0
+│   ├── sda / sda1 / sda2      block device stubs
+│   ├── loop0-loop7 + loop-control
+│   ├── stdin / stdout / stderr
+│   ├── pts/
+│   └── shm/
 │
 ├── etc/
-│   ├── apt/
-│   │   ├── sources.list       virtual Fortune repos
-│   │   └── sources.list.d/
+│   ├── apt/sources.list + sources.list.d/
 │   ├── cron.d/
 │   ├── init.d/
-│   ├── network/
-│   │   └── interfaces         lo + eth0 (DHCP)
+│   ├── ld.so.conf + ld.so.conf.d/x86_64-linux-gnu.conf
+│   ├── network/interfaces     lo + eth0 (DHCP)
+│   ├── pam.d/                 common-auth|account|password|session + sshd
+│   ├── security/limits.conf + access.conf
+│   ├── sudoers (0o440) + sudoers.d/
 │   ├── systemd/system/
 │   ├── debian_version         12.0
+│   ├── fstab                  UUID stubs + tmpfs entries
 │   ├── group                  synced from VirtualUserManager
 │   ├── hostname
-│   ├── hosts                  127.0.0.1 localhost + VM hostname + ::1
+│   ├── hosts                  127.0.0.1 + ::1 + VM hostname
 │   ├── issue                  login banner
-│   ├── motd                   welcome message (uses ShellProperties)
+│   ├── locale.conf            LANG=en_US.UTF-8
+│   ├── localtime / timezone   UTC
+│   ├── login.defs             UID_MIN=1000 SHA512
+│   ├── motd                   uses ShellProperties
 │   ├── os-release             NAME="Fortune GNU/Linux" + ShellProperties
 │   ├── passwd                 synced from VirtualUserManager
 │   ├── profile                PATH + PS1 defaults
@@ -1267,33 +1290,45 @@ On every `VirtualShell` init, a realistic Linux hierarchy is bootstrapped idempo
 │   └── shells                 /bin/sh /bin/bash /usr/bin/bash
 │
 ├── home/
-│
-├── mnt/
 ├── media/
+├── mnt/
 ├── opt/
+├── snap/bin/
 ├── srv/
 │
 ├── proc/                      kernel simulation engine (refreshed on demand)
-│   ├── boot/
-│   │   ├── log                kernel boot sequence log
-│   │   └── version
-│   ├── net/
-│   │   └── dev                lo + eth0 counters
-│   ├── 1/                     init process (cmdline, comm, stat, status, environ, fd/, fdinfo/)
+│   ├── boot/log + version     kernel boot sequence
+│   ├── net/dev + if_inet6 + tcp + tcp6
+│   ├── sys/kernel/            hostname, ostype, osrelease, pid_max,
+│   │                          threads-max, randomize_va_space, dmesg_restrict
+│   ├── sys/net/ipv4/ip_forward
+│   ├── sys/vm/swappiness + overcommit_memory
+│   ├── self/mounts            mirrors most recent session's /proc/<pid>/
+│   ├── 1/                     init (cmdline, comm, stat, status, environ, fd/, fdinfo/)
 │   ├── <pid>/                 one subtree per active session (TTY-derived PID)
-│   ├── self/                  mirrors most recent session's /proc/<pid>/
+│   ├── cmdline                kernel boot args
 │   ├── cpuinfo                real host CPU passthrough
+│   ├── filesystems
 │   ├── hostname
 │   ├── loadavg                computed dynamically
-│   ├── meminfo                real host memory (MemTotal/Free/Available/Buffers/Cached/Swap)
+│   ├── meminfo                real host memory (Total/Free/Available/Buffers/Cached/Swap)
+│   ├── mounts
+│   ├── partitions
+│   ├── swaps
 │   ├── uptime                 computed from shellStartTime
 │   └── version                Linux <kernel> (fortune@build)
 │
 ├── root/                      (mode 0o700)
-│   ├── .bashrc                colored PS1, PATH, aliases
+│   ├── .bashrc                colored PS1, PATH, ll/la aliases
 │   └── .profile
 │
-├── sys/                       sysfs graph — deterministic, seeded from hostname
+├── run/                       (systemd tmpfs runtime)
+│   ├── lock/
+│   ├── systemd/
+│   ├── user/
+│   └── utmp
+│
+├── sys/                       sysfs graph — deterministic, seeded from hostname (fnv1a)
 │   ├── class/net/
 │   ├── devices/virtual/dmi/id/
 │   │   ├── bios_vendor / bios_version / bios_date
@@ -1312,7 +1347,7 @@ On every `VirtualShell` init, a realistic Linux hierarchy is bootstrapped idempo
 ├── usr/
 │   ├── bin/                   stubs for all built-in commands (exec builtin <name>)
 │   ├── sbin/
-│   ├── lib/
+│   ├── lib/ + lib64/
 │   ├── local/bin|lib|share/
 │   └── share/doc|man/man1/
 │
@@ -1320,17 +1355,20 @@ On every `VirtualShell` init, a realistic Linux hierarchy is bootstrapped idempo
     ├── cache/apt/archives/
     ├── lib/
     │   ├── apt/lists/
+    │   ├── misc/
     │   └── dpkg/
     │       ├── available
     │       ├── info/
     │       └── status          managed by VirtualPackageManager
     ├── log/
-    │   ├── apt/history.log
-    │   ├── apt/term.log
+    │   ├── apt/history.log + term.log
     │   ├── auth.log
     │   ├── dpkg.log
+    │   ├── kern.log
     │   └── syslog
-    ├── run/
+    ├── mail/
+    ├── run -> /run             (legacy symlink)
+    ├── spool/cron/
     └── tmp/
 ```
 

@@ -134,6 +134,69 @@ function bootstrapEtc(
 	ensureDir(vfs, "/etc/init.d");
 	ensureDir(vfs, "/etc/systemd");
 	ensureDir(vfs, "/etc/systemd/system");
+
+	// fstab
+	ensureFile(
+		vfs,
+		"/etc/fstab",
+		`${[
+			"# <file system>  <mount point>  <type>   <options>         <dump>  <pass>",
+			"UUID=00000000-0000-0000-0000-000000000001  /       ext4  errors=remount-ro  0  1",
+			"UUID=00000000-0000-0000-0000-000000000002  /boot   ext4  defaults           0  2",
+			"UUID=00000000-0000-0000-0000-000000000003  none    swap  sw                 0  0",
+			"tmpfs  /tmp   tmpfs  defaults,noatime  0  0",
+			"tmpfs  /run   tmpfs  defaults,noatime  0  0",
+		].join("\n")}\n`,
+	);
+
+	// login.defs — useradd/passwd defaults
+	ensureFile(
+		vfs,
+		"/etc/login.defs",
+		`${[
+			"MAIL_DIR        /var/mail",
+			"PASS_MAX_DAYS   99999",
+			"PASS_MIN_DAYS   0",
+			"PASS_WARN_AGE   7",
+			"UID_MIN         1000",
+			"UID_MAX         60000",
+			"GID_MIN         1000",
+			"GID_MAX         60000",
+			"CREATE_HOME     yes",
+			"UMASK           022",
+			"USERGROUPS_ENAB yes",
+			"ENCRYPT_METHOD  SHA512",
+		].join("\n")}\n`,
+	);
+
+	// security + pam
+	ensureDir(vfs, "/etc/security");
+	ensureFile(vfs, "/etc/security/limits.conf", "# /etc/security/limits.conf\n");
+	ensureFile(vfs, "/etc/security/access.conf", "# /etc/security/access.conf\n");
+
+	ensureDir(vfs, "/etc/pam.d");
+	ensureFile(vfs, "/etc/pam.d/common-auth",     "auth required pam_unix.so\n");
+	ensureFile(vfs, "/etc/pam.d/common-account",  "account required pam_unix.so\n");
+	ensureFile(vfs, "/etc/pam.d/common-password",
+		"password required pam_unix.so obscure sha512\n");
+	ensureFile(vfs, "/etc/pam.d/common-session",  "session required pam_unix.so\n");
+	ensureFile(vfs, "/etc/pam.d/sshd",
+		"@include common-auth\n@include common-account\n@include common-session\n");
+
+	// sudo config
+	ensureDir(vfs, "/etc/sudoers.d");
+	ensureFile(vfs, "/etc/sudoers",
+		"root ALL=(ALL:ALL) ALL\n%sudo ALL=(ALL:ALL) ALL\n", 0o440);
+
+	// ld
+	ensureFile(vfs, "/etc/ld.so.conf", "include /etc/ld.so.conf.d/*.conf\n");
+	ensureDir(vfs, "/etc/ld.so.conf.d");
+	ensureFile(vfs, "/etc/ld.so.conf.d/x86_64-linux-gnu.conf", "/lib/x86_64-linux-gnu\n/usr/lib/x86_64-linux-gnu\n");
+
+	// locale + timezone
+	ensureFile(vfs, "/etc/locale.conf", "LANG=en_US.UTF-8\n");
+	ensureFile(vfs, "/etc/timezone", "UTC\n");
+	ensureFile(vfs, "/etc/localtime", "UTC\n");
 }
 
 // ─── /etc/passwd + /etc/group + /etc/shadow ─────────────────────────────────
@@ -345,6 +408,74 @@ export function refreshProc(
 			"  eth0:  131072    1024    0    0    0     0          0         0    65536     512    0    0    0     0       0          0",
 		].join("\n")}\n`,
 	);
+	ensureFile(vfs, "/proc/net/if_inet6", "");
+	ensureFile(vfs, "/proc/net/tcp",  "  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n");
+	ensureFile(vfs, "/proc/net/tcp6", "  sl  local_address                         remote_address                        st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n");
+
+	// /proc/cmdline — kernel boot args
+	write(vfs, "/proc/cmdline", `BOOT_IMAGE=/boot/vmlinuz-${props.kernel} root=/dev/sda2 ro quiet splash\n`);
+
+	// /proc/filesystems
+	ensureFile(
+		vfs,
+		"/proc/filesystems",
+		`${["nodev\tsysfs", "nodev\ttmpfs", "nodev\tproc", "nodev\tdevtmpfs", "\text4", "\tvfat", "nodev\tsquashfs", "nodev\toverlay"].join("\n")}\n`,
+	);
+
+	// /proc/mounts (= /proc/self/mounts)
+	const mountsContent = `${[
+		"sysfs /sys sysfs rw,nosuid,nodev,noexec,relatime 0 0",
+		"proc /proc proc rw,nosuid,nodev,noexec,relatime 0 0",
+		"devtmpfs /dev devtmpfs rw,nosuid,size=8192k,nr_inodes=4096,mode=755 0 0",
+		"tmpfs /run tmpfs rw,nosuid,nodev,noexec,relatime,size=204800k,mode=755 0 0",
+		"tmpfs /tmp tmpfs rw,nosuid,nodev,noatime 0 0",
+		"/dev/sda2 / ext4 rw,relatime,errors=remount-ro 0 0",
+		"/dev/sda1 /boot ext4 rw,relatime 0 0",
+		"tmpfs /dev/shm tmpfs rw,nosuid,nodev 0 0",
+		"devpts /dev/pts devpts rw,nosuid,noexec,relatime,mode=620,ptmxmode=000 0 0",
+		"squashfs /snap/core squashfs ro,nodev,relatime 0 0",
+	].join("\n")}\n`;
+	write(vfs, "/proc/mounts", mountsContent);
+	ensureDir(vfs, "/proc/self");
+	write(vfs, "/proc/self/mounts", mountsContent);
+
+	// /proc/partitions
+	write(
+		vfs,
+		"/proc/partitions",
+		`${[
+			"major minor  #blocks  name",
+			"",
+			"   8        0   41943040 sda",
+			"   8        1     524288 sda1",
+			"   8        2   41417216 sda2",
+			"   7        0   10485760 loop0",
+		].join("\n")}\n`,
+	);
+
+	// /proc/swaps
+	write(
+		vfs,
+		"/proc/swaps",
+		"Filename\t\t\t\tType\t\tSize\t\tUsed\t\tPriority\n" +
+		`/dev/sda3\t\t\t\tpartition\t${Math.floor(os.totalmem() / 2048)}\t\t0\t\t-2\n`,
+	);
+
+	// /proc/sys — sysctl virtual tree
+	ensureDir(vfs, "/proc/sys");
+	ensureDir(vfs, "/proc/sys/kernel");
+	ensureDir(vfs, "/proc/sys/net");
+	ensureDir(vfs, "/proc/sys/vm");
+	ensureFile(vfs, "/proc/sys/kernel/hostname",            `${hostname}\n`);
+	ensureFile(vfs, "/proc/sys/kernel/ostype",               "Linux\n");
+	ensureFile(vfs, "/proc/sys/kernel/osrelease",            `${props.kernel}\n`);
+	ensureFile(vfs, "/proc/sys/kernel/pid_max",              "32768\n");
+	ensureFile(vfs, "/proc/sys/kernel/threads-max",          "65536\n");
+	ensureFile(vfs, "/proc/sys/kernel/randomize_va_space",   "2\n");
+	ensureFile(vfs, "/proc/sys/kernel/dmesg_restrict",       "0\n");
+	ensureFile(vfs, "/proc/sys/net/ipv4/ip_forward",         "0\n");
+	ensureFile(vfs, "/proc/sys/vm/swappiness",               "60\n");
+	ensureFile(vfs, "/proc/sys/vm/overcommit_memory",        "0\n");
 
 	// init process (PID 1)
 	writeProcPid(vfs, 1, "root", "pts/0", "/sbin/init", new Date(shellStartTime).toISOString(), {});
@@ -438,12 +569,39 @@ function bootstrapSys(vfs: VirtualFileSystem, hostname: string, props: ShellProp
 
 function bootstrapDev(vfs: VirtualFileSystem): void {
 	ensureDir(vfs, "/dev");
-	ensureFile(vfs, "/dev/null", "", 0o666);
-	ensureFile(vfs, "/dev/zero", "", 0o666);
-	ensureFile(vfs, "/dev/random", "", 0o444);
+
+	// character devices
+	ensureFile(vfs, "/dev/null",    "", 0o666);
+	ensureFile(vfs, "/dev/zero",    "", 0o666);
+	ensureFile(vfs, "/dev/full",    "", 0o666);
+	ensureFile(vfs, "/dev/random",  "", 0o444);
 	ensureFile(vfs, "/dev/urandom", "", 0o444);
+	ensureFile(vfs, "/dev/mem",     "", 0o640);
+
+	// terminal devices
+	ensureFile(vfs, "/dev/console", "", 0o600);
+	ensureFile(vfs, "/dev/tty",     "", 0o666);
+	ensureFile(vfs, "/dev/tty0",    "", 0o620);
+	ensureFile(vfs, "/dev/tty1",    "", 0o620);
+	ensureFile(vfs, "/dev/ttyS0",   "", 0o660);
+
+	// loop devices
+	for (let i = 0; i < 8; i++) {
+		ensureFile(vfs, `/dev/loop${i}`, "", 0o660);
+	}
+	ensureDir(vfs, "/dev/loop-control");
+
+	// block device stubs (sda + partitions)
+	ensureFile(vfs, "/dev/sda",  "", 0o660);
+	ensureFile(vfs, "/dev/sda1", "", 0o660);
+	ensureFile(vfs, "/dev/sda2", "", 0o660);
+
+	// misc
 	ensureDir(vfs, "/dev/pts");
 	ensureDir(vfs, "/dev/shm");
+	ensureFile(vfs, "/dev/stdin",  "", 0o666);
+	ensureFile(vfs, "/dev/stdout", "", 0o666);
+	ensureFile(vfs, "/dev/stderr", "", 0o666);
 }
 
 // ─── /usr ─────────────────────────────────────────────────────────────────────
@@ -486,7 +644,6 @@ function bootstrapVar(vfs: VirtualFileSystem): void {
 	ensureDir(vfs, "/var/log");
 	ensureDir(vfs, "/var/log/apt");
 	ensureDir(vfs, "/var/tmp");
-	ensureDir(vfs, "/var/run");
 	ensureDir(vfs, "/var/cache");
 	ensureDir(vfs, "/var/cache/apt");
 	ensureDir(vfs, "/var/cache/apt/archives");
@@ -495,6 +652,10 @@ function bootstrapVar(vfs: VirtualFileSystem): void {
 	ensureDir(vfs, "/var/lib/apt/lists");
 	ensureDir(vfs, "/var/lib/dpkg");
 	ensureDir(vfs, "/var/lib/dpkg/info");
+	ensureDir(vfs, "/var/lib/misc");
+	ensureDir(vfs, "/var/spool");
+	ensureDir(vfs, "/var/spool/cron");
+	ensureDir(vfs, "/var/mail");
 
 	// dpkg status — starts empty, VirtualPackageManager populates it
 	ensureFile(vfs, "/var/lib/dpkg/status", "");
@@ -503,19 +664,34 @@ function bootstrapVar(vfs: VirtualFileSystem): void {
 	// syslog stubs
 	ensureFile(vfs, "/var/log/syslog", `${new Date().toUTCString()} fortune kernel: Virtual container started\n`);
 	ensureFile(vfs, "/var/log/auth.log", "");
+	ensureFile(vfs, "/var/log/kern.log", "");
 	ensureFile(vfs, "/var/log/dpkg.log", "");
 	ensureFile(vfs, "/var/log/apt/history.log", "");
 	ensureFile(vfs, "/var/log/apt/term.log", "");
+
+	// /run — systemd tmpfs runtime dir (canonical on modern Debian)
+	// /var/run is a legacy symlink to /run
+	ensureDir(vfs, "/run");
+	ensureDir(vfs, "/run/lock");
+	ensureDir(vfs, "/run/systemd");
+	ensureDir(vfs, "/run/user");
+	ensureFile(vfs, "/run/utmp", "");
 }
 
 // ─── /bin + /sbin symlinks ────────────────────────────────────────────────────
 
 function bootstrapBin(vfs: VirtualFileSystem): void {
 	// Modern Debian: /bin and /sbin are symlinks to /usr/bin and /usr/sbin
-	if (!vfs.exists("/bin")) vfs.symlink("/usr/bin", "/bin");
+	if (!vfs.exists("/bin"))  vfs.symlink("/usr/bin",  "/bin");
 	if (!vfs.exists("/sbin")) vfs.symlink("/usr/sbin", "/sbin");
+
+	// /var/run → /run (systemd compat)
+	if (!vfs.exists("/var/run")) vfs.symlink("/run", "/var/run");
+
 	ensureDir(vfs, "/lib");
 	ensureDir(vfs, "/lib64");
+	ensureDir(vfs, "/lib/x86_64-linux-gnu");
+	ensureDir(vfs, "/lib/modules");
 }
 
 // ─── /tmp ─────────────────────────────────────────────────────────────────────
@@ -544,12 +720,50 @@ function bootstrapRoot(vfs: VirtualFileSystem): void {
 
 // ─── /opt /srv /mnt /media /home ─────────────────────────────────────────────
 
-function bootstrapMisc(vfs: VirtualFileSystem): void {
+function bootstrapMisc(vfs: VirtualFileSystem, props: ShellProperties): void {
 	ensureDir(vfs, "/opt");
 	ensureDir(vfs, "/srv");
 	ensureDir(vfs, "/mnt");
 	ensureDir(vfs, "/media");
 	ensureDir(vfs, "/home");
+
+	// /boot — grub + kernel images
+	ensureDir(vfs, "/boot");
+	ensureDir(vfs, "/boot/grub");
+	ensureDir(vfs, "/boot/grub/grub.cfg.d");
+	ensureFile(
+		vfs,
+		"/boot/grub/grub.cfg",
+		`${[
+			"# GRUB configuration (virtual)",
+			"set default=0",
+			"set timeout=5",
+			"",
+			`menuentry "Fortune GNU/Linux" {`,
+			`  linux   /vmlinuz root=/dev/sda2 ro quiet splash`,
+			`  initrd  /initrd.img`,
+			`}`,
+		].join("\n")}\n`,
+	);
+	// kernel + initrd stubs in /boot
+	const kver = props.kernel;
+	ensureFile(vfs, `/boot/vmlinuz-${kver}`, "", 0o644);
+	ensureFile(vfs, `/boot/initrd.img-${kver}`, "", 0o644);
+	ensureFile(vfs, `/boot/System.map-${kver}`, `${kver} virtual\n`, 0o644);
+	ensureFile(vfs, `/boot/config-${kver}`, `# Linux kernel config ${kver}\n`, 0o644);
+
+	// root-level symlinks (Debian convention)
+	if (!vfs.exists("/vmlinuz"))     vfs.symlink(`/boot/vmlinuz-${kver}`, "/vmlinuz");
+	if (!vfs.exists("/vmlinuz.old")) vfs.symlink(`/boot/vmlinuz-${kver}`, "/vmlinuz.old");
+	if (!vfs.exists("/initrd.img"))     vfs.symlink(`/boot/initrd.img-${kver}`, "/initrd.img");
+	if (!vfs.exists("/initrd.img.old")) vfs.symlink(`/boot/initrd.img-${kver}`, "/initrd.img.old");
+
+	// /snap — snapd mount namespace root
+	ensureDir(vfs, "/snap");
+	ensureDir(vfs, "/snap/bin");
+
+	// /lost+found — ext4 fsck recovery dir (mode 0o700, root only)
+	ensureDir(vfs, "/lost+found", 0o700);
 }
 
 // ─── main entry point ─────────────────────────────────────────────────────────
@@ -581,7 +795,7 @@ export function bootstrapLinuxRootfs(
 	bootstrapBin(vfs);
 	bootstrapTmp(vfs);
 	bootstrapRoot(vfs);
-	bootstrapMisc(vfs);
+	bootstrapMisc(vfs, props);
 	bootProcLog(vfs, props);
 	refreshProc(vfs, props, hostname, shellStartTime, sessions);
 	syncEtcPasswd(vfs, users);
