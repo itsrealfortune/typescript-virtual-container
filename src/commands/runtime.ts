@@ -288,6 +288,21 @@ export async function runCommand(
 	);
 
 	const parts = tokenizeCommand(expanded.trim());
+	if (parts.length === 0) return { exitCode: 0 };
+	const assignRe = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/;
+	if (assignRe.test(parts[0]!)) {
+		return runCommandDirect(
+			parts[0]!,
+			parts.slice(1),
+			authUser,
+			hostname,
+			mode,
+			cwd,
+			shell,
+			stdin,
+			shellEnv,
+		);
+	}
 	const commandName = parts[0]?.toLowerCase() ?? "";
 	// Apply brace expansion to each arg token
 	const args = parts.slice(1).flatMap(expandBraces);

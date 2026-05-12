@@ -1,9 +1,9 @@
 import type {
+	LogicalOp,
 	Pipeline,
 	PipelineCommand,
 	Script,
 	Statement,
-	LogicalOp,
 } from "../types/pipeline";
 import { tokenizeCommand } from "../utils/tokenize";
 
@@ -274,7 +274,8 @@ function parseCommandWithRedirections(token: string): PipelineCommand {
 		}
 	}
 
-	const name = (cmdParts[0] ?? "").toLowerCase();
+	const rawName = cmdParts[0] ?? "";
+	const name = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/.test(rawName) ? rawName : rawName.toLowerCase();
 	return {
 		name, args: cmdParts.slice(1),
 		inputFile, outputFile, appendOutput,
