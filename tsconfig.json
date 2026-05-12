@@ -35,7 +35,12 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "declaration": true,
-    "declarationMap": true
+    "declarationMap": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "sourceMap": true,
+    "composite": true,
+    "tsBuildInfoFile": "dist/.tsbuildinfo"
   },    
-  "include": ["src/**/*", "tests/**/*"]
+  "include": ["src/**/*"]
 }
