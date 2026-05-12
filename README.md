@@ -219,7 +219,7 @@ console.log(r.stdout);
 
 ---
 
-<details open>
+<details>
 <summary><strong>API Reference</strong></summary>
 
 ### `VirtualSshServer`
