@@ -225,6 +225,10 @@ function parseCommandWithRedirections(token: string): PipelineCommand {
 	let appendOutput = false;
 	let i = 0;
 
+	let stderrFile: string | undefined;
+	let stderrAppend = false;
+	let stderrToStdout = false;
+
 	while (i < parts.length) {
 		const part = parts[i]!;
 		if (part === "<") {
@@ -247,6 +251,23 @@ function parseCommandWithRedirections(token: string): PipelineCommand {
 			outputFile = parts[i];
 			appendOutput = false;
 			i++;
+		} else if (part === "2>&1") {
+			stderrToStdout = true;
+			i++;
+		} else if (part === "2>>") {
+			i++;
+			if (i >= parts.length)
+				throw new Error("Syntax error: expected filename after 2>>");
+			stderrFile = parts[i];
+			stderrAppend = true;
+			i++;
+		} else if (part === "2>") {
+			i++;
+			if (i >= parts.length)
+				throw new Error("Syntax error: expected filename after 2>");
+			stderrFile = parts[i];
+			stderrAppend = false;
+			i++;
 		} else {
 			cmdParts.push(part);
 			i++;
@@ -254,6 +275,10 @@ function parseCommandWithRedirections(token: string): PipelineCommand {
 	}
 
 	const name = (cmdParts[0] ?? "").toLowerCase();
-	return { name, args: cmdParts.slice(1), inputFile, outputFile, appendOutput };
+	return {
+		name, args: cmdParts.slice(1),
+		inputFile, outputFile, appendOutput,
+		stderrFile, stderrAppend, stderrToStdout,
+	};
 }
 

@@ -24,6 +24,7 @@
   - [`VirtualSftpServer`](#virtualsftpserver)
   - [`VirtualShell`](#virtualshell)
   - [`VirtualFileSystem`](#virtualfilesystem)
+    - [Mount API](#mount-api)
   - [`VirtualUserManager`](#virtualusermanager)
   - [`VirtualPackageManager`](#virtualpackagemanager)
   - [Snapshot Diff Tooling](#snapshot-diff-tooling)
@@ -53,7 +54,7 @@
 | Mode | Entry point | Use case |
 |------|-------------|----------|
 | **SSH/SFTP server** | `VirtualSshServer` / `VirtualSftpServer` | Honeypots, remote testing, training environments |
-| **Web shell** | `builds/web.min.js` (browser bundle) | Embedded terminals, interactive tutorials, browser demos |
+| **Web shell** | `builds/web.min.js` / `builds/web-full-api.min.js` (ESM) | Embedded terminals, interactive tutorials, browser demos |
 | **Standalone CLI** | `builds/self-standalone.js` (single file) | Local shell, one-liner demos, no install required |
 
 All three modes share the same core: a pure in-memory VFS, a real shell interpreter, a virtual package manager, and a typed programmatic API.
@@ -111,24 +112,22 @@ await ssh.start();
 
 ### Web shell (browser)
 
-Three browser bundles are available — pick the one that fits your deployment:
+Two browser bundles are available:
 
-| Bundle | Format | Entry | Use case |
-|--------|--------|-------|----------|
-| `builds/web.min.js` | ESM | `createWebShell()` | Local dev, modern bundlers |
-| `builds/web-iife.min.js` | IIFE (`WebShellLib`) | `WebShellLib.createWebShell()` | Cloudflare, CDN, reverse proxies |
-| `builds/web-full-api.min.js` | ESM | `createVirtualShellShim()` | API surface close to `VirtualShell` |
+| Bundle | Format | Entry point | Use case |
+|--------|--------|-------------|----------|
+| `builds/web.min.js` | ESM | `createWebShell()` | Embedded terminals, modern bundlers |
+| `builds/web-full-api.min.js` | ESM | `createVirtualShellShim()` | Full `VirtualShell`-like API in the browser |
 
-All bundles persist the VFS in **IndexedDB** — state survives page reloads.
+Both bundles persist the VFS in **IndexedDB** — state survives page reloads.
 
 ```bash
-bun run web-build          # → builds/web.min.js + examples/web.min.js
-bun run web-build-iife     # → builds/web-iife.min.js
-bun run web-full-build     # → builds/web-full-api.min.js
-bun run build-all          # rebuild everything
+bun run web-build       # → builds/web.min.js + examples/web.min.js
+bun run web-full-build  # → builds/web-full-api.min.js
+bun run build-all       # rebuild everything
 ```
 
-**ESM (`web.min.js`)**
+**`web.min.js`** — lightweight shell with IndexedDB VFS:
 
 ```html
 <script type="module">
@@ -144,19 +143,7 @@ bun run build-all          # rebuild everything
 </script>
 ```
 
-**IIFE (`web-iife.min.js`)** — no `type="module"` needed, works through Cloudflare:
-
-```html
-<script src="./builds/web-iife.min.js"></script>
-<script>
-  const shell = WebShellLib.createWebShell("web-vm");
-  shell.ensureInitialized().then(() =>
-    shell.executeCommandLine("whoami").then(r => console.log(r.stdout))
-  );
-</script>
-```
-
-**Full API shim (`web-full-api.min.js`)** — mirrors the `VirtualShell` programmatic API:
+**`web-full-api.min.js`** — mirrors the `VirtualShell` programmatic API:
 
 ```html
 <script type="module">
@@ -165,8 +152,7 @@ bun run build-all          # rebuild everything
   const shell = createVirtualShellShim("web-vm");
   await shell.ensureInitialized();
   await shell.executeCommandLine("mkdir -p /app && echo hello > /app/file.txt");
-  const vfs = shell.getVfs();
-  console.log(vfs.readFile("/app/file.txt")); // hello
+  console.log(shell.getVfs().readFile("/app/file.txt")); // hello
 </script>
 ```
 
@@ -174,8 +160,7 @@ bun run build-all          # rebuild everything
 
 ```bash
 bun run example-serve
-# Open http://localhost:8787/index.html (ESM)
-# or   http://localhost:8787/index-cf.html (IIFE, Cloudflare-compatible)
+# Open http://localhost:8787/index.html
 ```
 
 ### Programmatic API
@@ -327,6 +312,9 @@ interface ShellProperties {
 | `writeFileAsUser(authUser, path, content)` | Write with quota enforcement. |
 | `refreshProcFs(): void` | Refresh all `/proc/*` files (uptime, meminfo, cpuinfo, per-pid). |
 | `refreshProcSessions(): void` | Lightweight refresh of `/proc/<pid>` and `/proc/self` only. |
+| `mount(vPath, hostPath, options?): void` | Mount a host directory into the VFS. See [Mount API](#mount-api). |
+| `unmount(vPath): void` | Remove a host directory mount. |
+| `getMounts()` | List all active mounts as `{ vPath, hostPath, readOnly }[]`. |
 | `syncPasswd(): void` | Sync `/etc/passwd`, `/etc/group`, `/etc/shadow` from user manager. |
 | `getVfs(): VirtualFileSystem \| null` | Access VFS instance. |
 | `getUsers(): VirtualUserManager \| null` | Access user manager. |
@@ -397,6 +385,40 @@ await vfs.flushMirror();   // save to disk
 | `VirtualFileSystem.fromSnapshot(snapshot)` | **Static.** Create memory-mode instance from snapshot. |
 
 **Events:** `file:write { path, size }`, `file:read { path, size }`, `dir:create { path, mode }`, `node:remove { path }`, `symlink:create { link, target }`, `snapshot:import`, `snapshot:restore { path }`, `mirror:flush { path? }`
+
+
+#### Mount API
+
+Mount a host directory inside the VM — all standard VFS operations (`readFile`, `writeFile`, `exists`, `stat`, `list`) are transparently delegated to the host filesystem.
+
+> **Node.js only.** In browser environments `mount()` is a silent no-op — the `vPath` remains an empty in-memory directory.
+
+```typescript
+// Read-only mount (default) — shell commands can read host files
+shell.mount("/workspace", "./my-project");
+
+// Read-write mount — shell commands can also write back to the host
+shell.mount("/data", "./data", { readOnly: false });
+
+// Unmount — delegation removed, vPath stays as an empty VFS directory
+shell.unmount("/workspace");
+
+// Introspect
+shell.getMounts();
+// → [{ vPath: "/workspace", hostPath: "/abs/path/my-project", readOnly: true }]
+```
+
+Direct VFS usage:
+
+```typescript
+shell.vfs.mount("/workspace", "./my-project");
+shell.vfs.unmount("/workspace");
+shell.vfs.getMounts();
+```
+
+**Events:** `mount { vPath, hostPath, readOnly }`, `unmount { vPath }`
+
+**Snapshot behaviour:** mounted files are **not** included in `toSnapshot()` — only the in-memory VFS tree is serialised. The mount configuration itself is also not persisted; restore it after each `fromSnapshot()` or `restoreMirror()`.
 
 #### VFSB Binary Format
 
@@ -653,6 +675,17 @@ interface VirtualActiveSession {
   tty: string;
   remoteAddress: string;
   startedAt: string; // ISO-8601
+}
+
+/** Returned by adduser, passwd, deluser — triggers interactive password prompt in the terminal. */
+interface PasswordChallenge {
+  preamble?: string;        // Lines printed before the first prompt
+  prompt: string;           // e.g. "New password: "
+  confirmPrompt?: string;   // Second prompt for confirmation
+  confirmText?: string;     // Destructive confirmation prompt (y/N)
+  action: "adduser" | "passwd" | "deluser" | "su";
+  targetUsername: string;
+  newUsername?: string;     // adduser only
 }
 ```
 
@@ -932,7 +965,7 @@ echo "Welcome back, root!"
 <details>
 <summary><strong>Built-in Commands (91)</strong></summary>
 
-Type `help` in the shell for a grouped, colorized listing. Type `help <command>` for detailed usage.
+Type `help` in the shell for a grouped, colorized listing. Type `help <command>` for detailed usage. Type `man <command>` for full manual pages — all 91 commands are documented.
 
 ### Navigation
 
@@ -1440,13 +1473,17 @@ Open:
 - [x] Pure in-memory VFS · symlinks · binary snapshot format (VFSB, ~27% smaller than JSON+base64)
 - [x] Linux rootfs on boot — `/etc`, `/proc`, `/sys`, `/dev`, `/usr`, `/var`
 - [x] Virtual package manager — `apt`/`dpkg`, 25 packages, VFS file writes
-- [x] 91 built-in commands across 9 categories
-- [x] Real shell interpreter — `if`/`for`/`while`/`case`/functions, `$(cmd)`, `$((expr))`, `${#VAR}`, single-quote isolation
+- [x] 92 built-in commands across 9 categories (`seq` added)
+- [x] Real shell interpreter — `if`/`for`/`while`/`case`/functions, `$(cmd)`, `$((expr))`, `${#VAR}`, `{a,b,c}` brace expansion, `{1..N}` ranges, `2>/dev/null` stderr redirect, `2>&1`, `(( x++ ))`
 - [x] `curl`/`wget` as pure `fetch()` · VFS PATH resolution · `/sbin` root-only
 - [x] `/proc/self` and `/proc/<pid>` per-session entries
 - [x] Snapshot diff tooling — `diffSnapshots`, `formatDiff`, `assertDiff`
 - [x] `node`/`python3`/`npm`/`npx` — package-gated virtual REPL stubs
-- [x] Web shell bundle (`web.min.js`) — fully browser-native with IndexedDB VFS
-- [x] Self-standalone CLI (`self-standalone.js`) — single-file interactive shell, no install
+- [x] Web shell bundles (`web.min.js`, `web-full-api.min.js`) — fully browser-native with IndexedDB VFS
+- [x] Self-standalone CLI (`self-standalone.js`) — single-file interactive shell, per-user history, tab completion
+- [x] 120+ `man` pages — all built-in commands documented via `man <cmd>`
+- [x] Shared `tokenize.ts` — unified tokenizer for shell parser and runtime (eliminates duplication)
+- [x] `PasswordChallenge` type — generic interactive password flow for `adduser`, `passwd`, `deluser`
+- [x] `VirtualFileSystem.mount(vPath, hostPath, { readOnly })` — bind-mount host directories into the VM; read-only by default; browser-safe (silent no-op)
 
 </details>

@@ -79,3 +79,20 @@ export type VfsSnapshotNode = VfsSnapshotFileNode | VfsSnapshotDirectoryNode;
 export interface VfsSnapshot {
 	root: VfsSnapshotDirectoryNode;
 }
+
+/** Options for mounting a host directory into the VFS. */
+export interface MountOptions {
+	/** Absolute path inside the VM (e.g. `"/app"`). */
+	vPath: string;
+	/** Path on the host filesystem. Relative paths resolved from `process.cwd()`. */
+	hostPath: string;
+	/** When `true` (default), write operations inside the mount throw `EROFS`. */
+	readOnly?: boolean;
+}
+
+/** Describes an active mount point. */
+export interface MountPoint {
+	vPath:    string;
+	hostPath: string;
+	readOnly: boolean;
+}

@@ -299,6 +299,42 @@ class VirtualShell extends EventEmitter {
 	}
 
 	/**
+	 * Mount a host directory into the VFS at `vPath`.
+	 *
+	 * Delegates file operations inside `vPath` to the host filesystem via
+	 * `node:fs`. Silently ignored in browser environments.
+	 *
+	 * @param vPath    Absolute path inside the VM (e.g. `"/app"`).
+	 * @param hostPath Path on the host — relative paths are resolved from `process.cwd()`.
+	 * @param options  `{ readOnly?: boolean }` — default `true`.
+	 *
+	 * @example
+	 * ```ts
+	 * const shell = new VirtualShell("dev-vm");
+	 * await shell.ensureInitialized();
+	 * shell.mount("/workspace", "./my-project");
+	 * // shell commands can now read ./my-project files via /workspace
+	 * ```
+	 */
+	public mount(
+		vPath: string,
+		hostPath: string,
+		options: { readOnly?: boolean } = {},
+	): void {
+		this.vfs.mount(vPath, hostPath, options);
+	}
+
+	/** Remove a previously mounted host directory. */
+	public unmount(vPath: string): void {
+		this.vfs.unmount(vPath);
+	}
+
+	/** List all active mounts. */
+	public getMounts(): Array<{ vPath: string; hostPath: string; readOnly: boolean }> {
+		return this.vfs.getMounts();
+	}
+
+	/**
 	 * Updates only the session-dependent `/proc` entries (`/proc/<pid>`,
 	 * `/proc/self`). Cheaper than a full `refreshProcFs()` — call this
 	 * whenever a session is registered or unregistered.

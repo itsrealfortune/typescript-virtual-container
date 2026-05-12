@@ -10,6 +10,12 @@ export interface PipelineCommand {
 	outputFile?: string;
 	/** Append to output file (>> file) */
 	appendOutput?: boolean;
+	/** Stderr redirection file path (2> file) */
+	stderrFile?: string;
+	/** Append stderr to file (2>> file) */
+	stderrAppend?: boolean;
+	/** Redirect stderr to stdout (2>&1) */
+	stderrToStdout?: boolean;
 }
 
 /** Logical operator connecting two statement groups. */
