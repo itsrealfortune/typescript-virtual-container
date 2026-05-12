@@ -75,6 +75,11 @@ class VirtualFileSystem extends EventEmitter {
 	private root: InternalDirectoryNode;
 	private readonly mode: VfsPersistenceMode;
 	private readonly snapshotFile: string | null;
+	/** Active host-directory mounts: vPath → { hostPath, readOnly } */
+	private readonly mounts = new Map<string, { hostPath: string; readOnly: boolean }>();
+	/** True when running in a browser environment (no host FS access). */
+	private static readonly isBrowser =
+		typeof process === "undefined" || typeof (process as NodeJS.Process).versions?.node === "undefined";
 
 	constructor(options: VfsOptions = {}) {
 		super();
@@ -219,7 +224,97 @@ class VirtualFileSystem extends EventEmitter {
 	// ── Public filesystem API ─────────────────────────────────────────────────
 
 	/** Creates a directory (and any missing parents). */
-	public mkdir(targetPath: string, mode: number = 0o755): void {
+
+	// ── Mount API ─────────────────────────────────────────────────────────────
+
+	/**
+	 * Mount a host directory into the VFS at `vPath`.
+	 *
+	 * Files inside `vPath` are read directly from the host filesystem via
+	 * `node:fs`. All standard VFS operations (`readFile`, `writeFile`,
+	 * `exists`, `stat`, `list`) are transparently delegated.
+	 *
+	 * In browser environments the mount is silently ignored — `vPath` remains
+	 * an empty in-memory directory.
+	 *
+	 * @param vPath     Absolute path inside the VM (e.g. `"/app"`).
+	 * @param hostPath  Path on the host filesystem — relative paths are
+	 *                  resolved from `process.cwd()`.
+	 * @param readOnly  When `true` (default), write operations inside the
+	 *                  mount throw `EROFS: read-only file system`.
+	 *
+	 * @example
+	 * ```ts
+	 * shell.vfs.mount("/app", "./src", { readOnly: true });
+	 * // cat /app/index.ts  — reads ./src/index.ts from host
+	 * ```
+	 */
+	public mount(
+		vPath: string,
+		hostPath: string,
+		{ readOnly = true }: { readOnly?: boolean } = {},
+	): void {
+		if (VirtualFileSystem.isBrowser) return; // silently degrade in browser
+		const normalized = normalizePath(vPath);
+		const resolved   = path.resolve(hostPath);
+		if (!fsSync.existsSync(resolved)) {
+			throw new Error(`VirtualFileSystem.mount: host path does not exist: "${resolved}"`);
+		}
+		if (!fsSync.statSync(resolved).isDirectory()) {
+			throw new Error(`VirtualFileSystem.mount: host path is not a directory: "${resolved}"`);
+		}
+		// Ensure the mount point exists in the VFS tree
+		this.mkdir(normalized);
+		this.mounts.set(normalized, { hostPath: resolved, readOnly });
+		this.emit("mount", { vPath: normalized, hostPath: resolved, readOnly });
+	}
+
+	/**
+	 * Unmount a previously mounted host directory.
+	 * The in-memory VFS directory at `vPath` is preserved but the host
+	 * delegation is removed.
+	 */
+	public unmount(vPath: string): void {
+		const normalized = normalizePath(vPath);
+		if (this.mounts.delete(normalized)) {
+			this.emit("unmount", { vPath: normalized });
+		}
+	}
+
+	/** List all active mounts. */
+	public getMounts(): Array<{ vPath: string; hostPath: string; readOnly: boolean }> {
+		return [...this.mounts.entries()].map(([vPath, opts]) => ({
+			vPath, ...opts,
+		}));
+	}
+
+	/**
+	 * If `targetPath` is inside a mount, return `{ hostPath, readOnly, relPath }`.
+	 * `relPath` is the path relative to the mount's host directory.
+	 * Returns `null` if the path is not under any mount.
+	 */
+	private resolveMount(targetPath: string): {
+		hostPath: string;
+		readOnly: boolean;
+		relPath:  string;
+		fullHostPath: string;
+	} | null {
+		const normalized = normalizePath(targetPath);
+		// Iterate mounts from most specific to least specific
+		const sorted = [...this.mounts.entries()].sort(
+			([a], [b]) => b.length - a.length,
+		);
+		for (const [vBase, opts] of sorted) {
+			if (normalized === vBase || normalized.startsWith(`${vBase}/`)) {
+				const relPath      = normalized.slice(vBase.length).replace(/^\//, "");
+				const fullHostPath = relPath ? path.join(opts.hostPath, relPath) : opts.hostPath;
+				return { hostPath: opts.hostPath, readOnly: opts.readOnly, relPath, fullHostPath };
+			}
+		}
+		return null;
+	}
+
+		public mkdir(targetPath: string, mode: number = 0o755): void {
 		const normalized = normalizePath(targetPath);
 		const existing = (() => {
 			try {
@@ -245,6 +340,15 @@ class VirtualFileSystem extends EventEmitter {
 		content: string | Buffer,
 		options: WriteFileOptions = {},
 	): void {
+		// Delegate to host FS if inside a mount
+		const m = this.resolveMount(targetPath);
+		if (m) {
+			if (m.readOnly) throw new Error(`EROFS: read-only file system, open '${m.fullHostPath}'`);
+			const dir = path.dirname(m.fullHostPath);
+			if (!fsSync.existsSync(dir)) fsSync.mkdirSync(dir, { recursive: true });
+			fsSync.writeFileSync(m.fullHostPath, Buffer.isBuffer(content) ? content : Buffer.from(content, "utf8"));
+			return;
+		}
 		const normalized = normalizePath(targetPath);
 		const { parent, name } = getParentDirectory(
 			this.root,
@@ -288,6 +392,11 @@ class VirtualFileSystem extends EventEmitter {
 	 * Gzip-compressed files are transparently decompressed.
 	 */
 	public readFile(targetPath: string): string {
+		const m = this.resolveMount(targetPath);
+		if (m) {
+			if (!fsSync.existsSync(m.fullHostPath)) throw new Error(`ENOENT: no such file or directory, open '${m.fullHostPath}'`);
+			return fsSync.readFileSync(m.fullHostPath, "utf8");
+		}
 		const normalized = normalizePath(targetPath);
 		const node = getNode(this.root, normalized);
 		if (node.type !== "file") {
@@ -301,6 +410,11 @@ class VirtualFileSystem extends EventEmitter {
 
 	/** Reads file content as a Buffer (decompresses if needed). */
 	public readFileRaw(targetPath: string): Buffer {
+		const m = this.resolveMount(targetPath);
+		if (m) {
+			if (!fsSync.existsSync(m.fullHostPath)) throw new Error(`ENOENT: no such file or directory, open '${m.fullHostPath}'`);
+			return fsSync.readFileSync(m.fullHostPath);
+		}
 		const normalized = normalizePath(targetPath);
 		const node = getNode(this.root, normalized);
 		if (node.type !== "file") {
@@ -314,6 +428,8 @@ class VirtualFileSystem extends EventEmitter {
 
 	/** Returns true when a file or directory exists at path. */
 	public exists(targetPath: string): boolean {
+		const m = this.resolveMount(targetPath);
+		if (m) return fsSync.existsSync(m.fullHostPath);
 		try {
 			getNode(this.root, normalizePath(targetPath));
 			return true;
@@ -329,6 +445,34 @@ class VirtualFileSystem extends EventEmitter {
 
 	/** Returns metadata for a file or directory. */
 	public stat(targetPath: string): VfsNodeStats {
+		const m = this.resolveMount(targetPath);
+		if (m) {
+			if (!fsSync.existsSync(m.fullHostPath)) throw new Error(`ENOENT: stat '${m.fullHostPath}'`);
+			const hst = fsSync.statSync(m.fullHostPath);
+			const name = m.relPath.split("/").pop() ?? m.fullHostPath.split("/").pop() ?? "";
+			const now = hst.mtime;
+			if (hst.isDirectory()) {
+				return {
+					type: "directory",
+					name,
+					path: normalizePath(targetPath),
+					mode: 0o755,
+					createdAt: hst.birthtime,
+					updatedAt: now,
+					childrenCount: fsSync.readdirSync(m.fullHostPath).length,
+				} satisfies import("../types/vfs").VfsDirectoryNode;
+			}
+			return {
+				type: "file",
+				name,
+				path: normalizePath(targetPath),
+				mode: m.readOnly ? 0o444 : 0o644,
+				createdAt: hst.birthtime,
+				updatedAt: now,
+				compressed: false,
+				size: hst.size,
+			} satisfies import("../types/vfs").VfsFileNode;
+		}
 		const normalized = normalizePath(targetPath);
 		const node = getNode(this.root, normalized);
 		const name = normalized === "/" ? "" : path.posix.basename(normalized);
@@ -359,6 +503,13 @@ class VirtualFileSystem extends EventEmitter {
 
 	/** Lists direct children names of a directory (sorted). */
 	public list(dirPath: string = "/"): string[] {
+		const m = this.resolveMount(dirPath);
+		if (m) {
+			if (!fsSync.existsSync(m.fullHostPath)) return [];
+			try {
+				return fsSync.readdirSync(m.fullHostPath).sort();
+			} catch { return []; }
+		}
 		const normalized = normalizePath(dirPath);
 		const node = getNode(this.root, normalized);
 		if (node.type !== "directory") {
@@ -508,6 +659,18 @@ class VirtualFileSystem extends EventEmitter {
 
 	/** Removes a file or directory node. */
 	public remove(targetPath: string, options: RemoveOptions = {}): void {
+		const m = this.resolveMount(targetPath);
+		if (m) {
+			if (m.readOnly) throw new Error(`EROFS: read-only file system, unlink '${m.fullHostPath}'`);
+			if (!fsSync.existsSync(m.fullHostPath)) throw new Error(`ENOENT: no such file or directory, unlink '${m.fullHostPath}'`);
+			const hst = fsSync.statSync(m.fullHostPath);
+			if (hst.isDirectory()) {
+				fsSync.rmSync(m.fullHostPath, { recursive: options.recursive ?? false });
+			} else {
+				fsSync.unlinkSync(m.fullHostPath);
+			}
+			return;
+		}
 		const normalized = normalizePath(targetPath);
 		if (normalized === "/") throw new Error("Cannot remove root directory.");
 		const node = getNode(this.root, normalized);
