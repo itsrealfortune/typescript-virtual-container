@@ -3,7 +3,7 @@ import type {
 	CommandResult,
 	ShellModule,
 } from "../types/commands";
-import { expandAsync } from "../utils/expand";
+import { evalArith, expandAsync, expandBraces } from "../utils/expand";
 import { ifFlag } from "./command-helpers";
 import { resolvePath } from "./helpers";
 import { runCommand } from "./runtime";
@@ -319,8 +319,7 @@ async function runBlocks(
 			ctx.env.vars[`__func_${block.name}`] = block.body.join("\n");
 		} else if (block.type === "arith") {
 			// (( expr )) — evaluate arithmetic, update vars
-			const { expandSync } = await import("../utils/expand");
-			const expr = expandSync(block.expr, ctx.env.vars, ctx.env.lastExitCode);
+			const expr = block.expr.trim();
 			// Handle i++ / i-- / i+=N / i-=N
 			const incMatch = expr.match(/^(\w+)\s*(\+\+|--)$/);
 			if (incMatch) {
@@ -333,6 +332,11 @@ async function runBlocks(
 					const rhs = parseInt(assignMatch[3]!, 10);
 					const ops: Record<string, number> = { "+": lhs + rhs, "-": lhs - rhs, "*": lhs * rhs, "/": Math.floor(lhs / rhs) };
 					ctx.env.vars[assignMatch[1]!] = String(ops[assignMatch[2]!] ?? lhs);
+				} else {
+					const value = evalArith(expr, ctx.env.vars);
+					if (!Number.isNaN(value)) {
+						ctx.env.lastExitCode = value === 0 ? 1 : 0;
+					}
 				}
 			}
 		} else if (block.type === "for") {
@@ -343,7 +347,6 @@ async function runBlocks(
 				ctx,
 			);
 			// Apply brace expansion to each token in the list
-			const { expandBraces } = await import("../utils/expand");
 			const items = listExpanded.trim().split(/\s+/).flatMap(expandBraces);
 			for (const item of items) {
 				ctx.env.vars[block.var] = item;

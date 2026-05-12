@@ -10,7 +10,7 @@
 import * as os from "node:os";
 import type VirtualFileSystem from "../VirtualFileSystem";
 import type { ShellProperties } from "../VirtualShell";
-import type { VirtualUserManager } from "../VirtualUserManager";
+import type { VirtualActiveSession, VirtualUserManager } from "../VirtualUserManager";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -248,7 +248,7 @@ export function refreshProc(
 	props: ShellProperties,
 	hostname: string,
 	shellStartTime: number,
-	sessions?: import("../VirtualUserManager").VirtualActiveSession[],
+	sessions?: VirtualActiveSession[],
 ): void {
 	ensureDir(vfs, "/proc");
 

@@ -1,6 +1,6 @@
 import type { ShellModule } from "../types/commands";
 import { getFlag } from "./command-helpers";
-import { resolvePath, assertPathAccess } from "./helpers";
+import { assertPathAccess, resolvePath } from "./helpers";
 
 /**
  * Minimal awk-like pattern scanner.
@@ -92,7 +92,6 @@ export const awkCommand: ShellModule = {
 				// Arithmetic NR+1, NF-1
 				const arith = expr.replace(/\bNR\b/g, String(nr)).replace(/\bNF\b/g, String(nf));
 				if (/^[\d\s+\-*/()]+$/.test(arith)) {
-					// biome-ignore lint/security/noGlobalEval: safe arithmetic — input contains only digits and operators after variable substitution
 					try { return String(Function(`"use strict"; return (${arith});`)()); } catch {}  				}
 				return expr.replace(/"/g, "");
 			};

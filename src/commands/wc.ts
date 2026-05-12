@@ -20,7 +20,7 @@ export const wcCommand: ShellModule = {
 		const positionals = args.filter((a) => !a.startsWith("-"));
 
 		const count = (content: string, label: string): string => {
-			const l = content.split("\n").length - (content.endsWith("\n") ? 1 : 0);
+			const l = content.length === 0 ? 0 : content.trim().split("\n").length;
 			const w = content.trim().split(/\s+/).filter(Boolean).length;
 			const c = Buffer.byteLength(content, "utf8");
 			const parts: string[] = [];

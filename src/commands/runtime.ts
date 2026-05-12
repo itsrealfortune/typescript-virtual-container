@@ -3,9 +3,9 @@ import { executeStatements } from "../SSHMimic/executor";
 import type { VirtualShell } from "../VirtualShell";
 import { parseScript } from "../VirtualShell/shellParser";
 import type {
-    CommandMode,
-    CommandResult,
-    ShellEnv,
+	CommandMode,
+	CommandResult,
+	ShellEnv,
 } from "../types/commands";
 import { expandAsync, expandBraces } from "../utils/expand";
 import { tokenizeCommand } from "../utils/tokenize";
@@ -77,6 +77,44 @@ export async function runCommandDirect(
 	stdin: string | undefined,
 	env: ShellEnv,
 ): Promise<CommandResult> {
+	const assignRe = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/;
+	const invocation = [name, ...args];
+	let assignCount = 0;
+	while (assignCount < invocation.length && assignRe.test(invocation[assignCount]!)) {
+		assignCount += 1;
+	}
+	if (assignCount > 0) {
+		const assignments = invocation.slice(0, assignCount).map((token) => token.match(assignRe)!);
+		const remaining = invocation.slice(assignCount);
+		const restored: Array<[string, string | undefined]> = [];
+		for (const [, key, value] of assignments) {
+			restored.push([key!, env.vars[key!]]);
+			env.vars[key!] = value!;
+		}
+		if (remaining.length === 0) {
+			return { exitCode: 0 };
+		}
+		try {
+			const result = await runCommandDirect(
+				remaining[0]!,
+				remaining.slice(1),
+				authUser,
+				hostname,
+				mode,
+				cwd,
+				shell,
+				stdin,
+				env,
+			);
+			return result;
+		} finally {
+			for (const [key, value] of restored) {
+				if (value === undefined) delete env.vars[key];
+				else env.vars[key] = value;
+			}
+		}
+	}
+
 	const aliasVal = env.vars[`__alias_${name}`];
 	if (aliasVal) {
 		return runCommand(
@@ -250,6 +288,21 @@ export async function runCommand(
 	);
 
 	const parts = tokenizeCommand(expanded.trim());
+	if (parts.length === 0) return { exitCode: 0 };
+	const assignRe = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/;
+	if (assignRe.test(parts[0]!)) {
+		return runCommandDirect(
+			parts[0]!,
+			parts.slice(1),
+			authUser,
+			hostname,
+			mode,
+			cwd,
+			shell,
+			stdin,
+			shellEnv,
+		);
+	}
 	const commandName = parts[0]?.toLowerCase() ?? "";
 	// Apply brace expansion to each arg token
 	const args = parts.slice(1).flatMap(expandBraces);
