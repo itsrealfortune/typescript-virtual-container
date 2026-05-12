@@ -4,6 +4,8 @@ const MANUAL_ALIASES: Record<string, string> = {
 	gunzip: "gzip",
 };
 
+const __dirname = import.meta.dirname;
+
 const manualCache = new Map<string, string | null>();
 const manualsBaseUrl = `${__dirname}/manuals/`;
 
