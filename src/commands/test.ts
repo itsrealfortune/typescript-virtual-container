@@ -1,4 +1,6 @@
 import type { ShellModule } from "../types/commands";
+import type { VfsFileNode } from "../types/vfs";
+import type { VirtualShell } from "../VirtualShell";
 
 /**
  * Evaluate a POSIX test expression.
@@ -8,7 +10,7 @@ import type { ShellModule } from "../types/commands";
  */
 function evalTest(
 	tokens: string[],
-	shell: import("../VirtualShell").VirtualShell,
+	shell: VirtualShell,
 	cwd: string,
 ): boolean {
 	// When called via [ command, ] is the last arg — strip it
@@ -68,7 +70,7 @@ function evalTest(
 				return (
 					shell.vfs.exists(path) &&
 					shell.vfs.stat(path).type === "file" &&
-					(shell.vfs.stat(path) as import("../types/vfs").VfsFileNode).size > 0
+					(shell.vfs.stat(path) as VfsFileNode).size > 0
 				);
 			case "-z":
 				return operand.length === 0;

@@ -3,14 +3,9 @@ import * as fsSync from "node:fs";
 import * as path from "node:path";
 import { gunzipSync, gzipSync } from "node:zlib";
 import type {
-	InternalDirectoryNode,
-	InternalFileNode,
-	InternalNode,
-} from "./internalTypes";
-import { decodeVfs, encodeVfs, isBinarySnapshot } from "./binaryPack";
-import { getNode, getParentDirectory, normalizePath } from "./path";
-import type {
 	RemoveOptions,
+	VfsDirectoryNode,
+	VfsFileNode,
 	VfsNodeStats,
 	VfsSnapshot,
 	VfsSnapshotDirectoryNode,
@@ -18,6 +13,13 @@ import type {
 	VfsSnapshotNode,
 	WriteFileOptions,
 } from "../types/vfs";
+import { decodeVfs, encodeVfs, isBinarySnapshot } from "./binaryPack";
+import type {
+	InternalDirectoryNode,
+	InternalFileNode,
+	InternalNode,
+} from "./internalTypes";
+import { getNode, getParentDirectory, normalizePath } from "./path";
 
 // ── Persistence options ───────────────────────────────────────────────────────
 
@@ -460,7 +462,7 @@ class VirtualFileSystem extends EventEmitter {
 					createdAt: hst.birthtime,
 					updatedAt: now,
 					childrenCount: fsSync.readdirSync(m.fullHostPath).length,
-				} satisfies import("../types/vfs").VfsDirectoryNode;
+				} satisfies VfsDirectoryNode;
 			}
 			return {
 				type: "file",
@@ -471,7 +473,7 @@ class VirtualFileSystem extends EventEmitter {
 				updatedAt: now,
 				compressed: false,
 				size: hst.size,
-			} satisfies import("../types/vfs").VfsFileNode;
+			} satisfies VfsFileNode;
 		}
 		const normalized = normalizePath(targetPath);
 		const node = getNode(this.root, normalized);

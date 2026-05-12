@@ -3,7 +3,7 @@ import type {
 	CommandResult,
 	ShellModule,
 } from "../types/commands";
-import { evalArith, expandAsync } from "../utils/expand";
+import { evalArith, expandAsync, expandBraces } from "../utils/expand";
 import { ifFlag } from "./command-helpers";
 import { resolvePath } from "./helpers";
 import { runCommand } from "./runtime";
@@ -347,7 +347,6 @@ async function runBlocks(
 				ctx,
 			);
 			// Apply brace expansion to each token in the list
-			const { expandBraces } = await import("../utils/expand");
 			const items = listExpanded.trim().split(/\s+/).flatMap(expandBraces);
 			for (const item of items) {
 				ctx.env.vars[block.var] = item;
