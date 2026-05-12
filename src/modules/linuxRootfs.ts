@@ -1,10 +1,17 @@
-/** biome-ignore-all lint/style/useNamingConvention: ENV VAR KEYS */
+/** biome-ignore-all lint/style/useNamingConvention: ENV VAR KEYS + system names */
 /**
  * linuxRootfs.ts
  *
  * Bootstraps a realistic Linux directory hierarchy in the VFS.
  * Called once during VirtualShell initialization. Idempotent — skips
  * paths that already exist so FS-mode snapshots survive restarts.
+ *
+ * Public API:
+ *  - bootstrapLinuxRootfs()  one-shot boot (VirtualShell calls this)
+ *  - refreshProc()           refresh /proc/* (call on session changes)
+ *  - syncEtcPasswd()         sync /etc/passwd|group|shadow from UserManager
+ *  - createLinuxRootfsEngine() returns engine with .boot() + .tick() for
+ *                            runtimes that want a live refresh loop
  */
 
 import * as os from "node:os";
@@ -25,6 +32,20 @@ function ensureFile(
 	mode = 0o644,
 ): void {
 	if (!vfs.exists(path)) vfs.writeFile(path, content, { mode });
+}
+
+function write(vfs: VirtualFileSystem, path: string, content: string): void {
+	vfs.writeFile(path, content);
+}
+
+/** FNV-1a 32-bit — deterministic seed from any string */
+function fnv1a(str: string): number {
+	let h = 2166136261;
+	for (let i = 0; i < str.length; i++) {
+		h ^= str.charCodeAt(i);
+		h = Math.imul(h, 16777619);
+	}
+	return h >>> 0;
 }
 
 // ─── /etc ────────────────────────────────────────────────────────────────────
@@ -63,8 +84,7 @@ function bootstrapEtc(
 		].join("\n")}\n`,
 	);
 
-	ensureFile(vfs, "/etc/issue", `Fortune GNU/Linux 1.0 \\n \\l\n`);
-
+	ensureFile(vfs, "/etc/issue", "Fortune GNU/Linux 1.0 \\n \\l\n");
 	ensureFile(
 		vfs,
 		"/etc/motd",
@@ -84,7 +104,7 @@ function bootstrapEtc(
 		].join("\n")}\n`,
 	);
 
-	// network stubs
+	// network
 	ensureDir(vfs, "/etc/network");
 	ensureFile(
 		vfs,
@@ -98,11 +118,7 @@ function bootstrapEtc(
 		].join("\n")}\n`,
 	);
 
-	ensureFile(
-		vfs,
-		"/etc/resolv.conf",
-		"nameserver 1.1.1.1\nnameserver 8.8.8.8\n",
-	);
+	ensureFile(vfs, "/etc/resolv.conf", "nameserver 1.1.1.1\nnameserver 8.8.8.8\n");
 
 	ensureFile(
 		vfs,
@@ -125,8 +141,6 @@ function bootstrapEtc(
 /**
  * Sync `/etc/passwd`, `/etc/group`, and `/etc/shadow` from the
  * VirtualUserManager's current user list into the VFS.
- * @param vfs VirtualFileSystem instance to write files into
- * @param users VirtualUserManager to source users from
  */
 export function syncEtcPasswd(
 	vfs: VirtualFileSystem,
@@ -159,7 +173,7 @@ export function syncEtcPasswd(
 	];
 	vfs.writeFile("/etc/group", `${groupLines.join("\n")}\n`);
 
-	// shadow — fake hashes, never real
+	// shadow — fake hashes, never real credentials
 	const shadowLines = [
 		"root:*:19000:0:99999:7:::",
 		"daemon:*:19000:0:99999:7:::",
@@ -171,9 +185,9 @@ export function syncEtcPasswd(
 	vfs.writeFile("/etc/shadow", `${shadowLines.join("\n")}\n`, { mode: 0o640 });
 }
 
-// ─── /proc ───────────────────────────────────────────────────────────────────
+// ─── /proc helpers ───────────────────────────────────────────────────────────
 
-/** Derive a stable virtual PID from a tty string like "pts/0" → 1000, "pts/1" → 1001 */
+/** Derive a stable virtual PID from a tty string e.g. "pts/0" → 1000 */
 function ttyToPid(tty: string): number {
 	const match = tty.match(/(\d+)$/);
 	return 1000 + (match?.[1] ? parseInt(match[1], 10) : 0);
@@ -194,16 +208,16 @@ function writeProcPid(
 	ensureDir(vfs, `${dir}/fd`);
 	ensureDir(vfs, `${dir}/fdinfo`);
 
-	const uptimeSec = Math.floor(
-		(Date.now() - new Date(startedAt).getTime()) / 1000,
-	);
+	const uptimeSec = Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000);
+	const comm = cmdline.split(/\s+/)[0] ?? "bash";
 
-	vfs.writeFile(`${dir}/cmdline`, `${cmdline.replace(/\s+/g, "\0")}\0`);
-	vfs.writeFile(`${dir}/comm`, cmdline.split(/\s+/)[0] ?? "bash");
-	vfs.writeFile(
+	write(vfs, `${dir}/cmdline`, `${cmdline.replace(/\s+/g, "\0")}\0`);
+	write(vfs, `${dir}/comm`, comm);
+	write(
+		vfs,
 		`${dir}/status`,
 		`${[
-			`Name:   ${cmdline.split(/\s+/)[0] ?? "bash"}`,
+			`Name:   ${comm}`,
 			`State:  S (sleeping)`,
 			`Pid:    ${pid}`,
 			`PPid:   1`,
@@ -214,54 +228,71 @@ function writeProcPid(
 			`Threads: 1`,
 		].join("\n")}\n`,
 	);
-	vfs.writeFile(
+	write(
+		vfs,
 		`${dir}/stat`,
-		`${pid} (${cmdline.split(/\s+/)[0] ?? "bash"}) S 1 ${pid} ${pid} 0 -1 4194304 0 0 0 0 ${uptimeSec} 0 0 0 20 0 1 0 0 16384 4096 0\n`,
+		`${pid} (${comm}) S 1 ${pid} ${pid} 0 -1 4194304 0 0 0 0 ${uptimeSec} 0 0 0 20 0 1 0 0 16384 4096 0\n`,
 	);
-	vfs.writeFile(
+	write(
+		vfs,
 		`${dir}/environ`,
-		`${Object.entries(env)
-			.map(([k, v]) => `${k}=${v}`)
-			.join("\0")}\0`,
+		`${Object.entries(env).map(([k, v]) => `${k}=${v}`).join("\0")}\0`,
 	);
-	vfs.writeFile(`${dir}/cwd`, `/home/${username}\0`);
-	vfs.writeFile(`${dir}/exe`, "/bin/bash\0");
+	write(vfs, `${dir}/cwd`, `/home/${username}\0`);
+	write(vfs, `${dir}/exe`, "/bin/bash\0");
 
-	// Standard fd entries
-	vfs.writeFile(`${dir}/fd/0`, "");
-	vfs.writeFile(`${dir}/fd/1`, "");
-	vfs.writeFile(`${dir}/fd/2`, "");
+	// Standard fd stubs (stdin/stdout/stderr)
+	for (const fd of ["0", "1", "2"]) {
+		ensureFile(vfs, `${dir}/fd/${fd}`, "");
+	}
 }
+
+// ─── /proc boot log ──────────────────────────────────────────────────────────
+
+function bootProcLog(vfs: VirtualFileSystem, props: ShellProperties): void {
+	ensureDir(vfs, "/proc/boot");
+	ensureFile(
+		vfs,
+		"/proc/boot/log",
+		`${[
+			"[    0.000000] Linux virtual kernel booting...",
+			"[    0.000120] init memory subsystem",
+			"[    0.000240] mount /proc /sys /dev",
+			"[    0.000420] start init",
+			"[    0.000680] system ready",
+		].join("\n")}\n`,
+	);
+	ensureFile(vfs, "/proc/boot/version", `Linux ${props.kernel} (virtual)\n`);
+}
+
+// ─── /proc refresh ───────────────────────────────────────────────────────────
 
 /**
  * Populate and refresh `/proc` virtual entries based on host stats and
- * provided active sessions. Rewrites `/proc/uptime`, `/proc/meminfo`,
- * `/proc/cpuinfo`, `/proc/<pid>` entries and `/proc/self` content.
- * @param vfs VirtualFileSystem instance
- * @param props ShellProperties used for version strings
- * @param hostname Hostname to write into /proc/hostname
- * @param shellStartTime Start time used to compute uptime
- * @param sessions Optional active sessions list to populate per-pid entries
+ * provided active sessions. Rewrites uptime, meminfo, cpuinfo, loadavg,
+ * per-pid entries, and /proc/self.
+ *
+ * Safe to call repeatedly — acts as a live kernel state snapshot.
  */
 export function refreshProc(
 	vfs: VirtualFileSystem,
 	props: ShellProperties,
 	hostname: string,
 	shellStartTime: number,
-	sessions?: VirtualActiveSession[],
+	sessions: VirtualActiveSession[] = [],
 ): void {
 	ensureDir(vfs, "/proc");
 
 	const uptimeSec = Math.floor((Date.now() - shellStartTime) / 1000);
-	vfs.writeFile(
-		"/proc/uptime",
-		`${uptimeSec}.00 ${Math.floor(uptimeSec * 0.9)}.00\n`,
-	);
+	const idleSec = Math.floor(uptimeSec * 0.9);
+	write(vfs, "/proc/uptime", `${uptimeSec}.00 ${idleSec}.00\n`);
 
+	// meminfo — real host values, Linux-compatible format
 	const totalMemKb = Math.floor(os.totalmem() / 1024);
 	const freeMemKb = Math.floor(os.freemem() / 1024);
 	const availMemKb = Math.floor(freeMemKb * 0.95);
-	vfs.writeFile(
+	write(
+		vfs,
 		"/proc/meminfo",
 		`${[
 			`MemTotal:       ${String(totalMemKb).padStart(10)} kB`,
@@ -274,36 +305,33 @@ export function refreshProc(
 		].join("\n")}\n`,
 	);
 
+	// cpuinfo — real host CPU passthrough
 	const cpus = os.cpus();
 	const cpuLines: string[] = [];
 	for (let i = 0; i < cpus.length; i++) {
 		const c = cpus[i];
 		if (!c) continue;
-		const mhz = c.speed.toFixed(3);
 		cpuLines.push(
 			`processor\t: ${i}`,
 			`model name\t: ${c.model}`,
-			`cpu MHz\t\t: ${mhz}`,
+			`cpu MHz\t\t: ${c.speed.toFixed(3)}`,
 			`cache size\t: 8192 KB`,
 			"",
 		);
 	}
-	vfs.writeFile("/proc/cpuinfo", `${cpuLines.join("\n")}\n`);
+	write(vfs, "/proc/cpuinfo", `${cpuLines.join("\n")}\n`);
 
-	vfs.writeFile(
+	write(
+		vfs,
 		"/proc/version",
 		`Linux version ${props.kernel} (fortune@build) (gcc version 12.2.0) #1 SMP\n`,
 	);
+	write(vfs, "/proc/hostname", `${hostname}\n`);
 
-	vfs.writeFile("/proc/hostname", `${hostname}\n`);
-
-	// /proc/loadavg
+	// loadavg — slightly random but bounded
 	const load = (Math.random() * 0.5).toFixed(2);
-	const numProcs = 1 + (sessions?.length ?? 0);
-	vfs.writeFile(
-		"/proc/loadavg",
-		`${load} ${load} ${load} ${numProcs}/${numProcs} 1\n`,
-	);
+	const numProcs = 1 + sessions.length;
+	write(vfs, "/proc/loadavg", `${load} ${load} ${load} ${numProcs}/${numProcs} 1\n`);
 
 	// /proc/net stubs
 	ensureDir(vfs, "/proc/net");
@@ -318,112 +346,90 @@ export function refreshProc(
 		].join("\n")}\n`,
 	);
 
-	// ── /proc/1 — init process ────────────────────────────────────────────────
-	writeProcPid(
-		vfs,
-		1,
-		"root",
-		"pts/0",
-		"/sbin/init",
-		new Date(shellStartTime).toISOString(),
-		{},
-	);
+	// init process (PID 1)
+	writeProcPid(vfs, 1, "root", "pts/0", "/sbin/init", new Date(shellStartTime).toISOString(), {});
 
-	// ── /proc/<pid> per session ───────────────────────────────────────────────
-	const activeSessions = sessions ?? [];
-	for (const session of activeSessions) {
+	// per-session processes
+	for (const session of sessions) {
 		const pid = ttyToPid(session.tty);
-		writeProcPid(
-			vfs,
-			pid,
-			session.username,
-			session.tty,
-			"bash",
-			session.startedAt,
-			{
-				USER: session.username,
-				HOME: `/home/${session.username}`,
-				TERM: "xterm-256color",
-				SHELL: "/bin/bash",
-			},
-		);
+		writeProcPid(vfs, pid, session.username, session.tty, "bash", session.startedAt, {
+			USER: session.username,
+			HOME: `/home/${session.username}`,
+			TERM: "xterm-256color",
+			SHELL: "/bin/bash",
+		});
 	}
 
-	// ── /proc/self — symlink to current session PID or 1 ────────────────────
-	// We can't know which session is "current" at populate time,
-	// so /proc/self is a directory that mirrors the most recent session,
-	// or init if no sessions. Commands that read /proc/self get consistent data.
-	const selfPid =
-		activeSessions.length > 0
-			? ttyToPid(activeSessions[activeSessions.length - 1]!.tty)
-			: 1;
+	// /proc/self — mirror of most recent session, or init
+	const selfPid = sessions.length > 0 ? ttyToPid(sessions[sessions.length - 1]!.tty) : 1;
 
-	// Remove existing /proc/self and recreate as content copy
 	if (vfs.exists("/proc/self")) {
-		try {
-			vfs.remove("/proc/self");
-		} catch {}
+		try { vfs.remove("/proc/self"); } catch { /* ignore */ }
 	}
-	// /proc/self is a real directory (not a symlink, which VFS may not support for dirs)
+
 	const selfSrc = `/proc/${selfPid}`;
+	ensureDir(vfs, "/proc/self");
+	ensureDir(vfs, "/proc/self/fd");
+
 	if (vfs.exists(selfSrc)) {
-		ensureDir(vfs, "/proc/self");
-		ensureDir(vfs, "/proc/self/fd");
 		for (const entry of vfs.list(selfSrc)) {
 			const srcPath = `${selfSrc}/${entry}`;
 			const dstPath = `/proc/self/${entry}`;
 			try {
 				const st = vfs.stat(srcPath);
-				if (st.type === "file") {
-					vfs.writeFile(dstPath, vfs.readFile(srcPath));
-				}
-			} catch {}
+				if (st.type === "file") write(vfs, dstPath, vfs.readFile(srcPath));
+			} catch { /* skip unreadable entries */ }
 		}
-		vfs.writeFile(
-			"/proc/self/status",
-			vfs.exists(`${selfSrc}/status`) ? vfs.readFile(`${selfSrc}/status`) : "",
-		);
 	} else {
-		// Fallback minimal /proc/self
-		ensureDir(vfs, "/proc/self");
-		vfs.writeFile("/proc/self/cmdline", "bash\0");
-		vfs.writeFile("/proc/self/comm", "bash");
-		vfs.writeFile(
-			"/proc/self/status",
-			"Name:\tbash\nState:\tS (sleeping)\nPid:\t1\nPPid:\t0\n",
-		);
-		vfs.writeFile("/proc/self/environ", "");
-		vfs.writeFile("/proc/self/cwd", "/root\0");
-		vfs.writeFile("/proc/self/exe", "/bin/bash\0");
+		// Minimal fallback
+		write(vfs, "/proc/self/cmdline", "bash\0");
+		write(vfs, "/proc/self/comm", "bash");
+		write(vfs, "/proc/self/status", "Name:\tbash\nState:\tS (sleeping)\nPid:\t1\nPPid:\t0\n");
+		write(vfs, "/proc/self/environ", "");
+		write(vfs, "/proc/self/cwd", "/root\0");
+		write(vfs, "/proc/self/exe", "/bin/bash\0");
 	}
 }
 
 // ─── /sys ─────────────────────────────────────────────────────────────────────
 
-function bootstrapSys(vfs: VirtualFileSystem, props: ShellProperties): void {
+function bootstrapSys(vfs: VirtualFileSystem, hostname: string, props: ShellProperties): void {
 	ensureDir(vfs, "/sys");
 	ensureDir(vfs, "/sys/devices");
 	ensureDir(vfs, "/sys/devices/virtual");
 	ensureDir(vfs, "/sys/devices/virtual/dmi");
 	ensureDir(vfs, "/sys/devices/virtual/dmi/id");
 
-	ensureFile(
-		vfs,
-		"/sys/devices/virtual/dmi/id/sys_vendor",
-		"Fortune Systems\n",
-	);
-	ensureFile(
-		vfs,
-		"/sys/devices/virtual/dmi/id/product_name",
-		"VirtualContainer v1\n",
-	);
-	ensureFile(vfs, "/sys/devices/virtual/dmi/id/board_name", "fortune-board\n");
+	const seed = fnv1a(hostname);
+	const product = `VirtualNode-${(seed % 10000).toString().padStart(4, "0")}`;
+
+	// Full DMI table — deterministic, seeded from hostname
+	const dmi: Record<string, string> = {
+		bios_vendor:      "Virtual BIOS",
+		bios_version:     "1.0",
+		bios_date:        "01/01/2025",
+		sys_vendor:       "Fortune Systems",
+		product_name:     product,
+		product_family:   "VirtualContainer",
+		product_version:  "v1",
+		product_uuid:     `${seed.toString(16).padStart(8, "0")}-0000-0000-0000-000000000000`,
+		product_serial:   `SN-${seed}`,
+		chassis_type:     "3",
+		chassis_vendor:   "Virtual",
+		chassis_version:  "v1",
+		board_name:       "fortune-board",
+		modalias:         `dmi:bvnVirtual:bvr1.0:svnFortune:pn${product}`,
+	};
+
+	for (const [k, v] of Object.entries(dmi)) {
+		ensureFile(vfs, `/sys/devices/virtual/dmi/id/${k}`, `${v}\n`);
+	}
 
 	ensureDir(vfs, "/sys/class");
 	ensureDir(vfs, "/sys/class/net");
-
 	ensureDir(vfs, "/sys/kernel");
-	ensureFile(vfs, "/sys/kernel/hostname", "fortune-vm\n");
+
+	ensureFile(vfs, "/sys/kernel/hostname", `${hostname}\n`);
 	ensureFile(vfs, "/sys/kernel/osrelease", `${props.kernel}\n`);
 	ensureFile(vfs, "/sys/kernel/ostype", "Linux\n");
 }
@@ -456,70 +462,21 @@ function bootstrapUsr(vfs: VirtualFileSystem): void {
 	ensureDir(vfs, "/usr/share/man/man1");
 	ensureDir(vfs, "/usr/lib");
 
-	// Stub binaries so `which` can find built-in commands
+	// Stubs so `which` can resolve built-in commands
 	const builtins = [
-		"sh",
-		"bash",
-		"ls",
-		"cat",
-		"echo",
-		"grep",
-		"find",
-		"sort",
-		"head",
-		"tail",
-		"cut",
-		"tr",
-		"sed",
-		"awk",
-		"wc",
-		"tee",
-		"tar",
-		"gzip",
-		"gunzip",
-		"touch",
-		"mkdir",
-		"rm",
-		"mv",
-		"cp",
-		"chmod",
-		"ln",
-		"pwd",
-		"env",
-		"date",
-		"sleep",
-		"id",
-		"whoami",
-		"hostname",
-		"uname",
-		"ps",
-		"kill",
-		"df",
-		"du",
-		"curl",
-		"wget",
-		"nano",
-		"diff",
-		"uniq",
-		"xargs",
-		"base64",
+		"sh", "bash", "ls", "cat", "echo", "grep", "find", "sort",
+		"head", "tail", "cut", "tr", "sed", "awk", "wc", "tee",
+		"tar", "gzip", "gunzip", "touch", "mkdir", "rm", "mv", "cp",
+		"chmod", "ln", "pwd", "env", "date", "sleep", "id", "whoami",
+		"hostname", "uname", "ps", "kill", "df", "du", "curl", "wget",
+		"nano", "diff", "uniq", "xargs", "base64",
 	];
+
 	for (const bin of builtins) {
-		ensureFile(
-			vfs,
-			`/usr/bin/${bin}`,
-			`#!/bin/sh\nexec builtin ${bin} "$@"\n`,
-			0o755,
-		);
+		ensureFile(vfs, `/usr/bin/${bin}`, `#!/bin/sh\nexec builtin ${bin} "$@"\n`, 0o755);
 	}
 
-	// lsb_release script
-	ensureFile(
-		vfs,
-		"/usr/bin/lsb_release",
-		'#!/bin/sh\nexec lsb_release "$@"\n',
-		0o755,
-	);
+	ensureFile(vfs, "/usr/bin/lsb_release", '#!/bin/sh\nexec lsb_release "$@"\n', 0o755);
 }
 
 // ─── /var ─────────────────────────────────────────────────────────────────────
@@ -527,6 +484,7 @@ function bootstrapUsr(vfs: VirtualFileSystem): void {
 function bootstrapVar(vfs: VirtualFileSystem): void {
 	ensureDir(vfs, "/var");
 	ensureDir(vfs, "/var/log");
+	ensureDir(vfs, "/var/log/apt");
 	ensureDir(vfs, "/var/tmp");
 	ensureDir(vfs, "/var/run");
 	ensureDir(vfs, "/var/cache");
@@ -538,16 +496,12 @@ function bootstrapVar(vfs: VirtualFileSystem): void {
 	ensureDir(vfs, "/var/lib/dpkg");
 	ensureDir(vfs, "/var/lib/dpkg/info");
 
-	// dpkg status — starts empty, apt install populates it
+	// dpkg status — starts empty, VirtualPackageManager populates it
 	ensureFile(vfs, "/var/lib/dpkg/status", "");
 	ensureFile(vfs, "/var/lib/dpkg/available", "");
 
-	// syslog stub
-	ensureFile(
-		vfs,
-		"/var/log/syslog",
-		`${new Date().toUTCString()} fortune kernel: Virtual container started\n`,
-	);
+	// syslog stubs
+	ensureFile(vfs, "/var/log/syslog", `${new Date().toUTCString()} fortune kernel: Virtual container started\n`);
 	ensureFile(vfs, "/var/log/auth.log", "");
 	ensureFile(vfs, "/var/log/dpkg.log", "");
 	ensureFile(vfs, "/var/log/apt/history.log", "");
@@ -557,19 +511,11 @@ function bootstrapVar(vfs: VirtualFileSystem): void {
 // ─── /bin + /sbin symlinks ────────────────────────────────────────────────────
 
 function bootstrapBin(vfs: VirtualFileSystem): void {
-	// On modern Debian/Ubuntu /bin is a symlink to /usr/bin
-	if (!vfs.exists("/bin")) {
-		vfs.symlink("/usr/bin", "/bin");
-	}
-	if (!vfs.exists("/sbin")) {
-		vfs.symlink("/usr/sbin", "/sbin");
-	}
-	if (!vfs.exists("/lib")) {
-		ensureDir(vfs, "/lib");
-	}
-	if (!vfs.exists("/lib64")) {
-		ensureDir(vfs, "/lib64");
-	}
+	// Modern Debian: /bin and /sbin are symlinks to /usr/bin and /usr/sbin
+	if (!vfs.exists("/bin")) vfs.symlink("/usr/bin", "/bin");
+	if (!vfs.exists("/sbin")) vfs.symlink("/usr/sbin", "/sbin");
+	ensureDir(vfs, "/lib");
+	ensureDir(vfs, "/lib64");
 }
 
 // ─── /tmp ─────────────────────────────────────────────────────────────────────
@@ -578,13 +524,13 @@ function bootstrapTmp(vfs: VirtualFileSystem): void {
 	ensureDir(vfs, "/tmp", 0o1777);
 }
 
-// ─── /root ────────────────────────────────────────────────────────────────────
+// ─── /root home ───────────────────────────────────────────────────────────────
 
 function bootstrapRoot(vfs: VirtualFileSystem): void {
 	ensureDir(vfs, "/root", 0o700);
 	ensureFile(
 		vfs,
-		"/home/root/.bashrc",
+		"/root/.bashrc",
 		`${[
 			"# root .bashrc",
 			"export PS1='\\[\\033[0;31m\\]\\u@\\h\\[\\033[0m\\]:\\[\\033[0;34m\\]\\w\\[\\033[0m\\]# '",
@@ -593,20 +539,17 @@ function bootstrapRoot(vfs: VirtualFileSystem): void {
 			"alias la='ls -A'",
 		].join("\n")}\n`,
 	);
-	ensureFile(vfs, "/home/root/.profile", "[ -f ~/.bashrc ] && . ~/.bashrc\n");
-	// Fix: /home/root should map to /root for root user
-	// if (!vfs.exists("/home/root")) {
-	// 	vfs.symlink("/root", "/home/root");
-	// }
+	ensureFile(vfs, "/root/.profile", "[ -f ~/.bashrc ] && . ~/.bashrc\n");
 }
 
-// ─── /opt + /srv + /mnt + /media ─────────────────────────────────────────────
+// ─── /opt /srv /mnt /media /home ─────────────────────────────────────────────
 
 function bootstrapMisc(vfs: VirtualFileSystem): void {
 	ensureDir(vfs, "/opt");
 	ensureDir(vfs, "/srv");
 	ensureDir(vfs, "/mnt");
 	ensureDir(vfs, "/media");
+	ensureDir(vfs, "/home");
 }
 
 // ─── main entry point ─────────────────────────────────────────────────────────
@@ -615,11 +558,12 @@ function bootstrapMisc(vfs: VirtualFileSystem): void {
  * Bootstraps the full Linux rootfs hierarchy in the VFS.
  * Safe to call multiple times — idempotent.
  *
- * @param vfs Target virtual filesystem.
- * @param users User manager (for /etc/passwd sync).
- * @param hostname Virtual hostname.
- * @param props Shell properties (kernel, os, arch).
+ * @param vfs            Target virtual filesystem.
+ * @param users          User manager (for /etc/passwd sync).
+ * @param hostname       Virtual hostname.
+ * @param props          Shell properties (kernel, os, arch).
  * @param shellStartTime Unix ms of shell creation (for uptime).
+ * @param sessions       Active sessions (for /proc/<pid> population).
  */
 export function bootstrapLinuxRootfs(
 	vfs: VirtualFileSystem,
@@ -627,9 +571,10 @@ export function bootstrapLinuxRootfs(
 	hostname: string,
 	props: ShellProperties,
 	shellStartTime: number,
+	sessions: VirtualActiveSession[] = [],
 ): void {
 	bootstrapEtc(vfs, hostname, props);
-	bootstrapSys(vfs, props);
+	bootstrapSys(vfs, hostname, props);
 	bootstrapDev(vfs);
 	bootstrapUsr(vfs);
 	bootstrapVar(vfs);
@@ -637,6 +582,36 @@ export function bootstrapLinuxRootfs(
 	bootstrapTmp(vfs);
 	bootstrapRoot(vfs);
 	bootstrapMisc(vfs);
-	refreshProc(vfs, props, hostname, shellStartTime, []);
+	bootProcLog(vfs, props);
+	refreshProc(vfs, props, hostname, shellStartTime, sessions);
 	syncEtcPasswd(vfs, users);
+}
+
+// ─── optional live engine ─────────────────────────────────────────────────────
+
+/**
+ * Engine for runtimes that want periodic /proc refresh (e.g. web shell
+ * with live `top`/`ps` output). Call `.boot()` once, then `.tick()` on
+ * each session change or on a timer.
+ *
+ * ```ts
+ * const engine = createLinuxRootfsEngine(vfs, props, hostname, Date.now());
+ * engine.boot(users, sessions);
+ * setInterval(() => engine.tick(shell.listActiveSessions()), 5000);
+ * ```
+ */
+export function createLinuxRootfsEngine(
+	vfs: VirtualFileSystem,
+	props: ShellProperties,
+	hostname: string,
+	startTime: number,
+) {
+	return {
+		boot(users: VirtualUserManager, sessions: VirtualActiveSession[] = []) {
+			bootstrapLinuxRootfs(vfs, users, hostname, props, startTime, sessions);
+		},
+		tick(sessions: VirtualActiveSession[] = []) {
+			refreshProc(vfs, props, hostname, startTime, sessions);
+		},
+	};
 }

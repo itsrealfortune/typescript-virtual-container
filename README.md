@@ -1231,27 +1231,107 @@ On every `VirtualShell` init, a realistic Linux hierarchy is bootstrapped idempo
 
 ```
 /
-├── bin -> /usr/bin          (symlink, Debian-style)
-├── dev/                     null, zero, random, urandom, pts/, shm/
+├── bin -> /usr/bin            (symlink, Debian-style)
+├── sbin -> /usr/sbin          (symlink, Debian-style)
+├── lib/                       (ELF stub)
+├── lib64/                     (ELF stub)
+│
+├── dev/
+│   ├── null                   (0o666)
+│   ├── zero                   (0o666)
+│   ├── random                 (0o444)
+│   ├── urandom                (0o444)
+│   ├── pts/                   (terminal devices)
+│   └── shm/                   (shared memory)
+│
 ├── etc/
-│   ├── group                synced from VirtualUserManager
+│   ├── apt/
+│   │   ├── sources.list       virtual Fortune repos
+│   │   └── sources.list.d/
+│   ├── cron.d/
+│   ├── init.d/
+│   ├── network/
+│   │   └── interfaces         lo + eth0 (DHCP)
+│   ├── systemd/system/
+│   ├── debian_version         12.0
+│   ├── group                  synced from VirtualUserManager
 │   ├── hostname
-│   ├── hosts                127.0.0.1 localhost + VM hostname
-│   ├── os-release           NAME="Fortune GNU/Linux" + ShellProperties
-│   ├── passwd               synced from VirtualUserManager
-│   ├── resolv.conf          1.1.1.1 + 8.8.8.8
-│   └── shadow               (mode 0o640)
-├── proc/
-│   ├── 1/                   init process (cmdline, status, comm, environ, fd/)
-│   ├── <pid>/               one entry per active session (pts/* TTY)
-│   ├── self/                mirrors most recent session's /proc/<pid>/
-│   ├── cpuinfo              real host CPU info
-│   ├── meminfo              real host memory
-│   └── ...
-├── sys/devices/virtual/dmi/id/
-├── tmp/                     (mode 0o1777 sticky)
-├── usr/bin/                 stubs for all built-in commands
-└── var/lib/dpkg/status      managed by VirtualPackageManager
+│   ├── hosts                  127.0.0.1 localhost + VM hostname + ::1
+│   ├── issue                  login banner
+│   ├── motd                   welcome message (uses ShellProperties)
+│   ├── os-release             NAME="Fortune GNU/Linux" + ShellProperties
+│   ├── passwd                 synced from VirtualUserManager
+│   ├── profile                PATH + PS1 defaults
+│   ├── resolv.conf            1.1.1.1 + 8.8.8.8
+│   ├── shadow                 (mode 0o640, fake hashes)
+│   └── shells                 /bin/sh /bin/bash /usr/bin/bash
+│
+├── home/
+│
+├── mnt/
+├── media/
+├── opt/
+├── srv/
+│
+├── proc/                      kernel simulation engine (refreshed on demand)
+│   ├── boot/
+│   │   ├── log                kernel boot sequence log
+│   │   └── version
+│   ├── net/
+│   │   └── dev                lo + eth0 counters
+│   ├── 1/                     init process (cmdline, comm, stat, status, environ, fd/, fdinfo/)
+│   ├── <pid>/                 one subtree per active session (TTY-derived PID)
+│   ├── self/                  mirrors most recent session's /proc/<pid>/
+│   ├── cpuinfo                real host CPU passthrough
+│   ├── hostname
+│   ├── loadavg                computed dynamically
+│   ├── meminfo                real host memory (MemTotal/Free/Available/Buffers/Cached/Swap)
+│   ├── uptime                 computed from shellStartTime
+│   └── version                Linux <kernel> (fortune@build)
+│
+├── root/                      (mode 0o700)
+│   ├── .bashrc                colored PS1, PATH, aliases
+│   └── .profile
+│
+├── sys/                       sysfs graph — deterministic, seeded from hostname
+│   ├── class/net/
+│   ├── devices/virtual/dmi/id/
+│   │   ├── bios_vendor / bios_version / bios_date
+│   │   ├── sys_vendor / product_name / product_family / product_version
+│   │   ├── product_uuid / product_serial
+│   │   ├── chassis_type / chassis_vendor / chassis_version
+│   │   ├── board_name
+│   │   └── modalias
+│   └── kernel/
+│       ├── hostname
+│       ├── osrelease
+│       └── ostype
+│
+├── tmp/                       (mode 0o1777, sticky)
+│
+├── usr/
+│   ├── bin/                   stubs for all built-in commands (exec builtin <name>)
+│   ├── sbin/
+│   ├── lib/
+│   ├── local/bin|lib|share/
+│   └── share/doc|man/man1/
+│
+└── var/
+    ├── cache/apt/archives/
+    ├── lib/
+    │   ├── apt/lists/
+    │   └── dpkg/
+    │       ├── available
+    │       ├── info/
+    │       └── status          managed by VirtualPackageManager
+    ├── log/
+    │   ├── apt/history.log
+    │   ├── apt/term.log
+    │   ├── auth.log
+    │   ├── dpkg.log
+    │   └── syslog
+    ├── run/
+    └── tmp/
 ```
 
 ```typescript
