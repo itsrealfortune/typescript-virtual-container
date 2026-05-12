@@ -20,35 +20,152 @@
 
 // ─── arithmetic evaluator ────────────────────────────────────────────────────
 
+type ArithToken =
+	| { type: "number"; value: number }
+	| { type: "plus" | "minus" | "mul" | "div" | "mod" | "pow" | "lparen" | "rparen" };
+
+function tokenizeArith(expr: string, env: Record<string, string>): ArithToken[] {
+	const tokens: ArithToken[] = [];
+	let i = 0;
+	while (i < expr.length) {
+		const ch = expr[i]!;
+		if (/\s/.test(ch)) {
+			i++;
+			continue;
+		}
+		if (ch === "+") { tokens.push({ type: "plus" }); i++; continue; }
+		if (ch === "-") { tokens.push({ type: "minus" }); i++; continue; }
+		if (ch === "*") {
+			if (expr[i + 1] === "*") { tokens.push({ type: "pow" }); i += 2; continue; }
+			tokens.push({ type: "mul" });
+			i++;
+			continue;
+		}
+		if (ch === "/") { tokens.push({ type: "div" }); i++; continue; }
+		if (ch === "%") { tokens.push({ type: "mod" }); i++; continue; }
+		if (ch === "(") { tokens.push({ type: "lparen" }); i++; continue; }
+		if (ch === ")") { tokens.push({ type: "rparen" }); i++; continue; }
+		if (/\d/.test(ch)) {
+			let j = i + 1;
+			while (j < expr.length && /\d/.test(expr[j]!)) j++;
+			tokens.push({ type: "number", value: Number(expr.slice(i, j)) });
+			i = j;
+			continue;
+		}
+		if (/[A-Za-z_]/.test(ch)) {
+			let j = i + 1;
+			while (j < expr.length && /[A-Za-z0-9_]/.test(expr[j]!)) j++;
+			const name = expr.slice(i, j);
+			const raw = env[name];
+			const value = raw === undefined || raw === "" ? 0 : Number(raw);
+			tokens.push({ type: "number", value: Number.isFinite(value) ? value : 0 });
+			i = j;
+			continue;
+		}
+		return [];
+	}
+	return tokens;
+}
+
 /**
- * Evaluate a simple integer arithmetic expression.
+ * Evaluate a simple integer arithmetic expression with a bounded parser.
  * Supports: +  -  *  /  %  **  unary-  ( )
- * Variables are resolved from `env` before evaluation.
+ * Variables are resolved from `env`.
  * Returns NaN on syntax error.
  */
 export function evalArith(expr: string, env: Record<string, string>): number {
-	// Substitute variable names before evaluating
-	const substituted = expr.replace(
-		/\b([A-Za-z_][A-Za-z0-9_]*)\b/g,
-		(_, name) => {
-			const val = env[name];
-			return val !== undefined && val !== "" ? val : "0";
-		},
-	);
+	const trimmed = expr.trim();
+	if (trimmed.length === 0 || trimmed.length > 1024) return NaN;
+	const tokens = tokenizeArith(trimmed, env);
+	if (tokens.length === 0) return NaN;
 
-	// Whitelist: only digits, operators, spaces, parens
-	if (!/^[\d\s+\-*/%()^!&|<>=,. ]+$/.test(substituted)) return NaN;
+	let index = 0;
 
-	try {
-		// Use Function constructor for safe subset (no identifiers remain)
-		// eslint-disable-next-line no-new-func
-		const result = Function(
-			`"use strict"; return (${substituted.replace(/\*\*/g, "**")});`,
-		)();
-		return typeof result === "number" ? Math.trunc(result) : NaN;
-	} catch {
+	const peek = () => tokens[index];
+	const consume = () => tokens[index++];
+
+	const parsePrimary = (): number => {
+		const token = consume();
+		if (!token) return NaN;
+		if (token.type === "number") return token.value;
+		if (token.type === "lparen") {
+			const value = parseExpression();
+			if (tokens[index]?.type !== "rparen") return NaN;
+			index++;
+			return value;
+		}
 		return NaN;
-	}
+	};
+
+	const parseUnary = (): number => {
+		const token = peek();
+		if (token?.type === "plus") {
+			consume();
+			return parseUnary();
+		}
+		if (token?.type === "minus") {
+			consume();
+			return -parseUnary();
+		}
+		return parsePrimary();
+	};
+
+	const parsePower = (): number => {
+		let left = parseUnary();
+		while (peek()?.type === "pow") {
+			consume();
+			const right = parseUnary();
+			left = left ** right;
+		}
+		return left;
+	};
+
+	const parseTerm = (): number => {
+		let left = parsePower();
+		while (true) {
+			const token = peek();
+			if (token?.type === "mul") {
+				consume();
+				left *= parsePower();
+				continue;
+			}
+			if (token?.type === "div") {
+				consume();
+				const right = parsePower();
+				left = right === 0 ? NaN : left / right;
+				continue;
+			}
+			if (token?.type === "mod") {
+				consume();
+				const right = parsePower();
+				left = right === 0 ? NaN : left % right;
+				continue;
+			}
+			return left;
+		}
+	};
+
+	const parseExpression = (): number => {
+		let left = parseTerm();
+		while (true) {
+			const token = peek();
+			if (token?.type === "plus") {
+				consume();
+				left += parseTerm();
+				continue;
+			}
+			if (token?.type === "minus") {
+				consume();
+				left -= parseTerm();
+				continue;
+			}
+			return left;
+		}
+	};
+
+	const result = parseExpression();
+	if (!Number.isFinite(result) || index !== tokens.length) return NaN;
+	return Math.trunc(result);
 }
 
 // ─── synchronous expansion ───────────────────────────────────────────────────
@@ -168,6 +285,42 @@ export function expandBraces(token: string): string[] {
 	return [token];
 }
 
+function expandArithmeticChunks(input: string, env: Record<string, string>): string {
+	let result = "";
+	let index = 0;
+	while (index < input.length) {
+		if (input[index] === "$" && input[index + 1] === "(" && input[index + 2] === "(") {
+			let scan = index + 3;
+			let depth = 0;
+			while (scan < input.length) {
+				const ch = input[scan]!;
+				if (ch === "(") {
+					depth++;
+				} else if (ch === ")") {
+					if (depth > 0) {
+						depth--;
+					} else if (input[scan + 1] === ")") {
+						const expr = input.slice(index + 3, scan);
+						const value = evalArith(expr, env);
+						result += Number.isNaN(value) ? "0" : String(value);
+						index = scan + 2;
+						break;
+					}
+				}
+				scan++;
+			}
+			if (scan >= input.length) {
+				result += input.slice(index);
+				break;
+			}
+			continue;
+		}
+		result += input[index]!
+		index++;
+	}
+	return result;
+}
+
 export function expandSync(
 	input: string,
 	env: Record<string, string>,
@@ -191,10 +344,7 @@ export function expandSync(
 		s = s.replace(/\$#/g, "0");
 
 		// $(( arithmetic )) — must come before ${ and $VAR to avoid conflicts
-		s = s.replace(/\$\(\(([^)]+(?:\([^)]*\)[^)]*)*)\)\)/g, (_, expr) => {
-			const result = evalArith(expr, env);
-			return Number.isNaN(result) ? "0" : String(result);
-		});
+		s = expandArithmeticChunks(s, env);
 
 		// ${#VAR} — string length
 		s = s.replace(/\$\{#([A-Za-z_][A-Za-z0-9_]*)\}/g, (_, name) =>
