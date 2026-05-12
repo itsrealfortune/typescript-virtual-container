@@ -32,13 +32,18 @@ new VirtualSftpServer({ port: 2223, hostname, shell: virtualShell })
 	});
 
 process.on("uncaughtException", (error) => {
-	console.log("Oh my god, something terrible happened: ", error);
+	console.debug("Oh my god, something terrible happened: ", error);
 });
 
 process.on("unhandledRejection", (error, promise) => {
-	console.log(
+	console.debug(
 		" Oh Lord! We forgot to handle a promise rejection here: ",
 		promise,
 	);
-	console.log(" The error was: ", error);
+	console.debug(" The error was: ", error);
 });
+
+setInterval(() => {
+	const rss = process.memoryUsage().rss; // Just keep the event loop alive and prevent exit
+	console.debug(`Current memory usage: ${Math.round(rss / 1024 / 1024)} MB`);
+}, 1000);
