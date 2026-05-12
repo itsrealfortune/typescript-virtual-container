@@ -95,6 +95,79 @@ function outsideSingleQuotes(
  * @param lastExit  Last command exit code (for `$?`).
  * @param home      Home directory path (for `~`).
  */
+
+/**
+ * Expand brace expressions in a single token.
+ * - `{a,b,c}` → `["a", "b", "c"]`
+ * - `{1..5}` → `["1", "2", "3", "4", "5"]`
+ * - `{a..e}` → `["a", "b", "c", "d", "e"]`
+ * - `prefix{a,b}suffix` → `["prefixasuffix", "prefixbsuffix"]`
+ * Returns a single-element array when no brace expansion applies.
+ */
+export function expandBraces(token: string): string[] {
+	// Find the first { not preceded by $
+	let depth = 0;
+	let start = -1;
+	for (let i = 0; i < token.length; i++) {
+		const ch = token[i]!;
+		if (ch === "{" && token[i - 1] !== "$") {
+			if (depth === 0) start = i;
+			depth++;
+		} else if (ch === "}") {
+			depth--;
+			if (depth === 0 && start !== -1) {
+				const prefix  = token.slice(0, start);
+				const inner   = token.slice(start + 1, i);
+				const suffix  = token.slice(i + 1);
+
+				// Range: {1..5} or {a..e}
+				const rangeMatch = inner.match(/^(-?\d+)\.\.(-?\d+)(?:\.\.-?(\d+))?$/) ||
+				                   inner.match(/^([a-z])\.\.([a-z])$/);
+				if (rangeMatch) {
+					const items: string[] = [];
+					if (/\d/.test(rangeMatch[1]!)) {
+						const from = parseInt(rangeMatch[1]!, 10);
+						const to   = parseInt(rangeMatch[2]!, 10);
+						const step = rangeMatch[3] ? parseInt(rangeMatch[3], 10) : 1;
+						const inc  = from <= to ? step : -step;
+						for (let n = from; from <= to ? n <= to : n >= to; n += inc) {
+							items.push(String(n));
+						}
+					} else {
+						const from = rangeMatch[1]!.charCodeAt(0);
+						const to   = rangeMatch[2]!.charCodeAt(0);
+						const inc  = from <= to ? 1 : -1;
+						for (let c = from; from <= to ? c <= to : c >= to; c += inc) {
+							items.push(String.fromCharCode(c));
+						}
+					}
+					const expanded = items.map((v) => `${prefix}${v}${suffix}`);
+					return expanded.flatMap(expandBraces);
+				}
+
+				// Comma list: {a,b,c} — split respecting nested braces
+				const parts: string[] = [];
+				let cur = "";
+				let d2 = 0;
+				for (const ch2 of inner) {
+					if (ch2 === "{") { d2++; cur += ch2; }
+					else if (ch2 === "}") { d2--; cur += ch2; }
+					else if (ch2 === "," && d2 === 0) { parts.push(cur); cur = ""; }
+					else { cur += ch2; }
+				}
+				parts.push(cur);
+
+				if (parts.length > 1) {
+					const expanded = parts.map((p) => `${prefix}${p}${suffix}`);
+					return expanded.flatMap(expandBraces);
+				}
+				break;
+			}
+		}
+	}
+	return [token];
+}
+
 export function expandSync(
 	input: string,
 	env: Record<string, string>,
@@ -155,8 +228,8 @@ export function expandSync(
 			(_, name) => env[name] ?? "",
 		);
 
-		// $VAR
-		s = s.replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, name) => env[name] ?? "");
+		// $VAR and positional params $1 $2 ...
+		s = s.replace(/\$([A-Za-z_][A-Za-z0-9_]*|\d+)/g, (_, name) => env[name] ?? "");
 
 		return s;
 	});
