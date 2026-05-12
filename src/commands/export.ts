@@ -11,13 +11,15 @@ export const exportCommand: ShellModule = {
 	category: "shell",
 	params: ["[VAR=value]"],
 	run: ({ args, env }) => {
-		if (args.length === 0) {
+		// export -p or export with no args — list all exported vars
+		if (args.length === 0 || (args.length === 1 && args[0] === "-p")) {
 			const out = Object.entries(env.vars)
+				.filter(([k]) => k && /^[A-Za-z_][A-Za-z0-9_]*$/.test(k))
 				.map(([k, v]) => `declare -x ${k}="${v}"`)
 				.join("\n");
-			return { stdout: out, exitCode: 0 };
+			return { stdout: out ? `${out}\n` : "", exitCode: 0 };
 		}
-		for (const arg of args) {
+		for (const arg of args.filter((a) => a !== "-p")) {
 			if (arg.includes("=")) {
 				const eq = arg.indexOf("=");
 				const name = arg.slice(0, eq);
