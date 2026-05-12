@@ -12,7 +12,7 @@ export const cdCommand: ShellModule = {
 	category: "navigation",
 	params: ["[path]"],
 	run: ({ authUser, shell, cwd, args }) => {
-		const target = resolvePath(cwd, args[0] ?? `/home/${authUser}`);
+		const target = resolvePath(cwd, args[0] ?? `~`);
 		assertPathAccess(authUser, target, "cd");
 		const stats = shell.vfs.stat(target);
 		if (stats.type !== "directory") {
