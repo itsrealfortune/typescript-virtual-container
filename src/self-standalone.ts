@@ -18,7 +18,7 @@ const hostname = process.env.SSH_MIMIC_HOSTNAME ?? "typescript-vm";
 const argv = process.argv.slice(2);
 
 // ── CLI args ──────────────────────────────────────────────────────────────────
-
+console.clear();
 function readUserArg(): string {
 	for (let index = 0; index < argv.length; index += 1) {
 		const current = argv[index];
