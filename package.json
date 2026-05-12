@@ -40,7 +40,7 @@
     "self-standalone-build": "bunx esbuild src/self-standalone.ts --bundle --platform=node --format=esm --target=node18 --outfile=builds/self-standalone.js --tree-shaking=true --minify --sourcemap --banner:js='#!/usr/bin/env node'",
     "standalone-build": "bunx esbuild src/standalone.ts --bundle --platform=node --target=node18 --outfile=builds/standalone.js --tree-shaking=true --minify --sourcemap",
     "build-all": "bun run self-standalone-build && bun run standalone-build && bun run standalone-build:wo-sftp && bun run web-build && bun run web-full-build && bun run example-build",
-    "publish-doc": "npx typedoc && npx gh-pages -d docs"
+    "publish-doc": "bunx typedoc && bunx gh-pages -d docs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",
