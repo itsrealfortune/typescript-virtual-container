@@ -51,11 +51,13 @@
 
 ## Three ways to run
 
+<!-- BUILD:mode-table -->
 | Mode | Entry point | Use case |
 |------|-------------|----------|
 | **SSH/SFTP server** | `VirtualSshServer` / `VirtualSftpServer` | Honeypots, remote testing, training environments |
-| **Web shell** | `builds/web.min.js` / `builds/web-full-api.min.js` (ESM) | Embedded terminals, interactive tutorials, browser demos |
-| **Standalone CLI** | `builds/self-standalone.mjs` (single file) | Local shell, one-liner demos, no install required |
+| **Web shell** | `builds/fortune-nyx-v1.5.1-web.min.js` / `builds/fortune-nyx-v1.5.1-web-full.min.js` (ESM) | Embedded terminals, interactive tutorials, browser demos |
+| **Standalone CLI** | `builds/fortune-nyx-v1.5.1-directbash-k6.1.0.mjs` (single file) | Local shell, one-liner demos, no install required |
+<!-- /BUILD:mode-table -->
 
 All three modes share the same core: a pure in-memory VFS, a real shell interpreter, a virtual package manager, and a typed programmatic API.
 
@@ -72,28 +74,32 @@ npm install typescript-virtual-container
 
 ### Try instantly (zero install)
 
+<!-- BUILD:curl-start -->
 ```bash
 # Interactive local shell — persists VFS in .vfs/ in the current directory
-curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/self-standalone.mjs -o self-standalone.mjs && node self-standalone.mjs && rm -f self-standalone.mjs
+curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.0-directbash-k6.1.0.mjs -o fortune-nyx-directbash.mjs && node fortune-nyx-directbash.mjs && rm -f fortune-nyx-directbash.mjs
 
 # SSH server (connect with any SSH client on port 2222)
-curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/standalone.js -o standalone.js && node standalone.js && rm -f standalone.js
+curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.0-ssh.cjs -o fortune-nyx-ssh.cjs && node fortune-nyx-ssh.cjs && rm -f fortune-nyx-ssh.cjs
 
 # SSH server without SFTP (lighter build)
-curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/standalone-wo-sftp.js -o standalone.js && node standalone.js && rm -f standalone.js
+curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.0-ssh-nosftp.js -o fortune-nyx-ssh-nosftp.js && node fortune-nyx-ssh-nosftp.js && rm -f fortune-nyx-ssh-nosftp.js
 ```
+<!-- BUILD:curl-end -->
 
 > [!NOTE]
 > The standalone builds are intended for quick demos and testing. For production use, it's recommended to install the package and import the relevant classes directly in your codebase for better performance, stability, and security.
 
-**`self-standalone.mjs` options:**
+<!-- BUILD:selfStandalone-options -->
+**`fortune-nyx-v1.5.1-directbash-k6.1.0.mjs` options:**
 
 ```bash
-node self-standalone.mjs                  # boot as root
-node self-standalone.mjs --user alice     # boot as alice (prompts for password if set)
-node self-standalone.mjs --user=alice     # same, inline form
-SSH_MIMIC_HOSTNAME=my-box node self-standalone.mjs  # custom hostname
+node fortune-nyx-v1.5.1-directbash-k6.1.0.mjs                  # boot as root
+node fortune-nyx-v1.5.1-directbash-k6.1.0.mjs --user alice     # boot as alice (prompts for password if set)
+node fortune-nyx-v1.5.1-directbash-k6.1.0.mjs --user=alice     # same, inline form
+SSH_MIMIC_HOSTNAME=my-box node fortune-nyx-v1.5.1-directbash-k6.1.0.mjs  # custom hostname
 ```
+<!-- /BUILD:selfStandalone-options -->
 
 The VFS is persisted automatically to `.vfs/vfs-snapshot.vfsb` in the current directory — state survives between runs. Delete `.vfs/` to start fresh.
 
@@ -113,10 +119,12 @@ await ssh.start();
 
 Two browser bundles are available:
 
+<!-- BUILD:web-table -->
 | Bundle | Format | Entry point | Use case |
 |--------|--------|-------------|----------|
-| `builds/web.min.js` | ESM | `createWebShell()` | Embedded terminals, modern bundlers |
-| `builds/web-full-api.min.js` | ESM | `createVirtualShellShim()` | Full `VirtualShell`-like API in the browser |
+| `builds/fortune-nyx-v1.5.1-web.min.js` | ESM | `createWebShell()` | Embedded terminals, modern bundlers |
+| `builds/fortune-nyx-v1.5.1-web-full.min.js` | ESM | `createVirtualShellShim()` | Full `VirtualShell`-like API in the browser |
+<!-- /BUILD:web-table -->
 
 Both bundles persist the VFS in **IndexedDB** — state survives page reloads.
 
@@ -126,11 +134,12 @@ bun run web-full-build  # → builds/web-full-api.min.js
 bun run build-all       # rebuild everything
 ```
 
-**`web.min.js`** — lightweight shell with IndexedDB VFS:
+<!-- BUILD:web-options -->
+**`fortune-nyx-v1.5.1-web.min.js`** — lightweight shell with IndexedDB VFS:
 
 ```html
 <script type="module">
-  import { createWebShell } from "./builds/web.min.js";
+  import { createWebShell } from "./builds/fortune-nyx-v1.5.1-web.min.js";
 
   const shell = createWebShell("web-vm", {
     vfs: { databaseName: "virtual-env-js", storeName: "vfs" },
@@ -142,11 +151,11 @@ bun run build-all       # rebuild everything
 </script>
 ```
 
-**`web-full-api.min.js`** — mirrors the `VirtualShell` programmatic API:
+**`fortune-nyx-v1.5.1-web-full.min.js`** — mirrors the `VirtualShell` programmatic API:
 
 ```html
 <script type="module">
-  import { createVirtualShellShim } from "./builds/web-full-api.min.js";
+  import { createVirtualShellShim } from "./builds/fortune-nyx-v1.5.1-web-full.min.js";
 
   const shell = createVirtualShellShim("web-vm");
   await shell.ensureInitialized();
@@ -154,6 +163,7 @@ bun run build-all       # rebuild everything
   console.log(shell.getVfs().readFile("/app/file.txt")); // hello
 </script>
 ```
+<!-- /BUILD:web-options -->
 
 **Run the demo locally:**
 
@@ -1634,8 +1644,10 @@ Open:
 - [x] `/proc/self` and `/proc/<pid>` per-session entries
 - [x] Snapshot diff tooling — `diffSnapshots`, `formatDiff`, `assertDiff`
 - [x] `node`/`python3`/`npm`/`npx` — package-gated virtual REPL stubs
-- [x] Web shell bundles (`web.min.js`, `web-full-api.min.js`) — fully browser-native with IndexedDB VFS
-- [x] Self-standalone CLI (`self-standalone.mjs`) — single-file interactive shell, per-user history, tab completion
+<!-- BUILD:changelog -->
+- [x] Web shell bundles (`fortune-nyx-v1.5.1-web.min.js`, `fortune-nyx-v1.5.1-web-full.min.js`) — fully browser-native with IndexedDB VFS
+- [x] Self-standalone CLI (`fortune-nyx-v1.5.1-directbash-k6.1.0.mjs`) — single-file interactive shell, per-user history, tab completion
+<!-- /BUILD:changelog -->
 - [x] 120+ `man` pages — all built-in commands documented via `man <cmd>`
 - [x] Shared `tokenize.ts` — unified tokenizer for shell parser and runtime (eliminates duplication)
 - [x] `PasswordChallenge` type — generic interactive password flow for `adduser`, `passwd`, `deluser`
