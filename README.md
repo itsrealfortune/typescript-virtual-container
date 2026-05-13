@@ -221,6 +221,9 @@ console.log(r.stdout);
 <details>
 <summary><strong>API Reference</strong></summary>
 
+<!-- https://itsrealfortune.fr/typescript-virtual-container/ -->
+API reference for all core classes and utilities. Designed for quick lookup while developing with the library. More extensive documentation, examples, and guides are available in <a href="https://itsrealfortune.fr/typescript-virtual-container/">the documentation</a>.
+
 ### `VirtualSshServer`
 
 ```typescript
