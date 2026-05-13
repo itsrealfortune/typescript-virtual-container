@@ -11,7 +11,7 @@
  */
 
 import { execSync } from "node:child_process";
-import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { BUILDS_DIR, NAMES } from "./build-names.mjs";
@@ -51,10 +51,6 @@ const targets = [
 
   // web shell (browser ESM)
   `${ESBUILD} src/web.ts --bundle --platform=browser --format=esm --target=es2020 \
---outfile=${BUILDS_DIR}/${NAMES.web} --tree-shaking=true --minify`,
-
-  // web full API (browser ESM + node polyfills)
-  `${ESBUILD} src/web-api.ts --bundle --platform=browser --format=esm --target=es2020 \
 --outfile=${BUILDS_DIR}/${NAMES.webFull} --tree-shaking=true --minify \
 --alias:node:events=./polyfills/node_events/index.js \
 --alias:node:path=./polyfills/node_path/index.js \
@@ -71,14 +67,14 @@ for (const cmd of targets) {
   run(cmd.replace(/\s+/g, " ").trim());
 }
 
-// ── 4. Copy web to examples/ ─────────────────────────────────────────────────
-const examplesDir = join(root, "examples");
-mkdirSync(examplesDir, { recursive: true });
-copyFileSync(
-  join(BUILDS_DIR, NAMES.web),
-  join(examplesDir, "web.min.js"),
-);
-console.log(`\n✓ Copied ${NAMES.web} → examples/web.min.js`);
+// // ── 4. Copy web to examples/ ─────────────────────────────────────────────────
+// const examplesDir = join(root, "examples");
+// mkdirSync(examplesDir, { recursive: true });
+// copyFileSync(
+//   join(BUILDS_DIR, NAMES.web),
+//   join(examplesDir, "web.min.js"),
+// );
+// console.log(`\n✓ Copied ${NAMES.web} → examples/web.min.js`);
 
 // ── 5. Update README.md ───────────────────────────────────────────────────────
 const readmePath = join(root, "README.md");
