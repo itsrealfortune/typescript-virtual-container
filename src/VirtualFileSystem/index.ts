@@ -338,7 +338,22 @@ class VirtualFileSystem extends EventEmitter {
 		if (this._dirty) await this.flushMirror();
 	}
 
-	// ── WAL Journal helpers ───────────────────────────────────────────────────
+	/**
+	 * Replace the entire root tree — used internally by `bootstrapLinuxRootfs`
+	 * to hot-swap the static rootfs snapshot without going through importSnapshot
+	 * (which would re-journal every node in fs mode).
+	 * @internal
+	 */
+	public importRootTree(root: InternalDirectoryNode): void {
+		const prev = this._replayMode;
+		this._replayMode = true;
+		try { this.root = root; } finally { this._replayMode = prev; }
+	}
+
+	/** Serialise current tree to VFSB binary. Used for the static rootfs cache. */
+	public encodeBinary(): Buffer {
+		return encodeVfs(this.root);
+	}
 
 	/** Set to true during journal replay to suppress re-journaling. */
 	private _replayMode = false;
