@@ -6,18 +6,26 @@
             <title>Virtual Env JS</title>
             <script type="module">
                 import { VirtualShell, VirtualFileSystem } from '../builds/fortune-nyx-v1.5.1-web.min.js';
-                import { ready } from '../polyfills/node_fs/index.js'; // si exposé
 
                 const now1 = new Date();
-                await ready;
+                const ready = await globalThis.__fsReady__;
+                window.ready = ready; // Expose for debugging
                 const now2 = new Date();
                 console.log(`IndexedDB VFS ready in ${now2 - now1}ms`);
-                const vfs = new VirtualFileSystem({ mode: 'fs', snapshotPath: '.vfs'});
-                const shell = new VirtualShell({ vfs });
+                const shell = new VirtualShell('my-vm', undefined, {
+                    mode: 'fs',
+                    snapshotPath: '/vfs-data',
+                    flushIntervalMs: 10_000,
+                });
+
+                window.addEventListener('beforeunload', () => {
+                    shell.vfs.flushMirror();
+                });
+
                 window.shell = shell; // Expose shell for debugging
                 const result = await shell.executeCommand("ls -l", "root", "/root");
                 await shell.vfs.flushMirror()
-                console.log(result);
+                console.log(shell.vfs.getMode());
             </script>
         </head>
         <body>

@@ -77,7 +77,8 @@ export function readFileSync(path, optionsOrEncoding) {
   const bytes = memCache.get(path);
   if (bytes === '__DIR__') throw Object.assign(new Error(`EISDIR: ${path}`), { code: 'EISDIR' });
   const enc = typeof optionsOrEncoding === 'string' ? optionsOrEncoding : optionsOrEncoding?.encoding;
-  return enc ? fromBytes(bytes, enc) : bytes;
+  if (enc) return fromBytes(bytes, enc);
+  return globalThis.Buffer.from(bytes); 
 }
 
 export function writeFileSync(path, data, optionsOrEncoding) {
@@ -182,18 +183,20 @@ export function closeSync(fd) {
 }
 
 export const ready = openDB().then(db => new Promise(resolve => {
-    const tx = db.transaction(STORE, 'readonly');
-    const req = tx.objectStore(STORE).openCursor();
-    req.onsuccess = e => {
-        const cursor = e.target.result;
-        if (!cursor) return resolve();
-        memCache.set(cursor.key, cursor.value);
-        cursor.continue();
-    };
+  const tx = db.transaction(STORE, 'readonly');
+  const req = tx.objectStore(STORE).openCursor();
+  req.onsuccess = e => {
+    const cursor = e.target.result;
+    if (!cursor) return resolve(true);
+    memCache.set(cursor.key, cursor.value);
+    cursor.continue();
+  };
 }));
+
+globalThis.__fsReady__ = ready; 
 
 export default {
   existsSync, readFileSync, writeFileSync, appendFileSync,
   unlinkSync, rmSync, mkdirSync, readdirSync, statSync,
-  openSync, writeSync, closeSync, constants,
+  openSync, writeSync, closeSync, constants, ready
 };
