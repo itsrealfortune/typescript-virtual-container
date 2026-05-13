@@ -103,7 +103,7 @@ export class VirtualUserManager extends EventEmitter {
 		// 	changed = true;
 		// }
 		
-		const homePath = `/home/root`;
+		const homePath = "/root";
 		if (!this.vfs.exists(homePath)) {
 			this.vfs.mkdir(homePath, 0o755);
 			this.vfs.writeFile(
@@ -173,7 +173,7 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public getUsageBytes(username: string): number {
 		perf.mark("getUsageBytes");
-		const homePath = `/home/${username}`;
+		const homePath = username === "root" ? "/root" : `/home/${username}`;
 		if (!this.vfs.exists(homePath)) {
 			return 0;
 		}
@@ -202,7 +202,7 @@ export class VirtualUserManager extends EventEmitter {
 		}
 
 		const normalizedPath = normalizeVfsPath(targetPath);
-		const homePath = normalizeVfsPath(`/home/${username}`);
+		const homePath = normalizeVfsPath(username === "root" ? "/root" : `/home/${username}`);
 		const inUserHome =
 			normalizedPath === homePath || normalizedPath.startsWith(`${homePath}/`);
 		if (!inUserHome) {
@@ -279,7 +279,7 @@ export class VirtualUserManager extends EventEmitter {
 		if (this.autoSudoForNewUsers) {
 			this.sudoers.add(username);
 		}
-		const homePath = `/home/${username}`;
+		const homePath = username === "root" ? "/root" : `/home/${username}`;
 		if (!this.vfs.exists(homePath)) {
 			this.vfs.mkdir(homePath, 0o755);
 			this.vfs.writeFile(

@@ -5,7 +5,7 @@ import { stdin, stdout } from "node:process";
 import { createInterface, type Interface } from "node:readline";
 
 import { getCommandNames } from "./commands/registry";
-import { makeDefaultEnv, runCommand } from "./commands/runtime";
+import { makeDefaultEnv, runCommand, userHome } from "./commands/runtime";
 import { spawnNanoEditorProcess } from "./modules/shellInteractive";
 import { resolvePath } from "./modules/shellRuntime";
 import { buildLoginBanner, type LoginBannerState } from "./SSHMimic/loginBanner";
@@ -66,7 +66,7 @@ async function flushVfs(): Promise<void> {
 }
 
 function loadHistory(authUser: string): string[] {
-	const historyPath = `/home/${authUser}/.bash_history`;
+	const historyPath = `${userHome(authUser)}/.bash_history`;
 	if (!virtualShell.vfs.exists(historyPath)) {
 		virtualShell.vfs.writeFile(historyPath, "");
 		return [];
@@ -80,7 +80,7 @@ function loadHistory(authUser: string): string[] {
 
 function saveHistory(history: string[], authUser: string): void {
 	const data = history.length > 0 ? `${history.join("\n")}\n` : "";
-	virtualShell.vfs.writeFile(`/home/${authUser}/.bash_history`, data);
+	virtualShell.vfs.writeFile(`${userHome(authUser)}/.bash_history`, data);
 }
 
 // ── Tab completion ────────────────────────────────────────────────────────────
@@ -173,10 +173,10 @@ function applySessionState(
 	let cwd = cwdState;
 	if (result.switchUser) {
 		authUser = result.switchUser;
-		cwd = result.nextCwd ?? `/home/${authUser}`;
+		cwd = result.nextCwd ?? userHome(authUser);
 		shellEnvState.vars.USER = authUser;
 		shellEnvState.vars.LOGNAME = authUser;
-		shellEnvState.vars.HOME = `/home/${authUser}`;
+		shellEnvState.vars.HOME = userHome(authUser);
 		shellEnvState.vars.PWD = cwd;
 	} else if (result.nextCwd) {
 		cwd = result.nextCwd;
@@ -204,7 +204,7 @@ async function runReadlineShell(): Promise<void> {
 	}
 
 	// Ensure home dir and README.txt exist (mirrors SSHMimic/VirtualUserManager behaviour)
-	const homePath = selectedUser === "root" ? "/root" : `/home/${selectedUser}`;
+	const homePath = selectedUser === "root" ? "/root" : userHome(selectedUser);
 	if (!virtualShell.vfs.exists(homePath)) {
 		virtualShell.vfs.mkdir(homePath, selectedUser === "root" ? 0o700 : 0o755);
 	}
@@ -219,7 +219,7 @@ async function runReadlineShell(): Promise<void> {
 
 	const shellEnv = makeDefaultEnv(selectedUser, hostname);
 	let authUser = selectedUser;
-	let cwd = `/home/${authUser}`;
+	let cwd = userHome(authUser);
 	shellEnv.vars.PWD = cwd;
 	const remoteAddress = "localhost";
 	const terminalSize = { cols: stdout.columns ?? 80, rows: stdout.rows ?? 24 };
@@ -323,15 +323,15 @@ async function runReadlineShell(): Promise<void> {
 
 		if (!challenge.commandLine) {
 			authUser = challenge.targetUser;
-			cwd = `/home/${authUser}`;
+			cwd = userHome(authUser);
 			shellEnv.vars.USER = authUser;
 			shellEnv.vars.LOGNAME = authUser;
-			shellEnv.vars.HOME = `/home/${authUser}`;
+			shellEnv.vars.HOME = userHome(authUser);
 			shellEnv.vars.PWD = cwd;
 			return;
 		}
 
-		const runCwd = challenge.loginShell ? `/home/${challenge.targetUser}` : cwd;
+		const runCwd = challenge.loginShell ? userHome(challenge.targetUser) : cwd;
 		const nestedResult = await runCommand(
 			challenge.commandLine,
 			challenge.targetUser,
@@ -374,10 +374,10 @@ async function runReadlineShell(): Promise<void> {
 				break;
 			case "su":
 				authUser = challenge.targetUsername;
-				cwd = `/home/${authUser}`;
+				cwd = userHome(authUser);
 				shellEnv.vars.USER = authUser;
 				shellEnv.vars.LOGNAME = authUser;
-				shellEnv.vars.HOME = `/home/${authUser}`;
+				shellEnv.vars.HOME = userHome(authUser);
 				shellEnv.vars.PWD = cwd;
 				break;
 		}
@@ -431,7 +431,7 @@ async function runReadlineShell(): Promise<void> {
 	// ── Prompt helper ──────────────────────────────────────────────────────────
 
 	const renderPrompt = (): string => {
-		const cwdLabel = cwd === `/home/${authUser}` ? "~" : basename(cwd) || "/";
+		const cwdLabel = cwd === userHome(authUser) ? "~" : basename(cwd) || "/";
 		return buildPrompt(authUser, hostname, cwdLabel);
 	};
 

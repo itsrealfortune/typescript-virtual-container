@@ -1,6 +1,7 @@
 import { EventEmitter } from "node:events";
 import { Server as SshServer } from "ssh2";
 import { VirtualShell } from "../VirtualShell";
+import { userHome } from "../commands";
 import { createPerfLogger, type PerfLogger } from "../utils/perfLogger";
 import { runExec } from "./exec";
 import { loadOrCreateHostKey } from "./hostKey";
@@ -104,7 +105,7 @@ class SshMimic extends EventEmitter {
 	// ── Home directory bootstrap ─────────────────────────────────────────────
 
 	private ensureHomeDir(authUser: string): void {
-		const homePath = `/home/${authUser}`;
+		const homePath = userHome(authUser);
 		if (!this.shell.vfs.exists(homePath)) {
 			this.shell.vfs.mkdir(homePath, 0o755);
 			this.shell.vfs.writeFile(

@@ -7,6 +7,7 @@ import type { VfsNodeStats } from "../types/vfs";
 import type { PerfLogger } from "../utils/perfLogger";
 import { createPerfLogger } from "../utils/perfLogger";
 import type VirtualFileSystem from "../VirtualFileSystem";
+import { userHome } from "../commands";
 import { VirtualShell } from "../VirtualShell";
 import type { VirtualUserManager } from "../VirtualUserManager";
 import { loadOrCreateHostKey } from "./hostKey";
@@ -246,7 +247,7 @@ export class SftpMimic extends EventEmitter {
 						this.getVfs().mkdir(homeRoot, 0o755);
 					}
 
-					const homePath = `/home/${authUser}`;
+					const homePath = userHome(authUser);
 					if (!this.getVfs().exists(homePath)) {
 						this.getVfs().mkdir(homePath, 0o755);
 						this.getVfs().writeFile(
@@ -384,7 +385,7 @@ export class SftpMimic extends EventEmitter {
 	 * This is standard SFTP behavior where the "working directory" is always the home.
 	 */
 	private resolveRequestPath(requestPath: string, authUser: string): string {
-		const homePath = `/home/${authUser}`;
+		const homePath = userHome(authUser);
 
 		// Empty path or "." → resolve to home directory
 		if (!requestPath || requestPath === ".") {
@@ -408,7 +409,7 @@ export class SftpMimic extends EventEmitter {
 	 * @returns true if path is within home, false if traversal attempt detected
 	 */
 	private isPathWithinHome(targetPath: string, authUser: string): boolean {
-		const homePath = `/home/${authUser}`;
+		const homePath = userHome(authUser);
 		const normalized = path.posix.normalize(targetPath);
 
 		// Allow access to home directory itself
