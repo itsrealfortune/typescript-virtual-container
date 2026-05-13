@@ -844,6 +844,7 @@ class VirtualFileSystem extends EventEmitter {
 
 	private computeUsage(node: InternalNode): number {
 		if (node.type === "file") return (node as InternalFileNode).content.length;
+		if (node.type === "stub") return node.stubContent.length;
 		let total = 0;
 		for (const child of Object.values((node as InternalDirectoryNode).children)) {
 			total += this.computeUsage(child);
