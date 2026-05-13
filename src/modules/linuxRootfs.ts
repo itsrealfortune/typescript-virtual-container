@@ -33,7 +33,8 @@ function ensureFile(
 	content: string,
 	mode = 0o644,
 ): void {
-	if (!vfs.exists(path)) vfs.writeFile(path, content, { mode });
+	// Use lazy stub — no Buffer allocated until the file is actually read or overwritten
+	vfs.writeStub(path, content, mode);
 }
 
 function write(vfs: VirtualFileSystem, path: string, content: string): void {

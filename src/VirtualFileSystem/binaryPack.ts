@@ -35,6 +35,7 @@ import type {
 	InternalDirectoryNode,
 	InternalFileNode,
 	InternalNode,
+	InternalStubNode,
 } from "./internalTypes";
 
 const MAGIC = Buffer.from([0x56, 0x46, 0x53, 0x21]); // "VFS!"
@@ -101,6 +102,16 @@ function encodeNode(enc: Encoder, node: InternalNode): void {
 		enc.writeFloat64(f.updatedAt.getTime());
 		enc.writeUint8(f.compressed ? 0x01 : 0x00);
 		enc.writeBytes(f.content);
+	} else if (node.type === "stub") {
+		// Encode stub as a regular uncompressed file node
+		const s = node as InternalStubNode;
+		enc.writeUint8(TYPE_FILE);
+		enc.writeString(s.name);
+		enc.writeUint32(s.mode);
+		enc.writeFloat64(s.createdAt.getTime());
+		enc.writeFloat64(s.updatedAt.getTime());
+		enc.writeUint8(0x00); // not compressed
+		enc.writeBytes(Buffer.from(s.stubContent, "utf8"));
 	} else {
 		const d = node as InternalDirectoryNode;
 		enc.writeUint8(TYPE_DIR);

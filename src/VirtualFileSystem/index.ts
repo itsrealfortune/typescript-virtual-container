@@ -19,6 +19,7 @@ import type {
 	InternalDirectoryNode,
 	InternalFileNode,
 	InternalNode,
+	InternalStubNode,
 } from "./internalTypes";
 import { appendJournalEntry, JournalOp, readJournal, truncateJournal } from "./journal";
 import { getNode, getParentDirectory, normalizePath } from "./path";
@@ -183,6 +184,35 @@ class VirtualFileSystem extends EventEmitter {
 			createdAt: now,
 			updatedAt: now,
 		};
+	}
+
+	private makeStub(name: string, content: string, mode: number): InternalStubNode {
+		const now = new Date();
+		return { type: "stub", name, stubContent: content, mode, createdAt: now, updatedAt: now };
+	}
+
+	/**
+	 * Write a lazy stub — stores content as a plain string with no Buffer allocation.
+	 * Use for static rootfs files that may never be read. On first `writeFile()`,
+	 * the stub is promoted to a real `InternalFileNode`.
+	 * Parent directories are created when missing.
+	 */
+	public writeStub(targetPath: string, content: string, mode = 0o644): void {
+		const normalized = normalizePath(targetPath);
+		const { parent, name } = getParentDirectory(
+			this.root,
+			normalized,
+			true,
+			(p) => this.mkdirRecursive(p, 0o755),
+		);
+		const existing = parent.children[name];
+		if (existing?.type === "directory") {
+			throw new Error(`Cannot write stub '${normalized}': path is a directory.`);
+		}
+		// Don't overwrite a real file or an already-promoted node
+		if (existing?.type === "file") return;
+		if (!existing) parent._childCount++;
+		parent.children[name] = this.makeStub(name, content, mode);
 	}
 
 	private mkdirRecursive(targetPath: string, mode: number): void {
@@ -412,7 +442,7 @@ class VirtualFileSystem extends EventEmitter {
 		for (const node of Object.values(dir.children)) {
 			if (node.type === "directory") {
 				this._evictDir(node);
-			} else if (!node.evicted) {
+			} else if (node.type === "file" && !node.evicted) {
 				const rawSize = node.compressed
 					? (node.size ?? node.content.length * 2) // estimate uncompressed
 					: node.content.length;
@@ -422,6 +452,7 @@ class VirtualFileSystem extends EventEmitter {
 					node.evicted = true;
 				}
 			}
+			// stubs: nothing to evict — content is already a plain string, not a Buffer
 		}
 	}
 
@@ -440,7 +471,7 @@ class VirtualFileSystem extends EventEmitter {
 			let cur: InternalNode = tmpRoot;
 			for (const part of parts) {
 				if (cur.type !== "directory") return;
-				const next = cur.children[part];
+				const next: InternalNode | undefined = cur.children[part];
 				if (!next) return;
 				cur = next;
 			}
@@ -600,15 +631,17 @@ class VirtualFileSystem extends EventEmitter {
 		const storedContent = shouldCompress ? gzipSync(rawContent) : rawContent;
 		const mode = options.mode ?? 0o644;
 
-		if (existing) {
+		if (existing && existing.type === "file") {
+			// Update real file in place
 			const f = existing as InternalFileNode;
 			f.content = storedContent;
 			f.compressed = shouldCompress;
 			f.mode = mode;
 			f.updatedAt = new Date();
 		} else {
+			// Create new real file — also promotes stubs (no _childCount change for stubs)
+			if (!existing) parent._childCount++;
 			parent.children[name] = this.makeFile(name, storedContent, mode, shouldCompress);
-			parent._childCount++;
 		}
 
 		this.emit("file:write", { path: normalized, size: storedContent.length });
@@ -627,6 +660,10 @@ class VirtualFileSystem extends EventEmitter {
 		}
 		const normalized = normalizePath(targetPath);
 		const node = getNode(this.root, normalized);
+		if (node.type === "stub") {
+			this.emit("file:read", { path: normalized, size: node.stubContent.length });
+			return node.stubContent;
+		}
 		if (node.type !== "file") {
 			throw new Error(`Cannot read '${targetPath}': not a file.`);
 		}
@@ -646,6 +683,11 @@ class VirtualFileSystem extends EventEmitter {
 		}
 		const normalized = normalizePath(targetPath);
 		const node = getNode(this.root, normalized);
+		if (node.type === "stub") {
+			const buf = Buffer.from(node.stubContent, "utf8");
+			this.emit("file:read", { path: normalized, size: buf.length });
+			return buf;
+		}
 		if (node.type !== "file") {
 			throw new Error(`Cannot read '${targetPath}': not a file.`);
 		}
@@ -708,6 +750,19 @@ class VirtualFileSystem extends EventEmitter {
 		const normalized = normalizePath(targetPath);
 		const node = getNode(this.root, normalized);
 		const name = normalized === "/" ? "" : path.posix.basename(normalized);
+		if (node.type === "stub") {
+			const s = node as InternalStubNode;
+			return {
+				type: "file",
+				name,
+				path: normalized,
+				mode: s.mode,
+				createdAt: s.createdAt,
+				updatedAt: s.updatedAt,
+				compressed: false,
+				size: s.stubContent.length,
+			};
+		}
 		if (node.type === "file") {
 			const f = node as InternalFileNode;
 			return {
@@ -975,11 +1030,22 @@ class VirtualFileSystem extends EventEmitter {
 	private serializeDir(dir: InternalDirectoryNode): VfsSnapshotDirectoryNode {
 		const children: VfsSnapshotNode[] = [];
 		for (const child of Object.values(dir.children)) {
-			children.push(
-				child.type === "file"
-					? this.serializeFile(child as InternalFileNode)
-					: this.serializeDir(child as InternalDirectoryNode),
-			);
+			if (child.type === "stub") {
+				// Serialize stub as a regular file node
+				children.push({
+					type: "file",
+					name: child.name,
+					mode: child.mode,
+					createdAt: child.createdAt.toISOString(),
+					updatedAt: child.updatedAt.toISOString(),
+					compressed: false,
+					contentBase64: Buffer.from(child.stubContent, "utf8").toString("base64"),
+				} satisfies VfsSnapshotFileNode);
+			} else if (child.type === "file") {
+				children.push(this.serializeFile(child as InternalFileNode));
+			} else {
+				children.push(this.serializeDir(child as InternalDirectoryNode));
+			}
 		}
 		return {
 			type: "directory",
