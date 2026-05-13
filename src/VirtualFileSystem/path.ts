@@ -33,7 +33,7 @@ export function getNode(
 			throw new Error(`Path '${normalized}' does not exist.`);
 		}
 
-		const next = current.children.get(part);
+		const next: InternalNode | undefined = current.children[part];
 		if (!next) {
 			throw new Error(`Path '${normalized}' does not exist.`);
 		}

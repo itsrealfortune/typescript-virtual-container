@@ -109,7 +109,7 @@ class SshMimic extends EventEmitter {
 				`${homePath}/README.txt`,
 				`Welcome to ${this.shell.hostname}\n`,
 			);
-			void this.shell.vfs.flushMirror();
+			void this.shell.vfs.stopAutoFlush();
 		}
 	}
 
@@ -311,6 +311,8 @@ class SshMimic extends EventEmitter {
 	 */
 	public stop(): void {
 		perf.mark("stop");
+		// Flush pending WAL journal before closing
+		void this.shell.vfs.stopAutoFlush();
 		if (this.server) {
 			this.server.close(() => {
 				devLog("SSH Mimic stopped");

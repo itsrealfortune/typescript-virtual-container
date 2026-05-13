@@ -247,7 +247,6 @@ export class SftpMimic extends EventEmitter {
 							`${homePath}/README.txt`,
 							`Welcome to ${this.hostname}`,
 						);
-						void this.getVfs().flushMirror();
 					}
 				};
 
@@ -585,7 +584,6 @@ export class SftpMimic extends EventEmitter {
 				try {
 					getUsers().assertWriteWithinQuota(authUser, entry.path, entry.buffer);
 					getVfs().writeFile(entry.path, entry.buffer);
-					void getVfs().flushMirror();
 				} catch (error) {
 					devErr("SFTP CLOSE write error:", error);
 					sftp.status(reqid, SFTP_STATUS_CODE.FAILURE);
@@ -778,7 +776,6 @@ export class SftpMimic extends EventEmitter {
 
 			try {
 				getVfs().mkdir(targetPath, 0o755);
-				void getVfs().flushMirror();
 				sftp.status(reqid, SFTP_STATUS_CODE.OK);
 			} catch {
 				sftp.status(reqid, SFTP_STATUS_CODE.FAILURE);
@@ -799,7 +796,6 @@ export class SftpMimic extends EventEmitter {
 
 			try {
 				getVfs().remove(targetPath, { recursive: false });
-				void getVfs().flushMirror();
 				sftp.status(reqid, SFTP_STATUS_CODE.OK);
 			} catch {
 				sftp.status(reqid, SFTP_STATUS_CODE.FAILURE);
@@ -820,7 +816,6 @@ export class SftpMimic extends EventEmitter {
 
 			try {
 				getVfs().remove(targetPath, { recursive: false });
-				void getVfs().flushMirror();
 				sftp.status(reqid, SFTP_STATUS_CODE.OK);
 			} catch {
 				sftp.status(reqid, SFTP_STATUS_CODE.FAILURE);
@@ -845,7 +840,6 @@ export class SftpMimic extends EventEmitter {
 
 			try {
 				getVfs().move(fromPath, toPath);
-				void getVfs().flushMirror();
 				sftp.status(reqid, SFTP_STATUS_CODE.OK);
 			} catch {
 				sftp.status(reqid, SFTP_STATUS_CODE.FAILURE);

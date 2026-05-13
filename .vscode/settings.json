@@ -10,6 +10,7 @@
         ".ssh-mimic": true,
         ".vfs": true,
         "builds": true,
+        "docs": true,
         "examples": true,
         
         "LICENSE": true,

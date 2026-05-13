@@ -35,6 +35,7 @@ import type {
 	InternalDirectoryNode,
 	InternalFileNode,
 	InternalNode,
+	InternalStubNode,
 } from "./internalTypes";
 
 const MAGIC = Buffer.from([0x56, 0x46, 0x53, 0x21]); // "VFS!"
@@ -101,6 +102,16 @@ function encodeNode(enc: Encoder, node: InternalNode): void {
 		enc.writeFloat64(f.updatedAt.getTime());
 		enc.writeUint8(f.compressed ? 0x01 : 0x00);
 		enc.writeBytes(f.content);
+	} else if (node.type === "stub") {
+		// Encode stub as a regular uncompressed file node
+		const s = node as InternalStubNode;
+		enc.writeUint8(TYPE_FILE);
+		enc.writeString(s.name);
+		enc.writeUint32(s.mode);
+		enc.writeFloat64(s.createdAt.getTime());
+		enc.writeFloat64(s.updatedAt.getTime());
+		enc.writeUint8(0x00); // not compressed
+		enc.writeBytes(Buffer.from(s.stubContent, "utf8"));
 	} else {
 		const d = node as InternalDirectoryNode;
 		enc.writeUint8(TYPE_DIR);
@@ -108,7 +119,7 @@ function encodeNode(enc: Encoder, node: InternalNode): void {
 		enc.writeUint32(d.mode);
 		enc.writeFloat64(d.createdAt.getTime());
 		enc.writeFloat64(d.updatedAt.getTime());
-		const children = Array.from(d.children.values());
+		const children = Object.values(d.children);
 		enc.writeUint32(children.length);
 		for (const child of children) encodeNode(enc, child);
 	}
@@ -196,10 +207,10 @@ function decodeNode(dec: Decoder): InternalNode {
 
 	if (type === TYPE_DIR) {
 		const count = dec.readUint32();
-		const children = new Map<string, InternalNode>();
+		const children = Object.create(null) as Record<string, InternalNode>;
 		for (let i = 0; i < count; i++) {
 			const child = decodeNode(dec);
-			children.set(child.name, child);
+			children[child.name] = child;
 		}
 		return {
 			type: "directory",
@@ -208,6 +219,7 @@ function decodeNode(dec: Decoder): InternalNode {
 			createdAt,
 			updatedAt,
 			children,
+			_childCount: count,
 		} satisfies InternalDirectoryNode;
 	}
 

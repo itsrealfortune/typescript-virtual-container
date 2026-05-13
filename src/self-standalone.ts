@@ -18,7 +18,7 @@ const hostname = process.env.SSH_MIMIC_HOSTNAME ?? "typescript-vm";
 const argv = process.argv.slice(2);
 
 // ── CLI args ──────────────────────────────────────────────────────────────────
-
+console.clear();
 function readUserArg(): string {
 	for (let index = 0; index < argv.length; index += 1) {
 		const current = argv[index];
@@ -62,7 +62,7 @@ function writeLastLogin(username: string, from: string): void {
 }
 
 async function flushVfs(): Promise<void> {
-	await virtualShell.vfs.flushMirror();
+	await virtualShell.vfs.stopAutoFlush();
 }
 
 function loadHistory(authUser: string): string[] {
@@ -505,6 +505,19 @@ runReadlineShell().catch((error: unknown) => {
 	console.error("Failed to start readline SSH emulation:", error);
 	process.exit(1);
 });
+
+
+// ── Graceful shutdown (process-level) ────────────────────────────────────────
+let _shuttingDown = false;
+async function _gracefulShutdown(signal: string): Promise<void> {
+	if (_shuttingDown) return;
+	_shuttingDown = true;
+	process.stdout.write(`\n[${signal}] Saving VFS...\n`);
+	try { await virtualShell.vfs.stopAutoFlush(); } catch {}
+	process.exit(0);
+}
+process.on("SIGTERM", () => { void _gracefulShutdown("SIGTERM"); });
+process.on("beforeExit", () => { void virtualShell.vfs.stopAutoFlush(); });
 
 process.on("uncaughtException", (error) => {
 	console.error("Uncaught exception:", error);
