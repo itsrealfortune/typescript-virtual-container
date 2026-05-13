@@ -32,6 +32,7 @@ export const JournalOp = {
 
 export type JournalOp = typeof JournalOp[keyof typeof JournalOp];
 
+/** @internal */
 export interface JournalEntry {
 	op:      JournalOp;
 	path:    string;

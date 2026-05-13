@@ -1102,7 +1102,7 @@ Type `help` in the shell for a grouped, colorized listing. Type `help <command>`
 | `su [user]` | | Switch user |
 | `sudo <cmd>` | `-i` | Run as root |
 
-**ℹ️ All 91 built-in commands include complete JSDoc documentation** with `@category` and `@params` tags. See [src/commands/](src/commands/) for source code and inline documentation.
+**ℹ️ All 91 built-in commands include complete JSDoc documentation** with `@category` and `@params` tags. See [src/commands/](https://github.com/itsrealfortune/typescript-virtual-container/tree/main/src/commands) for source code and inline documentation.
 
 Custom commands: `shell.addCommand(name, params, callback)`.
 

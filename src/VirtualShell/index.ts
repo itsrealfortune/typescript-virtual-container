@@ -42,6 +42,10 @@ export interface ShellProperties {
 	arch: string;
 }
 
+/**
+ * Minimal VFS interface accepted by {@link VirtualShell} as a drop-in replacement
+ * for the built-in {@link VirtualFileSystem}.
+ */
 export interface VirtualShellVfsLike {
 	restoreMirror(): Promise<void>;
 	flushMirror(): Promise<void>;
@@ -57,6 +61,9 @@ export interface VirtualShellVfsLike {
 	getUsageBytes?(targetPath?: string): number;
 }
 
+/**
+ * Constructor options for {@link VirtualShell} when passing an existing VFS instance.
+ */
 export interface VirtualShellVfsOptions {
 	vfsInstance?: VirtualShellVfsLike;
 }
@@ -153,7 +160,7 @@ class VirtualShell extends EventEmitter {
 	 *
 	 * @param hostname Virtual hostname used for prompts and idents.
 	 * @param properties Customizable properties shown in `uname -a` and similar commands.
-	 * @param vfsOptions Optional VFS persistence options (mode, snapshotPath).
+	 * @param vfsOptionsOrInstance Optional VFS persistence options (mode, snapshotPath) or an existing VFS instance.
 	 */
 	constructor(
 		hostname: string,

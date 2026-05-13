@@ -1297,4 +1297,3 @@ deluser: done.
 `),a.write("",{ctrl:!0,name:"u"}),h()}),a.on("close",()=>{Jt().then(()=>{console.log(""),process.exit(0)})}),h()}Bo().catch(n=>{console.error("Failed to start readline SSH emulation:",n),process.exit(1)});var Rs=!1;async function Wo(n){if(!Rs){Rs=!0,process.stdout.write(`
 [${n}] Saving VFS...
 `);try{await q.vfs.stopAutoFlush()}catch{}process.exit(0)}}process.on("SIGTERM",()=>{Wo("SIGTERM")});process.on("beforeExit",()=>{q.vfs.stopAutoFlush()});process.on("uncaughtException",n=>{console.error("Uncaught exception:",n)});process.on("unhandledRejection",(n,t)=>{console.error("Unhandled rejection at:",t,"error:",n)});
-//# sourceMappingURL=self-standalone.js.map

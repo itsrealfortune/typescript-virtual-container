@@ -1,4 +1,8 @@
-type ArgParseOptions = {
+/**
+ * Options for argument parsing helpers.
+ * @public
+ */
+export type ArgParseOptions = {
 	flags?: string[];
 	flagsWithValue?: string[];
 };
