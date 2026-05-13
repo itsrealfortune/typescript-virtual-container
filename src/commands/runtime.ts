@@ -15,7 +15,7 @@ export function makeDefaultEnv(authUser: string, hostname: string): ShellEnv {
 	return {
 		vars: {
 			PATH: "/usr/local/bin:/usr/bin:/bin",
-			HOME: `/home/${authUser}`,
+			HOME: authUser === "root" ? "/root" : `/home/${authUser}`,
 			USER: authUser,
 			LOGNAME: authUser,
 			SHELL: "/bin/sh",
