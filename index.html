@@ -1,0 +1,27 @@
+    <!DOCTYPE html>
+    <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Virtual Env JS</title>
+            <script type="module">
+            import { VirtualShell, VirtualFileSystem } from './dist/web-index.js';
+
+            const vfs = new VirtualFileSystem();
+            const shell = new VirtualShell({ vfs });
+            window.shell = shell; // Expose shell for debugging
+            console.log(shell);
+            </script>
+        </head>
+        <body>
+            <!-- <h1>Virtual Env JS</h1>
+            <p>A JavaScript-based virtual environment for running shell commands and SSH servers.</p>
+            <h2>Usage</h2>
+            <p>To start an interactive local shell that persists the virtual file system (VFS) in the .vfs/ directory, run the following command:</p>
+            <pre><code>curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.1-directbash-k6.1.0.mjs -o fortune-nyx-v1.5.1-directbash-k6.1.0.mjs && node fortune-nyx-v1.5.1.0.mjs</code></pre>
+            <p>To start an SSH server that listens on port 2222, run the following command:</p>
+            <pre><code>curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.1-ssh.cjs -o fortune-nyx-v1.5.1-ssh.cjs && node fortune-nyx-v1.5.1-ssh.cjs</code></pre>
+            <p>To start an SSH server without SFTP support (lighter build), run the following command:</p>
+            <pre><code>curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.1-ssh-nosftp.js -o fortune-nyx-v1.5.1-ssh-nosftp.js && node fortune-nyx-v1.5.1-ssh-nosftp.js</code></pre> -->
+        </body>
+    </html>
