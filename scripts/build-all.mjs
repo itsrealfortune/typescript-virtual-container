@@ -112,7 +112,8 @@ replaceSection(
 replaceSection(
   "curl-start",
   [
-    `# Interactive local shell — persists VFS in .vfs/ in the current directory`,
+    `\`\`\`bash`,
+    `# Interactivea local shell — persists VFS in .vfs/ in the current directory`,
     `curl -s ${GH_BASE}/${selfStandalone} -o ${selfStandalone} && node ${selfStandalone} && rm -f ${selfStandalone}`,
     ``,
     `# SSH server (connect with any SSH client on port 2222)`,
@@ -120,6 +121,7 @@ replaceSection(
     ``,
     `# SSH server without SFTP (lighter build)`,
     `curl -s ${GH_BASE}/${standaloneNoSftp} -o ${standaloneNoSftp} && node ${standaloneNoSftp} && rm -f ${standaloneNoSftp}`,
+    `\`\`\``,
   ].join("\n"),
 );
 
