@@ -5,12 +5,18 @@
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Virtual Env JS</title>
             <script type="module">
-                import { VirtualShell, VirtualFileSystem } from './dist/web-index.js';
+                import { VirtualShell, VirtualFileSystem } from '../builds/fortune-nyx-v1.5.1-web.min.js';
+                import { ready } from '../polyfills/node_fs/index.js'; // si exposé
 
-                const vfs = new VirtualFileSystem();
+                const now1 = new Date();
+                await ready;
+                const now2 = new Date();
+                console.log(`IndexedDB VFS ready in ${now2 - now1}ms`);
+                const vfs = new VirtualFileSystem({ mode: 'fs', snapshotPath: '.vfs'});
                 const shell = new VirtualShell({ vfs });
                 window.shell = shell; // Expose shell for debugging
                 const result = await shell.executeCommand("ls -l", "root", "/root");
+                await shell.vfs.flushMirror()
                 console.log(result);
             </script>
         </head>
