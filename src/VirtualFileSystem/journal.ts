@@ -142,7 +142,7 @@ export function decodeJournal(buf: Buffer): JournalEntry[] {
 /** Append a single entry to the journal file (O_APPEND, atomic write). */
 export function appendJournalEntry(journalPath: string, entry: JournalEntry): void {
 	const buf = encodeEntry(entry);
-	// console.log(`[Journal] Appending entry: op=${entry.op} path=${entry.path} ${entry.content ? `content_len=${entry.content.length}` : ""}${entry.mode ? ` mode=${entry.mode.toString(8)}` : ""}${entry.dest ? ` dest=${entry.dest}` : ""}`);
+	console.log(`[Journal] Appending entry: op=${entry.op} path=${entry.path} ${entry.content ? `content_len=${entry.content.length}` : ""}${entry.mode ? ` mode=${entry.mode.toString(8)}` : ""}${entry.dest ? ` dest=${entry.dest}` : ""}`);
 	if (fsSync.existsSync(journalPath)) {
 		const fd = fsSync.openSync(journalPath, fsSync.constants.O_WRONLY | fsSync.constants.O_CREAT | fsSync.constants.O_APPEND);
 		try {

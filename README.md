@@ -1233,104 +1233,120 @@ On every `VirtualShell` init, a realistic Linux hierarchy is bootstrapped idempo
 
 ```
 /
-├── bin -> usr/bin             (symlink, Debian-style)
-├── sbin -> usr/sbin           (symlink, Debian-style)
-├── lib/                       (ELF stub)
-├── lib/modules/
-├── lib/x86_64-linux-gnu/
-├── lib64 -> usr/lib64         (symlink, Debian-style)
-├── initrd.img -> boot/initrd.img-<kernel>
-├── initrd.img.old -> boot/initrd.img-<prev>
-├── vmlinuz -> boot/vmlinuz-<kernel>
-├── vmlinuz.old -> boot/vmlinuz-<prev>
-├── lost+found/                (mode 0o700, ext4 fsck dir)
+├── bin -> /usr/bin             (symlink, Debian-style)
+├── sbin -> /usr/sbin           (symlink, Debian-style)
+├── lib/                        (ELF stub)
+│   ├── modules/
+│   └── x86_64-linux-gnu/
+├── lib64/
+│   └── ld-linux-x86-64.so.2   (stub, 0o755)
+├── initrd.img -> /boot/initrd.img-<kernel>
+├── initrd.img.old -> /boot/initrd.img-<kernel>
+├── vmlinuz -> /boot/vmlinuz-<kernel>
+├── vmlinuz.old -> /boot/vmlinuz-<kernel>
+├── lost+found/                 (mode 0o700, ext4 fsck dir)
 │
 ├── boot/
 │   ├── grub/
-│   │   └── grub.cfg           virtual bootloader config
-│   ├── vmlinuz-<kernel>       kernel stub
-│   ├── initrd.img-<kernel>    initrd stub
+│   │   └── grub.cfg            virtual bootloader config
+│   ├── vmlinuz-<kernel>        kernel stub
+│   ├── initrd.img-<kernel>     initrd stub
 │   ├── System.map-<kernel>
 │   └── config-<kernel>
 │
 ├── dev/
-│   ├── null / zero / full     (0o666)
-│   ├── random / urandom       (0o444)
-│   ├── mem                    (0o640)
+│   ├── null / zero / full      (0o666)
+│   ├── random / urandom        (0o444)
+│   ├── mem                     (0o640)
 │   ├── console / tty / tty0 / tty1 / ttyS0
-│   ├── sda / sda1 / sda2      block device stubs
+│   ├── sda / sda1 / sda2       block device stubs
 │   ├── loop0-loop7 + loop-control
 │   ├── stdin / stdout / stderr
 │   ├── pts/
 │   └── shm/
 │
 ├── etc/
-│   ├── apt/sources.list + sources.list.d/
-│   ├── cron.d/
+│   ├── apt/
+│   │   ├── sources.list
+│   │   ├── sources.list.d/
+│   │   ├── trusted.gpg.d/
+│   │   ├── keyrings/
+│   │   └── apt.conf.d/70debconf
+│   ├── cron.d/ + cron.daily/ + cron.hourly/ + cron.weekly/ + cron.monthly/
+│   ├── default/locale
 │   ├── init.d/
-│   ├── ld.so.conf + ld.so.conf.d/x86_64-linux-gnu.conf
-│   ├── network/interfaces     lo + eth0 (DHCP)
-│   ├── pam.d/                 common-auth|account|password|session + sshd
+│   ├── ld.so.conf + ld.so.conf.d/x86_64-linux-gnu.conf + fakeroot.conf
+│   ├── netplan/01-netcfg.yaml
+│   ├── network/interfaces      lo + eth0 (DHCP)
+│   ├── pam.d/                  common-auth|account|password|session · sshd · login · sudo
 │   ├── security/limits.conf + access.conf
-│   ├── sudoers (0o440) + sudoers.d/
-│   ├── systemd/system/
-│   ├── debian_version         12.0
-│   ├── fstab                  UUID stubs + tmpfs entries
-│   ├── group                  synced from VirtualUserManager
+│   ├── sudoers (0o440) + sudoers.d/README
+│   ├── systemd/system/ + systemd/network/ + systemd/system.conf
+│   ├── debian_version          nyx/stable
+│   ├── fstab                   UUID stubs + tmpfs entries
+│   ├── group                   synced from VirtualUserManager
 │   ├── hostname
-│   ├── hosts                  127.0.0.1 + ::1 + VM hostname
-│   ├── issue                  login banner
-│   ├── locale.conf            LANG=en_US.UTF-8
-│   ├── localtime / timezone   UTC
-│   ├── login.defs             UID_MIN=1000 SHA512
-│   ├── motd                   uses ShellProperties
-│   ├── os-release             NAME="Fortune GNU/Linux" + ShellProperties
-│   ├── passwd                 synced from VirtualUserManager
-│   ├── profile                PATH + PS1 defaults
-│   ├── resolv.conf            1.1.1.1 + 8.8.8.8
-│   ├── shadow                 (mode 0o640, fake hashes)
-│   └── shells                 /bin/sh /bin/bash /usr/bin/bash
+│   ├── hosts                   127.0.0.1 + ::1 + VM hostname
+│   ├── issue + issue.net        login banner
+│   ├── locale.conf + locale.gen LANG=en_US.UTF-8
+│   ├── localtime / timezone    UTC
+│   ├── login.defs              UID_MIN=1000 SHA512
+│   ├── lsb-release             Fortune GNU/Linux + ShellProperties
+│   ├── motd                    uses ShellProperties
+│   ├── nsswitch.conf
+│   ├── os-release              NAME="Fortune GNU/Linux" + ShellProperties
+│   ├── passwd                  synced from VirtualUserManager
+│   ├── profile                 PATH + PS1 defaults
+│   ├── resolv.conf             1.1.1.1 + 8.8.8.8
+│   ├── shadow                  (mode 0o640, fake hashes)
+│   └── shells                  /bin/sh /bin/bash /usr/bin/bash
 │
 ├── home/
+│   └── <user>/
+│       └── README.txt          created on first login
 ├── media/
 ├── mnt/
 ├── opt/
-├── snap/bin/
+│   └── rclone/
 ├── srv/
 │
-├── proc/                      kernel simulation engine (refreshed on demand)
-│   ├── boot/log + version     kernel boot sequence
+├── proc/                       kernel simulation engine (refreshed on demand)
+│   ├── boot/log + version      kernel boot sequence
 │   ├── net/dev + if_inet6 + tcp + tcp6
-│   ├── sys/kernel/            hostname, ostype, osrelease, pid_max,
-│   │                          threads-max, randomize_va_space, dmesg_restrict
+│   ├── sys/kernel/             hostname, ostype, osrelease, pid_max,
+│   │                           threads-max, randomize_va_space, dmesg_restrict
 │   ├── sys/net/ipv4/ip_forward
 │   ├── sys/vm/swappiness + overcommit_memory
-│   ├── self/mounts            mirrors most recent session's /proc/<pid>/
-│   ├── 1/                     init (cmdline, comm, stat, status, environ, fd/, fdinfo/)
-│   ├── <pid>/                 one subtree per active session (TTY-derived PID)
-│   ├── cmdline                kernel boot args
-│   ├── cpuinfo                real host CPU passthrough
+│   ├── self/mounts             mirrors most recent session's /proc/<pid>/
+│   ├── 1/                      init (cmdline, comm, stat, status, environ, fd/, fdinfo/)
+│   ├── <pid>/                  one subtree per active session (TTY-derived PID)
+│   ├── cmdline                 kernel boot args
+│   ├── cpuinfo                 real host CPU passthrough
 │   ├── filesystems
 │   ├── hostname
-│   ├── loadavg                computed dynamically
-│   ├── meminfo                real host memory (Total/Free/Available/Buffers/Cached/Swap)
+│   ├── loadavg                 computed dynamically
+│   ├── meminfo                 real host memory (Total/Free/Available/Buffers/Cached/Swap)
 │   ├── mounts
 │   ├── partitions
 │   ├── swaps
-│   ├── uptime                 computed from shellStartTime
-│   └── version                Linux <kernel> (fortune@build)
+│   ├── uptime                  computed from shellStartTime
+│   └── version                 Linux <kernel> (fortune@build)
 │
-├── root/                      (mode 0o700)
-│   ├── .bashrc                colored PS1, PATH, ll/la aliases
+├── root/                       (mode 0o700)
+│   ├── .ssh/                   (mode 0o700)
+│   ├── .config/pip/pip.conf    break-system-packages = true
+│   ├── .local/share/
+│   ├── .bash_logout
+│   ├── .bashrc                 colored PS1, PATH, ll/la/l aliases
 │   └── .profile
 │
-├── run/                       (systemd tmpfs runtime)
+├── run/                        (systemd tmpfs runtime)
 │   ├── lock/
 │   ├── systemd/
 │   ├── user/
 │   └── utmp
 │
-├── sys/                       sysfs graph — deterministic, seeded from hostname (fnv1a)
+├── sys/                        sysfs graph — deterministic, seeded from hostname (fnv1a)
 │   ├── class/net/
 │   ├── devices/virtual/dmi/id/
 │   │   ├── bios_vendor / bios_version / bios_date
@@ -1344,32 +1360,51 @@ On every `VirtualShell` init, a realistic Linux hierarchy is bootstrapped idempo
 │       ├── osrelease
 │       └── ostype
 │
-├── tmp/                       (mode 0o1777, sticky)
+├── tmp/                        (mode 0o1777, sticky)
+│   └── node-compile-cache/
 │
 ├── usr/
-│   ├── bin/                   stubs for all built-in commands (exec builtin <name>)
+│   ├── bin/                    stubs for all built-in commands (exec builtin <name>)
 │   ├── sbin/
-│   ├── lib/ + lib64/
-│   ├── local/bin|lib|share/
-│   └── share/doc|man/man1/
+│   ├── lib/
+│   │   ├── x86_64-linux-gnu/
+│   │   ├── python3/dist-packages/
+│   │   ├── python3.12/
+│   │   └── jvm/java-21-openjdk-amd64/
+│   ├── local/bin|lib|share|include|sbin/
+│   └── share/
+│       ├── doc/
+│       ├── man/man1|man5|man8/
+│       ├── ca-certificates/
+│       ├── common-licenses/
+│       └── zoneinfo/
 │
 └── var/
-    ├── cache/apt/archives/
+    ├── cache/
+    │   ├── apt/archives/partial/
+    │   ├── debconf/
+    │   ├── fontconfig/
+    │   ├── ldconfig/
+    │   └── PackageKit/
     ├── lib/
-    │   ├── apt/lists/
+    │   ├── apt/lists/partial/
+    │   ├── dpkg/
+    │   │   ├── info/
+    │   │   ├── updates/
+    │   │   ├── alternatives/
+    │   │   ├── available
+    │   │   └── status          managed by VirtualPackageManager
     │   ├── misc/
-    │   └── dpkg/
-    │       ├── available
-    │       ├── info/
-    │       └── status          managed by VirtualPackageManager
+    │   └── systemd/
     ├── log/
     │   ├── apt/history.log + term.log
     │   ├── auth.log
     │   ├── dpkg.log
+    │   ├── journal/
     │   ├── kern.log
+    │   ├── private/
     │   └── syslog
-    ├── mail/
-    ├── run -> /run             (legacy symlink)
+    ├── run -> /run              (legacy symlink)
     ├── spool/cron/
     └── tmp/
 ```

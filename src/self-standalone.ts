@@ -203,6 +203,20 @@ async function runReadlineShell(): Promise<void> {
 		process.exit(1);
 	}
 
+	// Ensure home dir and README.txt exist (mirrors SSHMimic/VirtualUserManager behaviour)
+	const homePath = selectedUser === "root" ? "/root" : `/home/${selectedUser}`;
+	if (!virtualShell.vfs.exists(homePath)) {
+		virtualShell.vfs.mkdir(homePath, selectedUser === "root" ? 0o700 : 0o755);
+	}
+	const readmePath = `${homePath}/README.txt`;
+	if (!virtualShell.vfs.exists(readmePath)) {
+		virtualShell.vfs.writeFile(
+			readmePath,
+			`Welcome to ${hostname}\n`,
+		);
+		await virtualShell.vfs.stopAutoFlush();
+	}
+
 	const shellEnv = makeDefaultEnv(selectedUser, hostname);
 	let authUser = selectedUser;
 	let cwd = `/home/${authUser}`;
