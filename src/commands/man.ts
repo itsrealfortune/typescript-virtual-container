@@ -27,9 +27,9 @@ async function loadBundledManual(commandName: string): Promise<string | null> {
 
 	try {
 		const fsModule = (await dynamicImport("node:fs/promises")) as {
-			readFile: (path: URL, encoding: "utf8") => Promise<string>;
+			readFile: (path: string, encoding: "utf8") => Promise<string>;
 		};
-		const manualUrl = new URL(`${lookupName}.txt`, manualsBaseUrl);
+		const manualUrl = `${manualsBaseUrl}${lookupName}.txt`;
 		const content = await fsModule.readFile(manualUrl, "utf8");
 		const page = content.replace(/\n$/, "");
 		manualCache.set(cacheKey, page);
