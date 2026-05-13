@@ -77,13 +77,13 @@ npm install typescript-virtual-container
 <!-- BUILD:curl-start -->
 ```bash
 # Interactivea local shell — persists VFS in .vfs/ in the current directory
-curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.1-directbash-k6.1.0.mjs -o fortune-nyx-v1.5.1-directbash-k6.1.0.mjs && node fortune-nyx-v1.5.1-directbash-k6.1.0.mjs && rm -f fortune-nyx-v1.5.1-directbash-k6.1.0.mjs
+curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.1-directbash-k6.1.0.mjs -o fortune-nyx-v1.5.1-directbash-k6.1.0.mjs && node fortune-nyx-v1.5.1-directbash-k6.1.0.mjs
 
 # SSH server (connect with any SSH client on port 2222)
-curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.1-ssh.cjs -o fortune-nyx-v1.5.1-ssh.cjs && node fortune-nyx-v1.5.1-ssh.cjs && rm -f fortune-nyx-v1.5.1-ssh.cjs
+curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.1-ssh.cjs -o fortune-nyx-v1.5.1-ssh.cjs && node fortune-nyx-v1.5.1-ssh.cjs
 
 # SSH server without SFTP (lighter build)
-curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.1-ssh-nosftp.js -o fortune-nyx-v1.5.1-ssh-nosftp.js && node fortune-nyx-v1.5.1-ssh-nosftp.js && rm -f fortune-nyx-v1.5.1-ssh-nosftp.js
+curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.1-ssh-nosftp.js -o fortune-nyx-v1.5.1-ssh-nosftp.js && node fortune-nyx-v1.5.1-ssh-nosftp.js
 ```
 <!-- /BUILD:curl-start -->
 

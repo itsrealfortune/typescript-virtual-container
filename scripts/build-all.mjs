@@ -114,13 +114,13 @@ replaceSection(
   [
     `\`\`\`bash`,
     `# Interactivea local shell — persists VFS in .vfs/ in the current directory`,
-    `curl -s ${GH_BASE}/${selfStandalone} -o ${selfStandalone} && node ${selfStandalone} && rm -f ${selfStandalone}`,
+    `curl -s ${GH_BASE}/${selfStandalone} -o ${selfStandalone} && node ${selfStandalone}`,
     ``,
     `# SSH server (connect with any SSH client on port 2222)`,
-    `curl -s ${GH_BASE}/${standalone} -o ${standalone} && node ${standalone} && rm -f ${standalone}`,
+    `curl -s ${GH_BASE}/${standalone} -o ${standalone} && node ${standalone}`,
     ``,
     `# SSH server without SFTP (lighter build)`,
-    `curl -s ${GH_BASE}/${standaloneNoSftp} -o ${standaloneNoSftp} && node ${standaloneNoSftp} && rm -f ${standaloneNoSftp}`,
+    `curl -s ${GH_BASE}/${standaloneNoSftp} -o ${standaloneNoSftp} && node ${standaloneNoSftp}`,
     `\`\`\``,
   ].join("\n"),
 );
