@@ -28,12 +28,13 @@ export function normalizeTerminalOutput(text: string): string {
 		.trimEnd();
 }
 
-export function resolvePath(cwd: string, inputPath: string): string {
+export function resolvePath(cwd: string, inputPath: string, homeDir?: string): string {
 	if (!inputPath || inputPath.trim() === "") {
 		return cwd;
 	}
 	if (inputPath.startsWith("~")) {
-		return path.posix.normalize(`/home/${inputPath.slice(1)}`);
+		const home = homeDir ?? "/root";
+		return path.posix.normalize(`${home}${inputPath.slice(1)}`);
 	}
 	return inputPath.startsWith("/")
 		? path.posix.normalize(inputPath)

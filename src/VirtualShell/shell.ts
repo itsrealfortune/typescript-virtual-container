@@ -2,7 +2,7 @@ import type { ChildProcessWithoutNullStreams } from "node:child_process";
 import { readFile, unlink, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import type { ShellProperties, VirtualShell } from ".";
-import { getCommandNames, makeDefaultEnv, runCommand } from "../commands";
+import { getCommandNames, makeDefaultEnv, runCommand, userHome } from "../commands";
 import {
 	spawnHtopProcess,
 	spawnNanoEditorProcess,
@@ -55,12 +55,12 @@ export function startShell(
 	let history = loadHistory(shell.vfs, authUser);
 	let historyIndex: number | null = null;
 	let historyDraft = "";
-	let cwd = `/home/${authUser}`;
+	let cwd = userHome(authUser);
 	const shellEnv: ShellEnv = makeDefaultEnv(authUser, hostname);
 	let nanoSession: NanoSession | null = null;
 	let pendingSudo: PendingSudo | null = null;
 	const buildCurrentPrompt = (): string => {
-		const homePath = `/home/${authUser}`;
+		const homePath = userHome(authUser);
 		const cwdLabel = cwd === homePath ? "~" : path.posix.basename(cwd) || "/";
 		return buildPrompt(authUser, hostname, cwdLabel);
 	};
@@ -71,7 +71,7 @@ export function startShell(
 
 	// Load .bashrc if it exists
 	void (async () => {
-		const bashrcPath = `/home/${authUser}/.bashrc`;
+		const bashrcPath = `${userHome(authUser)}/.bashrc`;
 		if (shell.vfs.exists(bashrcPath)) {
 			try {
 				const bashrc = shell.vfs.readFile(bashrcPath);
@@ -146,7 +146,7 @@ export function startShell(
 		if (!challenge.commandLine) {
 			authUser = challenge.targetUser;
 			if (challenge.loginShell) {
-				cwd = `/home/${authUser}`;
+				cwd = userHome(authUser);
 			}
 			shell.users.updateSession(sessionId, authUser, remoteAddress);
 			stream.write("\r\n");
@@ -154,7 +154,7 @@ export function startShell(
 			return;
 		}
 
-		const runCwd = challenge.loginShell ? `/home/${challenge.targetUser}` : cwd;
+		const runCwd = challenge.loginShell ? userHome(challenge.targetUser) : cwd;
 		const result = await Promise.resolve(
 			runCommand(
 				challenge.commandLine,
@@ -196,7 +196,7 @@ export function startShell(
 
 		if (result.switchUser) {
 			authUser = result.switchUser;
-			cwd = result.nextCwd ?? `/home/${authUser}`;
+			cwd = result.nextCwd ?? userHome(authUser);
 			shell.users.updateSession(sessionId, authUser, remoteAddress);
 		} else if (result.nextCwd) {
 			cwd = result.nextCwd;
@@ -388,11 +388,11 @@ export function startShell(
 		}
 
 		const data = history.length > 0 ? `${history.join("\n")}\n` : "";
-		shell.vfs.writeFile(`/home/${authUser}/.bash_history`, data);
+		shell.vfs.writeFile(`${userHome(authUser)}/.bash_history`, data);
 	}
 
 	function readLastLogin(): { at: string; from: string } | null {
-		const lastlogPath = `/home/${authUser}/.lastlog.json`;
+		const lastlogPath = `${userHome(authUser)}/.lastlog.json`;
 		if (!shell.vfs.exists(lastlogPath)) {
 			return null;
 		}
@@ -408,7 +408,7 @@ export function startShell(
 	}
 
 	function writeLastLogin(nowIso: string): void {
-		const lastlogPath = `/home/${authUser}/.lastlog`;
+		const lastlogPath = `${userHome(authUser)}/.lastlog`;
 		shell.vfs.writeFile(
 			lastlogPath,
 			JSON.stringify({ at: nowIso, from: remoteAddress }),
@@ -651,7 +651,7 @@ export function startShell(
 
 					if (result.switchUser) {
 						authUser = result.switchUser;
-						cwd = result.nextCwd ?? `/home/${authUser}`;
+						cwd = result.nextCwd ?? userHome(authUser);
 						shell.users.updateSession(sessionId, authUser, remoteAddress);
 						lineBuffer = "";
 						cursorPos = 0;
@@ -686,7 +686,7 @@ export function startShell(
 }
 
 function loadHistory(vfs: VirtualFileSystem, authUser: string): string[] {
-	const historyPath = `/home/${authUser}/.bash_history`;
+	const historyPath = `${userHome(authUser)}/.bash_history`;
 	if (!vfs.exists(historyPath)) {
 		vfs.writeFile(historyPath, "");
 		return [];

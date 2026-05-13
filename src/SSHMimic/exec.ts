@@ -1,4 +1,4 @@
-import { makeDefaultEnv, runCommand } from "../commands";
+import { makeDefaultEnv, runCommand, userHome } from "../commands";
 import type { ExecStream } from "../types/streams";
 import type { VirtualShell } from "../VirtualShell";
 
@@ -22,7 +22,7 @@ export function runExec(
 			authUser,
 			hostname,
 			"exec",
-			`/home/${authUser}`,
+			userHome(authUser),
 			shell,
 			undefined,
 			makeDefaultEnv(authUser, hostname),

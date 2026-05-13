@@ -6,4 +6,4 @@ export {
 	resolveModule
 } from "./registry";
 
-export { makeDefaultEnv, runCommand, runCommandDirect } from "./runtime";
+export { makeDefaultEnv, runCommand, runCommandDirect, userHome } from "./runtime";

@@ -11,11 +11,16 @@ import { expandAsync, expandBraces } from "../utils/expand";
 import { tokenizeCommand } from "../utils/tokenize";
 import { resolveModule } from "./registry";
 
+/** Returns the home directory path for a given user. Root lives at /root. */
+export function userHome(authUser: string): string {
+	return authUser === "root" ? "/root" : `/home/${authUser}`;
+}
+
 export function makeDefaultEnv(authUser: string, hostname: string): ShellEnv {
 	return {
 		vars: {
 			PATH: "/usr/local/bin:/usr/bin:/bin",
-			HOME: `/home/${authUser}`,
+			HOME: userHome(authUser),
 			USER: authUser,
 			LOGNAME: authUser,
 			SHELL: "/bin/sh",

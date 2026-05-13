@@ -69,7 +69,7 @@ describe("SftpMimic", () => {
 
 		await users.initialize();
 
-		const rootPath = "/home/root";
+		const rootPath = "/root";
 		if (!vfs.exists(rootPath)) {
 			vfs.mkdir(rootPath, 0o755);
 		}
@@ -89,7 +89,7 @@ describe("SftpMimic", () => {
 			const list = await new Promise<FileEntryWithStats[]>(
 				(resolve, reject) => {
 					sftp.readdir(
-						"/home/root",
+						"/root",
 						(err?: Error | null, list?: FileEntryWithStats[]) => {
 							if (err) {
 								reject(err);
@@ -105,7 +105,7 @@ describe("SftpMimic", () => {
 
 			const content = await new Promise<string>((resolve, reject) => {
 				sftp.readFile(
-					"/home/root/TEST.txt",
+					"/root/TEST.txt",
 					"utf8",
 					(err?: Error | null, data?: Buffer) => {
 						if (err) {
@@ -130,7 +130,7 @@ describe("SftpMimic", () => {
 
 		await users.initialize();
 
-		const rootPath = "/home/root";
+		const rootPath = "/root";
 		if (!vfs.exists(rootPath)) {
 			vfs.mkdir(rootPath, 0o755);
 		}
@@ -146,7 +146,7 @@ describe("SftpMimic", () => {
 		try {
 			const { client, sftp } = await connectSftp(port);
 
-			// /etc/passwd is outside /home/root — should be rejected
+			// /etc/passwd is outside /root — should be rejected
 			const traversalAttempt = await new Promise<Error | null>((resolve) => {
 				sftp.stat("/etc/passwd", (err?: Error | null) => {
 					resolve(err ?? null);
@@ -156,11 +156,11 @@ describe("SftpMimic", () => {
 			expect(traversalAttempt).not.toBeNull();
 			expect(traversalAttempt?.message).toContain("Permission denied");
 
-			// /home/root itself should work
+			// /root itself should work
 			const homeAccess = await new Promise<FileEntryWithStats[]>(
 				(resolve, reject) => {
 					sftp.readdir(
-						"/home/root",
+						"/root",
 						(err?: Error | null, list?: FileEntryWithStats[]) => {
 							if (err) {
 								reject(err);
@@ -175,7 +175,7 @@ describe("SftpMimic", () => {
 
 			// Path traversal via ../.. should also be rejected
 			const upTraversalAttempt = await new Promise<Error | null>((resolve) => {
-				sftp.readdir("/home/root/../../etc", (err?: Error | null) => {
+				sftp.readdir("/root/../../etc", (err?: Error | null) => {
 					resolve(err ?? null);
 				});
 			});
@@ -267,8 +267,8 @@ describe("SftpMimic", () => {
 
 		await users.initialize();
 
-		if (!vfs.exists("/home/root")) {
-			vfs.mkdir("/home/root", 0o755);
+		if (!vfs.exists("/root")) {
+			vfs.mkdir("/root", 0o755);
 		}
 
 		const server = new SftpMimic({
@@ -284,7 +284,7 @@ describe("SftpMimic", () => {
 
 			await new Promise<void>((resolve, reject) => {
 				sftp.writeFile(
-					"/home/root/written.txt",
+					"/root/written.txt",
 					Buffer.from("written via sftp"),
 					(err?: Error | null) => {
 						if (err) {
@@ -298,7 +298,7 @@ describe("SftpMimic", () => {
 
 			const content = await new Promise<string>((resolve, reject) => {
 				sftp.readFile(
-					"/home/root/written.txt",
+					"/root/written.txt",
 					"utf8",
 					(err?: Error | null, data?: Buffer) => {
 						if (err) {
@@ -313,7 +313,7 @@ describe("SftpMimic", () => {
 			expect(content).toBe("written via sftp");
 
 			// Also verify it landed in the in-memory VFS
-			expect(vfs.readFile("/home/root/written.txt")).toBe("written via sftp");
+			expect(vfs.readFile("/root/written.txt")).toBe("written via sftp");
 
 			client.end();
 		} finally {
