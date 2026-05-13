@@ -11,7 +11,7 @@ if [[ -n "$(git status --porcelain)" ]]; then
   exit 1
 fi
 
-VERSION="$(node -p "require('./package.json').version")"
+VERSION="$(bun -e "console.log(require('./package.json').version)")"
 TAG="v${VERSION}"
 
 if [[ -z "${VERSION}" ]]; then
