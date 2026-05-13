@@ -1863,6 +1863,12 @@ function _staticCacheKey(hostname: string, props: ShellProperties): string {
 	return `${hostname}|${props.kernel}|${props.os}|${props.arch}`;
 }
 
+/**
+ * Build or retrieve the static rootfs VFSB snapshot for the given
+ * hostname + ShellProperties combination.
+ *
+ * Subsequent calls with the same key return the cached Buffer in ~0ms.
+ */
 export function getStaticRootfsSnapshot(
 	hostname: string,
 	props: ShellProperties,
@@ -1889,6 +1895,17 @@ export function getStaticRootfsSnapshot(
 
 // ─── main entry point ─────────────────────────────────────────────────────────
 
+/**
+ * Bootstraps the full Linux rootfs hierarchy in the VFS.
+ * Safe to call multiple times — idempotent.
+ *
+ * @param vfs            Target virtual filesystem.
+ * @param users          User manager (for /etc/passwd sync).
+ * @param hostname       Virtual hostname.
+ * @param props          Shell properties (kernel, os, arch).
+ * @param shellStartTime Unix ms of shell creation (for uptime).
+ * @param sessions       Active sessions (for /proc/<pid> population).
+ */
 export function bootstrapLinuxRootfs(
 	vfs: VirtualFileSystem,
 	users: VirtualUserManager,

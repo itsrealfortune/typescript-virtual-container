@@ -132,9 +132,12 @@ class VirtualFileSystem extends EventEmitter {
 				"vfs-snapshot.vfsb",
 			);
 			this.journalFile = path.resolve(options.snapshotPath, "vfs-journal.bin");
+			if(!fsSync.existsSync(this.journalFile)) {
+				this.journalFile = null; // journal is optional — silently degrade if not writable
+			}
 			this.evictionThreshold = options.evictionThresholdBytes ?? 64 * 1024; // 64 KB default
 			this.flushAfterNWrites = options.flushAfterNWrites ?? 500;
-			const intervalMs = options.flushIntervalMs ?? 30_000;
+			const intervalMs = options.flushIntervalMs ?? 1_000;
 			if (intervalMs > 0) {
 				this._flushTimer = setInterval(() => {
 					if (this._dirty) void this._autoFlush();
@@ -367,6 +370,7 @@ class VirtualFileSystem extends EventEmitter {
 			clearInterval(this._flushTimer);
 			this._flushTimer = null;
 		}
+		console.log(this._dirty ? "[VirtualFileSystem] Stopping auto-flush: flushing pending changes..." : "[VirtualFileSystem] Stopping auto-flush: no pending changes.");
 		if (this._dirty) await this.flushMirror();
 	}
 
