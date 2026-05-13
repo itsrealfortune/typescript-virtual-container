@@ -239,7 +239,7 @@ class VirtualShell extends EventEmitter {
 	 */
 	executeCommand(rawInput: string, authUser: string, cwd: string): void {
 		perf.mark("executeCommand");
-		if (this._idle) void this._idle.ping();
+		this._idle?.ping();
 		runCommand(rawInput, authUser, this.hostname, "shell", cwd, this);
 		this.emit("command", { command: rawInput, user: authUser, cwd });
 	}
@@ -266,7 +266,7 @@ class VirtualShell extends EventEmitter {
 		terminalSize: { cols: number; rows: number },
 	): void {
 		perf.mark("startInteractiveSession");
-		if (this._idle) void this._idle.ping();
+		this._idle?.ping();
 		// Interactive shell logic
 		this.emit("session:start", { user: authUser, sessionId, remoteAddress });
 		startShell(
@@ -451,6 +451,14 @@ class VirtualShell extends EventEmitter {
 	/** Milliseconds since last shell activity. 0 when idle management is disabled. */
 	public get idleMs(): number {
 		return this._idle?.idleMs ?? 0;
+	}
+
+	/**
+	 * Ping the idle manager to signal external activity (e.g. SFTP, direct VFS writes).
+	 * No-op when idle management is disabled.
+	 */
+	public pingIdle(): void {
+		this._idle?.ping();
 	}
 }
 

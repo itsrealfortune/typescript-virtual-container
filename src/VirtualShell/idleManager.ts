@@ -78,16 +78,20 @@ export class IdleManager extends EventEmitter {
 			clearInterval(this._checkTimer);
 			this._checkTimer = null;
 		}
-		if (this._state === "frozen") await this._thaw();
+		if (this._state === "frozen") this._thaw();
 	}
 
 	/**
-	 * Signal activity — resets the idle clock and thaws if frozen.
+	 * Signal activity — resets the idle clock and thaws synchronously if frozen.
 	 * Call this before every exec / keypress / session event.
+	 *
+	 * Thaw is intentionally synchronous: decodeVfs() is a pure CPU operation
+	 * (~0.07 ms) with no I/O, so it is safe to block briefly on the hot path.
+	 * This guarantees the VFS tree is fully restored before any command runs.
 	 */
-	public async ping(): Promise<void> {
+	public ping(): void {
 		this._lastActivity = Date.now();
-		if (this._state === "frozen") await this._thaw();
+		if (this._state === "frozen") this._thaw();
 	}
 
 	/** Current idle state. */
@@ -121,9 +125,9 @@ export class IdleManager extends EventEmitter {
 		this.emit("freeze");
 	}
 
-	private async _thaw(): Promise<void> {
+	private _thaw(): void {
 		if (this._state !== "frozen" || !this._frozenBuffer) return;
-		// Reconstruct the tree from the frozen buffer (~0.07 ms for typical rootfs)
+		// Reconstruct the tree from the frozen buffer (~0.07 ms — pure CPU, no I/O)
 		const root = decodeVfs(this._frozenBuffer);
 		this.vfs.importRootTree(root);
 		this._frozenBuffer = null;
