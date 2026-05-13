@@ -55,7 +55,7 @@
 |------|-------------|----------|
 | **SSH/SFTP server** | `VirtualSshServer` / `VirtualSftpServer` | Honeypots, remote testing, training environments |
 | **Web shell** | `builds/web.min.js` / `builds/web-full-api.min.js` (ESM) | Embedded terminals, interactive tutorials, browser demos |
-| **Standalone CLI** | `builds/self-standalone.js` (single file) | Local shell, one-liner demos, no install required |
+| **Standalone CLI** | `builds/self-standalone.mjs` (single file) | Local shell, one-liner demos, no install required |
 
 All three modes share the same core: a pure in-memory VFS, a real shell interpreter, a virtual package manager, and a typed programmatic API.
 
@@ -74,7 +74,7 @@ npm install typescript-virtual-container
 
 ```bash
 # Interactive local shell — persists VFS in .vfs/ in the current directory
-curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/self-standalone.js -o self-standalone.js && node self-standalone.js && rm -f self-standalone.js
+curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/self-standalone.mjs -o self-standalone.mjs && node self-standalone.mjs && rm -f self-standalone.mjs
 
 # SSH server (connect with any SSH client on port 2222)
 curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/standalone.js -o standalone.js && node standalone.js && rm -f standalone.js
@@ -86,13 +86,13 @@ curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-cont
 > [!NOTE]
 > The standalone builds are intended for quick demos and testing. For production use, it's recommended to install the package and import the relevant classes directly in your codebase for better performance, stability, and security.
 
-**`self-standalone.js` options:**
+**`self-standalone.mjs` options:**
 
 ```bash
-node self-standalone.js                  # boot as root
-node self-standalone.js --user alice     # boot as alice (prompts for password if set)
-node self-standalone.js --user=alice     # same, inline form
-SSH_MIMIC_HOSTNAME=my-box node self-standalone.js  # custom hostname
+node self-standalone.mjs                  # boot as root
+node self-standalone.mjs --user alice     # boot as alice (prompts for password if set)
+node self-standalone.mjs --user=alice     # same, inline form
+SSH_MIMIC_HOSTNAME=my-box node self-standalone.mjs  # custom hostname
 ```
 
 The VFS is persisted automatically to `.vfs/vfs-snapshot.vfsb` in the current directory — state survives between runs. Delete `.vfs/` to start fresh.
@@ -1600,7 +1600,7 @@ Open:
 - [x] Snapshot diff tooling — `diffSnapshots`, `formatDiff`, `assertDiff`
 - [x] `node`/`python3`/`npm`/`npx` — package-gated virtual REPL stubs
 - [x] Web shell bundles (`web.min.js`, `web-full-api.min.js`) — fully browser-native with IndexedDB VFS
-- [x] Self-standalone CLI (`self-standalone.js`) — single-file interactive shell, per-user history, tab completion
+- [x] Self-standalone CLI (`self-standalone.mjs`) — single-file interactive shell, per-user history, tab completion
 - [x] 120+ `man` pages — all built-in commands documented via `man <cmd>`
 - [x] Shared `tokenize.ts` — unified tokenizer for shell parser and runtime (eliminates duplication)
 - [x] `PasswordChallenge` type — generic interactive password flow for `adduser`, `passwd`, `deluser`
