@@ -181,6 +181,17 @@ export function closeSync(fd) {
   fdMap.delete(fd);
 }
 
+export const ready = openDB().then(db => new Promise(resolve => {
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).openCursor();
+    req.onsuccess = e => {
+        const cursor = e.target.result;
+        if (!cursor) return resolve();
+        memCache.set(cursor.key, cursor.value);
+        cursor.continue();
+    };
+}));
+
 export default {
   existsSync, readFileSync, writeFileSync, appendFileSync,
   unlinkSync, rmSync, mkdirSync, readdirSync, statSync,
