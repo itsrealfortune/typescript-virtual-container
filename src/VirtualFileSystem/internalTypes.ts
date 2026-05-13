@@ -3,8 +3,10 @@ export type InternalNode = InternalFileNode | InternalStubNode | InternalDirecto
 interface InternalBaseNode {
 	name: string;
 	mode: number;
-	createdAt: Date;
-	updatedAt: Date;
+	/** Unix timestamp in ms — avoids Date object overhead (~80 bytes each). */
+	createdAt: number;
+	/** Unix timestamp in ms. */
+	updatedAt: number;
 }
 
 export interface InternalFileNode extends InternalBaseNode {

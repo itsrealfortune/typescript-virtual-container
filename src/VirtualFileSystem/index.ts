@@ -156,7 +156,7 @@ class VirtualFileSystem extends EventEmitter {
 	// ── Internal helpers ──────────────────────────────────────────────────────
 
 	private makeDir(name: string, mode: number): InternalDirectoryNode {
-		const now = new Date();
+		const now = Date.now();
 		return {
 			type: "directory",
 			name,
@@ -174,7 +174,7 @@ class VirtualFileSystem extends EventEmitter {
 		mode: number,
 		compressed: boolean,
 	): InternalFileNode {
-		const now = new Date();
+		const now = Date.now();
 		return {
 			type: "file",
 			name,
@@ -187,7 +187,7 @@ class VirtualFileSystem extends EventEmitter {
 	}
 
 	private makeStub(name: string, content: string, mode: number): InternalStubNode {
-		const now = new Date();
+		const now = Date.now();
 		return { type: "stub", name, stubContent: content, mode, createdAt: now, updatedAt: now };
 	}
 
@@ -385,6 +385,17 @@ class VirtualFileSystem extends EventEmitter {
 	/** Serialise current tree to VFSB binary. Used for the static rootfs cache. */
 	public encodeBinary(): Buffer {
 		return encodeVfs(this.root);
+	}
+
+	/**
+	 * Release the in-memory VFS tree, freeing all InternalNode objects for GC.
+	 * The tree MUST be restored via `importRootTree()` before any VFS operation.
+	 * Called by IdleManager when freezing an idle shell.
+	 * @internal
+	 */
+	public releaseTree(): void {
+		// Replace root with a minimal stub — keeps the object alive but frees all children
+		this.root = this.makeDir("", 0o755);
 	}
 
 	/** Set to true during journal replay to suppress re-journaling. */
@@ -637,7 +648,7 @@ class VirtualFileSystem extends EventEmitter {
 			f.content = storedContent;
 			f.compressed = shouldCompress;
 			f.mode = mode;
-			f.updatedAt = new Date();
+			f.updatedAt = Date.now();
 		} else {
 			// Create new real file — also promotes stubs (no _childCount change for stubs)
 			if (!existing) parent._childCount++;
@@ -757,8 +768,8 @@ class VirtualFileSystem extends EventEmitter {
 				name,
 				path: normalized,
 				mode: s.mode,
-				createdAt: s.createdAt,
-				updatedAt: s.updatedAt,
+				createdAt: new Date(s.createdAt),
+				updatedAt: new Date(s.updatedAt),
 				compressed: false,
 				size: s.stubContent.length,
 			};
@@ -770,8 +781,8 @@ class VirtualFileSystem extends EventEmitter {
 				name,
 				path: normalized,
 				mode: f.mode,
-				createdAt: f.createdAt,
-				updatedAt: f.updatedAt,
+				createdAt: new Date(f.createdAt),
+				updatedAt: new Date(f.updatedAt),
 				compressed: f.compressed,
 				size: f.evicted ? (f.size ?? 0) : f.content.length,
 			};
@@ -782,8 +793,8 @@ class VirtualFileSystem extends EventEmitter {
 			name,
 			path: normalized,
 			mode: d.mode,
-			createdAt: d.createdAt,
-			updatedAt: d.updatedAt,
+			createdAt: new Date(d.createdAt),
+			updatedAt: new Date(d.updatedAt),
 			childrenCount: d._childCount,
 		};
 	}
@@ -861,7 +872,7 @@ class VirtualFileSystem extends EventEmitter {
 		if (!f.compressed) {
 			f.content = gzipSync(f.content);
 			f.compressed = true;
-			f.updatedAt = new Date();
+			f.updatedAt = Date.now();
 		}
 	}
 
@@ -874,7 +885,7 @@ class VirtualFileSystem extends EventEmitter {
 		if (f.compressed) {
 			f.content = gunzipSync(f.content);
 			f.compressed = false;
-			f.updatedAt = new Date();
+			f.updatedAt = Date.now();
 		}
 	}
 
@@ -899,8 +910,8 @@ class VirtualFileSystem extends EventEmitter {
 			content: Buffer.from(normalizedTarget, "utf8"),
 			mode: 0o120777,
 			compressed: false,
-			createdAt: new Date(),
-			updatedAt: new Date(),
+			createdAt: Date.now(),
+			updatedAt: Date.now(),
 		};
 		parent.children[name] = symNode;
 		parent._childCount++;
@@ -1037,8 +1048,8 @@ class VirtualFileSystem extends EventEmitter {
 					type: "file",
 					name: child.name,
 					mode: child.mode,
-					createdAt: child.createdAt.toISOString(),
-					updatedAt: child.updatedAt.toISOString(),
+					createdAt: new Date(child.createdAt).toISOString(),
+					updatedAt: new Date(child.updatedAt).toISOString(),
 					compressed: false,
 					contentBase64: Buffer.from(child.stubContent, "utf8").toString("base64"),
 				} satisfies VfsSnapshotFileNode);
@@ -1052,8 +1063,8 @@ class VirtualFileSystem extends EventEmitter {
 			type: "directory",
 			name: dir.name,
 			mode: dir.mode,
-			createdAt: dir.createdAt.toISOString(),
-			updatedAt: dir.updatedAt.toISOString(),
+			createdAt: new Date(dir.createdAt).toISOString(),
+			updatedAt: new Date(dir.updatedAt).toISOString(),
 			children,
 		};
 	}
@@ -1063,8 +1074,8 @@ class VirtualFileSystem extends EventEmitter {
 			type: "file",
 			name: file.name,
 			mode: file.mode,
-			createdAt: file.createdAt.toISOString(),
-			updatedAt: file.updatedAt.toISOString(),
+			createdAt: new Date(file.createdAt).toISOString(),
+			updatedAt: new Date(file.updatedAt).toISOString(),
 			compressed: file.compressed,
 			contentBase64: file.content.toString("base64"),
 		};
@@ -1106,8 +1117,8 @@ class VirtualFileSystem extends EventEmitter {
 			type: "directory",
 			name,
 			mode: snap.mode,
-			createdAt: new Date(snap.createdAt),
-			updatedAt: new Date(snap.updatedAt),
+			createdAt: Date.parse(snap.createdAt),
+			updatedAt: Date.parse(snap.updatedAt),
 			children: Object.create(null) as Record<string, InternalNode>,
 			_childCount: 0,
 		};
@@ -1118,8 +1129,8 @@ class VirtualFileSystem extends EventEmitter {
 					type: "file",
 					name: f.name,
 					mode: f.mode,
-					createdAt: new Date(f.createdAt),
-					updatedAt: new Date(f.updatedAt),
+					createdAt: Date.parse(f.createdAt),
+					updatedAt: Date.parse(f.updatedAt),
 					compressed: f.compressed,
 					content: Buffer.from(f.contentBase64, "base64"),
 				};
