@@ -5,3 +5,9 @@ export function createHash(alg){ let data=''; return { update(d){ data += String
     let h=0; for(let i=0;i<data.length;i++) h=(h*31+data.charCodeAt(i))|0; const s=(h>>>0).toString(16); return enc==='hex'?s:s; } }; }
 export function scryptSync(){ throw new Error('scryptSync not implemented in browser shim'); }
 export default { randomBytes, randomUUID, createHash, scryptSync };
+export function timingSafeEqual(a, b) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+  return diff === 0;
+}
