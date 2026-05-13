@@ -243,12 +243,15 @@ class VirtualShell extends EventEmitter {
 	 * @param rawInput Unparsed command line (e.g. `"ls -la /tmp"`).
 	 * @param authUser Username to run the command as.
 	 * @param cwd      Current working directory for path resolution.
+	 * 
+	 * @returns CommandResult or a Promise that resolves to CommandResult. The result is also emitted via the "command" event.
 	 */
-	executeCommand(rawInput: string, authUser: string, cwd: string): void {
+	executeCommand(rawInput: string, authUser: string, cwd: string): CommandResult | Promise<CommandResult> {
 		perf.mark("executeCommand");
 		this._idle?.ping();
-		runCommand(rawInput, authUser, this.hostname, "shell", cwd, this);
+		const result = runCommand(rawInput, authUser, this.hostname, "shell", cwd, this);
 		this.emit("command", { command: rawInput, user: authUser, cwd });
+		return result;
 	}
 
 	/**

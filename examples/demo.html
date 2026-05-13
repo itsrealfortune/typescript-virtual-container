@@ -1,0 +1,19 @@
+    <!DOCTYPE html>
+    <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Virtual Env JS</title>
+            <script type="module">
+                import { VirtualShell, VirtualFileSystem } from './dist/web-index.js';
+
+                const vfs = new VirtualFileSystem();
+                const shell = new VirtualShell({ vfs });
+                window.shell = shell; // Expose shell for debugging
+                const result = await shell.executeCommand("ls -l", "root", "/root");
+                console.log(result);
+            </script>
+        </head>
+        <body>
+        </body>
+    </html>
