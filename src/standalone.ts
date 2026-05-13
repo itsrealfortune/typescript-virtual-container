@@ -31,6 +31,29 @@ new VirtualSftpServer({ port: 2223, hostname, shell: virtualShell })
 		process.exit(1);
 	});
 
+
+// ── Graceful shutdown ─────────────────────────────────────────────────────────
+// On SIGINT / SIGTERM: flush the WAL journal to a full checkpoint before exit.
+// A kill -9 or OOM crash is unrecoverable here, but the WAL journal on disk
+// guarantees all writes since the last checkpoint are replayed on next start.
+let isShuttingDown = false;
+async function gracefulShutdown(signal: string): Promise<void> {
+	if (isShuttingDown) return;
+	isShuttingDown = true;
+	console.log(`\n[${signal}] Flushing VFS checkpoint before exit...`);
+	try {
+		await virtualShell.vfs.stopAutoFlush();
+		console.log("[shutdown] Checkpoint written. Goodbye.");
+	} catch (err) {
+		console.error("[shutdown] Flush failed:", err);
+	}
+	process.exit(0);
+}
+
+process.on("SIGINT",  () => { void gracefulShutdown("SIGINT"); });
+process.on("SIGTERM", () => { void gracefulShutdown("SIGTERM"); });
+process.on("beforeExit", () => { void virtualShell.vfs.stopAutoFlush(); });
+
 process.on("uncaughtException", (error) => {
 	console.debug("Oh my god, something terrible happened: ", error);
 });
