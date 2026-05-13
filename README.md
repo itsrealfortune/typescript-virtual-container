@@ -55,7 +55,7 @@
 | Mode | Entry point | Use case |
 |------|-------------|----------|
 | **SSH/SFTP server** | `VirtualSshServer` / `VirtualSftpServer` | Honeypots, remote testing, training environments |
-| **Web shell** | `builds/fortune-nyx-v1.5.1-web.min.js` / `builds/fortune-nyx-v1.5.1-web-full.min.js` (ESM) | Embedded terminals, interactive tutorials, browser demos |
+| **Web shell** | `builds/fortune-nyx-v1.5.1-web.min.js` (ESM) | Embedded terminals, interactive tutorials, browser demos |
 | **Standalone CLI** | `builds/fortune-nyx-v1.5.1-directbash-k6.1.0.mjs` (single file) | Local shell, one-liner demos, no install required |
 <!-- /BUILD:mode-table -->
 
@@ -127,7 +127,6 @@ Two browser bundles are available:
 | Bundle | Format | Entry point | Use case |
 |--------|--------|-------------|----------|
 | `builds/fortune-nyx-v1.5.1-web.min.js` | ESM | `createWebShell()` | Embedded terminals, modern bundlers |
-| `builds/fortune-nyx-v1.5.1-web-full.min.js` | ESM | `createVirtualShellShim()` | Full `VirtualShell`-like API in the browser |
 <!-- /BUILD:web-table -->
 
 Both bundles persist the VFS in **IndexedDB** — state survives page reloads.
@@ -155,11 +154,11 @@ bun run build-all       # rebuild everything
 </script>
 ```
 
-**`fortune-nyx-v1.5.1-web-full.min.js`** — mirrors the `VirtualShell` programmatic API:
+**`fortune-nyx-v1.5.1-web.min.js`** — mirrors the `VirtualShell` programmatic API:
 
 ```html
 <script type="module">
-  import { createVirtualShellShim } from "./builds/fortune-nyx-v1.5.1-web-full.min.js";
+  import { createVirtualShellShim } from "./builds/fortune-nyx-v1.5.1-web.min.js";
 
   const shell = createVirtualShellShim("web-vm");
   await shell.ensureInitialized();
@@ -1649,7 +1648,7 @@ Open:
 - [x] Snapshot diff tooling — `diffSnapshots`, `formatDiff`, `assertDiff`
 - [x] `node`/`python3`/`npm`/`npx` — package-gated virtual REPL stubs
 <!-- BUILD:changelog -->
-- [x] Web shell bundles (`fortune-nyx-v1.5.1-web.min.js`, `fortune-nyx-v1.5.1-web-full.min.js`) — fully browser-native with IndexedDB VFS
+- [x] Web shell bundles (`fortune-nyx-v1.5.1-web.min.js`) — fully browser-native with IndexedDB VFS
 - [x] Self-standalone CLI (`fortune-nyx-v1.5.1-directbash-k6.1.0.mjs`) — single-file interactive shell, per-user history, tab completion
 <!-- /BUILD:changelog -->
 - [x] 120+ `man` pages — all built-in commands documented via `man <cmd>`

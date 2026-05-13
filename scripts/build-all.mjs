@@ -48,19 +48,6 @@ const targets = [
   // standalone SSH only (no SFTP)
   `${ESBUILD} src/standalone-wo-sftp.ts --bundle --platform=node --target=node18 \
 --outfile=${BUILDS_DIR}/${NAMES.standaloneNoSftp} --tree-shaking=true --minify ${BANNER}`,
-
-  // web shell (browser ESM)
-  `${ESBUILD} src/web.ts --bundle --platform=browser --format=esm --target=es2020 \
---outfile=${BUILDS_DIR}/${NAMES.webFull} --tree-shaking=true --minify \
---alias:node:events=./polyfills/node_events/index.js \
---alias:node:path=./polyfills/node_path/index.js \
---alias:node:os=./polyfills/node_os/index.js \
---alias:node:fs=./polyfills/node_fs/index.js \
---alias:node:fs/promises=./polyfills/node_fs/promises.js \
---alias:node:crypto=./polyfills/node_crypto/index.js \
---alias:node:child_process=./polyfills/node_child_process/index.js \
---alias:node:zlib=./polyfills/node_zlib/index.js \
---alias:node:vm=./polyfills/node_vm/index.js`,
 ];
 
 for (const cmd of targets) {
@@ -76,12 +63,14 @@ for (const cmd of targets) {
 // );
 // console.log(`\n✓ Copied ${NAMES.web} → examples/web.min.js`);
 
+// ── 4. Run build.js ───────────────────────────────────────────────────────────
+run("node build.js");
+
 // ── 5. Update README.md ───────────────────────────────────────────────────────
 const readmePath = join(root, "README.md");
 let readme = readFileSync(readmePath, "utf8");
 
-const { selfStandalone, standalone, standaloneNoSftp, web, webFull } = NAMES;
-const selfBase = selfStandalone.replace(".mjs", ""); // local filename without ext for the rm -f
+const { selfStandalone, standalone, standaloneNoSftp, web } = NAMES;
 
 // Helper: replace content between <!-- BUILD:tag --> and <!-- /BUILD:tag -->
 function replaceSection(tag, content) {
@@ -99,7 +88,7 @@ replaceSection(
     `| Mode | Entry point | Use case |`,
     `|------|-------------|----------|`,
     `| **SSH/SFTP server** | \`VirtualSshServer\` / \`VirtualSftpServer\` | Honeypots, remote testing, training environments |`,
-    `| **Web shell** | \`builds/${web}\` / \`builds/${webFull}\` (ESM) | Embedded terminals, interactive tutorials, browser demos |`,
+    `| **Web shell** | \`builds/${web}\` (ESM) | Embedded terminals, interactive tutorials, browser demos |`,
     `| **Standalone CLI** | \`builds/${selfStandalone}\` (single file) | Local shell, one-liner demos, no install required |`,
   ].join("\n"),
 );
@@ -147,7 +136,6 @@ replaceSection(
     `| Bundle | Format | Entry point | Use case |`,
     `|--------|--------|-------------|----------|`,
     `| \`builds/${web}\` | ESM | \`createWebShell()\` | Embedded terminals, modern bundlers |`,
-    `| \`builds/${webFull}\` | ESM | \`createVirtualShellShim()\` | Full \`VirtualShell\`-like API in the browser |`,
   ].join("\n"),
 );
 replaceSection(
@@ -169,11 +157,11 @@ replaceSection(
     `</script>`,
     `\`\`\``,
     ``,
-    `**\`${webFull}\`** — mirrors the \`VirtualShell\` programmatic API:`,
+    `**\`${web}\`** — mirrors the \`VirtualShell\` programmatic API:`,
     ``,
     `\`\`\`html`,
     `<script type="module">`,
-    `  import { createVirtualShellShim } from "./builds/${webFull}";`,
+    `  import { createVirtualShellShim } from "./builds/${web}";`,
     ``,
     `  const shell = createVirtualShellShim("web-vm");`,
     `  await shell.ensureInitialized();`,
@@ -188,7 +176,7 @@ replaceSection(
 replaceSection(
   "changelog",
   [
-    `- [x] Web shell bundles (\`${web}\`, \`${webFull}\`) — fully browser-native with IndexedDB VFS`,
+    `- [x] Web shell bundles (\`${web}\`) — fully browser-native with IndexedDB VFS`,
     `- [x] Self-standalone CLI (\`${selfStandalone}\`) — single-file interactive shell, per-user history, tab completion`,
   ].join("\n"),
 );
