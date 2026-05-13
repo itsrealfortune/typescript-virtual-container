@@ -33,7 +33,8 @@ export function getNode(
 			throw new Error(`Path '${normalized}' does not exist.`);
 		}
 
-		const next = current.children.get(part);
+		// @ts-expect-error - We just checked that current is a directory
+		const next = current.children[part];
 		if (!next) {
 			throw new Error(`Path '${normalized}' does not exist.`);
 		}

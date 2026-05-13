@@ -162,7 +162,8 @@ class VirtualFileSystem extends EventEmitter {
 			mode,
 			createdAt: now,
 			updatedAt: now,
-			children: new Map(),
+			children: Object.create(null) as Record<string, InternalNode>,
+			_childCount: 0,
 		};
 	}
 
@@ -192,10 +193,11 @@ class VirtualFileSystem extends EventEmitter {
 		let builtPath = "";
 		for (const part of parts) {
 			builtPath += `/${part}`;
-			let child = current.children.get(part);
+			let child = current.children[part];
 			if (!child) {
 				child = this.makeDir(part, mode);
-				current.children.set(part, child);
+				current.children[part] = child;
+				current._childCount++;
 				this.emit("dir:create", { path: builtPath, mode });
 				this._journal({ op: JournalOp.MKDIR, path: builtPath, mode });
 			} else if (child.type !== "directory") {
@@ -407,7 +409,7 @@ class VirtualFileSystem extends EventEmitter {
 	}
 
 	private _evictDir(dir: InternalDirectoryNode): void {
-		for (const node of dir.children.values()) {
+		for (const node of Object.values(dir.children)) {
 			if (node.type === "directory") {
 				this._evictDir(node);
 			} else if (!node.evicted) {
@@ -438,7 +440,7 @@ class VirtualFileSystem extends EventEmitter {
 			let cur: InternalNode = tmpRoot;
 			for (const part of parts) {
 				if (cur.type !== "directory") return;
-				const next = cur.children.get(part);
+				const next = cur.children[part];
 				if (!next) return;
 				cur = next;
 			}
@@ -584,7 +586,7 @@ class VirtualFileSystem extends EventEmitter {
 			(p) => this.mkdirRecursive(p, 0o755),
 		);
 
-		const existing = parent.children.get(name);
+		const existing = parent.children[name];
 		if (existing?.type === "directory") {
 			throw new Error(
 				`Cannot write file '${normalized}': path is a directory.`,
@@ -605,10 +607,8 @@ class VirtualFileSystem extends EventEmitter {
 			f.mode = mode;
 			f.updatedAt = new Date();
 		} else {
-			parent.children.set(
-				name,
-				this.makeFile(name, storedContent, mode, shouldCompress),
-			);
+			parent.children[name] = this.makeFile(name, storedContent, mode, shouldCompress);
+			parent._childCount++;
 		}
 
 		this.emit("file:write", { path: normalized, size: storedContent.length });
@@ -729,7 +729,7 @@ class VirtualFileSystem extends EventEmitter {
 			mode: d.mode,
 			createdAt: d.createdAt,
 			updatedAt: d.updatedAt,
-			childrenCount: d.children.size,
+			childrenCount: d._childCount,
 		};
 	}
 
@@ -747,7 +747,7 @@ class VirtualFileSystem extends EventEmitter {
 		if (node.type !== "directory") {
 			throw new Error(`Cannot list '${dirPath}': not a directory.`);
 		}
-		return Array.from((node as InternalDirectoryNode).children.keys()).sort();
+		return Object.keys((node as InternalDirectoryNode).children).sort();
 	}
 
 	/** Renders ASCII tree view of a directory hierarchy. */
@@ -763,10 +763,10 @@ class VirtualFileSystem extends EventEmitter {
 
 	private renderTreeLines(dir: InternalDirectoryNode, label: string): string {
 		const lines = [label];
-		const entries = Array.from(dir.children.keys()).sort();
+		const entries = Object.keys(dir.children).sort();
 		for (let i = 0; i < entries.length; i++) {
 			const name = entries[i]!;
-			const child = dir.children.get(name)!;
+			const child = dir.children[name]!;
 			const isLast = i === entries.length - 1;
 			const connector = isLast ? "└── " : "├── ";
 			const nextPrefix = isLast ? "    " : "│   ";
@@ -790,7 +790,7 @@ class VirtualFileSystem extends EventEmitter {
 	private computeUsage(node: InternalNode): number {
 		if (node.type === "file") return (node as InternalFileNode).content.length;
 		let total = 0;
-		for (const child of (node as InternalDirectoryNode).children.values()) {
+		for (const child of Object.values((node as InternalDirectoryNode).children)) {
 			total += this.computeUsage(child);
 		}
 		return total;
@@ -846,7 +846,8 @@ class VirtualFileSystem extends EventEmitter {
 			createdAt: new Date(),
 			updatedAt: new Date(),
 		};
-		parent.children.set(name, symNode);
+		parent.children[name] = symNode;
+		parent._childCount++;
 		// Journal before emit
 		this._journal({ op: JournalOp.SYMLINK, path: normalizedLink, dest: normalizedTarget });
 		this.emit("symlink:create", {
@@ -910,7 +911,7 @@ class VirtualFileSystem extends EventEmitter {
 		const node = getNode(this.root, normalized);
 		if (node.type === "directory") {
 			const dir = node as InternalDirectoryNode;
-			if (!options.recursive && dir.children.size > 0) {
+			if (!options.recursive && dir._childCount > 0) {
 				throw new Error(
 					`Directory '${normalized}' is not empty. Use recursive option.`,
 				);
@@ -922,8 +923,8 @@ class VirtualFileSystem extends EventEmitter {
 			false,
 			() => {},
 		);
-		parent.children.delete(name);
-		this.emit("node:remove", { path: normalized });
+		delete parent.children[name];
+		parent._childCount--;		this.emit("node:remove", { path: normalized });
 		this._journal({ op: JournalOp.REMOVE, path: normalized });
 	}
 
@@ -951,9 +952,11 @@ class VirtualFileSystem extends EventEmitter {
 			false,
 			() => {},
 		);
-		srcParent.children.delete(srcName);
+		delete srcParent.children[srcName];
+		srcParent._childCount--;
 		node.name = destName;
-		destParent.children.set(destName, node);
+		destParent.children[destName] = node;
+		destParent._childCount++;
 		this._journal({ op: JournalOp.MOVE, path: fromNormalized, dest: toNormalized });
 	}
 
@@ -971,7 +974,7 @@ class VirtualFileSystem extends EventEmitter {
 
 	private serializeDir(dir: InternalDirectoryNode): VfsSnapshotDirectoryNode {
 		const children: VfsSnapshotNode[] = [];
-		for (const child of dir.children.values()) {
+		for (const child of Object.values(dir.children)) {
 			children.push(
 				child.type === "file"
 					? this.serializeFile(child as InternalFileNode)
@@ -1038,12 +1041,13 @@ class VirtualFileSystem extends EventEmitter {
 			mode: snap.mode,
 			createdAt: new Date(snap.createdAt),
 			updatedAt: new Date(snap.updatedAt),
-			children: new Map(),
+			children: Object.create(null) as Record<string, InternalNode>,
+			_childCount: 0,
 		};
 		for (const child of snap.children) {
 			if (child.type === "file") {
 				const f = child as VfsSnapshotFileNode;
-				dir.children.set(f.name, {
+				dir.children[f.name] = {
 					type: "file",
 					name: f.name,
 					mode: f.mode,
@@ -1051,14 +1055,15 @@ class VirtualFileSystem extends EventEmitter {
 					updatedAt: new Date(f.updatedAt),
 					compressed: f.compressed,
 					content: Buffer.from(f.contentBase64, "base64"),
-				});
+				};
 			} else {
 				const sub = this.deserializeDir(
 					child as VfsSnapshotDirectoryNode,
 					child.name,
 				);
-				dir.children.set(child.name, sub);
+				dir.children[child.name] = sub;
 			}
+			dir._childCount++;
 		}
 		return dir;
 	}

@@ -108,7 +108,7 @@ function encodeNode(enc: Encoder, node: InternalNode): void {
 		enc.writeUint32(d.mode);
 		enc.writeFloat64(d.createdAt.getTime());
 		enc.writeFloat64(d.updatedAt.getTime());
-		const children = Array.from(d.children.values());
+		const children = Object.values(d.children);
 		enc.writeUint32(children.length);
 		for (const child of children) encodeNode(enc, child);
 	}
@@ -196,10 +196,10 @@ function decodeNode(dec: Decoder): InternalNode {
 
 	if (type === TYPE_DIR) {
 		const count = dec.readUint32();
-		const children = new Map<string, InternalNode>();
+		const children = Object.create(null) as Record<string, InternalNode>;
 		for (let i = 0; i < count; i++) {
 			const child = decodeNode(dec);
-			children.set(child.name, child);
+			children[child.name] = child;
 		}
 		return {
 			type: "directory",
@@ -208,6 +208,7 @@ function decodeNode(dec: Decoder): InternalNode {
 			createdAt,
 			updatedAt,
 			children,
+			_childCount: count,
 		} satisfies InternalDirectoryNode;
 	}
 
