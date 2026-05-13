@@ -7,5 +7,6 @@ export const process = {
   cwd: () => '/',
   exit: () => {},
   nextTick: (fn, ...args) => queueMicrotask(() => fn(...args)),
+  memoryUsage: () => ({ rss: 0, heapTotal: 0, heapUsed: 0, external: 0 }),
 };
 globalThis.process = process;
