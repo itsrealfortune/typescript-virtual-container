@@ -10,12 +10,11 @@
  *  5. update README.md         — replace filenames in marked sections
  */
 
-import { execSync }  from "node:child_process";
+import { execSync } from "node:child_process";
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join }      from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { BUILDS_DIR, NAMES } from "./build-names.mjs";
-import { dirname }   from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
@@ -99,12 +98,14 @@ function replaceSection(tag, content) {
 
 // Overview table — web and selfStandalone filenames
 replaceSection(
-  "web",
-  `\`builds/${web}\` / \`builds/${webFull}\``,
-);
-replaceSection(
-  "selfStandalone",
-  `\`builds/${selfStandalone}\``,
+  "mode-table",
+  [
+    `| Mode | Entry point | Use case |`,
+    `|------|-------------|----------|`,
+    `| **SSH/SFTP server** | \`VirtualSshServer\` / \`VirtualSftpServer\` | Honeypots, remote testing, training environments |`,
+    `| **Web shell** | \`builds/${web}\` / \`builds/${webFull}\` (ESM) | Embedded terminals, interactive tutorials, browser demos |`,
+    `| **Standalone CLI** | \`builds/${selfStandalone}\` (single file) | Local shell, one-liner demos, no install required |`,
+  ].join("\n"),
 );
 
 // curl commands block
@@ -141,6 +142,8 @@ replaceSection(
 replaceSection(
   "web-table",
   [
+    `| Bundle | Format | Entry point | Use case |`,
+    `|--------|--------|-------------|----------|`,
     `| \`builds/${web}\` | ESM | \`createWebShell()\` | Embedded terminals, modern bundlers |`,
     `| \`builds/${webFull}\` | ESM | \`createVirtualShellShim()\` | Full \`VirtualShell\`-like API in the browser |`,
   ].join("\n"),

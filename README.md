@@ -51,15 +51,13 @@
 
 ## Three ways to run
 
+<!-- BUILD:mode-table -->
 | Mode | Entry point | Use case |
 |------|-------------|----------|
 | **SSH/SFTP server** | `VirtualSshServer` / `VirtualSftpServer` | Honeypots, remote testing, training environments |
-| **Web shell** | <!-- BUILD:web -->
-`builds/fortune-nyx-v1.5.1-web.min.js` / `builds/fortune-nyx-v1.5.1-web-full.min.js`
-<!-- /BUILD:web --> (ESM) | Embedded terminals, interactive tutorials, browser demos |
-| **Standalone CLI** | <!-- BUILD:selfStandalone -->
-`builds/fortune-nyx-v1.5.1-directbash-k6.1.0.mjs`
-<!-- /BUILD:selfStandalone --> (single file) | Local shell, one-liner demos, no install required |
+| **Web shell** | `builds/fortune-nyx-v1.5.1-web.min.js` / `builds/fortune-nyx-v1.5.1-web-full.min.js` (ESM) | Embedded terminals, interactive tutorials, browser demos |
+| **Standalone CLI** | `builds/fortune-nyx-v1.5.1-directbash-k6.1.0.mjs` (single file) | Local shell, one-liner demos, no install required |
+<!-- /BUILD:mode-table -->
 
 All three modes share the same core: a pure in-memory VFS, a real shell interpreter, a virtual package manager, and a typed programmatic API.
 
@@ -76,8 +74,8 @@ npm install typescript-virtual-container
 
 ### Try instantly (zero install)
 
-```bash
 <!-- BUILD:curl-start -->
+```bash
 # Interactive local shell — persists VFS in .vfs/ in the current directory
 curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.0-directbash-k6.1.0.mjs -o fortune-nyx-directbash.mjs && node fortune-nyx-directbash.mjs && rm -f fortune-nyx-directbash.mjs
 
@@ -86,8 +84,8 @@ curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-cont
 
 # SSH server without SFTP (lighter build)
 curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.0-ssh-nosftp.js -o fortune-nyx-ssh-nosftp.js && node fortune-nyx-ssh-nosftp.js && rm -f fortune-nyx-ssh-nosftp.js
-<!-- BUILD:curl-end -->
 ```
+<!-- BUILD:curl-end -->
 
 > [!NOTE]
 > The standalone builds are intended for quick demos and testing. For production use, it's recommended to install the package and import the relevant classes directly in your codebase for better performance, stability, and security.
@@ -121,9 +119,9 @@ await ssh.start();
 
 Two browser bundles are available:
 
+<!-- BUILD:web-table -->
 | Bundle | Format | Entry point | Use case |
 |--------|--------|-------------|----------|
-<!-- BUILD:web-table -->
 | `builds/fortune-nyx-v1.5.1-web.min.js` | ESM | `createWebShell()` | Embedded terminals, modern bundlers |
 | `builds/fortune-nyx-v1.5.1-web-full.min.js` | ESM | `createVirtualShellShim()` | Full `VirtualShell`-like API in the browser |
 <!-- /BUILD:web-table -->
