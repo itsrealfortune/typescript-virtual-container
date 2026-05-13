@@ -14,6 +14,7 @@
     "moduleResolution": "bundler",
     "verbatimModuleSyntax": true,
     "noEmit": false,
+    "rewriteRelativeImportExtensions": true,
     
     // Best practices
     "strict": true,
@@ -35,10 +36,10 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "declaration": true,
-    "declarationMap": true,
+    "declarationMap": false,
     "rootDir": "src",
     "outDir": "dist",
-    "sourceMap": true,
+    "sourceMap": false,
     "composite": true,
     "tsBuildInfoFile": "dist/.tsbuildinfo"
   },    
