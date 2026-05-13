@@ -34,7 +34,7 @@ run("node scripts/generate-manuals-bundle.mjs");
 
 // ── 3. esbuild targets ───────────────────────────────────────────────────────
 const ESBUILD = "bunx esbuild";
-const BANNER  = `--banner:js='#!/usr/bin/env node'`;
+const BANNER = `--banner:js='#!/usr/bin/env node'`;
 
 const targets = [
   // self-standalone (ESM, interactive CLI)
@@ -112,14 +112,18 @@ replaceSection(
 replaceSection(
   "curl-start",
   [
+    `#### Interactivea local shell — persists VFS in .vfs/ in the current directory`,
     `\`\`\`bash`,
-    `# Interactivea local shell — persists VFS in .vfs/ in the current directory`,
     `curl -s ${GH_BASE}/${selfStandalone} -o ${selfStandalone} && node ${selfStandalone}`,
+    `\`\`\``,
     ``,
-    `# SSH server (connect with any SSH client on port 2222)`,
+    `#### SSH server (connect with any SSH client on port 2222)`,
+    `\`\`\`bash`,
     `curl -s ${GH_BASE}/${standalone} -o ${standalone} && node ${standalone}`,
+    `\`\`\``,
     ``,
-    `# SSH server without SFTP (lighter build)`,
+    `#### SSH server without SFTP (lighter build)`,
+    `\`\`\`bash`,
     `curl -s ${GH_BASE}/${standaloneNoSftp} -o ${standaloneNoSftp} && node ${standaloneNoSftp}`,
     `\`\`\``,
   ].join("\n"),

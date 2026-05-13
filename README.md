@@ -75,14 +75,18 @@ npm install typescript-virtual-container
 ### Try instantly (zero install)
 
 <!-- BUILD:curl-start -->
+#### Interactivea local shell — persists VFS in .vfs/ in the current directory
 ```bash
-# Interactivea local shell — persists VFS in .vfs/ in the current directory
 curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.1-directbash-k6.1.0.mjs -o fortune-nyx-v1.5.1-directbash-k6.1.0.mjs && node fortune-nyx-v1.5.1-directbash-k6.1.0.mjs
+```
 
-# SSH server (connect with any SSH client on port 2222)
+#### SSH server (connect with any SSH client on port 2222)
+```bash
 curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.1-ssh.cjs -o fortune-nyx-v1.5.1-ssh.cjs && node fortune-nyx-v1.5.1-ssh.cjs
+```
 
-# SSH server without SFTP (lighter build)
+#### SSH server without SFTP (lighter build)
+```bash
 curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.1-ssh-nosftp.js -o fortune-nyx-v1.5.1-ssh-nosftp.js && node fortune-nyx-v1.5.1-ssh-nosftp.js
 ```
 <!-- /BUILD:curl-start -->
