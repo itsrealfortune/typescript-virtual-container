@@ -41,6 +41,7 @@ const OPEN_MODE = {
 
 const perf: PerfLogger = createPerfLogger("SftpMimic");
 
+/** @internal */
 interface SftpFileHandle {
 	type: "file";
 	path: string;
@@ -48,6 +49,7 @@ interface SftpFileHandle {
 	buffer: Buffer;
 }
 
+/** @internal */
 interface SftpDirHandle {
 	type: "dir";
 	path: string;
@@ -55,8 +57,10 @@ interface SftpDirHandle {
 	index: number;
 }
 
+/** @internal */
 type SftpHandle = SftpFileHandle | SftpDirHandle;
 
+/** @internal */
 interface SftpAttributes {
 	mode: number;
 	uid: number;
@@ -66,6 +70,7 @@ interface SftpAttributes {
 	mtime: number | Date;
 }
 
+/** @internal */
 interface SftpServerStream {
 	on(
 		event: "OPEN",
@@ -139,6 +144,7 @@ interface SftpServerStream {
 	): void;
 }
 
+/** Options for {@link SftpMimic} constructor. */
 export interface SftpMimicOptions {
 	port: number;
 	hostname?: string;

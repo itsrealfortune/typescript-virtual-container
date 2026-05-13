@@ -26,6 +26,7 @@ const DEV = !!process.env.DEV_MODE;
 const devLog = DEV ? console.log.bind(console) : () => {};
 
 
+/** @internal */
 interface RateLimitEntry {
 	attempts: number;
 	lockedUntil: number;
@@ -45,11 +46,12 @@ class SshMimic extends EventEmitter {
 	/**
 	 * Creates a new SSH mimic server instance.
 	 *
-	 * @param port TCP port to bind on localhost.
-	 * @param hostname Virtual hostname used for the SSH ident and default shell label.
-	 * @param shell Optional preconfigured virtual shell instance to reuse.
-	 * @param maxAuthAttempts Max failed attempts per IP before lockout (default: 5).
-	 * @param lockoutDurationMs Lockout window in ms after exceeding attempts (default: 60 000).
+	 * @param options - Configuration object for the SSH server.
+	 * @param options.port - TCP port to bind on localhost.
+	 * @param options.hostname - Virtual hostname used for the SSH ident and default shell label.
+	 * @param options.shell - Optional preconfigured virtual shell instance to reuse.
+	 * @param options.maxAuthAttempts - Max failed attempts per IP before lockout (default: 5).
+	 * @param options.lockoutDurationMs - Lockout window in ms after exceeding attempts (default: 60 000).
 	 */
 	constructor({
 		port,

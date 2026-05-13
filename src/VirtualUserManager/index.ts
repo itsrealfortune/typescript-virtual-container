@@ -5,7 +5,10 @@ import type { PerfLogger } from "../utils/perfLogger";
 import { createPerfLogger } from "../utils/perfLogger";
 import type VirtualFileSystem from "../VirtualFileSystem";
 
-/** Persisted virtual user credential record. */
+/** 
+ * Persisted virtual user credential record.
+ * @internal
+ */
 export interface VirtualUserRecord {
 	/** Unique login name. */
 	username: string;
@@ -61,7 +64,6 @@ export class VirtualUserManager extends EventEmitter {
 	 * Creates a user manager instance backed by a virtual filesystem.
 	 *
 	 * @param vfs Backing virtual filesystem used for persistence.
-	 * @param defaultRootPassword Initial root password used when root is created.
 	 * @param autoSudoForNewUsers Whether newly created users are added to sudoers.
 	 */
 	constructor(

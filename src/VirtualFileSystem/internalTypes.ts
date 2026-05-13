@@ -1,3 +1,4 @@
+/** @internal */
 export type InternalNode = InternalFileNode | InternalStubNode | InternalDirectoryNode;
 
 interface InternalBaseNode {
@@ -9,6 +10,7 @@ interface InternalBaseNode {
 	updatedAt: number;
 }
 
+/** @internal */
 export interface InternalFileNode extends InternalBaseNode {
 	type: "file";
 	content: Buffer;
@@ -23,6 +25,7 @@ export interface InternalFileNode extends InternalBaseNode {
  * Lazy stub — stores static rootfs file content as a plain string.
  * No Buffer allocation until the file is actually read or written.
  * On first write, promoted to a real InternalFileNode.
+ * @internal
  */
 export interface InternalStubNode extends InternalBaseNode {
 	type: "stub";
@@ -30,6 +33,7 @@ export interface InternalStubNode extends InternalBaseNode {
 	stubContent: string;
 }
 
+/** @internal */
 export interface InternalDirectoryNode extends InternalBaseNode {
 	type: "directory";
 	/** Null-prototype object — avoids Map overhead (~40% less RAM per entry). */
