@@ -1915,7 +1915,16 @@ export function bootstrapLinuxRootfs(
 	sessions: VirtualActiveSession[] = [],
 ): void {
 	const snapshot = getStaticRootfsSnapshot(hostname, props);
-	vfs.importRootTree(decodeVfs(snapshot));
+	const hasRestoredData = vfs.getMode() === "fs" && vfs.exists("/home");
+
+	if (hasRestoredData) {
+		// Snapshot was already restored — merge static rootfs without
+		// clobbering user files and directories.
+		vfs.mergeRootTree(decodeVfs(snapshot));
+	} else {
+		// Fresh start — replace the empty tree with the full static rootfs.
+		vfs.importRootTree(decodeVfs(snapshot));
+	}
 
 	bootstrapRoot(vfs);
 	refreshProc(vfs, props, hostname, shellStartTime, sessions);

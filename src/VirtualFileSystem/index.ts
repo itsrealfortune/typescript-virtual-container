@@ -384,6 +384,47 @@ class VirtualFileSystem extends EventEmitter {
 		try { this.root = root; } finally { this._replayMode = prev; }
 	}
 
+	/**
+	 * Merge a static rootfs tree into the existing live tree.
+	 * Used by `bootstrapLinuxRootfs` when a persisted snapshot already exists,
+	 * to layer in missing system files without overwriting user data.
+	 *
+	 * Rules:
+	 * - Directories: recurse — never overwrite a live dir with an empty one.
+	 * - Files/stubs: only written if the path does NOT yet exist in the live tree.
+	 *   This ensures user-created files always win over static defaults.
+	 *
+	 * @internal
+	 */
+	public mergeRootTree(incoming: InternalDirectoryNode): void {
+		const prev = this._replayMode;
+		this._replayMode = true;
+		try { this._mergeDir(this.root, incoming); } finally { this._replayMode = prev; }
+	}
+
+	private _mergeDir(live: InternalDirectoryNode, incoming: InternalDirectoryNode): void {
+		for (const [name, node] of Object.entries(incoming.children)) {
+			const existing = live.children[name];
+			if (node.type === "directory") {
+				if (!existing) {
+					// Dir doesn't exist yet — add it
+					live.children[name] = node;
+					live._childCount++;
+				} else if (existing.type === "directory") {
+					// Both dirs — recurse
+					this._mergeDir(existing, node);
+				}
+				// existing is a file where dir expected — leave user file alone
+			} else {
+				// File or stub — only add if not already present
+				if (!existing) {
+					live.children[name] = node;
+					live._childCount++;
+				}
+			}
+		}
+	}
+
 	/** Serialise current tree to VFSB binary. Used for the static rootfs cache. */
 	public encodeBinary(): Buffer {
 		return encodeVfs(this.root);
