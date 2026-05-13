@@ -76,16 +76,16 @@ npm install typescript-virtual-container
 
 <!-- BUILD:curl-start -->
 ```bash
-# Interactive local shell — persists VFS in .vfs/ in the current directory
-curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.0-directbash-k6.1.0.mjs -o fortune-nyx-directbash.mjs && node fortune-nyx-directbash.mjs && rm -f fortune-nyx-directbash.mjs
+# Interactivea local shell — persists VFS in .vfs/ in the current directory
+curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.1-directbash-k6.1.0.mjs -o fortune-nyx-v1.5.1-directbash-k6.1.0.mjs && node fortune-nyx-v1.5.1-directbash-k6.1.0.mjs && rm -f fortune-nyx-v1.5.1-directbash-k6.1.0.mjs
 
 # SSH server (connect with any SSH client on port 2222)
-curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.0-ssh.cjs -o fortune-nyx-ssh.cjs && node fortune-nyx-ssh.cjs && rm -f fortune-nyx-ssh.cjs
+curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.1-ssh.cjs -o fortune-nyx-v1.5.1-ssh.cjs && node fortune-nyx-v1.5.1-ssh.cjs && rm -f fortune-nyx-v1.5.1-ssh.cjs
 
 # SSH server without SFTP (lighter build)
-curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.0-ssh-nosftp.js -o fortune-nyx-ssh-nosftp.js && node fortune-nyx-ssh-nosftp.js && rm -f fortune-nyx-ssh-nosftp.js
+curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.1-ssh-nosftp.js -o fortune-nyx-v1.5.1-ssh-nosftp.js && node fortune-nyx-v1.5.1-ssh-nosftp.js && rm -f fortune-nyx-v1.5.1-ssh-nosftp.js
 ```
-<!-- BUILD:curl-end -->
+<!-- /BUILD:curl-start -->
 
 > [!NOTE]
 > The standalone builds are intended for quick demos and testing. For production use, it's recommended to install the package and import the relevant classes directly in your codebase for better performance, stability, and security.
