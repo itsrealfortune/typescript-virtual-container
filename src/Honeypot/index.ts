@@ -43,6 +43,8 @@ export interface HoneyPotStats {
 	userDeleted: number;
 	clientConnects: number;
 	clientDisconnects: number;
+	shellFreezes: number;
+	shellThaws: number;
 }
 
 const perf: PerfLogger = createPerfLogger("HoneyPot");
@@ -68,9 +70,13 @@ export class HoneyPot {
 		userDeleted: 0,
 		clientConnects: 0,
 		clientDisconnects: 0,
+		shellFreezes: 0,
+		shellThaws: 0,
 	};
 
 	private maxLogSize: number;
+	/** Reference kept so VFS events can ping the shell's idle manager. */
+	private _shell: VirtualShell | null = null;
 
 	/**
 	 * Creates a new HoneyPot instance.
@@ -99,6 +105,7 @@ export class HoneyPot {
 		sftp?: SftpMimic,
 	): void {
 		perf.mark("attach");
+		this._shell = shell;
 		this.attachVirtualShell(shell);
 		this.attachVirtualFileSystem(vfs);
 		this.attachVirtualUserManager(users);
@@ -130,23 +137,38 @@ export class HoneyPot {
 				this.log("VirtualShell", "session:start", data);
 			},
 		);
+
+		(shell as EventEmitter).on("shell:freeze", () => {
+			this.stats.shellFreezes++;
+			this.log("VirtualShell", "shell:freeze", {});
+		});
+
+		(shell as EventEmitter).on("shell:thaw", () => {
+			this.stats.shellThaws++;
+			this.log("VirtualShell", "shell:thaw", {});
+		});
 	}
 
 	/**
 	 * Attaches to VirtualFileSystem events.
+	 * Also pings the shell's idle manager so SFTP/direct VFS activity
+	 * counts as activity and prevents spurious freezes.
 	 */
 	private attachVirtualFileSystem(vfs: VirtualFileSystem): void {
 		(vfs as EventEmitter).on("file:read", (data: Record<string, unknown>) => {
 			this.stats.fileReads++;
+			this._shell?.pingIdle();
 			this.log("VirtualFileSystem", "file:read", data);
 		});
 
 		(vfs as EventEmitter).on("file:write", (data: Record<string, unknown>) => {
 			this.stats.fileWrites++;
+			this._shell?.pingIdle();
 			this.log("VirtualFileSystem", "file:write", data);
 		});
 
 		(vfs as EventEmitter).on("dir:create", (data: Record<string, unknown>) => {
+			this._shell?.pingIdle();
 			this.log("VirtualFileSystem", "dir:create", data);
 		});
 
@@ -354,6 +376,8 @@ export class HoneyPot {
 			userDeleted: 0,
 			clientConnects: 0,
 			clientDisconnects: 0,
+			shellFreezes: 0,
+			shellThaws: 0,
 		};
 	}
 
