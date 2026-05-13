@@ -365,11 +365,10 @@ class VirtualFileSystem extends EventEmitter {
 	 * ```
 	 */
 	public async stopAutoFlush(): Promise<void> {
-		// if (this._flushTimer !== null) {
-		// 	clearInterval(this._flushTimer);
-		// 	this._flushTimer = null;
-		// }
-		console.log(this._dirty ? "[VirtualFileSystem] Stopping auto-flush: flushing pending changes..." : "[VirtualFileSystem] Stopping auto-flush: no pending changes.");
+		if (this._flushTimer !== null) {
+			clearInterval(this._flushTimer);
+			this._flushTimer = null;
+		}
 		if (this._dirty) await this.flushMirror();
 	}
 
