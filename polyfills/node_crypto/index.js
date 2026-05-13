@@ -144,4 +144,24 @@ export function timingSafeEqual(a, b) {
   return diff === 0;
 }
 
-export default { randomBytes, randomUUID, createHash, scryptSync, timingSafeEqual };
+export function generateKeyPairSync() {
+  throw new Error('generateKeyPairSync is not implemented in this environment');
+}
+
+export function createHmac() {
+  throw new Error('createHmac is not implemented in this environment');
+}
+
+export function createCipheriv() {
+  throw new Error('createCipheriv is not implemented in this environment');
+}
+
+export function createDecipheriv() {
+  throw new Error('createDecipheriv is not implemented in this environment');
+}
+
+export function createSign() {
+  throw new Error('createSign is not implemented in this environment');
+}
+
+export default { randomBytes, randomUUID, createHash, scryptSync, timingSafeEqual, generateKeyPairSync, createHmac, createCipheriv, createDecipheriv, createSign };
