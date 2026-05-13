@@ -1,10 +1,11 @@
 import esbuild from 'esbuild';
+import { NAMES } from './scripts/build-names.mjs';
 
 await esbuild.build({
-    entryPoints: ['src/web-index.ts'],
+    entryPoints: ['src/index.ts'],
     bundle: true,
     format: 'esm',
-    outfile: 'dist/web-index.js',
+    outfile: `builds/${NAMES.web}`,
     platform: 'browser',
     alias: {
         'node:events': './polyfills/node_events/index.js',
@@ -16,5 +17,6 @@ await esbuild.build({
         'node:child_process': './polyfills/node_child_process/index.js',
         'node:zlib': './polyfills/node_zlib/index.js',
         'node:vm': './polyfills/node_vm/index.js',
+        'ssh2': './polyfills/ssh2/index.js',
     }, inject: ['./polyfills/process.js', './polyfills/buffer.js'],
 });
