@@ -13,7 +13,7 @@ export const lsbReleaseCommand: ShellModule = {
 	params: ["[-a] [-i] [-d] [-r] [-c]"],
 	run: ({ args, shell }) => {
 		let osName = shell.properties?.os ?? "Fortune GNU/Linux x64";
-		let codename = "aurora";
+		let codename = "nyx";
 		let version = "1.0";
 
 		try {

@@ -63,7 +63,7 @@ function bootstrapEtc(
 ): void {
 	ensureDir(vfs, "/etc");
 
-	// os-release — Fortune Aurora identity
+	// os-release — Fortune Nyx identity
 	ensureFile(
 		vfs,
 		"/etc/os-release",
@@ -111,7 +111,7 @@ function bootstrapEtc(
 		].join("\n")}\n`,
 	);
 
-	// APT — Fortune Aurora sources
+	// APT — Fortune Nyx sources
 	ensureDir(vfs, "/etc/apt");
 	ensureDir(vfs, "/etc/apt/sources.list.d");
 	ensureDir(vfs, "/etc/apt/trusted.gpg.d");
@@ -120,7 +120,7 @@ function bootstrapEtc(
 		vfs,
 		"/etc/apt/sources.list",
 		`${[
-			"# Fortune GNU/Linux package sources (Fortune 1.0 Aurora)",
+			"# Fortune GNU/Linux package sources (Fortune 1.0 Nyx)",
 			"deb [virtual] fortune://packages.fortune.local nyx main contrib non-free",
 			"deb [virtual] fortune://packages.fortune.local nyx-updates main contrib non-free",
 			"deb [virtual] fortune://security.fortune.local nyx-security main",
@@ -399,6 +399,10 @@ function bootstrapEtc(
 
 // ─── /etc/passwd + /etc/group + /etc/shadow ─────────────────────────────────
 
+/**
+ * Sync `/etc/passwd`, `/etc/group`, and `/etc/shadow` from the
+ * VirtualUserManager's current user list into the VFS.
+ */
 export function syncEtcPasswd(
 	vfs: VirtualFileSystem,
 	users: VirtualUserManager,
@@ -681,6 +685,13 @@ function bootProcLog(vfs: VirtualFileSystem, props: ShellProperties): void {
 
 // ─── /proc refresh ───────────────────────────────────────────────────────────
 
+/**
+ * Populate and refresh `/proc` virtual entries based on host stats and
+ * provided active sessions. Rewrites uptime, meminfo, cpuinfo, loadavg,
+ * per-pid entries, and /proc/self.
+ *
+ * Safe to call repeatedly — acts as a live kernel state snapshot.
+ */
 export function refreshProc(
 	vfs: VirtualFileSystem,
 	props: ShellProperties,
@@ -1138,6 +1149,44 @@ function bootstrapSys(vfs: VirtualFileSystem, hostname: string, props: ShellProp
 
 	// security
 	ensureDir(vfs, "/sys/kernel/security");
+
+
+	// Still; we will create virtual dmi
+	ensureDir(vfs, "/sys/devices/virtual");
+	ensureDir(vfs, "/sys/devices/virtual/dmi");
+	ensureDir(vfs, "/sys/devices/virtual/dmi/id");
+	const product = `VirtualNode-${(seed % 10000).toString().padStart(4, "0")}`;
+
+	// Full DMI table — deterministic, seeded from hostname
+	const dmi: Record<string, string> = {
+		bios_vendor:      "Virtual BIOS",
+		bios_version:     "1.0",
+		bios_date:        "01/01/2025",
+		sys_vendor:       "Fortune Systems",
+		product_name:     product,
+		product_family:   "VirtualContainer",
+		product_version:  "v1",
+		product_uuid:     `${seed.toString(16).padStart(8, "0")}-0000-0000-0000-000000000000`,
+		product_serial:   `SN-${seed}`,
+		chassis_type:     "3",
+		chassis_vendor:   "Virtual",
+		chassis_version:  "v1",
+		board_name:       "fortune-board",
+		modalias:         `dmi:bvnVirtual:bvr1.0:svnFortune:pn${product}`,
+	};
+
+	for (const [k, v] of Object.entries(dmi)) {
+		ensureFile(vfs, `/sys/devices/virtual/dmi/id/${k}`, `${v}\n`);
+	}
+
+	ensureDir(vfs, "/sys/class");
+	ensureDir(vfs, "/sys/class/net");
+	ensureDir(vfs, "/sys/kernel");
+
+	ensureFile(vfs, "/sys/kernel/hostname", `${hostname}\n`);
+	ensureFile(vfs, "/sys/kernel/osrelease", `${props.kernel}\n`);
+	ensureFile(vfs, "/sys/kernel/ostype", "Linux\n");
+
 }
 
 // ─── /dev ─────────────────────────────────────────────────────────────────────
@@ -1247,59 +1296,69 @@ function bootstrapUsr(vfs: VirtualFileSystem): void {
 
 	// builtins — all bins present in the real container
 	const builtins = [
-		// core
-		"sh", "bash", "dash",
-		"ls", "cat", "echo", "grep", "find", "sort",
-		"head", "tail", "cut", "tr", "sed", "awk", "mawk", "gawk",
-		"wc", "tee", "tar", "gzip", "gunzip", "bzip2", "xz",
-		"touch", "mkdir", "rm", "mv", "cp", "ln", "pwd",
-		"chmod", "chown", "chgrp", "env", "date", "sleep",
-		"id", "whoami", "hostname", "uname", "ps", "kill",
-		"df", "du", "dd", "stat", "file",
-		// net
-		"curl", "wget", "nc", "netcat", "ss", "ip",
-		// editors
-		"nano", "vi",
-		// text
-		"diff", "uniq", "xargs", "base64", "md5sum", "sha256sum",
-		"strings", "hexdump", "od", "column", "fmt", "paste",
-		"join", "comm", "split", "csplit", "fold", "expand",
-		// archive
-		"zip", "unzip",
-		// process
-		"top", "htop", "free", "uptime", "dmesg", "lsof",
-		"strace", "ltrace", "pgrep", "pkill", "nohup", "nice",
-		// fs
-		"mount", "umount", "lsblk", "fdisk", "blkid", "e2fsck",
-		// misc
-		"bc", "expr", "seq", "yes", "true", "false", "test",
-		"readlink", "realpath", "dirname", "basename", "mktemp",
-		"install", "make",
-		// dev tools
-		"gcc", "gcc-13", "g++", "g++-13", "cpp", "as", "ld",
-		"ar", "nm", "objdump", "objcopy", "strip", "size",
-		"cc", "c++", "pkg-config",
-		// package
-		"apt", "apt-get", "apt-cache", "dpkg", "dpkg-query",
-		"lsb_release", "add-apt-repository",
-		// scripting
-		"perl", "python3", "python3.12", "pipx",
-		// node/npm
-		"node", "npm", "npx",
-		// java
-		"java", "javac", "jar", "javadoc",
-		// security
-		"openssl", "gpg", "gpg2", "gpgv", "ssh", "ssh-keygen",
-		"sudo", "su", "passwd", "adduser", "useradd",
-		// misc system
-		"systemctl", "journalctl", "loginctl",
-		"timedatectl", "localectl",
-		"lshw", "lscpu", "lsusb", "lspci",
-		// text proc
-		"jq", "xmllint", "pandoc",
-		// multimedia
-		"ffmpeg",
+		"sh", "bash", "ls", "cat", "echo", "grep", "find", "sort",
+		"head", "tail", "cut", "tr", "sed", "awk", "wc", "tee",
+		"tar", "gzip", "gunzip", "touch", "mkdir", "rm", "mv", "cp",
+		"chmod", "ln", "pwd", "env", "date", "sleep", "id", "whoami",
+		"hostname", "uname", "ps", "kill", "df", "du", "curl", "wget",
+		"nano", "diff", "uniq", "xargs", "base64",
 	];
+
+	// From a real container
+	// const builtins = [
+	// 	// core
+	// 	"sh", "bash", "dash",
+	// 	"ls", "cat", "echo", "grep", "find", "sort",
+	// 	"head", "tail", "cut", "tr", "sed", "awk", "mawk", "gawk",
+	// 	"wc", "tee", "tar", "gzip", "gunzip", "bzip2", "xz",
+	// 	"touch", "mkdir", "rm", "mv", "cp", "ln", "pwd",
+	// 	"chmod", "chown", "chgrp", "env", "date", "sleep",
+	// 	"id", "whoami", "hostname", "uname", "ps", "kill",
+	// 	"df", "du", "dd", "stat", "file",
+	// 	// net
+	// 	"curl", "wget", "nc", "netcat", "ss", "ip",
+	// 	// editors
+	// 	"nano", "vi",
+	// 	// text
+	// 	"diff", "uniq", "xargs", "base64", "md5sum", "sha256sum",
+	// 	"strings", "hexdump", "od", "column", "fmt", "paste",
+	// 	"join", "comm", "split", "csplit", "fold", "expand",
+	// 	// archive
+	// 	"zip", "unzip",
+	// 	// process
+	// 	"top", "htop", "free", "uptime", "dmesg", "lsof",
+	// 	"strace", "ltrace", "pgrep", "pkill", "nohup", "nice",
+	// 	// fs
+	// 	"mount", "umount", "lsblk", "fdisk", "blkid", "e2fsck",
+	// 	// misc
+	// 	"bc", "expr", "seq", "yes", "true", "false", "test",
+	// 	"readlink", "realpath", "dirname", "basename", "mktemp",
+	// 	"install", "make",
+	// 	// dev tools
+	// 	"gcc", "gcc-13", "g++", "g++-13", "cpp", "as", "ld",
+	// 	"ar", "nm", "objdump", "objcopy", "strip", "size",
+	// 	"cc", "c++", "pkg-config",
+	// 	// package
+	// 	"apt", "apt-get", "apt-cache", "dpkg", "dpkg-query",
+	// 	"lsb_release", "add-apt-repository",
+	// 	// scripting
+	// 	"perl", "python3", "python3.12", "pipx",
+	// 	// node/npm
+	// 	"node", "npm", "npx",
+	// 	// java
+	// 	"java", "javac", "jar", "javadoc",
+	// 	// security
+	// 	"openssl", "gpg", "gpg2", "gpgv", "ssh", "ssh-keygen",
+	// 	"sudo", "su", "passwd", "adduser", "useradd",
+	// 	// misc system
+	// 	"systemctl", "journalctl", "loginctl",
+	// 	"timedatectl", "localectl",
+	// 	"lshw", "lscpu", "lsusb", "lspci",
+	// 	// text proc
+	// 	"jq", "xmllint", "pandoc",
+	// 	// multimedia
+	// 	"ffmpeg",
+	// ];
 
 	for (const bin of builtins) {
 		ensureFile(vfs, `/usr/bin/${bin}`, `#!/bin/sh\nexec builtin ${bin} "$@"\n`, 0o755);
@@ -1690,7 +1749,7 @@ function bootstrapVar(vfs: VirtualFileSystem): void {
 // ─── /bin + /sbin symlinks ────────────────────────────────────────────────────
 
 function bootstrapBin(vfs: VirtualFileSystem): void {
-	// Modern Fortune Aurora: /bin and /sbin are symlinks to /usr/bin and /usr/sbin
+	// Modern Fortune Nyx: /bin and /sbin are symlinks to /usr/bin and /usr/sbin
 	if (!vfs.exists("/bin"))  vfs.symlink("/usr/bin",  "/bin");
 	if (!vfs.exists("/sbin")) vfs.symlink("/usr/sbin", "/sbin");
 
@@ -1848,6 +1907,17 @@ export function bootstrapLinuxRootfs(
 
 // ─── optional live engine ─────────────────────────────────────────────────────
 
+/**
+ * Engine for runtimes that want periodic /proc refresh (e.g. web shell
+ * with live `top`/`ps` output). Call `.boot()` once, then `.tick()` on
+ * each session change or on a timer.
+ *
+ * ```ts
+ * const engine = createLinuxRootfsEngine(vfs, props, hostname, Date.now());
+ * engine.boot(users, sessions);
+ * setInterval(() => engine.tick(shell.listActiveSessions()), 5000);
+ * ```
+ */
 export function createLinuxRootfsEngine(
 	vfs: VirtualFileSystem,
 	props: ShellProperties,

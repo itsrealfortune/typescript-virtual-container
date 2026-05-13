@@ -57,8 +57,8 @@ export const aptCommand: ShellModule = {
 			case "update": {
 				return {
 					stdout: [
-						"Hit:1 fortune://packages.fortune.local aurora InRelease",
-						"Hit:2 fortune://security.fortune.local aurora-security InRelease",
+						"Hit:1 fortune://packages.fortune.local nyx InRelease",
+						"Hit:2 fortune://security.fortune.local nyx-security InRelease",
 						"Reading package lists... Done",
 						"Building dependency tree... Done",
 						"Reading state information... Done",
@@ -218,7 +218,7 @@ export const aptCacheCommand: ShellModule = {
 						`  Candidate: ${def.version}`,
 						`  Version table:`,
 						`     ${def.version} 500`,
-						`        500 fortune://packages.fortune.local aurora/main amd64 Packages`,
+						`        500 fortune://packages.fortune.local nyx/main amd64 Packages`,
 					].join("\n"),
 					exitCode: 0,
 				};

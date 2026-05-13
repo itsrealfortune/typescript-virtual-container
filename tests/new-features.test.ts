@@ -55,7 +55,7 @@ describe("Linux rootfs", () => {
 		expect(r.stdout).toContain("1.0.0+itsrealfortune");
 	});
 
-	test("/sys/devices/virtual/dmi/id/sys_vendor exists", async () => {
+	test("/ exists", async () => {
 		const r = await client.cat("/sys/devices/virtual/dmi/id/sys_vendor");
 		expect(r.exitCode).toBe(0);
 		expect(r.stdout?.trim()).toBe("Fortune Systems");
@@ -381,7 +381,7 @@ describe("Extra commands", () => {
 	test("lsb_release -a returns distro info", async () => {
 		const r = await client.exec("lsb_release -a");
 		expect(r.stdout).toContain("Fortune");
-		expect(r.stdout).toContain("aurora");
+		expect(r.stdout).toContain("nyx");
 	});
 
 	test("lsb_release -d returns description", async () => {
