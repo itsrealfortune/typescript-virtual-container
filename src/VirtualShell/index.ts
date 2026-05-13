@@ -14,6 +14,7 @@ import { createPerfLogger } from "../utils/perfLogger";
 import VirtualFileSystem, { type VfsOptions } from "../VirtualFileSystem";
 import { VirtualPackageManager } from "../VirtualPackageManager";
 import { VirtualUserManager } from "../VirtualUserManager";
+import { IdleManager, type IdleManagerOptions } from "./idleManager";
 import { startShell } from "./shell";
 
 /**
@@ -143,6 +144,8 @@ class VirtualShell extends EventEmitter {
 	properties: ShellProperties;
 	/** Unix ms timestamp of shell creation — used by `uptime` and `/proc/uptime`. */
 	startTime: number;
+	/** Idle / cold-start manager — null until `enableIdleManagement()` is called. */
+	private _idle: IdleManager | null = null;
 	private initialized: Promise<void>;
 
 	/**
@@ -236,6 +239,7 @@ class VirtualShell extends EventEmitter {
 	 */
 	executeCommand(rawInput: string, authUser: string, cwd: string): void {
 		perf.mark("executeCommand");
+		if (this._idle) void this._idle.ping();
 		runCommand(rawInput, authUser, this.hostname, "shell", cwd, this);
 		this.emit("command", { command: rawInput, user: authUser, cwd });
 	}
@@ -262,6 +266,7 @@ class VirtualShell extends EventEmitter {
 		terminalSize: { cols: number; rows: number },
 	): void {
 		perf.mark("startInteractiveSession");
+		if (this._idle) void this._idle.ping();
 		// Interactive shell logic
 		this.emit("session:start", { user: authUser, sessionId, remoteAddress });
 		startShell(
@@ -403,6 +408,49 @@ class VirtualShell extends EventEmitter {
 		perf.mark("writeFileAsUser");
 		this.users.assertWriteWithinQuota(authUser, targetPath, content);
 		this.vfs.writeFile(targetPath, content);
+	}
+
+	/**
+	 * Enable idle detection and cold-start freeze/thaw for this shell.
+	 *
+	 * After `idleThresholdMs` of inactivity the VFS tree is serialised and
+	 * released from RAM. The next command transparently restores it in ~0.1 ms.
+	 *
+	 * @example
+	 * ```ts
+	 * await shell.ensureInitialized();
+	 * shell.enableIdleManagement({ idleThresholdMs: 60_000 });
+	 * ```
+	 */
+	public enableIdleManagement(options?: IdleManagerOptions): void {
+		if (this._idle) return; // already enabled
+		this._idle = new IdleManager(this.vfs, options);
+		this._idle.on("freeze", () => this.emit("shell:freeze"));
+		this._idle.on("thaw",   () => this.emit("shell:thaw"));
+		this._idle.start();
+	}
+
+	/**
+	 * Disable idle management and thaw the shell if currently frozen.
+	 * Safe to call even if idle management was never enabled.
+	 */
+	public async disableIdleManagement(): Promise<void> {
+		if (!this._idle) return;
+		await this._idle.stop();
+		this._idle = null;
+	}
+
+	/**
+	 * Current idle state — `"active"` or `"frozen"`.
+	 * Returns `"active"` when idle management is disabled.
+	 */
+	public get idleState(): "active" | "frozen" {
+		return this._idle?.state ?? "active";
+	}
+
+	/** Milliseconds since last shell activity. 0 when idle management is disabled. */
+	public get idleMs(): number {
+		return this._idle?.idleMs ?? 0;
 	}
 }
 

@@ -5,6 +5,8 @@ export { default as VirtualFileSystem } from "./VirtualFileSystem/index";
 export { VirtualPackageManager } from "./VirtualPackageManager/index";
 export { VirtualShell } from "./VirtualShell/index";
 export { VirtualUserManager } from "./VirtualUserManager/index";
+export { IdleManager } from "./VirtualShell/idleManager";
+export type { IdleManagerOptions, IdleState } from "./VirtualShell/idleManager";
 
 export type {
 	AuditLogEntry,

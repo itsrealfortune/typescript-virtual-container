@@ -98,8 +98,8 @@ function encodeNode(enc: Encoder, node: InternalNode): void {
 		enc.writeUint8(TYPE_FILE);
 		enc.writeString(f.name);
 		enc.writeUint32(f.mode);
-		enc.writeFloat64(f.createdAt.getTime());
-		enc.writeFloat64(f.updatedAt.getTime());
+		enc.writeFloat64(f.createdAt);
+		enc.writeFloat64(f.updatedAt);
 		enc.writeUint8(f.compressed ? 0x01 : 0x00);
 		enc.writeBytes(f.content);
 	} else if (node.type === "stub") {
@@ -108,8 +108,8 @@ function encodeNode(enc: Encoder, node: InternalNode): void {
 		enc.writeUint8(TYPE_FILE);
 		enc.writeString(s.name);
 		enc.writeUint32(s.mode);
-		enc.writeFloat64(s.createdAt.getTime());
-		enc.writeFloat64(s.updatedAt.getTime());
+		enc.writeFloat64(s.createdAt);
+		enc.writeFloat64(s.updatedAt);
 		enc.writeUint8(0x00); // not compressed
 		enc.writeBytes(Buffer.from(s.stubContent, "utf8"));
 	} else {
@@ -117,8 +117,8 @@ function encodeNode(enc: Encoder, node: InternalNode): void {
 		enc.writeUint8(TYPE_DIR);
 		enc.writeString(d.name);
 		enc.writeUint32(d.mode);
-		enc.writeFloat64(d.createdAt.getTime());
-		enc.writeFloat64(d.updatedAt.getTime());
+		enc.writeFloat64(d.createdAt);
+		enc.writeFloat64(d.updatedAt);
 		const children = Object.values(d.children);
 		enc.writeUint32(children.length);
 		for (const child of children) encodeNode(enc, child);
@@ -188,8 +188,8 @@ function decodeNode(dec: Decoder): InternalNode {
 	const type = dec.readUint8();
 	const name = dec.readString();
 	const mode = dec.readUint32();
-	const createdAt = new Date(dec.readFloat64());
-	const updatedAt = new Date(dec.readFloat64());
+	const createdAt = dec.readFloat64();
+	const updatedAt = dec.readFloat64();
 
 	if (type === TYPE_FILE) {
 		const compressed = dec.readUint8() === 0x01;

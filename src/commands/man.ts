@@ -1,44 +1,9 @@
 import type { ShellModule } from "../types/commands";
+import { MANUALS } from "./manuals-bundle";
 
 const MANUAL_ALIASES: Record<string, string> = {
 	gunzip: "gzip",
 };
-
-const __dirname = import.meta.dirname;
-
-const manualCache = new Map<string, string | null>();
-const manualsBaseUrl = `${__dirname}/manuals/`;
-
-async function dynamicImport(specifier: string): Promise<unknown> {
-	const importer = new Function(
-		"moduleName",
-		"return import(moduleName)",
-	) as (moduleName: string) => Promise<unknown>;
-	return importer(specifier);
-}
-
-async function loadBundledManual(commandName: string): Promise<string | null> {
-	const normalized = commandName.toLowerCase();
-	const lookupName = MANUAL_ALIASES[normalized] ?? normalized;
-	const cacheKey = `builtin:${lookupName}`;
-	if (manualCache.has(cacheKey)) {
-		return manualCache.get(cacheKey) ?? null;
-	}
-
-	try {
-		const fsModule = (await dynamicImport("node:fs/promises")) as {
-			readFile: (path: string, encoding: "utf8") => Promise<string>;
-		};
-		const manualUrl = `${manualsBaseUrl}${lookupName}.txt`;
-		const content = await fsModule.readFile(manualUrl, "utf8");
-		const page = content.replace(/\n$/, "");
-		manualCache.set(cacheKey, page);
-		return page;
-	} catch {
-		manualCache.set(cacheKey, null);
-		return null;
-	}
-}
 
 export const manCommand: ShellModule = {
 	name: "man",
@@ -55,7 +20,10 @@ export const manCommand: ShellModule = {
 			return { stdout: shell.vfs.readFile(manPath), exitCode: 0 };
 		}
 
-		const page = await loadBundledManual(name);
+		// Bundled manuals — available in all build modes (standalone, web, dev)
+		const normalized = name.toLowerCase();
+		const lookupName = MANUAL_ALIASES[normalized] ?? normalized;
+		const page = MANUALS[lookupName] ?? null;
 		if (page) return { stdout: page, exitCode: 0 };
 
 		return { stderr: `No manual entry for ${name}`, exitCode: 16 };

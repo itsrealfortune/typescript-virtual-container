@@ -4,7 +4,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
-  "version": "1.4.7",
+  "version": "1.4.8",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -39,8 +39,9 @@
     "publish-package": "bash ./scripts/publish-package.sh",
     "self-standalone-build": "bunx esbuild src/self-standalone.ts --bundle --platform=node --format=esm --target=node18 --outfile=builds/self-standalone.js --tree-shaking=true --minify --sourcemap --banner:js='#!/usr/bin/env node'",
     "standalone-build": "bunx esbuild src/standalone.ts --bundle --platform=node --target=node18 --outfile=builds/standalone.cjs --tree-shaking=true --minify --sourcemap  --banner:js='#!/usr/bin/env node'",
-    "build-all": "bun run self-standalone-build && bun run standalone-build && bun run standalone-build:wo-sftp && bun run web-build && bun run web-full-build && bun run example-build",
-    "publish-doc": "bunx typedoc && bunx gh-pages -d docs"
+    "build-all": "bun run generate-manuals && bun run self-standalone-build && bun run standalone-build && bun run standalone-build:wo-sftp && bun run web-build && bun run web-full-build && bun run example-build",
+    "publish-doc": "bunx typedoc && bunx gh-pages -d docs",
+    "generate-manuals": "node scripts/generate-manuals-bundle.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",
