@@ -6,10 +6,10 @@
  * Called once during VirtualShell initialization. Idempotent — skips
  * paths that already exist so FS-mode snapshots survive restarts.
  *
- * Emulation fidelity: modelled after a real Fortune GNU/Linux 1.0 (Aurora)
+ * Emulation fidelity: modelled after a Fortune GNU/Linux 1.0 (Nyx)
  * container with Firecracker MicroVM kernel 6.x, virtio block devices
  * (vda/vdb/vdc/vdd), cgroups v1 hierarchy, Node.js 22, Python 3.12,
- * GCC 13, OpenJDK 21, and a full Fortune-style package database.
+ * GCC 13, OpenJDK 21, and a Fortune-style package database.
  *
  * Public API:
  *  - bootstrapLinuxRootfs()    one-shot boot (VirtualShell calls this)
@@ -73,13 +73,13 @@ function bootstrapEtc(
 			`ID=fortune`,
 			`ID_LIKE=debian`,
 			`HOME_URL="https://github.com/itsrealfortune/typescript-virtual-container"`,
-			`VERSION_CODENAME=aurora`,
+			`VERSION_CODENAME=nyx`,
 			`VERSION_ID="24.04"`,
-			`FORTUNE_CODENAME=aurora`,
+			`FORTUNE_CODENAME=nyx`,
 		].join("\n")}\n`,
 	);
 
-	ensureFile(vfs, "/etc/debian_version", "aurora/stable\n");
+	ensureFile(vfs, "/etc/debian_version", "nyx/stable\n");
 	ensureFile(vfs, "/etc/hostname", `${hostname}\n`);
 	ensureFile(
 		vfs,
@@ -106,7 +106,7 @@ function bootstrapEtc(
 		`${[
 			"DISTRIB_ID=Fortune",
 			"DISTRIB_RELEASE=24.04",
-			"DISTRIB_CODENAME=aurora",
+			"DISTRIB_CODENAME=nyx",
 			`DISTRIB_DESCRIPTION="${props.os}"`,
 		].join("\n")}\n`,
 	);
@@ -121,9 +121,9 @@ function bootstrapEtc(
 		"/etc/apt/sources.list",
 		`${[
 			"# Fortune GNU/Linux package sources (Fortune 1.0 Aurora)",
-			"deb [virtual] fortune://packages.fortune.local aurora main contrib non-free",
-			"deb [virtual] fortune://packages.fortune.local aurora-updates main contrib non-free",
-			"deb [virtual] fortune://security.fortune.local aurora-security main",
+			"deb [virtual] fortune://packages.fortune.local nyx main contrib non-free",
+			"deb [virtual] fortune://packages.fortune.local nyx-updates main contrib non-free",
+			"deb [virtual] fortune://security.fortune.local nyx-security main",
 		].join("\n")}\n`,
 	);
 	ensureFile(vfs, "/etc/apt/apt.conf.d/70debconf", `// debconf config\n`);
@@ -803,7 +803,7 @@ export function refreshProc(
 	write(
 		vfs,
 		"/proc/version",
-		`Linux version ${props.kernel} (argocd@coder-build) (gcc (Fortune 13.3.0-aurora1) 13.3.0, GNU ld (GNU Binutils for Fortune) 2.42) #2 SMP PREEMPT_DYNAMIC\n`,
+		`Linux version ${props.kernel} (fortune@nyx-build) (gcc (Fortune 13.3.0-nyx1) 13.3.0, GNU ld (GNU Binutils for Fortune) 2.42) #2 SMP PREEMPT_DYNAMIC\n`,
 	);
 	write(vfs, "/proc/hostname", `${hostname}\n`);
 
@@ -1354,7 +1354,7 @@ Section: shells
 Installed-Size: 7012
 Maintainer: Fortune Maintainers <maintainers@fortune.local>
 Architecture: amd64
-Version: 5.2.21-2fortune1
+Version: 5.2.21-2nyx1
 Depends: base-files (>= 2.1.12), fortune-utils (>= 1.0)
 Description: GNU Bourne Again SHell
  bash is an sh-compatible command language interpreter that executes commands
@@ -1367,7 +1367,7 @@ Section: utils
 Installed-Size: 18272
 Maintainer: Fortune Maintainers <maintainers@fortune.local>
 Architecture: amd64
-Version: 9.4-3fortune1
+Version: 9.4-3nyx1
 Depends: libacl1 (>= 2.2.23), libattr1 (>= 1:2.4.44), libc6 (>= 2.17)
 Description: GNU core utilities
  This package contains the basic file, shell and text manipulation utilities.
@@ -1379,7 +1379,7 @@ Section: web
 Installed-Size: 107120
 Maintainer: NodeSource <nodejs@nodesource.com>
 Architecture: amd64
-Version: 22.22.2-1fortune1
+Version: 22.22.2-1nyx1
 Depends: libc6 (>= 2.17), libgcc-s1 (>= 3.0), libstdc++6 (>= 9.0)
 Description: Node.js event-based server-side javascript engine
  Node.js is similar in design to and influenced by systems like Ruby's Twisted.
@@ -1391,8 +1391,8 @@ Section: python
 Installed-Size: 68
 Maintainer: Fortune Maintainers <maintainers@fortune.local>
 Architecture: amd64
-Version: 3.12.3-0fortune1
-Depends: python3.12 (>= 3.12.3-0fortune1)
+Version: 3.12.3-0nyx1
+Depends: python3.12 (>= 3.12.3-0nyx1)
 Description: interactive high-level object-oriented language (default python3)
  Python, the high-level, interactive object oriented language, includes an
  extensive class library with lots of goodies for network programming.
@@ -1404,8 +1404,8 @@ Section: python
 Installed-Size: 36
 Maintainer: Fortune Maintainers <maintainers@fortune.local>
 Architecture: amd64
-Version: 3.12.3-1fortune1
-Depends: python3.12-minimal (= 3.12.3-1fortune1), libpython3.12-stdlib
+Version: 3.12.3-1nyx1
+Depends: python3.12-minimal (= 3.12.3-1nyx1), libpython3.12-stdlib
 Description: Interactive high-level object-oriented language (version 3.12)
  Python is a high-level, interactive, object-oriented language. Its 3.12 version
  includes an extensive class library.
@@ -1417,8 +1417,8 @@ Section: devel
 Installed-Size: 70460
 Maintainer: Fortune GCC Maintainers <gcc@fortune.local>
 Architecture: amd64
-Version: 13.3.0-6fortune1~1.0
-Depends: cpp-13 (= 13.3.0-6fortune1~1.0), gcc-13-base (= 13.3.0-6fortune1~1.0)
+Version: 13.3.0-6nyx1
+Depends: cpp-13 (= 13.3.0-6nyx1), gcc-13-base (= 13.3.0-6nyx1)
 Description: GNU C compiler
  This is the GNU C compiler, a fairly portable optimizing compiler for C.
 
@@ -1429,7 +1429,7 @@ Section: java
 Installed-Size: 174488
 Maintainer: Fortune Maintainers <maintainers@fortune.local>
 Architecture: amd64
-Version: 21.0.10+7-1~aurora
+Version: 21.0.10+7-1~nyx
 Depends: libc6 (>= 2.17), libgcc-s1 (>= 3.4)
 Description: OpenJDK Java runtime, using Hotspot JIT (headless)
  Minimal Java runtime - needed for executing non-graphical Java programs.
@@ -1441,8 +1441,8 @@ Section: web
 Installed-Size: 544
 Maintainer: Fortune Maintainers <maintainers@fortune.local>
 Architecture: amd64
-Version: 8.5.0-2fortune1
-Depends: libcurl4 (= 8.5.0-2fortune1), zlib1g (>= 1:1.1.4)
+Version: 8.5.0-2nyx1
+Depends: libcurl4 (= 8.5.0-2nyx1), zlib1g (>= 1:1.1.4)
 Description: command line tool for transferring data with URL syntax
  curl is a command line tool for transferring data with URL syntax, supporting
  DICT, FILE, FTP, FTPS, GOPHER, HTTP, HTTPS, IMAP, IMAPS, LDAP, LDAPS, POP3,
@@ -1455,7 +1455,7 @@ Section: vcs
 Installed-Size: 36552
 Maintainer: Fortune VCS Team <vcs@fortune.local>
 Architecture: amd64
-Version: 1:2.43.0-1fortune1
+Version: 1:2.43.0-1nyx1
 Depends: liberror-perl, git-man, libc6 (>= 2.34), libcurl3-gnutls
 Description: fast, scalable, distributed revision control system
  Git is popular version control system designed to handle very large projects
@@ -1468,7 +1468,7 @@ Section: utils
 Installed-Size: 1320
 Maintainer: Fortune Security Team <security@fortune.local>
 Architecture: amd64
-Version: 3.0.13-0fortune1
+Version: 3.0.13-0nyx1
 Depends: libssl3 (>= 3.0.13)
 Description: Secure Sockets Layer toolkit - cryptographic utility
  This package is part of the OpenSSL project's implementation of the SSL and TLS
@@ -1481,7 +1481,7 @@ Section: web
 Installed-Size: 1100
 Maintainer: Fortune Maintainers <maintainers@fortune.local>
 Architecture: amd64
-Version: 1.21.4-1fortune1
+Version: 1.21.4-1nyx1
 Depends: libc6 (>= 2.17), libgnutls30 (>= 3.7.9), libidn2-0 (>= 2.0.0)
 Description: retrieves files from the web
  GNU Wget is a program for retrieving files from the web, supporting the HTTP,
@@ -1494,7 +1494,7 @@ Section: devel
 Installed-Size: 556
 Maintainer: Fortune Maintainers <maintainers@fortune.local>
 Architecture: amd64
-Version: 4.3-4.1fortune1
+Version: 4.3-4.1nyx1
 Depends: libc6 (>= 2.17)
 Description: utility for directing compilation
  GNU Make is a utility which controls the generation of executables and other
@@ -1507,7 +1507,7 @@ Section: video
 Installed-Size: 2184
 Maintainer: Fortune Multimedia Team <multimedia@fortune.local>
 Architecture: amd64
-Version: 7:6.1.1-3fortune1
+Version: 7:6.1.1-3nyx1
 Depends: libavcodec60, libavdevice60, libavfilter9, libavformat60, libavutil58
 Description: Tools for transcoding, streaming and playing of multimedia files
  FFmpeg is a complete, cross-platform solution to record, convert and stream
@@ -1545,7 +1545,7 @@ Section: admin
 Installed-Size: 6800
 Maintainer: Fortune Package Team <dpkg@fortune.local>
 Architecture: amd64
-Version: 1.22.6fortune1
+Version: 1.22.6nyx1
 Depends: libc6 (>= 2.17), libzstd1 (>= 1.5.5)
 Description: Fortune package management system
  This package provides the low-level infrastructure for handling the
@@ -1558,7 +1558,7 @@ Section: admin
 Installed-Size: 4236
 Maintainer: Fortune Package Team <apt@fortune.local>
 Architecture: amd64
-Version: 2.8.3fortune1
+Version: 2.8.3nyx1
 Depends: libapt-pkg6.0 (>= 2.8.3), adduser, gpgv
 Description: commandline package manager
  This package provides commandline tools for searching and managing as well as
@@ -1572,7 +1572,7 @@ Section: admin
 Installed-Size: 36476
 Maintainer: Fortune System Team <systemd@fortune.local>
 Architecture: amd64
-Version: 255.4-1fortune1
+Version: 255.4-1nyx1
 Depends: libacl1 (>= 2.2.23), libblkid1 (>= 2.24), libc6 (>= 2.39)
 Description: system and service manager
  systemd is a system and service manager for Linux. It provides aggressive
