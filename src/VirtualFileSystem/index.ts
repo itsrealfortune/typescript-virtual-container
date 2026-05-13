@@ -132,15 +132,13 @@ class VirtualFileSystem extends EventEmitter {
 				"vfs-snapshot.vfsb",
 			);
 			this.journalFile = path.resolve(options.snapshotPath, "vfs-journal.bin");
-			if(!fsSync.existsSync(this.journalFile)) {
-				this.journalFile = null; // journal is optional — silently degrade if not writable
-			}
 			this.evictionThreshold = options.evictionThresholdBytes ?? 64 * 1024; // 64 KB default
 			this.flushAfterNWrites = options.flushAfterNWrites ?? 500;
 			const intervalMs = options.flushIntervalMs ?? 1_000;
 			if (intervalMs > 0) {
 				this._flushTimer = setInterval(() => {
-					if (this._dirty) void this._autoFlush();
+					const dirty = this._dirty;
+					if (dirty) void this._autoFlush();
 				}, intervalMs);
 				// Don't block process exit on this timer
 				if (typeof this._flushTimer === "object" && this._flushTimer !== null && "unref" in this._flushTimer) {
@@ -306,7 +304,8 @@ class VirtualFileSystem extends EventEmitter {
 
 		const dir = path.dirname(this.snapshotFile);
 		fsSync.mkdirSync(dir, { recursive: true });
-		const binary = encodeVfs(this.root);
+		const root = this.root;
+		const binary = encodeVfs(root);
 		fsSync.writeFileSync(this.snapshotFile, binary);
 		// Checkpoint complete — truncate the journal (entries are now in the snapshot)
 		if (this.journalFile) truncateJournal(this.journalFile);
@@ -366,10 +365,10 @@ class VirtualFileSystem extends EventEmitter {
 	 * ```
 	 */
 	public async stopAutoFlush(): Promise<void> {
-		if (this._flushTimer !== null) {
-			clearInterval(this._flushTimer);
-			this._flushTimer = null;
-		}
+		// if (this._flushTimer !== null) {
+		// 	clearInterval(this._flushTimer);
+		// 	this._flushTimer = null;
+		// }
 		console.log(this._dirty ? "[VirtualFileSystem] Stopping auto-flush: flushing pending changes..." : "[VirtualFileSystem] Stopping auto-flush: no pending changes.");
 		if (this._dirty) await this.flushMirror();
 	}
