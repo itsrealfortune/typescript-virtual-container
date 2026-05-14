@@ -45,5 +45,6 @@
     "composite": true,
     "tsBuildInfoFile": "dist/.tsbuildinfo"
   },    
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "src/*standalone*.ts", "src/commands/standalone.ts"]
 }
