@@ -7,6 +7,11 @@ import { awkCommand } from "./awk";
 import { base64Command } from "./base64";
 import { basenameCommand, dirnameCommand } from "./basename";
 import { bcCommand } from "./bc";
+import { bunzip2Command, bzip2Command } from "./bzip2";
+import { lsofCommand } from "./lsof";
+import { perlCommand } from "./perl";
+import { straceCommand } from "./strace";
+import { unzipCommand, zipCommand } from "./zip";
 import { catCommand } from "./cat";
 import { cdCommand } from "./cd";
 import { chmodCommand } from "./chmod";
@@ -130,6 +135,10 @@ const BASE_COMMANDS: ShellModule[] = [
 	tarCommand,
 	gzipCommand,
 	gunzipCommand,
+	zipCommand,
+	unzipCommand,
+	bzip2Command,
+	bunzip2Command,
 	base64Command,
 	// System info
 	whoamiCommand,
@@ -217,6 +226,10 @@ const BASE_COMMANDS: ShellModule[] = [
 	uptimeCommand,
 	freeCommand,
 	lsbReleaseCommand,
+	lsofCommand,
+	straceCommand,
+	// Scripting
+	perlCommand,
 ];
 
 const customCommands: ShellModule[] = [];

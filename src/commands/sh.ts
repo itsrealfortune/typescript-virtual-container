@@ -45,9 +45,11 @@ type Block =
 	  }
 	| { type: "for"; var: string; list: string; body: string[] }
 	| { type: "while"; cond: string; body: string[] }
+	| { type: "until"; cond: string; body: string[] }
 	| { type: "func"; name: string; body: string[] }
 	| { type: "arith"; expr: string }
 	| { type: "case"; expr: string; patterns: Array<{ pattern: string; body: string[] }> }
+	| { type: "array"; name: string; elements: string[] }
 	| { type: "cmd"; line: string };
 
 /** Very small shell interpreter: supports if/elif/else/fi, for/do/done, while/do/done */
@@ -160,6 +162,28 @@ function parseBlocks(lines: string[]): Block[] {
 				i++;
 			}
 			blocks.push({ type: "while", cond, body });
+		} else if (line.startsWith("until ")) {
+			const cond = line
+				.replace(/^until\s+/, "")
+				.replace(/;\s*do\s*$/, "")
+				.trim();
+			const body: string[] = [];
+			i++;
+			while (i < lines.length && lines[i]?.trim() !== "done") {
+				const l = lines[i]!.trim().replace(/^do\s+/, "");
+				if (l && l !== "do") body.push(l);
+				i++;
+			}
+			blocks.push({ type: "until", cond, body });
+		} else if (/^[A-Za-z_][A-Za-z0-9_]*=\s*\(/.test(line)) {
+			// Array assignment: arr=(elem1 elem2 ...)
+			const arrMatch = line.match(/^([A-Za-z_][A-Za-z0-9_]*)=\s*\(([^)]*)\)$/);
+			if (arrMatch) {
+				const elems = arrMatch[2]!.trim().split(/\s+/).filter(Boolean);
+				blocks.push({ type: "array", name: arrMatch[1]!, elements: elems });
+			} else {
+				blocks.push({ type: "cmd", line });
+			}
 		} else if (line.startsWith("case ") && line.endsWith(" in") || line.match(/^case\s+.+\s+in$/)) {
 			const caseExpr = line.replace(/^case\s+/, "").replace(/\s+in$/, "").trim();
 			const patterns: Array<{ pattern: string; body: string[] }> = [];
@@ -395,6 +419,18 @@ async function runBlocks(
 				if (sub.closeSession) return sub;
 				iterations++;
 			}
+		} else if (block.type === "until") {
+			let iterations = 0;
+			while (iterations < 1000 && !(await evalCondition(block.cond, ctx))) {
+				const sub = await runBlocks(parseBlocks(block.body), ctx);
+				if (sub.stdout) output += `${sub.stdout}\n`;
+				if (sub.closeSession) return sub;
+				iterations++;
+			}
+		} else if (block.type === "array") {
+			// Store array: arr[0]=e0, arr[1]=e1, ..., arr=space-joined (for ${arr[@]})
+			block.elements.forEach((el, idx) => { ctx.env.vars[`${block.name}[${idx}]`] = el; });
+			ctx.env.vars[block.name] = block.elements.join(" ");
 		} else if (block.type === "case") {
 			const expanded = await expandVars(block.expr, ctx.env.vars, ctx.env.lastExitCode, ctx);
 			for (const pat of block.patterns) {
