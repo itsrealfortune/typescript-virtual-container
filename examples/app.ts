@@ -229,7 +229,7 @@ cmd.addEventListener('keydown', async (e: KeyboardEvent) => {
 
     if (result.clearScreen) out.innerHTML = '';
     if (result.stdout) print(result.stdout);
-    if (result.stderr) print(result.stderr);
+    if (result.stderr) print(`${result.stderr}\n`);
 
     applyResult(result);
     await vfs.flushMirror();
