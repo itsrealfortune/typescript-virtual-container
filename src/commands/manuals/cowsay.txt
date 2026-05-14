@@ -1,0 +1,21 @@
+COWSAY(1)                User Commands                  COWSAY(1)
+
+NAME
+       cowsay - configurable speaking/thinking cow
+
+SYNOPSIS
+       cowsay [-d] [message]
+       cowthink [message]
+
+OPTIONS
+       -d    use dead eyes (xx)
+
+DESCRIPTION
+       cowsay generates an ASCII picture of a cow saying or thinking
+       something. Input can be given as arguments or via stdin.
+
+EXAMPLES
+       cowsay 'Hello, World!'
+       echo 'Moo.' | cowsay
+       fortune | cowsay
+       cowthink 'Hmm...'

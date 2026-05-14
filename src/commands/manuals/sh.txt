@@ -1,0 +1,25 @@
+SH(1)                    User Commands                      SH(1)
+
+NAME
+       sh - command interpreter (shell)
+
+SYNOPSIS
+       sh [-c command] [file] [arguments]
+
+OPTIONS
+       -c    read commands from the command string operand
+
+DESCRIPTION
+       sh is a POSIX-compliant command interpreter. It executes commands
+       read from a command line string, the standard input, or a specified
+       file.
+
+FEATURES
+       Variables, parameter expansion, command substitution $(...),
+       arithmetic $((...)), pipelines, redirections, &&/||/; operators,
+       for/while/if/case constructs, functions.
+
+EXAMPLES
+       sh -c 'echo hello'
+       sh script.sh
+       sh -c 'for i in 1 2 3; do echo $i; done'

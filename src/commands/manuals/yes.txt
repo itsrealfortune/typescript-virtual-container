@@ -1,0 +1,16 @@
+YES(1)                   User Commands                     YES(1)
+
+NAME
+       yes - output a string repeatedly until killed
+
+SYNOPSIS
+       yes [STRING]
+
+DESCRIPTION
+       Repeatedly outputs STRING (default: 'y') until killed.
+       Commonly used to automatically answer 'yes' to prompts.
+
+EXAMPLES
+       yes | apt-get install pkg   # auto-confirm
+       yes no | some-program       # repeatedly answer 'no'
+       yes                         # output 'y' forever

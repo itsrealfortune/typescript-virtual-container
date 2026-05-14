@@ -218,6 +218,20 @@ async function executePipelineChain(
 		);
 		exitCode = result.exitCode ?? 0;
 
+		// 2>&1 — merge stderr into stdout
+		const effectiveResult = cmd.stderrToStdout
+			? { ...result, stdout: (result.stdout ?? '') + (result.stderr ?? ''), stderr: undefined }
+			: result;
+
+		// 2>file — redirect stderr to file
+		if (cmd.stderrFile && effectiveResult.stderr) {
+			const sp = resolvePath(cwd, cmd.stderrFile);
+			try {
+				const ex = (() => { try { return shell.vfs.readFile(sp); } catch { return ''; } })();
+				shell.writeFileAsUser(authUser, sp, cmd.stderrAppend ? ex + effectiveResult.stderr : effectiveResult.stderr);
+			} catch {}
+		}
+
 		if (i === commands.length - 1 && cmd.outputFile) {
 			const outputPath = resolvePath(cwd, cmd.outputFile);
 			const output = result.stdout || "";
@@ -239,12 +253,12 @@ async function executePipelineChain(
 				return { stderr: `Failed to write to ${cmd.outputFile}`, exitCode: 1 };
 			}
 		} else {
-			currentOutput = result.stdout || "";
+			currentOutput = effectiveResult.stdout || "";
 		}
 
-		if (result.stderr && exitCode !== 0)
-			return { stderr: result.stderr, exitCode };
-		if (result.closeSession || result.switchUser) return result;
+		if (effectiveResult.stderr && exitCode !== 0)
+			return { stderr: effectiveResult.stderr, exitCode };
+		if (effectiveResult.closeSession || effectiveResult.switchUser) return effectiveResult;
 	}
 
 	return { stdout: currentOutput, exitCode };

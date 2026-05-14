@@ -1,0 +1,19 @@
+READ(1)                  User Commands                    READ(1)
+
+NAME
+       read - read a line from standard input
+
+SYNOPSIS
+       read [-r] [-p PROMPT] [-s] NAME...
+
+OPTIONS
+       -r    do not allow backslashes to escape characters
+       -p PROMPT  output the string PROMPT before reading
+       -s    do not echo input (silent, for passwords)
+       -n N  return after reading N characters
+
+EXAMPLES
+       read name
+       read -p "Enter name: " name
+       read -s password
+       read -r line

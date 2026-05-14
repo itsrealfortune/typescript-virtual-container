@@ -1,0 +1,15 @@
+BASE64(1)                User Commands                   BASE64(1)
+
+NAME
+       base64 - encode/decode data in base64
+
+SYNOPSIS
+       base64 [OPTION]... [FILE]
+
+OPTIONS
+       -d, --decode    decode data
+       -w, --wrap=COLS wrap encoded lines after COLS characters (default 76, 0=no wrap)
+
+EXAMPLES
+       echo 'hello' | base64
+       echo 'aGVsbG8=' | base64 -d

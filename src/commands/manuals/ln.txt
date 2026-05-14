@@ -1,0 +1,17 @@
+LN(1)                    User Commands                      LN(1)
+
+NAME
+       ln - make links between files
+
+SYNOPSIS
+       ln [OPTION]... TARGET LINK_NAME
+
+OPTIONS
+       -s    make symbolic links instead of hard links
+       -f    remove existing destination files
+       -n    treat LINK_NAME as a normal file if a symlink to a directory
+
+EXAMPLES
+       ln -s /usr/bin/python3 /usr/local/bin/python
+       ln file.txt hardlink.txt
+       ln -sf new_target existing_link

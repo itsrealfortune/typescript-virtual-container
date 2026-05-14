@@ -1,0 +1,22 @@
+MAN(1)                   User Commands                     MAN(1)
+
+NAME
+       man - an interface to the system reference manuals
+
+SYNOPSIS
+       man [SECTION] PAGE...
+
+SECTIONS
+       1   executable programs or shell commands
+       2   system calls
+       3   library calls
+       4   special files
+       5   file formats and conventions
+       6   games
+       7   miscellaneous
+       8   system administration commands
+
+EXAMPLES
+       man ls
+       man 1 printf
+       man grep

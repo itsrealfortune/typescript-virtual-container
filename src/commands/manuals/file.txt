@@ -1,0 +1,21 @@
+FILE(1)                  User Commands                     FILE(1)
+
+NAME
+       file - determine file type
+
+SYNOPSIS
+       file [OPTION...] FILE...
+
+OPTIONS
+       -b    do not prepend filenames to output lines (brief mode)
+       -i    output MIME type strings
+
+DESCRIPTION
+       file tests each argument and attempts to classify it. The
+       classification is done by checking magic bytes, file content,
+       and filename extension.
+
+EXAMPLES
+       file /bin/ls
+       file *.txt
+       file -b script.sh

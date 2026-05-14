@@ -1,0 +1,16 @@
+DIRNAME(1)               User Commands                  DIRNAME(1)
+
+NAME
+       dirname - strip last component from file name
+
+SYNOPSIS
+       dirname [OPTION] NAME...
+
+DESCRIPTION
+       Output each NAME with its last non-slash component and
+       trailing slashes removed; if NAME contains no /'s, output '.'
+
+EXAMPLES
+       dirname /usr/bin/vim    # /usr/bin
+       dirname /etc/hosts      # /etc
+       dirname foo             # .

@@ -1,0 +1,20 @@
+LAST(1)                  User Commands                    LAST(1)
+
+NAME
+       last - show a listing of last logged in users
+
+SYNOPSIS
+       last [options] [username]
+
+OPTIONS
+       -n NUM   show last NUM lines
+       -F       print full login and logout times
+
+DESCRIPTION
+       last searches back through the login history and displays
+       a list of all users logged in since the system was started.
+
+EXAMPLES
+       last           # show all logins
+       last root      # show root logins
+       last -n 10     # show last 10 entries

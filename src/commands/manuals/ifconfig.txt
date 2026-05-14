@@ -1,0 +1,22 @@
+IFCONFIG(8)         System Administration         IFCONFIG(8)
+
+NAME
+       ifconfig - configure a network interface
+
+SYNOPSIS
+       ifconfig [interface] [options]
+       ifconfig -a
+
+OPTIONS
+       -a    display all interfaces, including those that are down
+       -s    display a short list
+
+DESCRIPTION
+       ifconfig is used to configure kernel-resident network interfaces.
+       It is used at boot time to set up interfaces as necessary. Use
+       'ip addr' for a more modern alternative.
+
+EXAMPLES
+       ifconfig           # show active interfaces
+       ifconfig -a        # show all interfaces
+       ifconfig eth0      # show eth0 details

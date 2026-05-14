@@ -1,0 +1,16 @@
+SL(1)                    User Commands                      SL(1)
+
+NAME
+       sl - steam locomotive
+
+SYNOPSIS
+       sl
+
+DESCRIPTION
+       sl is a cure for your bad habit of mistyping 'ls'. It displays
+       an ASCII art steam locomotive crossing your terminal.
+
+       This command exists to punish those who type 'sl' instead of 'ls'.
+
+EXAMPLES
+       sl         # you typed 'sl' instead of 'ls', didn't you?

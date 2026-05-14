@@ -1,0 +1,16 @@
+FORTUNE(6)               Games and Amusements          FORTUNE(6)
+
+NAME
+       fortune - print a random, hopefully interesting adage
+
+SYNOPSIS
+       fortune [options]
+
+DESCRIPTION
+       fortune prints a random quotation from a database of quotations.
+       The quotes cover programming wisdom, hacker culture, and
+       general computing philosophy.
+
+EXAMPLES
+       fortune
+       fortune | cowsay

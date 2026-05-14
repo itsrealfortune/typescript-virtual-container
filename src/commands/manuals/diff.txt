@@ -1,0 +1,18 @@
+DIFF(1)                  User Commands                     DIFF(1)
+
+NAME
+       diff - compare files line by line
+
+SYNOPSIS
+       diff [OPTION]... FILE1 FILE2
+
+OPTIONS
+       -u    output unified diff format
+       -i    ignore case differences
+       -w    ignore all whitespace
+       -r    recursively compare directories
+       -q    report only when files differ
+
+EXAMPLES
+       diff file1.txt file2.txt
+       diff -u old.py new.py

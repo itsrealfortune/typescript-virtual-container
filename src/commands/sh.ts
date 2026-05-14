@@ -406,7 +406,12 @@ function splitShScript(script: string): string[] {
 				}
 				continue;
 			}
-			if (depth === 0 && (ch === ";" || ch === "\n")) {
+			// Backslash-newline continuation: join lines
+		if (!inSingleQ && ch === '\\' && i + 1 < script.length && script[i + 1] === '\n') {
+			i += 2; // skip \ and \n
+			continue;
+		}
+		if (depth === 0 && (ch === ";" || ch === "\n")) {
 				const t = current.trim();
 				if (t && !t.startsWith("#")) lines.push(t);
 				current = "";

@@ -1,0 +1,16 @@
+EXIT(1)                  User Commands                     EXIT(1)
+
+NAME
+       exit - exit the shell
+
+SYNOPSIS
+       exit [n]
+
+DESCRIPTION
+       Exits the shell with status n. If n is omitted, the exit status
+       is that of the last command executed.
+
+EXAMPLES
+       exit       # exit with last command's status
+       exit 0     # exit successfully
+       exit 1     # exit with error

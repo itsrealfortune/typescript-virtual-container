@@ -7,7 +7,7 @@ import type {
 	CommandResult,
 	ShellEnv,
 } from "../types/commands";
-import { expandAsync, expandBraces } from "../utils/expand";
+import { expandAsync, expandBraces, expandGlob } from "../utils/expand";
 import { tokenizeCommand } from "../utils/tokenize";
 import { resolveModule } from "./registry";
 
@@ -252,6 +252,27 @@ export async function runCommand(
 		return { stderr: `${trimmed.split(" ")[0]}: maximum call depth (${MAX_CALL_DEPTH}) exceeded`, exitCode: 126 };
 	}
 	try {
+
+	// History expansion: !! and !n
+	if (trimmed === '!!' || /^!-?\d+$/.test(trimmed) || trimmed.startsWith('!! ')) {
+		const histPath = `${shellEnv.vars.HOME ?? `/home/${authUser}`}/.bash_history`;
+		if (shell.vfs.exists(histPath)) {
+			const lines = shell.vfs.readFile(histPath).split('\n').filter(Boolean);
+			let cmd: string | undefined;
+			if (trimmed === '!!' || trimmed.startsWith('!! ')) {
+				cmd = lines[lines.length - 1];
+			} else {
+				const n = parseInt(trimmed.slice(1), 10);
+				cmd = n > 0 ? lines[n - 1] : lines[lines.length + n];
+			}
+			if (cmd) {
+				const suffix = trimmed.startsWith('!! ') ? trimmed.slice(3) : '';
+				return runCommand(`${cmd}${suffix ? ` ${suffix}` : ''}`, authUser, hostname, mode, cwd, shell, stdin, shellEnv);
+			}
+		}
+		return { stderr: `${trimmed}: event not found`, exitCode: 1 };
+	}
+
 	const rawTokens = tokenizeCommand(trimmed);
 	const rawFirstWord = rawTokens[0]?.toLowerCase() ?? "";
 	const aliasVal = shellEnv.vars[`__alias_${rawFirstWord}`];
@@ -350,7 +371,7 @@ export async function runCommand(
 	}
 	const commandName = parts[0]?.toLowerCase() ?? "";
 	// Apply brace expansion to each arg token
-	const args = parts.slice(1).flatMap(expandBraces);
+	const args = parts.slice(1).flatMap(expandBraces).flatMap(token => expandGlob(token, cwd, shell.vfs));
 	const mod = resolveModule(commandName);
 
 	if (!mod) {

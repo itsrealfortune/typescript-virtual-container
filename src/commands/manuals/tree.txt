@@ -1,0 +1,20 @@
+TREE(1)                  User Commands                    TREE(1)
+
+NAME
+       tree - list contents of directories in a tree-like format
+
+SYNOPSIS
+       tree [OPTION]... [DIRECTORY]...
+
+OPTIONS
+       -a      all files, including hidden
+       -d      directories only
+       -L N    max display depth of the directory tree
+       -f      print full path prefix for each file
+       --noreport  omit file/directory count at end of tree listing
+
+EXAMPLES
+       tree
+       tree /etc
+       tree -L 2 /usr
+       tree -a -d

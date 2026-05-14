@@ -1,0 +1,19 @@
+CMATRIX(1)               User Commands                 CMATRIX(1)
+
+NAME
+       cmatrix - show a scrolling Matrix-like screen
+
+SYNOPSIS
+       cmatrix [options]
+
+DESCRIPTION
+       cmatrix shows a scrolling screen of random characters in the
+       style of the "Matrix" movie. Characters fall from the top of
+       the screen to the bottom.
+
+OPTIONS
+       -b    use bold characters
+       -C color  use specified color (green, red, blue, white, yellow, cyan, magenta)
+
+EXAMPLES
+       cmatrix
