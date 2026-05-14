@@ -392,6 +392,77 @@ export function expandSync(
 				env[name] !== undefined && env[name] !== "" ? alt : "",
 		);
 
+		// ${VAR:offset:len} and ${VAR:offset}
+		s = s.replace(
+			/\$\{([A-Za-z_][A-Za-z0-9_]*):(-?\d+)(?::(\d+))?\}/g,
+			(_, name, offset, len) => {
+				const val = env[name] ?? "";
+				const off = parseInt(offset, 10);
+				const start = off < 0 ? Math.max(0, val.length + off) : Math.min(off, val.length);
+				return len !== undefined ? val.slice(start, start + parseInt(len, 10)) : val.slice(start);
+			},
+		);
+
+		// ${VAR//pattern/replace} — replace all
+		s = s.replace(
+			/\$\{([A-Za-z_][A-Za-z0-9_]*)\/\/([^/}]*)\/([^}]*)\}/g,
+			(_, name, pat, rep) => {
+				const val = env[name] ?? "";
+				try { return val.replace(new RegExp(pat.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, "."), "g"), rep); }
+				catch { return val; }
+			},
+		);
+
+		// ${VAR/pattern/replace} — replace first
+		s = s.replace(
+			/\$\{([A-Za-z_][A-Za-z0-9_]*)\/([^/}]*)\/([^}]*)\}/g,
+			(_, name, pat, rep) => {
+				const val = env[name] ?? "";
+				try { return val.replace(new RegExp(pat.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".")), rep); }
+				catch { return val; }
+			},
+		);
+
+		// ${VAR##pattern} — strip longest prefix
+		s = s.replace(
+			/\$\{([A-Za-z_][A-Za-z0-9_]*)##([^}]+)\}/g,
+			(_, name, pat) => {
+				const val = env[name] ?? "";
+				const re = new RegExp(`^${pat.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".")}`);
+				return val.replace(re, "");
+			},
+		);
+
+		// ${VAR#pattern} — strip shortest prefix
+		s = s.replace(
+			/\$\{([A-Za-z_][A-Za-z0-9_]*)#([^}]+)\}/g,
+			(_, name, pat) => {
+				const val = env[name] ?? "";
+				const re = new RegExp(`^${pat.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^/]*").replace(/\?/g, ".")}`);
+				return val.replace(re, "");
+			},
+		);
+
+		// ${VAR%%pattern} — strip longest suffix
+		s = s.replace(
+			/\$\{([A-Za-z_][A-Za-z0-9_]*)%%([^}]+)\}/g,
+			(_, name, pat) => {
+				const val = env[name] ?? "";
+				const re = new RegExp(`${pat.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".")}$`);
+				return val.replace(re, "");
+			},
+		);
+
+		// ${VAR%pattern} — strip shortest suffix
+		s = s.replace(
+			/\$\{([A-Za-z_][A-Za-z0-9_]*)%([^}]+)\}/g,
+			(_, name, pat) => {
+				const val = env[name] ?? "";
+				const re = new RegExp(`${pat.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^/]*").replace(/\?/g, ".")}$`);
+				return val.replace(re, "");
+			},
+		);
+
 		// ${VAR}
 		s = s.replace(
 			/\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g,
