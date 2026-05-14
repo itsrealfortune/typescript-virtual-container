@@ -23,5 +23,12 @@ const ctx = await esbuild.context({
     inject: ['../polyfills/process.js', '../polyfills/buffer.js'],
 });
 
-await ctx.watch();
-console.log('watching...');
+const watch = process.argv.includes('--watch');
+if (watch) {
+    await ctx.watch();
+    console.log('watching...');
+} else {
+    await ctx.rebuild();
+    console.log('build complete');
+    process.exit(0);
+}
