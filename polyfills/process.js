@@ -1,3 +1,4 @@
+globalThis.startedat = Date.now();
 export const process = {
   env: { NODE_ENV: 'production' },
   version: 'v20.0.0',
@@ -8,5 +9,6 @@ export const process = {
   exit: () => {},
   nextTick: (fn, ...args) => queueMicrotask(() => fn(...args)),
   memoryUsage: () => ({ rss: 0, heapTotal: 0, heapUsed: 0, external: 0 }),
+  uptime: () => (Date.now() - globalThis.startedat) / 1000,
 };
 globalThis.process = process;

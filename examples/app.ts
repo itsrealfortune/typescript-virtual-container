@@ -228,8 +228,8 @@ cmd.addEventListener('keydown', async (e: KeyboardEvent) => {
     const result = await runCommand(value, authUser, HOSTNAME, 'shell', cwd, shell, undefined, shellEnv);
 
     if (result.clearScreen) out.innerHTML = '';
-    if (result.stdout) print(result.stdout);
-    if (result.stderr) print(`${result.stderr}\n`);
+    if (result.stdout) print(`${result.stdout.trim()}\n`);
+    if (result.stderr) print(`${result.stderr.trim()}\n`);
 
     applyResult(result);
     await vfs.flushMirror();
