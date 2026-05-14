@@ -22,7 +22,7 @@
 - [How It Works](#how-it-works)
 - [API Reference](#api-reference)
 - [Examples](#examples)
-- [Built-in Commands (110)](#built-in-commands-110)
+- [Built-in Commands (118)](#built-in-commands-118)
 - [Shell Scripting](#shell-scripting)
 - [Linux Rootfs & VFS PATH Resolution](#linux-rootfs--vfs-path-resolution)
 - [Configuration](#configuration)
@@ -44,8 +44,8 @@
 | Mode | Entry point | Use case |
 |------|-------------|----------|
 | **SSH/SFTP server** | `VirtualSshServer` / `VirtualSftpServer` | Honeypots, remote testing, training environments |
-| **Web shell** | `builds/fortune-nyx-v1.5.5-web.min.js` (ESM) | Embedded terminals, interactive tutorials, browser demos |
-| **Standalone CLI** | `builds/fortune-nyx-v1.5.5-directbash-k6.1.0.mjs` (single file) | Local shell, one-liner demos, no install required |
+| **Web shell** | `builds/fortune-nyx-v1.5.6-web.min.js` (ESM) | Embedded terminals, interactive tutorials, browser demos |
+| **Standalone CLI** | `builds/fortune-nyx-v1.5.6-directbash-k6.1.0.mjs` (single file) | Local shell, one-liner demos, no install required |
 <!-- /BUILD:mode-table -->
 
 All three modes share the same core: a pure in-memory VFS, a real shell interpreter, a virtual package manager, and a typed programmatic API.
@@ -66,17 +66,17 @@ npm install typescript-virtual-container
 <!-- BUILD:curl-start -->
 #### Interactivea local shell — persists VFS in .vfs/ in the current directory
 ```bash
-curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.5-directbash-k6.1.0.mjs -o fortune-nyx-v1.5.5-directbash-k6.1.0.mjs && node fortune-nyx-v1.5.5-directbash-k6.1.0.mjs
+curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.6-directbash-k6.1.0.mjs -o fortune-nyx-v1.5.6-directbash-k6.1.0.mjs && node fortune-nyx-v1.5.6-directbash-k6.1.0.mjs
 ```
 
 #### SSH server (connect with any SSH client on port 2222)
 ```bash
-curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.5-ssh.cjs -o fortune-nyx-v1.5.5-ssh.cjs && node fortune-nyx-v1.5.5-ssh.cjs
+curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.6-ssh.cjs -o fortune-nyx-v1.5.6-ssh.cjs && node fortune-nyx-v1.5.6-ssh.cjs
 ```
 
 #### SSH server without SFTP (lighter build)
 ```bash
-curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.5-ssh-nosftp.js -o fortune-nyx-v1.5.5-ssh-nosftp.js && node fortune-nyx-v1.5.5-ssh-nosftp.js
+curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.6-ssh-nosftp.js -o fortune-nyx-v1.5.6-ssh-nosftp.js && node fortune-nyx-v1.5.6-ssh-nosftp.js
 ```
 <!-- /BUILD:curl-start -->
 
@@ -84,13 +84,13 @@ curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-cont
 > The standalone builds are intended for quick demos and testing. For production use, it's recommended to install the package and import the relevant classes directly in your codebase for better performance, stability, and security.
 
 <!-- BUILD:selfStandalone-options -->
-**`fortune-nyx-v1.5.5-directbash-k6.1.0.mjs` options:**
+**`fortune-nyx-v1.5.6-directbash-k6.1.0.mjs` options:**
 
 ```bash
-node fortune-nyx-v1.5.5-directbash-k6.1.0.mjs                  # boot as root
-node fortune-nyx-v1.5.5-directbash-k6.1.0.mjs --user alice     # boot as alice (prompts for password if set)
-node fortune-nyx-v1.5.5-directbash-k6.1.0.mjs --user=alice     # same, inline form
-SSH_MIMIC_HOSTNAME=my-box node fortune-nyx-v1.5.5-directbash-k6.1.0.mjs  # custom hostname
+node fortune-nyx-v1.5.6-directbash-k6.1.0.mjs                  # boot as root
+node fortune-nyx-v1.5.6-directbash-k6.1.0.mjs --user alice     # boot as alice (prompts for password if set)
+node fortune-nyx-v1.5.6-directbash-k6.1.0.mjs --user=alice     # same, inline form
+SSH_MIMIC_HOSTNAME=my-box node fortune-nyx-v1.5.6-directbash-k6.1.0.mjs  # custom hostname
 ```
 <!-- /BUILD:selfStandalone-options -->
 
@@ -117,7 +117,7 @@ Two browser bundles are available:
 <!-- BUILD:web-table -->
 | Bundle | Format | Entry point | Use case |
 |--------|--------|-------------|----------|
-| `builds/fortune-nyx-v1.5.5-web.min.js` | ESM | `createWebShell()` | Embedded terminals, modern bundlers |
+| `builds/fortune-nyx-v1.5.6-web.min.js` | ESM | `createWebShell()` | Embedded terminals, modern bundlers |
 <!-- /BUILD:web-table -->
 
 Both bundles persist the VFS in **IndexedDB** — state survives page reloads.
@@ -129,11 +129,11 @@ bun run build-all       # rebuild everything
 ```
 
 <!-- BUILD:web-options -->
-**`fortune-nyx-v1.5.5-web.min.js`** — lightweight shell with IndexedDB VFS:
+**`fortune-nyx-v1.5.6-web.min.js`** — lightweight shell with IndexedDB VFS:
 
 ```html
 <script type="module">
-  import { createWebShell } from "./builds/fortune-nyx-v1.5.5-web.min.js";
+  import { createWebShell } from "./builds/fortune-nyx-v1.5.6-web.min.js";
 
   const shell = createWebShell("web-vm", {
     vfs: { databaseName: "virtual-env-js", storeName: "vfs" },
@@ -145,11 +145,11 @@ bun run build-all       # rebuild everything
 </script>
 ```
 
-**`fortune-nyx-v1.5.5-web.min.js`** — mirrors the `VirtualShell` programmatic API:
+**`fortune-nyx-v1.5.6-web.min.js`** — mirrors the `VirtualShell` programmatic API:
 
 ```html
 <script type="module">
-  import { createVirtualShellShim } from "./builds/fortune-nyx-v1.5.5-web.min.js";
+  import { createVirtualShellShim } from "./builds/fortune-nyx-v1.5.6-web.min.js";
 
   const shell = createVirtualShellShim("web-vm");
   await shell.ensureInitialized();
@@ -475,9 +475,9 @@ echo "Welcome back, root!"
 ---
 
 <details>
-<summary><strong>Built-in Commands (110)</strong></summary>
+<summary><strong>Built-in Commands (118)</strong></summary>
 
-Type `help` in the shell for a grouped, colorized listing. Type `help <command>` for detailed usage. Type `man <command>` for full manual pages — all 110 commands are documented.
+Type `help` in the shell for a grouped, colorized listing. Type `help <command>` for detailed usage. Type `man <command>` for full manual pages — all 118 commands are documented.
 
 ### Navigation
 
@@ -495,7 +495,7 @@ Type `help` in the shell for a grouped, colorized listing. Type `help <command>`
 | `cat <path...>` | `-n` `-b` | Concatenate and print; `-n` numbers lines, `-b` numbers non-blank |
 | `chmod <mode> <file>` | | Octal (`755`) or symbolic (`+x`, `u+x`, `go-w`, `a=rx`) |
 | `cp <src> <dest>` | `-r` | Copy file or directory |
-| `find [path]` | `-name` `-type` | Search for files |
+| `find [path]` | `-name` `-iname` `-type` `-maxdepth` `-mindepth` `-exec` `-not` `-o` `-a` `-empty` `-size` | Search for files |
 | `ln <target> <link>` | `-s` | Hard or symbolic link |
 | `readlink <path>` | `-f` | Print resolved path of symbolic link |
 | `mkdir <path>` | `-p` | Create directory |
@@ -509,13 +509,13 @@ Type `help` in the shell for a grouped, colorized listing. Type `help <command>`
 
 | Command | Flags | Description |
 |---------|-------|-------------|
-| `awk [-F <sep>] '<prog>'` | | Pattern scanning |
+| `awk [-F <sep>] '<prog>'` | `-v var=val` | Pattern scanning — NR/NF, `BEGIN`/`END`, field assign, `gsub`/`sub`/`substr`/`split`/`length`, `printf` |
 | `base64` | `-d` | Encode/decode base64 |
 | `cut` | `-d` `-f` | Remove sections from lines |
 | `diff <f1> <f2>` | | Compare files line by line |
 | `grep <pattern> [files]` | `-i` `-v` `-n` `-r` | Search file content |
 | `head [files]` | `-n <N>` | First N lines |
-| `sed -e 's/pat/rep/[g]'` | `-i` | Stream editor |
+| `sed -e 's/pat/rep/[g]'` | `-n` `-i` `-e` | Stream editor — `s///[gI]`, `d`, `p`, `=`, `q`, line/regex/range addresses |
 | `sort [files]` | `-r` `-n` `-u` | Sort lines |
 | `tail [files]` | `-n <N>` | Last N lines |
 | `tee [files]` | `-a` | Read stdin, write to stdout and files |
@@ -531,8 +531,10 @@ Type `help` in the shell for a grouped, colorized listing. Type `help <command>`
 
 | Command | Flags | Description |
 |---------|-------|-------------|
-| `gzip <file>` / `gunzip <file>` | | Compress / decompress |
-| `tar <archive> [files]` | `-czf` `-xzf` `-tf` | Archive utility |
+| `gzip <file>` / `gunzip <file>` | `-k` `-d` | Compress / decompress (real gzip, browser-native) |
+| `bzip2 <file>` / `bunzip2 <file>` | `-k` `-d` | Compress / decompress bzip2 (VFS round-trip) |
+| `zip [-r] <archive> <files>` / `unzip <archive>` | `-l` `-d <dir>` | Real PKZIP + DEFLATE (interoperable) |
+| `tar <archive> [files]` | `-czf` `-xzf` `-tf` `-v` | Archive utility — real POSIX ustar binary format (interoperable) |
 
 ### System
 
@@ -561,6 +563,8 @@ Type `help` in the shell for a grouped, colorized listing. Type `help <command>`
 | `sleep <seconds>` | | Delay execution |
 | `uname` | `-a` `-r` `-m` | System information |
 | `bc` | | Arithmetic calculator (integer; `+` `-` `*` `/` `%` `**` `()`) |
+| `lsof` | `-i` | List open files (simulated) |
+| `strace <cmd>` | `-e` `-o` | Trace system calls (stub with realistic output) |
 | `uptime` | `-p` `-s` | Running time |
 | `w` | | Who is logged on and what they are doing |
 | `who` | | Active sessions |
@@ -595,7 +599,8 @@ Type `help` in the shell for a grouped, colorized listing. Type `help <command>`
 | `read [-r] <var...>` | `-r` `-p` | Read stdin into variable(s) |
 | `return [n]` | | Return from shell function |
 | `set [VAR=val]` | `-e` `-x` `+e` `+x` | Display or set shell variables; `-e` exit on error, `-x` trace execution |
-| `sh` | `-c <script>` `[file]` | Execute shell script — `if`/`for`/`while`/`case`/functions, `$((expr))`, single-quote-safe |
+| `sh` | `-c <script>` `[file]` | Execute shell script — `if`/`for`/`while`/`until`/`case`/functions, arrays `arr=(a b c)`, `$((expr))`, single-quote-safe |
+| `perl` | `-e` `-p` `-n` | One-liner interpreter (`print`/`say`, `s///`, `-p`/`-n` loop) |
 | `shift [n]` | | Shift positional parameters |
 | `source <file>` | | Execute file in current env; alias `.` |
 | `test <expr>` / `[ <expr> ]` | | POSIX conditional: `-f` `-d` `-e` `-z` `-n` `-x` `-s` `=` `!=` `-eq` `-lt` `-gt` `-le` `-ge` `!` `-a` `-o` |
@@ -639,7 +644,7 @@ Type `help` in the shell for a grouped, colorized listing. Type `help <command>`
 | `su [user]` | | Switch user |
 | `sudo <cmd>` | `-i` | Run as root |
 
-**ℹ️ All 110 built-in commands include complete JSDoc documentation** with `@category` and `@params` tags. See [src/commands/](https://github.com/itsrealfortune/typescript-virtual-container/tree/main/src/commands) for source code and inline documentation.
+**ℹ️ All 118 built-in commands include complete JSDoc documentation** with `@category` and `@params` tags. See [src/commands/](https://github.com/itsrealfortune/typescript-virtual-container/tree/main/src/commands) for source code and inline documentation.
 
 Custom commands: `shell.addCommand(name, params, callback)`.
 
@@ -674,10 +679,22 @@ echo "${UNSET:-default}"     # default
 echo "${NAME:+alternate}"    # alternate (only if NAME is set)
 echo "${UNSET:=assigned}"    # assigns and returns "assigned"
 echo "${#NAME}"              # 5 (string length)
+echo "${NAME:2}"             # rld (substring from offset 2)
+echo "${NAME:1:3}"           # orl (substring offset 1, length 3)
+echo "${NAME/o/0}"           # w0rld (replace first)
+echo "${NAME//l/L}"          # worLd  (replace all)
+echo "${PATH##*/}"           # strip longest prefix match
+echo "${FILE%.txt}"          # strip shortest suffix match
 echo "$?"                    # last exit code
 echo "$RANDOM"               # random integer 0–32767
 echo "$LINENO"               # current line number
 echo ~                       # /home/<user> (tilde expansion)
+
+# Arrays
+arr=(alpha beta gamma)
+echo "${arr[0]}"             # alpha
+echo "${arr[@]}"             # alpha beta gamma
+echo "${#arr[@]}"            # 3
 ```
 
 > **Single-quote isolation** — `$VAR` and `$((...))` are never expanded inside `'...'`.
@@ -716,6 +733,12 @@ COUNT=0
 while [ $COUNT -lt 3 ]; do
   echo "Count: $COUNT"
   COUNT=$((COUNT + 1))
+done
+
+COUNT=5
+until [ $COUNT -eq 0 ]; do
+  echo "Countdown: $COUNT"
+  COUNT=$((COUNT - 1))
 done
 ```
 
@@ -1206,19 +1229,21 @@ Open:
 - [x] Pure in-memory VFS · symlinks · binary snapshot format (VFSB, ~27% smaller than JSON+base64)
 - [x] Linux rootfs on boot — `/etc`, `/proc`, `/sys`, `/dev`, `/usr`, `/var`
 - [x] Virtual package manager — `apt`/`dpkg`, 25 packages, VFS file writes
-- [x] 110 built-in commands across 10 categories (added `w`, `ip`, `dmesg`, `last`, `basename`, `dirname`, `file`, `tput`, `stty`, `yes`, `fortune`, `cowsay`, `cowthink`, `cmatrix`, `sl`, `bc`, `jobs`, `bg`, `fg`)
-- [x] Real shell interpreter — `if`/`for`/`while`/`case`/functions, `$(cmd)`, `$((expr))`, `${#VAR}`, `{a,b,c}` brace expansion, `{1..N}` ranges, `*.glob` expansion, `!!` history expansion, `\` line continuation, `2>/dev/null` stderr redirect, `2>&1`, `(( x++ ))`, heredoc `<< EOF`, `set -e`/`set -x`, `$RANDOM`/`$LINENO`
+- [x] 118 built-in commands across 11 categories (added `zip`, `unzip`, `bzip2`, `bunzip2`, `lsof`, `strace`, `perl`, `w`, `ip`, `dmesg`, `last`, `basename`, `dirname`, `file`, `tput`, `stty`, `yes`, `fortune`, `cowsay`, `cowthink`, `cmatrix`, `sl`, `bc`, `jobs`, `bg`, `fg`)
+- [x] Real shell interpreter — `if`/`for`/`while`/`until`/`case`/functions, arrays `arr=(...)`, `$(cmd)`, `$((expr))`, `${#VAR}`, `${var#pfx}` `${var##pfx}` `${var%sfx}` `${var%%sfx}` `${var/p/r}` `${var//p/r}` `${var:off:len}` `${arr[@]}`, `{a,b,c}` brace expansion, `{1..N}` ranges, `*.glob` expansion, `!!` history expansion, `\` line continuation, `2>/dev/null` stderr redirect, `2>&1`, `(( x++ ))`, heredoc `<< EOF`, `set -e`/`set -x`, `$RANDOM`/`$LINENO`
 - [x] `curl`/`wget` as pure `fetch()` · VFS PATH resolution · `/sbin` root-only
 - [x] `/proc/self` and `/proc/<pid>` per-session entries
 - [x] Snapshot diff tooling — `diffSnapshots`, `formatDiff`, `assertDiff`
 - [x] `node`/`python3`/`npm`/`npx` — package-gated virtual REPL stubs
 <!-- BUILD:changelog -->
-- [x] Web shell bundles (`fortune-nyx-v1.5.5-web.min.js`) — fully browser-native with IndexedDB VFS
-- [x] Self-standalone CLI (`fortune-nyx-v1.5.5-directbash-k6.1.0.mjs`) — single-file interactive shell, per-user history, tab completion
+- [x] Web shell bundles (`fortune-nyx-v1.5.6-web.min.js`) — fully browser-native with IndexedDB VFS
+- [x] Self-standalone CLI (`fortune-nyx-v1.5.6-directbash-k6.1.0.mjs`) — single-file interactive shell, per-user history, tab completion
 <!-- /BUILD:changelog -->
 - [x] 120+ `man` pages — all built-in commands documented via `man <cmd>`
 - [x] Shared `tokenize.ts` — unified tokenizer for shell parser and runtime (eliminates duplication)
 - [x] Full readline line editing — `Ctrl+A/E/K/U/W`, `Home`/`End`, `!!` history expansion, `/etc/environment` + `~/.profile` login sourcing
+- [x] Interoperable archive formats — `tar` writes real POSIX ustar binary; `zip`/`unzip` use PKZIP+DEFLATE (fflate); files extracted by real system tools via SFTP
+- [x] Overhauled `sed` — `d`/`p`/`=`/`q`, `-n` suppress, line/regex/range/`$` addresses; overhauled `awk` — `-v`, field assignment, `gsub`/`sub`/`substr`/`split`/`length`/`printf`/`next`; overhauled `find` — `-exec`, `-maxdepth`, `-iname`, `-not`/`!`, `-o`/`-a`, `-empty`, `-size`
 - [x] `PasswordChallenge` type — generic interactive password flow for `adduser`, `passwd`, `deluser`
 - [x] `VirtualFileSystem.mount(vPath, hostPath, { readOnly })` — bind-mount host directories into the VM; read-only by default; browser-safe (silent no-op)
 
