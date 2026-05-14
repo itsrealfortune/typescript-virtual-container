@@ -8,8 +8,13 @@ import type { CommandResult } from '../src/types/commands.js';
 const HOSTNAME = 'my-vm';
 const MAX_HISTORY = 500;
 
+const terminal = document.getElementById('terminal') as HTMLElement;
 const out = document.getElementById('output') as HTMLElement;
 const cmd = document.getElementById('cmd') as HTMLInputElement;
+
+function scrollToBottom(): void {
+  terminal.scrollTop = terminal.scrollHeight;
+}
 
 cmd.focus();
 document.addEventListener('click', () => {
@@ -63,7 +68,7 @@ function print(s: string): void {
   } else {
     out.appendChild(span);
   }
-  out.scrollTop = out.scrollHeight;
+  scrollToBottom();
 }
 
 // Live input line — sits at bottom of #output as an inline element
@@ -91,13 +96,13 @@ function printPrompt(): void {
   inputLineEl.appendChild(textSpan);
   inputLineEl.appendChild(cursor);
   out.appendChild(inputLineEl);
-  out.scrollTop = out.scrollHeight;
+  scrollToBottom();
 }
 
 cmd.addEventListener('input', () => {
   if (!inputLineEl) return;
   (inputLineEl.querySelector('.typed') as HTMLSpanElement).textContent = cmd.value;
-  out.scrollTop = out.scrollHeight;
+  scrollToBottom();
 });
 
 // Wait for IndexedDB fs shim memCache

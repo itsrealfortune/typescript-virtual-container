@@ -28,6 +28,11 @@
         padding: 12px 16px;
         cursor: text;
         user-select: text;
+        scrollbar-width: none;       /* Firefox */
+      }
+
+      #terminal::-webkit-scrollbar {
+        display: none;               /* Chrome/Safari */
       }
 
       #output {
