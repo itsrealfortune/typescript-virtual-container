@@ -10,7 +10,11 @@ const MAX_HISTORY = 500;
 
 const out = document.getElementById('output') as HTMLElement;
 const cmd = document.getElementById('cmd') as HTMLInputElement;
+
 cmd.focus();
+document.addEventListener('click', () => {
+  if (!window.getSelection()?.toString()) cmd.focus();
+});
 
 // ANSI to HTML
 const FG_COLORS: Record<number, string> = {
@@ -49,22 +53,57 @@ function ansiToHtml(s: string): string {
   return html;
 }
 
+// All output goes into a single <span> appended to #output.
+// #output is pre-wrap so \n = newline, no extra divs needed.
 function print(s: string): void {
-  out.innerHTML += ansiToHtml(s);
+  const span = document.createElement('span');
+  span.innerHTML = ansiToHtml(s);
+  if (inputLineEl) {
+    out.insertBefore(span, inputLineEl);
+  } else {
+    out.appendChild(span);
+  }
   out.scrollTop = out.scrollHeight;
 }
+
+// Live input line — sits at bottom of #output as an inline element
+let inputLineEl: HTMLSpanElement | null = null;
 
 function printPrompt(): void {
+  if (inputLineEl) { inputLineEl.remove(); inputLineEl = null; }
+  cmd.value = '';
+
+  inputLineEl = document.createElement('span');
+  inputLineEl.className = 'input-line';
+
+  const promptSpan = document.createElement('span');
   const cwdLabel = cwd === userHome(authUser) ? '~' : (cwd.split('/').at(-1) || '/');
-  out.innerHTML += ansiToHtml(buildPrompt(authUser, HOSTNAME, cwdLabel));
+  promptSpan.innerHTML = ansiToHtml(buildPrompt(authUser, HOSTNAME, cwdLabel));
+
+  const textSpan = document.createElement('span');
+  textSpan.className = 'typed';
+
+  const cursor = document.createElement('span');
+  cursor.className = 'cursor';
+  cursor.textContent = '\u00a0';
+
+  inputLineEl.appendChild(promptSpan);
+  inputLineEl.appendChild(textSpan);
+  inputLineEl.appendChild(cursor);
+  out.appendChild(inputLineEl);
   out.scrollTop = out.scrollHeight;
 }
 
-// Wait for IndexedDB fs shim to preload memCache before any existsSync call
-// biome-ignore lint/suspicious/noExplicitAny: globalThis shim readiness
+cmd.addEventListener('input', () => {
+  if (!inputLineEl) return;
+  (inputLineEl.querySelector('.typed') as HTMLSpanElement).textContent = cmd.value;
+  out.scrollTop = out.scrollHeight;
+});
+
+// Wait for IndexedDB fs shim memCache
+// biome-ignore lint/suspicious/noExplicitAny: globalThis shim
 await (globalThis as any).__fsReady__;
 
-// Shell
 const shell = new VirtualShell(HOSTNAME, undefined, {
   mode: 'fs',
   snapshotPath: '/vfs-data',
@@ -73,9 +112,6 @@ const shell = new VirtualShell(HOSTNAME, undefined, {
 
 const vfs = shell.vfs;
 
-// Bootstrap strategy:
-//   1. restoreMirror — loads snapshot from IndexedDB-backed fs shim into VFS
-//   2. Only ensureInitialized if /bin missing (true first run, not a reload)
 await vfs.restoreMirror();
 
 const isFirstRun = !vfs.exists('/bin');
@@ -86,9 +122,7 @@ if (isFirstRun) {
   await vfs.flushMirror();
 }
 
-window.addEventListener('beforeunload', () => {
-  vfs.flushMirror();
-});
+window.addEventListener('beforeunload', () => { vfs.flushMirror(); });
 
 // Session state
 let authUser = 'root';
@@ -111,17 +145,13 @@ function applyResult(result: CommandResult): void {
 }
 
 // History
-function historyPath(): string {
-  return `${userHome(authUser)}/.bash_history`;
-}
+function historyPath(): string { return `${userHome(authUser)}/.bash_history`; }
 
 function loadHistory(): string[] {
   try {
     if (!vfs.exists(historyPath())) return [];
     return (vfs.readFile(historyPath()) as string)
-      .split('\n')
-      .map((l: string) => l.trim())
-      .filter((l: string) => l.length > 0);
+      .split('\n').map((l: string) => l.trim()).filter((l: string) => l.length > 0);
   } catch { return []; }
 }
 
@@ -132,8 +162,7 @@ function saveHistory(): void {
 let history: string[] = loadHistory();
 let historyIdx = -1;
 
-// Input
-
+// Login banner + lastlog
 function readLastLogin(): LoginBannerState | null {
   try {
     if (!vfs.exists('/root/.lastlog')) return null;
@@ -142,47 +171,47 @@ function readLastLogin(): LoginBannerState | null {
 }
 
 function writeLastLogin(): void {
-  vfs.writeFile('/root/.lastlog', JSON.stringify({
-    at: new Date().toISOString(),
-    from: 'browser',
-  }));
+  vfs.writeFile('/root/.lastlog', JSON.stringify({ at: new Date().toISOString(), from: 'browser' }));
 }
 
-const banner = buildLoginBanner(HOSTNAME, shell.properties, readLastLogin());
-print(banner);
+print(buildLoginBanner(HOSTNAME, shell.properties, readLastLogin()));
 writeLastLogin();
 await vfs.flushMirror();
 printPrompt();
 
+// Input handler
 cmd.addEventListener('keydown', async (e: KeyboardEvent) => {
   if (e.key === 'ArrowUp') {
     e.preventDefault();
     if (historyIdx < history.length - 1) {
       historyIdx++;
       cmd.value = history[history.length - 1 - historyIdx];
+      if (inputLineEl) (inputLineEl.querySelector('.typed') as HTMLSpanElement).textContent = cmd.value;
     }
     return;
   }
 
   if (e.key === 'ArrowDown') {
     e.preventDefault();
-    if (historyIdx > 0) {
-      historyIdx--;
-      cmd.value = history[history.length - 1 - historyIdx];
-    } else {
-      historyIdx = -1;
-      cmd.value = '';
-    }
+    if (historyIdx > 0) { historyIdx--; cmd.value = history[history.length - 1 - historyIdx]; }
+    else { historyIdx = -1; cmd.value = ''; }
+    if (inputLineEl) (inputLineEl.querySelector('.typed') as HTMLSpanElement).textContent = cmd.value;
     return;
   }
 
   if (e.key !== 'Enter') return;
 
   const value = cmd.value.trim();
-  cmd.value = '';
   historyIdx = -1;
 
-  print(`${value}\n`);
+  // Freeze input line: remove cursor span, null the ref (keeps prompt+typed in DOM)
+  if (inputLineEl) {
+    inputLineEl.querySelector('.cursor')?.remove();
+    inputLineEl = null;
+  }
+
+  // Newline after the frozen line
+  out.appendChild(document.createTextNode('\n'));
 
   if (value) {
     history.push(value);
@@ -191,16 +220,7 @@ cmd.addEventListener('keydown', async (e: KeyboardEvent) => {
   }
 
   try {
-    const result = await runCommand(
-      value,
-      authUser,
-      HOSTNAME,
-      'shell',
-      cwd,
-      shell,
-      undefined,
-      shellEnv,
-    );
+    const result = await runCommand(value, authUser, HOSTNAME, 'shell', cwd, shell, undefined, shellEnv);
 
     if (result.clearScreen) out.innerHTML = '';
     if (result.stdout) print(result.stdout);
@@ -209,10 +229,7 @@ cmd.addEventListener('keydown', async (e: KeyboardEvent) => {
     applyResult(result);
     await vfs.flushMirror();
 
-    if (result.closeSession) {
-      print('\nSession closed.\n');
-      return;
-    }
+    if (result.closeSession) { print('\nSession closed.\n'); return; }
   } catch (err) {
     print(`${String(err)}\n`);
   }
