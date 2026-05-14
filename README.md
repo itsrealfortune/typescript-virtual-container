@@ -6,6 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Runtime](https://img.shields.io/badge/runtime-Node.js%20%7C%20Bun-43853D.svg)](https://nodejs.org/)
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen.svg)](http://itsrealfortune.fr/typescript-virtual-container/demo)
 
 ---
 
@@ -121,6 +122,8 @@ await ssh.start();
 
 ### Web shell (browser)
 
+> **[🖥 Try the live demo →](http://itsrealfortune.fr/typescript-virtual-container/demo)**
+
 Two browser bundles are available:
 
 <!-- BUILD:web-table -->
@@ -174,6 +177,8 @@ bun run build-all       # rebuild everything
 bun run example-serve
 # Open http://localhost:8787/index.html
 ```
+
+> You can also try the hosted demo at **[itsrealfortune.fr/typescript-virtual-container/demo](http://itsrealfortune.fr/typescript-virtual-container/demo)**.
 
 ### Programmatic API
 

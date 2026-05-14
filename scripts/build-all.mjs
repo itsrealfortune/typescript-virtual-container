@@ -11,7 +11,7 @@
  */
 
 import { execSync } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { BUILDS_DIR, NAMES } from "./build-names.mjs";
@@ -66,7 +66,15 @@ for (const cmd of targets) {
 // ── 4. Run build.js ───────────────────────────────────────────────────────────
 run("node build.js");
 
-// ── 5. Update README.md ───────────────────────────────────────────────────────
+// ── 5. Copy demo to docs/ ─────────────────────────────────────────────────────
+const docsDir = join(root, "docs");
+mkdirSync(docsDir, { recursive: true });
+copyFileSync(join(root, "examples", "app.js"), join(docsDir, "app.js"));
+copyFileSync(join(root, "examples", "index.html"), join(docsDir, "demo.html"));
+console.log("\n✓ Copied examples/app.js → docs/app.js");
+console.log("✓ Copied examples/index.html → docs/demo.html");
+
+// ── 6. Update README.md ───────────────────────────────────────────────────────
 const readmePath = join(root, "README.md");
 let readme = readFileSync(readmePath, "utf8");
 
