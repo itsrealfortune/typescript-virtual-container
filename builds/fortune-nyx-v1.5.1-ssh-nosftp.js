@@ -1616,9 +1616,9 @@ CONFIG_VIRTIO_BLK=y
 CONFIG_VIRTIO_NET=y
 CONFIG_KVM_GUEST=y
 `,420),n.exists("/vmlinuz")||n.symlink(`/boot/vmlinuz-${e}`,"/vmlinuz"),n.exists("/vmlinuz.old")||n.symlink(`/boot/vmlinuz-${e}`,"/vmlinuz.old"),n.exists("/initrd.img")||n.symlink(`/boot/initrd.img-${e}`,"/initrd.img"),n.exists("/initrd.img.old")||n.symlink(`/boot/initrd.img-${e}`,"/initrd.img.old"),M(n,"/lost+found",448),M(n,"/home")}var Th=new Map;function My(n,t){return`${n}|${t.kernel}|${t.os}|${t.arch}`}function Ly(n,t){let e=My(n,t),r=Th.get(e);if(r)return r;let i=new io({mode:"memory"});wy(i,n,t),Cy(i,n,t),ky(i),vy(i),By(i),Ry(i),Py(i),Oy(i,t),Iy(i,t);let s=i.encodeBinary();return Th.set(e,s),s}function Oh(n,t,e,r,i,s=[]){let o=Ly(e,r);n.getMode()==="fs"&&n.exists("/home")?n.mergeRootTree(or(o)):n.importRootTree(or(o)),Ty(n),so(n,r,e,i,s),kc(n,t)}function Mh(n){return n==="1"||n==="true"}function Lh(){return typeof performance<"u"&&typeof performance.now=="function"?performance.now():Date.now()}function Dy(){return Mh(process.env.DEV_MODE)||Mh(process.env.RENDER_PERF)}function ar(n){let t=Dy();if(!t)return{enabled:t,mark:()=>{},done:()=>{}};let e=Lh(),r=s=>{let o=Lh()-e;console.log(`[perf][${n}] ${s}: ${o.toFixed(1)}ms`)};return{enabled:t,mark:r,done:(s="done")=>{r(s)}}}var vc=[{name:"vim",version:"2:9.0.1378-2",section:"editors",description:"Vi IMproved - enhanced vi editor",shortDesc:"Vi IMproved",installedSizeKb:3812,files:[{path:"/usr/bin/vim",content:`#!/bin/sh
-echo 'vim: use nano for editing in this environment'
+exec builtin nano "$@"
 `,mode:493},{path:"/usr/bin/vi",content:`#!/bin/sh
-exec vim "$@"
+exec builtin nano "$@"
 `,mode:493},{path:"/usr/share/doc/vim/README",content:`Vim editor \u2014 virtual package.
 `}]},{name:"git",version:"1:2.39.2-1",section:"vcs",description:"Fast, scalable, distributed revision control system",shortDesc:"fast distributed version control system",installedSizeKb:11240,files:[{path:"/usr/bin/git",content:`#!/bin/sh
 echo 'git: virtual stub \u2014 no host access'
@@ -1626,11 +1626,11 @@ echo 'git: virtual stub \u2014 no host access'
 `}]},{name:"python3",version:"3.11.2-1+b1",section:"python",description:"Interactive high-level object-oriented language (version 3)",shortDesc:"interactive high-level object-oriented language",installedSizeKb:512,depends:["python3-minimal"],files:[{path:"/usr/bin/python3",content:`#!/bin/sh
 echo 'Python 3.11.2 (virtual)'
 `,mode:493},{path:"/usr/bin/python3.11",content:`#!/bin/sh
-exec python3 "$@"
+exec builtin python3 "$@"
 `,mode:493},{path:"/usr/lib/python3.11/.keep",content:""}]},{name:"python3-minimal",version:"3.11.2-1+b1",section:"python",description:"Minimal subset of the Python language (version 3)",shortDesc:"minimal subset of Python language",installedSizeKb:196,files:[{path:"/usr/lib/python3-minimal/.keep",content:""}]},{name:"nodejs",version:"18.19.0+dfsg-6",section:"javascript",description:"Evented I/O for V8 javascript - runtime executable",shortDesc:"Node.js JavaScript runtime",installedSizeKb:15360,files:[{path:"/usr/bin/node",content:`#!/bin/sh
 echo 'node v18.19.0 (virtual)'
 `,mode:493},{path:"/usr/bin/nodejs",content:`#!/bin/sh
-exec node "$@"
+exec builtin node "$@"
 `,mode:493},{path:"/usr/share/doc/nodejs/README",content:`Node.js virtual package.
 `}]},{name:"npm",version:"9.2.0~ds1-2",section:"javascript",description:"package manager for Node.js",shortDesc:"package manager for Node.js",installedSizeKb:9814,depends:["nodejs"],files:[{path:"/usr/bin/npm",content:`#!/bin/sh
 exec builtin npm "$@"
@@ -1672,7 +1672,7 @@ echo 'jq: virtual stub \u2014 pipe JSON here'
 `}]},{name:"gcc",version:"4:12.2.0-3",section:"devel",description:"GNU C compiler",shortDesc:"GNU C compiler",installedSizeKb:24448,files:[{path:"/usr/bin/gcc",content:`#!/bin/sh
 echo 'gcc (Fortune GNU/Linux) 12.2.0 (virtual)'
 `,mode:493},{path:"/usr/bin/gcc-12",content:`#!/bin/sh
-exec gcc "$@"
+echo 'gcc (Fortune GNU/Linux) 12.2.0 (virtual)'
 `,mode:493}]},{name:"g++",version:"4:12.2.0-3",section:"devel",description:"GNU C++ compiler",shortDesc:"GNU C++ compiler",installedSizeKb:1024,depends:["gcc"],files:[{path:"/usr/bin/g++",content:`#!/bin/sh
 echo 'g++ (Fortune GNU/Linux) 12.2.0 (virtual)'
 `,mode:493}]},{name:"make",version:"4.3-4.1",section:"devel",description:"Utility for directing compilation",shortDesc:"build utility",installedSizeKb:504,files:[{path:"/usr/bin/make",content:`#!/bin/sh

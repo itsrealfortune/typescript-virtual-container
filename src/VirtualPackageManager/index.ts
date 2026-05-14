@@ -89,13 +89,12 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		files: [
 			{
 				path: "/usr/bin/vim",
-				content:
-					"#!/bin/sh\necho 'vim: use nano for editing in this environment'\n",
+				content: "#!/bin/sh\nexec builtin nano \"$@\"\n",
 				mode: 0o755,
 			},
 			{
 				path: "/usr/bin/vi",
-				content: '#!/bin/sh\nexec vim "$@"\n',
+				content: "#!/bin/sh\nexec builtin nano \"$@\"\n",
 				mode: 0o755,
 			},
 			{
@@ -139,7 +138,7 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 			},
 			{
 				path: "/usr/bin/python3.11",
-				content: '#!/bin/sh\nexec python3 "$@"\n',
+				content: "#!/bin/sh\nexec builtin python3 \"$@\"\n",
 				mode: 0o755,
 			},
 			{ path: "/usr/lib/python3.11/.keep", content: "" },
@@ -169,7 +168,7 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 			},
 			{
 				path: "/usr/bin/nodejs",
-				content: '#!/bin/sh\nexec node "$@"\n',
+				content: "#!/bin/sh\nexec builtin node \"$@\"\n",
 				mode: 0o755,
 			},
 			{
@@ -376,7 +375,7 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 			},
 			{
 				path: "/usr/bin/gcc-12",
-				content: '#!/bin/sh\nexec gcc "$@"\n',
+				content: "#!/bin/sh\necho 'gcc (Fortune GNU/Linux) 12.2.0 (virtual)'\n",
 				mode: 0o755,
 			},
 		],
