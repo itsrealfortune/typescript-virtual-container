@@ -5,6 +5,7 @@ import { aliasCommand, unaliasCommand } from "./alias";
 import { aptCacheCommand, aptCommand } from "./apt";
 import { awkCommand } from "./awk";
 import { base64Command } from "./base64";
+import { basenameCommand, dirnameCommand } from "./basename";
 import { catCommand } from "./cat";
 import { cdCommand } from "./cd";
 import { chmodCommand } from "./chmod";
@@ -23,8 +24,10 @@ import { echoCommand } from "./echo";
 import { envCommand } from "./env";
 import { exitCommand } from "./exit";
 import { exportCommand } from "./export";
+import { fileCommand } from "./file";
 import { findCommand } from "./find";
 import { freeCommand } from "./free";
+import { cmatrixCommand, cowsayCommand, cowthinkCommand, fortuneCommand, slCommand, yesCommand } from "./fun";
 import { grepCommand } from "./grep";
 import { groupsCommand } from "./groups";
 import { gunzipCommand, gzipCommand } from "./gzip";
@@ -34,10 +37,10 @@ import { historyCommand } from "./history";
 import { hostnameCommand } from "./hostname";
 import { htopCommand } from "./htop";
 import { idCommand } from "./id";
+import { ifconfigCommand } from "./ifconfig";
 import { killCommand } from "./kill";
+import { dmesgCommand, lastCommand } from "./last";
 import { lnCommand, readlinkCommand } from "./ln";
-import { seqCommand } from "./seq";
-import { statCommand } from "./stat";
 import { lsCommand } from "./ls";
 import { lsbReleaseCommand } from "./lsb-release";
 import { manCommand } from "./man";
@@ -56,12 +59,14 @@ import { python3Command } from "./python";
 import { readCommand } from "./read";
 import { rmCommand } from "./rm";
 import { sedCommand } from "./sed";
+import { seqCommand } from "./seq";
 import { setCommand } from "./set";
 import { shCommand } from "./sh";
 import { returnCommand, shiftCommand, trapCommand } from "./shift";
 import { sleepCommand } from "./sleep";
 import { sortCommand } from "./sort";
 import { sourceCommand } from "./source";
+import { statCommand } from "./stat";
 import { suCommand } from "./su";
 import { sudoCommand } from "./sudo";
 import { tailCommand } from "./tail";
@@ -69,6 +74,7 @@ import { tarCommand } from "./tar";
 import { teeCommand } from "./tee";
 import { testCommand } from "./test";
 import { touchCommand } from "./touch";
+import { sttyCommand, tputCommand } from "./tput";
 import { trCommand } from "./tr";
 import { treeCommand } from "./tree";
 import { falseCommand, trueCommand } from "./true";
@@ -83,12 +89,6 @@ import { whichCommand } from "./which";
 import { whoCommand } from "./who";
 import { whoamiCommand } from "./whoami";
 import { xargsCommand } from "./xargs";
-import { basenameCommand, dirnameCommand } from "./basename";
-import { fileCommand } from "./file";
-import { tputCommand, sttyCommand } from "./tput";
-import { lastCommand, dmesgCommand } from "./last";
-import { ipCommand } from "./ip";
-import { yesCommand, fortuneCommand, cowsayCommand, cowthinkCommand, cmatrixCommand, slCommand } from "./fun";
 
 const BASE_COMMANDS: ShellModule[] = [
 	// Navigation
@@ -160,7 +160,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	sttyCommand,
 	lastCommand,
 	dmesgCommand,
-	ipCommand,
+	ifconfigCommand,
 	yesCommand,
 	fortuneCommand,
 	cowsayCommand,
