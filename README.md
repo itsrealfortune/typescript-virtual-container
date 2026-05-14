@@ -56,8 +56,8 @@
 | Mode | Entry point | Use case |
 |------|-------------|----------|
 | **SSH/SFTP server** | `VirtualSshServer` / `VirtualSftpServer` | Honeypots, remote testing, training environments |
-| **Web shell** | `builds/fortune-nyx-v1.5.3-web.min.js` (ESM) | Embedded terminals, interactive tutorials, browser demos |
-| **Standalone CLI** | `builds/fortune-nyx-v1.5.3-directbash-k6.1.0.mjs` (single file) | Local shell, one-liner demos, no install required |
+| **Web shell** | `builds/fortune-nyx-v1.5.4-web.min.js` (ESM) | Embedded terminals, interactive tutorials, browser demos |
+| **Standalone CLI** | `builds/fortune-nyx-v1.5.4-directbash-k6.1.0.mjs` (single file) | Local shell, one-liner demos, no install required |
 <!-- /BUILD:mode-table -->
 
 All three modes share the same core: a pure in-memory VFS, a real shell interpreter, a virtual package manager, and a typed programmatic API.
@@ -78,17 +78,17 @@ npm install typescript-virtual-container
 <!-- BUILD:curl-start -->
 #### Interactivea local shell — persists VFS in .vfs/ in the current directory
 ```bash
-curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.3-directbash-k6.1.0.mjs -o fortune-nyx-v1.5.3-directbash-k6.1.0.mjs && node fortune-nyx-v1.5.3-directbash-k6.1.0.mjs
+curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.4-directbash-k6.1.0.mjs -o fortune-nyx-v1.5.4-directbash-k6.1.0.mjs && node fortune-nyx-v1.5.4-directbash-k6.1.0.mjs
 ```
 
 #### SSH server (connect with any SSH client on port 2222)
 ```bash
-curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.3-ssh.cjs -o fortune-nyx-v1.5.3-ssh.cjs && node fortune-nyx-v1.5.3-ssh.cjs
+curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.4-ssh.cjs -o fortune-nyx-v1.5.4-ssh.cjs && node fortune-nyx-v1.5.4-ssh.cjs
 ```
 
 #### SSH server without SFTP (lighter build)
 ```bash
-curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.3-ssh-nosftp.js -o fortune-nyx-v1.5.3-ssh-nosftp.js && node fortune-nyx-v1.5.3-ssh-nosftp.js
+curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.4-ssh-nosftp.js -o fortune-nyx-v1.5.4-ssh-nosftp.js && node fortune-nyx-v1.5.4-ssh-nosftp.js
 ```
 <!-- /BUILD:curl-start -->
 
@@ -96,13 +96,13 @@ curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-cont
 > The standalone builds are intended for quick demos and testing. For production use, it's recommended to install the package and import the relevant classes directly in your codebase for better performance, stability, and security.
 
 <!-- BUILD:selfStandalone-options -->
-**`fortune-nyx-v1.5.3-directbash-k6.1.0.mjs` options:**
+**`fortune-nyx-v1.5.4-directbash-k6.1.0.mjs` options:**
 
 ```bash
-node fortune-nyx-v1.5.3-directbash-k6.1.0.mjs                  # boot as root
-node fortune-nyx-v1.5.3-directbash-k6.1.0.mjs --user alice     # boot as alice (prompts for password if set)
-node fortune-nyx-v1.5.3-directbash-k6.1.0.mjs --user=alice     # same, inline form
-SSH_MIMIC_HOSTNAME=my-box node fortune-nyx-v1.5.3-directbash-k6.1.0.mjs  # custom hostname
+node fortune-nyx-v1.5.4-directbash-k6.1.0.mjs                  # boot as root
+node fortune-nyx-v1.5.4-directbash-k6.1.0.mjs --user alice     # boot as alice (prompts for password if set)
+node fortune-nyx-v1.5.4-directbash-k6.1.0.mjs --user=alice     # same, inline form
+SSH_MIMIC_HOSTNAME=my-box node fortune-nyx-v1.5.4-directbash-k6.1.0.mjs  # custom hostname
 ```
 <!-- /BUILD:selfStandalone-options -->
 
@@ -129,7 +129,7 @@ Two browser bundles are available:
 <!-- BUILD:web-table -->
 | Bundle | Format | Entry point | Use case |
 |--------|--------|-------------|----------|
-| `builds/fortune-nyx-v1.5.3-web.min.js` | ESM | `createWebShell()` | Embedded terminals, modern bundlers |
+| `builds/fortune-nyx-v1.5.4-web.min.js` | ESM | `createWebShell()` | Embedded terminals, modern bundlers |
 <!-- /BUILD:web-table -->
 
 Both bundles persist the VFS in **IndexedDB** — state survives page reloads.
@@ -141,11 +141,11 @@ bun run build-all       # rebuild everything
 ```
 
 <!-- BUILD:web-options -->
-**`fortune-nyx-v1.5.3-web.min.js`** — lightweight shell with IndexedDB VFS:
+**`fortune-nyx-v1.5.4-web.min.js`** — lightweight shell with IndexedDB VFS:
 
 ```html
 <script type="module">
-  import { createWebShell } from "./builds/fortune-nyx-v1.5.3-web.min.js";
+  import { createWebShell } from "./builds/fortune-nyx-v1.5.4-web.min.js";
 
   const shell = createWebShell("web-vm", {
     vfs: { databaseName: "virtual-env-js", storeName: "vfs" },
@@ -157,11 +157,11 @@ bun run build-all       # rebuild everything
 </script>
 ```
 
-**`fortune-nyx-v1.5.3-web.min.js`** — mirrors the `VirtualShell` programmatic API:
+**`fortune-nyx-v1.5.4-web.min.js`** — mirrors the `VirtualShell` programmatic API:
 
 ```html
 <script type="module">
-  import { createVirtualShellShim } from "./builds/fortune-nyx-v1.5.3-web.min.js";
+  import { createVirtualShellShim } from "./builds/fortune-nyx-v1.5.4-web.min.js";
 
   const shell = createVirtualShellShim("web-vm");
   await shell.ensureInitialized();
@@ -1673,8 +1673,8 @@ Open:
 - [x] Snapshot diff tooling — `diffSnapshots`, `formatDiff`, `assertDiff`
 - [x] `node`/`python3`/`npm`/`npx` — package-gated virtual REPL stubs
 <!-- BUILD:changelog -->
-- [x] Web shell bundles (`fortune-nyx-v1.5.3-web.min.js`) — fully browser-native with IndexedDB VFS
-- [x] Self-standalone CLI (`fortune-nyx-v1.5.3-directbash-k6.1.0.mjs`) — single-file interactive shell, per-user history, tab completion
+- [x] Web shell bundles (`fortune-nyx-v1.5.4-web.min.js`) — fully browser-native with IndexedDB VFS
+- [x] Self-standalone CLI (`fortune-nyx-v1.5.4-directbash-k6.1.0.mjs`) — single-file interactive shell, per-user history, tab completion
 <!-- /BUILD:changelog -->
 - [x] 120+ `man` pages — all built-in commands documented via `man <cmd>`
 - [x] Shared `tokenize.ts` — unified tokenizer for shell parser and runtime (eliminates duplication)
