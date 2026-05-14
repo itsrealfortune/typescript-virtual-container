@@ -22,7 +22,7 @@
 - [How It Works](#how-it-works)
 - [API Reference](#api-reference)
 - [Examples](#examples)
-- [Built-in Commands (106)](#built-in-commands-106)
+- [Built-in Commands (110)](#built-in-commands-110)
 - [Shell Scripting](#shell-scripting)
 - [Linux Rootfs & VFS PATH Resolution](#linux-rootfs--vfs-path-resolution)
 - [Configuration](#configuration)
@@ -475,9 +475,9 @@ echo "Welcome back, root!"
 ---
 
 <details>
-<summary><strong>Built-in Commands (106)</strong></summary>
+<summary><strong>Built-in Commands (110)</strong></summary>
 
-Type `help` in the shell for a grouped, colorized listing. Type `help <command>` for detailed usage. Type `man <command>` for full manual pages — all 106 commands are documented.
+Type `help` in the shell for a grouped, colorized listing. Type `help <command>` for detailed usage. Type `man <command>` for full manual pages — all 110 commands are documented.
 
 ### Navigation
 
@@ -560,6 +560,7 @@ Type `help` in the shell for a grouped, colorized listing. Type `help <command>`
 | `python3` | `--version` `-c` `-V` | Virtual Python 3 interpreter; alias `python`; **requires `apt install python3`** |
 | `sleep <seconds>` | | Delay execution |
 | `uname` | `-a` `-r` `-m` | System information |
+| `bc` | | Arithmetic calculator (integer; `+` `-` `*` `/` `%` `**` `()`) |
 | `uptime` | `-p` `-s` | Running time |
 | `w` | | Who is logged on and what they are doing |
 | `who` | | Active sessions |
@@ -586,11 +587,14 @@ Type `help` in the shell for a grouped, colorized listing. Type `help <command>`
 | `false` | | Return exit code 1 |
 | `help [command]` | | List commands or show command usage |
 | `history [n]` | | Command history |
+| `jobs` | | List active jobs |
+| `bg [%n]` | | Resume job in background |
+| `fg [%n]` | | Resume job in foreground |
 | `man <command>` | | Command reference manual |
 | `printf <fmt> [args...]` | | Format and print (`%s` `%d` `%f` `%x` `\n` `\t`) |
 | `read [-r] <var...>` | `-r` `-p` | Read stdin into variable(s) |
 | `return [n]` | | Return from shell function |
-| `set [VAR=val]` | | Display or set shell variables |
+| `set [VAR=val]` | `-e` `-x` `+e` `+x` | Display or set shell variables; `-e` exit on error, `-x` trace execution |
 | `sh` | `-c <script>` `[file]` | Execute shell script — `if`/`for`/`while`/`case`/functions, `$((expr))`, single-quote-safe |
 | `shift [n]` | | Shift positional parameters |
 | `source <file>` | | Execute file in current env; alias `.` |
@@ -635,7 +639,7 @@ Type `help` in the shell for a grouped, colorized listing. Type `help <command>`
 | `su [user]` | | Switch user |
 | `sudo <cmd>` | `-i` | Run as root |
 
-**ℹ️ All 106 built-in commands include complete JSDoc documentation** with `@category` and `@params` tags. See [src/commands/](https://github.com/itsrealfortune/typescript-virtual-container/tree/main/src/commands) for source code and inline documentation.
+**ℹ️ All 110 built-in commands include complete JSDoc documentation** with `@category` and `@params` tags. See [src/commands/](https://github.com/itsrealfortune/typescript-virtual-container/tree/main/src/commands) for source code and inline documentation.
 
 Custom commands: `shell.addCommand(name, params, callback)`.
 
@@ -671,6 +675,8 @@ echo "${NAME:+alternate}"    # alternate (only if NAME is set)
 echo "${UNSET:=assigned}"    # assigns and returns "assigned"
 echo "${#NAME}"              # 5 (string length)
 echo "$?"                    # last exit code
+echo "$RANDOM"               # random integer 0–32767
+echo "$LINENO"               # current line number
 echo ~                       # /home/<user> (tilde expansion)
 ```
 
@@ -728,6 +734,30 @@ case "$1" in
 esac
 ```
 
+### Heredoc
+
+```bash
+cat << EOF
+line one
+line two
+EOF
+
+# write to file
+cat > /tmp/config << EOF
+HOST=localhost
+PORT=3000
+EOF
+```
+
+### set -e / set -x
+
+```bash
+set -e          # exit immediately on any non-zero exit code
+set -x          # print each command before executing (trace)
+set +e          # disable errexit
+set +x          # disable xtrace
+```
+
 ### Script Files
 
 ```typescript
@@ -740,15 +770,33 @@ done
 await client.exec("sh /usr/local/bin/setup.sh");
 ```
 
-### .bashrc
+### Login Files
 
-Sourced automatically on every interactive session from `/home/<user>/.bashrc`:
+Sourced automatically at session start, in order:
+
+1. `/etc/environment` — `KEY=VALUE` pairs only, no shell syntax
+2. `~/.profile` — user login script
+3. `~/.bashrc` — interactive shell config
 
 ```bash
 export EDITOR=nano
 alias ll="ls -l"
 echo "Welcome, $USER!"
 ```
+
+### Line Editing
+
+Interactive shell supports full readline-style key bindings:
+
+| Key | Action |
+|-----|--------|
+| `←` / `→` | Move cursor left / right |
+| `Home` / `Ctrl+A` | Jump to start of line |
+| `End` / `Ctrl+E` | Jump to end of line |
+| `Ctrl+K` | Kill to end of line |
+| `Ctrl+U` | Kill to start of line |
+| `Ctrl+W` | Kill word backward |
+| `!!` | Expand to last command |
 
 </details>
 
@@ -1158,8 +1206,8 @@ Open:
 - [x] Pure in-memory VFS · symlinks · binary snapshot format (VFSB, ~27% smaller than JSON+base64)
 - [x] Linux rootfs on boot — `/etc`, `/proc`, `/sys`, `/dev`, `/usr`, `/var`
 - [x] Virtual package manager — `apt`/`dpkg`, 25 packages, VFS file writes
-- [x] 106 built-in commands across 10 categories (added `w`, `ip`, `dmesg`, `last`, `basename`, `dirname`, `file`, `tput`, `stty`, `yes`, `fortune`, `cowsay`, `cowthink`, `cmatrix`, `sl`)
-- [x] Real shell interpreter — `if`/`for`/`while`/`case`/functions, `$(cmd)`, `$((expr))`, `${#VAR}`, `{a,b,c}` brace expansion, `{1..N}` ranges, `*.glob` expansion, `!!`/`!n` history expansion, `\` line continuation, `2>/dev/null` stderr redirect, `2>&1`, `(( x++ ))`
+- [x] 110 built-in commands across 10 categories (added `w`, `ip`, `dmesg`, `last`, `basename`, `dirname`, `file`, `tput`, `stty`, `yes`, `fortune`, `cowsay`, `cowthink`, `cmatrix`, `sl`, `bc`, `jobs`, `bg`, `fg`)
+- [x] Real shell interpreter — `if`/`for`/`while`/`case`/functions, `$(cmd)`, `$((expr))`, `${#VAR}`, `{a,b,c}` brace expansion, `{1..N}` ranges, `*.glob` expansion, `!!` history expansion, `\` line continuation, `2>/dev/null` stderr redirect, `2>&1`, `(( x++ ))`, heredoc `<< EOF`, `set -e`/`set -x`, `$RANDOM`/`$LINENO`
 - [x] `curl`/`wget` as pure `fetch()` · VFS PATH resolution · `/sbin` root-only
 - [x] `/proc/self` and `/proc/<pid>` per-session entries
 - [x] Snapshot diff tooling — `diffSnapshots`, `formatDiff`, `assertDiff`
@@ -1170,6 +1218,7 @@ Open:
 <!-- /BUILD:changelog -->
 - [x] 120+ `man` pages — all built-in commands documented via `man <cmd>`
 - [x] Shared `tokenize.ts` — unified tokenizer for shell parser and runtime (eliminates duplication)
+- [x] Full readline line editing — `Ctrl+A/E/K/U/W`, `Home`/`End`, `!!` history expansion, `/etc/environment` + `~/.profile` login sourcing
 - [x] `PasswordChallenge` type — generic interactive password flow for `adduser`, `passwd`, `deluser`
 - [x] `VirtualFileSystem.mount(vPath, hostPath, { readOnly })` — bind-mount host directories into the VM; read-only by default; browser-safe (silent no-op)
 
