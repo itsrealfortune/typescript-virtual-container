@@ -92,10 +92,7 @@ function isVirtualShellVfsLike(value: unknown): value is VirtualShellVfsLike {
 		typeof candidate.exists === "function" &&
 		typeof candidate.stat === "function" &&
 		typeof candidate.list === "function" &&
-		typeof candidate.remove === "function" &&
-		typeof candidate.copy === "function" &&
-		typeof candidate.move === "function" &&
-		typeof candidate.touch === "function"
+		typeof candidate.remove === "function"
 	);
 }
 

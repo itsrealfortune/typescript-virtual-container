@@ -1,32 +1,9 @@
-import { spawn } from "node:child_process";
 import * as path from "node:path";
 import type VirtualFileSystem from "../VirtualFileSystem";
 import type { VirtualPackageManager } from "../VirtualPackageManager";
 import type { VirtualShell } from "../VirtualShell";
 
 const PROTECTED_PREFIXES = ["/.virtual-env-js/.auth", "/etc/htpasswd"] as const;
-
-function normalizeFetchUrl(input: string): string {
-	if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(input)) {
-		return input;
-	}
-
-	return `http://${input}`;
-}
-
-export function normalizeTerminalOutput(text: string): string {
-	return text
-		.replace(/\r\n/g, "\n")
-		.replace(/\r/g, "\n")
-		.replace(/\t/g, "  ")
-		.split("\n")
-		.map((line) =>
-			line.replace(/^[ \u00A0]{8,}/, "  ").replace(/[ \u00A0]{3,}/g, "  "),
-		)
-		.join("\n")
-		.replace(/\n{3,}/g, "\n\n")
-		.trimEnd();
-}
 
 export function resolvePath(cwd: string, inputPath: string, homeDir?: string): string {
 	if (!inputPath || inputPath.trim() === "") {
@@ -69,91 +46,6 @@ export function stripUrlFilename(url: string): string {
 	const cleaned = url.split("?")[0]?.split("#")[0] ?? url;
 	const lastPart = cleaned.split("/").filter(Boolean).pop();
 	return lastPart && lastPart.length > 0 ? lastPart : "index.html";
-}
-
-export async function fetchResource(
-	url: string,
-): Promise<{ text: string; status: number; contentType: string | null }> {
-	const response = await fetch(normalizeFetchUrl(url));
-	const contentType = response.headers.get("content-type");
-	return {
-		text: await response.text(),
-		status: response.status,
-		contentType,
-	};
-}
-
-/**
- * Run a host command like curl or wget and capture its output.
- * @param binary - The binary to execute (e.g., "curl", "wget").
- * @param args - Arguments to pass to the binary.
- * @returns Promise resolving with stdout, stderr, and exit code.
- */
-export function runHostCommand(
-	binary: string,
-	args: string[],
-): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-	return new Promise((resolve) => {
-		let childProcess: ReturnType<typeof spawn>;
-
-		try {
-			childProcess = spawn(binary, args, {
-				stdio: ["ignore", "pipe", "pipe"],
-			});
-		} catch (error) {
-			resolve({
-				stdout: "",
-				stderr: `${binary}: ${error instanceof Error ? error.message : String(error)}`,
-				exitCode: 1,
-			});
-			return;
-		}
-
-		let stdout = "";
-		let stderr = "";
-		const stdoutStream = childProcess.stdout;
-		const stderrStream = childProcess.stderr;
-
-		if (!stdoutStream || !stderrStream) {
-			resolve({
-				stdout: "",
-				stderr: `${binary}: failed to capture process output`,
-				exitCode: 1,
-			});
-			return;
-		}
-
-		stdoutStream.setEncoding("utf8");
-		stderrStream.setEncoding("utf8");
-
-		stdoutStream.on("data", (chunk: string) => {
-			stdout += chunk;
-		});
-
-		stderrStream.on("data", (chunk: string) => {
-			stderr += chunk;
-		});
-
-		childProcess.on("error", (error) => {
-			const errorCode =
-				error instanceof Error && "code" in error
-					? String((error as NodeJS.ErrnoException).code ?? "")
-					: "";
-			resolve({
-				stdout: "",
-				stderr: `${binary}: ${error.message}`,
-				exitCode: errorCode === "ENOENT" ? 127 : 1,
-			});
-		});
-
-		childProcess.on("close", (code) => {
-			resolve({
-				stdout,
-				stderr,
-				exitCode: code ?? 1,
-			});
-		});
-	});
 }
 
 function levenshtein(a: string, b: string): number {
@@ -211,20 +103,6 @@ export function resolveReadablePath(
 	}
 
 	return exactPath;
-}
-
-export function joinListWithType(
-	cwd: string,
-	items: string[],
-	statAt: (p: string) => { type: "file" | "directory" },
-): string {
-	return items
-		.map((name) => {
-			const childPath = resolvePath(cwd, name);
-			const stats = statAt(childPath);
-			return stats.type === "directory" ? `${name}/` : name;
-		})
-		.join("  ");
 }
 
 export function getPackageManager(
