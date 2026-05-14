@@ -1,0 +1,24 @@
+HTOP(1)                  User Commands                    HTOP(1)
+
+NAME
+       htop - interactive process viewer
+
+SYNOPSIS
+       htop [OPTION]
+
+OPTIONS
+       -d DELAY  set update delay in tenths of seconds
+       -u USER   show only processes of given user
+       -p PID    show only listed PIDs
+
+DESCRIPTION
+       htop is an interactive process viewer. It displays a frequently
+       updated list of processes running on the system, normally ordered
+       by the amount of CPU usage.
+
+KEYS
+       F1       help
+       F2       setup
+       F9       kill process
+       F10, q   quit
+       Up/Down  select process

@@ -1,0 +1,24 @@
+IP(8)               System Administration              IP(8)
+
+NAME
+       ip - show/manipulate routing, network devices, interfaces
+
+SYNOPSIS
+       ip [OPTIONS] OBJECT {COMMAND | help}
+
+OBJECTS
+       addr     protocol (IP or IPv6) address on a device
+       link     network device
+       route    routing table entry
+       neigh    neighbour/ARP table entry
+
+OPTIONS
+       -4    use IPv4 only
+       -6    use IPv6 only
+       -c    use color output
+
+EXAMPLES
+       ip addr                  # show addresses
+       ip addr show eth0        # show eth0 address
+       ip route                 # show routing table
+       ip link                  # show link info

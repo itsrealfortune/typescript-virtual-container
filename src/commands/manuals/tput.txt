@@ -1,0 +1,28 @@
+TPUT(1)                  User Commands                    TPUT(1)
+
+NAME
+       tput - initialize a terminal or query terminfo database
+
+SYNOPSIS
+       tput [-T type] capname [parameters]
+
+DESCRIPTION
+       tput queries the terminfo database to output terminal capability
+       values or send terminal control sequences.
+
+CAPABILITIES
+       cols       number of columns
+       lines      number of lines
+       colors     number of colors
+       bold       begin bold mode
+       sgr0       reset all attributes
+       setaf N    set foreground color N (0-7)
+       setab N    set background color N (0-7)
+       clear      clear screen
+       el         clear to end of line
+       cup R C    move cursor to row R, column C
+
+EXAMPLES
+       tput cols
+       tput setaf 2; echo "green"; tput sgr0
+       tput bold; echo "bold text"; tput sgr0

@@ -1,0 +1,17 @@
+W(1)                     User Commands                       W(1)
+
+NAME
+       w - show who is logged on and what they are doing
+
+SYNOPSIS
+       w [user]
+
+DESCRIPTION
+       w displays information about the users currently on the machine
+       and their processes. The header shows the current time, how long
+       the system has been running, how many users are currently logged
+       on, and the system load averages.
+
+       The following entries are displayed for each user: login name,
+       the tty name, the remote host, login time, idle time, JCPU, PCPU,
+       and the command line of the current process.

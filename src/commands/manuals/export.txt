@@ -1,0 +1,20 @@
+EXPORT(1)                User Commands                   EXPORT(1)
+
+NAME
+       export - set export attribute for shell variables
+
+SYNOPSIS
+       export [NAME[=VALUE] ...]
+       export -p
+
+OPTIONS
+       -p    print all exported variables
+
+DESCRIPTION
+       Marks each NAME for automatic export to the environment of
+       subsequently executed commands.
+
+EXAMPLES
+       export PATH="$PATH:/usr/local/bin"
+       export NODE_ENV=production
+       export -p

@@ -1,0 +1,23 @@
+DMESG(1)                 User Commands                   DMESG(1)
+
+NAME
+       dmesg - print or control the kernel ring buffer
+
+SYNOPSIS
+       dmesg [options]
+
+OPTIONS
+       -n level  set the level at which messages are printed
+       -c        clear the ring buffer after printing
+       -T        print human-readable timestamps
+       -H        human-readable output
+
+DESCRIPTION
+       dmesg is used to examine or control the kernel ring buffer.
+       The default action is to display all messages from the kernel
+       ring buffer.
+
+EXAMPLES
+       dmesg
+       dmesg | grep eth0
+       dmesg | tail -20

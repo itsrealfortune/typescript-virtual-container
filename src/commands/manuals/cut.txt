@@ -1,0 +1,18 @@
+CUT(1)                   User Commands                     CUT(1)
+
+NAME
+       cut - remove sections from each line of files
+
+SYNOPSIS
+       cut OPTION... [FILE]...
+
+OPTIONS
+       -b LIST   select only these bytes
+       -c LIST   select only these characters
+       -d DELIM  use DELIM instead of TAB for field delimiter
+       -f LIST   select only these fields
+
+EXAMPLES
+       echo 'a:b:c' | cut -d: -f2       # b
+       echo 'hello' | cut -c1-3         # hel
+       cut -d, -f1 file.csv

@@ -1,0 +1,16 @@
+ALIAS(1)                 User Commands                    ALIAS(1)
+
+NAME
+       alias - define or display aliases
+
+SYNOPSIS
+       alias [name[=value] ...]
+
+DESCRIPTION
+       Without arguments, alias prints the list of defined aliases.
+       With name=value, defines a new alias.
+
+EXAMPLES
+       alias ll='ls -la'
+       alias grep='grep --color=auto'
+       alias          # list all aliases

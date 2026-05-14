@@ -1,0 +1,17 @@
+BASENAME(1)              User Commands                 BASENAME(1)
+
+NAME
+       basename - strip directory and suffix from filenames
+
+SYNOPSIS
+       basename NAME [SUFFIX]
+       basename OPTION... NAME...
+
+OPTIONS
+       -a     support multiple arguments and treat each as a NAME
+       -s SUFFIX  remove a trailing SUFFIX
+
+EXAMPLES
+       basename /usr/bin/vim        # vim
+       basename /etc/hosts .conf    # hosts
+       basename -a /a/b /c/d        # b\nd

@@ -1,0 +1,21 @@
+STTY(1)                  User Commands                    STTY(1)
+
+NAME
+       stty - change and print terminal line settings
+
+SYNOPSIS
+       stty [OPTION]... [SETTING]...
+
+OPTIONS
+       -a, --all    print all current settings in human-readable form
+       -g, --save   print all current settings in stty-readable form
+       size         print the number of rows and columns (rows cols)
+
+DESCRIPTION
+       Print or change terminal characteristics. Without arguments,
+       prints baud rate, line discipline, and deviations from stty sane.
+
+EXAMPLES
+       stty -a            # all settings
+       stty size          # terminal size (rows cols)
+       stty sane          # reset to sane settings

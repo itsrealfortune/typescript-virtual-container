@@ -1,0 +1,20 @@
+SEQ(1)                   User Commands                     SEQ(1)
+
+NAME
+       seq - print a sequence of numbers
+
+SYNOPSIS
+       seq [OPTION]... LAST
+       seq [OPTION]... FIRST LAST
+       seq [OPTION]... FIRST INCREMENT LAST
+
+OPTIONS
+       -f FORMAT  use printf style floating-point FORMAT
+       -s STRING  use STRING to separate numbers (default: \n)
+       -w         equalize width by padding with leading zeros
+
+EXAMPLES
+       seq 5            # 1 2 3 4 5
+       seq 2 8          # 2 3 4 5 6 7 8
+       seq 0 2 10       # 0 2 4 6 8 10
+       seq -s, 5        # 1,2,3,4,5
