@@ -20,6 +20,22 @@ SYNOPSIS
 DESCRIPTION
        Create a new user account with a home directory.
        In this environment, prompts for a password interactively.`,
+	"alias": `ALIAS(1)                 User Commands                    ALIAS(1)
+
+NAME
+       alias - define or display aliases
+
+SYNOPSIS
+       alias [name[=value] ...]
+
+DESCRIPTION
+       Without arguments, alias prints the list of defined aliases.
+       With name=value, defines a new alias.
+
+EXAMPLES
+       alias ll='ls -la'
+       alias grep='grep --color=auto'
+       alias          # list all aliases`,
 	"apt-cache": `APT-CACHE(8)             APT                        APT-CACHE(8)
 
 NAME
@@ -65,6 +81,38 @@ DESCRIPTION
 
 OPTIONS
        -F fs    use fs as input field separator`,
+	"base64": `BASE64(1)                User Commands                   BASE64(1)
+
+NAME
+       base64 - encode/decode data in base64
+
+SYNOPSIS
+       base64 [OPTION]... [FILE]
+
+OPTIONS
+       -d, --decode    decode data
+       -w, --wrap=COLS wrap encoded lines after COLS characters (default 76, 0=no wrap)
+
+EXAMPLES
+       echo 'hello' | base64
+       echo 'aGVsbG8=' | base64 -d`,
+	"basename": `BASENAME(1)              User Commands                 BASENAME(1)
+
+NAME
+       basename - strip directory and suffix from filenames
+
+SYNOPSIS
+       basename NAME [SUFFIX]
+       basename OPTION... NAME...
+
+OPTIONS
+       -a     support multiple arguments and treat each as a NAME
+       -s SUFFIX  remove a trailing SUFFIX
+
+EXAMPLES
+       basename /usr/bin/vim        # vim
+       basename /etc/hosts .conf    # hosts
+       basename -a /a/b /c/d        # b\\nd`,
 	"cat": `CAT(1)                   User Commands                    CAT(1)
 
 NAME
@@ -121,6 +169,46 @@ SYNOPSIS
 
 DESCRIPTION
        Clear the display and move cursor to top-left.`,
+	"cmatrix": `CMATRIX(1)               User Commands                 CMATRIX(1)
+
+NAME
+       cmatrix - show a scrolling Matrix-like screen
+
+SYNOPSIS
+       cmatrix [options]
+
+DESCRIPTION
+       cmatrix shows a scrolling screen of random characters in the
+       style of the "Matrix" movie. Characters fall from the top of
+       the screen to the bottom.
+
+OPTIONS
+       -b    use bold characters
+       -C color  use specified color (green, red, blue, white, yellow, cyan, magenta)
+
+EXAMPLES
+       cmatrix`,
+	"cowsay": `COWSAY(1)                User Commands                  COWSAY(1)
+
+NAME
+       cowsay - configurable speaking/thinking cow
+
+SYNOPSIS
+       cowsay [-d] [message]
+       cowthink [message]
+
+OPTIONS
+       -d    use dead eyes (xx)
+
+DESCRIPTION
+       cowsay generates an ASCII picture of a cow saying or thinking
+       something. Input can be given as arguments or via stdin.
+
+EXAMPLES
+       cowsay 'Hello, World!'
+       echo 'Moo.' | cowsay
+       fortune | cowsay
+       cowthink 'Hmm...'`,
 	"cp": `CP(1)                    User Commands                      CP(1)
 
 NAME
@@ -151,6 +239,24 @@ OPTIONS
        -I, --head              Show document info only
        -L, --location          Follow redirects
        -v, --verbose           Make the operation more talkative`,
+	"cut": `CUT(1)                   User Commands                     CUT(1)
+
+NAME
+       cut - remove sections from each line of files
+
+SYNOPSIS
+       cut OPTION... [FILE]...
+
+OPTIONS
+       -b LIST   select only these bytes
+       -c LIST   select only these characters
+       -d DELIM  use DELIM instead of TAB for field delimiter
+       -f LIST   select only these fields
+
+EXAMPLES
+       echo 'a:b:c' | cut -d: -f2       # b
+       echo 'hello' | cut -c1-3         # hel
+       cut -d, -f1 file.csv`,
 	"date": `DATE(1)                  User Commands                    DATE(1)
 
 NAME
@@ -197,6 +303,63 @@ SYNOPSIS
 
 OPTIONS
        -h     print sizes in human readable format`,
+	"diff": `DIFF(1)                  User Commands                     DIFF(1)
+
+NAME
+       diff - compare files line by line
+
+SYNOPSIS
+       diff [OPTION]... FILE1 FILE2
+
+OPTIONS
+       -u    output unified diff format
+       -i    ignore case differences
+       -w    ignore all whitespace
+       -r    recursively compare directories
+       -q    report only when files differ
+
+EXAMPLES
+       diff file1.txt file2.txt
+       diff -u old.py new.py`,
+	"dirname": `DIRNAME(1)               User Commands                  DIRNAME(1)
+
+NAME
+       dirname - strip last component from file name
+
+SYNOPSIS
+       dirname [OPTION] NAME...
+
+DESCRIPTION
+       Output each NAME with its last non-slash component and
+       trailing slashes removed; if NAME contains no /'s, output '.'
+
+EXAMPLES
+       dirname /usr/bin/vim    # /usr/bin
+       dirname /etc/hosts      # /etc
+       dirname foo             # .`,
+	"dmesg": `DMESG(1)                 User Commands                   DMESG(1)
+
+NAME
+       dmesg - print or control the kernel ring buffer
+
+SYNOPSIS
+       dmesg [options]
+
+OPTIONS
+       -n level  set the level at which messages are printed
+       -c        clear the ring buffer after printing
+       -T        print human-readable timestamps
+       -H        human-readable output
+
+DESCRIPTION
+       dmesg is used to examine or control the kernel ring buffer.
+       The default action is to display all messages from the kernel
+       ring buffer.
+
+EXAMPLES
+       dmesg
+       dmesg | grep eth0
+       dmesg | tail -20`,
 	"dpkg-query": `DPKG-QUERY(1)            User Commands              DPKG-QUERY(1)
 
 NAME
@@ -244,6 +407,62 @@ SYNOPSIS
 OPTIONS
        -n     do not output the trailing newline
        -e     enable interpretation of backslash escapes`,
+	"env": `ENV(1)                   User Commands                     ENV(1)
+
+NAME
+       env - run a program in a modified environment
+
+SYNOPSIS
+       env [OPTION]... [NAME=VALUE]... [COMMAND [ARG]...]
+
+OPTIONS
+       -i    start with an empty environment
+       -u NAME  remove variable from the environment
+
+DESCRIPTION
+       Without a command, env prints the current environment.
+       With NAME=VALUE pairs, sets variables before running COMMAND.
+
+EXAMPLES
+       env                        # print all variables
+       env NODE_ENV=production node app.js
+       env -u HOME bash`,
+	"exit": `EXIT(1)                  User Commands                     EXIT(1)
+
+NAME
+       exit - exit the shell
+
+SYNOPSIS
+       exit [n]
+
+DESCRIPTION
+       Exits the shell with status n. If n is omitted, the exit status
+       is that of the last command executed.
+
+EXAMPLES
+       exit       # exit with last command's status
+       exit 0     # exit successfully
+       exit 1     # exit with error`,
+	"export": `EXPORT(1)                User Commands                   EXPORT(1)
+
+NAME
+       export - set export attribute for shell variables
+
+SYNOPSIS
+       export [NAME[=VALUE] ...]
+       export -p
+
+OPTIONS
+       -p    print all exported variables
+
+DESCRIPTION
+       Marks each NAME for automatic export to the environment of
+       subsequently executed commands.
+
+EXAMPLES
+       export PATH="$PATH:/usr/local/bin"
+       export NODE_ENV=production
+       export -p`,
 	"false": `FALSE(1)                 User Commands                   FALSE(1)
 
 NAME
@@ -254,6 +473,27 @@ SYNOPSIS
 
 DESCRIPTION
        Exit with a status code indicating failure (1).`,
+	"file": `FILE(1)                  User Commands                     FILE(1)
+
+NAME
+       file - determine file type
+
+SYNOPSIS
+       file [OPTION...] FILE...
+
+OPTIONS
+       -b    do not prepend filenames to output lines (brief mode)
+       -i    output MIME type strings
+
+DESCRIPTION
+       file tests each argument and attempts to classify it. The
+       classification is done by checking magic bytes, file content,
+       and filename extension.
+
+EXAMPLES
+       file /bin/ls
+       file *.txt
+       file -b script.sh`,
 	"find": `FIND(1)                  User Commands                    FIND(1)
 
 NAME
@@ -265,6 +505,22 @@ SYNOPSIS
 OPTIONS
        -name PATTERN   base name matches shell PATTERN
        -type TYPE      file type, e.g. f for file, d for directory`,
+	"fortune": `FORTUNE(6)               Games and Amusements          FORTUNE(6)
+
+NAME
+       fortune - print a random, hopefully interesting adage
+
+SYNOPSIS
+       fortune [options]
+
+DESCRIPTION
+       fortune prints a random quotation from a database of quotations.
+       The quotes cover programming wisdom, hacker culture, and
+       general computing philosophy.
+
+EXAMPLES
+       fortune
+       fortune | cowsay`,
 	"free": `FREE(1)                  User Commands                    FREE(1)
 
 NAME
@@ -353,6 +609,30 @@ SYNOPSIS
 
 DESCRIPTION
        Print the current host name.`,
+	"htop": `HTOP(1)                  User Commands                    HTOP(1)
+
+NAME
+       htop - interactive process viewer
+
+SYNOPSIS
+       htop [OPTION]
+
+OPTIONS
+       -d DELAY  set update delay in tenths of seconds
+       -u USER   show only processes of given user
+       -p PID    show only listed PIDs
+
+DESCRIPTION
+       htop is an interactive process viewer. It displays a frequently
+       updated list of processes running on the system, normally ordered
+       by the amount of CPU usage.
+
+KEYS
+       F1       help
+       F2       setup
+       F9       kill process
+       F10, q   quit
+       Up/Down  select process`,
 	"id": `ID(1)                    User Commands                      ID(1)
 
 NAME
@@ -363,6 +643,52 @@ SYNOPSIS
 
 DESCRIPTION
        Print user identity information including uid, gid, and groups.`,
+	"ifconfig": `IFCONFIG(8)         System Administration         IFCONFIG(8)
+
+NAME
+       ifconfig - configure a network interface
+
+SYNOPSIS
+       ifconfig [interface] [options]
+       ifconfig -a
+
+OPTIONS
+       -a    display all interfaces, including those that are down
+       -s    display a short list
+
+DESCRIPTION
+       ifconfig is used to configure kernel-resident network interfaces.
+       It is used at boot time to set up interfaces as necessary. Use
+       'ip addr' for a more modern alternative.
+
+EXAMPLES
+       ifconfig           # show active interfaces
+       ifconfig -a        # show all interfaces
+       ifconfig eth0      # show eth0 details`,
+	"ip": `IP(8)               System Administration              IP(8)
+
+NAME
+       ip - show/manipulate routing, network devices, interfaces
+
+SYNOPSIS
+       ip [OPTIONS] OBJECT {COMMAND | help}
+
+OBJECTS
+       addr     protocol (IP or IPv6) address on a device
+       link     network device
+       route    routing table entry
+       neigh    neighbour/ARP table entry
+
+OPTIONS
+       -4    use IPv4 only
+       -6    use IPv6 only
+       -c    use color output
+
+EXAMPLES
+       ip addr                  # show addresses
+       ip addr show eth0        # show eth0 address
+       ip route                 # show routing table
+       ip link                  # show link info`,
 	"kill": `KILL(1)                  User Commands                    KILL(1)
 
 NAME
@@ -376,6 +702,43 @@ DESCRIPTION
 
 NOTES
        This environment provides a mock process model.`,
+	"last": `LAST(1)                  User Commands                    LAST(1)
+
+NAME
+       last - show a listing of last logged in users
+
+SYNOPSIS
+       last [options] [username]
+
+OPTIONS
+       -n NUM   show last NUM lines
+       -F       print full login and logout times
+
+DESCRIPTION
+       last searches back through the login history and displays
+       a list of all users logged in since the system was started.
+
+EXAMPLES
+       last           # show all logins
+       last root      # show root logins
+       last -n 10     # show last 10 entries`,
+	"ln": `LN(1)                    User Commands                      LN(1)
+
+NAME
+       ln - make links between files
+
+SYNOPSIS
+       ln [OPTION]... TARGET LINK_NAME
+
+OPTIONS
+       -s    make symbolic links instead of hard links
+       -f    remove existing destination files
+       -n    treat LINK_NAME as a normal file if a symlink to a directory
+
+EXAMPLES
+       ln -s /usr/bin/python3 /usr/local/bin/python
+       ln file.txt hardlink.txt
+       ln -sf new_target existing_link`,
 	"ls": `LS(1)                    User Commands                    LS(1)
 
 NAME
@@ -396,7 +759,7 @@ OPTIONS
 
 AUTHOR
        Written by Richard M. Stallman and David MacKenzie.`,
-	"lsb_release": `LSB_RELEASE(1)           User Commands             LSB_RELEASE(1)
+	"lsb_release": `LSB_RELEASE(1)           User Commands              LSB_RELEASE(1)
 
 NAME
        lsb_release - print distribution-specific information
@@ -405,11 +768,39 @@ SYNOPSIS
        lsb_release [OPTION]...
 
 OPTIONS
-       -a     show all available information
-       -i     show distributor ID
-       -d     show description
-       -r     show release number
-       -c     show codename`,
+       -a    print all information
+       -i    print distributor ID
+       -d    print description
+       -r    print release number
+       -c    print codename
+       -s    print short output (only with another option)
+
+EXAMPLES
+       lsb_release -a
+       lsb_release -d
+       lsb_release -rs`,
+	"man": `MAN(1)                   User Commands                     MAN(1)
+
+NAME
+       man - an interface to the system reference manuals
+
+SYNOPSIS
+       man [SECTION] PAGE...
+
+SECTIONS
+       1   executable programs or shell commands
+       2   system calls
+       3   library calls
+       4   special files
+       5   file formats and conventions
+       6   games
+       7   miscellaneous
+       8   system administration commands
+
+EXAMPLES
+       man ls
+       man 1 printf
+       man grep`,
 	"mkdir": `MKDIR(1)                 User Commands                  MKDIR(1)
 
 NAME
@@ -555,6 +946,25 @@ DESCRIPTION
 
 NOTES
        Requires package installation: apt install python3.`,
+	"read": `READ(1)                  User Commands                    READ(1)
+
+NAME
+       read - read a line from standard input
+
+SYNOPSIS
+       read [-r] [-p PROMPT] [-s] NAME...
+
+OPTIONS
+       -r    do not allow backslashes to escape characters
+       -p PROMPT  output the string PROMPT before reading
+       -s    do not echo input (silent, for passwords)
+       -n N  return after reading N characters
+
+EXAMPLES
+       read name
+       read -p "Enter name: " name
+       read -s password
+       read -r line`,
 	"readlink": `READLINK(1)               User Commands                READLINK(1)
 
 NAME
@@ -596,6 +1006,26 @@ SYNOPSIS
 OPTIONS
        -e SCRIPT   add SCRIPT to commands to be executed
        -i          edit files in place`,
+	"seq": `SEQ(1)                   User Commands                     SEQ(1)
+
+NAME
+       seq - print a sequence of numbers
+
+SYNOPSIS
+       seq [OPTION]... LAST
+       seq [OPTION]... FIRST LAST
+       seq [OPTION]... FIRST INCREMENT LAST
+
+OPTIONS
+       -f FORMAT  use printf style floating-point FORMAT
+       -s STRING  use STRING to separate numbers (default: \\n)
+       -w         equalize width by padding with leading zeros
+
+EXAMPLES
+       seq 5            # 1 2 3 4 5
+       seq 2 8          # 2 3 4 5 6 7 8
+       seq 0 2 10       # 0 2 4 6 8 10
+       seq -s, 5        # 1,2,3,4,5`,
 	"set": `SET(1)                   Shell Builtins                    SET(1)
 
 NAME
@@ -607,6 +1037,31 @@ SYNOPSIS
 
 DESCRIPTION
        Display or modify shell variable state.`,
+	"sh": `SH(1)                    User Commands                      SH(1)
+
+NAME
+       sh - command interpreter (shell)
+
+SYNOPSIS
+       sh [-c command] [file] [arguments]
+
+OPTIONS
+       -c    read commands from the command string operand
+
+DESCRIPTION
+       sh is a POSIX-compliant command interpreter. It executes commands
+       read from a command line string, the standard input, or a specified
+       file.
+
+FEATURES
+       Variables, parameter expansion, command substitution $(...),
+       arithmetic $((...)), pipelines, redirections, &&/||/; operators,
+       for/while/if/case constructs, functions.
+
+EXAMPLES
+       sh -c 'echo hello'
+       sh script.sh
+       sh -c 'for i in 1 2 3; do echo $i; done'`,
 	"shift": `SHIFT(1)                 Shell Builtins                  SHIFT(1)
 
 NAME
@@ -617,6 +1072,22 @@ SYNOPSIS
 
 DESCRIPTION
        Rename positional parameters by discarding the first N arguments.`,
+	"sl": `SL(1)                    User Commands                      SL(1)
+
+NAME
+       sl - steam locomotive
+
+SYNOPSIS
+       sl
+
+DESCRIPTION
+       sl is a cure for your bad habit of mistyping 'ls'. It displays
+       an ASCII art steam locomotive crossing your terminal.
+
+       This command exists to punish those who type 'sl' instead of 'ls'.
+
+EXAMPLES
+       sl         # you typed 'sl' instead of 'ls', didn't you?`,
 	"sleep": `SLEEP(1)                 User Commands                   SLEEP(1)
 
 NAME
@@ -671,6 +1142,27 @@ SYNOPSIS
 
 OPTIONS
        -c, --format=FORMAT   use the specified output format`,
+	"stty": `STTY(1)                  User Commands                    STTY(1)
+
+NAME
+       stty - change and print terminal line settings
+
+SYNOPSIS
+       stty [OPTION]... [SETTING]...
+
+OPTIONS
+       -a, --all    print all current settings in human-readable form
+       -g, --save   print all current settings in stty-readable form
+       size         print the number of rows and columns (rows cols)
+
+DESCRIPTION
+       Print or change terminal characteristics. Without arguments,
+       prints baud rate, line discipline, and deviations from stty sane.
+
+EXAMPLES
+       stty -a            # all settings
+       stty size          # terminal size (rows cols)
+       stty sane          # reset to sane settings`,
 	"su": `SU(1)                    User Commands                      SU(1)
 
 NAME
@@ -756,6 +1248,34 @@ SYNOPSIS
 DESCRIPTION
        Update access and modification times.
        If FILE does not exist, create an empty file.`,
+	"tput": `TPUT(1)                  User Commands                    TPUT(1)
+
+NAME
+       tput - initialize a terminal or query terminfo database
+
+SYNOPSIS
+       tput [-T type] capname [parameters]
+
+DESCRIPTION
+       tput queries the terminfo database to output terminal capability
+       values or send terminal control sequences.
+
+CAPABILITIES
+       cols       number of columns
+       lines      number of lines
+       colors     number of colors
+       bold       begin bold mode
+       sgr0       reset all attributes
+       setaf N    set foreground color N (0-7)
+       setab N    set background color N (0-7)
+       clear      clear screen
+       el         clear to end of line
+       cup R C    move cursor to row R, column C
+
+EXAMPLES
+       tput cols
+       tput setaf 2; echo "green"; tput sgr0
+       tput bold; echo "bold text"; tput sgr0`,
 	"tr": `TR(1)                    User Commands                      TR(1)
 
 NAME
@@ -776,6 +1296,26 @@ SYNOPSIS
 
 DESCRIPTION
        Define or clear handlers for shell signals and EXIT.`,
+	"tree": `TREE(1)                  User Commands                    TREE(1)
+
+NAME
+       tree - list contents of directories in a tree-like format
+
+SYNOPSIS
+       tree [OPTION]... [DIRECTORY]...
+
+OPTIONS
+       -a      all files, including hidden
+       -d      directories only
+       -L N    max display depth of the directory tree
+       -f      print full path prefix for each file
+       --noreport  omit file/directory count at end of tree listing
+
+EXAMPLES
+       tree
+       tree /etc
+       tree -L 2 /usr
+       tree -a -d`,
 	"true": `TRUE(1)                  User Commands                    TRUE(1)
 
 NAME
@@ -841,6 +1381,23 @@ SYNOPSIS
 OPTIONS
        -p     show uptime in a pretty format
        -s     show system up since time`,
+	"w": `W(1)                     User Commands                       W(1)
+
+NAME
+       w - show who is logged on and what they are doing
+
+SYNOPSIS
+       w [user]
+
+DESCRIPTION
+       w displays information about the users currently on the machine
+       and their processes. The header shows the current time, how long
+       the system has been running, how many users are currently logged
+       on, and the system load averages.
+
+       The following entries are displayed for each user: login name,
+       the tty name, the remote host, login time, idle time, JCPU, PCPU,
+       and the command line of the current process.`,
 	"wc": `WC(1)                    User Commands                      WC(1)
 
 NAME
@@ -875,6 +1432,25 @@ SYNOPSIS
 
 DESCRIPTION
        Print the path of COMMAND found in $PATH.`,
+	"who": `WHO(1)                   User Commands                     WHO(1)
+
+NAME
+       who - show who is logged on
+
+SYNOPSIS
+       who [OPTION]... [FILE | ARG1 ARG2]
+
+OPTIONS
+       -a    print all information
+       -b    time of last system boot
+       -H    print column headers
+       -q    all login names and number of users logged on
+       am i  print effective user
+
+EXAMPLES
+       who          # show logged in users
+       who -H       # with headers
+       who am i     # show current user`,
 	"whoami": `WHOAMI(1)                User Commands                 WHOAMI(1)
 
 NAME
@@ -895,4 +1471,20 @@ SYNOPSIS
 
 DESCRIPTION
        Read items from stdin and execute COMMAND with those items as arguments.`,
+	"yes": `YES(1)                   User Commands                     YES(1)
+
+NAME
+       yes - output a string repeatedly until killed
+
+SYNOPSIS
+       yes [STRING]
+
+DESCRIPTION
+       Repeatedly outputs STRING (default: 'y') until killed.
+       Commonly used to automatically answer 'yes' to prompts.
+
+EXAMPLES
+       yes | apt-get install pkg   # auto-confirm
+       yes no | some-program       # repeatedly answer 'no'
+       yes                         # output 'y' forever`,
 } as const;
