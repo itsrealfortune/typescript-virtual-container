@@ -114,6 +114,8 @@ class VirtualFileSystem extends EventEmitter {
 	private _dirty = false;
 	/** Active host-directory mounts: vPath → { hostPath, readOnly } */
 	private readonly mounts = new Map<string, { hostPath: string; readOnly: boolean }>();
+	/** Sorted mounts cache (longest-path-first). Rebuilt lazily on mount/unmount. */
+	private _sortedMounts: Array<[string, { hostPath: string; readOnly: boolean }]> | null = null;
 	/** True when running in a browser environment (no host FS access). */
 	private static readonly isBrowser =
 		typeof process === "undefined" || typeof (process as NodeJS.Process).versions?.node === "undefined";
@@ -580,6 +582,7 @@ class VirtualFileSystem extends EventEmitter {
 		// Ensure the mount point exists in the VFS tree
 		this.mkdir(normalized);
 		this.mounts.set(normalized, { hostPath: resolved, readOnly });
+		this._sortedMounts = null;
 		this.emit("mount", { vPath: normalized, hostPath: resolved, readOnly });
 	}
 
@@ -591,6 +594,7 @@ class VirtualFileSystem extends EventEmitter {
 	public unmount(vPath: string): void {
 		const normalized = normalizePath(vPath);
 		if (this.mounts.delete(normalized)) {
+			this._sortedMounts = null;
 			this.emit("unmount", { vPath: normalized });
 		}
 	}
@@ -614,11 +618,11 @@ class VirtualFileSystem extends EventEmitter {
 		fullHostPath: string;
 	} | null {
 		const normalized = normalizePath(targetPath);
-		// Iterate mounts from most specific to least specific
-		const sorted = [...this.mounts.entries()].sort(
-			([a], [b]) => b.length - a.length,
-		);
-		for (const [vBase, opts] of sorted) {
+		// Iterate mounts from most specific to least specific (cached, rebuilt on mount/unmount)
+		if (!this._sortedMounts) {
+			this._sortedMounts = [...this.mounts.entries()].sort(([a], [b]) => b.length - a.length);
+		}
+		for (const [vBase, opts] of this._sortedMounts) {
 			if (normalized === vBase || normalized.startsWith(`${vBase}/`)) {
 				const relPath      = normalized.slice(vBase.length).replace(/^\//, "");
 				const fullHostPath = relPath ? path.join(opts.hostPath, relPath) : opts.hostPath;

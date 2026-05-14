@@ -264,7 +264,11 @@ export function registerCommand(module: ShellModule): void {
 		throw new Error("Command names must be non-empty and contain no spaces");
 	}
 	customCommands.push(normalized);
-	buildCache();
+	// Incremental insert — avoids full Map rebuild for every registerCommand call
+	commandRegistry.set(normalized.name, normalized);
+	for (const alias of normalized.aliases ?? []) commandRegistry.set(alias, normalized);
+	// Invalidate sorted names cache; rebuilt lazily on next getCommandNames()
+	cachedCommandNames = null;
 }
 
 export function createCustomCommand(
