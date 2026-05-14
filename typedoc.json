@@ -43,6 +43,5 @@
   "excludePrivate": true,
   "excludeInternal": true,
   "treatWarningsAsErrors": false,
-  "skipErrorChecking": false,
-  "htmlLinkSuffix": ""
+  "skipErrorChecking": false
 }
