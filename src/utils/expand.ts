@@ -366,6 +366,19 @@ export function expandSync(
 		// $(( arithmetic )) — must come before ${ and $VAR to avoid conflicts
 		s = expandArithmeticChunks(s, env);
 
+		// ${arr[@]} and ${arr[*]} — all array elements
+		s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)[@*]\}/g, (_, name) => env[name] ?? "");
+
+		// ${arr[N]} — single array element
+		s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)\[(\d+)\]\}/g, (_, name, idx) => env[`${name}[${idx}]`] ?? "");
+
+		// ${#arr[@]} — array length
+		s = s.replace(/\$\{#([A-Za-z_][A-Za-z0-9_]*)[@*]\}/g, (_, name) => {
+			let count = 0;
+			for (const k of Object.keys(env)) { if (k.startsWith(`${name}[`)) count++; }
+			return String(count);
+		});
+
 		// ${#VAR} — string length
 		s = s.replace(/\$\{#([A-Za-z_][A-Za-z0-9_]*)\}/g, (_, name) =>
 			String((env[name] ?? "").length),
