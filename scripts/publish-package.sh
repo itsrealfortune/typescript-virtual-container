@@ -19,6 +19,16 @@ if [[ -z "${VERSION}" ]]; then
   exit 1
 fi
 
+# Build dist before publishing
+echo "Building dist..."
+bun run build
+
+# Show what will be published
+echo ""
+echo "Files that will be published to npm:"
+npm pack --dry-run 2>&1 | grep -E "^npm notice|Tarball" || true
+echo ""
+
 git fetch --tags --quiet
 
 TAG_EXISTS_LOCAL="false"
