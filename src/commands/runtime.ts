@@ -72,6 +72,7 @@ function resolveVfsBinary(
 }
 
 const MAX_CALL_DEPTH = 8;
+let _callDepth = 0;
 
 export async function runCommandDirect(
 	name: string,
@@ -85,15 +86,17 @@ export async function runCommandDirect(
 	env: ShellEnv,
 ): Promise<CommandResult> {
 	// Anti-loop guard: track call depth via env to avoid infinite recursion
-	const depth = Number(env.vars.__call_depth__ ?? 0);
-	if (depth >= MAX_CALL_DEPTH) {
+	_callDepth++;
+	// console.debug(`[depth=${_callDepth}] runCommandDirect: ${name}`);
+	if (_callDepth > MAX_CALL_DEPTH) {
+		_callDepth--;
+		// console.debug(`[LOOP DETECTED] runCommandDirect blocked: ${name}`);
 		return { stderr: `${name}: maximum call depth (${MAX_CALL_DEPTH}) exceeded`, exitCode: 126 };
 	}
-	env.vars.__call_depth__ = String(depth + 1);
 	try {
-	return await _runCommandDirectInner(name, args, authUser, hostname, mode, cwd, shell, stdin, env);
+		return await _runCommandDirectInner(name, args, authUser, hostname, mode, cwd, shell, stdin, env);
 	} finally {
-		env.vars.__call_depth__ = String(depth); // restore on exit
+		_callDepth--;
 	}
 }
 
@@ -241,11 +244,14 @@ export async function runCommand(
 	const shellEnv: ShellEnv = env ?? makeDefaultEnv(authUser, hostname);
 
 	// Anti-loop guard: check depth here too — catches sh -c recursive calls
-	const depth = Number(shellEnv.vars.__call_depth__ ?? 0);
-	if (depth >= MAX_CALL_DEPTH) {
+	_callDepth++;
+	// console.debug(`[depth=${_callDepth}] runCommand: ${trimmed.slice(0, 60)}`);
+	if (_callDepth > MAX_CALL_DEPTH) {
+		_callDepth--;
+		// console.debug(`[LOOP DETECTED] runCommand blocked: ${trimmed.slice(0, 60)}`);
 		return { stderr: `${trimmed.split(" ")[0]}: maximum call depth (${MAX_CALL_DEPTH}) exceeded`, exitCode: 126 };
 	}
-
+	try {
 	const rawTokens = tokenizeCommand(trimmed);
 	const rawFirstWord = rawTokens[0]?.toLowerCase() ?? "";
 	const aliasVal = shellEnv.vars[`__alias_${rawFirstWord}`];
@@ -408,5 +414,8 @@ export async function runCommand(
 			stderr: error instanceof Error ? error.message : "Command failed",
 			exitCode: 1,
 		};
+	}
+	} finally {
+		_callDepth--;
 	}
 }
