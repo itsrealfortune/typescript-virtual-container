@@ -1,6 +1,8 @@
 /** biome-ignore-all lint/suspicious/noControlCharactersInRegex: need to parse ANSI */
+import { getCommandNames } from '../src/commands/registry.js';
 import { makeDefaultEnv, runCommand, userHome } from '../src/commands/runtime.js';
 import { VirtualShell } from '../src/index.js';
+import { resolvePath } from '../src/modules/shellRuntime.js';
 import { type LoginBannerState, buildLoginBanner } from '../src/SSHMimic/loginBanner.js';
 import { buildPrompt } from '../src/SSHMimic/prompt.js';
 import type { CommandResult } from '../src/types/commands.js';
@@ -184,8 +186,62 @@ writeLastLogin();
 await vfs.flushMirror();
 printPrompt();
 
+
+// Tab completion
+function listPathCompletions(prefix: string): string[] {
+  const slashIndex = prefix.lastIndexOf('/');
+  const dirPart  = slashIndex >= 0 ? prefix.slice(0, slashIndex + 1) : '';
+  const namePart = slashIndex >= 0 ? prefix.slice(slashIndex + 1)    : prefix;
+  const basePath = resolvePath(cwd, dirPart || '.');
+  try {
+    return vfs.list(basePath)
+      .filter((e: string) => !e.startsWith('.') && e.startsWith(namePart))
+      .map((e: string) => {
+        const fullPath = `${basePath}/${e}`.replace(/\/+/g, '/');
+        const st = vfs.stat(fullPath);
+        return `${dirPart}${e}${st.type === 'directory' ? '/' : ''}`;
+      })
+      .sort();
+  } catch { return []; }
+}
+
+const commandNames = Array.from(new Set(getCommandNames())).sort();
+
+function getCompletions(line: string): [string[], string] {
+  const token = line.split(/\s+/).at(-1) ?? '';
+  const isFirstToken = line.trimStart() === token;
+  const cmdHits  = isFirstToken ? commandNames.filter(n => n.startsWith(token)) : [];
+  const pathHits = listPathCompletions(token);
+  const hits = Array.from(new Set([...cmdHits, ...pathHits])).sort();
+  return [hits, token];
+}
+
 // Input handler
 cmd.addEventListener('keydown', async (e: KeyboardEvent) => {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const line = cmd.value;
+    const [hits, token] = getCompletions(line);
+    if (hits.length === 0) return;
+    if (hits.length === 1) {
+      // Unique match — complete inline
+      cmd.value = line.slice(0, line.length - token.length) + hits[0];
+      if (inputLineEl) (inputLineEl.querySelector('.typed') as HTMLSpanElement).textContent = cmd.value;
+    } else {
+      // Multiple matches — print them below current line, re-prompt
+      const prevLine = inputLineEl;
+      inputLineEl = null;
+      prevLine?.querySelector('.cursor')?.remove();
+      out.appendChild(document.createTextNode('\n'));
+      print(`${hits.join('  ')}
+`);
+      printPrompt();
+      cmd.value = line;
+      if (inputLineEl) ((inputLineEl as HTMLSpanElement).querySelector('.typed') as HTMLSpanElement).textContent = cmd.value;
+    }
+    return;
+  }
+
   if (e.key === 'ArrowUp') {
     e.preventDefault();
     if (historyIdx < history.length - 1) {
