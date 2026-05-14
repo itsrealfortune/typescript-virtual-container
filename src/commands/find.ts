@@ -1,4 +1,5 @@
 import type { ShellModule } from "../types/commands";
+import { globToRegex } from "../utils/glob";
 import { assertPathAccess, resolvePath } from "./helpers";
 import { runCommand } from "./runtime";
 
@@ -119,10 +120,6 @@ export const findCommand: ShellModule = {
 
 		const pred = exprArgs.length > 0 ? parseExpr(exprArgs, 0)[0] : { type: "true" as const };
 
-		function globToRegex(pat: string, flags = ""): RegExp {
-			const esc = pat.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".");
-			return new RegExp(`^${esc}$`, flags);
-		}
 
 		function matchPred(p: Pred, fullPath: string, depth: number): boolean {
 			switch (p.type) {

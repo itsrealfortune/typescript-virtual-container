@@ -11,6 +11,7 @@ import { resolvePath } from "./modules/shellRuntime";
 import { buildLoginBanner, type LoginBannerState } from "./SSHMimic/loginBanner";
 import { buildPrompt } from "./SSHMimic/prompt";
 import type { CommandResult, PasswordChallenge, SudoChallenge } from "./types/commands";
+import { getFlag, getOptionString } from "./utils/argv";
 import type VirtualFileSystem from "./VirtualFileSystem";
 import { VirtualShell } from "./VirtualShell";
 
@@ -18,25 +19,12 @@ import { VirtualShell } from "./VirtualShell";
 
 const argv = process.argv.slice(2);
 
-function getFlag(name: string): boolean {
-	return argv.includes(name);
-}
-
-function getOption(name: string, fallback: string): string {
-	const prefix = `${name}=`;
-	const entry = argv.find((a) => a === name || a.startsWith(prefix));
-	if (!entry) return fallback;
-	if (entry.startsWith(prefix)) return entry.slice(prefix.length);
-	const next = argv[argv.indexOf(entry) + 1];
-	return (next && !next.startsWith("--")) ? next : fallback;
-}
-
-if (getFlag("--version") || getFlag("-V")) {
+if (getFlag(argv, "--version") || getFlag(argv, "-V")) {
 	process.stdout.write("self-standalone 1.5.6\n");
 	process.exit(0);
 }
 
-if (getFlag("--help") || getFlag("-h")) {
+if (getFlag(argv, "--help") || getFlag(argv, "-h")) {
 	process.stdout.write(`\
 Usage: node <self-standalone.mjs> [OPTIONS]
 
@@ -70,8 +58,8 @@ function readUserArg(): string {
 	return "root";
 }
 
-const hostname = getOption("--hostname", process.env.SSH_MIMIC_HOSTNAME ?? "typescript-vm");
-const snapshotPath = getOption("--snapshot", ".vfs");
+const hostname = getOptionString(argv, "--hostname", process.env.SSH_MIMIC_HOSTNAME ?? "typescript-vm");
+const snapshotPath = getOptionString(argv, "--snapshot", ".vfs");
 const initialUser = readUserArg();
 
 // ── Shell ─────────────────────────────────────────────────────────────────────

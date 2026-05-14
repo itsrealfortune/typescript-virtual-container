@@ -1,24 +1,12 @@
 import { VirtualSftpServer, VirtualShell, VirtualSshServer } from ".";
+import { getFlag, getOptionInt } from "./utils/argv";
 
 // ── CLI argument parsing ──────────────────────────────────────────────────────
 
 const argv = process.argv.slice(2);
 
-function getFlag(name: string): boolean {
-	return argv.includes(name);
-}
-
-function getOption(name: string, fallback: number): number {
-	const prefix = `${name}=`;
-	const entry = argv.find((a) => a === name || a.startsWith(prefix));
-	if (!entry) return fallback;
-	if (entry.startsWith(prefix)) return parseInt(entry.slice(prefix.length), 10);
-	const next = argv[argv.indexOf(entry) + 1];
-	return next ? parseInt(next, 10) : fallback;
-}
-
-const noSsh   = getFlag("--no-ssh");
-const sshPort = getOption("--ssh-port", 2222);
+const noSsh   = getFlag(argv, "--no-ssh");
+const sshPort = getOptionInt(argv, "--ssh-port", 2222);
 
 // ── Shell ─────────────────────────────────────────────────────────────────────
 
