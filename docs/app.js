@@ -2124,7 +2124,7 @@ Installed-Size: 6800
 Maintainer: Fortune Package Team <dpkg@fortune.local>
 Architecture: amd64
 Version: 1.22.6nyx1
-Depends: libc6 (>= 2.17), libzstd1 (>= 1.5.5)
+Depends: libc6 (>= 2.17), libzstd1 (>= 1.5.6)
 Description: Fortune package management system
  This package provides the low-level infrastructure for handling the
  installation and removal of Fortune software packages.

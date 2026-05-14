@@ -5,17 +5,18 @@
     "": {
       "name": "typescript-virtual-container",
       "dependencies": {
-        "ssh2": "latest",
+        "fflate": "^0.8.2",
+        "ssh2": "^1.17.0",
       },
       "devDependencies": {
-        "@biomejs/biome": "latest",
-        "@types/bun": "latest",
-        "@types/node": "latest",
-        "@types/ssh2": "latest",
-        "esbuild": "latest",
-        "gh-pages": "latest",
-        "rimraf": "latest",
-        "typescript": "latest",
+        "@biomejs/biome": "^2.4.15",
+        "@types/bun": "^1.3.14",
+        "@types/node": "^25.8.0",
+        "@types/ssh2": "^1.15.5",
+        "esbuild": "^0.28.0",
+        "gh-pages": "^6.3.0",
+        "rimraf": "^6.1.3",
+        "typescript": "^6.0.3",
       },
       "peerDependencies": {
         "typescript": "^5",
@@ -140,6 +141,8 @@
     "fast-glob": ["fast-glob@3.3.3", "", { "dependencies": { "@nodelib/fs.stat": "^2.0.2", "@nodelib/fs.walk": "^1.2.3", "glob-parent": "^5.1.2", "merge2": "^1.3.0", "micromatch": "^4.0.8" } }, "sha512-7MptL8U0cqcFdzIzwOTHoilX9x5BrNqye7Z/LuC7kCMRio1EMSyqRK3BEAUD7sXRq4iT4AzTVuZdhgQ2TCvYLg=="],
 
     "fastq": ["fastq@1.20.1", "", { "dependencies": { "reusify": "^1.0.4" } }, "sha512-GGToxJ/w1x32s/D2EKND7kTil4n8OVk/9mycTc4VDza13lOvpUZTGX3mFSCtV9ksdGBVzvsyAVLM6mHFThxXxw=="],
+
+    "fflate": ["fflate@0.8.2", "", {}, "sha512-cPJU47OaAoCbg0pBvzsgpTPhmhqI5eJjh/JIu8tPj5q+T7iLvW/JAYUqmE7KOB4R1ZyEhzBaIQpQpardBF5z8A=="],
 
     "filename-reserved-regex": ["filename-reserved-regex@2.0.0", "", {}, "sha512-lc1bnsSr4L4Bdif8Xb/qrtokGbq5zlsms/CYH8PP+WtCkGNF65DPiQY8vG3SakEdRn8Dlnm+gW/qWKKjS5sZzQ=="],
 
