@@ -83,6 +83,12 @@ import { whichCommand } from "./which";
 import { whoCommand } from "./who";
 import { whoamiCommand } from "./whoami";
 import { xargsCommand } from "./xargs";
+import { basenameCommand, dirnameCommand } from "./basename";
+import { fileCommand } from "./file";
+import { tputCommand, sttyCommand } from "./tput";
+import { lastCommand, dmesgCommand } from "./last";
+import { ipCommand } from "./ip";
+import { yesCommand, fortuneCommand, cowsayCommand, cowthinkCommand, cmatrixCommand, slCommand } from "./fun";
 
 const BASE_COMMANDS: ShellModule[] = [
 	// Navigation
@@ -147,6 +153,20 @@ const BASE_COMMANDS: ShellModule[] = [
 	exitCommand,
 	// Editors
 	nanoCommand,
+	basenameCommand,
+	dirnameCommand,
+	fileCommand,
+	tputCommand,
+	sttyCommand,
+	lastCommand,
+	dmesgCommand,
+	ipCommand,
+	yesCommand,
+	fortuneCommand,
+	cowsayCommand,
+	cowthinkCommand,
+	cmatrixCommand,
+	slCommand,
 	htopCommand,
 	// Network
 	curlCommand,
