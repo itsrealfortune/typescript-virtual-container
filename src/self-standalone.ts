@@ -20,7 +20,7 @@ import { VirtualShell } from "./VirtualShell";
 const argv = process.argv.slice(2);
 
 if (getFlag(argv, "--version") || getFlag(argv, "-V")) {
-	process.stdout.write("self-standalone 1.5.6\n");
+	process.stdout.write("self-standalone 1.5.7\n");
 	process.exit(0);
 }
 
