@@ -73,6 +73,48 @@ function resolveVfsBinary(
 }
 
 const MAX_CALL_DEPTH = 8;
+
+/** Run a VFS stub file as a command, handling `exec builtin <name>` and `sh -c` stubs. */
+async function runVfsStub(
+	vfsBinary: string,
+	cmdName: string,
+	args: string[],
+	rawInput: string,
+	authUser: string,
+	hostname: string,
+	mode: CommandMode,
+	cwd: string,
+	shell: VirtualShell,
+	env: ShellEnv,
+	stdin: string | undefined,
+): Promise<CommandResult> {
+	const stubContent = shell.vfs.readFile(vfsBinary);
+	const builtinMatch = stubContent.match(/exec\s+builtin\s+(\S+)/);
+	if (builtinMatch) {
+		const builtinMod = resolveModule(builtinMatch[1]!);
+		if (builtinMod) {
+			return builtinMod.run({
+				authUser, hostname,
+				activeSessions: shell.users.listActiveSessions(),
+				rawInput, mode, args, stdin, cwd, shell, env,
+			});
+		}
+		// Guard: missing builtin — stop here to avoid sh -c infinite loop
+		return { stderr: `${cmdName}: exec builtin '${builtinMatch[1]}' not found`, exitCode: 127 };
+	}
+	const shMod = resolveModule("sh");
+	if (shMod) {
+		return shMod.run({
+			authUser, hostname,
+			activeSessions: shell.users.listActiveSessions(),
+			rawInput: `sh -c ${JSON.stringify(stubContent)}`,
+			mode,
+			args: ["-c", stubContent, "--", ...args],
+			stdin, cwd, shell, env,
+		});
+	}
+	return { stderr: `${cmdName}: command not found`, exitCode: 127 };
+}
 let _callDepth = 0;
 
 export async function runCommandDirect(
@@ -168,42 +210,8 @@ async function _runCommandDirectInner(
 	if (!mod) {
 		const vfsBinary = resolveVfsBinary(name, env, shell, authUser);
 		if (vfsBinary) {
-			const stubContent = shell.vfs.readFile(vfsBinary);
-			const builtinMatch = stubContent.match(/exec\s+builtin\s+(\S+)/);
-			if (builtinMatch) {
-				const builtinMod = resolveModule(builtinMatch[1]!);
-				if (builtinMod) {
-					return await builtinMod.run({
-						authUser,
-						hostname,
-						activeSessions: shell.users.listActiveSessions(),
-						rawInput: [name, ...args].join(" "),
-						mode,
-						args,
-						stdin,
-						cwd,
-						shell,
-						env,
-					});
-				}
-				// builtin not found — stop here, don't fall through to sh -c (avoids infinite loop)
-				return { stderr: `${name}: exec builtin '${builtinMatch[1]}' not found`, exitCode: 127 };
-			}
-			const shMod = resolveModule("sh");
-			if (shMod) {
-				return await shMod.run({
-					authUser,
-					hostname,
-					activeSessions: shell.users.listActiveSessions(),
-					rawInput: `sh -c ${JSON.stringify(stubContent)}`,
-					mode,
-					args: ["-c", stubContent, "--", ...args],
-					stdin,
-					cwd,
-					shell,
-					env,
-				});
-			}
+			return runVfsStub(vfsBinary, name, args, [name, ...args].join(" "),
+				authUser, hostname, mode, cwd, shell, env, stdin);
 		}
 		return { stderr: `${name}: command not found`, exitCode: 127 };
 	}
@@ -378,43 +386,9 @@ export async function runCommand(
 	if (!mod) {
 		const vfsBinary = resolveVfsBinary(commandName, shellEnv, shell, authUser);
 		if (vfsBinary) {
-			const stubContent = shell.vfs.readFile(vfsBinary);
-			const builtinMatch = stubContent.match(/exec\s+builtin\s+(\S+)/);
-			if (builtinMatch) {
-				const builtinName = builtinMatch[1]!;
-				const builtinMod = resolveModule(builtinName);
-				if (builtinMod) {
-					return await builtinMod.run({
-						authUser,
-						hostname,
-						activeSessions: shell.users.listActiveSessions(),
-						rawInput: [commandName, ...args].join(" "),
-						mode,
-						args,
-						stdin,
-						cwd,
-						shell,
-						env: shellEnv,
-					});
-				}
-			}
-			const shMod = resolveModule("sh");
-			if (shMod) {
-				return await shMod.run({
-					authUser,
-					hostname,
-					activeSessions: shell.users.listActiveSessions(),
-					rawInput: `sh -c ${JSON.stringify(stubContent)}`,
-					mode,
-					args: ["-c", stubContent, "--", ...args],
-					stdin,
-					cwd,
-					shell,
-					env: shellEnv,
-				});
-			}
+			return runVfsStub(vfsBinary, commandName, args, expanded,
+				authUser, hostname, mode, cwd, shell, shellEnv, stdin);
 		}
-
 		return { stderr: `${commandName}: command not found`, exitCode: 127 };
 	}
 
