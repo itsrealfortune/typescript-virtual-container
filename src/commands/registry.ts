@@ -89,6 +89,7 @@ import { whichCommand } from "./which";
 import { whoCommand } from "./who";
 import { whoamiCommand } from "./whoami";
 import { xargsCommand } from "./xargs";
+import { wCommand } from "./w";
 
 const BASE_COMMANDS: ShellModule[] = [
 	// Navigation
@@ -153,6 +154,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	exitCommand,
 	// Editors
 	nanoCommand,
+	wCommand,
 	basenameCommand,
 	dirnameCommand,
 	fileCommand,
