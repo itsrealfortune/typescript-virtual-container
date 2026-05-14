@@ -71,7 +71,33 @@ function resolveVfsBinary(
 	return null;
 }
 
+const MAX_CALL_DEPTH = 8;
+
 export async function runCommandDirect(
+	name: string,
+	args: string[],
+	authUser: string,
+	hostname: string,
+	mode: CommandMode,
+	cwd: string,
+	shell: VirtualShell,
+	stdin: string | undefined,
+	env: ShellEnv,
+): Promise<CommandResult> {
+	// Anti-loop guard: track call depth via env to avoid infinite recursion
+	const depth = Number(env.vars.__call_depth__ ?? 0);
+	if (depth >= MAX_CALL_DEPTH) {
+		return { stderr: `${name}: maximum call depth (${MAX_CALL_DEPTH}) exceeded`, exitCode: 126 };
+	}
+	env.vars.__call_depth__ = String(depth + 1);
+	try {
+	return await _runCommandDirectInner(name, args, authUser, hostname, mode, cwd, shell, stdin, env);
+	} finally {
+		env.vars.__call_depth__ = String(depth); // restore on exit
+	}
+}
+
+async function _runCommandDirectInner(
 	name: string,
 	args: string[],
 	authUser: string,
@@ -156,6 +182,8 @@ export async function runCommandDirect(
 						env,
 					});
 				}
+				// builtin not found — stop here, don't fall through to sh -c (avoids infinite loop)
+				return { stderr: `${name}: exec builtin '${builtinMatch[1]}' not found`, exitCode: 127 };
 			}
 			const shMod = resolveModule("sh");
 			if (shMod) {
@@ -211,6 +239,12 @@ export async function runCommand(
 	if (trimmed.length === 0) return { exitCode: 0 };
 
 	const shellEnv: ShellEnv = env ?? makeDefaultEnv(authUser, hostname);
+
+	// Anti-loop guard: check depth here too — catches sh -c recursive calls
+	const depth = Number(shellEnv.vars.__call_depth__ ?? 0);
+	if (depth >= MAX_CALL_DEPTH) {
+		return { stderr: `${trimmed.split(" ")[0]}: maximum call depth (${MAX_CALL_DEPTH}) exceeded`, exitCode: 126 };
+	}
 
 	const rawTokens = tokenizeCommand(trimmed);
 	const rawFirstWord = rawTokens[0]?.toLowerCase() ?? "";

@@ -88,16 +88,6 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		installedSizeKb: 3812,
 		files: [
 			{
-				path: "/usr/bin/vim",
-				content: "#!/bin/sh\nexec builtin nano \"$@\"\n",
-				mode: 0o755,
-			},
-			{
-				path: "/usr/bin/vi",
-				content: "#!/bin/sh\nexec builtin nano \"$@\"\n",
-				mode: 0o755,
-			},
-			{
 				path: "/usr/share/doc/vim/README",
 				content: "Vim editor — virtual package.\n",
 			},
