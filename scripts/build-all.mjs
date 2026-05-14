@@ -192,6 +192,33 @@ replaceSection(
 writeFileSync(readmePath, readme, "utf8");
 console.log("✓ README.md updated with current build filenames");
 
+
+// ── 7. Strip .html from internal links in docs/ ───────────────────────────────
+// TypeDoc hardcodes .html — post-process all generated files to remove the
+// extension so GitHub Pages serves clean URLs (e.g. /docs/classes/VirtualShell)
+import { readdirSync } from "node:fs";
+
+function stripHtmlExtensions(dir) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      stripHtmlExtensions(full);
+    } else if (entry.name.endsWith(".html")) {
+      let src = readFileSync(full, "utf8");
+      // Replace href="...something.html" and href="...something.html#anchor"
+      // Only relative links (no http/https)
+      src = src.replace(
+        /href="(?!https?:\/\/)([^"]*)\.html(#[^"]*)?"/g,
+        (_, path, hash) => `href="${path}${hash ?? ""}"`,
+      );
+      writeFileSync(full, src, "utf8");
+    }
+  }
+}
+
+stripHtmlExtensions(docsDir);
+console.log("\n✓ Stripped .html from internal links in docs/");
+
 // ── Summary ──────────────────────────────────────────────────────────────────
 console.log("\n✅ Build complete:");
 for (const [key, name] of Object.entries(NAMES)) {
