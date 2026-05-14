@@ -5,6 +5,8 @@ import { aliasCommand, unaliasCommand } from "./alias";
 import { aptCacheCommand, aptCommand } from "./apt";
 import { awkCommand } from "./awk";
 import { base64Command } from "./base64";
+import { bcCommand } from "./bc";
+import { bgCommand, fgCommand, jobsCommand } from "./jobs";
 import { basenameCommand, dirnameCommand } from "./basename";
 import { catCommand } from "./cat";
 import { cdCommand } from "./cd";
@@ -187,6 +189,10 @@ const BASE_COMMANDS: ShellModule[] = [
 	dpkgCommand,
 	dpkgQueryCommand,
 	// Shell (extended)
+	jobsCommand,
+	bgCommand,
+	fgCommand,
+	bcCommand,
 	whichCommand,
 	typeCommand,
 	manCommand,
