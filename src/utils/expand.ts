@@ -489,3 +489,87 @@ export async function expandAsync(
 		else env[depthKey] = String(currentDepth);
 	}
 }
+
+// ─── Glob expansion ──────────────────────────────────────────────────────────
+
+/**
+ * Expand a glob pattern against a VirtualShell VFS.
+ * Supports * (any chars in segment) and ** (any path).
+ * Returns the original pattern if no matches found (bash behavior).
+ */
+export function expandGlob(
+	pattern: string,
+	cwd: string,
+	vfs: { list: (p: string) => string[]; exists: (p: string) => boolean; stat: (p: string) => { type: string } },
+): string[] {
+	// No glob chars → return as-is
+	if (!pattern.includes('*') && !pattern.includes('?')) return [pattern];
+
+	const isAbsolute = pattern.startsWith('/');
+	const base = isAbsolute ? '/' : cwd;
+	const relPattern = isAbsolute ? pattern.slice(1) : pattern;
+
+	const results = matchGlob(base, relPattern.split('/'), vfs);
+	if (results.length === 0) return [pattern]; // no match → literal
+	return results.sort();
+}
+
+function matchGlob(
+	dir: string,
+	segments: string[],
+	vfs: { list: (p: string) => string[]; exists: (p: string) => boolean; stat: (p: string) => { type: string } },
+): string[] {
+	if (segments.length === 0) return [dir];
+	const [seg, ...rest] = segments;
+	if (!seg) return [dir];
+
+	// ** matches zero or more path segments
+	if (seg === '**') {
+		const all = walkAll(dir, vfs);
+		return rest.length === 0 ? all : all.flatMap(d => {
+			try {
+				if (vfs.stat(d).type === 'directory') return matchGlob(d, rest, vfs);
+			} catch {}
+			return [];
+		});
+	}
+
+	let entries: string[] = [];
+	try { entries = vfs.list(dir); } catch { return []; }
+
+	const re = globToRegex(seg);
+	return entries
+		.filter(e => !e.startsWith('.') || seg.startsWith('.'))
+		.filter(e => re.test(e))
+		.flatMap(e => {
+			const full = dir === '/' ? `/${e}` : `${dir}/${e}`;
+			if (rest.length === 0) return [full];
+			try {
+				if (vfs.stat(full).type === 'directory') return matchGlob(full, rest, vfs);
+			} catch {}
+			return [];
+		});
+}
+
+function walkAll(
+	dir: string,
+	vfs: { list: (p: string) => string[]; stat: (p: string) => { type: string } },
+): string[] {
+	const results: string[] = [dir];
+	let entries: string[] = [];
+	try { entries = vfs.list(dir); } catch { return results; }
+	for (const e of entries) {
+		const full = dir === '/' ? `/${e}` : `${dir}/${e}`;
+		try {
+			if (vfs.stat(full).type === 'directory') results.push(...walkAll(full, vfs));
+		} catch {}
+	}
+	return results;
+}
+
+function globToRegex(pattern: string): RegExp {
+	const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&')
+		.replace(/\*/g, '.*')
+		.replace(/\?/g, '.');
+	return new RegExp(`^${escaped}$`);
+}
