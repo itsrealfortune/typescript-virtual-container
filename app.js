@@ -1745,7 +1745,8 @@ Sorry, try again.\r
 `).map(e=>e.trim()).filter(e=>e.length>0):[]}catch{return[]}}function ya(){ue.writeFile(En(),ye.length>0?`${ye.join(`
 `)}
 `:"")}var ye=ga(),De=-1;function Sa(){try{return ue.exists("/root/.lastlog")?JSON.parse(ue.readFile("/root/.lastlog")):null}catch{return null}}function ba(){ue.writeFile("/root/.lastlog",JSON.stringify({at:new Date().toISOString(),from:"browser"}))}bt(jt(et,qt.properties,Sa()));ba();await ue.flushMirror();Ci();Se.addEventListener("keydown",async e=>{if(e.key==="ArrowUp"){e.preventDefault(),De<ye.length-1&&(De++,Se.value=ye[ye.length-1-De],ie&&(ie.querySelector(".typed").textContent=Se.value));return}if(e.key==="ArrowDown"){e.preventDefault(),De>0?(De--,Se.value=ye[ye.length-1-De]):(De=-1,Se.value=""),ie&&(ie.querySelector(".typed").textContent=Se.value);return}if(e.key!=="Enter")return;let t=Se.value.trim();De=-1,ie&&(ie.querySelector(".cursor")?.remove(),ie=null),xt.appendChild(document.createTextNode(`
-`)),t&&(ye.push(t),ye.length>Si&&(ye=ye.slice(ye.length-Si)),ya());try{let n=await Q(t,we,et,"shell",Re,qt,void 0,je);if(n.clearScreen&&(xt.innerHTML=""),n.stdout&&bt(n.stdout),n.stderr&&bt(n.stderr),ha(n),await ue.flushMirror(),n.closeSession){bt(`
+`)),t&&(ye.push(t),ye.length>Si&&(ye=ye.slice(ye.length-Si)),ya());try{let n=await Q(t,we,et,"shell",Re,qt,void 0,je);if(n.clearScreen&&(xt.innerHTML=""),n.stdout&&bt(n.stdout),n.stderr&&bt(`${n.stderr}
+`),ha(n),await ue.flushMirror(),n.closeSession){bt(`
 Session closed.
 `);return}}catch(n){bt(`${String(n)}
 `)}Ci()});
