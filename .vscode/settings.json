@@ -11,7 +11,7 @@
         // ".vfs": true,
         // "builds": true,
         "docs": true,
-        "examples": true,
+        // "examples": true,
         
         "LICENSE": true,
         "tsconfig.tsbuildinfo": true
