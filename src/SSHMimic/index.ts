@@ -5,6 +5,8 @@ import { userHome } from "../commands";
 import { createPerfLogger, type PerfLogger } from "../utils/perfLogger";
 import { runExec } from "./exec";
 import { loadOrCreateHostKey } from "./hostKey";
+import { handleScp } from "./scp";
+import type { SftpMimic } from "./sftp";
 
 /**
  * SSH server facade that wires the virtual shell runtime into ssh2 sessions.
@@ -37,6 +39,7 @@ class SshMimic extends EventEmitter {
 	port: number;
 	server: SshServer | null;
 	private shell: VirtualShell;
+	private readonly sftpMimic: SftpMimic | null;
 
 	/** Max failed auth attempts before an IP is temporarily locked. */
 	private readonly maxAuthAttempts: number;
@@ -51,6 +54,7 @@ class SshMimic extends EventEmitter {
 	 * @param options.port - TCP port to bind on localhost.
 	 * @param options.hostname - Virtual hostname used for the SSH ident and default shell label.
 	 * @param options.shell - Optional preconfigured virtual shell instance to reuse.
+	 * @param options.sftp - Optional SftpMimic instance to handle SFTP subsystem requests on this SSH port.
 	 * @param options.maxAuthAttempts - Max failed attempts per IP before lockout (default: 5).
 	 * @param options.lockoutDurationMs - Lockout window in ms after exceeding attempts (default: 60 000).
 	 */
@@ -58,12 +62,14 @@ class SshMimic extends EventEmitter {
 		port,
 		hostname = "typescript-vm",
 		shell = new VirtualShell(hostname),
+		sftp = null,
 		maxAuthAttempts = 5,
 		lockoutDurationMs = 60_000,
 	}: {
 		port: number;
 		hostname?: string;
 		shell?: VirtualShell;
+		sftp?: SftpMimic | null;
 		maxAuthAttempts?: number;
 		lockoutDurationMs?: number;
 	}) {
@@ -72,6 +78,7 @@ class SshMimic extends EventEmitter {
 		this.port = port;
 		this.server = null;
 		this.shell = shell;
+		this.sftpMimic = sftp;
 		this.maxAuthAttempts = maxAuthAttempts;
 		this.lockoutDurationMs = lockoutDurationMs;
 	}
@@ -284,14 +291,26 @@ class SshMimic extends EventEmitter {
 
 						session.on("exec", (acceptExec, _rejectExec, info) => {
 							const stream = acceptExec();
-							if (stream) {
-								runExec(
-									stream,
-									info.command.trim(),
-									authUser,
-									shell.hostname,
-									shell,
-								);
+							if (!stream) return;
+							const cmd = info.command.trim();
+							const parts = cmd.split(/\s+/);
+							if (parts[0] === "scp") {
+								handleScp(stream, parts.slice(1), authUser, shell);
+							} else {
+								runExec(stream, cmd, authUser, shell.hostname, shell);
+							}
+						});
+
+						session.on("sftp", (acceptSftp, rejectSftp) => {
+							if (this.sftpMimic) {
+								const sftp = acceptSftp();
+								this.sftpMimic.attachSftpHandlers(sftp, authUser);
+								// Close the SSH connection when the SFTP channel ends
+								// (scp/sftp clients open a session just for the transfer).
+								sftp.on("close", () => client.end());
+								sftp.on("end",   () => sftp.end());
+							} else {
+								rejectSftp();
 							}
 						});
 					});

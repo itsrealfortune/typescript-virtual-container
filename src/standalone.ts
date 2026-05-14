@@ -45,8 +45,12 @@ virtualShell.addCommand("demo", [], () => {
 
 // ── Servers ───────────────────────────────────────────────────────────────────
 
+// Create the SFTP handler first so the SSH server can reuse it for the
+// sftp subsystem (enables `scp` and SFTP clients on the SSH port directly).
+const sftpServer = noSftp ? null : new VirtualSftpServer({ port: sftpPort, hostname, shell: virtualShell });
+
 if (!noSsh) {
-	new VirtualSshServer({ port: sshPort, hostname, shell: virtualShell })
+	new VirtualSshServer({ port: sshPort, hostname, shell: virtualShell, sftp: sftpServer })
 		.start()
 		.catch((error: unknown) => {
 			console.error("Failed to start SSH server:", error);
@@ -54,8 +58,8 @@ if (!noSsh) {
 		});
 }
 
-if (!noSftp) {
-	new VirtualSftpServer({ port: sftpPort, hostname, shell: virtualShell })
+if (sftpServer) {
+	sftpServer
 		.start()
 		.catch((error: unknown) => {
 			console.error("Failed to start SFTP server:", error);

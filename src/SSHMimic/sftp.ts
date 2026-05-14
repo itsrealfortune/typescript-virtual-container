@@ -456,7 +456,8 @@ export class SftpMimic extends EventEmitter {
 		this.handles.delete(handle.toString("hex"));
 	}
 
-	private attachSftpHandlers(sftp: SftpServerStream, authUser: string): void {
+	/** Attach SFTP handlers to an already-accepted sftp stream (e.g. from an SSH subsystem request). */
+	public attachSftpHandlers(sftp: SftpServerStream, authUser: string): void {
 		const getVfs = () => this.getVfs();
 		const getUsers = () => this.getUsers();
 
