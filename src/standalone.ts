@@ -1,5 +1,35 @@
 import { VirtualSftpServer, VirtualShell, VirtualSshServer } from ".";
 
+// ── CLI argument parsing ──────────────────────────────────────────────────────
+
+const argv = process.argv.slice(2);
+
+function getFlag(name: string): boolean {
+	return argv.includes(name);
+}
+
+function getOption(name: string, fallback: number): number {
+	const prefix = `${name}=`;
+	const entry = argv.find((a) => a === name || a.startsWith(prefix));
+	if (!entry) return fallback;
+	if (entry.startsWith(prefix)) return parseInt(entry.slice(prefix.length), 10);
+	const next = argv[argv.indexOf(entry) + 1];
+	return next ? parseInt(next, 10) : fallback;
+}
+
+const noSsh  = getFlag("--no-ssh");
+const noSftp = getFlag("--no-sftp");
+
+if (noSsh && noSftp) {
+	console.error("standalone: at least one server must be enabled (cannot use both --no-ssh and --no-sftp)");
+	process.exit(1);
+}
+
+const sshPort  = getOption("--ssh-port",  2222);
+const sftpPort = getOption("--sftp-port", 2223);
+
+// ── Shell ─────────────────────────────────────────────────────────────────────
+
 const hostname = process.env.SSH_MIMIC_HOSTNAME ?? "typescript-vm";
 const virtualShell = new VirtualShell(hostname, undefined, {
 	mode: "fs",
@@ -13,24 +43,25 @@ virtualShell.addCommand("demo", [], () => {
 	};
 });
 
-new VirtualSshServer({
-	port: 2222,
-	hostname,
-	shell: virtualShell,
-})
-	.start()
-	.catch((error: unknown) => {
-		console.error("Failed to start SSH Mimic:", error);
-		process.exit(1);
-	});
+// ── Servers ───────────────────────────────────────────────────────────────────
 
-new VirtualSftpServer({ port: 2223, hostname, shell: virtualShell })
-	.start()
-	.catch((error: unknown) => {
-		console.error("Failed to start SFTP Mimic:", error);
-		process.exit(1);
-	});
+if (!noSsh) {
+	new VirtualSshServer({ port: sshPort, hostname, shell: virtualShell })
+		.start()
+		.catch((error: unknown) => {
+			console.error("Failed to start SSH server:", error);
+			process.exit(1);
+		});
+}
 
+if (!noSftp) {
+	new VirtualSftpServer({ port: sftpPort, hostname, shell: virtualShell })
+		.start()
+		.catch((error: unknown) => {
+			console.error("Failed to start SFTP server:", error);
+			process.exit(1);
+		});
+}
 
 // ── Graceful shutdown ─────────────────────────────────────────────────────────
 // On SIGINT / SIGTERM: flush the WAL journal to a full checkpoint before exit.
@@ -67,6 +98,6 @@ process.on("unhandledRejection", (error, promise) => {
 });
 
 setInterval(() => {
-	const rss = process.memoryUsage().rss; // Just keep the event loop alive and prevent exit
+	const rss = process.memoryUsage().rss;
 	console.debug(`Current memory usage: ${Math.round(rss / 1024 / 1024)} MB`);
 }, 1000);

@@ -64,19 +64,29 @@ npm install typescript-virtual-container
 ### Try instantly (zero install)
 
 <!-- BUILD:curl-start -->
-#### Interactivea local shell — persists VFS in .vfs/ in the current directory
+#### Interactive local shell — persists VFS in .vfs/ in the current directory
 ```bash
 curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.6-directbash-k6.1.0.mjs -o fortune-nyx-v1.5.6-directbash-k6.1.0.mjs && node fortune-nyx-v1.5.6-directbash-k6.1.0.mjs
 ```
 
-#### SSH server (connect with any SSH client on port 2222)
+#### SSH + SFTP server (ports 2222 / 2223 by default)
 ```bash
 curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.6-ssh.cjs -o fortune-nyx-v1.5.6-ssh.cjs && node fortune-nyx-v1.5.6-ssh.cjs
 ```
 
-#### SSH server without SFTP (lighter build)
+#### SSH only (no SFTP)
 ```bash
-curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.6-ssh-nosftp.js -o fortune-nyx-v1.5.6-ssh-nosftp.js && node fortune-nyx-v1.5.6-ssh-nosftp.js
+node fortune-nyx-v1.5.6-ssh.cjs --no-sftp
+```
+
+#### SFTP only (no SSH)
+```bash
+node fortune-nyx-v1.5.6-ssh.cjs --no-ssh
+```
+
+#### Custom ports
+```bash
+node fortune-nyx-v1.5.6-ssh.cjs --ssh-port=2022 --sftp-port=2024
 ```
 <!-- /BUILD:curl-start -->
 
