@@ -32,7 +32,7 @@
     "lint:write": "bunx --bun @biomejs/biome lint --write ./src",
     "test": "bun run test-salve",
     "test-battery": "bun test tests/",
-    "test-salve": "for f in tests/*.test.ts; do echo \"\\n\ud83e\uddea Testing $f...\"; bun test \"$f\" --timeout 10000; sleep 0.25; done",
+    "test-salve": "for f in tests/*.test.ts; do echo \"\\n🧪 Testing $f...\"; bun test \"$f\" --timeout 10000; sleep 0.25; done",
     "build": "tsc --project tsconfig.json",
     "deploy:npm": "bun publish --access public",
     "bench": "rm -rf .benchmark-shells/ && bun benchmark-virtualshell.ts",
@@ -52,7 +52,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",
     "@types/bun": "^1.3.14",
-    "@types/node": "^25.7.0",
+    "@types/node": "^25.8.0",
     "@types/ssh2": "^1.15.5",
     "esbuild": "^0.28.0",
     "gh-pages": "^6.3.0",
