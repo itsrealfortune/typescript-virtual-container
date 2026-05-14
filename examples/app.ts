@@ -1,6 +1,7 @@
 /** biome-ignore-all lint/suspicious/noControlCharactersInRegex: need to parse ANSI */
 import { makeDefaultEnv, runCommand, userHome } from '../src/commands/runtime.js';
 import { VirtualShell } from '../src/index.js';
+import { type LoginBannerState, buildLoginBanner } from '../src/SSHMimic/loginBanner.js';
 import { buildPrompt } from '../src/SSHMimic/prompt.js';
 import type { CommandResult } from '../src/types/commands.js';
 
@@ -30,15 +31,15 @@ function ansiToHtml(s: string): string {
     const m = part.match(/^\x1b\[([0-9;]*)m$/);
     if (m) {
       for (const code of m[1].split(';').map(Number)) {
-        if (code === 0)           { bold = false; fg = ''; bg = ''; }
-        else if (code === 1)      bold = true;
+        if (code === 0) { bold = false; fg = ''; bg = ''; }
+        else if (code === 1) bold = true;
         else if (FG_COLORS[code]) fg = FG_COLORS[code];
         else if (BG_COLORS[code]) bg = BG_COLORS[code];
       }
     } else if (part) {
       const style = [
-        fg   ? `color:${fg}`      : '',
-        bg   ? `background:${bg}` : '',
+        fg ? `color:${fg}` : '',
+        bg ? `background:${bg}` : '',
         bold ? 'font-weight:bold' : '',
       ].filter(Boolean).join(';');
       const escaped = part.replace(/&/g, '&amp;').replace(/</g, '&lt;');
@@ -59,6 +60,10 @@ function printPrompt(): void {
   out.scrollTop = out.scrollHeight;
 }
 
+// Wait for IndexedDB fs shim to preload memCache before any existsSync call
+// biome-ignore lint/suspicious/noExplicitAny: globalThis shim readiness
+await (globalThis as any).__fsReady__;
+
 // Shell
 const shell = new VirtualShell(HOSTNAME, undefined, {
   mode: 'fs',
@@ -66,12 +71,11 @@ const shell = new VirtualShell(HOSTNAME, undefined, {
   flushIntervalMs: 10_000,
 });
 
-const vfs = (shell as any).vfs;
+const vfs = shell.vfs;
 
 // Bootstrap strategy:
-//   - Always restoreMirror first (loads IndexedDB)
-//   - Only run ensureInitialized if /bin missing (first run)
-//   - On reload: skip ensureInitialized entirely to preserve user files
+//   1. restoreMirror — loads snapshot from IndexedDB-backed fs shim into VFS
+//   2. Only ensureInitialized if /bin missing (true first run, not a reload)
 await vfs.restoreMirror();
 
 const isFirstRun = !vfs.exists('/bin');
@@ -96,10 +100,10 @@ function applyResult(result: CommandResult): void {
   if (result.switchUser) {
     authUser = result.switchUser;
     cwd = result.nextCwd ?? userHome(authUser);
-    shellEnv.vars.USER    = authUser;
+    shellEnv.vars.USER = authUser;
     shellEnv.vars.LOGNAME = authUser;
-    shellEnv.vars.HOME    = userHome(authUser);
-    shellEnv.vars.PWD     = cwd;
+    shellEnv.vars.HOME = userHome(authUser);
+    shellEnv.vars.PWD = cwd;
   } else if (result.nextCwd) {
     cwd = result.nextCwd;
     shellEnv.vars.PWD = cwd;
@@ -129,6 +133,25 @@ let history: string[] = loadHistory();
 let historyIdx = -1;
 
 // Input
+
+function readLastLogin(): LoginBannerState | null {
+  try {
+    if (!vfs.exists('/root/.lastlog')) return null;
+    return JSON.parse(vfs.readFile('/root/.lastlog'));
+  } catch { return null; }
+}
+
+function writeLastLogin(): void {
+  vfs.writeFile('/root/.lastlog', JSON.stringify({
+    at: new Date().toISOString(),
+    from: 'browser',
+  }));
+}
+
+const banner = buildLoginBanner(HOSTNAME, shell.properties, readLastLogin());
+print(banner);
+writeLastLogin();
+await vfs.flushMirror();
 printPrompt();
 
 cmd.addEventListener('keydown', async (e: KeyboardEvent) => {
@@ -180,8 +203,8 @@ cmd.addEventListener('keydown', async (e: KeyboardEvent) => {
     );
 
     if (result.clearScreen) out.innerHTML = '';
-    if (result.stdout)      print(result.stdout);
-    if (result.stderr)      print(result.stderr);
+    if (result.stdout) print(result.stdout);
+    if (result.stderr) print(result.stderr);
 
     applyResult(result);
     await vfs.flushMirror();
