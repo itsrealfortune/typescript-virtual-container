@@ -17,16 +17,8 @@ function getOption(name: string, fallback: number): number {
 	return next ? parseInt(next, 10) : fallback;
 }
 
-const noSsh  = getFlag("--no-ssh");
-const noSftp = getFlag("--no-sftp");
-
-if (noSsh && noSftp) {
-	console.error("standalone: at least one server must be enabled (cannot use both --no-ssh and --no-sftp)");
-	process.exit(1);
-}
-
-const sshPort  = getOption("--ssh-port",  2222);
-const sftpPort = getOption("--sftp-port", 2223);
+const noSsh   = getFlag("--no-ssh");
+const sshPort = getOption("--ssh-port", 2222);
 
 // ── Shell ─────────────────────────────────────────────────────────────────────
 
@@ -45,24 +37,15 @@ virtualShell.addCommand("demo", [], () => {
 
 // ── Servers ───────────────────────────────────────────────────────────────────
 
-// Create the SFTP handler first so the SSH server can reuse it for the
-// sftp subsystem (enables `scp` and SFTP clients on the SSH port directly).
-const sftpServer = noSftp ? null : new VirtualSftpServer({ port: sftpPort, hostname, shell: virtualShell });
+// SFTP subsystem handler — no standalone server, reused by the SSH server
+// so that `scp` and `sftp` clients work directly on the SSH port.
+const sftpHandler = new VirtualSftpServer({ shell: virtualShell });
 
 if (!noSsh) {
-	new VirtualSshServer({ port: sshPort, hostname, shell: virtualShell, sftp: sftpServer })
+	new VirtualSshServer({ port: sshPort, hostname, shell: virtualShell, sftp: sftpHandler })
 		.start()
 		.catch((error: unknown) => {
 			console.error("Failed to start SSH server:", error);
-			process.exit(1);
-		});
-}
-
-if (sftpServer) {
-	sftpServer
-		.start()
-		.catch((error: unknown) => {
-			console.error("Failed to start SFTP server:", error);
 			process.exit(1);
 		});
 }

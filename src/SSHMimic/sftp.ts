@@ -147,7 +147,8 @@ interface SftpServerStream {
 
 /** Options for {@link SftpMimic} constructor. */
 export interface SftpMimicOptions {
-	port: number;
+	/** TCP port to bind. Optional — omit if using as a subsystem handler only (no standalone server). */
+	port?: number;
 	hostname?: string;
 	shell?: VirtualShell;
 	vfs?: VirtualFileSystem;
@@ -155,7 +156,7 @@ export interface SftpMimicOptions {
 }
 
 export class SftpMimic extends EventEmitter {
-	port: number;
+	port: number | undefined;
 	server: SshServer | null;
 	private readonly hostname: string;
 	private readonly shell: VirtualShell | null;
@@ -203,6 +204,9 @@ export class SftpMimic extends EventEmitter {
 	}
 
 	public async start(): Promise<number> {
+		if (this.port === undefined) {
+			throw new Error("SftpMimic: cannot start — no port configured (this instance is a subsystem handler only)");
+		}
 		perf.mark("start");
 		const privateKey = loadOrCreateHostKey();
 
