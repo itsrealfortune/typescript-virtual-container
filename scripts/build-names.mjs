@@ -9,8 +9,8 @@
  */
 
 import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { join, dirname } from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
@@ -32,8 +32,7 @@ export const NAMES = {
   selfStandalone:  `fortune-nyx-v${pkgVersion}-directbash-${kernelVersion}.mjs`,
   standalone:      `fortune-nyx-v${pkgVersion}-ssh.cjs`,
   standaloneNoSftp:`fortune-nyx-v${pkgVersion}-ssh-nosftp.js`,
-  web:             `fortune-nyx-v${pkgVersion}-web.min.js`,
-  webFull:         `fortune-nyx-v${pkgVersion}-web-full.min.js`,
+  web:             `fortune-nyx-v${pkgVersion}-web.min.js`
 };
 
 // Print for shell consumption: NAME=value pairs

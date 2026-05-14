@@ -9,9 +9,9 @@
 
         ".ssh-mimic": true,
         // ".vfs": true,
-        "builds": true,
+        // "builds": true,
         "docs": true,
-        "examples": true,
+        // "examples": true,
         
         "LICENSE": true,
         "tsconfig.tsbuildinfo": true

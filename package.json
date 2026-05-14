@@ -40,7 +40,7 @@
     "self-standalone-build": "node scripts/build-all.mjs",
     "standalone-build": "bunx esbuild src/standalone.ts --bundle --platform=node --target=node18 --outfile=builds/standalone.cjs --tree-shaking=true --minify  --banner:js='#!/usr/bin/env node'",
     "build-all": "node scripts/build-all.mjs",
-    "publish-doc": "bunx typedoc && bunx gh-pages -d docs",
+    "publish-doc": "bunx typedoc && bun build-all && bunx gh-pages -d docs && git add docs && git commit -m 'docs: update documentation' && git push",
     "generate-manuals": "node scripts/generate-manuals-bundle.mjs"
   },
   "devDependencies": {
@@ -48,6 +48,7 @@
     "@types/bun": "^1.3.14",
     "@types/node": "^25.7.0",
     "@types/ssh2": "^1.15.5",
+    "esbuild": "^0.28.0",
     "gh-pages": "^6.3.0",
     "rimraf": "^6.1.3",
     "typescript": "^6.0.3"

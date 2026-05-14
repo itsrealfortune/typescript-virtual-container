@@ -6,6 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Runtime](https://img.shields.io/badge/runtime-Node.js%20%7C%20Bun-43853D.svg)](https://nodejs.org/)
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen.svg)](https://itsrealfortune.fr/typescript-virtual-container/demo)
 
 ---
 
@@ -55,7 +56,7 @@
 | Mode | Entry point | Use case |
 |------|-------------|----------|
 | **SSH/SFTP server** | `VirtualSshServer` / `VirtualSftpServer` | Honeypots, remote testing, training environments |
-| **Web shell** | `builds/fortune-nyx-v1.5.1-web.min.js` / `builds/fortune-nyx-v1.5.1-web-full.min.js` (ESM) | Embedded terminals, interactive tutorials, browser demos |
+| **Web shell** | `builds/fortune-nyx-v1.5.1-web.min.js` (ESM) | Embedded terminals, interactive tutorials, browser demos |
 | **Standalone CLI** | `builds/fortune-nyx-v1.5.1-directbash-k6.1.0.mjs` (single file) | Local shell, one-liner demos, no install required |
 <!-- /BUILD:mode-table -->
 
@@ -75,17 +76,21 @@ npm install typescript-virtual-container
 ### Try instantly (zero install)
 
 <!-- BUILD:curl-start -->
+#### Interactivea local shell — persists VFS in .vfs/ in the current directory
 ```bash
-# Interactive local shell — persists VFS in .vfs/ in the current directory
-curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.0-directbash-k6.1.0.mjs -o fortune-nyx-directbash.mjs && node fortune-nyx-directbash.mjs && rm -f fortune-nyx-directbash.mjs
-
-# SSH server (connect with any SSH client on port 2222)
-curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.0-ssh.cjs -o fortune-nyx-ssh.cjs && node fortune-nyx-ssh.cjs && rm -f fortune-nyx-ssh.cjs
-
-# SSH server without SFTP (lighter build)
-curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.0-ssh-nosftp.js -o fortune-nyx-ssh-nosftp.js && node fortune-nyx-ssh-nosftp.js && rm -f fortune-nyx-ssh-nosftp.js
+curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.1-directbash-k6.1.0.mjs -o fortune-nyx-v1.5.1-directbash-k6.1.0.mjs && node fortune-nyx-v1.5.1-directbash-k6.1.0.mjs
 ```
-<!-- BUILD:curl-end -->
+
+#### SSH server (connect with any SSH client on port 2222)
+```bash
+curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.1-ssh.cjs -o fortune-nyx-v1.5.1-ssh.cjs && node fortune-nyx-v1.5.1-ssh.cjs
+```
+
+#### SSH server without SFTP (lighter build)
+```bash
+curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.1-ssh-nosftp.js -o fortune-nyx-v1.5.1-ssh-nosftp.js && node fortune-nyx-v1.5.1-ssh-nosftp.js
+```
+<!-- /BUILD:curl-start -->
 
 > [!NOTE]
 > The standalone builds are intended for quick demos and testing. For production use, it's recommended to install the package and import the relevant classes directly in your codebase for better performance, stability, and security.
@@ -117,13 +122,14 @@ await ssh.start();
 
 ### Web shell (browser)
 
+> **[🖥 Try the live demo →](https://itsrealfortune.fr/typescript-virtual-container/demo)**
+
 Two browser bundles are available:
 
 <!-- BUILD:web-table -->
 | Bundle | Format | Entry point | Use case |
 |--------|--------|-------------|----------|
 | `builds/fortune-nyx-v1.5.1-web.min.js` | ESM | `createWebShell()` | Embedded terminals, modern bundlers |
-| `builds/fortune-nyx-v1.5.1-web-full.min.js` | ESM | `createVirtualShellShim()` | Full `VirtualShell`-like API in the browser |
 <!-- /BUILD:web-table -->
 
 Both bundles persist the VFS in **IndexedDB** — state survives page reloads.
@@ -151,11 +157,11 @@ bun run build-all       # rebuild everything
 </script>
 ```
 
-**`fortune-nyx-v1.5.1-web-full.min.js`** — mirrors the `VirtualShell` programmatic API:
+**`fortune-nyx-v1.5.1-web.min.js`** — mirrors the `VirtualShell` programmatic API:
 
 ```html
 <script type="module">
-  import { createVirtualShellShim } from "./builds/fortune-nyx-v1.5.1-web-full.min.js";
+  import { createVirtualShellShim } from "./builds/fortune-nyx-v1.5.1-web.min.js";
 
   const shell = createVirtualShellShim("web-vm");
   await shell.ensureInitialized();
@@ -171,6 +177,8 @@ bun run build-all       # rebuild everything
 bun run example-serve
 # Open http://localhost:8787/index.html
 ```
+
+> You can also try the hosted demo at **[itsrealfortune.fr/typescript-virtual-container/demo](https://itsrealfortune.fr/typescript-virtual-container/demo)**.
 
 ### Programmatic API
 
@@ -1645,7 +1653,7 @@ Open:
 - [x] Snapshot diff tooling — `diffSnapshots`, `formatDiff`, `assertDiff`
 - [x] `node`/`python3`/`npm`/`npx` — package-gated virtual REPL stubs
 <!-- BUILD:changelog -->
-- [x] Web shell bundles (`fortune-nyx-v1.5.1-web.min.js`, `fortune-nyx-v1.5.1-web-full.min.js`) — fully browser-native with IndexedDB VFS
+- [x] Web shell bundles (`fortune-nyx-v1.5.1-web.min.js`) — fully browser-native with IndexedDB VFS
 - [x] Self-standalone CLI (`fortune-nyx-v1.5.1-directbash-k6.1.0.mjs`) — single-file interactive shell, per-user history, tab completion
 <!-- /BUILD:changelog -->
 - [x] 120+ `man` pages — all built-in commands documented via `man <cmd>`

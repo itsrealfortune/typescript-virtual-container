@@ -34,7 +34,7 @@ run("node scripts/generate-manuals-bundle.mjs");
 
 // ── 3. esbuild targets ───────────────────────────────────────────────────────
 const ESBUILD = "bunx esbuild";
-const BANNER  = `--banner:js='#!/usr/bin/env node'`;
+const BANNER = `--banner:js='#!/usr/bin/env node'`;
 
 const targets = [
   // self-standalone (ESM, interactive CLI)
@@ -48,44 +48,37 @@ const targets = [
   // standalone SSH only (no SFTP)
   `${ESBUILD} src/standalone-wo-sftp.ts --bundle --platform=node --target=node18 \
 --outfile=${BUILDS_DIR}/${NAMES.standaloneNoSftp} --tree-shaking=true --minify ${BANNER}`,
-
-  // web shell (browser ESM)
-  `${ESBUILD} src/web.ts --bundle --platform=browser --format=esm --target=es2020 \
---outfile=${BUILDS_DIR}/${NAMES.web} --tree-shaking=true --minify`,
-
-  // web full API (browser ESM + node polyfills)
-  `${ESBUILD} src/web-api.ts --bundle --platform=browser --format=esm --target=es2020 \
---outfile=${BUILDS_DIR}/${NAMES.webFull} --tree-shaking=true --minify \
---alias:node:events=./polyfills/node_events/index.js \
---alias:node:path=./polyfills/node_path/index.js \
---alias:node:os=./polyfills/node_os/index.js \
---alias:node:fs=./polyfills/node_fs/index.js \
---alias:node:fs/promises=./polyfills/node_fs/promises.js \
---alias:node:crypto=./polyfills/node_crypto/index.js \
---alias:node:child_process=./polyfills/node_child_process/index.js \
---alias:node:zlib=./polyfills/node_zlib/index.js \
---alias:node:vm=./polyfills/node_vm/index.js`,
 ];
 
 for (const cmd of targets) {
   run(cmd.replace(/\s+/g, " ").trim());
 }
 
-// ── 4. Copy web to examples/ ─────────────────────────────────────────────────
-const examplesDir = join(root, "examples");
-mkdirSync(examplesDir, { recursive: true });
-copyFileSync(
-  join(BUILDS_DIR, NAMES.web),
-  join(examplesDir, "web.min.js"),
-);
-console.log(`\n✓ Copied ${NAMES.web} → examples/web.min.js`);
+// // ── 4. Copy web to examples/ ─────────────────────────────────────────────────
+// const examplesDir = join(root, "examples");
+// mkdirSync(examplesDir, { recursive: true });
+// copyFileSync(
+//   join(BUILDS_DIR, NAMES.web),
+//   join(examplesDir, "web.min.js"),
+// );
+// console.log(`\n✓ Copied ${NAMES.web} → examples/web.min.js`);
 
-// ── 5. Update README.md ───────────────────────────────────────────────────────
+// ── 4. Run build.js ───────────────────────────────────────────────────────────
+run("node build.js");
+
+// ── 5. Copy demo to docs/ ─────────────────────────────────────────────────────
+const docsDir = join(root, "docs");
+mkdirSync(docsDir, { recursive: true });
+copyFileSync(join(root, "examples", "app.js"), join(docsDir, "app.js"));
+copyFileSync(join(root, "examples", "index.html"), join(docsDir, "demo.html"));
+console.log("\n✓ Copied examples/app.js → docs/app.js");
+console.log("✓ Copied examples/index.html → docs/demo.html");
+
+// ── 6. Update README.md ───────────────────────────────────────────────────────
 const readmePath = join(root, "README.md");
 let readme = readFileSync(readmePath, "utf8");
 
-const { selfStandalone, standalone, standaloneNoSftp, web, webFull } = NAMES;
-const selfBase = selfStandalone.replace(".mjs", ""); // local filename without ext for the rm -f
+const { selfStandalone, standalone, standaloneNoSftp, web } = NAMES;
 
 // Helper: replace content between <!-- BUILD:tag --> and <!-- /BUILD:tag -->
 function replaceSection(tag, content) {
@@ -103,7 +96,7 @@ replaceSection(
     `| Mode | Entry point | Use case |`,
     `|------|-------------|----------|`,
     `| **SSH/SFTP server** | \`VirtualSshServer\` / \`VirtualSftpServer\` | Honeypots, remote testing, training environments |`,
-    `| **Web shell** | \`builds/${web}\` / \`builds/${webFull}\` (ESM) | Embedded terminals, interactive tutorials, browser demos |`,
+    `| **Web shell** | \`builds/${web}\` (ESM) | Embedded terminals, interactive tutorials, browser demos |`,
     `| **Standalone CLI** | \`builds/${selfStandalone}\` (single file) | Local shell, one-liner demos, no install required |`,
   ].join("\n"),
 );
@@ -112,14 +105,20 @@ replaceSection(
 replaceSection(
   "curl-start",
   [
-    `# Interactive local shell — persists VFS in .vfs/ in the current directory`,
-    `curl -s ${GH_BASE}/${selfStandalone} -o ${selfStandalone} && node ${selfStandalone} && rm -f ${selfStandalone}`,
+    `#### Interactivea local shell — persists VFS in .vfs/ in the current directory`,
+    `\`\`\`bash`,
+    `curl -s ${GH_BASE}/${selfStandalone} -o ${selfStandalone} && node ${selfStandalone}`,
+    `\`\`\``,
     ``,
-    `# SSH server (connect with any SSH client on port 2222)`,
-    `curl -s ${GH_BASE}/${standalone} -o ${standalone} && node ${standalone} && rm -f ${standalone}`,
+    `#### SSH server (connect with any SSH client on port 2222)`,
+    `\`\`\`bash`,
+    `curl -s ${GH_BASE}/${standalone} -o ${standalone} && node ${standalone}`,
+    `\`\`\``,
     ``,
-    `# SSH server without SFTP (lighter build)`,
-    `curl -s ${GH_BASE}/${standaloneNoSftp} -o ${standaloneNoSftp} && node ${standaloneNoSftp} && rm -f ${standaloneNoSftp}`,
+    `#### SSH server without SFTP (lighter build)`,
+    `\`\`\`bash`,
+    `curl -s ${GH_BASE}/${standaloneNoSftp} -o ${standaloneNoSftp} && node ${standaloneNoSftp}`,
+    `\`\`\``,
   ].join("\n"),
 );
 
@@ -145,7 +144,6 @@ replaceSection(
     `| Bundle | Format | Entry point | Use case |`,
     `|--------|--------|-------------|----------|`,
     `| \`builds/${web}\` | ESM | \`createWebShell()\` | Embedded terminals, modern bundlers |`,
-    `| \`builds/${webFull}\` | ESM | \`createVirtualShellShim()\` | Full \`VirtualShell\`-like API in the browser |`,
   ].join("\n"),
 );
 replaceSection(
@@ -167,11 +165,11 @@ replaceSection(
     `</script>`,
     `\`\`\``,
     ``,
-    `**\`${webFull}\`** — mirrors the \`VirtualShell\` programmatic API:`,
+    `**\`${web}\`** — mirrors the \`VirtualShell\` programmatic API:`,
     ``,
     `\`\`\`html`,
     `<script type="module">`,
-    `  import { createVirtualShellShim } from "./builds/${webFull}";`,
+    `  import { createVirtualShellShim } from "./builds/${web}";`,
     ``,
     `  const shell = createVirtualShellShim("web-vm");`,
     `  await shell.ensureInitialized();`,
@@ -186,13 +184,40 @@ replaceSection(
 replaceSection(
   "changelog",
   [
-    `- [x] Web shell bundles (\`${web}\`, \`${webFull}\`) — fully browser-native with IndexedDB VFS`,
+    `- [x] Web shell bundles (\`${web}\`) — fully browser-native with IndexedDB VFS`,
     `- [x] Self-standalone CLI (\`${selfStandalone}\`) — single-file interactive shell, per-user history, tab completion`,
   ].join("\n"),
 );
 
 writeFileSync(readmePath, readme, "utf8");
 console.log("✓ README.md updated with current build filenames");
+
+
+// ── 7. Strip .html from internal links in docs/ ───────────────────────────────
+// TypeDoc hardcodes .html — post-process all generated files to remove the
+// extension so GitHub Pages serves clean URLs (e.g. /docs/classes/VirtualShell)
+import { readdirSync } from "node:fs";
+
+function stripHtmlExtensions(dir) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      stripHtmlExtensions(full);
+    } else if (entry.name.endsWith(".html")) {
+      let src = readFileSync(full, "utf8");
+      // Replace href="...something.html" and href="...something.html#anchor"
+      // Only relative links (no http/https)
+      src = src.replace(
+        /href="(?!https?:\/\/)([^"]*)\.html(#[^"]*)?"/g,
+        (_, path, hash) => `href="${path}${hash ?? ""}"`,
+      );
+      writeFileSync(full, src, "utf8");
+    }
+  }
+}
+
+stripHtmlExtensions(docsDir);
+console.log("\n✓ Stripped .html from internal links in docs/");
 
 // ── Summary ──────────────────────────────────────────────────────────────────
 console.log("\n✅ Build complete:");

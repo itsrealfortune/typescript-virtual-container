@@ -1,5 +1,7 @@
 {
-  "entryPoints": ["src/index.ts"],
+  "entryPoints": [
+    "src/index.ts"
+  ],
   "out": "docs",
   "name": "typescript-virtual-container",
   "includeVersion": true,
