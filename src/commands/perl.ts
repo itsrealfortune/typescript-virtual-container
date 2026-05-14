@@ -29,7 +29,7 @@ export const perlCommand: ShellModule = {
 			for (let li = 0; li < lines.length; li++) {
 				let line = lines[li]!;
 				// $_ = line, $. = line number
-				let processed = code
+				const processed = code
 					.replace(/\$_/g, JSON.stringify(line))
 					.replace(/\$\./g, String(li + 1));
 

@@ -15,8 +15,8 @@ function makeTarHeader(name: string, size: number, isDir: boolean): Buffer {
 	enc(isDir ? "0000755\0" : "0000644\0", 100, 8);
 	enc("0000000\0", 108, 8);
 	enc("0000000\0", 116, 8);
-	enc(size.toString(8).padStart(11, "0") + "\0", 124, 12);
-	enc(Math.floor(Date.now() / 1000).toString(8).padStart(11, "0") + "\0", 136, 12);
+	enc(`${size.toString(8).padStart(11, "0")}\0`, 124, 12);
+	enc(`${Math.floor(Date.now() / 1000).toString(8).padStart(11, "0")}\0`, 136, 12);
 	hdr[156] = isDir ? 0x35 : 0x30; // '5' dir, '0' file
 	enc("ustar\0", 257, 6);
 	enc("00", 263, 2);
