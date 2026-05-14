@@ -32,10 +32,12 @@ export const fileCommand: ShellModule = {
 	run: ({ args, cwd, shell }) => {
 		if (!args.length) return { stderr: "file: missing operand", exitCode: 1 };
 		const lines: string[] = [];
+		let exitCode = 0;
 		for (const arg of args) {
 			const p = resolvePath(cwd, arg);
 			if (!shell.vfs.exists(p)) {
 				lines.push(`${arg}: ERROR: No such file or directory`);
+				exitCode = 1;
 				continue;
 			}
 			const st = shell.vfs.stat(p);
@@ -53,6 +55,6 @@ export const fileCommand: ShellModule = {
 			}
 			lines.push(`${arg}: ${type}`);
 		}
-		return { stdout: lines.join("\n"), exitCode: 0 };
+		return { stdout: lines.join("\n"), exitCode };
 	},
 };
