@@ -97,10 +97,13 @@ node fortune-nyx-v1.5.6-ssh.cjs --ssh-port=2022 --sftp-port=2024
 **`fortune-nyx-v1.5.6-directbash-k6.1.0.mjs` options:**
 
 ```bash
-node fortune-nyx-v1.5.6-directbash-k6.1.0.mjs                  # boot as root
-node fortune-nyx-v1.5.6-directbash-k6.1.0.mjs --user alice     # boot as alice (prompts for password if set)
-node fortune-nyx-v1.5.6-directbash-k6.1.0.mjs --user=alice     # same, inline form
-SSH_MIMIC_HOSTNAME=my-box node fortune-nyx-v1.5.6-directbash-k6.1.0.mjs  # custom hostname
+node fortune-nyx-v1.5.6-directbash-k6.1.0.mjs                          # boot as root
+node fortune-nyx-v1.5.6-directbash-k6.1.0.mjs --user alice             # boot as alice (prompts for password if set)
+node fortune-nyx-v1.5.6-directbash-k6.1.0.mjs --user=alice             # same, inline form
+node fortune-nyx-v1.5.6-directbash-k6.1.0.mjs --hostname=my-box        # custom hostname
+node fortune-nyx-v1.5.6-directbash-k6.1.0.mjs --snapshot=/data/.vfs    # custom VFS snapshot path
+node fortune-nyx-v1.5.6-directbash-k6.1.0.mjs --help                   # show all options
+node fortune-nyx-v1.5.6-directbash-k6.1.0.mjs --version                # print version
 ```
 <!-- /BUILD:selfStandalone-options -->
 
