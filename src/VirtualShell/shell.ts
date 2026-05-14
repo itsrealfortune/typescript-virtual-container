@@ -56,6 +56,7 @@ export function startShell(
 	let historyIndex: number | null = null;
 	let historyDraft = "";
 	let cwd = userHome(authUser);
+	let pendingHeredoc: { delimiter: string; lines: string[]; cmdBefore: string } | null = null;
 	const shellEnv: ShellEnv = makeDefaultEnv(authUser, hostname);
 	let nanoSession: NanoSession | null = null;
 	let pendingSudo: PendingSudo | null = null;
@@ -69,30 +70,28 @@ export function startShell(
 		`[${sessionId}] Shell started for user '${authUser}' at ${remoteAddress}`,
 	);
 
-	// Load .bashrc if it exists
+	// Source login/rc files at startup
 	void (async () => {
-		const bashrcPath = `${userHome(authUser)}/.bashrc`;
-		if (shell.vfs.exists(bashrcPath)) {
+		const sourceFile = async (filePath: string, isEnvFile = false) => {
+			if (!shell.vfs.exists(filePath)) return;
 			try {
-				const bashrc = shell.vfs.readFile(bashrcPath);
-				for (const line of bashrc.split("\n")) {
+				const content = shell.vfs.readFile(filePath);
+				for (const line of content.split("\n")) {
 					const l = line.trim();
 					if (!l || l.startsWith("#")) continue;
-					await runCommand(
-						l,
-						authUser,
-						hostname,
-						"shell",
-						cwd,
-						shell,
-						undefined,
-						shellEnv,
-					);
+					if (isEnvFile) {
+						// /etc/environment: KEY=VALUE pairs only, no shell syntax
+						const m = l.match(/^([A-Za-z_][A-Za-z0-9_]*)=["']?(.+?)["']?\s*$/);
+						if (m) shellEnv.vars[m[1]!] = m[2]!;
+					} else {
+						await runCommand(l, authUser, hostname, "shell", cwd, shell, undefined, shellEnv);
+					}
 				}
-			} catch {
-				/* ignore bashrc errors */
-			}
-		}
+			} catch { /* ignore */ }
+		};
+		await sourceFile("/etc/environment", true);
+		await sourceFile(`${userHome(authUser)}/.profile`);
+		await sourceFile(`${userHome(authUser)}/.bashrc`);
 	})();
 
 	function renderLine(): void {
@@ -431,6 +430,53 @@ export function startShell(
 			return;
 		}
 
+		if (pendingHeredoc) {
+			const hd = pendingHeredoc;
+			const input = chunk.toString("utf8");
+			for (let i = 0; i < input.length; i++) {
+				const ch = input[i]!;
+				if (ch === "") {
+					pendingHeredoc = null;
+					stream.write("^C\r\n");
+					renderLine();
+					return;
+				}
+				if (ch === "" || ch === "\b") {
+					lineBuffer = lineBuffer.slice(0, -1);
+					renderLine();
+					continue;
+				}
+				if (ch === "\r" || ch === "\n") {
+					const typedLine = lineBuffer;
+					lineBuffer = "";
+					cursorPos = 0;
+					stream.write("\r\n");
+					if (typedLine === hd.delimiter) {
+						const stdin = hd.lines.join("\n");
+						const cmd = hd.cmdBefore;
+						pendingHeredoc = null;
+						pushHistory(`${cmd} << ${hd.delimiter}`);
+						const result = await Promise.resolve(
+							runCommand(cmd, authUser, hostname, "shell", cwd, shell, stdin, shellEnv),
+						);
+						if (result.stdout) stream.write(`${toTtyLines(result.stdout)}\r\n`);
+						if (result.stderr) stream.write(`${toTtyLines(result.stderr)}\r\n`);
+						if (result.nextCwd) cwd = result.nextCwd;
+						renderLine();
+						return;
+					}
+					hd.lines.push(typedLine);
+					stream.write("> ");
+					continue;
+				}
+				if (ch >= " " || ch === "\t") {
+					lineBuffer += ch;
+					stream.write(ch);
+				}
+			}
+			return;
+		}
+
 		if (pendingSudo) {
 			const input = chunk.toString("utf8");
 
@@ -570,6 +616,17 @@ export function startShell(
 						}
 						continue;
 					}
+					// Home: \x1b[1~ or \x1b[H
+					if (third === "1" && fourth === "~") { i += 3; cursorPos = 0; renderLine(); continue; }
+					if (third === "H") { i += 2; cursorPos = 0; renderLine(); continue; }
+					// End: \x1b[4~ or \x1b[F
+					if (third === "4" && fourth === "~") { i += 3; cursorPos = lineBuffer.length; renderLine(); continue; }
+					if (third === "F") { i += 2; cursorPos = lineBuffer.length; renderLine(); continue; }
+				}
+				// Home/End via \x1bO sequences (some terminals)
+				if (next === "O" && third) {
+					if (third === "H") { i += 2; cursorPos = 0; renderLine(); continue; }
+					if (third === "F") { i += 2; cursorPos = lineBuffer.length; renderLine(); continue; }
 				}
 			}
 
@@ -583,13 +640,44 @@ export function startShell(
 				continue;
 			}
 
+			if (ch === "\u0001") { cursorPos = 0; renderLine(); continue; } // Ctrl+A
+			if (ch === "\u0005") { cursorPos = lineBuffer.length; renderLine(); continue; } // Ctrl+E
+			if (ch === "\u000b") { lineBuffer = lineBuffer.slice(0, cursorPos); renderLine(); continue; } // Ctrl+K
+			if (ch === "\u0015") { lineBuffer = lineBuffer.slice(cursorPos); cursorPos = 0; renderLine(); continue; } // Ctrl+U
+			if (ch === "\u0017") { // Ctrl+W — kill word backward
+				let wStart = cursorPos;
+				while (wStart > 0 && lineBuffer[wStart - 1] === " ") wStart--;
+				while (wStart > 0 && lineBuffer[wStart - 1] !== " ") wStart--;
+				lineBuffer = lineBuffer.slice(0, wStart) + lineBuffer.slice(cursorPos);
+				cursorPos = wStart;
+				renderLine();
+				continue;
+			}
+
 			if (ch === "\r" || ch === "\n") {
-				const line = lineBuffer.trim();
+				let line = lineBuffer.trim();
 				lineBuffer = "";
 				cursorPos = 0;
 				historyIndex = null;
 				historyDraft = "";
 				stream.write("\r\n");
+
+				// !! history expansion
+				if (line === "!!" || line.startsWith("!! ") || /\s!!$/.test(line) || / !! /.test(line)) {
+					const lastCmd = history.length > 0 ? history[history.length - 1]! : "";
+					line = line === "!!" ? lastCmd : line.replace(/!!/g, lastCmd);
+				} else if (/(?:^|\s)!!/.test(line)) {
+					const lastCmd = history.length > 0 ? history[history.length - 1]! : "";
+					line = line.replace(/!!/g, lastCmd);
+				}
+
+				// Heredoc detection: cmd << DELIM
+				const heredocMatch = line.match(/^(.*?)\s*<<-?\s*['"`]?([A-Za-z_][A-Za-z0-9_]*)['"`]?\s*$/);
+				if (heredocMatch && line.length > 0) {
+					pendingHeredoc = { delimiter: heredocMatch[2]!, lines: [], cmdBefore: heredocMatch[1]!.trim() || "cat" };
+					stream.write("> ");
+					continue;
+				}
 
 				if (line.length > 0) {
 					const result = await Promise.resolve(
