@@ -1,4 +1,4 @@
-import { gunzipSync, gzipSync } from "node:zlib";
+import { gunzipSync, gzipSync } from "fflate";
 import type { ShellModule } from "../types/commands";
 import { resolvePath } from "./helpers";
 
@@ -150,16 +150,20 @@ export const tarCommand: ShellModule = {
 				}
 			}
 
-			let tarBuf = buildTar(entries);
-			if (autoGzip) tarBuf = gzipSync(tarBuf);
-			shell.vfs.writeFile(archivePath, tarBuf);
+			const tarBuf = buildTar(entries);
+			const finalBuf = autoGzip ? Buffer.from(gzipSync(tarBuf)) : tarBuf;
+			shell.vfs.writeFile(archivePath, finalBuf);
 			return { stdout: verbose ? verboseLines.join("\n") : undefined, exitCode: 0 };
 		}
 
 		if (list || extract) {
-			let raw = shell.vfs.readFileRaw(archivePath);
+			const rawArchive = shell.vfs.readFileRaw(archivePath);
+			let raw: Buffer;
 			if (autoGzip) {
-				try { raw = gunzipSync(raw); } catch { return { stderr: `tar: ${archiveName}: not a gzip file`, exitCode: 1 }; }
+				try { raw = Buffer.from(gunzipSync(rawArchive)); }
+				catch { return { stderr: `tar: ${archiveName}: not a gzip file`, exitCode: 1 }; }
+			} else {
+				raw = rawArchive;
 			}
 
 			const files = parseTar(raw);

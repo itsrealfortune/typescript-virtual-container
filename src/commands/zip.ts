@@ -1,4 +1,4 @@
-import { deflateRawSync, inflateRawSync } from "node:zlib";
+import { deflateSync, inflateSync } from "fflate";
 import type { ShellModule } from "../types/commands";
 import { resolvePath } from "./helpers";
 
@@ -39,7 +39,7 @@ function buildZip(entries: Array<{ name: string; content: Buffer }>): Buffer {
 
 	for (const { name, content } of entries) {
 		const nameBuf = Buffer.from(name, "utf8");
-		const compressed = deflateRawSync(content, { level: 6 });
+		const compressed = Buffer.from(deflateSync(content, { level: 6 }));
 		const useDeflate = compressed.length < content.length;
 		const stored = useDeflate ? compressed : content;
 		const crc = crc32(content);
@@ -121,7 +121,7 @@ function parseZip(raw: Buffer): Array<{ name: string; content: Buffer }> {
 
 		let content: Buffer;
 		if (method === 8) {
-			try { content = inflateRawSync(compData); }
+			try { content = Buffer.from(inflateSync(compData)); }
 			catch { content = compData; }
 		} else {
 			content = compData;
