@@ -356,10 +356,12 @@ export function expandSync(
 			(_, pre, post) => `${pre}${homePath}${post}`,
 		);
 
-		// $? $$ $#
+		// $? $$ $# $RANDOM $LINENO
 		s = s.replace(/\$\?/g, String(lastExit));
 		s = s.replace(/\$\$/g, "1");
 		s = s.replace(/\$#/g, "0");
+		s = s.replace(/\$RANDOM\b/g, () => String(Math.floor(Math.random() * 32768)));
+		s = s.replace(/\$LINENO\b/g, "1");
 
 		// $(( arithmetic )) — must come before ${ and $VAR to avoid conflicts
 		s = expandArithmeticChunks(s, env);

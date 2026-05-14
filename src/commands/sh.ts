@@ -47,6 +47,7 @@ type Block =
 	| { type: "while"; cond: string; body: string[] }
 	| { type: "func"; name: string; body: string[] }
 	| { type: "arith"; expr: string }
+	| { type: "case"; expr: string; patterns: Array<{ pattern: string; body: string[] }> }
 	| { type: "cmd"; line: string };
 
 /** Very small shell interpreter: supports if/elif/else/fi, for/do/done, while/do/done */
@@ -159,6 +160,35 @@ function parseBlocks(lines: string[]): Block[] {
 				i++;
 			}
 			blocks.push({ type: "while", cond, body });
+		} else if (line.startsWith("case ") && line.endsWith(" in") || line.match(/^case\s+.+\s+in$/)) {
+			const caseExpr = line.replace(/^case\s+/, "").replace(/\s+in$/, "").trim();
+			const patterns: Array<{ pattern: string; body: string[] }> = [];
+			i++;
+			while (i < lines.length && lines[i]?.trim() !== "esac") {
+				const pl = lines[i]!.trim();
+				if (!pl || pl === "esac") { i++; continue; }
+				// pattern) or pattern1|pattern2)
+				const patMatch = pl.match(/^(.+?)\)\s*(.*)$/);
+				if (patMatch) {
+					const pat = patMatch[1]!.trim();
+					const body: string[] = [];
+					if (patMatch[2]?.trim() && patMatch[2].trim() !== ";;") {
+						body.push(patMatch[2].trim());
+					}
+					i++;
+					while (i < lines.length) {
+						const bl = lines[i]!.trim();
+						if (bl === ";;" || bl === "esac") break;
+						if (bl) body.push(bl);
+						i++;
+					}
+					if (lines[i]?.trim() === ";;") i++; // skip ;;
+					patterns.push({ pattern: pat, body });
+				} else {
+					i++;
+				}
+			}
+			blocks.push({ type: "case", expr: caseExpr, patterns });
 		} else {
 			blocks.push({ type: "cmd", line });
 		}
@@ -237,6 +267,7 @@ async function runBlocks(
 ): Promise<CommandResult> {
 	let lastResult: CommandResult = { exitCode: 0 };
 	let output = "";
+	let traceOutput = "";
 
 	for (const block of blocks) {
 		if (block.type === "cmd") {
@@ -246,6 +277,7 @@ async function runBlocks(
 				ctx.env.lastExitCode,
 				ctx,
 			);
+			if (ctx.env.vars.__xtrace) traceOutput += `+ ${expanded}\n`;
 
 			// Bare VAR=val assignment(s) — handle before dispatching to runCommand
 			const assignRe = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)/;
@@ -293,6 +325,7 @@ async function runBlocks(
 			ctx.env.lastExitCode = r.exitCode ?? 0;
 			if (r.stdout) output += `${r.stdout}\n`;
 			if (r.stderr) return { ...r, stdout: output.trim() };
+			if (ctx.env.vars.__errexit && (r.exitCode ?? 0) !== 0) return { ...r, stdout: output.trim() };
 			lastResult = r;
 		} else if (block.type === "if") {
 			let ran = false;
@@ -362,9 +395,32 @@ async function runBlocks(
 				if (sub.closeSession) return sub;
 				iterations++;
 			}
+		} else if (block.type === "case") {
+			const expanded = await expandVars(block.expr, ctx.env.vars, ctx.env.lastExitCode, ctx);
+			for (const pat of block.patterns) {
+				const alts = pat.pattern.split("|").map((p) => p.trim());
+				const matched = alts.some((p) => {
+					if (p === "*") return true;
+					if (p.includes("*") || p.includes("?")) {
+						const re = new RegExp(`^${p.replace(/\./g, "\\.").replace(/\*/g, ".*").replace(/\?/g, ".")}$`);
+						return re.test(expanded);
+					}
+					return p === expanded;
+				});
+				if (matched) {
+					const sub = await runBlocks(parseBlocks(pat.body), ctx);
+					if (sub.stdout) output += `${sub.stdout}\n`;
+					break;
+				}
+			}
 		}
 	}
-	return { ...lastResult, stdout: output.trim() || lastResult.stdout };
+	const finalStdout = output.trim() || lastResult.stdout;
+	if (traceOutput) {
+		const traceStderr = (lastResult.stderr ? `${lastResult.stderr}\n` : "") + traceOutput.trim();
+		return { ...lastResult, stdout: finalStdout, stderr: traceStderr || lastResult.stderr };
+	}
+	return { ...lastResult, stdout: finalStdout };
 }
 
 /**

@@ -26,8 +26,8 @@ const LINK_OUTPUT = `1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state
  * @category network
  * @params ["<object> <command>"]
  */
-export const ifconfigCommand: ShellModule = {
-	name: "ifconfig",
+export const ipCommand: ShellModule = {
+	name: "ip",
 	description: "Show/manipulate routing, network devices, interfaces",
 	category: "network",
 	params: ["<object> <command>"],
@@ -36,7 +36,7 @@ export const ifconfigCommand: ShellModule = {
 		const cmd = args[1]?.toLowerCase() ?? "show";
 
 		if (!obj) {
-			return { stderr: "Usage: ifconfig [interface]", exitCode: 1 };
+			return { stderr: "Usage: ip [ OPTIONS ] OBJECT { COMMAND | help }\nOBJECT := { link | addr | route | neigh }", exitCode: 1 };
 		}
 
 		if (obj === "addr" || obj === "address" || obj === "a") {

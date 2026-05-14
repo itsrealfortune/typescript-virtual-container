@@ -6,6 +6,7 @@ import { aptCacheCommand, aptCommand } from "./apt";
 import { awkCommand } from "./awk";
 import { base64Command } from "./base64";
 import { basenameCommand, dirnameCommand } from "./basename";
+import { bcCommand } from "./bc";
 import { catCommand } from "./cat";
 import { cdCommand } from "./cd";
 import { chmodCommand } from "./chmod";
@@ -37,7 +38,8 @@ import { historyCommand } from "./history";
 import { hostnameCommand } from "./hostname";
 import { htopCommand } from "./htop";
 import { idCommand } from "./id";
-import { ifconfigCommand } from "./ifconfig";
+import { ipCommand } from "./ip";
+import { bgCommand, fgCommand, jobsCommand } from "./jobs";
 import { killCommand } from "./kill";
 import { dmesgCommand, lastCommand } from "./last";
 import { lnCommand, readlinkCommand } from "./ln";
@@ -83,13 +85,13 @@ import { unameCommand } from "./uname";
 import { uniqCommand } from "./uniq";
 import { unsetCommand } from "./unset";
 import { uptimeCommand } from "./uptime";
+import { wCommand } from "./w";
 import { wcCommand } from "./wc";
 import { wgetCommand } from "./wget";
 import { whichCommand } from "./which";
 import { whoCommand } from "./who";
 import { whoamiCommand } from "./whoami";
 import { xargsCommand } from "./xargs";
-import { wCommand } from "./w";
 
 const BASE_COMMANDS: ShellModule[] = [
 	// Navigation
@@ -162,7 +164,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	sttyCommand,
 	lastCommand,
 	dmesgCommand,
-	ifconfigCommand,
+	ipCommand,
 	yesCommand,
 	fortuneCommand,
 	cowsayCommand,
@@ -187,6 +189,10 @@ const BASE_COMMANDS: ShellModule[] = [
 	dpkgCommand,
 	dpkgQueryCommand,
 	// Shell (extended)
+	jobsCommand,
+	bgCommand,
+	fgCommand,
+	bcCommand,
 	whichCommand,
 	typeCommand,
 	manCommand,

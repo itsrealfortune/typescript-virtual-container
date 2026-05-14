@@ -23,10 +23,11 @@ export function makeDefaultEnv(authUser: string, hostname: string): ShellEnv {
 			HOME: userHome(authUser),
 			USER: authUser,
 			LOGNAME: authUser,
-			SHELL: "/bin/sh",
+			SHELL: "/bin/bash",
 			TERM: "xterm-256color",
 			HOSTNAME: hostname,
 			PS1: "\\u@\\h:\\w\\$ ",
+			"0": "/bin/bash",
 		},
 		lastExitCode: 0,
 	};
