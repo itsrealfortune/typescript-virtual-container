@@ -460,7 +460,11 @@ export class SftpMimic extends EventEmitter {
 		this.handles.delete(handle.toString("hex"));
 	}
 
-	/** Attach SFTP handlers to an already-accepted sftp stream (e.g. from an SSH subsystem request). */
+	/**
+	 * Attach SFTP handlers to an already-accepted sftp stream.
+	 * Used internally by {@link SshMimic} for the SFTP subsystem on the SSH port.
+	 * @internal
+	 */
 	public attachSftpHandlers(sftp: SftpServerStream, authUser: string): void {
 		const getVfs = () => this.getVfs();
 		const getUsers = () => this.getUsers();
@@ -478,10 +482,6 @@ export class SftpMimic extends EventEmitter {
 			}
 
 			const openMode = flags;
-			const _canRead = Boolean(openMode & OPEN_MODE.READ);
-			const _canWrite = Boolean(
-				openMode & OPEN_MODE.WRITE || openMode & OPEN_MODE.APPEND,
-			);
 			const canCreate = Boolean(openMode & OPEN_MODE.CREAT);
 			const shouldTruncate = Boolean(openMode & OPEN_MODE.TRUNC);
 
@@ -544,7 +544,7 @@ export class SftpMimic extends EventEmitter {
 					return;
 				}
 
-				const chunk = entry.buffer.slice(offset, offset + length);
+				const chunk = entry.buffer.subarray(offset, offset + length);
 				sftp.data(reqid, chunk);
 			},
 		);
