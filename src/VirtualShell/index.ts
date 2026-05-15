@@ -135,9 +135,8 @@ function resolveAutoSudoForNewUsers(): boolean {
  * const result = await client.exec("uname -a");
  * ```
  *
- * @fires VirtualShell#initialized  Emitted once the VFS and users are ready.
- * @fires VirtualShell#command       Emitted after every command execution.
- * @fires VirtualShell#session:start Emitted when an interactive session opens.
+ * **Events:** `initialized` (VFS and users ready), `command` (after each execution),
+ * `session:start` (interactive session opened).
  */
 class VirtualShell extends EventEmitter {
 	/** Backing virtual filesystem — use for direct path operations. */
