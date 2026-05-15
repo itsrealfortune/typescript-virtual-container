@@ -33,9 +33,10 @@ function measureCharCell(): { w: number; h: number } {
 
 function getTermSize(): { cols: number; rows: number } {
   const { w, h } = measureCharCell();
+  const wrapper = document.getElementById('terminal-wrapper') ?? terminal;
   return {
     cols: Math.max(1, Math.floor(terminal.clientWidth / w)),
-    rows: Math.max(1, Math.floor(terminal.clientHeight / h)),
+    rows: Math.max(1, Math.floor(wrapper.clientHeight / h)),
   };
 }
 
@@ -45,14 +46,31 @@ const { cols, rows } = getTermSize();
 const renderer = new WebTermRenderer(rows, cols);
 
 let rafPending = false;
+const wrapper = document.getElementById('terminal-wrapper') as HTMLDivElement;
+let fullscreenMode = false;
 function flush(): void {
   if (rafPending) return;
   rafPending = true;
   requestAnimationFrame(() => {
     rafPending = false;
+    const cleared = renderer.consumeCleared();
+    if (cleared) fullscreenMode = true;
     scrollbackEl.innerHTML = renderer.renderScrollbackHtml();
     terminal.innerHTML = renderer.renderHtml();
-    terminal.scrollIntoView(false);
+    if (fullscreenMode) {
+      // Exit fullscreen once shell starts accumulating scrollback again
+      if (!cleared && renderer.scrollbackLength > 0) {
+        fullscreenMode = false;
+        wrapper.style.overflowY = 'auto';
+        terminal.scrollIntoView(false);
+      } else {
+        wrapper.style.overflowY = 'hidden';
+        wrapper.scrollTop = 0;
+      }
+    } else {
+      wrapper.style.overflowY = 'auto';
+      terminal.scrollIntoView(false);
+    }
   });
 }
 

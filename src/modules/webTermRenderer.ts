@@ -30,6 +30,7 @@ export class WebTermRenderer {
 	private curRow = 0;
 	private curCol = 0;
 	private cursorVisible = true;
+	private _cleared = false;
 
 	// Current SGR state
 	private bold = false;
@@ -178,6 +179,7 @@ export class WebTermRenderer {
 				this.scrollback = [];
 				this.curRow = 0;
 				this.curCol = 0;
+				this._cleared = true;
 			}
 			return;
 		}
@@ -301,6 +303,15 @@ export class WebTermRenderer {
 	get cursorRow(): number { return this.curRow; }
 	get cursorCol(): number { return this.curCol; }
 	get isCursorVisible(): boolean { return this.cursorVisible; }
+
+	/** Returns true (once) if CSI 2J was received since last call. */
+	consumeCleared(): boolean {
+		const v = this._cleared;
+		this._cleared = false;
+		return v;
+	}
+
+	get scrollbackLength(): number { return this.scrollback.length; }
 
 	renderScrollbackHtml(): string {
 		let html = "";
