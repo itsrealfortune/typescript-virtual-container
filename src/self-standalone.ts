@@ -305,21 +305,50 @@ async function runReadlineShell(): Promise<void> {
 
 			const snapSize = { cols: stdout.columns ?? 80, rows: stdout.rows ?? 24 };
 
+			// Steal all stdin listeners from readline so it gets no bytes during nano.
+			// Store them to restore later — this is safer than rl.pause()/resume()
+			// which leaves readline's internal state machine in a broken position.
+			const stdinListeners = stdin.listeners("data") as ((chunk: Buffer) => void)[];
+			for (const l of stdinListeners) stdin.off("data", l);
+
+			// Also steal the "keypress" listeners readline attaches for raw key events.
+			const keypressListeners = stdin.listeners("keypress") as ((...args: unknown[]) => void)[];
+			for (const l of keypressListeners) stdin.off("keypress", l);
+
+			function cleanup(): void {
+				process.off("SIGWINCH", onResize);
+				process.off("SIGINT", onSigint);
+				stdin.off("data", forwardInput);
+
+				// Restore to cooked mode first
+				stdin.setRawMode(false);
+
+				// Restore readline's listeners
+				for (const l of stdinListeners) stdin.on("data", l);
+				for (const l of keypressListeners) stdin.on("keypress", l);
+
+				// Reset terminal state: show cursor, reset SGR
+				stdout.write("\x1b[?25h\x1b[0m\r\n");
+			}
+
+			// Block SIGINT from killing the process while in nano
+			const onSigint = (): void => { /* absorbed — nano handles ^C via raw bytes */ };
+
 			const editor = new NanoEditor({
 				stream,
 				terminalSize: snapSize,
 				content: initialContent,
 				filename: path.posix.basename(targetPath),
+				onSave: (content) => {
+					virtualShell.writeFileAsUser(authUser, targetPath, content);
+					void flushVfs();
+				},
 				onExit: (reason, content) => {
-					process.off("SIGWINCH", onResize);
-					stdin.off("data", forwardInput);
-					stdin.setRawMode(false);
-					rl.resume();
+					cleanup();
 					if (reason === "saved") {
 						virtualShell.writeFileAsUser(authUser, targetPath, content);
 						void flushVfs();
 					}
-					stdout.write("\r\n");
 					resolve();
 				},
 			});
@@ -330,11 +359,11 @@ async function runReadlineShell(): Promise<void> {
 
 			const forwardInput = (chunk: Buffer): void => { editor.handleInput(chunk); };
 
-			rl.pause();
-			stdin.resume();
 			stdin.setRawMode(true);
+			stdin.resume();
 			stdin.on("data", forwardInput);
 			process.on("SIGWINCH", onResize);
+			process.on("SIGINT", onSigint);
 			editor.start();
 		});
 	}
@@ -433,6 +462,7 @@ async function runReadlineShell(): Promise<void> {
 				result.openEditor.initialContent,
 				result.openEditor.tempPath,
 			);
+			prompt();
 			return;
 		}
 

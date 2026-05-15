@@ -44,6 +44,8 @@ export interface NanoEditorOptions {
 	content: string;
 	filename: string;
 	onExit: (reason: NanoExitReason, content: string) => void;
+	/** Called on ^S / silent save — save without closing nano. Optional. */
+	onSave?: (content: string) => void;
 }
 
 // Undo stack entry
@@ -93,12 +95,14 @@ export class NanoEditor {
 	private readonly stream: ShellStream;
 	private terminalSize: TerminalSize;
 	private readonly onExit: NanoEditorOptions["onExit"];
+	private readonly onSave: NanoEditorOptions["onSave"];
 
 	constructor(opts: NanoEditorOptions) {
 		this.stream = opts.stream;
 		this.terminalSize = opts.terminalSize;
 		this.filename = opts.filename;
 		this.onExit = opts.onExit;
+		this.onSave = opts.onSave;
 		this.lines = opts.content.split("\n");
 		// Remove trailing empty line that split adds for files ending in \n
 		if (this.lines.length > 1 && this.lines.at(-1) === "") {
@@ -671,9 +675,17 @@ export class NanoEditor {
 	}
 
 	private doSave(): void {
+		// ^S: save without closing (if onSave provided), else fall back to ^O flow
 		const content = this.getCurrentContent();
-		this.modified = false;
-		this.onExit("saved", content);
+		if (this.onSave) {
+			this.modified = false;
+			this.onSave(content);
+			this.renderStatusLine(`Saved: ${this.filename}`);
+			this.renderTitleBar();
+		} else {
+			// No silent-save callback: behave like ^O (prompt filename)
+			this.enterWriteout();
+		}
 	}
 
 	private enterWriteout(): void {
