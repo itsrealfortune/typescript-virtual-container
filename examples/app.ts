@@ -115,27 +115,25 @@ function print(s: string): void {
 // Live input line — sits at bottom of #output as an inline element
 let inputLineEl: HTMLSpanElement | null = null;
 
-function printPrompt(): void {
+// Password challenge state
+let passwordMode = false;
+type ChallengeHandler = (input: string) => Promise<void>;
+let activeChallengeHandler: ChallengeHandler | null = null;
+
+function buildInputLine(promptHtml: string): void {
   if (inputLineEl) { inputLineEl.remove(); inputLineEl = null; }
   cmd.value = '';
-
   inputLineEl = document.createElement('span');
   inputLineEl.className = 'input-line';
-
   const promptSpan = document.createElement('span');
-  const cwdLabel = cwd === userHome(authUser) ? '~' : (cwd.split('/').at(-1) || '/');
-  promptSpan.innerHTML = ansiToHtml(buildPrompt(authUser, HOSTNAME, cwdLabel));
-
+  promptSpan.innerHTML = promptHtml;
   const textSpan = document.createElement('span');
   textSpan.className = 'typed';
-
   const cursor = document.createElement('span');
   cursor.className = 'cursor';
-  cursor.textContent = '\u00a0';
-
+  cursor.textContent = ' ';
   const afterSpan = document.createElement('span');
   afterSpan.className = 'after-cursor';
-
   inputLineEl.appendChild(promptSpan);
   inputLineEl.appendChild(textSpan);
   inputLineEl.appendChild(cursor);
@@ -144,12 +142,26 @@ function printPrompt(): void {
   scrollToBottom();
 }
 
+function printPrompt(): void {
+  passwordMode = false;
+  activeChallengeHandler = null;
+  const cwdLabel = cwd === userHome(authUser) ? '~' : (cwd.split('/').at(-1) || '/');
+  buildInputLine(ansiToHtml(buildPrompt(authUser, HOSTNAME, cwdLabel)));
+}
+
+function printChallengePrompt(text: string, handler: ChallengeHandler): void {
+  passwordMode = true;
+  activeChallengeHandler = handler;
+  buildInputLine(text.replace(/&/g, '&amp;').replace(/</g, '&lt;'));
+}
+
 function syncCursor(): void {
   if (!inputLineEl) return;
-  const val = cmd.value;
-  const pos = cmd.selectionStart ?? val.length;
+  // In password mode: never show typed text
+  const val = passwordMode ? '' : cmd.value;
+  const pos = passwordMode ? 0 : (cmd.selectionStart ?? cmd.value.length);
   const before = val.slice(0, pos);
-  const ch = val[pos] ?? '\u00a0';
+  const ch = val[pos] ?? ' ';
   const after = val.slice(pos + (val[pos] ? 1 : 0));
   (inputLineEl.querySelector('.typed') as HTMLSpanElement).textContent = before;
   (inputLineEl.querySelector('.cursor') as HTMLSpanElement).textContent = ch;
@@ -337,28 +349,38 @@ cmd.addEventListener('keydown', async (e: KeyboardEvent) => {
 
   if (e.key !== 'Enter') return;
 
-  const value = cmd.value.trim();
+  const value = cmd.value;
+  const trimmed = value.trim();
   historyIdx = -1;
 
-  // Freeze input line: restore full text, remove cursor, null the ref
+  // Freeze input line
   if (inputLineEl) {
-    (inputLineEl.querySelector('.typed') as HTMLSpanElement).textContent = value;
+    // In password mode: blank the frozen line (never show password in DOM)
+    (inputLineEl.querySelector('.typed') as HTMLSpanElement).textContent = passwordMode ? '' : trimmed;
     inputLineEl.querySelector('.cursor')?.remove();
     (inputLineEl.querySelector('.after-cursor') as HTMLSpanElement | null)?.remove();
     inputLineEl = null;
   }
 
-  // Newline after the frozen line
   out.appendChild(document.createTextNode('\n'));
 
-  if (value) {
-    history.push(value);
+  // Active challenge (password/confirm flow)
+  if (activeChallengeHandler) {
+    const handler = activeChallengeHandler;
+    activeChallengeHandler = null;
+    passwordMode = false;
+    await handler(value);
+    return;
+  }
+
+  if (trimmed) {
+    history.push(trimmed);
     if (history.length > MAX_HISTORY) history = history.slice(history.length - MAX_HISTORY);
     saveHistory();
   }
 
   try {
-    const result = await runCommand(value, authUser, HOSTNAME, 'shell', cwd, shell, undefined, shellEnv);
+    const result = await runCommand(trimmed, authUser, HOSTNAME, 'shell', cwd, shell, undefined, shellEnv);
 
     if (result.clearScreen) out.innerHTML = '';
     if (result.stdout) print(`${result.stdout.trim()}\n`);
@@ -368,6 +390,29 @@ cmd.addEventListener('keydown', async (e: KeyboardEvent) => {
     await vfs.flushMirror();
 
     if (result.closeSession) { print('\nSession closed.\n'); return; }
+
+    // Handle password/sudo challenge returned by the command
+    if (result.sudoChallenge) {
+      const challenge = result.sudoChallenge;
+      const makeHandler = (_promptText: string): ChallengeHandler => async (input: string) => {
+        if (!challenge.onPassword) { printPrompt(); return; }
+        try {
+          const { result: res, nextPrompt } = await challenge.onPassword(input, shell);
+          if (res === null && nextPrompt) {
+            printChallengePrompt(nextPrompt, makeHandler(nextPrompt));
+          } else {
+            if (res?.stdout) print(`${res.stdout.trim()}\n`);
+            if (res?.stderr) print(`${res.stderr.trim()}\n`);
+            printPrompt();
+          }
+        } catch (err) {
+          print(`${String(err)}\n`);
+          printPrompt();
+        }
+      };
+      printChallengePrompt(challenge.prompt, makeHandler(challenge.prompt));
+      return;
+    }
   } catch (err) {
     print(`${String(err)}\n`);
   }
