@@ -175,6 +175,12 @@ cmd.addEventListener('input', () => { syncCursor(); });
 // biome-ignore lint/suspicious/noExplicitAny: globalThis shim
 await (globalThis as any).__fsReady__;
 
+// Request persistent storage so the browser doesn't evict IndexedDB under pressure.
+// Best-effort — silently ignored if the API is unavailable or denied.
+if (navigator.storage?.persist) {
+  await navigator.storage.persist().catch(() => undefined);
+}
+
 function detectWebGlGpu(): string | undefined {
   try {
     const canvas = document.createElement('canvas');
