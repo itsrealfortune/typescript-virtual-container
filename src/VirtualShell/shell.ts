@@ -102,7 +102,7 @@ export function startShell(
 
 	function renderLine(): void {
 		const prompt = buildCurrentPrompt();
-		stream.write(`\r${prompt}${lineBuffer}\u001b[K`);
+		stream.write(`\r\x1b[0m${prompt}${lineBuffer}\u001b[K`);
 
 		const moveLeft = lineBuffer.length - cursorPos;
 		if (moveLeft > 0) {
@@ -730,4 +730,3 @@ export function startShell(
 		}
 	});
 }
-

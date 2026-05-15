@@ -31,10 +31,11 @@ export function buildPrompt(
 	const w = readlineMode ? "\x01" : "";
 	const ew = readlineMode ? "\x02" : "";
 	const colorUser = isRoot ? `${w}\x1b[31;1m${ew}` : `${w}\x1b[35;1m${ew}`;
-	const colorWhite = `${w}\x1b[37;1m${ew}`;
 	const colorBlue = `${w}\x1b[34;1m${ew}`;
 	const colorReset = `${w}\x1b[0m${ew}`;
 	const symbol = isRoot ? "#" : "$";
 
-	return `${colorWhite}[${colorUser}${user}${colorWhite}@${colorBlue}${host}${colorReset} ${cwdName}${colorWhite}]${colorReset}${symbol} `;
+	const colorCwd = `${w}\x1b[36;1m${ew}`;
+
+	return `${colorReset}[${colorUser}${user}${colorReset}@${colorBlue}${host}${colorReset} ${colorCwd}${cwdName}${colorReset}]${symbol} `;
 }

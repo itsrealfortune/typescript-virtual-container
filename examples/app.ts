@@ -13,6 +13,7 @@ if (navigator.storage?.persist) {
 // ── Terminal element ──────────────────────────────────────────────────────────
 
 const terminal = document.getElementById('terminal') as HTMLPreElement;
+const scrollbackEl = document.getElementById('scrollback') as HTMLPreElement;
 terminal.focus();
 document.addEventListener('click', () => {
   if (!window.getSelection()?.toString()) terminal.focus();
@@ -49,8 +50,9 @@ function flush(): void {
   rafPending = true;
   requestAnimationFrame(() => {
     rafPending = false;
+    scrollbackEl.innerHTML = renderer.renderScrollbackHtml();
     terminal.innerHTML = renderer.renderHtml();
-    terminal.scrollTop = terminal.scrollHeight;
+    terminal.scrollIntoView(false);
   });
 }
 
@@ -140,6 +142,7 @@ terminal.addEventListener('keydown', (e: KeyboardEvent) => {
   if (!bytes) return;
 
   for (const l of dataListeners) l(toChunk(bytes));
+  terminal.scrollTop = terminal.scrollHeight;
 });
 
 // Paste support
@@ -150,6 +153,7 @@ terminal.addEventListener('paste', (e: ClipboardEvent) => {
   const enc = new TextEncoder();
   const bytes = enc.encode(text);
   for (const l of dataListeners) l(toChunk(bytes));
+  terminal.scrollTop = terminal.scrollHeight;
 });
 
 // ── Resize ────────────────────────────────────────────────────────────────────

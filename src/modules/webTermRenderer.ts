@@ -26,6 +26,7 @@ export class WebTermRenderer {
 	private rows: number;
 	private cols: number;
 	private screen: Cell[][];
+	private scrollback: Cell[][] = [];
 	private curRow = 0;
 	private curCol = 0;
 	private cursorVisible = true;
@@ -174,6 +175,7 @@ export class WebTermRenderer {
 				for (let c = 0; c <= this.curCol; c++) this.screen[this.curRow]![c] = makeCell();
 			} else if (mode === 2) {
 				this.screen = this.makeScreen();
+				this.scrollback = [];
 				this.curRow = 0;
 				this.curCol = 0;
 			}
@@ -230,7 +232,9 @@ export class WebTermRenderer {
 	}
 
 	private scrollUp(): void {
-		this.screen.shift();
+		const line = this.screen.shift()!;
+		this.scrollback.push(line);
+		if (this.scrollback.length > 1000) this.scrollback.shift();
 		this.screen.push(Array.from({ length: this.cols }, () => makeCell()));
 		// curRow stays at rows-1 (bottom)
 	}
@@ -267,7 +271,7 @@ export class WebTermRenderer {
 				const cell = row[c]!;
 				const isCursor = this.cursorVisible && r === this.curRow && c === this.curCol;
 
-				let fg = cell.fg ?? (cell.bold ? "#fff" : "#ccc");
+				let fg = cell.fg ?? "#ccc";
 				let bg = cell.bg ?? "transparent";
 				if (cell.reverse) { [fg, bg] = [bg === "transparent" ? "#000" : bg, fg === "transparent" ? "#000" : fg]; }
 				if (isCursor) {
@@ -297,6 +301,38 @@ export class WebTermRenderer {
 	get cursorRow(): number { return this.curRow; }
 	get cursorCol(): number { return this.curCol; }
 	get isCursorVisible(): boolean { return this.cursorVisible; }
+
+	renderScrollbackHtml(): string {
+		let html = "";
+		for (const row of this.scrollback) {
+			let spanOpen = false;
+			let lastStyle = "";
+			for (const cell of row) {
+				let fg = cell.fg ?? "#ccc";
+				let bg = cell.bg ?? "transparent";
+				if (cell.reverse) { [fg, bg] = [bg === "transparent" ? "#000" : bg, fg === "transparent" ? "#000" : fg]; }
+				const style = `color:${fg};background:${bg};${cell.bold ? "font-weight:bold;" : ""}`;
+				if (style !== lastStyle) {
+					if (spanOpen) html += "</span>";
+					html += `<span style="${style}">`;
+					spanOpen = true;
+					lastStyle = style;
+				}
+				html += escHtml(cell.ch);
+			}
+			if (spanOpen) html += "</span>";
+			html += "\n";
+		}
+		return html;
+	}
+}
+
+const ANSI_NORMAL_TO_BRIGHT: Record<string, string> = {
+	"#000": "#555", "#c00": "#f55", "#0c0": "#5f5", "#cc0": "#ff5",
+	"#00c": "#55f", "#c0c": "#f5f", "#0cc": "#5ff", "#ccc": "#fff",
+};
+function boldBright(fg: string): string {
+	return ANSI_NORMAL_TO_BRIGHT[fg] ?? fg;
 }
 
 function escHtml(ch: string): string {
