@@ -76,27 +76,29 @@ export function startShell(
 	);
 
 	// Source login/rc files before first prompt.
-	void (async () => {
-		const sourceFile = async (filePath: string, isEnvFile = false) => {
-			if (!shell.vfs.exists(filePath)) return;
-			try {
-				const content = shell.vfs.readFile(filePath);
-				for (const line of content.split("\n")) {
-					const l = line.trim();
-					if (!l || l.startsWith("#")) continue;
-					if (isEnvFile) {
-						const m = l.match(/^([A-Za-z_][A-Za-z0-9_]*)=["']?(.+?)["']?\s*$/);
-						if (m) shellEnv.vars[m[1]!] = m[2]!;
-					} else {
-						const r = await runCommand(l, authUser, hostname, "shell", cwd, shell, undefined, shellEnv);
-						if (r.stdout) stream.write(r.stdout);
-					}
+	let loginReady = false;
+	const sourceFile = async (filePath: string, isEnvFile = false) => {
+		if (!shell.vfs.exists(filePath)) return;
+		try {
+			const content = shell.vfs.readFile(filePath);
+			for (const line of content.split("\n")) {
+				const l = line.trim();
+				if (!l || l.startsWith("#")) continue;
+				if (isEnvFile) {
+					const m = l.match(/^([A-Za-z_][A-Za-z0-9_]*)=["']?(.+?)["']?\s*$/);
+					if (m) shellEnv.vars[m[1]!] = m[2]!;
+				} else {
+					const r = await runCommand(l, authUser, hostname, "shell", cwd, shell, undefined, shellEnv);
+					if (r.stdout) stream.write(r.stdout.replace(/\n/g, "\r\n"));
 				}
-			} catch { /* ignore */ }
-		};
+			}
+		} catch { /* ignore */ }
+	};
+	const loginPromise = (async () => {
 		await sourceFile("/etc/environment", true);
 		await sourceFile(`${userHome(authUser)}/.profile`);
 		await sourceFile(`${userHome(authUser)}/.bashrc`);
+		loginReady = true;
 	})();
 
 	function renderLine(): void {
@@ -305,8 +307,8 @@ export function startShell(
 		try {
 			return shell.vfs
 				.list(basePath)
-				.filter((entry) => !entry.startsWith("."))
 				.filter((entry) => entry.startsWith(namePart))
+				.filter((entry) => namePart.startsWith(".") || !entry.startsWith("."))
 				.map((entry) => {
 					const fullPath = path.posix.join(basePath, entry);
 					const st = shell.vfs.stat(fullPath);
@@ -400,9 +402,10 @@ export function startShell(
 	}
 
 	renderLoginBanner();
-	renderLine();
+	void loginPromise.then(() => renderLine());
 
 	stream.on("data", async (chunk: Buffer) => {
+		if (!loginReady) return;
 		if (nanoSession) {
 			if (nanoSession.kind === "nano") {
 				nanoSession.editor.handleInput(chunk);
