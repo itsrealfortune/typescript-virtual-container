@@ -50,6 +50,7 @@ function flush(): void {
   requestAnimationFrame(() => {
     rafPending = false;
     terminal.innerHTML = renderer.renderHtml();
+    terminal.scrollTop = terminal.scrollHeight;
   });
 }
 

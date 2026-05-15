@@ -79,14 +79,34 @@ export class WebTermRenderer {
 					const cmd = this.buf[j]!;
 					this.handleCsi(seq, cmd);
 					i = j + 1;
+				} else if (next === "]") {
+					// OSC (Operating System Command) — terminator is BEL (\x07) or ST (ESC \)
+					// Must consume fully or the payload prints as raw text and corrupts SGR state.
+					let j = i + 2;
+					while (j < this.buf.length) {
+						if (this.buf[j] === "\x07") { j++; break; }
+						if (this.buf[j] === "\x1b" && this.buf[j + 1] === "\\") { j += 2; break; }
+						j++;
+					}
+					// If terminator not yet received, wait for more data
+					if (j >= this.buf.length && this.buf[j - 1] !== "\x07") break;
+					i = j;
+				} else if (next === "O") {
+					// SS3 — single extra byte (F1-F4, cursor keys in application mode)
+					if (i + 2 >= this.buf.length) break; // wait for more data
+					i += 3; // ESC O <cmd>
 				} else {
-					i += 2; // skip unknown ESC sequence
+					i += 2; // skip unknown 2-char ESC sequence
 				}
 			} else if (ch === "\r") {
 				this.curCol = 0;
 				i++;
 			} else if (ch === "\n") {
-				this.curRow = Math.min(this.curRow + 1, this.rows - 1);
+				if (this.curRow < this.rows - 1) {
+					this.curRow++;
+				} else {
+					this.scrollUp();
+				}
 				i++;
 			} else if (ch.charCodeAt(0) >= 32) {
 				this.putChar(ch);
@@ -124,15 +144,6 @@ export class WebTermRenderer {
 			}
 			return;
 		}
-		if (cmd === "J") {
-			const mode = seq === "" ? 0 : Number.parseInt(seq, 10);
-			if (mode === 2) {
-				this.screen = this.makeScreen();
-				this.curRow = 0;
-				this.curCol = 0;
-			}
-			return;
-		}
 		if (cmd === "m") {
 			this.handleSgr(seq);
 			return;
@@ -143,6 +154,29 @@ export class WebTermRenderer {
 		}
 		if (cmd === "h" && seq === "?25") {
 			this.cursorVisible = true;
+			return;
+		}
+		// Cursor movement (relative)
+		if (cmd === "A") { const n = Number.parseInt(seq || "1", 10) || 1; this.curRow = Math.max(0, this.curRow - n); return; }
+		if (cmd === "B") { const n = Number.parseInt(seq || "1", 10) || 1; this.curRow = Math.min(this.rows - 1, this.curRow + n); return; }
+		if (cmd === "C") { const n = Number.parseInt(seq || "1", 10) || 1; this.curCol = Math.min(this.cols - 1, this.curCol + n); return; }
+		if (cmd === "D") { const n = Number.parseInt(seq || "1", 10) || 1; this.curCol = Math.max(0, this.curCol - n); return; }
+		// Cursor column absolute
+		if (cmd === "G") { const n = Number.parseInt(seq || "1", 10) || 1; this.curCol = Math.max(0, Math.min(n - 1, this.cols - 1)); return; }
+		// Erase display modes 0/1
+		if (cmd === "J") {
+			const mode = seq === "" ? 0 : Number.parseInt(seq, 10);
+			if (mode === 0) {
+				for (let c = this.curCol; c < this.cols; c++) this.screen[this.curRow]![c] = makeCell();
+				for (let r = this.curRow + 1; r < this.rows; r++) this.screen[r] = Array.from({ length: this.cols }, () => makeCell());
+			} else if (mode === 1) {
+				for (let r = 0; r < this.curRow; r++) this.screen[r] = Array.from({ length: this.cols }, () => makeCell());
+				for (let c = 0; c <= this.curCol; c++) this.screen[this.curRow]![c] = makeCell();
+			} else if (mode === 2) {
+				this.screen = this.makeScreen();
+				this.curRow = 0;
+				this.curCol = 0;
+			}
 			return;
 		}
 	}
@@ -195,8 +229,17 @@ export class WebTermRenderer {
 		}
 	}
 
+	private scrollUp(): void {
+		this.screen.shift();
+		this.screen.push(Array.from({ length: this.cols }, () => makeCell()));
+		// curRow stays at rows-1 (bottom)
+	}
+
 	private putChar(ch: string): void {
-		if (this.curRow >= this.rows || this.curCol >= this.cols) return;
+		if (this.curCol >= this.cols) {
+			this.curCol = 0;
+			if (this.curRow < this.rows - 1) { this.curRow++; } else { this.scrollUp(); }
+		}
 		this.screen[this.curRow]![this.curCol] = makeCell({
 			ch,
 			bold: this.bold,
@@ -205,10 +248,6 @@ export class WebTermRenderer {
 			bg: this.bg,
 		});
 		this.curCol++;
-		if (this.curCol >= this.cols) {
-			this.curCol = 0;
-			if (this.curRow < this.rows - 1) this.curRow++;
-		}
 	}
 
 	private makeScreen(rows = this.rows, cols = this.cols): Cell[][] {
@@ -228,20 +267,26 @@ export class WebTermRenderer {
 				const cell = row[c]!;
 				const isCursor = this.cursorVisible && r === this.curRow && c === this.curCol;
 
-				let fg = cell.fg ?? "#ccc";
+				let fg = cell.fg ?? (cell.bold ? "#fff" : "#ccc");
 				let bg = cell.bg ?? "transparent";
-				if (cell.reverse) { [fg, bg] = [bg === "transparent" ? "#000" : bg, fg]; }
-				if (cell.bold && !cell.fg) fg = "#fff";
-				if (isCursor) { [fg, bg] = [bg === "transparent" ? "#000" : bg, fg === "#ccc" ? "#ccc" : fg]; bg = "#ccc"; fg = "#000"; }
-
-				const style = `color:${fg};background:${bg};${cell.bold ? "font-weight:bold;" : ""}`;
-				if (style !== lastStyle) {
-					if (spanOpen) html += "</span>";
-					html += `<span style="${style}">`;
-					spanOpen = true;
-					lastStyle = style;
+				if (cell.reverse) { [fg, bg] = [bg === "transparent" ? "#000" : bg, fg === "transparent" ? "#000" : fg]; }
+				if (isCursor) {
+					// Isoler le curseur dans son propre span pour éviter que sa couleur
+					// inversée ne déborde sur les cellules vides adjacentes.
+					if (spanOpen) { html += "</span>"; spanOpen = false; lastStyle = ""; }
+					const curFg = bg === "transparent" ? "#000" : bg;
+					const boldPart = cell.bold ? "font-weight:bold;" : "";
+					html += `<span style="color:${curFg};background:#ccc;${boldPart}">${escHtml(cell.ch)}</span>`;
+				} else {
+					const style = `color:${fg};background:${bg};${cell.bold ? "font-weight:bold;" : ""}`;
+					if (style !== lastStyle) {
+						if (spanOpen) html += "</span>";
+						html += `<span style="${style}">`;
+						spanOpen = true;
+						lastStyle = style;
+					}
+					html += escHtml(cell.ch);
 				}
-				html += escHtml(cell.ch);
 			}
 			if (spanOpen) html += "</span>";
 			if (r < this.rows - 1) html += "\n";
