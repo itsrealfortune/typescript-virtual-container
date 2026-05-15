@@ -271,10 +271,10 @@ function resolveDefaults(info: NeofetchInfo): Required<NeofetchInfo> {
 			os: info.osName ?? `${readOsPrettyName() ?? os.type()} ${os.arch()}`,
 			arch: os.arch(),
 		},
-		resolution: info.resolution ?? "n/a (ssh)",
+		resolution: info.resolution ?? shellProps?.resolution ?? "n/a (ssh)",
 		terminal: info.terminal ?? "unknown",
 		cpu: info.cpu ?? resolveCpuLabel(),
-		gpu: info.gpu ?? "n/a",
+		gpu: info.gpu ?? shellProps?.gpu ?? "n/a",
 		memoryUsedMiB: info.memoryUsedMiB ?? toMiB(usedMem),
 		memoryTotalMiB: info.memoryTotalMiB ?? toMiB(totalMem),
 	};
