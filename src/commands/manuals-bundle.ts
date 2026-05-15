@@ -994,7 +994,16 @@ SYNOPSIS
        rm [OPTION]... FILE...
 
 OPTIONS
-       -r     remove directories and their contents recursively`,
+       -r, -R remove directories and their contents recursively
+
+       -f, --force
+              skip confirmation prompt, never prompt
+
+       -rf, -fr
+              recursive and force combined
+
+       Without -f, rm prompts for confirmation before removing each target.
+       Answer y or yes to confirm, anything else cancels.`,
 	"sed": `SED(1)                   User Commands                      SED(1)
 
 NAME
