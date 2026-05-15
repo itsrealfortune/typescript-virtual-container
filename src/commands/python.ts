@@ -767,7 +767,10 @@ class Interpreter {
 					return left.repeat(right);
 				if (Array.isArray(left) && typeof right === "number") {
 					const arr: PyVal[] = [];
-					for (let i = 0; i < right; i++) arr.push(...left);
+					const n = right | 0;
+					for (let i = 0; i < n; i++) {
+						for (let j = 0; j < left.length; j++) arr.push(left[j] as PyVal);
+					}
 					return arr;
 				}
 				return (left as number) * (right as number);

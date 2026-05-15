@@ -56,24 +56,24 @@ export function tokenizeCommand(input: string): string[] {
 		}
 
 		// Handle 2>&1, 2>>, 2>, >&, >>
-		if (!inQ && ch === "2" && (next === ">" )) {
-			const rest = input.slice(i + 1);
-			if (rest.startsWith(">>&1") || rest.startsWith(">> &1")) {
+		if (!inQ && ch === "2" && next === ">") {
+			const c2 = input[i + 2];
+			const c3 = input[i + 3];
+			const c4 = input[i + 4];
+			if (c2 === ">" && c3 === "&" && c4 === "1") {
 				if (current) { tokens.push(current); current = ""; }
 				tokens.push("2>>&1"); i += 5; continue;
 			}
-			if (rest.startsWith(">&1")) {
+			if (c2 === "&" && c3 === "1") {
 				if (current) { tokens.push(current); current = ""; }
 				tokens.push("2>&1"); i += 4; continue;
 			}
-			if (rest.startsWith(">>")) {
+			if (c2 === ">") {
 				if (current) { tokens.push(current); current = ""; }
 				tokens.push("2>>"); i += 3; continue;
 			}
-			if (rest.startsWith(">")) {
-				if (current) { tokens.push(current); current = ""; }
-				tokens.push("2>"); i += 2; continue;
-			}
+			if (current) { tokens.push(current); current = ""; }
+			tokens.push("2>"); i += 2; continue;
 		}
 		if ((ch === ">" || ch === "<") && !inQ) {
 			if (current) {

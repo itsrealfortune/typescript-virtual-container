@@ -41,13 +41,9 @@ const targets = [
   `${ESBUILD} src/self-standalone.ts --bundle --platform=node --format=esm --target=node18 \
 --outfile=${BUILDS_DIR}/${NAMES.selfStandalone} --tree-shaking=true --minify ${BANNER}`,
 
-  // standalone SSH+SFTP (CJS)
+  // standalone SSH+SFTP (CJS) — supports --no-ssh, --no-sftp, --ssh-port, --sftp-port
   `${ESBUILD} src/standalone.ts --bundle --platform=node --target=node18 \
 --outfile=${BUILDS_DIR}/${NAMES.standalone} --tree-shaking=true --minify ${BANNER}`,
-
-  // standalone SSH only (no SFTP)
-  `${ESBUILD} src/standalone-wo-sftp.ts --bundle --platform=node --target=node18 \
---outfile=${BUILDS_DIR}/${NAMES.standaloneNoSftp} --tree-shaking=true --minify ${BANNER}`,
 ];
 
 for (const cmd of targets) {
@@ -78,7 +74,7 @@ console.log("✓ Copied examples/index.html → docs/demo.html");
 const readmePath = join(root, "README.md");
 let readme = readFileSync(readmePath, "utf8");
 
-const { selfStandalone, standalone, standaloneNoSftp, web } = NAMES;
+const { selfStandalone, standalone, web } = NAMES;
 
 // Helper: replace content between <!-- BUILD:tag --> and <!-- /BUILD:tag -->
 function replaceSection(tag, content) {
@@ -105,19 +101,24 @@ replaceSection(
 replaceSection(
   "curl-start",
   [
-    `#### Interactivea local shell — persists VFS in .vfs/ in the current directory`,
+    `#### Interactive local shell — persists VFS in .vfs/ in the current directory`,
     `\`\`\`bash`,
     `curl -s ${GH_BASE}/${selfStandalone} -o ${selfStandalone} && node ${selfStandalone}`,
     `\`\`\``,
     ``,
-    `#### SSH server (connect with any SSH client on port 2222)`,
+    `#### SSH server with built-in SFTP subsystem (scp / sftp on port 2222)`,
     `\`\`\`bash`,
     `curl -s ${GH_BASE}/${standalone} -o ${standalone} && node ${standalone}`,
     `\`\`\``,
     ``,
-    `#### SSH server without SFTP (lighter build)`,
+    `#### Custom SSH port`,
     `\`\`\`bash`,
-    `curl -s ${GH_BASE}/${standaloneNoSftp} -o ${standaloneNoSftp} && node ${standaloneNoSftp}`,
+    `node ${standalone} --ssh-port=2022`,
+    `\`\`\``,
+    ``,
+    `#### SSH disabled (handler only, no server started)`,
+    `\`\`\`bash`,
+    `node ${standalone} --no-ssh`,
     `\`\`\``,
   ].join("\n"),
 );
@@ -129,10 +130,13 @@ replaceSection(
     `**\`${selfStandalone}\` options:**`,
     ``,
     `\`\`\`bash`,
-    `node ${selfStandalone}                  # boot as root`,
-    `node ${selfStandalone} --user alice     # boot as alice (prompts for password if set)`,
-    `node ${selfStandalone} --user=alice     # same, inline form`,
-    `SSH_MIMIC_HOSTNAME=my-box node ${selfStandalone}  # custom hostname`,
+    `node ${selfStandalone}                          # boot as root`,
+    `node ${selfStandalone} --user alice             # boot as alice (prompts for password if set)`,
+    `node ${selfStandalone} --user=alice             # same, inline form`,
+    `node ${selfStandalone} --hostname=my-box        # custom hostname`,
+    `node ${selfStandalone} --snapshot=/data/.vfs    # custom VFS snapshot path`,
+    `node ${selfStandalone} --help                   # show all options`,
+    `node ${selfStandalone} --version                # print version`,
     `\`\`\``,
   ].join("\n"),
 );

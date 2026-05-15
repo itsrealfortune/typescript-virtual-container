@@ -18,6 +18,25 @@
  *   $((expr))     arithmetic (integer)
  */
 
+import { globToRegex } from "./glob";
+
+// Memoized shell-pattern → RegExp for ${VAR//pat/rep} etc. forms.
+// Key encodes anchor/greedy options to keep separate caches per form.
+const _shellPatCache = new Map<string, RegExp>();
+function shellPatToRegex(pat: string, anchor: "none" | "prefix" | "suffix", greedy: boolean, global = false): RegExp {
+	const key = `${anchor}:${greedy ? "g" : "s"}:${global ? "G" : ""}:${pat}`;
+	let re = _shellPatCache.get(key);
+	if (re) return re;
+	const esc = pat.replace(/[.+^${}()|[\]\\]/g, "\\$&");
+	const body = greedy
+		? esc.replace(/\*/g, ".*").replace(/\?/g, ".")
+		: esc.replace(/\*/g, "[^/]*").replace(/\?/g, ".");
+	const src = anchor === "prefix" ? `^${body}` : anchor === "suffix" ? `${body}$` : body;
+	re = new RegExp(src, global ? "g" : "");
+	_shellPatCache.set(key, re);
+	return re;
+}
+
 // ─── arithmetic evaluator ────────────────────────────────────────────────────
 
 type ArithToken =
@@ -178,25 +197,24 @@ function outsideSingleQuotes(
 	input: string,
 	replacer: (chunk: string) => string,
 ): string {
+	// Fast path: no single quotes → apply replacer to whole string, no allocation
+	if (!input.includes("'")) return replacer(input);
+
 	const parts: string[] = [];
 	let i = 0;
 	while (i < input.length) {
 		const sqIdx = input.indexOf("'", i);
 		if (sqIdx === -1) {
-			// No more single quotes — expand the rest
 			parts.push(replacer(input.slice(i)));
 			break;
 		}
-		// Expand the part before the single quote
 		parts.push(replacer(input.slice(i, sqIdx)));
-		// Find closing single quote — everything inside is literal
 		const closeIdx = input.indexOf("'", sqIdx + 1);
 		if (closeIdx === -1) {
-			// Unclosed quote — treat rest as literal
 			parts.push(input.slice(sqIdx));
 			break;
 		}
-		parts.push(input.slice(sqIdx, closeIdx + 1)); // include quotes
+		parts.push(input.slice(sqIdx, closeIdx + 1));
 		i = closeIdx + 1;
 	}
 	return parts.join("");
@@ -304,10 +322,13 @@ export function expandBraces(token: string): string[] {
 }
 
 function expandArithmeticChunks(input: string, env: Record<string, string>): string {
+	if (!input.includes("$((")) return input;
 	let result = "";
 	let index = 0;
+	let flush = 0;
 	while (index < input.length) {
 		if (input[index] === "$" && input[index + 1] === "(" && input[index + 2] === "(") {
+			result += input.slice(flush, index);
 			let scan = index + 3;
 			let depth = 0;
 			while (scan < input.length) {
@@ -322,6 +343,7 @@ function expandArithmeticChunks(input: string, env: Record<string, string>): str
 						const value = evalArith(expr, env);
 						result += Number.isNaN(value) ? "0" : String(value);
 						index = scan + 2;
+						flush = index;
 						break;
 					}
 				}
@@ -329,14 +351,13 @@ function expandArithmeticChunks(input: string, env: Record<string, string>): str
 			}
 			if (scan >= input.length) {
 				result += input.slice(index);
-				break;
+				return result;
 			}
 			continue;
 		}
-		result += input[index]!
 		index++;
 	}
-	return result;
+	return result + input.slice(flush);
 }
 
 export function expandSync(
@@ -345,6 +366,9 @@ export function expandSync(
 	lastExit = 0,
 	home?: string,
 ): string {
+	// Fast path: nothing to expand (no $ and no ~ and no single quotes)
+	if (!input.includes("$") && !input.includes("~") && !input.includes("'")) return input;
+
 	const homePath = home ?? env.HOME ?? "/home/user";
 
 	return outsideSingleQuotes(input, (chunk) => {
@@ -421,7 +445,7 @@ export function expandSync(
 			/\$\{([A-Za-z_][A-Za-z0-9_]*)\/\/([^/}]*)\/([^}]*)\}/g,
 			(_, name, pat, rep) => {
 				const val = env[name] ?? "";
-				try { return val.replace(new RegExp(pat.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, "."), "g"), rep); }
+				try { return val.replace(shellPatToRegex(pat, "none", true, true), rep); }
 				catch { return val; }
 			},
 		);
@@ -431,7 +455,7 @@ export function expandSync(
 			/\$\{([A-Za-z_][A-Za-z0-9_]*)\/([^/}]*)\/([^}]*)\}/g,
 			(_, name, pat, rep) => {
 				const val = env[name] ?? "";
-				try { return val.replace(new RegExp(pat.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".")), rep); }
+				try { return val.replace(shellPatToRegex(pat, "none", true, false), rep); }
 				catch { return val; }
 			},
 		);
@@ -439,41 +463,25 @@ export function expandSync(
 		// ${VAR##pattern} — strip longest prefix
 		s = s.replace(
 			/\$\{([A-Za-z_][A-Za-z0-9_]*)##([^}]+)\}/g,
-			(_, name, pat) => {
-				const val = env[name] ?? "";
-				const re = new RegExp(`^${pat.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".")}`);
-				return val.replace(re, "");
-			},
+			(_, name, pat) => (env[name] ?? "").replace(shellPatToRegex(pat, "prefix", true), ""),
 		);
 
 		// ${VAR#pattern} — strip shortest prefix
 		s = s.replace(
 			/\$\{([A-Za-z_][A-Za-z0-9_]*)#([^}]+)\}/g,
-			(_, name, pat) => {
-				const val = env[name] ?? "";
-				const re = new RegExp(`^${pat.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^/]*").replace(/\?/g, ".")}`);
-				return val.replace(re, "");
-			},
+			(_, name, pat) => (env[name] ?? "").replace(shellPatToRegex(pat, "prefix", false), ""),
 		);
 
 		// ${VAR%%pattern} — strip longest suffix
 		s = s.replace(
 			/\$\{([A-Za-z_][A-Za-z0-9_]*)%%([^}]+)\}/g,
-			(_, name, pat) => {
-				const val = env[name] ?? "";
-				const re = new RegExp(`${pat.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\?/g, ".")}$`);
-				return val.replace(re, "");
-			},
+			(_, name, pat) => (env[name] ?? "").replace(shellPatToRegex(pat, "suffix", true), ""),
 		);
 
 		// ${VAR%pattern} — strip shortest suffix
 		s = s.replace(
 			/\$\{([A-Za-z_][A-Za-z0-9_]*)%([^}]+)\}/g,
-			(_, name, pat) => {
-				const val = env[name] ?? "";
-				const re = new RegExp(`${pat.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^/]*").replace(/\?/g, ".")}$`);
-				return val.replace(re, "");
-			},
+			(_, name, pat) => (env[name] ?? "").replace(shellPatToRegex(pat, "suffix", false), ""),
 		);
 
 		// ${VAR}
@@ -583,10 +591,22 @@ export async function expandAsync(
  * Supports * (any chars in segment) and ** (any path).
  * Returns the original pattern if no matches found (bash behavior).
  */
+type GlobVfs = {
+	list: (p: string) => string[];
+	exists: (p: string) => boolean;
+	stat: (p: string) => { type: string };
+	statType?: (p: string) => string | null;
+};
+
+function nodeType(vfs: GlobVfs, p: string): string | null {
+	if (vfs.statType) return vfs.statType(p);
+	try { return vfs.stat(p).type; } catch { return null; }
+}
+
 export function expandGlob(
 	pattern: string,
 	cwd: string,
-	vfs: { list: (p: string) => string[]; exists: (p: string) => boolean; stat: (p: string) => { type: string } },
+	vfs: GlobVfs,
 ): string[] {
 	// No glob chars → return as-is
 	if (!pattern.includes('*') && !pattern.includes('?')) return [pattern];
@@ -600,11 +620,7 @@ export function expandGlob(
 	return results.sort();
 }
 
-function matchGlob(
-	dir: string,
-	segments: string[],
-	vfs: { list: (p: string) => string[]; exists: (p: string) => boolean; stat: (p: string) => { type: string } },
-): string[] {
+function matchGlob(dir: string, segments: string[], vfs: GlobVfs): string[] {
 	if (segments.length === 0) return [dir];
 	const [seg, ...rest] = segments;
 	if (!seg) return [dir];
@@ -612,50 +628,37 @@ function matchGlob(
 	// ** matches zero or more path segments
 	if (seg === '**') {
 		const all = walkAll(dir, vfs);
-		return rest.length === 0 ? all : all.flatMap(d => {
-			try {
-				if (vfs.stat(d).type === 'directory') return matchGlob(d, rest, vfs);
-			} catch {}
-			return [];
-		});
+		if (rest.length === 0) return all;
+		const out: string[] = [];
+		for (const d of all) {
+			if (nodeType(vfs, d) === 'directory') out.push(...matchGlob(d, rest, vfs));
+		}
+		return out;
 	}
 
 	let entries: string[] = [];
 	try { entries = vfs.list(dir); } catch { return []; }
 
 	const re = globToRegex(seg);
-	return entries
-		.filter(e => !e.startsWith('.') || seg.startsWith('.'))
-		.filter(e => re.test(e))
-		.flatMap(e => {
-			const full = dir === '/' ? `/${e}` : `${dir}/${e}`;
-			if (rest.length === 0) return [full];
-			try {
-				if (vfs.stat(full).type === 'directory') return matchGlob(full, rest, vfs);
-			} catch {}
-			return [];
-		});
+	const showHidden = seg.startsWith('.');
+	const matched: string[] = [];
+	for (const e of entries) {
+		if ((!showHidden && e.startsWith('.')) || !re.test(e)) continue;
+		const full = dir === '/' ? `/${e}` : `${dir}/${e}`;
+		if (rest.length === 0) { matched.push(full); continue; }
+		if (nodeType(vfs, full) === 'directory') matched.push(...matchGlob(full, rest, vfs));
+	}
+	return matched;
 }
 
-function walkAll(
-	dir: string,
-	vfs: { list: (p: string) => string[]; stat: (p: string) => { type: string } },
-): string[] {
+function walkAll(dir: string, vfs: GlobVfs): string[] {
 	const results: string[] = [dir];
 	let entries: string[] = [];
 	try { entries = vfs.list(dir); } catch { return results; }
 	for (const e of entries) {
 		const full = dir === '/' ? `/${e}` : `${dir}/${e}`;
-		try {
-			if (vfs.stat(full).type === 'directory') results.push(...walkAll(full, vfs));
-		} catch {}
+		if (nodeType(vfs, full) === 'directory') results.push(...walkAll(full, vfs));
 	}
 	return results;
 }
 
-function globToRegex(pattern: string): RegExp {
-	const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&')
-		.replace(/\*/g, '.*')
-		.replace(/\?/g, '.');
-	return new RegExp(`^${escaped}$`);
-}

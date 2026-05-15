@@ -1,4 +1,14 @@
 import { VirtualSftpServer, VirtualShell, VirtualSshServer } from ".";
+import { getFlag, getOptionInt } from "./utils/argv";
+
+// ── CLI argument parsing ──────────────────────────────────────────────────────
+
+const argv = process.argv.slice(2);
+
+const noSsh   = getFlag(argv, "--no-ssh");
+const sshPort = getOptionInt(argv, "--ssh-port", 2222);
+
+// ── Shell ─────────────────────────────────────────────────────────────────────
 
 const hostname = process.env.SSH_MIMIC_HOSTNAME ?? "typescript-vm";
 const virtualShell = new VirtualShell(hostname, undefined, {
@@ -13,24 +23,20 @@ virtualShell.addCommand("demo", [], () => {
 	};
 });
 
-new VirtualSshServer({
-	port: 2222,
-	hostname,
-	shell: virtualShell,
-})
-	.start()
-	.catch((error: unknown) => {
-		console.error("Failed to start SSH Mimic:", error);
-		process.exit(1);
-	});
+// ── Servers ───────────────────────────────────────────────────────────────────
 
-new VirtualSftpServer({ port: 2223, hostname, shell: virtualShell })
-	.start()
-	.catch((error: unknown) => {
-		console.error("Failed to start SFTP Mimic:", error);
-		process.exit(1);
-	});
+// SFTP subsystem handler — no standalone server, reused by the SSH server
+// so that `scp` and `sftp` clients work directly on the SSH port.
+const sftpHandler = new VirtualSftpServer({ shell: virtualShell });
 
+if (!noSsh) {
+	new VirtualSshServer({ port: sshPort, hostname, shell: virtualShell, sftp: sftpHandler })
+		.start()
+		.catch((error: unknown) => {
+			console.error("Failed to start SSH server:", error);
+			process.exit(1);
+		});
+}
 
 // ── Graceful shutdown ─────────────────────────────────────────────────────────
 // On SIGINT / SIGTERM: flush the WAL journal to a full checkpoint before exit.
@@ -67,6 +73,6 @@ process.on("unhandledRejection", (error, promise) => {
 });
 
 setInterval(() => {
-	const rss = process.memoryUsage().rss; // Just keep the event loop alive and prevent exit
+	const rss = process.memoryUsage().rss;
 	console.debug(`Current memory usage: ${Math.round(rss / 1024 / 1024)} MB`);
 }, 1000);

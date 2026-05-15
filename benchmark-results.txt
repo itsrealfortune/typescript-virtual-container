@@ -1,40 +1,53 @@
-Benchmarking VirtualShell concurrency:
+VirtualShell Benchmark
+======================
+Date      : 2026-05-15T05:40:20.778Z
+Runtime   : Bun 1.3.11
+Wall time : 2845 ms
+CPU user  : 3445 ms
+CPU sys   : 433 ms
 
-Running 1 shells...
-  Initialized 1 shells in 58ms, RSS 98 MB
-  Executed shell commands in 5ms, RSS now 98 MB (+1 MB)
+[1] Parallel shell initialization
+----------------------------------------------------------------------------
+Shells   Init (ms)  ms/shell  Cmd (ms)  Ops/sec       RSS
+----------------------------------------------------------------------------
+     1        117     117.0        64       47    154 MB
+     2        113      56.5       482       12    241 MB
+     5        712     142.4         1    15000    230 MB
+    10         54       5.4         1    30000    232 MB
+    20        141       7.0         1    60000    231 MB
+    50        365       7.3         1   150000    233 MB
+   100        610       6.1         1   300000    238 MB
 
-Running 2 shells...
-  Initialized 2 shells in 10ms, RSS 102 MB
-  Executed shell commands in 1ms, RSS now 102 MB (+0 MB)
+[2] Command latency  (N=500 iterations, single shell, ms)
+----------------------------------------------------------------------------
+Command                           min    p50    p95    p99    max
+----------------------------------------------------------------------------
+echo hello                       0.01   0.01   0.48 139.51 679.79
+ls /etc                          0.08    0.1   0.18   0.27   1.48
+cat /etc/passwd                  0.01   0.01   0.02   0.13   1.77
+grep root /etc/passwd            0.01   0.02   0.04   0.19    4.9
+ls -la /                         0.07   0.09   0.22   1.35    8.3
+pwd                                 0      0   0.01   0.01   0.11
+date                                0      0   0.01   0.02   0.41
 
-Running 5 shells...
-  Initialized 5 shells in 21ms, RSS 113 MB
-  Executed shell commands in 1ms, RSS now 113 MB (+0 MB)
+[3] VFS I/O throughput  (direct, no command parsing)
+----------------------------------------------------------------------------
+Operation               Files     Total  Time (ms)  Throughput
+----------------------------------------------------------------------------
+write small files        1000    0.5 MB          5   97.7 MB/s
+read small files         1000    0.5 MB          2  244.1 MB/s
+write large file            1   10.0 MB          2    4.9 GB/s
+read large file             1   10.0 MB          8    1.2 GB/s
 
-Running 10 shells...
-  Initialized 10 shells in 43ms, RSS 132 MB
-  Executed shell commands in 6ms, RSS now 132 MB (+1 MB)
+[4] Memory breakdown per shell count
+----------------------------------------------------------------------------
+Shells    Heap used  Heap total  External  ArrayBufs       RSS
+----------------------------------------------------------------------------
+     1     35.3 MB     12.3 MB   47.1 MB    28.8 MB    142 MB
+     2     35.3 MB     12.3 MB   66.5 MB    28.0 MB    143 MB
+     5     35.3 MB     16.7 MB   69.2 MB    30.7 MB    154 MB
+    10     35.3 MB     36.7 MB   75.8 MB    37.3 MB    207 MB
+    20     85.1 MB     50.7 MB   87.0 MB    48.3 MB    242 MB
+    50    105.6 MB     60.6 MB   42.5 MB    23.3 MB    241 MB
+   100     77.1 MB     63.4 MB   67.7 MB    47.9 MB    230 MB
 
-Running 20 shells...
-  Initialized 20 shells in 107ms, RSS 150 MB
-  Executed shell commands in 4ms, RSS now 150 MB (+0 MB)
-
-Running 50 shells...
-  Initialized 50 shells in 177ms, RSS 178 MB
-  Executed shell commands in 5ms, RSS now 179 MB (+0 MB)
-
-Running 100 shells...
-  Initialized 100 shells in 302ms, RSS 190 MB
-  Executed shell commands in 9ms, RSS now 190 MB (+0 MB)
-
-Summary:
-
-count   init_ms cmd_ms  init_rss        final_rss       delta_rss
-1       58      5       98 MB           98 MB           1 MB
-2       10      1       102 MB          102 MB          0 MB
-5       21      1       113 MB          113 MB          0 MB
-10      43      6       132 MB          132 MB          1 MB
-20      107     4       150 MB          150 MB          0 MB
-50      177     5       178 MB          179 MB          0 MB
-100     302     9       190 MB          190 MB          0 MB

@@ -11,6 +11,17 @@ import { expandAsync, expandBraces, expandGlob } from "../utils/expand";
 import { tokenizeCommand } from "../utils/tokenize";
 import { resolveModule } from "./registry";
 
+// Module-level compiled regexes — avoids recompilation on every runCommand call
+const ASSIGN_RE      = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/;
+const RE_FOR         = /\bfor\s+\w+\s+in\b/;
+const RE_WHILE       = /\bwhile\s+/;
+const RE_IF          = /\bif\s+/;
+const RE_FUNC_BRACE  = /\w+\s*\(\s*\)\s*\{/;
+const RE_FUNC_KW     = /\bfunction\s+\w+/;
+const RE_ARITH       = /\(\(\s*.+\s*\)\)/;
+const RE_PIPE        = /(?<![|&])[|](?![|])/;
+const RE_OPERATORS   = /[><;&]|\|\|/;
+
 /** Returns the home directory path for a given user. Root lives at /root. */
 export function userHome(authUser: string): string {
 	return authUser === "root" ? "/root" : `/home/${authUser}`;
@@ -56,7 +67,13 @@ function resolveVfsBinary(
 		}
 	}
 
-	const pathDirs = (env.vars.PATH ?? "/usr/local/bin:/usr/bin:/bin").split(":");
+	const rawPath = env.vars.PATH ?? "/usr/local/bin:/usr/bin:/bin";
+	// Cache split PATH on the env object to avoid re-splitting on every binary lookup
+	if (!env._pathDirs || env._pathRaw !== rawPath) {
+		env._pathRaw = rawPath;
+		env._pathDirs = rawPath.split(":");
+	}
+	const pathDirs = env._pathDirs;
 	for (const dir of pathDirs) {
 		if ((dir === "/sbin" || dir === "/usr/sbin") && authUser !== "root")
 			continue;
@@ -73,6 +90,48 @@ function resolveVfsBinary(
 }
 
 const MAX_CALL_DEPTH = 8;
+
+/** Run a VFS stub file as a command, handling `exec builtin <name>` and `sh -c` stubs. */
+async function runVfsStub(
+	vfsBinary: string,
+	cmdName: string,
+	args: string[],
+	rawInput: string,
+	authUser: string,
+	hostname: string,
+	mode: CommandMode,
+	cwd: string,
+	shell: VirtualShell,
+	env: ShellEnv,
+	stdin: string | undefined,
+): Promise<CommandResult> {
+	const stubContent = shell.vfs.readFile(vfsBinary);
+	const builtinMatch = stubContent.match(/exec\s+builtin\s+(\S+)/);
+	if (builtinMatch) {
+		const builtinMod = resolveModule(builtinMatch[1]!);
+		if (builtinMod) {
+			return builtinMod.run({
+				authUser, hostname,
+				activeSessions: shell.users.listActiveSessions(),
+				rawInput, mode, args, stdin, cwd, shell, env,
+			});
+		}
+		// Guard: missing builtin — stop here to avoid sh -c infinite loop
+		return { stderr: `${cmdName}: exec builtin '${builtinMatch[1]}' not found`, exitCode: 127 };
+	}
+	const shMod = resolveModule("sh");
+	if (shMod) {
+		return shMod.run({
+			authUser, hostname,
+			activeSessions: shell.users.listActiveSessions(),
+			rawInput: `sh -c ${JSON.stringify(stubContent)}`,
+			mode,
+			args: ["-c", stubContent, "--", ...args],
+			stdin, cwd, shell, env,
+		});
+	}
+	return { stderr: `${cmdName}: command not found`, exitCode: 127 };
+}
 let _callDepth = 0;
 
 export async function runCommandDirect(
@@ -112,7 +171,7 @@ async function _runCommandDirectInner(
 	stdin: string | undefined,
 	env: ShellEnv,
 ): Promise<CommandResult> {
-	const assignRe = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/;
+	const assignRe = ASSIGN_RE;
 	const invocation = [name, ...args];
 	let assignCount = 0;
 	while (assignCount < invocation.length && assignRe.test(invocation[assignCount]!)) {
@@ -168,42 +227,8 @@ async function _runCommandDirectInner(
 	if (!mod) {
 		const vfsBinary = resolveVfsBinary(name, env, shell, authUser);
 		if (vfsBinary) {
-			const stubContent = shell.vfs.readFile(vfsBinary);
-			const builtinMatch = stubContent.match(/exec\s+builtin\s+(\S+)/);
-			if (builtinMatch) {
-				const builtinMod = resolveModule(builtinMatch[1]!);
-				if (builtinMod) {
-					return await builtinMod.run({
-						authUser,
-						hostname,
-						activeSessions: shell.users.listActiveSessions(),
-						rawInput: [name, ...args].join(" "),
-						mode,
-						args,
-						stdin,
-						cwd,
-						shell,
-						env,
-					});
-				}
-				// builtin not found — stop here, don't fall through to sh -c (avoids infinite loop)
-				return { stderr: `${name}: exec builtin '${builtinMatch[1]}' not found`, exitCode: 127 };
-			}
-			const shMod = resolveModule("sh");
-			if (shMod) {
-				return await shMod.run({
-					authUser,
-					hostname,
-					activeSessions: shell.users.listActiveSessions(),
-					rawInput: `sh -c ${JSON.stringify(stubContent)}`,
-					mode,
-					args: ["-c", stubContent, "--", ...args],
-					stdin,
-					cwd,
-					shell,
-					env,
-				});
-			}
+			return runVfsStub(vfsBinary, name, args, [name, ...args].join(" "),
+				authUser, hostname, mode, cwd, shell, env, stdin);
 		}
 		return { stderr: `${name}: command not found`, exitCode: 127 };
 	}
@@ -283,20 +308,14 @@ export async function runCommand(
 
 	// Detect sh-syntax constructs that must be handled by the sh interpreter
 	const isShScript =
-		/\bfor\s+\w+\s+in\b/.test(aliasExpanded) ||
-		/\bwhile\s+/.test(aliasExpanded) ||
-		/\bif\s+/.test(aliasExpanded) ||
-		/\w+\s*\(\s*\)\s*\{/.test(aliasExpanded) ||
-		/\bfunction\s+\w+/.test(aliasExpanded) ||
-		/\(\(\s*.+\s*\)\)/.test(aliasExpanded);
+		RE_FOR.test(aliasExpanded) ||
+		RE_WHILE.test(aliasExpanded) ||
+		RE_IF.test(aliasExpanded) ||
+		RE_FUNC_BRACE.test(aliasExpanded) ||
+		RE_FUNC_KW.test(aliasExpanded) ||
+		RE_ARITH.test(aliasExpanded);
 
-	const hasOperators =
-		/(?<![|&])[|](?![|])/.test(aliasExpanded) ||
-		aliasExpanded.includes(">") ||
-		aliasExpanded.includes("<") ||
-		aliasExpanded.includes("&&") ||
-		aliasExpanded.includes("||") ||
-		aliasExpanded.includes(";");
+	const hasOperators = RE_PIPE.test(aliasExpanded) || RE_OPERATORS.test(aliasExpanded);
 
 	if ((isShScript && rawFirstWord !== "sh" && rawFirstWord !== "bash") || hasOperators) {
 		// sh-syntax: route through sh interpreter to handle for/while/functions
@@ -356,7 +375,7 @@ export async function runCommand(
 
 	const parts = tokenizeCommand(expanded.trim());
 	if (parts.length === 0) return { exitCode: 0 };
-	const assignRe = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/;
+	const assignRe = ASSIGN_RE;
 	if (assignRe.test(parts[0]!)) {
 		return runCommandDirect(
 			parts[0]!,
@@ -372,49 +391,21 @@ export async function runCommand(
 	}
 	const commandName = parts[0]?.toLowerCase() ?? "";
 	// Apply brace expansion to each arg token
-	const args = parts.slice(1).flatMap(expandBraces).flatMap(token => expandGlob(token, cwd, shell.vfs));
+	const rawArgs = parts.slice(1);
+	const args: string[] = [];
+	for (const token of rawArgs) {
+		for (const brace of expandBraces(token)) {
+			for (const glob of expandGlob(brace, cwd, shell.vfs)) args.push(glob);
+		}
+	}
 	const mod = resolveModule(commandName);
 
 	if (!mod) {
 		const vfsBinary = resolveVfsBinary(commandName, shellEnv, shell, authUser);
 		if (vfsBinary) {
-			const stubContent = shell.vfs.readFile(vfsBinary);
-			const builtinMatch = stubContent.match(/exec\s+builtin\s+(\S+)/);
-			if (builtinMatch) {
-				const builtinName = builtinMatch[1]!;
-				const builtinMod = resolveModule(builtinName);
-				if (builtinMod) {
-					return await builtinMod.run({
-						authUser,
-						hostname,
-						activeSessions: shell.users.listActiveSessions(),
-						rawInput: [commandName, ...args].join(" "),
-						mode,
-						args,
-						stdin,
-						cwd,
-						shell,
-						env: shellEnv,
-					});
-				}
-			}
-			const shMod = resolveModule("sh");
-			if (shMod) {
-				return await shMod.run({
-					authUser,
-					hostname,
-					activeSessions: shell.users.listActiveSessions(),
-					rawInput: `sh -c ${JSON.stringify(stubContent)}`,
-					mode,
-					args: ["-c", stubContent, "--", ...args],
-					stdin,
-					cwd,
-					shell,
-					env: shellEnv,
-				});
-			}
+			return runVfsStub(vfsBinary, commandName, args, expanded,
+				authUser, hostname, mode, cwd, shell, shellEnv, stdin);
 		}
-
 		return { stderr: `${commandName}: command not found`, exitCode: 127 };
 	}
 

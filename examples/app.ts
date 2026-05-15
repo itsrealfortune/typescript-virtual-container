@@ -23,17 +23,36 @@ document.addEventListener('click', () => {
   if (!window.getSelection()?.toString()) cmd.focus();
 });
 
-// ANSI to HTML
-const FG_COLORS: Record<number, string> = {
+// ANSI to HTML — supports 8-color, 16-color, 256-color, 24-bit RGB
+const ANSI_FG: Record<number, string> = {
   30: '#000', 31: '#c00', 32: '#0c0', 33: '#cc0',
   34: '#00c', 35: '#c0c', 36: '#0cc', 37: '#ccc',
   90: '#555', 91: '#f55', 92: '#5f5', 93: '#ff5',
   94: '#55f', 95: '#f5f', 96: '#5ff', 97: '#fff',
 };
-const BG_COLORS: Record<number, string> = {
+const ANSI_BG: Record<number, string> = {
   40: '#000', 41: '#c00', 42: '#0c0', 43: '#cc0',
   44: '#00c', 45: '#c0c', 46: '#0cc', 47: '#ccc',
+  100: '#555', 101: '#f55', 102: '#5f5', 103: '#ff5',
+  104: '#55f', 105: '#f5f', 106: '#5ff', 107: '#fff',
 };
+
+// xterm 256-color palette (first 16 = ANSI, 16-231 = 6x6x6 cube, 232-255 = grayscale)
+function xterm256(n: number): string {
+  if (n < 16) {
+    const basic = [...Object.values(ANSI_FG)];
+    return basic[n] ?? '#ccc';
+  }
+  if (n < 232) {
+    const i = n - 16;
+    const r = Math.floor(i / 36) * 51;
+    const g = Math.floor((i % 36) / 6) * 51;
+    const b = (i % 6) * 51;
+    return `rgb(${r},${g},${b})`;
+  }
+  const v = 8 + (n - 232) * 10;
+  return `rgb(${v},${v},${v})`;
+}
 
 function ansiToHtml(s: string): string {
   let html = '';
@@ -41,11 +60,31 @@ function ansiToHtml(s: string): string {
   for (const part of s.split(/(\x1b\[[0-9;]*m)/)) {
     const m = part.match(/^\x1b\[([0-9;]*)m$/);
     if (m) {
-      for (const code of m[1].split(';').map(Number)) {
+      const codes = m[1].split(';').map(Number);
+      let i = 0;
+      while (i < codes.length) {
+        const code = codes[i]!;
         if (code === 0) { bold = false; fg = ''; bg = ''; }
         else if (code === 1) bold = true;
-        else if (FG_COLORS[code]) fg = FG_COLORS[code];
-        else if (BG_COLORS[code]) bg = BG_COLORS[code];
+        else if (code === 38 && codes[i + 1] === 2) {
+          // 24-bit fg: 38;2;R;G;B
+          fg = `rgb(${codes[i+2]},${codes[i+3]},${codes[i+4]})`;
+          i += 4;
+        } else if (code === 48 && codes[i + 1] === 2) {
+          // 24-bit bg: 48;2;R;G;B
+          bg = `rgb(${codes[i+2]},${codes[i+3]},${codes[i+4]})`;
+          i += 4;
+        } else if (code === 38 && codes[i + 1] === 5) {
+          // 256-color fg: 38;5;N
+          fg = xterm256(codes[i + 2] ?? 0);
+          i += 2;
+        } else if (code === 48 && codes[i + 1] === 5) {
+          // 256-color bg: 48;5;N
+          bg = xterm256(codes[i + 2] ?? 0);
+          i += 2;
+        } else if (ANSI_FG[code]) { fg = ANSI_FG[code]; }
+        else if (ANSI_BG[code]) { bg = ANSI_BG[code]; }
+        i++;
       }
     } else if (part) {
       const style = [
@@ -76,42 +115,84 @@ function print(s: string): void {
 // Live input line — sits at bottom of #output as an inline element
 let inputLineEl: HTMLSpanElement | null = null;
 
-function printPrompt(): void {
+// Password challenge state
+let passwordMode = false;
+type ChallengeHandler = (input: string) => Promise<void>;
+let activeChallengeHandler: ChallengeHandler | null = null;
+
+function buildInputLine(promptHtml: string): void {
   if (inputLineEl) { inputLineEl.remove(); inputLineEl = null; }
   cmd.value = '';
-
   inputLineEl = document.createElement('span');
   inputLineEl.className = 'input-line';
-
   const promptSpan = document.createElement('span');
-  const cwdLabel = cwd === userHome(authUser) ? '~' : (cwd.split('/').at(-1) || '/');
-  promptSpan.innerHTML = ansiToHtml(buildPrompt(authUser, HOSTNAME, cwdLabel));
-
+  promptSpan.innerHTML = promptHtml;
   const textSpan = document.createElement('span');
   textSpan.className = 'typed';
-
   const cursor = document.createElement('span');
   cursor.className = 'cursor';
-  cursor.textContent = '\u00a0';
-
+  cursor.textContent = ' ';
+  const afterSpan = document.createElement('span');
+  afterSpan.className = 'after-cursor';
   inputLineEl.appendChild(promptSpan);
   inputLineEl.appendChild(textSpan);
   inputLineEl.appendChild(cursor);
+  inputLineEl.appendChild(afterSpan);
   out.appendChild(inputLineEl);
   scrollToBottom();
 }
 
-cmd.addEventListener('input', () => {
+function printPrompt(): void {
+  passwordMode = false;
+  activeChallengeHandler = null;
+  const cwdLabel = cwd === userHome(authUser) ? '~' : (cwd.split('/').at(-1) || '/');
+  buildInputLine(ansiToHtml(buildPrompt(authUser, HOSTNAME, cwdLabel)));
+}
+
+function printChallengePrompt(text: string, handler: ChallengeHandler): void {
+  passwordMode = true;
+  activeChallengeHandler = handler;
+  buildInputLine(text.replace(/&/g, '&amp;').replace(/</g, '&lt;'));
+}
+
+function syncCursor(): void {
   if (!inputLineEl) return;
-  (inputLineEl.querySelector('.typed') as HTMLSpanElement).textContent = cmd.value;
+  // In password mode: never show typed text
+  const val = passwordMode ? '' : cmd.value;
+  const pos = passwordMode ? 0 : (cmd.selectionStart ?? cmd.value.length);
+  const before = val.slice(0, pos);
+  const ch = val[pos] ?? ' ';
+  const after = val.slice(pos + (val[pos] ? 1 : 0));
+  (inputLineEl.querySelector('.typed') as HTMLSpanElement).textContent = before;
+  (inputLineEl.querySelector('.cursor') as HTMLSpanElement).textContent = ch;
+  (inputLineEl.querySelector('.after-cursor') as HTMLSpanElement).textContent = after;
   scrollToBottom();
-});
+}
+
+cmd.addEventListener('input', () => { syncCursor(); });
 
 // Wait for IndexedDB fs shim memCache
 // biome-ignore lint/suspicious/noExplicitAny: globalThis shim
 await (globalThis as any).__fsReady__;
 
-const shell = new VirtualShell(HOSTNAME, undefined, {
+function detectWebGlGpu(): string | undefined {
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl') as WebGLRenderingContext | null;
+    if (!gl) return undefined;
+    const ext = (gl as WebGLRenderingContext).getExtension('WEBGL_debug_renderer_info');
+    if (!ext) return undefined;
+    return (gl as WebGLRenderingContext).getParameter(ext.UNMASKED_RENDERER_WEBGL) as string || undefined;
+  } catch { return undefined; }
+}
+
+const shell = new VirtualShell(HOSTNAME, {
+  kernel: '6.1.0-web-amd64',
+  os: 'Fortune GNU/Linux (Web)',
+  arch: navigator.userAgent.includes('arm64') || navigator.userAgent.includes('aarch64') ? 'aarch64' : 'x86_64',
+  resolution: `${window.screen.width}x${window.screen.height}`,
+  gpu: detectWebGlGpu(),
+}, {
   mode: 'fs',
   snapshotPath: '/vfs-data',
   flushIntervalMs: 10_000,
@@ -137,8 +218,12 @@ let cwd = userHome(authUser);
 const shellEnv = makeDefaultEnv(authUser, HOSTNAME);
 shellEnv.vars.PWD = cwd;
 
+// Session stack for nested su sessions
+const sessionStack: Array<{ authUser: string; cwd: string }> = [];
+
 function applyResult(result: CommandResult): void {
   if (result.switchUser) {
+    sessionStack.push({ authUser, cwd });
     authUser = result.switchUser;
     cwd = result.nextCwd ?? userHome(authUser);
     shellEnv.vars.USER = authUser;
@@ -148,6 +233,22 @@ function applyResult(result: CommandResult): void {
   } else if (result.nextCwd) {
     cwd = result.nextCwd;
     shellEnv.vars.PWD = cwd;
+  }
+}
+
+function handleClose(): void {
+  if (sessionStack.length > 0) {
+    const prev = sessionStack.pop()!;
+    authUser = prev.authUser;
+    cwd = prev.cwd;
+    shellEnv.vars.USER = authUser;
+    shellEnv.vars.LOGNAME = authUser;
+    shellEnv.vars.HOME = userHome(authUser);
+    shellEnv.vars.PWD = cwd;
+    print('logout\n');
+    printPrompt();
+  } else {
+    print('\nlogout\n');
   }
 }
 
@@ -226,7 +327,7 @@ cmd.addEventListener('keydown', async (e: KeyboardEvent) => {
     if (hits.length === 1) {
       // Unique match — complete inline
       cmd.value = line.slice(0, line.length - token.length) + hits[0];
-      if (inputLineEl) (inputLineEl.querySelector('.typed') as HTMLSpanElement).textContent = cmd.value;
+      syncCursor();
     } else {
       // Multiple matches — print them below current line, re-prompt
       const prevLine = inputLineEl;
@@ -237,8 +338,29 @@ cmd.addEventListener('keydown', async (e: KeyboardEvent) => {
 `);
       printPrompt();
       cmd.value = line;
-      if (inputLineEl) ((inputLineEl as HTMLSpanElement).querySelector('.typed') as HTMLSpanElement).textContent = cmd.value;
+      syncCursor();
     }
+    return;
+  }
+
+  if (e.key === 'd' && e.ctrlKey) {
+    e.preventDefault();
+    // Only act on empty input (matches bash Ctrl+D behaviour)
+    if (cmd.value.length === 0) {
+      if (inputLineEl) {
+        inputLineEl.querySelector('.cursor')?.remove();
+        (inputLineEl.querySelector('.after-cursor') as HTMLSpanElement | null)?.remove();
+        inputLineEl = null;
+      }
+      out.appendChild(document.createTextNode('\n'));
+      handleClose();
+    }
+    return;
+  }
+
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Home' || e.key === 'End') {
+    // Let the browser move cmd's internal cursor, then sync visual cursor on next tick
+    setTimeout(syncCursor, 0);
     return;
   }
 
@@ -247,7 +369,7 @@ cmd.addEventListener('keydown', async (e: KeyboardEvent) => {
     if (historyIdx < history.length - 1) {
       historyIdx++;
       cmd.value = history[history.length - 1 - historyIdx];
-      if (inputLineEl) (inputLineEl.querySelector('.typed') as HTMLSpanElement).textContent = cmd.value;
+      syncCursor();
     }
     return;
   }
@@ -256,32 +378,44 @@ cmd.addEventListener('keydown', async (e: KeyboardEvent) => {
     e.preventDefault();
     if (historyIdx > 0) { historyIdx--; cmd.value = history[history.length - 1 - historyIdx]; }
     else { historyIdx = -1; cmd.value = ''; }
-    if (inputLineEl) (inputLineEl.querySelector('.typed') as HTMLSpanElement).textContent = cmd.value;
+    syncCursor();
     return;
   }
 
   if (e.key !== 'Enter') return;
 
-  const value = cmd.value.trim();
+  const value = cmd.value;
+  const trimmed = value.trim();
   historyIdx = -1;
 
-  // Freeze input line: remove cursor span, null the ref (keeps prompt+typed in DOM)
+  // Freeze input line
   if (inputLineEl) {
+    // In password mode: blank the frozen line (never show password in DOM)
+    (inputLineEl.querySelector('.typed') as HTMLSpanElement).textContent = passwordMode ? '' : trimmed;
     inputLineEl.querySelector('.cursor')?.remove();
+    (inputLineEl.querySelector('.after-cursor') as HTMLSpanElement | null)?.remove();
     inputLineEl = null;
   }
 
-  // Newline after the frozen line
   out.appendChild(document.createTextNode('\n'));
 
-  if (value) {
-    history.push(value);
+  // Active challenge (password/confirm flow)
+  if (activeChallengeHandler) {
+    const handler = activeChallengeHandler;
+    activeChallengeHandler = null;
+    passwordMode = false;
+    await handler(value);
+    return;
+  }
+
+  if (trimmed) {
+    history.push(trimmed);
     if (history.length > MAX_HISTORY) history = history.slice(history.length - MAX_HISTORY);
     saveHistory();
   }
 
   try {
-    const result = await runCommand(value, authUser, HOSTNAME, 'shell', cwd, shell, undefined, shellEnv);
+    const result = await runCommand(trimmed, authUser, HOSTNAME, 'shell', cwd, shell, undefined, shellEnv);
 
     if (result.clearScreen) out.innerHTML = '';
     if (result.stdout) print(`${result.stdout.trim()}\n`);
@@ -290,7 +424,30 @@ cmd.addEventListener('keydown', async (e: KeyboardEvent) => {
     applyResult(result);
     await vfs.flushMirror();
 
-    if (result.closeSession) { print('\nSession closed.\n'); return; }
+    if (result.closeSession) { handleClose(); return; }
+
+    // Handle password/sudo challenge returned by the command
+    if (result.sudoChallenge) {
+      const challenge = result.sudoChallenge;
+      const makeHandler = (_promptText: string): ChallengeHandler => async (input: string) => {
+        if (!challenge.onPassword) { printPrompt(); return; }
+        try {
+          const { result: res, nextPrompt } = await challenge.onPassword(input, shell);
+          if (res === null && nextPrompt) {
+            printChallengePrompt(nextPrompt, makeHandler(nextPrompt));
+          } else {
+            if (res?.stdout) print(`${res.stdout.trim()}\n`);
+            if (res?.stderr) print(`${res.stderr.trim()}\n`);
+            printPrompt();
+          }
+        } catch (err) {
+          print(`${String(err)}\n`);
+          printPrompt();
+        }
+      };
+      printChallengePrompt(challenge.prompt, makeHandler(challenge.prompt));
+      return;
+    }
   } catch (err) {
     print(`${String(err)}\n`);
   }

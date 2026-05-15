@@ -1,6 +1,7 @@
 import type { ShellModule } from "../types/commands";
 import type { VfsFileNode } from "../types/vfs";
 import type { VirtualShell } from "../VirtualShell";
+import { resolvePath } from "./helpers";
 
 /**
  * Evaluate a POSIX test expression.
@@ -47,9 +48,7 @@ function evalTest(
 	// Unary file tests
 	if (tokens.length === 2) {
 		const [flag, operand = ""] = tokens;
-		const resolvePath = (p: string) =>
-			p.startsWith("/") ? p : `${cwd}/${p}`.replace(/\/+/g, "/");
-		const path = resolvePath(operand);
+		const path = resolvePath(cwd, operand);
 
 		switch (flag) {
 			case "-e":

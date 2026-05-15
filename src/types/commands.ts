@@ -100,6 +100,10 @@ export interface ShellEnv {
 	vars: Record<string, string>;
 	/** Exit status of the last executed command. */
 	lastExitCode: number;
+	/** @internal Cached split of vars.PATH — invalidated when _pathRaw !== vars.PATH. */
+	_pathRaw?: string;
+	/** @internal Pre-split PATH directories for resolveVfsBinary hot-path. */
+	_pathDirs?: string[];
 }
 
 /** Runtime context object passed to each command module. */

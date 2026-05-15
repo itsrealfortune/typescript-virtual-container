@@ -40,6 +40,10 @@ export interface ShellProperties {
 	os: string;
 	/** CPU architecture label (e.g. `"x86_64"`, `"aarch64"`). */
 	arch: string;
+	/** Display resolution (e.g. `"1920x1080"`). */
+	resolution?: string;
+	/** GPU label (e.g. `"WebGL Renderer"`). */
+	gpu?: string;
 }
 
 /**
@@ -92,10 +96,7 @@ function isVirtualShellVfsLike(value: unknown): value is VirtualShellVfsLike {
 		typeof candidate.exists === "function" &&
 		typeof candidate.stat === "function" &&
 		typeof candidate.list === "function" &&
-		typeof candidate.remove === "function" &&
-		typeof candidate.copy === "function" &&
-		typeof candidate.move === "function" &&
-		typeof candidate.touch === "function"
+		typeof candidate.remove === "function"
 	);
 }
 
@@ -186,7 +187,6 @@ class VirtualShell extends EventEmitter {
 		// Store references to avoid TypeScript "used before assigned" errors
 		const vfs = this.vfs;
 		const users = this.users;
-		const pm = this.packageManager;
 		const shellProps = this.properties;
 		const shellHostname = this.hostname;
 		const startTime = this.startTime;
@@ -197,8 +197,6 @@ class VirtualShell extends EventEmitter {
 			await users.initialize();
 			// Bootstrap Linux rootfs (idempotent)
 			bootstrapLinuxRootfs(vfs, users, shellHostname, shellProps, startTime);
-			// Load installed packages from dpkg status
-			pm.load();
 			this.emit("initialized");
 		})();
 	}

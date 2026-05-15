@@ -147,7 +147,8 @@ interface SftpServerStream {
 
 /** Options for {@link SftpMimic} constructor. */
 export interface SftpMimicOptions {
-	port: number;
+	/** TCP port to bind. Optional — omit if using as a subsystem handler only (no standalone server). */
+	port?: number;
 	hostname?: string;
 	shell?: VirtualShell;
 	vfs?: VirtualFileSystem;
@@ -155,7 +156,7 @@ export interface SftpMimicOptions {
 }
 
 export class SftpMimic extends EventEmitter {
-	port: number;
+	port: number | undefined;
 	server: SshServer | null;
 	private readonly hostname: string;
 	private readonly shell: VirtualShell | null;
@@ -203,6 +204,9 @@ export class SftpMimic extends EventEmitter {
 	}
 
 	public async start(): Promise<number> {
+		if (this.port === undefined) {
+			throw new Error("SftpMimic: cannot start — no port configured (this instance is a subsystem handler only)");
+		}
 		perf.mark("start");
 		const privateKey = loadOrCreateHostKey();
 
@@ -456,7 +460,12 @@ export class SftpMimic extends EventEmitter {
 		this.handles.delete(handle.toString("hex"));
 	}
 
-	private attachSftpHandlers(sftp: SftpServerStream, authUser: string): void {
+	/**
+	 * Attach SFTP handlers to an already-accepted sftp stream.
+	 * Used internally by {@link SshMimic} for the SFTP subsystem on the SSH port.
+	 * @internal
+	 */
+	public attachSftpHandlers(sftp: SftpServerStream, authUser: string): void {
 		const getVfs = () => this.getVfs();
 		const getUsers = () => this.getUsers();
 
@@ -473,10 +482,6 @@ export class SftpMimic extends EventEmitter {
 			}
 
 			const openMode = flags;
-			const _canRead = Boolean(openMode & OPEN_MODE.READ);
-			const _canWrite = Boolean(
-				openMode & OPEN_MODE.WRITE || openMode & OPEN_MODE.APPEND,
-			);
 			const canCreate = Boolean(openMode & OPEN_MODE.CREAT);
 			const shouldTruncate = Boolean(openMode & OPEN_MODE.TRUNC);
 
@@ -539,7 +544,7 @@ export class SftpMimic extends EventEmitter {
 					return;
 				}
 
-				const chunk = entry.buffer.slice(offset, offset + length);
+				const chunk = entry.buffer.subarray(offset, offset + length);
 				sftp.data(reqid, chunk);
 			},
 		);

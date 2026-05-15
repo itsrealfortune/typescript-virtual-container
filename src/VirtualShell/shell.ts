@@ -58,6 +58,7 @@ export function startShell(
 	let cwd = userHome(authUser);
 	let pendingHeredoc: { delimiter: string; lines: string[]; cmdBefore: string } | null = null;
 	const shellEnv: ShellEnv = makeDefaultEnv(authUser, hostname);
+	const sessionStack: Array<{ authUser: string; cwd: string }> = [];
 	let nanoSession: NanoSession | null = null;
 	let pendingSudo: PendingSudo | null = null;
 	const buildCurrentPrompt = (): string => {
@@ -194,6 +195,7 @@ export function startShell(
 		}
 
 		if (result.switchUser) {
+			sessionStack.push({ authUser, cwd });
 			authUser = result.switchUser;
 			cwd = result.nextCwd ?? userHome(authUser);
 			shell.users.updateSession(sessionId, authUser, remoteAddress);
@@ -542,13 +544,23 @@ export function startShell(
 				cursorPos = 0;
 				historyIndex = null;
 				historyDraft = "";
-				stream.write("bye\r\n");
-				pushHistory("bye");
-				// WAL: checkpoint handled by auto-flush timer
 				stream.write("logout\r\n");
-				stream.exit(0);
-				stream.end();
-				return;
+				if (sessionStack.length > 0) {
+					const prev = sessionStack.pop()!;
+					authUser = prev.authUser;
+					cwd = prev.cwd;
+					shellEnv.vars.USER = authUser;
+					shellEnv.vars.LOGNAME = authUser;
+					shellEnv.vars.HOME = userHome(authUser);
+					shellEnv.vars.PWD = cwd;
+					shell.users.updateSession(sessionId, authUser, remoteAddress);
+					renderLine();
+				} else {
+					stream.exit(0);
+					stream.end();
+					return;
+				}
+				continue;
 			}
 
 			if (ch === "\t") {
@@ -728,18 +740,34 @@ export function startShell(
 
 					if (result.closeSession) {
 						stream.write("logout\r\n");
-						stream.exit(result.exitCode ?? 0);
-						stream.end();
-						return;
+						if (sessionStack.length > 0) {
+							const prev = sessionStack.pop()!;
+							authUser = prev.authUser;
+							cwd = prev.cwd;
+							shellEnv.vars.USER = authUser;
+							shellEnv.vars.LOGNAME = authUser;
+							shellEnv.vars.HOME = userHome(authUser);
+							shellEnv.vars.PWD = cwd;
+							shell.users.updateSession(sessionId, authUser, remoteAddress);
+						} else {
+							stream.exit(result.exitCode ?? 0);
+							stream.end();
+							return;
+						}
 					}
 
-					if (result.nextCwd) {
+					if (result.nextCwd && !result.closeSession) {
 						cwd = result.nextCwd;
 					}
 
 					if (result.switchUser) {
+						sessionStack.push({ authUser, cwd });
 						authUser = result.switchUser;
 						cwd = result.nextCwd ?? userHome(authUser);
+						shellEnv.vars.USER = authUser;
+						shellEnv.vars.LOGNAME = authUser;
+						shellEnv.vars.HOME = userHome(authUser);
+						shellEnv.vars.PWD = cwd;
 						shell.users.updateSession(sessionId, authUser, remoteAddress);
 						lineBuffer = "";
 						cursorPos = 0;

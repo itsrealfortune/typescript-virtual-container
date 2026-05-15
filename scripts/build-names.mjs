@@ -29,10 +29,9 @@ const kernelVersion = `k${kernelRaw.split("+")[0]}`;
 export const BUILDS_DIR = join(root, "builds");
 
 export const NAMES = {
-  selfStandalone:  `fortune-nyx-v${pkgVersion}-directbash-${kernelVersion}.mjs`,
-  standalone:      `fortune-nyx-v${pkgVersion}-ssh.cjs`,
-  standaloneNoSftp:`fortune-nyx-v${pkgVersion}-ssh-nosftp.js`,
-  web:             `fortune-nyx-v${pkgVersion}-web.min.js`
+  selfStandalone: `fortune-nyx-v${pkgVersion}-directbash-${kernelVersion}.mjs`,
+  standalone:     `fortune-nyx-v${pkgVersion}-ssh.cjs`,
+  web:            `fortune-nyx-v${pkgVersion}-web.min.js`
 };
 
 // Print for shell consumption: NAME=value pairs

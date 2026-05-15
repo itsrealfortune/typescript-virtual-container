@@ -586,6 +586,13 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 	}
 ];
 
+// O(1) name lookup — built once at module load, avoids O(n) linear scan per command
+const _REGISTRY_MAP = new Map<string, PackageDefinition>(
+	PACKAGE_REGISTRY.map((p) => [p.name.toLowerCase(), p]),
+);
+// Pre-sorted for listAvailable() — avoids O(n log n) sort on every apt list/search
+const _REGISTRY_SORTED = PACKAGE_REGISTRY.slice().sort((a, b) => a.name.localeCompare(b.name));
+
 /**
  * Pure-TypeScript APT/dpkg package manager backed by a built-in registry.
  *
@@ -608,6 +615,7 @@ export class VirtualPackageManager {
 	private readonly registryPath = "/var/lib/dpkg/status";
 	private readonly logPath = "/var/log/dpkg.log";
 	private readonly aptLogPath = "/var/log/apt/history.log";
+	private _loaded = false;
 
 	/**
 	 * @param vfs   Backing virtual filesystem for file I/O and dpkg status persistence.
@@ -618,13 +626,23 @@ export class VirtualPackageManager {
 		private readonly users: VirtualUserManager,
 	) {}
 
+	/** Ensure dpkg/status is parsed. Called lazily on first package operation. */
+	private _ensureLoaded(): void {
+		if (this._loaded) return;
+		this._loaded = true;
+		this._parseStatus();
+	}
+
 	/**
 	 * Loads installed package state from `/var/lib/dpkg/status` in the VFS.
-	 *
-	 * Called automatically by `VirtualShell` after `bootstrapLinuxRootfs`.
 	 * Safe to call again to reload state after a snapshot restore.
 	 */
 	public load(): void {
+		this._loaded = false;
+		this._ensureLoaded();
+	}
+
+	private _parseStatus(): void {
 		if (!this.vfs.exists(this.registryPath)) return;
 		const status = this.vfs.readFile(this.registryPath);
 		if (!status.trim()) return;
@@ -713,9 +731,7 @@ export class VirtualPackageManager {
 	 * @returns The matching `PackageDefinition`, or `undefined` if not found.
 	 */
 	public findInRegistry(name: string): PackageDefinition | undefined {
-		return PACKAGE_REGISTRY.find(
-			(p) => p.name.toLowerCase() === name.toLowerCase(),
-		);
+		return _REGISTRY_MAP.get(name.toLowerCase());
 	}
 
 	/**
@@ -724,7 +740,7 @@ export class VirtualPackageManager {
 	 * @returns Array of `PackageDefinition` entries.
 	 */
 	public listAvailable(): PackageDefinition[] {
-		return [...PACKAGE_REGISTRY].sort((a, b) => a.name.localeCompare(b.name));
+		return _REGISTRY_SORTED;
 	}
 
 	/**
@@ -733,6 +749,7 @@ export class VirtualPackageManager {
 	 * @returns Array of `InstalledPackage` records.
 	 */
 	public listInstalled(): InstalledPackage[] {
+		this._ensureLoaded();
 		return [...this.installed.values()].sort((a, b) =>
 			a.name.localeCompare(b.name),
 		);
@@ -744,6 +761,7 @@ export class VirtualPackageManager {
 	 * @param name Package name (case-insensitive).
 	 */
 	public isInstalled(name: string): boolean {
+		this._ensureLoaded();
 		return this.installed.has(name.toLowerCase());
 	}
 
@@ -753,6 +771,7 @@ export class VirtualPackageManager {
 	 * Used by `neofetch` to populate the `Packages:` field.
 	 */
 	public installedCount(): number {
+		this._ensureLoaded();
 		return this.installed.size;
 	}
 
@@ -774,6 +793,7 @@ export class VirtualPackageManager {
 		names: string[],
 		opts: { quiet?: boolean } = {},
 	): { output: string; exitCode: number } {
+		this._ensureLoaded();
 		const lines: string[] = [];
 		const toInstall: PackageDefinition[] = [];
 		const notFound: string[] = [];
@@ -903,6 +923,7 @@ export class VirtualPackageManager {
 		names: string[],
 		opts: { purge?: boolean; quiet?: boolean } = {},
 	): { output: string; exitCode: number } {
+		this._ensureLoaded();
 		const lines: string[] = [];
 		const toRemove: InstalledPackage[] = [];
 
@@ -987,6 +1008,7 @@ export class VirtualPackageManager {
 	 * @returns Multi-line metadata string, or `null` if not in the registry.
 	 */
 	public show(name: string): string | null {
+		this._ensureLoaded();
 		const def = this.findInRegistry(name);
 		if (!def) return null;
 		const inst = this.installed.get(name);

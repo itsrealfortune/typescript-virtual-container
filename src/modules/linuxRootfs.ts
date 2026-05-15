@@ -1605,7 +1605,7 @@ Installed-Size: 6800
 Maintainer: Fortune Package Team <dpkg@fortune.local>
 Architecture: amd64
 Version: 1.22.6nyx1
-Depends: libc6 (>= 2.17), libzstd1 (>= 1.5.6)
+Depends: libc6 (>= 2.17), libzstd1 (>= 1.5.7)
 Description: Fortune package management system
  This package provides the low-level infrastructure for handling the
  installation and removal of Fortune software packages.
@@ -1918,11 +1918,8 @@ export function bootstrapLinuxRootfs(
 	const hasRestoredData = vfs.getMode() === "fs" && vfs.exists("/home");
 
 	if (hasRestoredData) {
-		// Snapshot was already restored — merge static rootfs without
-		// clobbering user files and directories.
 		vfs.mergeRootTree(decodeVfs(snapshot));
 	} else {
-		// Fresh start — replace the empty tree with the full static rootfs.
 		vfs.importRootTree(decodeVfs(snapshot));
 	}
 
