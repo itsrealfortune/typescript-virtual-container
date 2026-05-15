@@ -27,6 +27,30 @@ export function userHome(authUser: string): string {
 	return authUser === "root" ? "/root" : `/home/${authUser}`;
 }
 
+/**
+ * Apply a user switch: reset PS1/USER/HOME/LOGNAME in shellEnv and re-source
+ * the new user's .bashrc. Call this after setting authUser = newUser.
+ */
+export async function applyUserSwitch(
+	newUser: string,
+	hostname: string,
+	cwd: string,
+	shellEnv: ShellEnv,
+	shell: VirtualShell,
+): Promise<void> {
+	shellEnv.vars.USER = newUser;
+	shellEnv.vars.LOGNAME = newUser;
+	shellEnv.vars.HOME = userHome(newUser);
+	shellEnv.vars.PS1 = makeDefaultEnv(newUser, hostname).vars.PS1 ?? "";
+	const rcPath = `${userHome(newUser)}/.bashrc`;
+	if (!shell.vfs.exists(rcPath)) return;
+	for (const raw of shell.vfs.readFile(rcPath).split("\n")) {
+		const l = raw.trim();
+		if (!l || l.startsWith("#")) continue;
+		try { await runCommand(l, newUser, hostname, "shell", cwd, shell, undefined, shellEnv); } catch { /* ignore */ }
+	}
+}
+
 export function makeDefaultEnv(authUser: string, hostname: string): ShellEnv {
 	return {
 		vars: {

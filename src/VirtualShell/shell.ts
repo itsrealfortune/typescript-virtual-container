@@ -1,6 +1,6 @@
 import * as path from "node:path";
 import type { ShellProperties, VirtualShell } from ".";
-import { getCommandNames, makeDefaultEnv, runCommand, userHome } from "../commands";
+import { applyUserSwitch, getCommandNames, makeDefaultEnv, runCommand, userHome } from "../commands";
 import {
 	spawnHtopProcess,
 } from "../modules/shellInteractive";
@@ -155,11 +155,7 @@ export function startShell(
 				cwd = userHome(authUser);
 			}
 			shell.users.updateSession(sessionId, authUser, remoteAddress);
-			shellEnv.vars.PS1 = makeDefaultEnv(authUser, hostname).vars.PS1 ?? "";
-			shellEnv.vars.USER = authUser;
-			shellEnv.vars.LOGNAME = authUser;
-			shellEnv.vars.HOME = userHome(authUser);
-			await sourceFile(`${userHome(authUser)}/.bashrc`);
+			await applyUserSwitch(authUser, hostname, cwd, shellEnv, shell);
 			stream.write("\r\n");
 			renderLine();
 			return;
@@ -209,12 +205,8 @@ export function startShell(
 			sessionStack.push({ authUser, cwd });
 			authUser = result.switchUser;
 			cwd = result.nextCwd ?? userHome(authUser);
-			shellEnv.vars.USER = authUser;
-			shellEnv.vars.LOGNAME = authUser;
-			shellEnv.vars.HOME = userHome(authUser);
-			shellEnv.vars.PS1 = makeDefaultEnv(authUser, hostname).vars.PS1 ?? "";
 			shell.users.updateSession(sessionId, authUser, remoteAddress);
-			await sourceFile(`${userHome(authUser)}/.bashrc`);
+			await applyUserSwitch(authUser, hostname, cwd, shellEnv, shell);
 		} else if (result.nextCwd) {
 			cwd = result.nextCwd;
 		}
@@ -757,13 +749,9 @@ export function startShell(
 						sessionStack.push({ authUser, cwd });
 						authUser = result.switchUser;
 						cwd = result.nextCwd ?? userHome(authUser);
-						shellEnv.vars.USER = authUser;
-						shellEnv.vars.LOGNAME = authUser;
-						shellEnv.vars.HOME = userHome(authUser);
 						shellEnv.vars.PWD = cwd;
-						shellEnv.vars.PS1 = makeDefaultEnv(authUser, hostname).vars.PS1 ?? "";
 						shell.users.updateSession(sessionId, authUser, remoteAddress);
-						await sourceFile(`${userHome(authUser)}/.bashrc`);
+						await applyUserSwitch(authUser, hostname, cwd, shellEnv, shell);
 						lineBuffer = "";
 						cursorPos = 0;
 					}

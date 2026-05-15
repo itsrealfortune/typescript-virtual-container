@@ -4,7 +4,7 @@ import { stdin, stdout } from "node:process";
 import { createInterface, type Interface } from "node:readline";
 
 import { getCommandNames } from "./commands/registry";
-import { makeDefaultEnv, runCommand, userHome } from "./commands/runtime";
+import { applyUserSwitch, makeDefaultEnv, runCommand, userHome } from "./commands/runtime";
 import { NanoEditor } from "./modules/nanoEditor";
 import { resolvePath } from "./modules/shellRuntime";
 import { buildLoginBanner, type LoginBannerState } from "./SSHMimic/loginBanner";
@@ -398,19 +398,8 @@ async function runReadlineShell(): Promise<void> {
 			sessionStack.push({ authUser, cwd });
 			authUser = challenge.targetUser;
 			cwd = userHome(authUser);
-			shellEnv.vars.USER = authUser;
-			shellEnv.vars.LOGNAME = authUser;
-			shellEnv.vars.HOME = userHome(authUser);
 			shellEnv.vars.PWD = cwd;
-			shellEnv.vars.PS1 = makeDefaultEnv(authUser, hostname).vars.PS1 ?? "";
-			for (const rcPath of [`${userHome(authUser)}/.bashrc`]) {
-				if (!virtualShell.vfs.exists(rcPath)) continue;
-				for (const raw of virtualShell.vfs.readFile(rcPath).split("\n")) {
-					const l = raw.trim();
-					if (!l || l.startsWith("#")) continue;
-					try { await runCommand(l, authUser, hostname, "shell", cwd, virtualShell, undefined, shellEnv); } catch { /* ignore */ }
-				}
-			}
+			await applyUserSwitch(authUser, hostname, cwd, shellEnv, virtualShell);
 			return;
 		}
 
@@ -508,15 +497,7 @@ async function runReadlineShell(): Promise<void> {
 		authUser = updated.authUser;
 		cwd = updated.cwd;
 		if (result.switchUser) {
-			shellEnv.vars.PS1 = makeDefaultEnv(authUser, hostname).vars.PS1 ?? "";
-			const rcPath = `${userHome(authUser)}/.bashrc`;
-			if (virtualShell.vfs.exists(rcPath)) {
-				for (const raw of virtualShell.vfs.readFile(rcPath).split("\n")) {
-					const l = raw.trim();
-					if (!l || l.startsWith("#")) continue;
-					try { await runCommand(l, authUser, hostname, "shell", cwd, virtualShell, undefined, shellEnv); } catch { /* ignore */ }
-				}
-			}
+			await applyUserSwitch(authUser, hostname, cwd, shellEnv, virtualShell);
 		}
 
 		if (result.closeSession) {
