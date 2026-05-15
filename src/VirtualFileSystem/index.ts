@@ -846,6 +846,23 @@ class VirtualFileSystem extends EventEmitter {
 		};
 	}
 
+	/**
+	 * Fast type-only check — no Date/string allocation.
+	 * Use instead of `stat().type` when that's all you need.
+	 */
+	public statType(targetPath: string): "file" | "directory" | null {
+		try {
+			const m = this.resolveMount(targetPath);
+			if (m) {
+				const s = fsSync.statSync(m.fullHostPath, { throwIfNoEntry: false });
+				if (!s) return null;
+				return s.isDirectory() ? "directory" : "file";
+			}
+			const node = getNode(this.root, normalizePath(targetPath));
+			return node.type === "directory" ? "directory" : "file";
+		} catch { return null; }
+	}
+
 	/** Lists direct children names of a directory (sorted). */
 	public list(dirPath: string = "/"): string[] {
 		const m = this.resolveMount(dirPath);
