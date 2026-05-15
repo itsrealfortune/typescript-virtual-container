@@ -1,5 +1,5 @@
-import type { TerminalSize } from "./shellRuntime";
 import type { ShellStream } from "../types/streams";
+import type { TerminalSize } from "./shellRuntime";
 
 // ── ANSI helpers ─────────────────────────────────────────────────────────────
 
@@ -396,8 +396,13 @@ export class NanoEditor {
 	private moveCursor(dRow: number, _dCol: number): void {
 		this.cursorRow = Math.max(0, Math.min(this.lines.length - 1, this.cursorRow + dRow));
 		this.cursorCol = Math.min(this.cursorCol, this.currentLine().length);
+		const prevScrollTop = this.scrollTop;
 		this.clampScroll();
-		this.renderCursor();
+		if (this.scrollTop !== prevScrollTop) {
+			this.renderEditArea();
+		} else {
+			this.renderCursor();
+		}
 	}
 
 	private moveCursorLeft(): void {
@@ -407,8 +412,9 @@ export class NanoEditor {
 			this.cursorRow--;
 			this.cursorCol = this.currentLine().length;
 		}
+		const prevScrollTop = this.scrollTop;
 		this.clampScroll();
-		this.renderCursor();
+		if (this.scrollTop !== prevScrollTop) { this.renderEditArea(); } else { this.renderCursor(); }
 	}
 
 	private moveCursorRight(): void {
@@ -419,8 +425,9 @@ export class NanoEditor {
 			this.cursorRow++;
 			this.cursorCol = 0;
 		}
+		const prevScrollTop = this.scrollTop;
 		this.clampScroll();
-		this.renderCursor();
+		if (this.scrollTop !== prevScrollTop) { this.renderEditArea(); } else { this.renderCursor(); }
 	}
 
 	private moveCursorHome(): void {
@@ -438,7 +445,7 @@ export class NanoEditor {
 		this.cursorRow = Math.max(0, Math.min(this.lines.length - 1, this.cursorRow + dir * editRows));
 		this.cursorCol = Math.min(this.cursorCol, this.currentLine().length);
 		this.clampScroll();
-		this.renderCursor();
+		this.renderEditArea();
 	}
 
 	private moveWordRight(): void {

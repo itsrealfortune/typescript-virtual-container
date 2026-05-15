@@ -26,25 +26,46 @@
         font-size: 14px;
         line-height: 1.4;
       }
-      #terminal {
+      #terminal-wrapper {
         position: fixed;
         inset: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        background: #0b0f14;
+        cursor: text;
+      }
+      #terminal-wrapper.fullscreen {
+        overflow: hidden;
+      }
+      #terminal-wrapper.fullscreen #scrollback {
+        display: none;
+      }
+      #terminal-wrapper.fullscreen #terminal {
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+      }
+      #scrollback, #terminal {
         margin: 0;
         padding: 0;
-        background: #0b0f14;
+        background: transparent;
         color: #ccc;
         white-space: pre;
-        overflow: hidden;
         outline: none;
-        cursor: text;
         font-family: inherit;
         font-size: inherit;
         line-height: inherit;
       }
+      #terminal {
+        outline: none;
+      }
     </style>
   </head>
   <body>
-    <pre id="terminal" tabindex="0"></pre>
+    <div id="terminal-wrapper">
+      <pre id="scrollback"></pre>
+      <pre id="terminal" tabindex="0"></pre>
+    </div>
     <script type="module" src="./app.js"></script>
   </body>
 </html>
