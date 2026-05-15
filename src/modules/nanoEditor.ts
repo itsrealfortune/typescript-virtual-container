@@ -225,8 +225,9 @@ export class NanoEditor {
 
 			// File ops
 			case 15: this.enterWriteout(); break;          // ^O
+			case 19: this.doSave(); break;                 // ^S (save without prompt)
 			case 24: this.doExit(); break;                 // ^X
-			case 18: this.doSearch(); break;               // ^R (read file — skip, reuse for search-next compat)
+			case 18: this.doSearch(); break;               // ^R (reused as search-next)
 
 			// Search
 			case 23: this.enterSearch(); break;            // ^W
@@ -667,6 +668,12 @@ export class NanoEditor {
 			return;
 		}
 		this.onExit("aborted", this.getCurrentContent());
+	}
+
+	private doSave(): void {
+		const content = this.getCurrentContent();
+		this.modified = false;
+		this.onExit("saved", content);
 	}
 
 	private enterWriteout(): void {

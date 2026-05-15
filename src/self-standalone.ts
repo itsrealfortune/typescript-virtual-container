@@ -295,12 +295,6 @@ async function runReadlineShell(): Promise<void> {
 		initialContent: string,
 		_tempPath: string,
 	): Promise<void> {
-		rl.pause();
-
-		const wasRawMode = Boolean(stdin.isRaw);
-		stdin.resume();
-		if (!wasRawMode) stdin.setRawMode(true);
-
 		return new Promise<void>((resolve) => {
 			const stream: import("./types/streams").ShellStream = {
 				write: (data: string) => { stdout.write(data); },
@@ -309,14 +303,17 @@ async function runReadlineShell(): Promise<void> {
 				on: () => undefined,
 			};
 
+			const snapSize = { cols: stdout.columns ?? 80, rows: stdout.rows ?? 24 };
+
 			const editor = new NanoEditor({
 				stream,
-				terminalSize,
+				terminalSize: snapSize,
 				content: initialContent,
 				filename: path.posix.basename(targetPath),
 				onExit: (reason, content) => {
+					process.off("SIGWINCH", onResize);
 					stdin.off("data", forwardInput);
-					if (!wasRawMode) stdin.setRawMode(false);
+					stdin.setRawMode(false);
 					rl.resume();
 					if (reason === "saved") {
 						virtualShell.writeFileAsUser(authUser, targetPath, content);
@@ -327,8 +324,17 @@ async function runReadlineShell(): Promise<void> {
 				},
 			});
 
+			const onResize = (): void => {
+				editor.resize({ cols: stdout.columns ?? snapSize.cols, rows: stdout.rows ?? snapSize.rows });
+			};
+
 			const forwardInput = (chunk: Buffer): void => { editor.handleInput(chunk); };
+
+			rl.pause();
+			stdin.resume();
+			stdin.setRawMode(true);
 			stdin.on("data", forwardInput);
+			process.on("SIGWINCH", onResize);
 			editor.start();
 		});
 	}
