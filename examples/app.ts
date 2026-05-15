@@ -218,8 +218,12 @@ let cwd = userHome(authUser);
 const shellEnv = makeDefaultEnv(authUser, HOSTNAME);
 shellEnv.vars.PWD = cwd;
 
+// Session stack for nested su sessions
+const sessionStack: Array<{ authUser: string; cwd: string }> = [];
+
 function applyResult(result: CommandResult): void {
   if (result.switchUser) {
+    sessionStack.push({ authUser, cwd });
     authUser = result.switchUser;
     cwd = result.nextCwd ?? userHome(authUser);
     shellEnv.vars.USER = authUser;
@@ -229,6 +233,22 @@ function applyResult(result: CommandResult): void {
   } else if (result.nextCwd) {
     cwd = result.nextCwd;
     shellEnv.vars.PWD = cwd;
+  }
+}
+
+function handleClose(): void {
+  if (sessionStack.length > 0) {
+    const prev = sessionStack.pop()!;
+    authUser = prev.authUser;
+    cwd = prev.cwd;
+    shellEnv.vars.USER = authUser;
+    shellEnv.vars.LOGNAME = authUser;
+    shellEnv.vars.HOME = userHome(authUser);
+    shellEnv.vars.PWD = cwd;
+    print('logout\n');
+    printPrompt();
+  } else {
+    print('\nlogout\n');
   }
 }
 
@@ -323,6 +343,21 @@ cmd.addEventListener('keydown', async (e: KeyboardEvent) => {
     return;
   }
 
+  if (e.key === 'd' && e.ctrlKey) {
+    e.preventDefault();
+    // Only act on empty input (matches bash Ctrl+D behaviour)
+    if (cmd.value.length === 0) {
+      if (inputLineEl) {
+        inputLineEl.querySelector('.cursor')?.remove();
+        (inputLineEl.querySelector('.after-cursor') as HTMLSpanElement | null)?.remove();
+        inputLineEl = null;
+      }
+      out.appendChild(document.createTextNode('\n'));
+      handleClose();
+    }
+    return;
+  }
+
   if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Home' || e.key === 'End') {
     // Let the browser move cmd's internal cursor, then sync visual cursor on next tick
     setTimeout(syncCursor, 0);
@@ -389,7 +424,7 @@ cmd.addEventListener('keydown', async (e: KeyboardEvent) => {
     applyResult(result);
     await vfs.flushMirror();
 
-    if (result.closeSession) { print('\nSession closed.\n'); return; }
+    if (result.closeSession) { handleClose(); return; }
 
     // Handle password/sudo challenge returned by the command
     if (result.sudoChallenge) {

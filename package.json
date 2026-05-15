@@ -33,7 +33,7 @@
     "test": "bun run test-salve",
     "test-battery": "bun test tests/",
     "test-salve": "for f in tests/*.test.ts; do echo \"\\n🧪 Testing $f...\"; bun test \"$f\" --timeout 10000; sleep 0.25; done",
-    "build": "tsc --project tsconfig.json",
+    "build": "tsc --project tsconfig.json && rm -f dist/*standalone*",
     "deploy:npm": "bun publish --access public",
     "bench": "rm -rf .benchmark-shells/ && bun benchmark-virtualshell.ts",
     "benchmark": "bun benchmark-virtualshell.ts > benchmark-results.txt",
@@ -46,7 +46,8 @@
     "self-standalone-build": "node scripts/build-all.mjs",
     "standalone-build": "bunx esbuild src/standalone.ts --bundle --platform=node --target=node18 --outfile=builds/standalone.cjs --tree-shaking=true --minify  --banner:js='#!/usr/bin/env node'",
     "build-all": "node scripts/build-all.mjs",
-    "publish-doc": "bunx typedoc && bun build-all && cd examples && node build && cd .. && bunx gh-pages -d docs && git add docs && git commit -m 'docs: update documentation' && git push",
+    "publish-doc": "bunx typedoc && bun build-all && rm -f dist/*standalone* && cd examples && node build && cd .. && bunx gh-pages -d docs && git add docs && git commit -m 'docs: update documentation' && git push",
+    "publish-doc-app": "bun build-all && cd examples && node build && cd .. && cp examples/app.js docs/app.js && bunx gh-pages -d docs && git add docs/app.js && git commit -m 'docs: update web terminal app' && git push",
     "generate-manuals": "node scripts/generate-manuals-bundle.mjs"
   },
   "devDependencies": {

@@ -243,6 +243,7 @@ async function runReadlineShell(): Promise<void> {
 	let authUser = selectedUser;
 	let cwd = userHome(authUser);
 	shellEnv.vars.PWD = cwd;
+	const sessionStack: Array<{ authUser: string; cwd: string }> = [];
 	const remoteAddress = "localhost";
 
 	// Terminal size — updated on SIGWINCH
@@ -348,6 +349,7 @@ async function runReadlineShell(): Promise<void> {
 		}
 
 		if (!challenge.commandLine) {
+			sessionStack.push({ authUser, cwd });
 			authUser = challenge.targetUser;
 			cwd = userHome(authUser);
 			shellEnv.vars.USER = authUser;
@@ -399,6 +401,7 @@ async function runReadlineShell(): Promise<void> {
 				stdout.write(`Removing user '${challenge.targetUsername}' ...\ndeluser: done.\n`);
 				break;
 			case "su":
+				sessionStack.push({ authUser, cwd });
 				authUser = challenge.targetUsername;
 				cwd = userHome(authUser);
 				shellEnv.vars.USER = authUser;
@@ -442,14 +445,29 @@ async function runReadlineShell(): Promise<void> {
 			process.stderr.write(result.stderr.endsWith("\n") ? result.stderr : `${result.stderr}\n`);
 		}
 
+		if (result.switchUser) {
+			sessionStack.push({ authUser, cwd });
+		}
 		const updated = applySessionState(authUser, cwd, result, shellEnv);
 		authUser = updated.authUser;
 		cwd = updated.cwd;
 
 		if (result.closeSession) {
 			await flushVfs();
-			rl.close();
-			process.exit(result.exitCode ?? 0);
+			if (sessionStack.length > 0) {
+				const prev = sessionStack.pop()!;
+				authUser = prev.authUser;
+				cwd = prev.cwd;
+				shellEnv.vars.USER = authUser;
+				shellEnv.vars.LOGNAME = authUser;
+				shellEnv.vars.HOME = userHome(authUser);
+				shellEnv.vars.PWD = cwd;
+				stdout.write("logout\n");
+				// resume prompt handled by caller
+			} else {
+				rl.close();
+				process.exit(result.exitCode ?? 0);
+			}
 		}
 	}
 
@@ -534,10 +552,22 @@ async function runReadlineShell(): Promise<void> {
 	});
 
 	rl.on("close", () => {
-		void flushVfs().then(() => {
-			console.log("");
-			process.exit(0);
-		});
+		if (sessionStack.length > 0) {
+			// Ctrl+D inside a su session: pop back to outer user then exit cleanly.
+			// Readline is already closed at this point so we can't re-prompt;
+			// just flush and exit with 0 (same UX as real ssh when inner shell dies).
+			const prev = sessionStack.pop()!;
+			authUser = prev.authUser;
+			void flushVfs().then(() => {
+				stdout.write(`logout\n`);
+				process.exit(0);
+			});
+		} else {
+			void flushVfs().then(() => {
+				console.log("");
+				process.exit(0);
+			});
+		}
 	});
 
 	prompt();
