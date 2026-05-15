@@ -91,7 +91,7 @@ function bootstrapEtc(
 		"/etc/profile",
 		`${[
 			"export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-			"export PS1='\\u@\\h:\\w\\$ '",
+			"export PS1='\\[\\e[37;1m\\][\\[\\e[31;1m\\]\\u\\[\\e[37;1m\\]@\\[\\e[34;1m\\]\\h\\[\\e[0m\\] \\W\\[\\e[37;1m\\]]\\[\\e[0m\\]\\$ '",
 		].join("\n")}\n`,
 	);
 
@@ -1605,7 +1605,7 @@ Installed-Size: 6800
 Maintainer: Fortune Package Team <dpkg@fortune.local>
 Architecture: amd64
 Version: 1.22.6nyx1
-Depends: libc6 (>= 2.17), libzstd1 (>= 1.5.7)
+Depends: libc6 (>= 2.17), libzstd1 (>= 1.5.8)
 Description: Fortune package management system
  This package provides the low-level infrastructure for handling the
  installation and removal of Fortune software packages.
@@ -1789,7 +1789,7 @@ function bootstrapRoot(vfs: VirtualFileSystem): void {
 		"/root/.bashrc",
 		`${[
 			"# root .bashrc",
-			"export PS1='\\[\\033[0;31m\\]\\u@\\h\\[\\033[0m\\]:\\[\\033[0;34m\\]\\w\\[\\033[0m\\]# '",
+			"export PS1='\\[\\e[37;1m\\][\\[\\e[31;1m\\]\\u\\[\\e[37;1m\\]@\\[\\e[34;1m\\]\\h\\[\\e[0m\\] \\W\\[\\e[37;1m\\]]\\[\\e[0m\\]\\$ '",
 			"export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
 			"export LANG=en_US.UTF-8",
 			"alias ll='ls -la'",
