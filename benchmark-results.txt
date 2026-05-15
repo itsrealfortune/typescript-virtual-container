@@ -1,53 +1,53 @@
 VirtualShell Benchmark
 ======================
-Date      : 2026-05-14T23:12:00.142Z
+Date      : 2026-05-15T05:40:20.778Z
 Runtime   : Bun 1.3.11
-Wall time : 3442 ms
-CPU user  : 4083 ms
-CPU sys   : 598 ms
+Wall time : 2845 ms
+CPU user  : 3445 ms
+CPU sys   : 433 ms
 
 [1] Parallel shell initialization
 ----------------------------------------------------------------------------
 Shells   Init (ms)  ms/shell  Cmd (ms)  Ops/sec       RSS
 ----------------------------------------------------------------------------
-     1        150     150.0        71       42    154 MB
-     2        170      85.0       790        8    210 MB
-     5        851     170.2         2     7500    246 MB
-    10         60       6.0         1    30000    241 MB
-    20        138       6.9         1    60000    248 MB
-    50        306       6.1         1   150000    263 MB
-   100        679       6.8         2   150000    266 MB
+     1        117     117.0        64       47    154 MB
+     2        113      56.5       482       12    241 MB
+     5        712     142.4         1    15000    230 MB
+    10         54       5.4         1    30000    232 MB
+    20        141       7.0         1    60000    231 MB
+    50        365       7.3         1   150000    233 MB
+   100        610       6.1         1   300000    238 MB
 
 [2] Command latency  (N=500 iterations, single shell, ms)
 ----------------------------------------------------------------------------
 Command                           min    p50    p95    p99    max
 ----------------------------------------------------------------------------
-echo hello                       0.01   0.01   0.44 141.59 800.68
-ls /etc                          0.12   0.15   0.24   0.85  20.47
-cat /etc/passwd                  0.01   0.01   0.02   0.04   0.69
-grep root /etc/passwd            0.02   0.02   0.04   0.09   1.41
-ls -la /                          0.1   0.13   0.21   0.31   5.06
-pwd                                 0      0   0.01   0.04   0.13
-date                                0      0   0.01   0.03   0.35
+echo hello                       0.01   0.01   0.48 139.51 679.79
+ls /etc                          0.08    0.1   0.18   0.27   1.48
+cat /etc/passwd                  0.01   0.01   0.02   0.13   1.77
+grep root /etc/passwd            0.01   0.02   0.04   0.19    4.9
+ls -la /                         0.07   0.09   0.22   1.35    8.3
+pwd                                 0      0   0.01   0.01   0.11
+date                                0      0   0.01   0.02   0.41
 
 [3] VFS I/O throughput  (direct, no command parsing)
 ----------------------------------------------------------------------------
 Operation               Files     Total  Time (ms)  Throughput
 ----------------------------------------------------------------------------
-write small files        1000    0.5 MB          6   81.4 MB/s
-read small files         1000    0.5 MB          4  122.1 MB/s
+write small files        1000    0.5 MB          5   97.7 MB/s
+read small files         1000    0.5 MB          2  244.1 MB/s
 write large file            1   10.0 MB          2    4.9 GB/s
-read large file             1   10.0 MB         21  476.2 MB/s
+read large file             1   10.0 MB          8    1.2 GB/s
 
 [4] Memory breakdown per shell count
 ----------------------------------------------------------------------------
 Shells    Heap used  Heap total  External  ArrayBufs       RSS
 ----------------------------------------------------------------------------
-     1     60.8 MB     13.4 MB   57.3 MB    28.8 MB    142 MB
-     2     60.8 MB     13.5 MB   58.4 MB    29.9 MB    143 MB
-     5     60.8 MB     18.0 MB   61.2 MB    32.7 MB    154 MB
-    10     60.8 MB     31.1 MB   39.2 MB    20.2 MB    172 MB
-    20     58.7 MB     49.7 MB   50.4 MB    31.3 MB    215 MB
-    50     61.2 MB     49.7 MB   57.7 MB    38.3 MB    210 MB
-   100     88.5 MB     67.4 MB   50.9 MB    30.9 MB    245 MB
+     1     35.3 MB     12.3 MB   47.1 MB    28.8 MB    142 MB
+     2     35.3 MB     12.3 MB   66.5 MB    28.0 MB    143 MB
+     5     35.3 MB     16.7 MB   69.2 MB    30.7 MB    154 MB
+    10     35.3 MB     36.7 MB   75.8 MB    37.3 MB    207 MB
+    20     85.1 MB     50.7 MB   87.0 MB    48.3 MB    242 MB
+    50    105.6 MB     60.6 MB   42.5 MB    23.3 MB    241 MB
+   100     77.1 MB     63.4 MB   67.7 MB    47.9 MB    230 MB
 
