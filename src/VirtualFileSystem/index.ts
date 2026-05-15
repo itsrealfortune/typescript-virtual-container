@@ -22,7 +22,7 @@ import type {
 	InternalStubNode,
 } from "./internalTypes";
 import { appendJournalEntry, JournalOp, readJournal, truncateJournal } from "./journal";
-import { getNode, getParentDirectory, normalizePath } from "./path";
+import { getNodeNormalized, getParentDirectory, normalizePath } from "./path";
 
 // ── Persistence options ───────────────────────────────────────────────────────
 
@@ -166,8 +166,9 @@ class VirtualFileSystem extends EventEmitter {
 			mode,
 			createdAt: now,
 			updatedAt: now,
-			children: Object.create(null) as Record<string, InternalNode>,
+		children: Object.create(null) as Record<string, InternalNode>,
 			_childCount: 0,
+			_sortedKeys: null,
 		};
 	}
 
@@ -214,7 +215,7 @@ class VirtualFileSystem extends EventEmitter {
 		}
 		// Don't overwrite a real file or an already-promoted node
 		if (existing?.type === "file") return;
-		if (!existing) parent._childCount++;
+		if (!existing) { parent._childCount++; parent._sortedKeys = null; }
 		parent.children[name] = this.makeStub(name, content, mode);
 	}
 
@@ -231,6 +232,7 @@ class VirtualFileSystem extends EventEmitter {
 				child = this.makeDir(part, mode);
 				current.children[part] = child;
 				current._childCount++;
+				current._sortedKeys = null;
 				this.emit("dir:create", { path: builtPath, mode });
 				this._journal({ op: JournalOp.MKDIR, path: builtPath, mode });
 			} else if (child.type !== "directory") {
@@ -409,19 +411,17 @@ class VirtualFileSystem extends EventEmitter {
 			const existing = live.children[name];
 			if (node.type === "directory") {
 				if (!existing) {
-					// Dir doesn't exist yet — add it
 					live.children[name] = node;
 					live._childCount++;
+					live._sortedKeys = null;
 				} else if (existing.type === "directory") {
-					// Both dirs — recurse
 					this._mergeDir(existing, node);
 				}
-				// existing is a file where dir expected — leave user file alone
 			} else {
-				// File or stub — only add if not already present
 				if (!existing) {
 					live.children[name] = node;
 					live._childCount++;
+					live._sortedKeys = null;
 				}
 			}
 		}
@@ -636,7 +636,7 @@ class VirtualFileSystem extends EventEmitter {
 		const normalized = normalizePath(targetPath);
 		const existing = (() => {
 			try {
-				return getNode(this.root, normalized);
+				return getNodeNormalized(this.root, normalized);
 			} catch {
 				return null;
 			}
@@ -698,7 +698,7 @@ class VirtualFileSystem extends EventEmitter {
 			f.updatedAt = Date.now();
 		} else {
 			// Create new real file — also promotes stubs (no _childCount change for stubs)
-			if (!existing) parent._childCount++;
+			if (!existing) { parent._childCount++; parent._sortedKeys = null; }
 			parent.children[name] = this.makeFile(name, storedContent, mode, shouldCompress);
 		}
 
@@ -717,7 +717,7 @@ class VirtualFileSystem extends EventEmitter {
 			return fsSync.readFileSync(m.fullHostPath, "utf8");
 		}
 		const normalized = normalizePath(targetPath);
-		const node = getNode(this.root, normalized);
+		const node = getNodeNormalized(this.root, normalized);
 		if (node.type === "stub") {
 			this.emit("file:read", { path: normalized, size: node.stubContent.length });
 			return node.stubContent;
@@ -740,7 +740,7 @@ class VirtualFileSystem extends EventEmitter {
 			return fsSync.readFileSync(m.fullHostPath);
 		}
 		const normalized = normalizePath(targetPath);
-		const node = getNode(this.root, normalized);
+		const node = getNodeNormalized(this.root, normalized);
 		if (node.type === "stub") {
 			const buf = Buffer.from(node.stubContent, "utf8");
 			this.emit("file:read", { path: normalized, size: buf.length });
@@ -761,7 +761,7 @@ class VirtualFileSystem extends EventEmitter {
 		const m = this.resolveMount(targetPath);
 		if (m) return fsSync.existsSync(m.fullHostPath);
 		try {
-			getNode(this.root, normalizePath(targetPath));
+			getNodeNormalized(this.root, normalizePath(targetPath));
 			return true;
 		} catch {
 			return false;
@@ -771,7 +771,7 @@ class VirtualFileSystem extends EventEmitter {
 	/** Updates mode bits on a node. */
 	public chmod(targetPath: string, mode: number): void {
 		const normalized = normalizePath(targetPath);
-		getNode(this.root, normalized).mode = mode;
+		getNodeNormalized(this.root, normalized).mode = mode;
 		this._journal({ op: JournalOp.CHMOD, path: normalized, mode });
 	}
 
@@ -806,7 +806,7 @@ class VirtualFileSystem extends EventEmitter {
 			} satisfies VfsFileNode;
 		}
 		const normalized = normalizePath(targetPath);
-		const node = getNode(this.root, normalized);
+		const node = getNodeNormalized(this.root, normalized);
 		const name = normalized === "/" ? "" : path.posix.basename(normalized);
 		if (node.type === "stub") {
 			const s = node as InternalStubNode;
@@ -858,7 +858,7 @@ class VirtualFileSystem extends EventEmitter {
 				if (!s) return null;
 				return s.isDirectory() ? "directory" : "file";
 			}
-			const node = getNode(this.root, normalizePath(targetPath));
+			const node = getNodeNormalized(this.root, normalizePath(targetPath));
 			return node.type === "directory" ? "directory" : "file";
 		} catch { return null; }
 	}
@@ -873,17 +873,19 @@ class VirtualFileSystem extends EventEmitter {
 			} catch { return []; }
 		}
 		const normalized = normalizePath(dirPath);
-		const node = getNode(this.root, normalized);
+		const node = getNodeNormalized(this.root, normalized);
 		if (node.type !== "directory") {
 			throw new Error(`Cannot list '${dirPath}': not a directory.`);
 		}
-		return Object.keys((node as InternalDirectoryNode).children).sort();
+		const dir = node as InternalDirectoryNode;
+		if (!dir._sortedKeys) dir._sortedKeys = Object.keys(dir.children).sort();
+		return dir._sortedKeys;
 	}
 
 	/** Renders ASCII tree view of a directory hierarchy. */
 	public tree(dirPath: string = "/"): string {
 		const normalized = normalizePath(dirPath);
-		const node = getNode(this.root, normalized);
+		const node = getNodeNormalized(this.root, normalized);
 		if (node.type !== "directory") {
 			throw new Error(`Cannot render tree for '${dirPath}': not a directory.`);
 		}
@@ -893,7 +895,8 @@ class VirtualFileSystem extends EventEmitter {
 
 	private renderTreeLines(dir: InternalDirectoryNode, label: string): string {
 		const lines = [label];
-		const entries = Object.keys(dir.children).sort();
+		if (!dir._sortedKeys) dir._sortedKeys = Object.keys(dir.children).sort();
+		const entries = dir._sortedKeys;
 		for (let i = 0; i < entries.length; i++) {
 			const name = entries[i]!;
 			const child = dir.children[name]!;
@@ -914,7 +917,7 @@ class VirtualFileSystem extends EventEmitter {
 
 	/** Computes total stored bytes under a path. */
 	public getUsageBytes(targetPath: string = "/"): number {
-		return this.computeUsage(getNode(this.root, normalizePath(targetPath)));
+		return this.computeUsage(getNodeNormalized(this.root, normalizePath(targetPath)));
 	}
 
 	private computeUsage(node: InternalNode): number {
@@ -929,7 +932,7 @@ class VirtualFileSystem extends EventEmitter {
 
 	/** Compresses a file's content with gzip in place. */
 	public compressFile(targetPath: string): void {
-		const node = getNode(this.root, normalizePath(targetPath));
+		const node = getNodeNormalized(this.root, normalizePath(targetPath));
 		if (node.type !== "file")
 			throw new Error(`Cannot compress '${targetPath}': not a file.`);
 		const f = node as InternalFileNode;
@@ -942,7 +945,7 @@ class VirtualFileSystem extends EventEmitter {
 
 	/** Decompresses a gzip-compressed file in place. */
 	public decompressFile(targetPath: string): void {
-		const node = getNode(this.root, normalizePath(targetPath));
+		const node = getNodeNormalized(this.root, normalizePath(targetPath));
 		if (node.type !== "file")
 			throw new Error(`Cannot decompress '${targetPath}': not a file.`);
 		const f = node as InternalFileNode;
@@ -979,6 +982,7 @@ class VirtualFileSystem extends EventEmitter {
 		};
 		parent.children[name] = symNode;
 		parent._childCount++;
+		parent._sortedKeys = null;
 		// Journal before emit
 		this._journal({ op: JournalOp.SYMLINK, path: normalizedLink, dest: normalizedTarget });
 		this.emit("symlink:create", {
@@ -990,7 +994,7 @@ class VirtualFileSystem extends EventEmitter {
 	/** Returns true when the path is a symbolic link node. */
 	public isSymlink(targetPath: string): boolean {
 		try {
-			const node = getNode(this.root, normalizePath(targetPath));
+			const node = getNodeNormalized(this.root, normalizePath(targetPath));
 			return node.type === "file" && node.mode === 0o120777;
 		} catch {
 			return false;
@@ -1005,7 +1009,7 @@ class VirtualFileSystem extends EventEmitter {
 		let current = normalizePath(linkPath);
 		for (let depth = 0; depth < maxDepth; depth++) {
 			try {
-				const node = getNode(this.root, current);
+				const node = getNodeNormalized(this.root, current);
 				if (node.type === "file" && node.mode === 0o120777) {
 					const target = (node as InternalFileNode).content.toString("utf8");
 					current = target.startsWith("/")
@@ -1039,7 +1043,7 @@ class VirtualFileSystem extends EventEmitter {
 		}
 		const normalized = normalizePath(targetPath);
 		if (normalized === "/") throw new Error("Cannot remove root directory.");
-		const node = getNode(this.root, normalized);
+		const node = getNodeNormalized(this.root, normalized);
 		if (node.type === "directory") {
 			const dir = node as InternalDirectoryNode;
 			if (!options.recursive && dir._childCount > 0) {
@@ -1055,7 +1059,9 @@ class VirtualFileSystem extends EventEmitter {
 			() => {},
 		);
 		delete parent.children[name];
-		parent._childCount--;		this.emit("node:remove", { path: normalized });
+		parent._childCount--;
+		parent._sortedKeys = null;
+		this.emit("node:remove", { path: normalized });
 		this._journal({ op: JournalOp.REMOVE, path: normalized });
 	}
 
@@ -1066,7 +1072,7 @@ class VirtualFileSystem extends EventEmitter {
 		if (fromNormalized === "/" || toNormalized === "/") {
 			throw new Error("Cannot move root directory.");
 		}
-		const node = getNode(this.root, fromNormalized);
+		const node = getNodeNormalized(this.root, fromNormalized);
 		if (this.exists(toNormalized)) {
 			throw new Error(`Destination '${toNormalized}' already exists.`);
 		}
@@ -1085,9 +1091,11 @@ class VirtualFileSystem extends EventEmitter {
 		);
 		delete srcParent.children[srcName];
 		srcParent._childCount--;
+		srcParent._sortedKeys = null;
 		node.name = destName;
 		destParent.children[destName] = node;
 		destParent._childCount++;
+		destParent._sortedKeys = null;
 		this._journal({ op: JournalOp.MOVE, path: fromNormalized, dest: toNormalized });
 	}
 
@@ -1185,6 +1193,7 @@ class VirtualFileSystem extends EventEmitter {
 			updatedAt: Date.parse(snap.updatedAt),
 			children: Object.create(null) as Record<string, InternalNode>,
 			_childCount: 0,
+			_sortedKeys: null,
 		};
 		for (const child of snap.children) {
 			if (child.type === "file") {

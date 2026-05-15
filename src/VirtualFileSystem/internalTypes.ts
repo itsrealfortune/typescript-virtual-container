@@ -40,4 +40,6 @@ export interface InternalDirectoryNode extends InternalBaseNode {
 	children: Record<string, InternalNode>;
 	/** Cached child count — avoids O(n) Object.keys() on hot paths. */
 	_childCount: number;
+	/** Cached sorted child names — null means stale, rebuilt lazily by list(). */
+	_sortedKeys: string[] | null;
 }

@@ -220,6 +220,7 @@ function decodeNode(dec: Decoder): InternalNode {
 			updatedAt,
 			children,
 			_childCount: count,
+			_sortedKeys: null,
 		} satisfies InternalDirectoryNode;
 	}
 

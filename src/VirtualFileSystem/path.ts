@@ -21,25 +21,36 @@ export function getNode(
 	targetPath: string,
 ): InternalNode {
 	const normalized = normalizePath(targetPath);
-	if (normalized === "/") {
-		return root;
-	}
+	return getNodeNormalized(root, normalized);
+}
 
-	const parts = splitPath(normalized);
+/**
+ * Like getNode but skips normalization — caller must pass an already-normalized path.
+ * Avoids double normalizePath() when the caller has already normalized.
+ */
+export function getNodeNormalized(
+	root: InternalDirectoryNode,
+	normalized: string,
+): InternalNode {
+	if (normalized === "/") return root;
+
 	let current: InternalNode = root;
-
-	for (const part of parts) {
-		if (current.type !== "directory") {
-			throw new Error(`Path '${normalized}' does not exist.`);
+	let i = 1; // skip leading "/"
+	while (i <= normalized.length) {
+		const slash = normalized.indexOf("/", i);
+		const end = slash === -1 ? normalized.length : slash;
+		const part = normalized.slice(i, end);
+		if (part) {
+			if (current.type !== "directory") {
+				throw new Error(`Path '${normalized}' does not exist.`);
+			}
+			const next: InternalNode | undefined = (current as InternalDirectoryNode).children[part];
+			if (!next) throw new Error(`Path '${normalized}' does not exist.`);
+			current = next;
 		}
-
-		const next: InternalNode | undefined = current.children[part];
-		if (!next) {
-			throw new Error(`Path '${normalized}' does not exist.`);
-		}
-		current = next;
+		if (slash === -1) break;
+		i = slash + 1;
 	}
-
 	return current;
 }
 
