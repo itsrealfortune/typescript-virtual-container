@@ -1,12 +1,10 @@
-import type { ChildProcessWithoutNullStreams } from "node:child_process";
-import { readFile, unlink, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import type { ShellProperties, VirtualShell } from ".";
 import { getCommandNames, makeDefaultEnv, runCommand, userHome } from "../commands";
 import {
 	spawnHtopProcess,
-	spawnNanoEditorProcess,
 } from "../modules/shellInteractive";
+import { NanoEditor } from "../modules/nanoEditor";
 import {
 	getVisibleHtopPidList,
 	resolvePath,
@@ -20,11 +18,16 @@ import type { ShellStream } from "../types/streams";
 import type VirtualFileSystem from "../VirtualFileSystem";
 
 interface NanoSession {
-	kind: "nano" | "htop";
+	kind: "nano";
 	targetPath: string;
-	tempPath: string;
-	process: ChildProcessWithoutNullStreams;
+	editor: NanoEditor;
 }
+
+interface HtopSession {
+	kind: "htop";
+	process: import("node:child_process").ChildProcessWithoutNullStreams;
+}
+
 
 interface PendingSudo {
 	username: string;
@@ -59,7 +62,7 @@ export function startShell(
 	let pendingHeredoc: { delimiter: string; lines: string[]; cmdBefore: string } | null = null;
 	const shellEnv: ShellEnv = makeDefaultEnv(authUser, hostname);
 	const sessionStack: Array<{ authUser: string; cwd: string }> = [];
-	let nanoSession: NanoSession | null = null;
+	let nanoSession: NanoSession | HtopSession | null = null;
 	let pendingSudo: PendingSudo | null = null;
 	const buildCurrentPrompt = (): string => {
 		if (shellEnv.vars.PS1) return buildPrompt(authUser, hostname, "", shellEnv.vars.PS1, cwd);
@@ -208,29 +211,10 @@ export function startShell(
 		renderLine();
 	}
 
-	async function finishNanoEditor(): Promise<void> {
-		if (!nanoSession) {
-			return;
+	function finishInteractiveSession(savedContent?: string, targetPath?: string): void {
+		if (savedContent !== undefined && targetPath) {
+			shell.writeFileAsUser(authUser, targetPath, savedContent);
 		}
-
-		const activeSession = nanoSession;
-
-		if (activeSession.kind === "nano") {
-			try {
-				const updatedContent = await readFile(activeSession.tempPath, "utf8");
-				shell.writeFileAsUser(
-					authUser,
-					activeSession.targetPath,
-					updatedContent,
-				);
-				// WAL: checkpoint handled by auto-flush timer
-			} catch {
-				// If temp file does not exist, nano exited without writing.
-			}
-
-			await unlink(activeSession.tempPath).catch(() => undefined);
-		}
-
 		nanoSession = null;
 		lineBuffer = "";
 		cursorPos = 0;
@@ -238,32 +222,27 @@ export function startShell(
 		renderLine();
 	}
 
-	async function startNanoEditor(
+	function startNanoEditor(
 		targetPath: string,
 		initialContent: string,
-		tempPath: string,
-	): Promise<void> {
-		if (shell.vfs.exists(targetPath)) {
-			await writeFile(tempPath, initialContent, "utf8");
-		}
-
-		const editor = spawnNanoEditorProcess(tempPath, terminalSize, stream);
-
-		editor.on("error", (error: Error) => {
-			stream.write(`nano: ${error.message}\r\n`);
-			void finishNanoEditor();
+		_tempPath: string,
+	): void {
+		const editor = new NanoEditor({
+			stream,
+			terminalSize,
+			content: initialContent,
+			filename: path.posix.basename(targetPath),
+			onExit: (reason, content) => {
+				if (reason === "saved") {
+					finishInteractiveSession(content, targetPath);
+				} else {
+					finishInteractiveSession();
+				}
+			},
 		});
 
-		editor.on("close", () => {
-			void finishNanoEditor();
-		});
-
-		nanoSession = {
-			kind: "nano",
-			targetPath,
-			tempPath,
-			process: editor,
-		};
+		nanoSession = { kind: "nano", targetPath, editor };
+		editor.start();
 	}
 
 	async function startHtop(): Promise<void> {
@@ -277,19 +256,14 @@ export function startShell(
 
 		monitor.on("error", (error: Error) => {
 			stream.write(`htop: ${error.message}\r\n`);
-			void finishNanoEditor();
+			finishInteractiveSession();
 		});
 
 		monitor.on("close", () => {
-			void finishNanoEditor();
+			finishInteractiveSession();
 		});
 
-		nanoSession = {
-			kind: "htop",
-			targetPath: "",
-			tempPath: "",
-			process: monitor,
-		};
+		nanoSession = { kind: "htop", process: monitor };
 	}
 
 	function applyHistoryLine(nextLine: string): void {
@@ -429,7 +403,11 @@ export function startShell(
 
 	stream.on("data", async (chunk: Buffer) => {
 		if (nanoSession) {
-			nanoSession.process.stdin.write(chunk);
+			if (nanoSession.kind === "nano") {
+				nanoSession.editor.handleInput(chunk);
+			} else {
+				nanoSession.process.stdin.write(chunk);
+			}
 			return;
 		}
 
@@ -796,7 +774,9 @@ export function startShell(
 
 	stream.on("close", () => {
 		if (nanoSession) {
-			nanoSession.process.kill("SIGTERM");
+			if (nanoSession.kind === "htop") {
+				nanoSession.process.kill("SIGTERM");
+			}
 			nanoSession = null;
 		}
 	});

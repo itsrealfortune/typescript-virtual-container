@@ -1,4 +1,3 @@
-import { readFile, unlink, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import { basename } from "node:path";
 import { stdin, stdout } from "node:process";
@@ -6,7 +5,7 @@ import { createInterface, type Interface } from "node:readline";
 
 import { getCommandNames } from "./commands/registry";
 import { makeDefaultEnv, runCommand, userHome } from "./commands/runtime";
-import { spawnNanoEditorProcess } from "./modules/shellInteractive";
+import { NanoEditor } from "./modules/nanoEditor";
 import { resolvePath } from "./modules/shellRuntime";
 import { buildLoginBanner, type LoginBannerState } from "./SSHMimic/loginBanner";
 import { buildPrompt } from "./SSHMimic/prompt";
@@ -291,61 +290,46 @@ async function runReadlineShell(): Promise<void> {
 
 	// ── nano editor ────────────────────────────────────────────────────────────
 
-	async function startNanoEditor(
+	function startNanoEditor(
 		targetPath: string,
 		initialContent: string,
-		tempPath: string,
+		_tempPath: string,
 	): Promise<void> {
-		if (virtualShell.vfs.exists(targetPath)) {
-			await writeFile(tempPath, initialContent, "utf8");
-		}
-
 		rl.pause();
 
-		const editor = spawnNanoEditorProcess(
-			tempPath,
-			terminalSize,
-			{
-				write: stdout.write.bind(stdout),
-				exit: () => undefined,
-				end: () => undefined,
-			} as unknown as Parameters<typeof spawnNanoEditorProcess>[2],
-		);
-
 		const wasRawMode = Boolean(stdin.isRaw);
-		const forwardInput = (chunk: Buffer): void => { editor.stdin.write(chunk); };
-
 		stdin.resume();
 		if (!wasRawMode) stdin.setRawMode(true);
-		stdin.on("data", forwardInput);
 
-		await new Promise<void>((resolve) => {
-			const cleanup = (): void => {
-				stdin.off("data", forwardInput);
-				if (!wasRawMode) stdin.setRawMode(false);
-				rl.resume();
+		return new Promise<void>((resolve) => {
+			const stream: import("./types/streams").ShellStream = {
+				write: (data: string) => { stdout.write(data); },
+				exit: () => undefined,
+				end: () => undefined,
+				on: () => undefined,
 			};
 
-			editor.on("error", (error: Error) => {
-				cleanup();
-				stdout.write(`nano: ${error.message}\r\n`);
-				resolve();
+			const editor = new NanoEditor({
+				stream,
+				terminalSize,
+				content: initialContent,
+				filename: path.posix.basename(targetPath),
+				onExit: (reason, content) => {
+					stdin.off("data", forwardInput);
+					if (!wasRawMode) stdin.setRawMode(false);
+					rl.resume();
+					if (reason === "saved") {
+						virtualShell.writeFileAsUser(authUser, targetPath, content);
+						void flushVfs();
+					}
+					stdout.write("\r\n");
+					resolve();
+				},
 			});
 
-			editor.on("close", async () => {
-				cleanup();
-				rl.write("", { ctrl: true, name: "u" });
-				try {
-					const updatedContent = await readFile(tempPath, "utf8");
-					virtualShell.writeFileAsUser(authUser, targetPath, updatedContent);
-					await flushVfs();
-				} catch {
-					// save skipped or temp file missing
-				}
-				await unlink(tempPath).catch(() => undefined);
-				stdout.write("\r\n");
-				resolve();
-			});
+			const forwardInput = (chunk: Buffer): void => { editor.handleInput(chunk); };
+			stdin.on("data", forwardInput);
+			editor.start();
 		});
 	}
 
