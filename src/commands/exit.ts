@@ -7,7 +7,7 @@ import type { ShellModule } from "../types/commands";
  */
 export const exitCommand: ShellModule = {
 	name: "exit",
-	aliases: ["bye"],
+	aliases: ["bye", "logout"],
 	description: "Exit the shell session",
 	category: "shell",
 	params: ["[code]"],

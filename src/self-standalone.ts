@@ -265,6 +265,30 @@ async function runReadlineShell(): Promise<void> {
 	const rlWithHistory = rl as Interface & { history: string[] };
 	rlWithHistory.history = [...history].reverse();
 
+	// Intercept Ctrl+D at the readline level: when inside a nested session,
+	// pop the session stack and re-prompt instead of closing readline.
+	{
+		type RlInternal = { _ttyWrite: (s: string, key: { ctrl?: boolean; name?: string } | null) => void; line: string };
+		const rlI = rl as unknown as RlInternal;
+		const orig = rlI._ttyWrite.bind(rl);
+		rlI._ttyWrite = (s, key) => {
+			if (key?.ctrl && key?.name === "d" && rlI.line === "" && sessionStack.length > 0) {
+				stdout.write("^D\n");
+				const prev = sessionStack.pop()!;
+				authUser = prev.authUser;
+				cwd = prev.cwd;
+				shellEnv.vars.USER = authUser;
+				shellEnv.vars.LOGNAME = authUser;
+				shellEnv.vars.HOME = userHome(authUser);
+				shellEnv.vars.PWD = cwd;
+				stdout.write("logout\n");
+				void flushVfs().then(() => { prompt(); });
+				return;
+			}
+			orig(s, key);
+		};
+	}
+
 	// ── nano editor ────────────────────────────────────────────────────────────
 
 	async function startNanoEditor(
