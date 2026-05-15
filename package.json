@@ -45,9 +45,9 @@
     "publish-package": "bash ./scripts/publish-package.sh",
     "self-standalone-build": "node scripts/build-all.mjs",
     "standalone-build": "bunx esbuild src/standalone.ts --bundle --platform=node --target=node18 --outfile=builds/standalone.cjs --tree-shaking=true --minify  --banner:js='#!/usr/bin/env node'",
-    "build-all": "node scripts/build-all.mjs",
-    "publish-doc": "bunx typedoc && bun build-all && rm -f dist/*standalone* && cd examples && node build && cd .. && bunx gh-pages -d docs && git add docs && git commit -m 'docs: update documentation' && git push",
-    "publish-doc-app": "bun build-all && cd examples && node build && cd .. && cp examples/app.js docs/app.js && bunx gh-pages -d docs && git add docs/app.js && git commit -m 'docs: update web terminal app' && git push",
+    "build-all": "bun run build && node scripts/build-all.mjs && cd examples && node build && cd .. && cp examples/app.js docs/app.js",
+    "publish-doc": "bunx typedoc && bun build-all && bunx gh-pages -d docs && git add docs && git commit -m 'docs: update documentation' && git push",
+    "publish-doc-app": "bun build-all && bunx gh-pages -d docs && git add docs/app.js && git commit -m 'docs: update web terminal app' && git push",
     "generate-manuals": "node scripts/generate-manuals-bundle.mjs"
   },
   "devDependencies": {

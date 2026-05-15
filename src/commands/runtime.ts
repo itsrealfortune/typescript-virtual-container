@@ -20,7 +20,7 @@ const RE_FUNC_BRACE  = /\w+\s*\(\s*\)\s*\{/;
 const RE_FUNC_KW     = /\bfunction\s+\w+/;
 const RE_ARITH       = /\(\(\s*.+\s*\)\)/;
 const RE_PIPE        = /(?<![|&])[|](?![|])/;
-const RE_OPERATORS   = /[><;&]/;
+const RE_OPERATORS   = /[><;&]|\|\|/;
 
 /** Returns the home directory path for a given user. Root lives at /root. */
 export function userHome(authUser: string): string {
