@@ -23,17 +23,36 @@ document.addEventListener('click', () => {
   if (!window.getSelection()?.toString()) cmd.focus();
 });
 
-// ANSI to HTML
-const FG_COLORS: Record<number, string> = {
+// ANSI to HTML — supports 8-color, 16-color, 256-color, 24-bit RGB
+const ANSI_FG: Record<number, string> = {
   30: '#000', 31: '#c00', 32: '#0c0', 33: '#cc0',
   34: '#00c', 35: '#c0c', 36: '#0cc', 37: '#ccc',
   90: '#555', 91: '#f55', 92: '#5f5', 93: '#ff5',
   94: '#55f', 95: '#f5f', 96: '#5ff', 97: '#fff',
 };
-const BG_COLORS: Record<number, string> = {
+const ANSI_BG: Record<number, string> = {
   40: '#000', 41: '#c00', 42: '#0c0', 43: '#cc0',
   44: '#00c', 45: '#c0c', 46: '#0cc', 47: '#ccc',
+  100: '#555', 101: '#f55', 102: '#5f5', 103: '#ff5',
+  104: '#55f', 105: '#f5f', 106: '#5ff', 107: '#fff',
 };
+
+// xterm 256-color palette (first 16 = ANSI, 16-231 = 6x6x6 cube, 232-255 = grayscale)
+function xterm256(n: number): string {
+  if (n < 16) {
+    const basic = [...Object.values(ANSI_FG)];
+    return basic[n] ?? '#ccc';
+  }
+  if (n < 232) {
+    const i = n - 16;
+    const r = Math.floor(i / 36) * 51;
+    const g = Math.floor((i % 36) / 6) * 51;
+    const b = (i % 6) * 51;
+    return `rgb(${r},${g},${b})`;
+  }
+  const v = 8 + (n - 232) * 10;
+  return `rgb(${v},${v},${v})`;
+}
 
 function ansiToHtml(s: string): string {
   let html = '';
@@ -41,11 +60,31 @@ function ansiToHtml(s: string): string {
   for (const part of s.split(/(\x1b\[[0-9;]*m)/)) {
     const m = part.match(/^\x1b\[([0-9;]*)m$/);
     if (m) {
-      for (const code of m[1].split(';').map(Number)) {
+      const codes = m[1].split(';').map(Number);
+      let i = 0;
+      while (i < codes.length) {
+        const code = codes[i]!;
         if (code === 0) { bold = false; fg = ''; bg = ''; }
         else if (code === 1) bold = true;
-        else if (FG_COLORS[code]) fg = FG_COLORS[code];
-        else if (BG_COLORS[code]) bg = BG_COLORS[code];
+        else if (code === 38 && codes[i + 1] === 2) {
+          // 24-bit fg: 38;2;R;G;B
+          fg = `rgb(${codes[i+2]},${codes[i+3]},${codes[i+4]})`;
+          i += 4;
+        } else if (code === 48 && codes[i + 1] === 2) {
+          // 24-bit bg: 48;2;R;G;B
+          bg = `rgb(${codes[i+2]},${codes[i+3]},${codes[i+4]})`;
+          i += 4;
+        } else if (code === 38 && codes[i + 1] === 5) {
+          // 256-color fg: 38;5;N
+          fg = xterm256(codes[i + 2] ?? 0);
+          i += 2;
+        } else if (code === 48 && codes[i + 1] === 5) {
+          // 256-color bg: 48;5;N
+          bg = xterm256(codes[i + 2] ?? 0);
+          i += 2;
+        } else if (ANSI_FG[code]) { fg = ANSI_FG[code]; }
+        else if (ANSI_BG[code]) { bg = ANSI_BG[code]; }
+        i++;
       }
     } else if (part) {
       const style = [
@@ -124,7 +163,24 @@ cmd.addEventListener('input', () => { syncCursor(); });
 // biome-ignore lint/suspicious/noExplicitAny: globalThis shim
 await (globalThis as any).__fsReady__;
 
-const shell = new VirtualShell(HOSTNAME, undefined, {
+function detectWebGlGpu(): string | undefined {
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl') as WebGLRenderingContext | null;
+    if (!gl) return undefined;
+    const ext = (gl as WebGLRenderingContext).getExtension('WEBGL_debug_renderer_info');
+    if (!ext) return undefined;
+    return (gl as WebGLRenderingContext).getParameter(ext.UNMASKED_RENDERER_WEBGL) as string || undefined;
+  } catch { return undefined; }
+}
+
+const shell = new VirtualShell(HOSTNAME, {
+  kernel: '6.1.0-web-amd64',
+  os: 'Fortune GNU/Linux (Web)',
+  arch: navigator.userAgent.includes('arm64') || navigator.userAgent.includes('aarch64') ? 'aarch64' : 'x86_64',
+  resolution: `${window.screen.width}x${window.screen.height}`,
+  gpu: detectWebGlGpu(),
+}, {
   mode: 'fs',
   snapshotPath: '/vfs-data',
   flushIntervalMs: 10_000,
