@@ -507,6 +507,17 @@ async function runReadlineShell(): Promise<void> {
 		const updated = applySessionState(authUser, cwd, result, shellEnv);
 		authUser = updated.authUser;
 		cwd = updated.cwd;
+		if (result.switchUser) {
+			shellEnv.vars.PS1 = makeDefaultEnv(authUser, hostname).vars.PS1 ?? "";
+			const rcPath = `${userHome(authUser)}/.bashrc`;
+			if (virtualShell.vfs.exists(rcPath)) {
+				for (const raw of virtualShell.vfs.readFile(rcPath).split("\n")) {
+					const l = raw.trim();
+					if (!l || l.startsWith("#")) continue;
+					try { await runCommand(l, authUser, hostname, "shell", cwd, virtualShell, undefined, shellEnv); } catch { /* ignore */ }
+				}
+			}
+		}
 
 		if (result.closeSession) {
 			await flushVfs();
