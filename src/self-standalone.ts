@@ -20,7 +20,7 @@ import { VirtualShell } from "./VirtualShell";
 const argv = process.argv.slice(2);
 
 if (getFlag(argv, "--version") || getFlag(argv, "-V")) {
-	process.stdout.write("self-standalone 1.5.7\n");
+	process.stdout.write("self-standalone 1.5.8\n");
 	process.exit(0);
 }
 
@@ -498,6 +498,7 @@ async function runReadlineShell(): Promise<void> {
 	// ── Prompt helper ──────────────────────────────────────────────────────────
 
 	const renderPrompt = (): string => {
+		if (shellEnv.vars.PS1) return buildPrompt(authUser, hostname, "", shellEnv.vars.PS1, cwd);
 		const cwdLabel = cwd === userHome(authUser) ? "~" : basename(cwd) || "/";
 		return buildPrompt(authUser, hostname, cwdLabel);
 	};
@@ -523,6 +524,20 @@ async function runReadlineShell(): Promise<void> {
 
 	stdout.write(buildLoginBanner(hostname, virtualShell.properties, readLastLogin(authUser)));
 	writeLastLogin(authUser, remoteAddress);
+
+	// Source login/rc files so PS1, aliases, exports are applied before first prompt.
+	for (const rcPath of ["/etc/environment", `${userHome(authUser)}/.profile`, `${userHome(authUser)}/.bashrc`]) {
+		if (!virtualShell.vfs.exists(rcPath)) continue;
+		for (const raw of virtualShell.vfs.readFile(rcPath).split("\n")) {
+			const l = raw.trim();
+			if (!l || l.startsWith("#")) continue;
+			try {
+				const r = await runCommand(l, authUser, hostname, "shell", cwd, virtualShell, undefined, shellEnv);
+				if (r.stdout) stdout.write(r.stdout);
+			} catch { /* ignore */ }
+		}
+	}
+
 	await flushVfs();
 
 	// ── Event-driven line handler (enables completer) ──────────────────────────

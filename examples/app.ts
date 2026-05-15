@@ -145,8 +145,10 @@ function buildInputLine(promptHtml: string): void {
 function printPrompt(): void {
   passwordMode = false;
   activeChallengeHandler = null;
-  const cwdLabel = cwd === userHome(authUser) ? '~' : (cwd.split('/').at(-1) || '/');
-  buildInputLine(ansiToHtml(buildPrompt(authUser, HOSTNAME, cwdLabel)));
+  const promptStr = shellEnv.vars.PS1
+    ? buildPrompt(authUser, HOSTNAME, '', shellEnv.vars.PS1, cwd)
+    : buildPrompt(authUser, HOSTNAME, cwd === userHome(authUser) ? '~' : (cwd.split('/').at(-1) || '/'));
+  buildInputLine(ansiToHtml(promptStr));
 }
 
 function printChallengePrompt(text: string, handler: ChallengeHandler): void {
@@ -290,6 +292,25 @@ function writeLastLogin(): void {
 
 print(buildLoginBanner(HOSTNAME, shell.properties, readLastLogin()));
 writeLastLogin();
+
+// Source login/rc files so PS1, aliases, exports are ready before first prompt.
+// Inline per-line execution: collects stdout (echo in rc files prints), per-line error isolation.
+async function sourceRcFile(filePath: string): Promise<void> {
+  if (!vfs.exists(filePath)) return;
+  const lines = vfs.readFile(filePath).split('\n');
+  for (const raw of lines) {
+    const l = raw.trim();
+    if (!l || l.startsWith('#')) continue;
+    try {
+      const r = await runCommand(l, authUser, HOSTNAME, 'shell', cwd, shell, undefined, shellEnv);
+      if (r.stdout) print(r.stdout);
+    } catch { /* ignore */ }
+  }
+}
+await sourceRcFile('/etc/environment');
+await sourceRcFile(`${userHome(authUser)}/.profile`);
+await sourceRcFile(`${userHome(authUser)}/.bashrc`);
+
 await vfs.flushMirror();
 printPrompt();
 

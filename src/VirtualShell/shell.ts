@@ -62,6 +62,7 @@ export function startShell(
 	let nanoSession: NanoSession | null = null;
 	let pendingSudo: PendingSudo | null = null;
 	const buildCurrentPrompt = (): string => {
+		if (shellEnv.vars.PS1) return buildPrompt(authUser, hostname, "", shellEnv.vars.PS1, cwd);
 		const homePath = userHome(authUser);
 		const cwdLabel = cwd === homePath ? "~" : path.posix.basename(cwd) || "/";
 		return buildPrompt(authUser, hostname, cwdLabel);
@@ -71,7 +72,7 @@ export function startShell(
 		`[${sessionId}] Shell started for user '${authUser}' at ${remoteAddress}`,
 	);
 
-	// Source login/rc files at startup
+	// Source login/rc files before first prompt.
 	void (async () => {
 		const sourceFile = async (filePath: string, isEnvFile = false) => {
 			if (!shell.vfs.exists(filePath)) return;
@@ -81,11 +82,11 @@ export function startShell(
 					const l = line.trim();
 					if (!l || l.startsWith("#")) continue;
 					if (isEnvFile) {
-						// /etc/environment: KEY=VALUE pairs only, no shell syntax
 						const m = l.match(/^([A-Za-z_][A-Za-z0-9_]*)=["']?(.+?)["']?\s*$/);
 						if (m) shellEnv.vars[m[1]!] = m[2]!;
 					} else {
-						await runCommand(l, authUser, hostname, "shell", cwd, shell, undefined, shellEnv);
+						const r = await runCommand(l, authUser, hostname, "shell", cwd, shell, undefined, shellEnv);
+						if (r.stdout) stream.write(r.stdout);
 					}
 				}
 			} catch { /* ignore */ }
