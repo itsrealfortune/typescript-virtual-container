@@ -40,6 +40,10 @@ export interface ShellProperties {
 	os: string;
 	/** CPU architecture label (e.g. `"x86_64"`, `"aarch64"`). */
 	arch: string;
+	/** Display resolution (e.g. `"1920x1080"`). */
+	resolution?: string;
+	/** GPU label (e.g. `"WebGL Renderer"`). */
+	gpu?: string;
 }
 
 /**
