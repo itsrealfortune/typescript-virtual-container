@@ -58,17 +58,19 @@ function flush(): void {
     scrollbackEl.innerHTML = renderer.renderScrollbackHtml();
     terminal.innerHTML = renderer.renderHtml();
     if (fullscreenMode) {
-      // Exit fullscreen once shell starts accumulating scrollback again
+      // Always wipe scrollback DOM in fullscreen — lines leaked by scrollUp must not show
+      renderer.clearScrollback();
+      scrollbackEl.innerHTML = '';
       if (!cleared && renderer.scrollbackLength > 0) {
         fullscreenMode = false;
-        wrapper.style.overflowY = 'auto';
+        wrapper.classList.remove('fullscreen');
         terminal.scrollIntoView(false);
       } else {
-        wrapper.style.overflowY = 'hidden';
+        wrapper.classList.add('fullscreen');
         wrapper.scrollTop = 0;
       }
     } else {
-      wrapper.style.overflowY = 'auto';
+      wrapper.classList.remove('fullscreen');
       terminal.scrollIntoView(false);
     }
   });

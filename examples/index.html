@@ -34,6 +34,17 @@
         background: #0b0f14;
         cursor: text;
       }
+      #terminal-wrapper.fullscreen {
+        overflow: hidden;
+      }
+      #terminal-wrapper.fullscreen #scrollback {
+        display: none;
+      }
+      #terminal-wrapper.fullscreen #terminal {
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+      }
       #scrollback, #terminal {
         margin: 0;
         padding: 0;
