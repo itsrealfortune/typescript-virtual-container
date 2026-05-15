@@ -586,6 +586,13 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 	}
 ];
 
+// O(1) name lookup — built once at module load, avoids O(n) linear scan per command
+const _REGISTRY_MAP = new Map<string, PackageDefinition>(
+	PACKAGE_REGISTRY.map((p) => [p.name.toLowerCase(), p]),
+);
+// Pre-sorted for listAvailable() — avoids O(n log n) sort on every apt list/search
+const _REGISTRY_SORTED = PACKAGE_REGISTRY.slice().sort((a, b) => a.name.localeCompare(b.name));
+
 /**
  * Pure-TypeScript APT/dpkg package manager backed by a built-in registry.
  *
@@ -713,9 +720,7 @@ export class VirtualPackageManager {
 	 * @returns The matching `PackageDefinition`, or `undefined` if not found.
 	 */
 	public findInRegistry(name: string): PackageDefinition | undefined {
-		return PACKAGE_REGISTRY.find(
-			(p) => p.name.toLowerCase() === name.toLowerCase(),
-		);
+		return _REGISTRY_MAP.get(name.toLowerCase());
 	}
 
 	/**
@@ -724,7 +729,7 @@ export class VirtualPackageManager {
 	 * @returns Array of `PackageDefinition` entries.
 	 */
 	public listAvailable(): PackageDefinition[] {
-		return [...PACKAGE_REGISTRY].sort((a, b) => a.name.localeCompare(b.name));
+		return _REGISTRY_SORTED;
 	}
 
 	/**
