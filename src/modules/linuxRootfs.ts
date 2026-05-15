@@ -1918,11 +1918,8 @@ export function bootstrapLinuxRootfs(
 	const hasRestoredData = vfs.getMode() === "fs" && vfs.exists("/home");
 
 	if (hasRestoredData) {
-		// Snapshot was already restored — merge static rootfs without
-		// clobbering user files and directories.
 		vfs.mergeRootTree(decodeVfs(snapshot));
 	} else {
-		// Fresh start — replace the empty tree with the full static rootfs.
 		vfs.importRootTree(decodeVfs(snapshot));
 	}
 

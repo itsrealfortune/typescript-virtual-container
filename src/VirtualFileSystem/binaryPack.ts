@@ -186,7 +186,7 @@ class Decoder {
 
 function decodeNode(dec: Decoder): InternalNode {
 	const type = dec.readUint8();
-	const name = dec.readString();
+	const name = internName(dec.readString());
 	const mode = dec.readUint32();
 	const createdAt = dec.readFloat64();
 	const updatedAt = dec.readFloat64();
@@ -225,6 +225,42 @@ function decodeNode(dec: Decoder): InternalNode {
 	}
 
 	throw new Error(`[VFS binary] Unknown node type: 0x${type.toString(16)}`);
+}
+
+// String intern pool for node names — avoids duplicate string allocations per decode call.
+// Names like "bin", "etc", "usr", "passwd" appear in every shell's tree.
+const _namePool = new Map<string, string>();
+function internName(s: string): string {
+	const cached = _namePool.get(s);
+	if (cached !== undefined) return cached;
+	_namePool.set(s, s);
+	return s;
+}
+
+/**
+ * Shallow-fork a decoded rootfs tree: creates new InternalDirectoryNode objects
+ * (necessary for per-shell write isolation) but shares all InternalFileNode and
+ * InternalStubNode references. Safe because file/stub nodes are never mutated in-place
+ * — writes replace the parent's children[name] reference with a new node.
+ */
+export function forkDirTree(base: InternalDirectoryNode): InternalDirectoryNode {
+	const children = Object.create(null) as Record<string, InternalNode>;
+	for (const name in base.children) {
+		const child = base.children[name]!;
+		children[name] = child.type === "directory"
+			? forkDirTree(child as InternalDirectoryNode)
+			: child; // shared — file/stub nodes are immutable until replaced
+	}
+	return {
+		type: "directory",
+		name: base.name,
+		mode: base.mode,
+		createdAt: base.createdAt,
+		updatedAt: base.updatedAt,
+		children,
+		_childCount: base._childCount,
+		_sortedKeys: base._sortedKeys, // safe to share — sorted list doesn't change for base
+	};
 }
 
 /**

@@ -183,7 +183,6 @@ class VirtualShell extends EventEmitter {
 		// Store references to avoid TypeScript "used before assigned" errors
 		const vfs = this.vfs;
 		const users = this.users;
-		const pm = this.packageManager;
 		const shellProps = this.properties;
 		const shellHostname = this.hostname;
 		const startTime = this.startTime;
@@ -194,8 +193,6 @@ class VirtualShell extends EventEmitter {
 			await users.initialize();
 			// Bootstrap Linux rootfs (idempotent)
 			bootstrapLinuxRootfs(vfs, users, shellHostname, shellProps, startTime);
-			// Load installed packages from dpkg status
-			pm.load();
 			this.emit("initialized");
 		})();
 	}
