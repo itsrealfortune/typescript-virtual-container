@@ -37,7 +37,9 @@ export function makeDefaultEnv(authUser: string, hostname: string): ShellEnv {
 			SHELL: "/bin/bash",
 			TERM: "xterm-256color",
 			HOSTNAME: hostname,
-			PS1: "\\[\\e[37;1m\\][\\[\\e[31;1m\\]\\u\\[\\e[37;1m\\]@\\[\\e[34;1m\\]\\h\\[\\e[0m\\] \\w\\[\\e[37;1m\\]]\\[\\e[0m\\]\\$",
+			PS1: authUser === "root"
+				? "\\[\\e[37;1m\\][\\[\\e[31;1m\\]\\u\\[\\e[37;1m\\]@\\[\\e[34;1m\\]\\h\\[\\e[0m\\] \\w\\[\\e[37;1m\\]]\\[\\e[31;1m\\]\\$\\[\\e[0m\\] "
+				: "\\[\\e[37;1m\\][\\[\\e[35;1m\\]\\u\\[\\e[37;1m\\]@\\[\\e[34;1m\\]\\h\\[\\e[0m\\] \\w\\[\\e[37;1m\\]]\\[\\e[0m\\]\\$ ",
 			"0": "/bin/bash",
 		},
 		lastExitCode: 0,

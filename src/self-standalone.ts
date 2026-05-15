@@ -402,6 +402,15 @@ async function runReadlineShell(): Promise<void> {
 			shellEnv.vars.LOGNAME = authUser;
 			shellEnv.vars.HOME = userHome(authUser);
 			shellEnv.vars.PWD = cwd;
+			shellEnv.vars.PS1 = makeDefaultEnv(authUser, hostname).vars.PS1 ?? "";
+			for (const rcPath of [`${userHome(authUser)}/.bashrc`]) {
+				if (!virtualShell.vfs.exists(rcPath)) continue;
+				for (const raw of virtualShell.vfs.readFile(rcPath).split("\n")) {
+					const l = raw.trim();
+					if (!l || l.startsWith("#")) continue;
+					try { await runCommand(l, authUser, hostname, "shell", cwd, virtualShell, undefined, shellEnv); } catch { /* ignore */ }
+				}
+			}
 			return;
 		}
 
@@ -521,9 +530,9 @@ async function runReadlineShell(): Promise<void> {
 	// ── Prompt helper ──────────────────────────────────────────────────────────
 
 	const renderPrompt = (): string => {
-		if (shellEnv.vars.PS1) return buildPrompt(authUser, hostname, "", shellEnv.vars.PS1, cwd);
+		if (shellEnv.vars.PS1) return buildPrompt(authUser, hostname, "", shellEnv.vars.PS1, cwd, true);
 		const cwdLabel = cwd === userHome(authUser) ? "~" : basename(cwd) || "/";
-		return buildPrompt(authUser, hostname, cwdLabel);
+		return buildPrompt(authUser, hostname, cwdLabel, undefined, undefined, true);
 	};
 
 	const prompt = (): void => {
