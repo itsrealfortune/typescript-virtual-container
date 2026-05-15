@@ -37,5 +37,5 @@ export function buildPrompt(
 
 	const colorCwd = `${w}\x1b[36;1m${ew}`;
 
-	return `${colorReset}[${colorUser}${user}${colorReset}@${colorBlue}${host}${colorReset} ${colorCwd}${cwdName}${colorReset}]${symbol} `;
+	return `${colorReset}[${colorUser}${user}${colorReset}@${colorBlue}${host}${colorReset} ${colorCwd}${cwdName}]${colorReset}${symbol} `;
 }
