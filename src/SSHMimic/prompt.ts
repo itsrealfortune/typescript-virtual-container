@@ -28,10 +28,12 @@ export function buildPrompt(
 ): string {
 	if (ps1) return expandPs1(ps1, user, host, fullCwd ?? cwdName, readlineMode);
 	const isRoot = user === "root";
-	const colorUser = isRoot ? "[31;1m" : "[35;1m";
-	const colorWhite = "[37;1m";
-	const colorBlue = "[34;1m";
-	const colorReset = "[0m";
+	const w = readlineMode ? "\x01" : "";
+	const ew = readlineMode ? "\x02" : "";
+	const colorUser = isRoot ? `${w}\x1b[31;1m${ew}` : `${w}\x1b[35;1m${ew}`;
+	const colorWhite = `${w}\x1b[37;1m${ew}`;
+	const colorBlue = `${w}\x1b[34;1m${ew}`;
+	const colorReset = `${w}\x1b[0m${ew}`;
 	const symbol = isRoot ? "#" : "$";
 
 	return `${colorWhite}[${colorUser}${user}${colorWhite}@${colorBlue}${host}${colorReset} ${cwdName}${colorWhite}]${colorReset}${symbol} `;
