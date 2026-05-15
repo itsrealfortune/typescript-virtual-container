@@ -20,9 +20,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
 const GH_BASE = "https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds";
 
-function run(cmd) {
+function run(cmd, cwd = root) {
   console.log(`\n$ ${cmd}`);
-  execSync(cmd, { stdio: "inherit", cwd: root });
+  execSync(cmd, { stdio: "inherit", cwd });
 }
 
 // ── 1. Clean ──────────────────────────────────────────────────────────────────
@@ -59,8 +59,9 @@ for (const cmd of targets) {
 // );
 // console.log(`\n✓ Copied ${NAMES.web} → examples/web.min.js`);
 
-// ── 4. Run build.js ───────────────────────────────────────────────────────────
+// ── 4. Build library bundle (build.js) + demo app (examples/build.js) ────────
 run("node build.js");
+run("node build.js", join(root, "examples"));
 
 // ── 5. Copy demo to docs/ ─────────────────────────────────────────────────────
 const docsDir = join(root, "docs");

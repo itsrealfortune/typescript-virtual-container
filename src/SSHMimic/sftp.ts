@@ -462,7 +462,7 @@ export class SftpMimic extends EventEmitter {
 
 	/**
 	 * Attach SFTP handlers to an already-accepted sftp stream.
-	 * Used internally by {@link SshMimic} for the SFTP subsystem on the SSH port.
+	 * Used internally by the SSH server for the SFTP subsystem on the SSH port.
 	 * @internal
 	 */
 	public attachSftpHandlers(sftp: SftpServerStream, authUser: string): void {

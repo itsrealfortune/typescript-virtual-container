@@ -1,18 +1,16 @@
-import { readFile, unlink, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import { basename } from "node:path";
 import { stdin, stdout } from "node:process";
 import { createInterface, type Interface } from "node:readline";
 
 import { getCommandNames } from "./commands/registry";
-import { makeDefaultEnv, runCommand, userHome } from "./commands/runtime";
-import { spawnNanoEditorProcess } from "./modules/shellInteractive";
-import { resolvePath } from "./modules/shellRuntime";
-import { buildLoginBanner, type LoginBannerState } from "./SSHMimic/loginBanner";
+import { applyUserSwitch, makeDefaultEnv, runCommand, userHome } from "./commands/runtime";
+import { NanoEditor } from "./modules/nanoEditor";
+import { buildLoginBanner } from "./SSHMimic/loginBanner";
 import { buildPrompt } from "./SSHMimic/prompt";
 import type { CommandResult, PasswordChallenge, SudoChallenge } from "./types/commands";
 import { getFlag, getOptionString } from "./utils/argv";
-import type VirtualFileSystem from "./VirtualFileSystem";
+import { listPathCompletions, loadHistory, readLastLogin, saveHistory, writeLastLogin } from "./utils/shellSession";
 import { VirtualShell } from "./VirtualShell";
 
 // ── CLI args ──────────────────────────────────────────────────────────────────
@@ -20,7 +18,7 @@ import { VirtualShell } from "./VirtualShell";
 const argv = process.argv.slice(2);
 
 if (getFlag(argv, "--version") || getFlag(argv, "-V")) {
-	process.stdout.write("self-standalone 1.5.7\n");
+	process.stdout.write("self-standalone 1.5.8\n");
 	process.exit(0);
 }
 
@@ -72,66 +70,11 @@ const virtualShell = new VirtualShell(hostname, undefined, {
 
 // ── VFS helpers ───────────────────────────────────────────────────────────────
 
-function readLastLogin(username: string): LoginBannerState | null {
-	const lastlogPath = `/home/${username}/.lastlog`;
-	if (!virtualShell.vfs.exists(lastlogPath)) return null;
-	try {
-		return JSON.parse(virtualShell.vfs.readFile(lastlogPath)) as LoginBannerState;
-	} catch {
-		return null;
-	}
-}
-
-function writeLastLogin(username: string, from: string): void {
-	virtualShell.vfs.writeFile(
-		`/home/${username}/.lastlog`,
-		JSON.stringify({ at: new Date().toISOString(), from }),
-	);
-}
-
 async function flushVfs(): Promise<void> {
 	await virtualShell.vfs.stopAutoFlush();
 }
 
-function loadHistory(authUser: string): string[] {
-	const historyPath = `${userHome(authUser)}/.bash_history`;
-	if (!virtualShell.vfs.exists(historyPath)) {
-		virtualShell.vfs.writeFile(historyPath, "");
-		return [];
-	}
-	return virtualShell.vfs
-		.readFile(historyPath)
-		.split("\n")
-		.map((line) => line.trim())
-		.filter((line) => line.length > 0);
-}
-
-function saveHistory(history: string[], authUser: string): void {
-	const data = history.length > 0 ? `${history.join("\n")}\n` : "";
-	virtualShell.vfs.writeFile(`${userHome(authUser)}/.bash_history`, data);
-}
-
 // ── Tab completion ────────────────────────────────────────────────────────────
-
-function listPathCompletions(vfs: VirtualFileSystem, cwd: string, prefix: string): string[] {
-	const slashIndex = prefix.lastIndexOf("/");
-	const dirPart = slashIndex >= 0 ? prefix.slice(0, slashIndex + 1) : "";
-	const namePart = slashIndex >= 0 ? prefix.slice(slashIndex + 1) : prefix;
-	const basePath = resolvePath(cwd, dirPart || ".");
-	try {
-		return vfs
-			.list(basePath)
-			.filter((e) => !e.startsWith(".") && e.startsWith(namePart))
-			.map((e) => {
-				const fullPath = path.posix.join(basePath, e);
-				const st = vfs.stat(fullPath);
-				return `${dirPart}${e}${st.type === "directory" ? "/" : ""}`;
-			})
-			.sort();
-	} catch {
-		return [];
-	}
-}
 
 function makeCompleter(getState: () => { cwd: string }) {
 	const commandNames = Array.from(new Set(getCommandNames())).sort();
@@ -253,7 +196,7 @@ async function runReadlineShell(): Promise<void> {
 		terminalSize.rows = stdout.rows ?? terminalSize.rows;
 	});
 
-	let history = loadHistory(authUser);
+	let history = loadHistory(virtualShell.vfs, authUser);
 
 	const rl = createInterface({
 		input: stdin,
@@ -291,61 +234,84 @@ async function runReadlineShell(): Promise<void> {
 
 	// ── nano editor ────────────────────────────────────────────────────────────
 
-	async function startNanoEditor(
+	function startNanoEditor(
 		targetPath: string,
 		initialContent: string,
-		tempPath: string,
+		_tempPath: string,
 	): Promise<void> {
-		if (virtualShell.vfs.exists(targetPath)) {
-			await writeFile(tempPath, initialContent, "utf8");
-		}
-
-		rl.pause();
-
-		const editor = spawnNanoEditorProcess(
-			tempPath,
-			terminalSize,
-			{
-				write: stdout.write.bind(stdout),
+		return new Promise<void>((resolve) => {
+			const stream: import("./types/streams").ShellStream = {
+				write: (data: string) => { stdout.write(data); },
 				exit: () => undefined,
 				end: () => undefined,
-			} as unknown as Parameters<typeof spawnNanoEditorProcess>[2],
-		);
-
-		const wasRawMode = Boolean(stdin.isRaw);
-		const forwardInput = (chunk: Buffer): void => { editor.stdin.write(chunk); };
-
-		stdin.resume();
-		if (!wasRawMode) stdin.setRawMode(true);
-		stdin.on("data", forwardInput);
-
-		await new Promise<void>((resolve) => {
-			const cleanup = (): void => {
-				stdin.off("data", forwardInput);
-				if (!wasRawMode) stdin.setRawMode(false);
-				rl.resume();
+				on: () => undefined,
 			};
 
-			editor.on("error", (error: Error) => {
-				cleanup();
-				stdout.write(`nano: ${error.message}\r\n`);
-				resolve();
+			const snapSize = { cols: stdout.columns ?? 80, rows: stdout.rows ?? 24 };
+
+			// Steal all stdin listeners from readline so it gets no bytes during nano.
+			// Store them to restore later — this is safer than rl.pause()/resume()
+			// which leaves readline's internal state machine in a broken position.
+			const stdinListeners = stdin.listeners("data") as ((chunk: Buffer) => void)[];
+			for (const l of stdinListeners) stdin.off("data", l);
+
+			// Also steal the "keypress" listeners readline attaches for raw key events.
+			const keypressListeners = stdin.listeners("keypress") as ((...args: unknown[]) => void)[];
+			for (const l of keypressListeners) stdin.off("keypress", l);
+
+			function cleanup(): void {
+				process.off("SIGWINCH", onResize);
+				process.off("SIGINT", onSigint);
+				stdin.off("data", forwardInput);
+
+				// Restore readline's listeners BEFORE touching rawMode.
+				// readline re-enables raw mode itself when it resumes — calling
+				// setRawMode(false) here leaves stdin in cooked mode and causes
+				// escape sequences to print as literal text.
+				for (const l of stdinListeners) stdin.on("data", l);
+				for (const l of keypressListeners) stdin.on("keypress", l);
+
+				// Reset terminal visual state only (cursor, SGR).
+				stdout.write("\x1b[?25h\x1b[0m");
+
+				// Let readline re-establish raw mode and line discipline.
+				rl.resume();
+			}
+
+			// Block SIGINT from killing the process while in nano
+			const onSigint = (): void => { /* absorbed — nano handles ^C via raw bytes */ };
+
+			const editor = new NanoEditor({
+				stream,
+				terminalSize: snapSize,
+				content: initialContent,
+				filename: path.posix.basename(targetPath),
+				onSave: (content) => {
+					virtualShell.writeFileAsUser(authUser, targetPath, content);
+					void flushVfs();
+				},
+				onExit: (reason, content) => {
+					cleanup();
+					if (reason === "saved") {
+						virtualShell.writeFileAsUser(authUser, targetPath, content);
+						void flushVfs();
+					}
+					resolve();
+				},
 			});
 
-			editor.on("close", async () => {
-				cleanup();
-				rl.write("", { ctrl: true, name: "u" });
-				try {
-					const updatedContent = await readFile(tempPath, "utf8");
-					virtualShell.writeFileAsUser(authUser, targetPath, updatedContent);
-					await flushVfs();
-				} catch {
-					// save skipped or temp file missing
-				}
-				await unlink(tempPath).catch(() => undefined);
-				stdout.write("\r\n");
-				resolve();
-			});
+			const onResize = (): void => {
+				editor.resize({ cols: stdout.columns ?? snapSize.cols, rows: stdout.rows ?? snapSize.rows });
+			};
+
+			const forwardInput = (chunk: Buffer): void => { editor.handleInput(chunk); };
+
+			stdin.setRawMode(true);
+			stdin.resume();
+			stdin.on("data", forwardInput);
+			process.on("SIGWINCH", onResize);
+			process.on("SIGINT", onSigint);
+			editor.start();
 		});
 	}
 
@@ -376,10 +342,8 @@ async function runReadlineShell(): Promise<void> {
 			sessionStack.push({ authUser, cwd });
 			authUser = challenge.targetUser;
 			cwd = userHome(authUser);
-			shellEnv.vars.USER = authUser;
-			shellEnv.vars.LOGNAME = authUser;
-			shellEnv.vars.HOME = userHome(authUser);
 			shellEnv.vars.PWD = cwd;
+			await applyUserSwitch(authUser, hostname, cwd, shellEnv, virtualShell);
 			return;
 		}
 
@@ -443,6 +407,7 @@ async function runReadlineShell(): Promise<void> {
 				result.openEditor.initialContent,
 				result.openEditor.tempPath,
 			);
+			prompt();
 			return;
 		}
 
@@ -475,6 +440,9 @@ async function runReadlineShell(): Promise<void> {
 		const updated = applySessionState(authUser, cwd, result, shellEnv);
 		authUser = updated.authUser;
 		cwd = updated.cwd;
+		if (result.switchUser) {
+			await applyUserSwitch(authUser, hostname, cwd, shellEnv, virtualShell);
+		}
 
 		if (result.closeSession) {
 			await flushVfs();
@@ -498,8 +466,9 @@ async function runReadlineShell(): Promise<void> {
 	// ── Prompt helper ──────────────────────────────────────────────────────────
 
 	const renderPrompt = (): string => {
+		if (shellEnv.vars.PS1) return buildPrompt(authUser, hostname, "", shellEnv.vars.PS1, cwd, true);
 		const cwdLabel = cwd === userHome(authUser) ? "~" : basename(cwd) || "/";
-		return buildPrompt(authUser, hostname, cwdLabel);
+		return buildPrompt(authUser, hostname, cwdLabel, undefined, undefined, true);
 	};
 
 	const prompt = (): void => {
@@ -521,8 +490,22 @@ async function runReadlineShell(): Promise<void> {
 
 	// ── Login banner ───────────────────────────────────────────────────────────
 
-	stdout.write(buildLoginBanner(hostname, virtualShell.properties, readLastLogin(authUser)));
-	writeLastLogin(authUser, remoteAddress);
+	stdout.write(buildLoginBanner(hostname, virtualShell.properties, readLastLogin(virtualShell.vfs, authUser)));
+	writeLastLogin(virtualShell.vfs, authUser, remoteAddress);
+
+	// Source login/rc files so PS1, aliases, exports are applied before first prompt.
+	for (const rcPath of ["/etc/environment", `${userHome(authUser)}/.profile`, `${userHome(authUser)}/.bashrc`]) {
+		if (!virtualShell.vfs.exists(rcPath)) continue;
+		for (const raw of virtualShell.vfs.readFile(rcPath).split("\n")) {
+			const l = raw.trim();
+			if (!l || l.startsWith("#")) continue;
+			try {
+				const r = await runCommand(l, authUser, hostname, "shell", cwd, virtualShell, undefined, shellEnv);
+				if (r.stdout) stdout.write(r.stdout);
+			} catch { /* ignore */ }
+		}
+	}
+
 	await flushVfs();
 
 	// ── Event-driven line handler (enables completer) ──────────────────────────
@@ -546,7 +529,7 @@ async function runReadlineShell(): Promise<void> {
 			if (history.at(-1) !== inputLine) {
 				history.push(inputLine);
 				if (history.length > 500) history = history.slice(history.length - 500);
-				saveHistory(history, authUser);
+				saveHistory(virtualShell.vfs, authUser, history);
 			}
 			rlWithHistory.history = [...history].reverse();
 		}

@@ -1,190 +1,172 @@
-/** biome-ignore-all lint/suspicious/noControlCharactersInRegex: need to parse ANSI */
-import { getCommandNames } from '../src/commands/registry.js';
-import { makeDefaultEnv, runCommand, userHome } from '../src/commands/runtime.js';
 import { VirtualShell } from '../src/index.js';
-import { resolvePath } from '../src/modules/shellRuntime.js';
-import { type LoginBannerState, buildLoginBanner } from '../src/SSHMimic/loginBanner.js';
-import { buildPrompt } from '../src/SSHMimic/prompt.js';
-import type { CommandResult } from '../src/types/commands.js';
+import { WebTermRenderer } from '../src/modules/webTermRenderer.js';
+import type { ShellStream } from '../src/types/streams.js';
 
-const HOSTNAME = 'my-vm';
-const MAX_HISTORY = 500;
-
-const terminal = document.getElementById('terminal') as HTMLElement;
-const out = document.getElementById('output') as HTMLElement;
-const cmd = document.getElementById('cmd') as HTMLInputElement;
-
-function scrollToBottom(): void {
-  terminal.scrollTop = terminal.scrollHeight;
-}
-
-cmd.focus();
-document.addEventListener('click', () => {
-  if (!window.getSelection()?.toString()) cmd.focus();
-});
-
-// ANSI to HTML — supports 8-color, 16-color, 256-color, 24-bit RGB
-const ANSI_FG: Record<number, string> = {
-  30: '#000', 31: '#c00', 32: '#0c0', 33: '#cc0',
-  34: '#00c', 35: '#c0c', 36: '#0cc', 37: '#ccc',
-  90: '#555', 91: '#f55', 92: '#5f5', 93: '#ff5',
-  94: '#55f', 95: '#f5f', 96: '#5ff', 97: '#fff',
-};
-const ANSI_BG: Record<number, string> = {
-  40: '#000', 41: '#c00', 42: '#0c0', 43: '#cc0',
-  44: '#00c', 45: '#c0c', 46: '#0cc', 47: '#ccc',
-  100: '#555', 101: '#f55', 102: '#5f5', 103: '#ff5',
-  104: '#55f', 105: '#f5f', 106: '#5ff', 107: '#fff',
-};
-
-// xterm 256-color palette (first 16 = ANSI, 16-231 = 6x6x6 cube, 232-255 = grayscale)
-function xterm256(n: number): string {
-  if (n < 16) {
-    const basic = [...Object.values(ANSI_FG)];
-    return basic[n] ?? '#ccc';
-  }
-  if (n < 232) {
-    const i = n - 16;
-    const r = Math.floor(i / 36) * 51;
-    const g = Math.floor((i % 36) / 6) * 51;
-    const b = (i % 6) * 51;
-    return `rgb(${r},${g},${b})`;
-  }
-  const v = 8 + (n - 232) * 10;
-  return `rgb(${v},${v},${v})`;
-}
-
-function ansiToHtml(s: string): string {
-  let html = '';
-  let bold = false, fg = '', bg = '';
-  for (const part of s.split(/(\x1b\[[0-9;]*m)/)) {
-    const m = part.match(/^\x1b\[([0-9;]*)m$/);
-    if (m) {
-      const codes = m[1].split(';').map(Number);
-      let i = 0;
-      while (i < codes.length) {
-        const code = codes[i]!;
-        if (code === 0) { bold = false; fg = ''; bg = ''; }
-        else if (code === 1) bold = true;
-        else if (code === 38 && codes[i + 1] === 2) {
-          // 24-bit fg: 38;2;R;G;B
-          fg = `rgb(${codes[i+2]},${codes[i+3]},${codes[i+4]})`;
-          i += 4;
-        } else if (code === 48 && codes[i + 1] === 2) {
-          // 24-bit bg: 48;2;R;G;B
-          bg = `rgb(${codes[i+2]},${codes[i+3]},${codes[i+4]})`;
-          i += 4;
-        } else if (code === 38 && codes[i + 1] === 5) {
-          // 256-color fg: 38;5;N
-          fg = xterm256(codes[i + 2] ?? 0);
-          i += 2;
-        } else if (code === 48 && codes[i + 1] === 5) {
-          // 256-color bg: 48;5;N
-          bg = xterm256(codes[i + 2] ?? 0);
-          i += 2;
-        } else if (ANSI_FG[code]) { fg = ANSI_FG[code]; }
-        else if (ANSI_BG[code]) { bg = ANSI_BG[code]; }
-        i++;
-      }
-    } else if (part) {
-      const style = [
-        fg ? `color:${fg}` : '',
-        bg ? `background:${bg}` : '',
-        bold ? 'font-weight:bold' : '',
-      ].filter(Boolean).join(';');
-      const escaped = part.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-      html += style ? `<span style="${style}">${escaped}</span>` : escaped;
-    }
-  }
-  return html;
-}
-
-// All output goes into a single <span> appended to #output.
-// #output is pre-wrap so \n = newline, no extra divs needed.
-function print(s: string): void {
-  const span = document.createElement('span');
-  span.innerHTML = ansiToHtml(s);
-  if (inputLineEl) {
-    out.insertBefore(span, inputLineEl);
-  } else {
-    out.appendChild(span);
-  }
-  scrollToBottom();
-}
-
-// Live input line — sits at bottom of #output as an inline element
-let inputLineEl: HTMLSpanElement | null = null;
-
-// Password challenge state
-let passwordMode = false;
-type ChallengeHandler = (input: string) => Promise<void>;
-let activeChallengeHandler: ChallengeHandler | null = null;
-
-function buildInputLine(promptHtml: string): void {
-  if (inputLineEl) { inputLineEl.remove(); inputLineEl = null; }
-  cmd.value = '';
-  inputLineEl = document.createElement('span');
-  inputLineEl.className = 'input-line';
-  const promptSpan = document.createElement('span');
-  promptSpan.innerHTML = promptHtml;
-  const textSpan = document.createElement('span');
-  textSpan.className = 'typed';
-  const cursor = document.createElement('span');
-  cursor.className = 'cursor';
-  cursor.textContent = ' ';
-  const afterSpan = document.createElement('span');
-  afterSpan.className = 'after-cursor';
-  inputLineEl.appendChild(promptSpan);
-  inputLineEl.appendChild(textSpan);
-  inputLineEl.appendChild(cursor);
-  inputLineEl.appendChild(afterSpan);
-  out.appendChild(inputLineEl);
-  scrollToBottom();
-}
-
-function printPrompt(): void {
-  passwordMode = false;
-  activeChallengeHandler = null;
-  const cwdLabel = cwd === userHome(authUser) ? '~' : (cwd.split('/').at(-1) || '/');
-  buildInputLine(ansiToHtml(buildPrompt(authUser, HOSTNAME, cwdLabel)));
-}
-
-function printChallengePrompt(text: string, handler: ChallengeHandler): void {
-  passwordMode = true;
-  activeChallengeHandler = handler;
-  buildInputLine(text.replace(/&/g, '&amp;').replace(/</g, '&lt;'));
-}
-
-function syncCursor(): void {
-  if (!inputLineEl) return;
-  // In password mode: never show typed text
-  const val = passwordMode ? '' : cmd.value;
-  const pos = passwordMode ? 0 : (cmd.selectionStart ?? cmd.value.length);
-  const before = val.slice(0, pos);
-  const ch = val[pos] ?? ' ';
-  const after = val.slice(pos + (val[pos] ? 1 : 0));
-  (inputLineEl.querySelector('.typed') as HTMLSpanElement).textContent = before;
-  (inputLineEl.querySelector('.cursor') as HTMLSpanElement).textContent = ch;
-  (inputLineEl.querySelector('.after-cursor') as HTMLSpanElement).textContent = after;
-  scrollToBottom();
-}
-
-cmd.addEventListener('input', () => { syncCursor(); });
-
-// Wait for IndexedDB fs shim memCache
+// ── Wait for IndexedDB fs shim ────────────────────────────────────────────────
 // biome-ignore lint/suspicious/noExplicitAny: globalThis shim
 await (globalThis as any).__fsReady__;
 
-// Request persistent storage so the browser doesn't evict IndexedDB under pressure.
-// Best-effort — silently ignored if the API is unavailable or denied.
 if (navigator.storage?.persist) {
   await navigator.storage.persist().catch(() => undefined);
 }
 
-function detectWebGlGpu(): string | undefined {
+// ── Terminal element ──────────────────────────────────────────────────────────
+
+const terminal = document.getElementById('terminal') as HTMLPreElement;
+terminal.focus();
+document.addEventListener('click', () => {
+  if (!window.getSelection()?.toString()) terminal.focus();
+});
+
+// ── Measure character cell size ───────────────────────────────────────────────
+
+function measureCharCell(): { w: number; h: number } {
+  const probe = document.createElement('span');
+  probe.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;';
+  probe.textContent = 'X';
+  terminal.appendChild(probe);
+  const rect = probe.getBoundingClientRect();
+  terminal.removeChild(probe);
+  return { w: rect.width || 8, h: rect.height || 16 };
+}
+
+function getTermSize(): { cols: number; rows: number } {
+  const { w, h } = measureCharCell();
+  return {
+    cols: Math.max(1, Math.floor(terminal.clientWidth / w)),
+    rows: Math.max(1, Math.floor(terminal.clientHeight / h)),
+  };
+}
+
+// ── Renderer ──────────────────────────────────────────────────────────────────
+
+const { cols, rows } = getTermSize();
+const renderer = new WebTermRenderer(rows, cols);
+
+let rafPending = false;
+function flush(): void {
+  if (rafPending) return;
+  rafPending = true;
+  requestAnimationFrame(() => {
+    rafPending = false;
+    terminal.innerHTML = renderer.renderHtml();
+  });
+}
+
+// ── ShellStream bridge ────────────────────────────────────────────────────────
+
+// Listeners registered by shell.ts via stream.on("data"|"close")
+const dataListeners: ((chunk: Buffer) => void)[] = [];
+const closeListeners: (() => void)[] = [];
+
+const stream: ShellStream = {
+  write: (data: string) => { renderer.write(data); flush(); },
+  exit: () => undefined,
+  end: () => { for (const l of closeListeners) l(); },
+  on: (event: 'data' | 'close', listener: ((chunk: Buffer) => void) & (() => void)) => {
+    if (event === 'data') dataListeners.push(listener);
+    else if (event === 'close') closeListeners.push(listener as () => void);
+  },
+};
+
+// ── Keyboard → bytes ──────────────────────────────────────────────────────────
+
+interface BufferShim { from(data: Uint8Array): Buffer }
+function toChunk(bytes: Uint8Array): Buffer {
+  // biome-ignore lint/style/useNamingConvention: Buffer is the shim's exported name
+  const g = globalThis as unknown as { Buffer?: BufferShim };
+  return g.Buffer ? g.Buffer.from(bytes) : (bytes as unknown as Buffer);
+}
+
+function keyToBytes(e: KeyboardEvent): Uint8Array | null {
+  const enc = new TextEncoder();
+
+  if (e.ctrlKey && !e.altKey) {
+    const k = e.key.toLowerCase();
+    if (k.length === 1 && k >= 'a' && k <= 'z') return new Uint8Array([k.charCodeAt(0) - 96]);
+    if (e.key === '[')  return new Uint8Array([27]);
+    if (e.key === '\\') return new Uint8Array([28]);
+    if (e.key === ']')  return new Uint8Array([29]);
+    if (e.key === '_' || e.key === '/') return new Uint8Array([31]);
+    if (e.key === 'Backspace') return new Uint8Array([8]);
+  }
+
+  if (e.altKey && !e.ctrlKey && e.key.length === 1) {
+    return new Uint8Array([27, e.key.charCodeAt(0)]);
+  }
+
+  switch (e.key) {
+    case 'ArrowUp':    return new Uint8Array([27, 91, 65]);
+    case 'ArrowDown':  return new Uint8Array([27, 91, 66]);
+    case 'ArrowRight': return new Uint8Array([27, 91, 67]);
+    case 'ArrowLeft':  return new Uint8Array([27, 91, 68]);
+    case 'Home':       return new Uint8Array([27, 91, 72]);
+    case 'End':        return new Uint8Array([27, 91, 70]);
+    case 'PageUp':     return new Uint8Array([27, 91, 53, 126]);
+    case 'PageDown':   return new Uint8Array([27, 91, 54, 126]);
+    case 'Delete':     return new Uint8Array([27, 91, 51, 126]);
+    case 'Insert':     return new Uint8Array([27, 91, 50, 126]);
+    case 'F1':         return new Uint8Array([27, 79, 80]);
+    case 'F2':         return new Uint8Array([27, 79, 81]);
+    case 'F3':         return new Uint8Array([27, 79, 82]);
+    case 'F4':         return new Uint8Array([27, 79, 83]);
+    case 'Backspace':  return new Uint8Array([127]);
+    case 'Enter':      return new Uint8Array([13]);
+    case 'Tab':        return new Uint8Array([9]);
+    case 'Escape':     return new Uint8Array([27]);
+    default:
+      if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+        return enc.encode(e.key);
+      }
+      return null;
+  }
+}
+
+terminal.addEventListener('keydown', (e: KeyboardEvent) => {
+  // Allow browser shortcuts (Ctrl+C copy, Ctrl+V paste, F12, etc.)
+  if (e.metaKey) return;
+  if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'a') && !e.altKey) {
+    // Let Ctrl+C pass through to shell (it's also used for copy but shell needs it)
+    // Only block if there's a selection (user is copying)
+    if (e.key !== 'c' || !window.getSelection()?.toString()) {
+      e.preventDefault();
+    }
+  } else {
+    e.preventDefault();
+  }
+
+  const bytes = keyToBytes(e);
+  if (!bytes) return;
+
+  for (const l of dataListeners) l(toChunk(bytes));
+});
+
+// Paste support
+terminal.addEventListener('paste', (e: ClipboardEvent) => {
+  e.preventDefault();
+  const text = e.clipboardData?.getData('text') ?? '';
+  if (!text) return;
+  const enc = new TextEncoder();
+  const bytes = enc.encode(text);
+  for (const l of dataListeners) l(toChunk(bytes));
+});
+
+// ── Resize ────────────────────────────────────────────────────────────────────
+
+window.addEventListener('resize', () => {
+  const { cols: newCols, rows: newRows } = getTermSize();
+  renderer.resize(newRows, newCols);
+  flush();
+  // shell.ts listens to stream resize via terminalSize ref — not exposed,
+  // but a full redraw from the shell side happens on next output anyway.
+});
+
+// ── GPU detection ─────────────────────────────────────────────────────────────
+
+function detectGpu(): string | undefined {
   try {
     const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl') as WebGLRenderingContext | null;
+    const gl = canvas.getContext('webgl') ?? canvas.getContext('experimental-webgl') as WebGLRenderingContext | null;
     if (!gl) return undefined;
     const ext = (gl as WebGLRenderingContext).getExtension('WEBGL_debug_renderer_info');
     if (!ext) return undefined;
@@ -192,271 +174,36 @@ function detectWebGlGpu(): string | undefined {
   } catch { return undefined; }
 }
 
+// ── Shell setup ───────────────────────────────────────────────────────────────
+
+const HOSTNAME = 'my-vm';
+
 const shell = new VirtualShell(HOSTNAME, {
   kernel: '6.1.0-web-amd64',
   os: 'Fortune GNU/Linux (Web)',
   arch: navigator.userAgent.includes('arm64') || navigator.userAgent.includes('aarch64') ? 'aarch64' : 'x86_64',
   resolution: `${window.screen.width}x${window.screen.height}`,
-  gpu: detectWebGlGpu(),
+  gpu: detectGpu(),
 }, {
   mode: 'fs',
   snapshotPath: '/vfs-data',
   flushIntervalMs: 10_000,
 });
 
-const vfs = shell.vfs;
+await shell.vfs.restoreMirror();
 
-await vfs.restoreMirror();
-
-const isFirstRun = !vfs.exists('/bin');
+const isFirstRun = !shell.vfs.exists('/bin');
 if (isFirstRun) {
   await shell.ensureInitialized();
-  if (!vfs.exists('/root')) vfs.mkdir('/root', 0o700);
-  vfs.writeFile('/root/README.txt', `Welcome to ${HOSTNAME}\n`);
-  await vfs.flushMirror();
+  if (!shell.vfs.exists('/root')) shell.vfs.mkdir('/root', 0o700);
+  shell.vfs.writeFile('/root/README.txt', `Welcome to ${HOSTNAME}\n`);
+  await shell.vfs.flushMirror();
+} else {
+  await shell.ensureInitialized();
 }
 
-window.addEventListener('beforeunload', () => { vfs.flushMirror(); });
+window.addEventListener('beforeunload', () => { shell.vfs.flushMirror(); });
 
-// Session state
-let authUser = 'root';
-let cwd = userHome(authUser);
-const shellEnv = makeDefaultEnv(authUser, HOSTNAME);
-shellEnv.vars.PWD = cwd;
+// ── Start interactive session ─────────────────────────────────────────────────
 
-// Session stack for nested su sessions
-const sessionStack: Array<{ authUser: string; cwd: string }> = [];
-
-function applyResult(result: CommandResult): void {
-  if (result.switchUser) {
-    sessionStack.push({ authUser, cwd });
-    authUser = result.switchUser;
-    cwd = result.nextCwd ?? userHome(authUser);
-    shellEnv.vars.USER = authUser;
-    shellEnv.vars.LOGNAME = authUser;
-    shellEnv.vars.HOME = userHome(authUser);
-    shellEnv.vars.PWD = cwd;
-  } else if (result.nextCwd) {
-    cwd = result.nextCwd;
-    shellEnv.vars.PWD = cwd;
-  }
-}
-
-function handleClose(): void {
-  if (sessionStack.length > 0) {
-    const prev = sessionStack.pop()!;
-    authUser = prev.authUser;
-    cwd = prev.cwd;
-    shellEnv.vars.USER = authUser;
-    shellEnv.vars.LOGNAME = authUser;
-    shellEnv.vars.HOME = userHome(authUser);
-    shellEnv.vars.PWD = cwd;
-    print('logout\n');
-    printPrompt();
-  } else {
-    print('\nlogout\n');
-  }
-}
-
-// History
-function historyPath(): string { return `${userHome(authUser)}/.bash_history`; }
-
-function loadHistory(): string[] {
-  try {
-    if (!vfs.exists(historyPath())) return [];
-    return (vfs.readFile(historyPath()) as string)
-      .split('\n').map((l: string) => l.trim()).filter((l: string) => l.length > 0);
-  } catch { return []; }
-}
-
-function saveHistory(): void {
-  vfs.writeFile(historyPath(), history.length > 0 ? `${history.join('\n')}\n` : '');
-}
-
-let history: string[] = loadHistory();
-let historyIdx = -1;
-
-// Login banner + lastlog
-function readLastLogin(): LoginBannerState | null {
-  try {
-    if (!vfs.exists('/root/.lastlog')) return null;
-    return JSON.parse(vfs.readFile('/root/.lastlog'));
-  } catch { return null; }
-}
-
-function writeLastLogin(): void {
-  vfs.writeFile('/root/.lastlog', JSON.stringify({ at: new Date().toISOString(), from: 'browser' }));
-}
-
-print(buildLoginBanner(HOSTNAME, shell.properties, readLastLogin()));
-writeLastLogin();
-await vfs.flushMirror();
-printPrompt();
-
-
-// Tab completion
-function listPathCompletions(prefix: string): string[] {
-  const slashIndex = prefix.lastIndexOf('/');
-  const dirPart  = slashIndex >= 0 ? prefix.slice(0, slashIndex + 1) : '';
-  const namePart = slashIndex >= 0 ? prefix.slice(slashIndex + 1)    : prefix;
-  const basePath = resolvePath(cwd, dirPart || '.');
-  try {
-    return vfs.list(basePath)
-      .filter((e: string) => !e.startsWith('.') && e.startsWith(namePart))
-      .map((e: string) => {
-        const fullPath = `${basePath}/${e}`.replace(/\/+/g, '/');
-        const st = vfs.stat(fullPath);
-        return `${dirPart}${e}${st.type === 'directory' ? '/' : ''}`;
-      })
-      .sort();
-  } catch { return []; }
-}
-
-const commandNames = Array.from(new Set(getCommandNames())).sort();
-
-function getCompletions(line: string): [string[], string] {
-  const token = line.split(/\s+/).at(-1) ?? '';
-  const isFirstToken = line.trimStart() === token;
-  const cmdHits  = isFirstToken ? commandNames.filter(n => n.startsWith(token)) : [];
-  const pathHits = listPathCompletions(token);
-  const hits = Array.from(new Set([...cmdHits, ...pathHits])).sort();
-  return [hits, token];
-}
-
-// Input handler
-cmd.addEventListener('keydown', async (e: KeyboardEvent) => {
-  if (e.key === 'Tab') {
-    e.preventDefault();
-    const line = cmd.value;
-    const [hits, token] = getCompletions(line);
-    if (hits.length === 0) return;
-    if (hits.length === 1) {
-      // Unique match — complete inline
-      cmd.value = line.slice(0, line.length - token.length) + hits[0];
-      syncCursor();
-    } else {
-      // Multiple matches — print them below current line, re-prompt
-      const prevLine = inputLineEl;
-      inputLineEl = null;
-      prevLine?.querySelector('.cursor')?.remove();
-      out.appendChild(document.createTextNode('\n'));
-      print(`${hits.join('  ')}
-`);
-      printPrompt();
-      cmd.value = line;
-      syncCursor();
-    }
-    return;
-  }
-
-  if (e.key === 'd' && e.ctrlKey) {
-    e.preventDefault();
-    // Only act on empty input (matches bash Ctrl+D behaviour)
-    if (cmd.value.length === 0) {
-      if (inputLineEl) {
-        inputLineEl.querySelector('.cursor')?.remove();
-        (inputLineEl.querySelector('.after-cursor') as HTMLSpanElement | null)?.remove();
-        inputLineEl = null;
-      }
-      out.appendChild(document.createTextNode('\n'));
-      handleClose();
-    }
-    return;
-  }
-
-  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Home' || e.key === 'End') {
-    // Let the browser move cmd's internal cursor, then sync visual cursor on next tick
-    setTimeout(syncCursor, 0);
-    return;
-  }
-
-  if (e.key === 'ArrowUp') {
-    e.preventDefault();
-    if (historyIdx < history.length - 1) {
-      historyIdx++;
-      cmd.value = history[history.length - 1 - historyIdx];
-      syncCursor();
-    }
-    return;
-  }
-
-  if (e.key === 'ArrowDown') {
-    e.preventDefault();
-    if (historyIdx > 0) { historyIdx--; cmd.value = history[history.length - 1 - historyIdx]; }
-    else { historyIdx = -1; cmd.value = ''; }
-    syncCursor();
-    return;
-  }
-
-  if (e.key !== 'Enter') return;
-
-  const value = cmd.value;
-  const trimmed = value.trim();
-  historyIdx = -1;
-
-  // Freeze input line
-  if (inputLineEl) {
-    // In password mode: blank the frozen line (never show password in DOM)
-    (inputLineEl.querySelector('.typed') as HTMLSpanElement).textContent = passwordMode ? '' : trimmed;
-    inputLineEl.querySelector('.cursor')?.remove();
-    (inputLineEl.querySelector('.after-cursor') as HTMLSpanElement | null)?.remove();
-    inputLineEl = null;
-  }
-
-  out.appendChild(document.createTextNode('\n'));
-
-  // Active challenge (password/confirm flow)
-  if (activeChallengeHandler) {
-    const handler = activeChallengeHandler;
-    activeChallengeHandler = null;
-    passwordMode = false;
-    await handler(value);
-    return;
-  }
-
-  if (trimmed) {
-    history.push(trimmed);
-    if (history.length > MAX_HISTORY) history = history.slice(history.length - MAX_HISTORY);
-    saveHistory();
-  }
-
-  try {
-    const result = await runCommand(trimmed, authUser, HOSTNAME, 'shell', cwd, shell, undefined, shellEnv);
-
-    if (result.clearScreen) out.innerHTML = '';
-    if (result.stdout) print(`${result.stdout.trim()}\n`);
-    if (result.stderr) print(`${result.stderr.trim()}\n`);
-
-    applyResult(result);
-    await vfs.flushMirror();
-
-    if (result.closeSession) { handleClose(); return; }
-
-    // Handle password/sudo challenge returned by the command
-    if (result.sudoChallenge) {
-      const challenge = result.sudoChallenge;
-      const makeHandler = (_promptText: string): ChallengeHandler => async (input: string) => {
-        if (!challenge.onPassword) { printPrompt(); return; }
-        try {
-          const { result: res, nextPrompt } = await challenge.onPassword(input, shell);
-          if (res === null && nextPrompt) {
-            printChallengePrompt(nextPrompt, makeHandler(nextPrompt));
-          } else {
-            if (res?.stdout) print(`${res.stdout.trim()}\n`);
-            if (res?.stderr) print(`${res.stderr.trim()}\n`);
-            printPrompt();
-          }
-        } catch (err) {
-          print(`${String(err)}\n`);
-          printPrompt();
-        }
-      };
-      printChallengePrompt(challenge.prompt, makeHandler(challenge.prompt));
-      return;
-    }
-  } catch (err) {
-    print(`${String(err)}\n`);
-  }
-
-  printPrompt();
-});
+shell.startInteractiveSession(stream, 'root', null, 'browser', { cols, rows });

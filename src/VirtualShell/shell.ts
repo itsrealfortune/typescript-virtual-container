@@ -1,15 +1,12 @@
-import type { ChildProcessWithoutNullStreams } from "node:child_process";
-import { readFile, unlink, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import type { ShellProperties, VirtualShell } from ".";
-import { getCommandNames, makeDefaultEnv, runCommand, userHome } from "../commands";
+import { applyUserSwitch, getCommandNames, makeDefaultEnv, runCommand, userHome } from "../commands";
+import { NanoEditor } from "../modules/nanoEditor";
 import {
 	spawnHtopProcess,
-	spawnNanoEditorProcess,
 } from "../modules/shellInteractive";
 import {
 	getVisibleHtopPidList,
-	resolvePath,
 	type TerminalSize,
 	toTtyLines,
 } from "../modules/shellRuntime";
@@ -17,14 +14,19 @@ import { buildLoginBanner } from "../SSHMimic/loginBanner";
 import { buildPrompt } from "../SSHMimic/prompt";
 import type { CommandResult, ShellEnv } from "../types/commands";
 import type { ShellStream } from "../types/streams";
-import type VirtualFileSystem from "../VirtualFileSystem";
+import { listPathCompletions, loadHistory, readLastLogin, saveHistory, writeLastLogin } from "../utils/shellSession";
 
 interface NanoSession {
-	kind: "nano" | "htop";
+	kind: "nano";
 	targetPath: string;
-	tempPath: string;
-	process: ChildProcessWithoutNullStreams;
+	editor: NanoEditor;
 }
+
+interface HtopSession {
+	kind: "htop";
+	process: import("node:child_process").ChildProcessWithoutNullStreams;
+}
+
 
 interface PendingSudo {
 	username: string;
@@ -59,9 +61,10 @@ export function startShell(
 	let pendingHeredoc: { delimiter: string; lines: string[]; cmdBefore: string } | null = null;
 	const shellEnv: ShellEnv = makeDefaultEnv(authUser, hostname);
 	const sessionStack: Array<{ authUser: string; cwd: string }> = [];
-	let nanoSession: NanoSession | null = null;
+	let nanoSession: NanoSession | HtopSession | null = null;
 	let pendingSudo: PendingSudo | null = null;
 	const buildCurrentPrompt = (): string => {
+		if (shellEnv.vars.PS1) return buildPrompt(authUser, hostname, "", shellEnv.vars.PS1, cwd);
 		const homePath = userHome(authUser);
 		const cwdLabel = cwd === homePath ? "~" : path.posix.basename(cwd) || "/";
 		return buildPrompt(authUser, hostname, cwdLabel);
@@ -71,28 +74,30 @@ export function startShell(
 		`[${sessionId}] Shell started for user '${authUser}' at ${remoteAddress}`,
 	);
 
-	// Source login/rc files at startup
-	void (async () => {
-		const sourceFile = async (filePath: string, isEnvFile = false) => {
-			if (!shell.vfs.exists(filePath)) return;
-			try {
-				const content = shell.vfs.readFile(filePath);
-				for (const line of content.split("\n")) {
-					const l = line.trim();
-					if (!l || l.startsWith("#")) continue;
-					if (isEnvFile) {
-						// /etc/environment: KEY=VALUE pairs only, no shell syntax
-						const m = l.match(/^([A-Za-z_][A-Za-z0-9_]*)=["']?(.+?)["']?\s*$/);
-						if (m) shellEnv.vars[m[1]!] = m[2]!;
-					} else {
-						await runCommand(l, authUser, hostname, "shell", cwd, shell, undefined, shellEnv);
-					}
+	// Source login/rc files before first prompt.
+	let loginReady = false;
+	const sourceFile = async (filePath: string, isEnvFile = false) => {
+		if (!shell.vfs.exists(filePath)) return;
+		try {
+			const content = shell.vfs.readFile(filePath);
+			for (const line of content.split("\n")) {
+				const l = line.trim();
+				if (!l || l.startsWith("#")) continue;
+				if (isEnvFile) {
+					const m = l.match(/^([A-Za-z_][A-Za-z0-9_]*)=["']?(.+?)["']?\s*$/);
+					if (m) shellEnv.vars[m[1]!] = m[2]!;
+				} else {
+					const r = await runCommand(l, authUser, hostname, "shell", cwd, shell, undefined, shellEnv);
+					if (r.stdout) stream.write(r.stdout.replace(/\n/g, "\r\n"));
 				}
-			} catch { /* ignore */ }
-		};
+			}
+		} catch { /* ignore */ }
+	};
+	const loginPromise = (async () => {
 		await sourceFile("/etc/environment", true);
 		await sourceFile(`${userHome(authUser)}/.profile`);
 		await sourceFile(`${userHome(authUser)}/.bashrc`);
+		loginReady = true;
 	})();
 
 	function renderLine(): void {
@@ -149,6 +154,7 @@ export function startShell(
 				cwd = userHome(authUser);
 			}
 			shell.users.updateSession(sessionId, authUser, remoteAddress);
+			await applyUserSwitch(authUser, hostname, cwd, shellEnv, shell);
 			stream.write("\r\n");
 			renderLine();
 			return;
@@ -199,6 +205,7 @@ export function startShell(
 			authUser = result.switchUser;
 			cwd = result.nextCwd ?? userHome(authUser);
 			shell.users.updateSession(sessionId, authUser, remoteAddress);
+			await applyUserSwitch(authUser, hostname, cwd, shellEnv, shell);
 		} else if (result.nextCwd) {
 			cwd = result.nextCwd;
 		}
@@ -207,62 +214,39 @@ export function startShell(
 		renderLine();
 	}
 
-	async function finishNanoEditor(): Promise<void> {
-		if (!nanoSession) {
-			return;
+	function finishInteractiveSession(savedContent?: string, targetPath?: string): void {
+		if (savedContent !== undefined && targetPath) {
+			shell.writeFileAsUser(authUser, targetPath, savedContent);
 		}
-
-		const activeSession = nanoSession;
-
-		if (activeSession.kind === "nano") {
-			try {
-				const updatedContent = await readFile(activeSession.tempPath, "utf8");
-				shell.writeFileAsUser(
-					authUser,
-					activeSession.targetPath,
-					updatedContent,
-				);
-				// WAL: checkpoint handled by auto-flush timer
-			} catch {
-				// If temp file does not exist, nano exited without writing.
-			}
-
-			await unlink(activeSession.tempPath).catch(() => undefined);
-		}
-
 		nanoSession = null;
 		lineBuffer = "";
 		cursorPos = 0;
-		stream.write("\r\n");
+		// Clear screen + reset SGR so nano residue is gone before next prompt
+		stream.write("\x1b[2J\x1b[H\x1b[0m");
 		renderLine();
 	}
 
-	async function startNanoEditor(
+	function startNanoEditor(
 		targetPath: string,
 		initialContent: string,
-		tempPath: string,
-	): Promise<void> {
-		if (shell.vfs.exists(targetPath)) {
-			await writeFile(tempPath, initialContent, "utf8");
-		}
-
-		const editor = spawnNanoEditorProcess(tempPath, terminalSize, stream);
-
-		editor.on("error", (error: Error) => {
-			stream.write(`nano: ${error.message}\r\n`);
-			void finishNanoEditor();
+		_tempPath: string,
+	): void {
+		const editor = new NanoEditor({
+			stream,
+			terminalSize,
+			content: initialContent,
+			filename: path.posix.basename(targetPath),
+			onExit: (reason, content) => {
+				if (reason === "saved") {
+					finishInteractiveSession(content, targetPath);
+				} else {
+					finishInteractiveSession();
+				}
+			},
 		});
 
-		editor.on("close", () => {
-			void finishNanoEditor();
-		});
-
-		nanoSession = {
-			kind: "nano",
-			targetPath,
-			tempPath,
-			process: editor,
-		};
+		nanoSession = { kind: "nano", targetPath, editor };
+		editor.start();
 	}
 
 	async function startHtop(): Promise<void> {
@@ -276,19 +260,14 @@ export function startShell(
 
 		monitor.on("error", (error: Error) => {
 			stream.write(`htop: ${error.message}\r\n`);
-			void finishNanoEditor();
+			finishInteractiveSession();
 		});
 
 		monitor.on("close", () => {
-			void finishNanoEditor();
+			finishInteractiveSession();
 		});
 
-		nanoSession = {
-			kind: "htop",
-			targetPath: "",
-			tempPath: "",
-			process: monitor,
-		};
+		nanoSession = { kind: "htop", process: monitor };
 	}
 
 	function applyHistoryLine(nextLine: string): void {
@@ -320,28 +299,6 @@ export function startShell(
 		return { start, end };
 	}
 
-	function listPathCompletions(prefix: string): string[] {
-		const slashIndex = prefix.lastIndexOf("/");
-		const dirPart = slashIndex >= 0 ? prefix.slice(0, slashIndex + 1) : "";
-		const namePart = slashIndex >= 0 ? prefix.slice(slashIndex + 1) : prefix;
-		const basePath = resolvePath(cwd, dirPart || ".");
-
-		try {
-			return shell.vfs
-				.list(basePath)
-				.filter((entry) => !entry.startsWith("."))
-				.filter((entry) => entry.startsWith(namePart))
-				.map((entry) => {
-					const fullPath = path.posix.join(basePath, entry);
-					const st = shell.vfs.stat(fullPath);
-					const suffix = st.type === "directory" ? "/" : "";
-					return `${dirPart}${entry}${suffix}`;
-				})
-				.sort();
-		} catch {
-			return [];
-		}
-	}
 
 	function handleTabCompletion(): void {
 		const { start, end } = getTokenRange(lineBuffer, cursorPos);
@@ -355,7 +312,7 @@ export function startShell(
 		const commandCandidates = firstToken
 			? commandNames.filter((name) => name.startsWith(token))
 			: [];
-		const pathCandidates = listPathCompletions(token);
+		const pathCandidates = listPathCompletions(shell.vfs, cwd, token);
 		const candidates = Array.from(
 			new Set([...commandCandidates, ...pathCandidates]),
 		).sort();
@@ -379,56 +336,29 @@ export function startShell(
 	}
 
 	function pushHistory(cmd: string): void {
-		if (cmd.length === 0) {
-			return;
-		}
-
+		if (cmd.length === 0) return;
 		history.push(cmd);
-		if (history.length > 500) {
-			history = history.slice(history.length - 500);
-		}
-
-		const data = history.length > 0 ? `${history.join("\n")}\n` : "";
-		shell.vfs.writeFile(`${userHome(authUser)}/.bash_history`, data);
-	}
-
-	function readLastLogin(): { at: string; from: string } | null {
-		const lastlogPath = `${userHome(authUser)}/.lastlog.json`;
-		if (!shell.vfs.exists(lastlogPath)) {
-			return null;
-		}
-
-		try {
-			return JSON.parse(shell.vfs.readFile(lastlogPath)) as {
-				at: string;
-				from: string;
-			};
-		} catch {
-			return null;
-		}
-	}
-
-	function writeLastLogin(nowIso: string): void {
-		const lastlogPath = `${userHome(authUser)}/.lastlog`;
-		shell.vfs.writeFile(
-			lastlogPath,
-			JSON.stringify({ at: nowIso, from: remoteAddress }),
-		);
+		if (history.length > 500) history = history.slice(history.length - 500);
+		saveHistory(shell.vfs, authUser, history);
 	}
 
 	function renderLoginBanner(): void {
-		const last = readLastLogin();
-		const nowIso = new Date().toISOString();
+		const last = readLastLogin(shell.vfs, authUser);
 		stream.write(buildLoginBanner(hostname, properties, last));
-		writeLastLogin(nowIso);
+		writeLastLogin(shell.vfs, authUser, remoteAddress);
 	}
 
 	renderLoginBanner();
-	renderLine();
+	void loginPromise.then(() => renderLine());
 
 	stream.on("data", async (chunk: Buffer) => {
+		if (!loginReady) return;
 		if (nanoSession) {
-			nanoSession.process.stdin.write(chunk);
+			if (nanoSession.kind === "nano") {
+				nanoSession.editor.handleInput(chunk);
+			} else {
+				nanoSession.process.stdin.write(chunk);
+			}
 			return;
 		}
 
@@ -764,11 +694,9 @@ export function startShell(
 						sessionStack.push({ authUser, cwd });
 						authUser = result.switchUser;
 						cwd = result.nextCwd ?? userHome(authUser);
-						shellEnv.vars.USER = authUser;
-						shellEnv.vars.LOGNAME = authUser;
-						shellEnv.vars.HOME = userHome(authUser);
 						shellEnv.vars.PWD = cwd;
 						shell.users.updateSession(sessionId, authUser, remoteAddress);
+						await applyUserSwitch(authUser, hostname, cwd, shellEnv, shell);
 						lineBuffer = "";
 						cursorPos = 0;
 					}
@@ -795,22 +723,11 @@ export function startShell(
 
 	stream.on("close", () => {
 		if (nanoSession) {
-			nanoSession.process.kill("SIGTERM");
+			if (nanoSession.kind === "htop") {
+				nanoSession.process.kill("SIGTERM");
+			}
 			nanoSession = null;
 		}
 	});
 }
 
-function loadHistory(vfs: VirtualFileSystem, authUser: string): string[] {
-	const historyPath = `${userHome(authUser)}/.bash_history`;
-	if (!vfs.exists(historyPath)) {
-		vfs.writeFile(historyPath, "");
-		return [];
-	}
-
-	const raw = vfs.readFile(historyPath);
-	return raw
-		.split("\n")
-		.map((line) => line.trim())
-		.filter((line) => line.length > 0);
-}

@@ -1,0 +1,1361 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="./"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>typescript-virtual-container</title><meta name="description" content="Documentation for typescript-virtual-container"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><script defer src="assets/main.js"></script><script async src="assets/icons.js" id="tsd-icons-script"></script><script async src="assets/search.js" id="tsd-search-script"></script><script async src="assets/navigation.js" id="tsd-nav-script"></script><script async src="assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="index.html" class="title">typescript-virtual-container</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><h1>typescript-virtual-container</h1></div><div class="tsd-panel tsd-typography"><h1 id="_" class="tsd-anchor-link"><code>typescript-virtual-container</code><a href="#_" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<blockquote>
+<p>A complete virtual Linux environment in pure TypeScript — runs as an SSH/SFTP server, a browser-based web shell, or a standalone CLI. Ships with a realistic Linux rootfs, a virtual package manager, a full shell interpreter, and a typed programmatic API for testing, automation, honeypots, and embedded shell experiences.</p>
+</blockquote>
+<p><a href="https://www.npmjs.com/package/typescript-virtual-container"><img src="https://badge.fury.io/js/typescript-virtual-container.svg" alt="npm version"></a>
+<a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+<a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.x-3178C6.svg?logo=typescript&amp;logoColor=white" alt="TypeScript"></a>
+<a href="https://nodejs.org/"><img src="https://img.shields.io/badge/runtime-Node.js%20%7C%20Bun-43853D.svg" alt="Runtime"></a>
+<a href="https://itsrealfortune.fr/typescript-virtual-container/demo"><img src="https://img.shields.io/badge/demo-live-brightgreen.svg" alt="Live Demo"></a></p>
+<hr>
+<h2 id="table-of-contents" class="tsd-anchor-link">Table of Contents<a href="#table-of-contents" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><a href="#three-ways-to-run">Three ways to run</a></li>
+<li><a href="#get-started">Get Started</a>
+<ul>
+<li><a href="#install">Install</a></li>
+<li><a href="#try-instantly-zero-install">Try instantly (zero install)</a></li>
+<li><a href="#ssh-server">SSH server</a></li>
+<li><a href="#web-shell-browser">Web shell (browser)</a></li>
+<li><a href="#programmatic-api">Programmatic API</a></li>
+</ul>
+</li>
+<li><a href="#how-it-works">How It Works</a></li>
+<li><a href="#api-reference">API Reference</a></li>
+<li><a href="#examples">Examples</a></li>
+<li><a href="#built-in-commands-118">Built-in Commands (118)</a></li>
+<li><a href="#shell-scripting">Shell Scripting</a></li>
+<li><a href="#linux-rootfs--vfs-path-resolution">Linux Rootfs &amp; VFS PATH Resolution</a></li>
+<li><a href="#configuration">Configuration</a></li>
+<li><a href="#performance--scalability">Performance &amp; Scalability</a></li>
+<li><a href="#types--typescript">Types &amp; TypeScript</a></li>
+<li><a href="#troubleshooting">Troubleshooting</a></li>
+<li><a href="#faq">FAQ</a></li>
+<li><a href="#contributing">Contributing</a></li>
+<li><a href="#security">Security</a></li>
+<li><a href="#compatibility">Compatibility</a></li>
+<li><a href="#license">License</a></li>
+<li><a href="#roadmap">Roadmap</a></li>
+</ul>
+<hr>
+<h2 id="three-ways-to-run" class="tsd-anchor-link">Three ways to run<a href="#three-ways-to-run" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<!-- BUILD:mode-table -->
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Entry point</th>
+<th>Use case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>SSH/SFTP server</strong></td>
+<td><code>VirtualSshServer</code> / <code>VirtualSftpServer</code></td>
+<td>Honeypots, remote testing, training environments</td>
+</tr>
+<tr>
+<td><strong>Web shell</strong></td>
+<td><code>builds/fortune-nyx-v1.5.8-web.min.js</code> (ESM)</td>
+<td>Embedded terminals, interactive tutorials, browser demos</td>
+</tr>
+<tr>
+<td><strong>Standalone CLI</strong></td>
+<td><code>builds/fortune-nyx-v1.5.8-directbash-k6.1.0.mjs</code> (single file)</td>
+<td>Local shell, one-liner demos, no install required</td>
+</tr>
+</tbody>
+</table>
+<!-- /BUILD:mode-table -->
+<p>All three modes share the same core: a pure in-memory VFS, a real shell interpreter, a virtual package manager, and a typed programmatic API.</p>
+<hr>
+<h2 id="get-started" class="tsd-anchor-link">Get Started<a href="#get-started" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="install" class="tsd-anchor-link">Install<a href="#install" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="bash"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">install</span><span class="hl-1"> </span><span class="hl-2">typescript-virtual-container</span><br/><span class="hl-3"># or: yarn add / bun add</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="try-instantly-zero-install" class="tsd-anchor-link">Try instantly (zero install)<a href="#try-instantly-zero-install" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<!-- BUILD:curl-start -->
+<h4 id="interactive-local-shell-persists-vfs-in-vfs-in-the-current-directory" class="tsd-anchor-link">Interactive local shell — persists VFS in .vfs/ in the current directory<a href="#interactive-local-shell-persists-vfs-in-vfs-in-the-current-directory" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<pre><code class="bash"><span class="hl-0">curl</span><span class="hl-1"> </span><span class="hl-4">-s</span><span class="hl-1"> </span><span class="hl-2">https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.8-directbash-k6.1.0.mjs</span><span class="hl-1"> </span><span class="hl-4">-o</span><span class="hl-1"> </span><span class="hl-2">fortune-nyx-v1.5.8-directbash-k6.1.0.mjs</span><span class="hl-1"> &amp;&amp; </span><span class="hl-0">node</span><span class="hl-1"> </span><span class="hl-2">fortune-nyx-v1.5.8-directbash-k6.1.0.mjs</span>
+</code><button type="button">Copy</button></pre>
+
+<h4 id="ssh-server-with-built-in-sftp-subsystem-scp-sftp-on-port-2222" class="tsd-anchor-link">SSH server with built-in SFTP subsystem (scp / sftp on port 2222)<a href="#ssh-server-with-built-in-sftp-subsystem-scp-sftp-on-port-2222" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<pre><code class="bash"><span class="hl-0">curl</span><span class="hl-1"> </span><span class="hl-4">-s</span><span class="hl-1"> </span><span class="hl-2">https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.5.8-ssh.cjs</span><span class="hl-1"> </span><span class="hl-4">-o</span><span class="hl-1"> </span><span class="hl-2">fortune-nyx-v1.5.8-ssh.cjs</span><span class="hl-1"> &amp;&amp; </span><span class="hl-0">node</span><span class="hl-1"> </span><span class="hl-2">fortune-nyx-v1.5.8-ssh.cjs</span>
+</code><button type="button">Copy</button></pre>
+
+<h4 id="custom-ssh-port" class="tsd-anchor-link">Custom SSH port<a href="#custom-ssh-port" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<pre><code class="bash"><span class="hl-0">node</span><span class="hl-1"> </span><span class="hl-2">fortune-nyx-v1.5.8-ssh.cjs</span><span class="hl-1"> </span><span class="hl-4">--ssh-port=2022</span>
+</code><button type="button">Copy</button></pre>
+
+<h4 id="ssh-disabled-handler-only-no-server-started" class="tsd-anchor-link">SSH disabled (handler only, no server started)<a href="#ssh-disabled-handler-only-no-server-started" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h4>
+<pre><code class="bash"><span class="hl-0">node</span><span class="hl-1"> </span><span class="hl-2">fortune-nyx-v1.5.8-ssh.cjs</span><span class="hl-1"> </span><span class="hl-4">--no-ssh</span>
+</code><button type="button">Copy</button></pre>
+
+<!-- /BUILD:curl-start -->
+<div class="tsd-alert tsd-alert-note"><div class="tsd-alert-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><use href="assets/icons.svg#icon-alertNote"></use></svg><span>Note</span></div><p>
+The standalone builds are intended for quick demos and testing. For production use, it's recommended to install the package and import the relevant classes directly in your codebase for better performance, stability, and security.</p>
+</div>
+<!-- BUILD:selfStandalone-options -->
+<p><strong><code>fortune-nyx-v1.5.8-directbash-k6.1.0.mjs</code> options:</strong></p>
+<pre><code class="bash"><span class="hl-0">node</span><span class="hl-1"> </span><span class="hl-2">fortune-nyx-v1.5.8-directbash-k6.1.0.mjs</span><span class="hl-1">                          </span><span class="hl-3"># boot as root</span><br/><span class="hl-0">node</span><span class="hl-1"> </span><span class="hl-2">fortune-nyx-v1.5.8-directbash-k6.1.0.mjs</span><span class="hl-1"> </span><span class="hl-4">--user</span><span class="hl-1"> </span><span class="hl-2">alice</span><span class="hl-1">             </span><span class="hl-3"># boot as alice (prompts for password if set)</span><br/><span class="hl-0">node</span><span class="hl-1"> </span><span class="hl-2">fortune-nyx-v1.5.8-directbash-k6.1.0.mjs</span><span class="hl-1"> </span><span class="hl-4">--user=alice</span><span class="hl-1">             </span><span class="hl-3"># same, inline form</span><br/><span class="hl-0">node</span><span class="hl-1"> </span><span class="hl-2">fortune-nyx-v1.5.8-directbash-k6.1.0.mjs</span><span class="hl-1"> </span><span class="hl-4">--hostname=my-box</span><span class="hl-1">        </span><span class="hl-3"># custom hostname</span><br/><span class="hl-0">node</span><span class="hl-1"> </span><span class="hl-2">fortune-nyx-v1.5.8-directbash-k6.1.0.mjs</span><span class="hl-1"> </span><span class="hl-4">--snapshot=/data/.vfs</span><span class="hl-1">    </span><span class="hl-3"># custom VFS snapshot path</span><br/><span class="hl-0">node</span><span class="hl-1"> </span><span class="hl-2">fortune-nyx-v1.5.8-directbash-k6.1.0.mjs</span><span class="hl-1"> </span><span class="hl-4">--help</span><span class="hl-1">                   </span><span class="hl-3"># show all options</span><br/><span class="hl-0">node</span><span class="hl-1"> </span><span class="hl-2">fortune-nyx-v1.5.8-directbash-k6.1.0.mjs</span><span class="hl-1"> </span><span class="hl-4">--version</span><span class="hl-1">                </span><span class="hl-3"># print version</span>
+</code><button type="button">Copy</button></pre>
+
+<!-- /BUILD:selfStandalone-options -->
+<p>The VFS is persisted automatically to <code>.vfs/vfs-snapshot.vfsb</code> in the current directory — state survives between runs. Delete <code>.vfs/</code> to start fresh.</p>
+<p>The shell shows a login banner and <code>Last login:</code> timestamp on each start.</p>
+<h3 id="ssh-server" class="tsd-anchor-link">SSH server<a href="#ssh-server" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-5">import</span><span class="hl-1"> { </span><span class="hl-6">VirtualSshServer</span><span class="hl-1"> } </span><span class="hl-5">from</span><span class="hl-1"> </span><span class="hl-2">&quot;typescript-virtual-container&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">ssh</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualSshServer</span><span class="hl-1">({ </span><span class="hl-6">port:</span><span class="hl-1"> </span><span class="hl-8">2222</span><span class="hl-1">, </span><span class="hl-6">hostname:</span><span class="hl-1"> </span><span class="hl-2">&quot;my-container&quot;</span><span class="hl-1"> });</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">ssh</span><span class="hl-1">.</span><span class="hl-0">start</span><span class="hl-1">();</span><br/><span class="hl-3">// ssh root@localhost -p 2222</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="web-shell-browser" class="tsd-anchor-link">Web shell (browser)<a href="#web-shell-browser" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<blockquote>
+<p><strong><a href="https://itsrealfortune.fr/typescript-virtual-container/demo">🖥 Try the live demo →</a></strong></p>
+</blockquote>
+<p>Two browser bundles are available:</p>
+<!-- BUILD:web-table -->
+<table>
+<thead>
+<tr>
+<th>Bundle</th>
+<th>Format</th>
+<th>Entry point</th>
+<th>Use case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>builds/fortune-nyx-v1.5.8-web.min.js</code></td>
+<td>ESM</td>
+<td><code>createWebShell()</code></td>
+<td>Embedded terminals, modern bundlers</td>
+</tr>
+</tbody>
+</table>
+<!-- /BUILD:web-table -->
+<p>Both bundles persist the VFS in <strong>IndexedDB</strong> — state survives page reloads.</p>
+<pre><code class="bash"><span class="hl-0">bun</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">web-build</span><span class="hl-1">       </span><span class="hl-3"># → builds/web.min.js + examples/web.min.js</span><br/><span class="hl-0">bun</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">web-full-build</span><span class="hl-1">  </span><span class="hl-3"># → builds/web-full-api.min.js</span><br/><span class="hl-0">bun</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">build-all</span><span class="hl-1">       </span><span class="hl-3"># rebuild everything</span>
+</code><button type="button">Copy</button></pre>
+
+<!-- BUILD:web-options -->
+<p><strong><code>fortune-nyx-v1.5.8-web.min.js</code></strong> — lightweight shell with IndexedDB VFS:</p>
+<pre><code class="html"><span class="hl-9">&lt;</span><span class="hl-10">script</span><span class="hl-11"> </span><span class="hl-12">type</span><span class="hl-11">=</span><span class="hl-13">&quot;module&quot;</span><span class="hl-9">&gt;</span><br/><span class="hl-11">  </span><span class="hl-5">import</span><span class="hl-11"> { </span><span class="hl-6">createWebShell</span><span class="hl-11"> } </span><span class="hl-5">from</span><span class="hl-11"> </span><span class="hl-2">&quot;./builds/fortune-nyx-v1.5.8-web.min.js&quot;</span><span class="hl-11">;</span><br/><br/><span class="hl-11">  </span><span class="hl-4">const</span><span class="hl-11"> </span><span class="hl-7">shell</span><span class="hl-11"> </span><span class="hl-1">=</span><span class="hl-11"> </span><span class="hl-0">createWebShell</span><span class="hl-11">(</span><span class="hl-2">&quot;web-vm&quot;</span><span class="hl-11">, {</span><br/><span class="hl-11">    </span><span class="hl-6">vfs:</span><span class="hl-11"> { </span><span class="hl-6">databaseName:</span><span class="hl-11"> </span><span class="hl-2">&quot;virtual-env-js&quot;</span><span class="hl-11">, </span><span class="hl-6">storeName:</span><span class="hl-11"> </span><span class="hl-2">&quot;vfs&quot;</span><span class="hl-11"> },</span><br/><span class="hl-11">  });</span><br/><span class="hl-11">  </span><span class="hl-5">await</span><span class="hl-11"> </span><span class="hl-6">shell</span><span class="hl-11">.</span><span class="hl-0">ensureInitialized</span><span class="hl-11">();</span><br/><br/><span class="hl-11">  </span><span class="hl-4">const</span><span class="hl-11"> </span><span class="hl-7">out</span><span class="hl-11"> </span><span class="hl-1">=</span><span class="hl-11"> </span><span class="hl-5">await</span><span class="hl-11"> </span><span class="hl-6">shell</span><span class="hl-11">.</span><span class="hl-0">executeCommandLine</span><span class="hl-11">(</span><span class="hl-2">&quot;ls /etc &amp;&amp; echo hello&quot;</span><span class="hl-11">);</span><br/><span class="hl-11">  </span><span class="hl-6">console</span><span class="hl-11">.</span><span class="hl-0">log</span><span class="hl-11">(</span><span class="hl-6">out</span><span class="hl-11">.</span><span class="hl-6">stdout</span><span class="hl-11">);</span><br/><span class="hl-9">&lt;/</span><span class="hl-10">script</span><span class="hl-9">&gt;</span>
+</code><button type="button">Copy</button></pre>
+
+<p><strong><code>fortune-nyx-v1.5.8-web.min.js</code></strong> — mirrors the <code>VirtualShell</code> programmatic API:</p>
+<pre><code class="html"><span class="hl-9">&lt;</span><span class="hl-10">script</span><span class="hl-11"> </span><span class="hl-12">type</span><span class="hl-11">=</span><span class="hl-13">&quot;module&quot;</span><span class="hl-9">&gt;</span><br/><span class="hl-11">  </span><span class="hl-5">import</span><span class="hl-11"> { </span><span class="hl-6">createVirtualShellShim</span><span class="hl-11"> } </span><span class="hl-5">from</span><span class="hl-11"> </span><span class="hl-2">&quot;./builds/fortune-nyx-v1.5.8-web.min.js&quot;</span><span class="hl-11">;</span><br/><br/><span class="hl-11">  </span><span class="hl-4">const</span><span class="hl-11"> </span><span class="hl-7">shell</span><span class="hl-11"> </span><span class="hl-1">=</span><span class="hl-11"> </span><span class="hl-0">createVirtualShellShim</span><span class="hl-11">(</span><span class="hl-2">&quot;web-vm&quot;</span><span class="hl-11">);</span><br/><span class="hl-11">  </span><span class="hl-5">await</span><span class="hl-11"> </span><span class="hl-6">shell</span><span class="hl-11">.</span><span class="hl-0">ensureInitialized</span><span class="hl-11">();</span><br/><span class="hl-11">  </span><span class="hl-5">await</span><span class="hl-11"> </span><span class="hl-6">shell</span><span class="hl-11">.</span><span class="hl-0">executeCommandLine</span><span class="hl-11">(</span><span class="hl-2">&quot;mkdir -p /app &amp;&amp; echo hello &gt; /app/file.txt&quot;</span><span class="hl-11">);</span><br/><span class="hl-11">  </span><span class="hl-6">console</span><span class="hl-11">.</span><span class="hl-0">log</span><span class="hl-11">(</span><span class="hl-6">shell</span><span class="hl-11">.</span><span class="hl-0">getVfs</span><span class="hl-11">().</span><span class="hl-0">readFile</span><span class="hl-11">(</span><span class="hl-2">&quot;/app/file.txt&quot;</span><span class="hl-11">)); </span><span class="hl-3">// hello</span><br/><span class="hl-9">&lt;/</span><span class="hl-10">script</span><span class="hl-9">&gt;</span>
+</code><button type="button">Copy</button></pre>
+
+<!-- /BUILD:web-options -->
+<p><strong>Run the demo locally:</strong></p>
+<pre><code class="bash"><span class="hl-0">bun</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">example-serve</span><br/><span class="hl-3"># Open http://localhost:8787/index.html</span>
+</code><button type="button">Copy</button></pre>
+
+<blockquote>
+<p>You can also try the hosted demo at <strong><a href="https://itsrealfortune.fr/typescript-virtual-container/demo">itsrealfortune.fr/typescript-virtual-container/demo</a></strong>.</p>
+</blockquote>
+<h3 id="programmatic-api" class="tsd-anchor-link">Programmatic API<a href="#programmatic-api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-5">import</span><span class="hl-1"> { </span><span class="hl-6">SshClient</span><span class="hl-1">, </span><span class="hl-6">VirtualShell</span><span class="hl-1"> } </span><span class="hl-5">from</span><span class="hl-1"> </span><span class="hl-2">&quot;typescript-virtual-container&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">shell</span><span class="hl-1">  = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualShell</span><span class="hl-1">(</span><span class="hl-2">&quot;typescript-vm&quot;</span><span class="hl-1">);</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-0">ensureInitialized</span><span class="hl-1">();</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">client</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">SshClient</span><span class="hl-1">(</span><span class="hl-6">shell</span><span class="hl-1">, </span><span class="hl-2">&quot;root&quot;</span><span class="hl-1">);</span><br/><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">client</span><span class="hl-1">.</span><span class="hl-0">mkdir</span><span class="hl-1">(</span><span class="hl-2">&quot;/app/config&quot;</span><span class="hl-1">, </span><span class="hl-4">true</span><span class="hl-1">);</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">client</span><span class="hl-1">.</span><span class="hl-0">writeFile</span><span class="hl-1">(</span><span class="hl-2">&quot;/app/config/settings.json&quot;</span><span class="hl-1">, </span><span class="hl-7">JSON</span><span class="hl-1">.</span><span class="hl-0">stringify</span><span class="hl-1">({ </span><span class="hl-6">env:</span><span class="hl-1"> </span><span class="hl-2">&quot;dev&quot;</span><span class="hl-1"> }));</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">r</span><span class="hl-1"> = </span><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">client</span><span class="hl-1">.</span><span class="hl-0">exec</span><span class="hl-1">(</span><span class="hl-2">&quot;ls /app &amp;&amp; cat /app/config/settings.json&quot;</span><span class="hl-1">);</span><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-6">r</span><span class="hl-1">.</span><span class="hl-6">stdout</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<hr>
+<h2 id="how-it-works" class="tsd-anchor-link">How It Works<a href="#how-it-works" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code><span class="hl-1">┌──────────────────────────────────────────────────────────────────────────┐</span><br/><span class="hl-1">│  </span><span class="hl-0">SshMimic</span><span class="hl-1"> (</span><span class="hl-6">VirtualSshServer</span><span class="hl-1">)             </span><span class="hl-0">SftpMimic</span><span class="hl-1"> (</span><span class="hl-6">VirtualSftpServer</span><span class="hl-1">)  │</span><br/><span class="hl-1">│  </span><span class="hl-6">password</span><span class="hl-1"> </span><span class="hl-6">auth</span><span class="hl-1"> · </span><span class="hl-6">publickey</span><span class="hl-1"> </span><span class="hl-6">auth</span><span class="hl-1">          </span><span class="hl-7">SFTP</span><span class="hl-1"> </span><span class="hl-6">protocol</span><span class="hl-1"> </span><span class="hl-6">handlers</span><span class="hl-1">          │</span><br/><span class="hl-1">│  </span><span class="hl-6">per</span><span class="hl-1">-</span><span class="hl-7">IP</span><span class="hl-1"> </span><span class="hl-6">rate</span><span class="hl-1"> </span><span class="hl-6">limiting</span><span class="hl-1"> / </span><span class="hl-6">lockout</span><span class="hl-1">          </span><span class="hl-6">home</span><span class="hl-1">-</span><span class="hl-6">dir</span><span class="hl-1"> </span><span class="hl-6">confinement</span><span class="hl-1">            │</span><br/><span class="hl-1">└─────────────────────────┬────────────────────────────────────────────────┘</span><br/><span class="hl-1">                          │</span><br/><span class="hl-1">               ┌──────────▼──────────┐</span><br/><span class="hl-1">               │    </span><span class="hl-6">VirtualShell</span><span class="hl-1">     │</span><br/><span class="hl-1">               │  </span><span class="hl-6">script</span><span class="hl-1"> </span><span class="hl-6">parser</span><span class="hl-1">      │  ← &amp;&amp;</span><span class="hl-14">/</span><span class="hl-15">||</span><span class="hl-14">/</span><span class="hl-1">; · </span><span class="hl-5">if</span><span class="hl-1">/</span><span class="hl-6">for</span><span class="hl-1">/</span><span class="hl-5">while</span><span class="hl-1">/</span><span class="hl-5">case</span><br/><span class="hl-1">               │  </span><span class="hl-6">command</span><span class="hl-1"> </span><span class="hl-6">executor</span><span class="hl-1">   │  ← </span><span class="hl-6">per</span><span class="hl-1">-</span><span class="hl-6">session</span><span class="hl-1"> </span><span class="hl-6">ShellEnv</span><br/><span class="hl-1">               │  .</span><span class="hl-6">bashrc</span><span class="hl-1"> </span><span class="hl-6">loader</span><span class="hl-1">     │  ← </span><span class="hl-14">/home/</span><span class="hl-1">&lt;</span><span class="hl-6">user</span><span class="hl-1">&gt;/.</span><span class="hl-6">bashrc</span><br/><span class="hl-1">               │  </span><span class="hl-6">session</span><span class="hl-1"> </span><span class="hl-6">manager</span><span class="hl-1">    │</span><br/><span class="hl-1">               └──┬──────────────┬───┘</span><br/><span class="hl-1">                  │              │</span><br/><span class="hl-1">     ┌────────────▼───┐    ┌─────▼───────────────┐</span><br/><span class="hl-1">     │</span><span class="hl-6">VirtualFileSystem</span><span class="hl-1">│   │ </span><span class="hl-6">VirtualUserManager</span><span class="hl-1">   │</span><br/><span class="hl-1">     │ </span><span class="hl-4">in</span><span class="hl-1">-</span><span class="hl-6">memory</span><span class="hl-1"> </span><span class="hl-6">tree</span><span class="hl-1">  │   │ </span><span class="hl-6">scrypt</span><span class="hl-1"> · </span><span class="hl-6">sudoers</span><span class="hl-1">     │</span><br/><span class="hl-1">     │ </span><span class="hl-6">gzip</span><span class="hl-1"> · </span><span class="hl-6">symlinks</span><span class="hl-1"> │   │ </span><span class="hl-6">publickey</span><span class="hl-1"> </span><span class="hl-6">auth</span><span class="hl-1">       │</span><br/><span class="hl-1">     │ .</span><span class="hl-6">vfsb</span><span class="hl-1"> </span><span class="hl-6">binary</span><span class="hl-1">    │   │ </span><span class="hl-6">quotas</span><span class="hl-1"> · </span><span class="hl-6">sessions</span><span class="hl-1">    │</span><br/><span class="hl-1">     │ </span><span class="hl-16">mode</span><span class="hl-1">:</span><span class="hl-6">memory</span><span class="hl-1">|</span><span class="hl-6">fs</span><span class="hl-1">  │   └─────────────────────-┘</span><br/><span class="hl-1">     └─────────────────┘</span><br/><span class="hl-1">                  │</span><br/><span class="hl-1">     ┌────────────▼────────────┐</span><br/><span class="hl-1">     │        </span><span class="hl-6">HoneyPot</span><span class="hl-1">         │</span><br/><span class="hl-1">     │ </span><span class="hl-6">audit</span><span class="hl-1"> </span><span class="hl-6">log</span><span class="hl-1"> · </span><span class="hl-6">stats</span><span class="hl-1">       │</span><br/><span class="hl-1">     │ </span><span class="hl-6">anomaly</span><span class="hl-1"> </span><span class="hl-6">detection</span><span class="hl-1">       │</span><br/><span class="hl-1">     └─────────────────────────┘</span>
+</code><button>Copy</button></pre>
+
+<p><strong>What it is:</strong> a shell emulator and virtual Linux environment for developer workflows.</p>
+<p><strong>What it is not:</strong> a kernel-level security boundary. <code>curl</code>/<code>wget</code> use the native <code>fetch()</code> API — no host binary spawned. <code>node</code>/<code>python3</code>/<code>npm</code> are virtual REPL stubs, not real runtimes. <code>execvp</code> is never called. Do not expose to the public internet without additional isolation.</p>
+<hr>
+<details>
+<summary><strong>API Reference</strong></summary>
+<!-- https://itsrealfortune.fr/typescript-virtual-container/ -->
+<p>API reference for all core classes and utilities. Designed for quick lookup while developing with the library. More extensive documentation, examples, and guides are available in <a href="https://itsrealfortune.fr/typescript-virtual-container/">the documentation</a>.</p>
+</details>
+<hr>
+<details>
+<summary><strong>Examples</strong></summary>
+<h3 id="ssh-server-with-events" class="tsd-anchor-link">SSH Server with Events<a href="#ssh-server-with-events" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-5">import</span><span class="hl-1"> { </span><span class="hl-6">VirtualSshServer</span><span class="hl-1"> } </span><span class="hl-5">from</span><span class="hl-1"> </span><span class="hl-2">&quot;typescript-virtual-container&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">ssh</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualSshServer</span><span class="hl-1">({ </span><span class="hl-6">port:</span><span class="hl-1"> </span><span class="hl-8">2222</span><span class="hl-1">, </span><span class="hl-6">hostname:</span><span class="hl-1"> </span><span class="hl-2">&quot;lab-environment&quot;</span><span class="hl-1"> });</span><br/><br/><span class="hl-6">ssh</span><span class="hl-1">.</span><span class="hl-0">on</span><span class="hl-1">(</span><span class="hl-2">&quot;auth:success&quot;</span><span class="hl-1">, ({ </span><span class="hl-6">username</span><span class="hl-1">, </span><span class="hl-6">remoteAddress</span><span class="hl-1"> }) </span><span class="hl-4">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`[SSH] </span><span class="hl-4">${</span><span class="hl-6">username</span><span class="hl-4">}</span><span class="hl-2"> from </span><span class="hl-4">${</span><span class="hl-6">remoteAddress</span><span class="hl-4">}</span><span class="hl-2">`</span><span class="hl-1">);</span><br/><span class="hl-1">});</span><br/><span class="hl-6">ssh</span><span class="hl-1">.</span><span class="hl-0">on</span><span class="hl-1">(</span><span class="hl-2">&quot;auth:lockout&quot;</span><span class="hl-1">, ({ </span><span class="hl-6">ip</span><span class="hl-1">, </span><span class="hl-6">until</span><span class="hl-1"> }) </span><span class="hl-4">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">warn</span><span class="hl-1">(</span><span class="hl-2">`[SSH] </span><span class="hl-4">${</span><span class="hl-6">ip</span><span class="hl-4">}</span><span class="hl-2"> locked until </span><span class="hl-4">${</span><span class="hl-6">until</span><span class="hl-4">}</span><span class="hl-2">`</span><span class="hl-1">);</span><br/><span class="hl-1">});</span><br/><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">ssh</span><span class="hl-1">.</span><span class="hl-0">start</span><span class="hl-1">();</span><br/><span class="hl-6">process</span><span class="hl-1">.</span><span class="hl-0">on</span><span class="hl-1">(</span><span class="hl-2">&quot;SIGINT&quot;</span><span class="hl-1">, () </span><span class="hl-4">=&gt;</span><span class="hl-1"> { </span><span class="hl-6">ssh</span><span class="hl-1">.</span><span class="hl-0">stop</span><span class="hl-1">(); </span><span class="hl-6">process</span><span class="hl-1">.</span><span class="hl-0">exit</span><span class="hl-1">(</span><span class="hl-8">0</span><span class="hl-1">); });</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="ssh-sftp-with-shared-state" class="tsd-anchor-link">SSH + SFTP with Shared State<a href="#ssh-sftp-with-shared-state" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-5">import</span><span class="hl-1"> { </span><span class="hl-6">VirtualSftpServer</span><span class="hl-1">, </span><span class="hl-6">VirtualShell</span><span class="hl-1">, </span><span class="hl-6">VirtualSshServer</span><span class="hl-1"> } </span><span class="hl-5">from</span><span class="hl-1"> </span><span class="hl-2">&quot;typescript-virtual-container&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">shell</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualShell</span><span class="hl-1">(</span><span class="hl-2">&quot;my-container&quot;</span><span class="hl-1">);</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">ssh</span><span class="hl-1">   = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualSshServer</span><span class="hl-1">({ </span><span class="hl-6">port:</span><span class="hl-1"> </span><span class="hl-8">2222</span><span class="hl-1">, </span><span class="hl-6">shell</span><span class="hl-1"> });</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">sftp</span><span class="hl-1">  = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualSftpServer</span><span class="hl-1">({ </span><span class="hl-6">port:</span><span class="hl-1"> </span><span class="hl-8">2223</span><span class="hl-1">, </span><span class="hl-6">shell</span><span class="hl-1"> });</span><br/><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">ssh</span><span class="hl-1">.</span><span class="hl-0">start</span><span class="hl-1">();</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">sftp</span><span class="hl-1">.</span><span class="hl-0">start</span><span class="hl-1">();</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="multi-user-environment-with-quotas" class="tsd-anchor-link">Multi-User Environment with Quotas<a href="#multi-user-environment-with-quotas" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-5">import</span><span class="hl-1"> { </span><span class="hl-6">SshClient</span><span class="hl-1">, </span><span class="hl-6">VirtualShell</span><span class="hl-1">, </span><span class="hl-6">VirtualSshServer</span><span class="hl-1"> } </span><span class="hl-5">from</span><span class="hl-1"> </span><span class="hl-2">&quot;typescript-virtual-container&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">shell</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualShell</span><span class="hl-1">(</span><span class="hl-2">&quot;typescript-vm&quot;</span><span class="hl-1">);</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">ssh</span><span class="hl-1">   = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualSshServer</span><span class="hl-1">({ </span><span class="hl-6">port:</span><span class="hl-1"> </span><span class="hl-8">2222</span><span class="hl-1">, </span><span class="hl-6">shell</span><span class="hl-1"> });</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">ssh</span><span class="hl-1">.</span><span class="hl-0">start</span><span class="hl-1">();</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">users</span><span class="hl-1"> = </span><span class="hl-6">ssh</span><span class="hl-1">.</span><span class="hl-0">getUsers</span><span class="hl-1">()!;</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">users</span><span class="hl-1">.</span><span class="hl-0">addUser</span><span class="hl-1">(</span><span class="hl-2">&quot;alice&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;alice123&quot;</span><span class="hl-1">);</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">users</span><span class="hl-1">.</span><span class="hl-0">addUser</span><span class="hl-1">(</span><span class="hl-2">&quot;bob&quot;</span><span class="hl-1">,   </span><span class="hl-2">&quot;bob456&quot;</span><span class="hl-1">);</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">users</span><span class="hl-1">.</span><span class="hl-0">removeSudoer</span><span class="hl-1">(</span><span class="hl-2">&quot;bob&quot;</span><span class="hl-1">);</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">users</span><span class="hl-1">.</span><span class="hl-0">setQuotaBytes</span><span class="hl-1">(</span><span class="hl-2">&quot;bob&quot;</span><span class="hl-1">, </span><span class="hl-8">5</span><span class="hl-1"> * </span><span class="hl-8">1024</span><span class="hl-1"> * </span><span class="hl-8">1024</span><span class="hl-1">); </span><span class="hl-3">// 5 MB</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">alice</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">SshClient</span><span class="hl-1">(</span><span class="hl-6">shell</span><span class="hl-1">, </span><span class="hl-2">&quot;alice&quot;</span><span class="hl-1">);</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">alice</span><span class="hl-1">.</span><span class="hl-0">writeFile</span><span class="hl-1">(</span><span class="hl-2">&quot;/etc/important.conf&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;secret=yes&quot;</span><span class="hl-1">);</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">bob</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">SshClient</span><span class="hl-1">(</span><span class="hl-6">shell</span><span class="hl-1">, </span><span class="hl-2">&quot;bob&quot;</span><span class="hl-1">);</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">r</span><span class="hl-1"> = </span><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">bob</span><span class="hl-1">.</span><span class="hl-0">cat</span><span class="hl-1">(</span><span class="hl-2">&quot;/etc/important.conf&quot;</span><span class="hl-1">);</span><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-6">r</span><span class="hl-1">.</span><span class="hl-6">stderr</span><span class="hl-1">); </span><span class="hl-3">// permission denied</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="persistent-state" class="tsd-anchor-link">Persistent State<a href="#persistent-state" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-3">// FS mode — automatic .vfsb persistence</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">shell</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualShell</span><span class="hl-1">(</span><span class="hl-2">&quot;my-vm&quot;</span><span class="hl-1">, </span><span class="hl-4">undefined</span><span class="hl-1">, {</span><br/><span class="hl-1">  </span><span class="hl-6">mode:</span><span class="hl-1"> </span><span class="hl-2">&quot;fs&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-6">snapshotPath:</span><span class="hl-1"> </span><span class="hl-2">&quot;./container-data&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">});</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">ssh</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualSshServer</span><span class="hl-1">({ </span><span class="hl-6">port:</span><span class="hl-1"> </span><span class="hl-8">2222</span><span class="hl-1">, </span><span class="hl-6">shell</span><span class="hl-1"> });</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">ssh</span><span class="hl-1">.</span><span class="hl-0">start</span><span class="hl-1">();</span><br/><span class="hl-3">// Restored from ./container-data/vfs-snapshot.vfsb on start, saved on every write.</span><br/><br/><span class="hl-3">// Memory mode — manual JSON snapshot</span><br/><span class="hl-5">import</span><span class="hl-1"> { </span><span class="hl-6">VirtualFileSystem</span><span class="hl-1"> } </span><span class="hl-5">from</span><span class="hl-1"> </span><span class="hl-2">&quot;typescript-virtual-container&quot;</span><span class="hl-1">;</span><br/><span class="hl-5">import</span><span class="hl-1"> { </span><span class="hl-6">writeFileSync</span><span class="hl-1">, </span><span class="hl-6">readFileSync</span><span class="hl-1"> } </span><span class="hl-5">from</span><span class="hl-1"> </span><span class="hl-2">&quot;node:fs&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">vfs</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualFileSystem</span><span class="hl-1">();</span><br/><span class="hl-6">vfs</span><span class="hl-1">.</span><span class="hl-0">writeFile</span><span class="hl-1">(</span><span class="hl-2">&quot;/data/report.txt&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;Baseline data&quot;</span><span class="hl-1">);</span><br/><span class="hl-0">writeFileSync</span><span class="hl-1">(</span><span class="hl-2">&quot;snapshot.json&quot;</span><span class="hl-1">, </span><span class="hl-7">JSON</span><span class="hl-1">.</span><span class="hl-0">stringify</span><span class="hl-1">(</span><span class="hl-6">vfs</span><span class="hl-1">.</span><span class="hl-0">toSnapshot</span><span class="hl-1">()));</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">restored</span><span class="hl-1"> = </span><span class="hl-6">VirtualFileSystem</span><span class="hl-1">.</span><span class="hl-0">fromSnapshot</span><span class="hl-1">(</span><br/><span class="hl-1">  </span><span class="hl-7">JSON</span><span class="hl-1">.</span><span class="hl-0">parse</span><span class="hl-1">(</span><span class="hl-0">readFileSync</span><span class="hl-1">(</span><span class="hl-2">&quot;snapshot.json&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;utf8&quot;</span><span class="hl-1">))</span><br/><span class="hl-1">);</span><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-6">restored</span><span class="hl-1">.</span><span class="hl-0">readFile</span><span class="hl-1">(</span><span class="hl-2">&quot;/data/report.txt&quot;</span><span class="hl-1">)); </span><span class="hl-3">// Baseline data</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="public-key-authentication" class="tsd-anchor-link">Public-Key Authentication<a href="#public-key-authentication" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-5">import</span><span class="hl-1"> { </span><span class="hl-6">readFileSync</span><span class="hl-1"> } </span><span class="hl-5">from</span><span class="hl-1"> </span><span class="hl-2">&quot;node:fs&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">shell</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualShell</span><span class="hl-1">(</span><span class="hl-2">&quot;secure-vm&quot;</span><span class="hl-1">);</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-0">ensureInitialized</span><span class="hl-1">();</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-6">users</span><span class="hl-1">.</span><span class="hl-0">addUser</span><span class="hl-1">(</span><span class="hl-2">&quot;alice&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;fallback-password&quot;</span><span class="hl-1">);</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">pubLine</span><span class="hl-1"> = </span><span class="hl-0">readFileSync</span><span class="hl-1">(</span><span class="hl-2">`</span><span class="hl-4">${</span><span class="hl-6">process</span><span class="hl-11">.</span><span class="hl-6">env</span><span class="hl-11">.</span><span class="hl-7">HOME</span><span class="hl-4">}</span><span class="hl-2">/.ssh/id_ed25519.pub`</span><span class="hl-1">, </span><span class="hl-2">&quot;utf8&quot;</span><span class="hl-1">).</span><span class="hl-0">trim</span><span class="hl-1">();</span><br/><span class="hl-4">const</span><span class="hl-1"> [</span><span class="hl-7">algo</span><span class="hl-1">, </span><span class="hl-7">b64</span><span class="hl-1">] = </span><span class="hl-6">pubLine</span><span class="hl-1">.</span><span class="hl-0">split</span><span class="hl-1">(</span><span class="hl-2">&quot; &quot;</span><span class="hl-1">);</span><br/><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-6">users</span><span class="hl-1">.</span><span class="hl-0">addAuthorizedKey</span><span class="hl-1">(</span><span class="hl-2">&quot;alice&quot;</span><span class="hl-1">, </span><span class="hl-6">algo</span><span class="hl-1">, </span><span class="hl-6">Buffer</span><span class="hl-1">.</span><span class="hl-0">from</span><span class="hl-1">(</span><span class="hl-6">b64</span><span class="hl-1">, </span><span class="hl-2">&quot;base64&quot;</span><span class="hl-1">));</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">ssh</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualSshServer</span><span class="hl-1">({ </span><span class="hl-6">port:</span><span class="hl-1"> </span><span class="hl-8">2222</span><span class="hl-1">, </span><span class="hl-6">shell</span><span class="hl-1"> });</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">ssh</span><span class="hl-1">.</span><span class="hl-0">start</span><span class="hl-1">();</span><br/><span class="hl-3">// ssh -i ~/.ssh/id_ed25519 alice@localhost -p 2222</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="rate-limiting" class="tsd-anchor-link">Rate Limiting<a href="#rate-limiting" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">ssh</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualSshServer</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-6">port:</span><span class="hl-1"> </span><span class="hl-8">2222</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-6">maxAuthAttempts:</span><span class="hl-1"> </span><span class="hl-8">3</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-6">lockoutDurationMs:</span><span class="hl-1"> </span><span class="hl-8">300_000</span><span class="hl-1">,</span><br/><span class="hl-1">});</span><br/><span class="hl-6">ssh</span><span class="hl-1">.</span><span class="hl-0">on</span><span class="hl-1">(</span><span class="hl-2">&quot;auth:lockout&quot;</span><span class="hl-1">, ({ </span><span class="hl-6">ip</span><span class="hl-1">, </span><span class="hl-6">until</span><span class="hl-1"> }) </span><span class="hl-4">=&gt;</span><span class="hl-1"> </span><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">warn</span><span class="hl-1">(</span><span class="hl-2">`</span><span class="hl-4">${</span><span class="hl-6">ip</span><span class="hl-4">}</span><span class="hl-2"> locked until </span><span class="hl-4">${</span><span class="hl-6">until</span><span class="hl-4">}</span><span class="hl-2">`</span><span class="hl-1">));</span><br/><span class="hl-6">ssh</span><span class="hl-1">.</span><span class="hl-0">clearLockout</span><span class="hl-1">(</span><span class="hl-2">&quot;192.168.1.100&quot;</span><span class="hl-1">); </span><span class="hl-3">// manual override</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="shell-operators-and-variables" class="tsd-anchor-link">Shell Operators and Variables<a href="#shell-operators-and-variables" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">client</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">SshClient</span><span class="hl-1">(</span><span class="hl-6">shell</span><span class="hl-1">, </span><span class="hl-2">&quot;root&quot;</span><span class="hl-1">);</span><br/><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">client</span><span class="hl-1">.</span><span class="hl-0">exec</span><span class="hl-1">(</span><span class="hl-2">&quot;mkdir /tmp/test &amp;&amp; echo created || echo failed&quot;</span><span class="hl-1">);</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">client</span><span class="hl-1">.</span><span class="hl-0">exec</span><span class="hl-1">(</span><span class="hl-2">&quot;export GREETING=hello &amp;&amp; echo $GREETING world&quot;</span><span class="hl-1">);</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">client</span><span class="hl-1">.</span><span class="hl-0">exec</span><span class="hl-1">(</span><span class="hl-2">&quot;false; echo exit=$?&quot;</span><span class="hl-1">); </span><span class="hl-3">// exit=1</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">r</span><span class="hl-1"> = </span><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">client</span><span class="hl-1">.</span><span class="hl-0">exec</span><span class="hl-1">(</span><span class="hl-2">&quot;echo -e &#39;banana</span><span class="hl-17">\\</span><span class="hl-2">napple</span><span class="hl-17">\\</span><span class="hl-2">ncherry&#39; | sort&quot;</span><span class="hl-1">);</span><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-6">r</span><span class="hl-1">.</span><span class="hl-6">stdout</span><span class="hl-1">); </span><span class="hl-3">// apple\nbanana\ncherry</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="shell-scripting" class="tsd-anchor-link">Shell Scripting<a href="#shell-scripting" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-6">vfs</span><span class="hl-1">.</span><span class="hl-0">writeFile</span><span class="hl-1">(</span><span class="hl-2">&quot;/usr/local/bin/setup.sh&quot;</span><span class="hl-1">, </span><span class="hl-2">`</span><br/><span class="hl-2">#!/bin/sh</span><br/><span class="hl-2">for dir in config logs tmp; do</span><br/><span class="hl-2">  mkdir /app/$dir</span><br/><span class="hl-2">  echo &quot;Created /app/$dir&quot;</span><br/><span class="hl-2">done</span><br/><span class="hl-2">if [ -d /app/config ]; then</span><br/><span class="hl-2">  echo &quot;Setup complete&quot;</span><br/><span class="hl-2">fi</span><br/><span class="hl-2">`</span><span class="hl-1">);</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">r</span><span class="hl-1"> = </span><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">client</span><span class="hl-1">.</span><span class="hl-0">exec</span><span class="hl-1">(</span><span class="hl-2">&quot;sh /usr/local/bin/setup.sh&quot;</span><span class="hl-1">);</span><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-6">r</span><span class="hl-1">.</span><span class="hl-6">stdout</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="snapshot-based-test-fixtures" class="tsd-anchor-link">Snapshot-Based Test Fixtures<a href="#snapshot-based-test-fixtures" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-5">import</span><span class="hl-1"> { </span><span class="hl-6">VirtualFileSystem</span><span class="hl-1"> } </span><span class="hl-5">from</span><span class="hl-1"> </span><span class="hl-2">&quot;typescript-virtual-container&quot;</span><span class="hl-1">;</span><br/><span class="hl-5">import</span><span class="hl-1"> </span><span class="hl-5">type</span><span class="hl-1"> { </span><span class="hl-6">VfsSnapshot</span><span class="hl-1"> } </span><span class="hl-5">from</span><span class="hl-1"> </span><span class="hl-2">&quot;typescript-virtual-container&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-4">function</span><span class="hl-1"> </span><span class="hl-0">buildFixture</span><span class="hl-1">(): </span><span class="hl-18">VfsSnapshot</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">vfs</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualFileSystem</span><span class="hl-1">();</span><br/><span class="hl-1">  </span><span class="hl-6">vfs</span><span class="hl-1">.</span><span class="hl-0">mkdir</span><span class="hl-1">(</span><span class="hl-2">&quot;/app/config&quot;</span><span class="hl-1">);</span><br/><span class="hl-1">  </span><span class="hl-6">vfs</span><span class="hl-1">.</span><span class="hl-0">writeFile</span><span class="hl-1">(</span><span class="hl-2">&quot;/app/config/settings.json&quot;</span><span class="hl-1">, </span><span class="hl-7">JSON</span><span class="hl-1">.</span><span class="hl-0">stringify</span><span class="hl-1">({ </span><span class="hl-6">env:</span><span class="hl-1"> </span><span class="hl-2">&quot;test&quot;</span><span class="hl-1"> }));</span><br/><span class="hl-1">  </span><span class="hl-5">return</span><span class="hl-1"> </span><span class="hl-6">vfs</span><span class="hl-1">.</span><span class="hl-0">toSnapshot</span><span class="hl-1">();</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">FIXTURE</span><span class="hl-1"> = </span><span class="hl-0">buildFixture</span><span class="hl-1">();</span><br/><br/><span class="hl-0">test</span><span class="hl-1">(</span><span class="hl-2">&quot;reads config file&quot;</span><span class="hl-1">, () </span><span class="hl-4">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">vfs</span><span class="hl-1">     = </span><span class="hl-6">VirtualFileSystem</span><span class="hl-1">.</span><span class="hl-0">fromSnapshot</span><span class="hl-1">(</span><span class="hl-7">FIXTURE</span><span class="hl-1">);</span><br/><span class="hl-1">  </span><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">content</span><span class="hl-1"> = </span><span class="hl-7">JSON</span><span class="hl-1">.</span><span class="hl-0">parse</span><span class="hl-1">(</span><span class="hl-6">vfs</span><span class="hl-1">.</span><span class="hl-0">readFile</span><span class="hl-1">(</span><span class="hl-2">&quot;/app/config/settings.json&quot;</span><span class="hl-1">));</span><br/><span class="hl-1">  </span><span class="hl-0">expect</span><span class="hl-1">(</span><span class="hl-6">content</span><span class="hl-1">.</span><span class="hl-6">env</span><span class="hl-1">).</span><span class="hl-0">toBe</span><span class="hl-1">(</span><span class="hl-2">&quot;test&quot;</span><span class="hl-1">);</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="snapshot-diff-in-tests" class="tsd-anchor-link">Snapshot Diff in Tests<a href="#snapshot-diff-in-tests" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-5">import</span><span class="hl-1"> { </span><span class="hl-6">diffSnapshots</span><span class="hl-1">, </span><span class="hl-6">assertDiff</span><span class="hl-1"> } </span><span class="hl-5">from</span><span class="hl-1"> </span><span class="hl-2">&quot;typescript-virtual-container&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">before</span><span class="hl-1"> = </span><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-6">vfs</span><span class="hl-1">.</span><span class="hl-0">toSnapshot</span><span class="hl-1">();</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">client</span><span class="hl-1">.</span><span class="hl-0">exec</span><span class="hl-1">(</span><span class="hl-2">&quot;apt install vim &amp;&amp; mkdir -p /app&quot;</span><span class="hl-1">);</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">after</span><span class="hl-1"> = </span><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-6">vfs</span><span class="hl-1">.</span><span class="hl-0">toSnapshot</span><span class="hl-1">();</span><br/><br/><span class="hl-0">assertDiff</span><span class="hl-1">(</span><span class="hl-0">diffSnapshots</span><span class="hl-1">(</span><span class="hl-6">before</span><span class="hl-1">, </span><span class="hl-6">after</span><span class="hl-1">, { </span><span class="hl-6">ignore:</span><span class="hl-1"> [</span><span class="hl-2">&quot;/proc&quot;</span><span class="hl-1">] }), {</span><br/><span class="hl-1">  </span><span class="hl-6">added:</span><span class="hl-1">    [</span><span class="hl-2">&quot;/app&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;/usr/bin/vim&quot;</span><span class="hl-1">],</span><br/><span class="hl-1">  </span><span class="hl-6">modified:</span><span class="hl-1"> [</span><span class="hl-2">&quot;/var/lib/dpkg/status&quot;</span><span class="hl-1">],</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="symlinks" class="tsd-anchor-link">Symlinks<a href="#symlinks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">vfs</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualFileSystem</span><span class="hl-1">();</span><br/><span class="hl-6">vfs</span><span class="hl-1">.</span><span class="hl-0">writeFile</span><span class="hl-1">(</span><span class="hl-2">&quot;/opt/myapp/bin/app&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;#!/bin/sh</span><span class="hl-17">\n</span><span class="hl-2">echo hello&quot;</span><span class="hl-1">);</span><br/><span class="hl-6">vfs</span><span class="hl-1">.</span><span class="hl-0">symlink</span><span class="hl-1">(</span><span class="hl-2">&quot;/opt/myapp/bin/app&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;/usr/local/bin/app&quot;</span><span class="hl-1">);</span><br/><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-6">vfs</span><span class="hl-1">.</span><span class="hl-0">isSymlink</span><span class="hl-1">(</span><span class="hl-2">&quot;/usr/local/bin/app&quot;</span><span class="hl-1">));     </span><span class="hl-3">// true</span><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-6">vfs</span><span class="hl-1">.</span><span class="hl-0">resolveSymlink</span><span class="hl-1">(</span><span class="hl-2">&quot;/usr/local/bin/app&quot;</span><span class="hl-1">)); </span><span class="hl-3">// /opt/myapp/bin/app</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="security-auditing-with-honeypot" class="tsd-anchor-link">Security Auditing with HoneyPot<a href="#security-auditing-with-honeypot" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-5">import</span><span class="hl-1"> { </span><span class="hl-6">HoneyPot</span><span class="hl-1">, </span><span class="hl-6">VirtualShell</span><span class="hl-1">, </span><span class="hl-6">VirtualSshServer</span><span class="hl-1"> } </span><span class="hl-5">from</span><span class="hl-1"> </span><span class="hl-2">&quot;typescript-virtual-container&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">shell</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualShell</span><span class="hl-1">(</span><span class="hl-2">&quot;typescript-vm&quot;</span><span class="hl-1">);</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">ssh</span><span class="hl-1">   = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualSshServer</span><span class="hl-1">({ </span><span class="hl-6">port:</span><span class="hl-1"> </span><span class="hl-8">2222</span><span class="hl-1">, </span><span class="hl-6">shell</span><span class="hl-1"> });</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">ssh</span><span class="hl-1">.</span><span class="hl-0">start</span><span class="hl-1">();</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">hp</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">HoneyPot</span><span class="hl-1">(</span><span class="hl-8">5000</span><span class="hl-1">);</span><br/><span class="hl-6">hp</span><span class="hl-1">.</span><span class="hl-0">attach</span><span class="hl-1">(</span><span class="hl-6">shell</span><span class="hl-1">, </span><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-6">vfs</span><span class="hl-1">, </span><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-6">users</span><span class="hl-1">, </span><span class="hl-6">ssh</span><span class="hl-1">);</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">stats</span><span class="hl-1"> = </span><span class="hl-6">hp</span><span class="hl-1">.</span><span class="hl-0">getStats</span><span class="hl-1">();</span><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`Commands: </span><span class="hl-4">${</span><span class="hl-6">stats</span><span class="hl-11">.</span><span class="hl-6">commands</span><span class="hl-4">}</span><span class="hl-2">, File writes: </span><span class="hl-4">${</span><span class="hl-6">stats</span><span class="hl-11">.</span><span class="hl-6">fileWrites</span><span class="hl-4">}</span><span class="hl-2">`</span><span class="hl-1">);</span><br/><br/><span class="hl-6">hp</span><span class="hl-1">.</span><span class="hl-0">detectAnomalies</span><span class="hl-1">().</span><span class="hl-0">forEach</span><span class="hl-1">(</span><span class="hl-6">a</span><span class="hl-1"> </span><span class="hl-4">=&gt;</span><br/><span class="hl-1">  </span><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`[</span><span class="hl-4">${</span><span class="hl-6">a</span><span class="hl-11">.</span><span class="hl-6">severity</span><span class="hl-11">.</span><span class="hl-0">toUpperCase</span><span class="hl-11">()</span><span class="hl-4">}</span><span class="hl-2">] </span><span class="hl-4">${</span><span class="hl-6">a</span><span class="hl-11">.</span><span class="hl-6">type</span><span class="hl-4">}</span><span class="hl-2">: </span><span class="hl-4">${</span><span class="hl-6">a</span><span class="hl-11">.</span><span class="hl-6">message</span><span class="hl-4">}</span><span class="hl-2">`</span><span class="hl-1">)</span><br/><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="concurrent-clients" class="tsd-anchor-link">Concurrent Clients<a href="#concurrent-clients" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">shell</span><span class="hl-1">   = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualShell</span><span class="hl-1">(</span><span class="hl-2">&quot;typescript-vm&quot;</span><span class="hl-1">);</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">client1</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">SshClient</span><span class="hl-1">(</span><span class="hl-6">shell</span><span class="hl-1">, </span><span class="hl-2">&quot;alice&quot;</span><span class="hl-1">);</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">client2</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">SshClient</span><span class="hl-1">(</span><span class="hl-6">shell</span><span class="hl-1">, </span><span class="hl-2">&quot;bob&quot;</span><span class="hl-1">);</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> [</span><span class="hl-7">r1</span><span class="hl-1">, </span><span class="hl-7">r2</span><span class="hl-1">] = </span><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-18">Promise</span><span class="hl-1">.</span><span class="hl-0">all</span><span class="hl-1">([</span><br/><span class="hl-1">  </span><span class="hl-6">client1</span><span class="hl-1">.</span><span class="hl-0">writeFile</span><span class="hl-1">(</span><span class="hl-2">&quot;/tmp/alice.txt&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;Alice&#39;s data&quot;</span><span class="hl-1">),</span><br/><span class="hl-1">  </span><span class="hl-6">client2</span><span class="hl-1">.</span><span class="hl-0">writeFile</span><span class="hl-1">(</span><span class="hl-2">&quot;/tmp/bob.txt&quot;</span><span class="hl-1">,   </span><span class="hl-2">&quot;Bob&#39;s data&quot;</span><span class="hl-1">),</span><br/><span class="hl-1">]);</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="bashrc" class="tsd-anchor-link">.bashrc<a href="#bashrc" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-6">vfs</span><span class="hl-1">.</span><span class="hl-0">writeFile</span><span class="hl-1">(</span><span class="hl-2">&quot;/home/root/.bashrc&quot;</span><span class="hl-1">, </span><span class="hl-2">`</span><br/><span class="hl-2">export EDITOR=nano</span><br/><span class="hl-2">export PATH=&quot;/usr/local/bin:/usr/bin:/bin&quot;</span><br/><span class="hl-2">alias ll=&quot;ls -l&quot;</span><br/><span class="hl-2">echo &quot;Welcome back, root!&quot;</span><br/><span class="hl-2">`</span><span class="hl-1">.</span><span class="hl-0">trim</span><span class="hl-1">());</span><br/><span class="hl-3">// On interactive SSH login, .bashrc is sourced automatically.</span>
+</code><button type="button">Copy</button></pre>
+
+</details>
+<hr>
+<details>
+<summary><strong>Built-in Commands (118)</strong></summary>
+<p>Type <code>help</code> in the shell for a grouped, colorized listing. Type <code>help &lt;command&gt;</code> for detailed usage. Type <code>man &lt;command&gt;</code> for full manual pages — all 118 commands are documented.</p>
+<h3 id="navigation" class="tsd-anchor-link">Navigation<a href="#navigation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Flags</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cd &lt;path&gt;</code></td>
+<td></td>
+<td>Change directory</td>
+</tr>
+<tr>
+<td><code>ls [path]</code></td>
+<td><code>-l</code> <code>-a</code></td>
+<td>List directory (<code>-a</code> shows dotfiles)</td>
+</tr>
+<tr>
+<td><code>pwd</code></td>
+<td></td>
+<td>Print working directory</td>
+</tr>
+<tr>
+<td><code>tree [path]</code></td>
+<td></td>
+<td>ASCII directory tree</td>
+</tr>
+</tbody>
+</table>
+<h3 id="files-filesystem" class="tsd-anchor-link">Files &amp; Filesystem<a href="#files-filesystem" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Flags</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cat &lt;path...&gt;</code></td>
+<td><code>-n</code> <code>-b</code></td>
+<td>Concatenate and print; <code>-n</code> numbers lines, <code>-b</code> numbers non-blank</td>
+</tr>
+<tr>
+<td><code>chmod &lt;mode&gt; &lt;file&gt;</code></td>
+<td></td>
+<td>Octal (<code>755</code>) or symbolic (<code>+x</code>, <code>u+x</code>, <code>go-w</code>, <code>a=rx</code>)</td>
+</tr>
+<tr>
+<td><code>cp &lt;src&gt; &lt;dest&gt;</code></td>
+<td><code>-r</code></td>
+<td>Copy file or directory</td>
+</tr>
+<tr>
+<td><code>find [path]</code></td>
+<td><code>-name</code> <code>-iname</code> <code>-type</code> <code>-maxdepth</code> <code>-mindepth</code> <code>-exec</code> <code>-not</code> <code>-o</code> <code>-a</code> <code>-empty</code> <code>-size</code></td>
+<td>Search for files</td>
+</tr>
+<tr>
+<td><code>ln &lt;target&gt; &lt;link&gt;</code></td>
+<td><code>-s</code></td>
+<td>Hard or symbolic link</td>
+</tr>
+<tr>
+<td><code>readlink &lt;path&gt;</code></td>
+<td><code>-f</code></td>
+<td>Print resolved path of symbolic link</td>
+</tr>
+<tr>
+<td><code>mkdir &lt;path&gt;</code></td>
+<td><code>-p</code></td>
+<td>Create directory</td>
+</tr>
+<tr>
+<td><code>mv &lt;src&gt; &lt;dest&gt;</code></td>
+<td></td>
+<td>Move or rename</td>
+</tr>
+<tr>
+<td><code>nano &lt;path&gt;</code></td>
+<td></td>
+<td>Interactive text editor</td>
+</tr>
+<tr>
+<td><code>rm &lt;path&gt;</code></td>
+<td><code>-r</code></td>
+<td>Remove file or directory</td>
+</tr>
+<tr>
+<td><code>stat &lt;path&gt;</code></td>
+<td><code>-c &lt;format&gt;</code></td>
+<td>Display file status (inode, size, mode, timestamps)</td>
+</tr>
+<tr>
+<td><code>touch &lt;path&gt;</code></td>
+<td></td>
+<td>Create or update file</td>
+</tr>
+</tbody>
+</table>
+<h3 id="text-processing" class="tsd-anchor-link">Text Processing<a href="#text-processing" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Flags</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>awk [-F &lt;sep&gt;] '&lt;prog&gt;'</code></td>
+<td><code>-v var=val</code></td>
+<td>Pattern scanning — NR/NF, <code>BEGIN</code>/<code>END</code>, field assign, <code>gsub</code>/<code>sub</code>/<code>substr</code>/<code>split</code>/<code>length</code>, <code>printf</code></td>
+</tr>
+<tr>
+<td><code>base64</code></td>
+<td><code>-d</code></td>
+<td>Encode/decode base64</td>
+</tr>
+<tr>
+<td><code>cut</code></td>
+<td><code>-d</code> <code>-f</code></td>
+<td>Remove sections from lines</td>
+</tr>
+<tr>
+<td><code>diff &lt;f1&gt; &lt;f2&gt;</code></td>
+<td></td>
+<td>Compare files line by line</td>
+</tr>
+<tr>
+<td><code>grep &lt;pattern&gt; [files]</code></td>
+<td><code>-i</code> <code>-v</code> <code>-n</code> <code>-r</code></td>
+<td>Search file content</td>
+</tr>
+<tr>
+<td><code>head [files]</code></td>
+<td><code>-n &lt;N&gt;</code></td>
+<td>First N lines</td>
+</tr>
+<tr>
+<td><code>sed -e 's/pat/rep/[g]'</code></td>
+<td><code>-n</code> <code>-i</code> <code>-e</code></td>
+<td>Stream editor — <code>s///[gI]</code>, <code>d</code>, <code>p</code>, <code>=</code>, <code>q</code>, line/regex/range addresses</td>
+</tr>
+<tr>
+<td><code>sort [files]</code></td>
+<td><code>-r</code> <code>-n</code> <code>-u</code></td>
+<td>Sort lines</td>
+</tr>
+<tr>
+<td><code>tail [files]</code></td>
+<td><code>-n &lt;N&gt;</code></td>
+<td>Last N lines</td>
+</tr>
+<tr>
+<td><code>tee [files]</code></td>
+<td><code>-a</code></td>
+<td>Read stdin, write to stdout and files</td>
+</tr>
+<tr>
+<td><code>tr &lt;set1&gt; [set2]</code></td>
+<td><code>-d</code></td>
+<td>Translate or delete characters</td>
+</tr>
+<tr>
+<td><code>uniq</code></td>
+<td><code>-c</code> <code>-d</code> <code>-u</code></td>
+<td>Filter repeated lines</td>
+</tr>
+<tr>
+<td><code>basename &lt;path&gt; [suffix]</code></td>
+<td><code>-a</code> <code>-s</code></td>
+<td>Strip directory and suffix from path</td>
+</tr>
+<tr>
+<td><code>dirname &lt;path&gt;</code></td>
+<td></td>
+<td>Strip last component from path</td>
+</tr>
+<tr>
+<td><code>file &lt;path...&gt;</code></td>
+<td></td>
+<td>Determine file type (magic bytes)</td>
+</tr>
+<tr>
+<td><code>wc [files]</code></td>
+<td><code>-l</code> <code>-w</code> <code>-c</code></td>
+<td>Word/line/byte count</td>
+</tr>
+<tr>
+<td><code>xargs [cmd]</code></td>
+<td></td>
+<td>Build and execute commands from stdin</td>
+</tr>
+</tbody>
+</table>
+<h3 id="archive-compression" class="tsd-anchor-link">Archive &amp; Compression<a href="#archive-compression" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Flags</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gzip &lt;file&gt;</code> / <code>gunzip &lt;file&gt;</code></td>
+<td><code>-k</code> <code>-d</code></td>
+<td>Compress / decompress (real gzip, browser-native)</td>
+</tr>
+<tr>
+<td><code>bzip2 &lt;file&gt;</code> / <code>bunzip2 &lt;file&gt;</code></td>
+<td><code>-k</code> <code>-d</code></td>
+<td>Compress / decompress bzip2 (VFS round-trip)</td>
+</tr>
+<tr>
+<td><code>zip [-r] &lt;archive&gt; &lt;files&gt;</code> / <code>unzip &lt;archive&gt;</code></td>
+<td><code>-l</code> <code>-d &lt;dir&gt;</code></td>
+<td>Real PKZIP + DEFLATE (interoperable)</td>
+</tr>
+<tr>
+<td><code>tar &lt;archive&gt; [files]</code></td>
+<td><code>-czf</code> <code>-xzf</code> <code>-tf</code> <code>-v</code></td>
+<td>Archive utility — real POSIX ustar binary format (interoperable)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="system" class="tsd-anchor-link">System<a href="#system" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Flags</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>date</code></td>
+<td><code>+format</code></td>
+<td>Current date and time</td>
+</tr>
+<tr>
+<td><code>df</code></td>
+<td><code>-h</code></td>
+<td>Filesystem disk space</td>
+</tr>
+<tr>
+<td><code>du [path]</code></td>
+<td><code>-h</code> <code>-s</code></td>
+<td>Estimate file space</td>
+</tr>
+<tr>
+<td><code>free</code></td>
+<td><code>-h</code> <code>-m</code> <code>-g</code></td>
+<td>Memory usage (real host data)</td>
+</tr>
+<tr>
+<td><code>groups [user]</code></td>
+<td></td>
+<td>Group memberships</td>
+</tr>
+<tr>
+<td><code>hostname</code></td>
+<td></td>
+<td>Print hostname</td>
+</tr>
+<tr>
+<td><code>htop</code></td>
+<td></td>
+<td>System monitor (mock)</td>
+</tr>
+<tr>
+<td><code>id [user]</code></td>
+<td></td>
+<td>User identity (uid/gid/groups)</td>
+</tr>
+<tr>
+<td><code>dmesg</code></td>
+<td><code>-n</code></td>
+<td>Print kernel ring buffer messages</td>
+</tr>
+<tr>
+<td><code>ip &lt;object&gt;</code></td>
+<td><code>addr</code> <code>route</code> <code>link</code> <code>neigh</code></td>
+<td>Modern network interface/routing tool</td>
+</tr>
+<tr>
+<td><code>kill [-9] &lt;pid&gt;</code></td>
+<td></td>
+<td>Send signal (mock)</td>
+</tr>
+<tr>
+<td><code>last [user]</code></td>
+<td></td>
+<td>Show login history</td>
+</tr>
+<tr>
+<td><code>lsb_release</code></td>
+<td><code>-a</code> <code>-i</code> <code>-d</code> <code>-r</code> <code>-c</code></td>
+<td>Distribution info</td>
+</tr>
+<tr>
+<td><code>neofetch</code></td>
+<td></td>
+<td>System info (real package count and uptime)</td>
+</tr>
+<tr>
+<td><code>node</code></td>
+<td><code>--version</code> <code>-e</code> <code>-p</code></td>
+<td>Virtual JS runtime; <strong>requires <code>apt install nodejs</code></strong></td>
+</tr>
+<tr>
+<td><code>npm</code></td>
+<td><code>--version</code> <code>list</code> <code>version</code></td>
+<td>Node.js package manager (install/run stubbed); <strong>requires <code>apt install npm</code></strong></td>
+</tr>
+<tr>
+<td><code>npx</code></td>
+<td><code>--version</code></td>
+<td>Node.js package runner (stubbed); <strong>requires <code>apt install npm</code></strong></td>
+</tr>
+<tr>
+<td><code>ping [-c &lt;n&gt;] &lt;host&gt;</code></td>
+<td></td>
+<td>ICMP ECHO_REQUEST (mock)</td>
+</tr>
+<tr>
+<td><code>ps</code></td>
+<td><code>-a</code> <code>-u</code> <code>-x</code> <code>aux</code></td>
+<td>Process status</td>
+</tr>
+<tr>
+<td><code>python3</code></td>
+<td><code>--version</code> <code>-c</code> <code>-V</code></td>
+<td>Virtual Python 3 interpreter; alias <code>python</code>; <strong>requires <code>apt install python3</code></strong></td>
+</tr>
+<tr>
+<td><code>sleep &lt;seconds&gt;</code></td>
+<td></td>
+<td>Delay execution</td>
+</tr>
+<tr>
+<td><code>uname</code></td>
+<td><code>-a</code> <code>-r</code> <code>-m</code></td>
+<td>System information</td>
+</tr>
+<tr>
+<td><code>bc</code></td>
+<td></td>
+<td>Arithmetic calculator (integer; <code>+</code> <code>-</code> <code>*</code> <code>/</code> <code>%</code> <code>**</code> <code>()</code>)</td>
+</tr>
+<tr>
+<td><code>lsof</code></td>
+<td><code>-i</code></td>
+<td>List open files (simulated)</td>
+</tr>
+<tr>
+<td><code>strace &lt;cmd&gt;</code></td>
+<td><code>-e</code> <code>-o</code></td>
+<td>Trace system calls (stub with realistic output)</td>
+</tr>
+<tr>
+<td><code>uptime</code></td>
+<td><code>-p</code> <code>-s</code></td>
+<td>Running time</td>
+</tr>
+<tr>
+<td><code>w</code></td>
+<td></td>
+<td>Who is logged on and what they are doing</td>
+</tr>
+<tr>
+<td><code>who</code></td>
+<td></td>
+<td>Active sessions</td>
+</tr>
+<tr>
+<td><code>whoami</code></td>
+<td></td>
+<td>Current user</td>
+</tr>
+</tbody>
+</table>
+<h3 id="network" class="tsd-anchor-link">Network<a href="#network" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Flags</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>curl &lt;url&gt;</code></td>
+<td><code>-o</code> <code>-X</code> <code>-d</code> <code>-H</code> <code>-s</code> <code>-I</code> <code>-L</code> <code>-v</code></td>
+<td>HTTP client (pure <code>fetch()</code>)</td>
+</tr>
+<tr>
+<td><code>wget &lt;url&gt;</code></td>
+<td><code>-O</code> <code>-P</code> <code>-q</code></td>
+<td>File downloader (pure <code>fetch()</code>)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="shell-scripting-1" class="tsd-anchor-link">Shell &amp; Scripting<a href="#shell-scripting-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Flags</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>alias [name=value]</code></td>
+<td></td>
+<td>Define or display aliases</td>
+</tr>
+<tr>
+<td><code>clear</code></td>
+<td></td>
+<td>Clear terminal screen</td>
+</tr>
+<tr>
+<td><code>declare [name=value]</code></td>
+<td><code>-i</code> <code>-r</code> <code>-x</code></td>
+<td>Declare variables; aliases <code>local</code>, <code>typeset</code></td>
+</tr>
+<tr>
+<td><code>echo &lt;text&gt;</code></td>
+<td><code>-n</code> <code>-e</code></td>
+<td>Display text; <code>-e</code> interprets <code>\n</code> <code>\t</code> <code>\r</code> <code>\\</code></td>
+</tr>
+<tr>
+<td><code>env</code></td>
+<td></td>
+<td>Print session environment</td>
+</tr>
+<tr>
+<td><code>exit [code]</code></td>
+<td></td>
+<td>Exit session</td>
+</tr>
+<tr>
+<td><code>export NAME=VALUE</code></td>
+<td></td>
+<td>Set shell variable</td>
+</tr>
+<tr>
+<td><code>false</code></td>
+<td></td>
+<td>Return exit code 1</td>
+</tr>
+<tr>
+<td><code>help [command]</code></td>
+<td></td>
+<td>List commands or show command usage</td>
+</tr>
+<tr>
+<td><code>history [n]</code></td>
+<td></td>
+<td>Command history</td>
+</tr>
+<tr>
+<td><code>jobs</code></td>
+<td></td>
+<td>List active jobs</td>
+</tr>
+<tr>
+<td><code>bg [%n]</code></td>
+<td></td>
+<td>Resume job in background</td>
+</tr>
+<tr>
+<td><code>fg [%n]</code></td>
+<td></td>
+<td>Resume job in foreground</td>
+</tr>
+<tr>
+<td><code>man &lt;command&gt;</code></td>
+<td></td>
+<td>Command reference manual</td>
+</tr>
+<tr>
+<td><code>printf &lt;fmt&gt; [args...]</code></td>
+<td></td>
+<td>Format and print (<code>%s</code> <code>%d</code> <code>%f</code> <code>%x</code> <code>\n</code> <code>\t</code>)</td>
+</tr>
+<tr>
+<td><code>read [-r] &lt;var...&gt;</code></td>
+<td><code>-r</code> <code>-p</code></td>
+<td>Read stdin into variable(s)</td>
+</tr>
+<tr>
+<td><code>return [n]</code></td>
+<td></td>
+<td>Return from shell function</td>
+</tr>
+<tr>
+<td><code>set [VAR=val]</code></td>
+<td><code>-e</code> <code>-x</code> <code>+e</code> <code>+x</code></td>
+<td>Display or set shell variables; <code>-e</code> exit on error, <code>-x</code> trace execution</td>
+</tr>
+<tr>
+<td><code>sh</code></td>
+<td><code>-c &lt;script&gt;</code> <code>[file]</code></td>
+<td>Execute shell script — <code>if</code>/<code>for</code>/<code>while</code>/<code>until</code>/<code>case</code>/functions, arrays <code>arr=(a b c)</code>, <code>$((expr))</code>, single-quote-safe</td>
+</tr>
+<tr>
+<td><code>perl</code></td>
+<td><code>-e</code> <code>-p</code> <code>-n</code></td>
+<td>One-liner interpreter (<code>print</code>/<code>say</code>, <code>s///</code>, <code>-p</code>/<code>-n</code> loop)</td>
+</tr>
+<tr>
+<td><code>shift [n]</code></td>
+<td></td>
+<td>Shift positional parameters</td>
+</tr>
+<tr>
+<td><code>source &lt;file&gt;</code></td>
+<td></td>
+<td>Execute file in current env; alias <code>.</code></td>
+</tr>
+<tr>
+<td><code>test &lt;expr&gt;</code> / <code>[ &lt;expr&gt; ]</code></td>
+<td></td>
+<td>POSIX conditional: <code>-f</code> <code>-d</code> <code>-e</code> <code>-z</code> <code>-n</code> <code>-x</code> <code>-s</code> <code>=</code> <code>!=</code> <code>-eq</code> <code>-lt</code> <code>-gt</code> <code>-le</code> <code>-ge</code> <code>!</code> <code>-a</code> <code>-o</code></td>
+</tr>
+<tr>
+<td><code>trap [action] [signal]</code></td>
+<td></td>
+<td>Signal handlers; supports <code>EXIT</code></td>
+</tr>
+<tr>
+<td><code>stty</code></td>
+<td><code>-a</code> <code>size</code></td>
+<td>Print/change terminal line settings</td>
+</tr>
+<tr>
+<td><code>tput &lt;cap&gt;</code></td>
+<td><code>cols</code> <code>lines</code> <code>setaf</code> <code>bold</code> <code>sgr0</code></td>
+<td>Query terminfo / output terminal escape sequences</td>
+</tr>
+<tr>
+<td><code>true</code></td>
+<td></td>
+<td>Return exit code 0</td>
+</tr>
+<tr>
+<td><code>type &lt;command&gt;</code></td>
+<td></td>
+<td>Describe command interpretation</td>
+</tr>
+<tr>
+<td><code>unalias &lt;name&gt;</code></td>
+<td><code>-a</code></td>
+<td>Remove aliases</td>
+</tr>
+<tr>
+<td><code>unset &lt;VAR&gt;</code></td>
+<td></td>
+<td>Remove shell variable</td>
+</tr>
+<tr>
+<td><code>which &lt;command&gt;</code></td>
+<td></td>
+<td>Locate command in <code>$PATH</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="misc-fun" class="tsd-anchor-link">Misc &amp; Fun<a href="#misc-fun" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Flags</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cmatrix</code></td>
+<td></td>
+<td>Matrix-style falling characters</td>
+</tr>
+<tr>
+<td><code>cowsay [msg]</code></td>
+<td></td>
+<td>ASCII cow saying something</td>
+</tr>
+<tr>
+<td><code>cowthink [msg]</code></td>
+<td></td>
+<td>ASCII cow thinking</td>
+</tr>
+<tr>
+<td><code>fortune</code></td>
+<td></td>
+<td>Print a random adage</td>
+</tr>
+<tr>
+<td><code>sl</code></td>
+<td></td>
+<td>Steam locomotive (cure for mistyping <code>ls</code>)</td>
+</tr>
+<tr>
+<td><code>yes [string]</code></td>
+<td></td>
+<td>Repeatedly output string until killed</td>
+</tr>
+</tbody>
+</table>
+<h3 id="package-management" class="tsd-anchor-link">Package Management<a href="#package-management" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Flags</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>apt &lt;cmd&gt; [pkg...]</code></td>
+<td></td>
+<td><code>install</code>, <code>remove</code>, <code>purge</code>, <code>update</code>, <code>upgrade</code>, <code>search</code>, <code>show</code>, <code>list</code></td>
+</tr>
+<tr>
+<td><code>apt-get</code></td>
+<td></td>
+<td>Alias for <code>apt</code></td>
+</tr>
+<tr>
+<td><code>apt-cache &lt;cmd&gt;</code></td>
+<td></td>
+<td><code>search</code>, <code>show</code>, <code>policy</code></td>
+</tr>
+<tr>
+<td><code>dpkg</code></td>
+<td><code>-l</code> <code>-s</code> <code>-L</code> <code>-r</code> <code>-P</code></td>
+<td>Low-level package tool</td>
+</tr>
+<tr>
+<td><code>dpkg-query</code></td>
+<td><code>-W</code> <code>-l</code></td>
+<td>Show installed package info</td>
+</tr>
+</tbody>
+</table>
+<h3 id="users-permissions" class="tsd-anchor-link">Users &amp; Permissions<a href="#users-permissions" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Flags</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>adduser &lt;name&gt; &lt;pass&gt;</code></td>
+<td></td>
+<td>Create user (root only)</td>
+</tr>
+<tr>
+<td><code>deluser &lt;name&gt;</code></td>
+<td></td>
+<td>Delete user (root only)</td>
+</tr>
+<tr>
+<td><code>passwd [user]</code></td>
+<td></td>
+<td>Change password</td>
+</tr>
+<tr>
+<td><code>su [user]</code></td>
+<td></td>
+<td>Switch user</td>
+</tr>
+<tr>
+<td><code>sudo &lt;cmd&gt;</code></td>
+<td><code>-i</code></td>
+<td>Run as root</td>
+</tr>
+</tbody>
+</table>
+<p><strong>ℹ️ All 118 built-in commands include complete JSDoc documentation</strong> with <code>@category</code> and <code>@params</code> tags. See <a href="https://github.com/itsrealfortune/typescript-virtual-container/tree/main/src/commands">src/commands/</a> for source code and inline documentation.</p>
+<p>Custom commands: <code>shell.addCommand(name, params, callback)</code>.</p>
+</details>
+<hr>
+<details>
+<summary><strong>Shell Scripting</strong></summary>
+<p>The interpreter supports a POSIX sh subset via <code>sh -c '...'</code>, <code>sh &lt;file&gt;</code>, or interactive session.</p>
+<h3 id="operators-and-redirections" class="tsd-anchor-link">Operators and Redirections<a href="#operators-and-redirections" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="bash"><span class="hl-0">mkdir</span><span class="hl-1"> </span><span class="hl-2">/app</span><span class="hl-1"> &amp;&amp; </span><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;created&quot;</span><span class="hl-1">     </span><span class="hl-3"># &amp;&amp; — only if previous succeeds</span><br/><span class="hl-0">rm</span><span class="hl-1"> </span><span class="hl-2">/missing</span><span class="hl-1"> || </span><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;not found&quot;</span><span class="hl-1">  </span><span class="hl-3"># || — only if previous fails</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">a</span><span class="hl-1">; </span><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">b</span><span class="hl-1">; </span><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">c</span><span class="hl-1">           </span><span class="hl-3"># ; — always all three</span><br/><br/><span class="hl-0">cat</span><span class="hl-1"> </span><span class="hl-2">/etc/hosts</span><span class="hl-1"> | </span><span class="hl-0">grep</span><span class="hl-1"> </span><span class="hl-2">local</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;hello&quot;</span><span class="hl-1"> &gt; </span><span class="hl-2">/tmp/out.txt</span><span class="hl-1">      </span><span class="hl-3"># overwrite</span><br/><span class="hl-0">cat</span><span class="hl-1"> </span><span class="hl-2">/tmp/out.txt</span><span class="hl-1"> &gt;&gt; </span><span class="hl-2">/tmp/log.txt</span><span class="hl-1"> </span><span class="hl-3"># append</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="variable-expansion" class="tsd-anchor-link">Variable Expansion<a href="#variable-expansion" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="bash"><span class="hl-4">export</span><span class="hl-1"> </span><span class="hl-6">NAME</span><span class="hl-1">=</span><span class="hl-6">world</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;Hello </span><span class="hl-6">$NAME</span><span class="hl-2">&quot;</span><span class="hl-1">           </span><span class="hl-3"># Hello world</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;${</span><span class="hl-6">NAME</span><span class="hl-1">:-</span><span class="hl-6">fallback</span><span class="hl-2">}&quot;</span><span class="hl-1">     </span><span class="hl-3"># world (or fallback if unset)</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;${</span><span class="hl-6">UNSET</span><span class="hl-1">:-</span><span class="hl-6">default</span><span class="hl-2">}&quot;</span><span class="hl-1">     </span><span class="hl-3"># default</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;${</span><span class="hl-6">NAME</span><span class="hl-1">:</span><span class="hl-2">+</span><span class="hl-6">alternate</span><span class="hl-2">}&quot;</span><span class="hl-1">    </span><span class="hl-3"># alternate (only if NAME is set)</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;${</span><span class="hl-6">UNSET</span><span class="hl-1">:=</span><span class="hl-6">assigned</span><span class="hl-2">}&quot;</span><span class="hl-1">    </span><span class="hl-3"># assigns and returns &quot;assigned&quot;</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;${</span><span class="hl-1">#</span><span class="hl-6">NAME</span><span class="hl-2">}&quot;</span><span class="hl-1">              </span><span class="hl-3"># 5 (string length)</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;${</span><span class="hl-6">NAME</span><span class="hl-1">:</span><span class="hl-6">2</span><span class="hl-2">}&quot;</span><span class="hl-1">             </span><span class="hl-3"># rld (substring from offset 2)</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;${</span><span class="hl-6">NAME</span><span class="hl-1">:</span><span class="hl-6">1</span><span class="hl-1">:</span><span class="hl-6">3</span><span class="hl-2">}&quot;</span><span class="hl-1">           </span><span class="hl-3"># orl (substring offset 1, length 3)</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;${</span><span class="hl-6">NAME</span><span class="hl-1">/</span><span class="hl-6">o</span><span class="hl-1">/</span><span class="hl-6">0</span><span class="hl-2">}&quot;</span><span class="hl-1">           </span><span class="hl-3"># w0rld (replace first)</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;${</span><span class="hl-6">NAME</span><span class="hl-1">//</span><span class="hl-6">l</span><span class="hl-1">/</span><span class="hl-6">L</span><span class="hl-2">}&quot;</span><span class="hl-1">          </span><span class="hl-3"># worLd  (replace all)</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;${</span><span class="hl-6">PATH</span><span class="hl-1">##*/</span><span class="hl-2">}&quot;</span><span class="hl-1">           </span><span class="hl-3"># strip longest prefix match</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;${</span><span class="hl-6">FILE</span><span class="hl-1">%</span><span class="hl-2">.</span><span class="hl-6">txt</span><span class="hl-2">}&quot;</span><span class="hl-1">          </span><span class="hl-3"># strip shortest suffix match</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;</span><span class="hl-4">$?</span><span class="hl-2">&quot;</span><span class="hl-1">                    </span><span class="hl-3"># last exit code</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;</span><span class="hl-6">$RANDOM</span><span class="hl-2">&quot;</span><span class="hl-1">               </span><span class="hl-3"># random integer 0–32767</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;</span><span class="hl-6">$LINENO</span><span class="hl-2">&quot;</span><span class="hl-1">               </span><span class="hl-3"># current line number</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">~</span><span class="hl-1">                       </span><span class="hl-3"># /home/&lt;user&gt; (tilde expansion)</span><br/><br/><span class="hl-3"># Arrays</span><br/><span class="hl-6">arr</span><span class="hl-1">=(</span><span class="hl-2">alpha</span><span class="hl-1"> </span><span class="hl-2">beta</span><span class="hl-1"> </span><span class="hl-2">gamma</span><span class="hl-1">)</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;${</span><span class="hl-6">arr</span><span class="hl-2">[0]}&quot;</span><span class="hl-1">             </span><span class="hl-3"># alpha</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;${</span><span class="hl-6">arr</span><span class="hl-2">[</span><span class="hl-1">@</span><span class="hl-2">]}&quot;</span><span class="hl-1">             </span><span class="hl-3"># alpha beta gamma</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;${</span><span class="hl-1">#</span><span class="hl-6">arr</span><span class="hl-2">[</span><span class="hl-1">@</span><span class="hl-2">]}&quot;</span><span class="hl-1">            </span><span class="hl-3"># 3</span>
+</code><button type="button">Copy</button></pre>
+
+<blockquote>
+<p><strong>Single-quote isolation</strong> — <code>$VAR</code> and <code>$((...))</code> are never expanded inside <code>'...'</code>.</p>
+</blockquote>
+<h3 id="arithmetic" class="tsd-anchor-link">Arithmetic<a href="#arithmetic" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="bash"><span class="hl-0">echo</span><span class="hl-1"> $((</span><span class="hl-0">2</span><span class="hl-1"> </span><span class="hl-2">+</span><span class="hl-1"> </span><span class="hl-8">3</span><span class="hl-1">))        </span><span class="hl-3"># 5</span><br/><span class="hl-6">X</span><span class="hl-1">=</span><span class="hl-2">4</span><span class="hl-1">; </span><span class="hl-0">echo</span><span class="hl-1"> $((</span><span class="hl-0">X</span><span class="hl-1"> </span><span class="hl-4">*</span><span class="hl-1"> </span><span class="hl-8">2</span><span class="hl-1">))   </span><span class="hl-3"># 8</span><br/><span class="hl-6">i</span><span class="hl-1">=</span><span class="hl-2">0</span><span class="hl-1">; </span><span class="hl-6">i</span><span class="hl-1">=$((</span><span class="hl-0">i</span><span class="hl-1"> </span><span class="hl-2">+</span><span class="hl-1"> </span><span class="hl-8">1</span><span class="hl-1">))      </span><span class="hl-3"># increment</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="conditionals" class="tsd-anchor-link">Conditionals<a href="#conditionals" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="bash"><span class="hl-5">if</span><span class="hl-1"> [ -f /etc/config ]; </span><span class="hl-5">then</span><br/><span class="hl-1">  </span><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;config exists&quot;</span><br/><span class="hl-5">elif</span><span class="hl-1"> [ -d /etc ]; </span><span class="hl-5">then</span><br/><span class="hl-1">  </span><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;etc is a directory&quot;</span><br/><span class="hl-5">else</span><br/><span class="hl-1">  </span><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;nothing found&quot;</span><br/><span class="hl-5">fi</span><br/><br/><span class="hl-1">[ </span><span class="hl-2">&quot;</span><span class="hl-6">$USER</span><span class="hl-2">&quot;</span><span class="hl-1"> = </span><span class="hl-2">&quot;root&quot;</span><span class="hl-1"> ] &amp;&amp; </span><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;root&quot;</span><br/><span class="hl-1">[ </span><span class="hl-6">$COUNT</span><span class="hl-1"> -gt </span><span class="hl-8">10</span><span class="hl-1"> ] &amp;&amp; </span><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;large&quot;</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="loops" class="tsd-anchor-link">Loops<a href="#loops" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="bash"><span class="hl-5">for</span><span class="hl-1"> </span><span class="hl-6">name</span><span class="hl-1"> </span><span class="hl-5">in</span><span class="hl-1"> </span><span class="hl-2">alice</span><span class="hl-1"> </span><span class="hl-2">bob</span><span class="hl-1"> </span><span class="hl-2">charlie</span><span class="hl-1">; </span><span class="hl-5">do</span><br/><span class="hl-1">  </span><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;Hello </span><span class="hl-6">$name</span><span class="hl-2">&quot;</span><br/><span class="hl-5">done</span><br/><br/><span class="hl-6">COUNT</span><span class="hl-1">=</span><span class="hl-2">0</span><br/><span class="hl-5">while</span><span class="hl-1"> [ </span><span class="hl-6">$COUNT</span><span class="hl-1"> -lt </span><span class="hl-8">3</span><span class="hl-1"> ]; </span><span class="hl-5">do</span><br/><span class="hl-1">  </span><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;Count: </span><span class="hl-6">$COUNT</span><span class="hl-2">&quot;</span><br/><span class="hl-1">  </span><span class="hl-6">COUNT</span><span class="hl-1">=$((</span><span class="hl-0">COUNT</span><span class="hl-1"> </span><span class="hl-2">+</span><span class="hl-1"> </span><span class="hl-8">1</span><span class="hl-1">))</span><br/><span class="hl-5">done</span><br/><br/><span class="hl-6">COUNT</span><span class="hl-1">=</span><span class="hl-2">5</span><br/><span class="hl-5">until</span><span class="hl-1"> [ </span><span class="hl-6">$COUNT</span><span class="hl-1"> -eq </span><span class="hl-8">0</span><span class="hl-1"> ]; </span><span class="hl-5">do</span><br/><span class="hl-1">  </span><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;Countdown: </span><span class="hl-6">$COUNT</span><span class="hl-2">&quot;</span><br/><span class="hl-1">  </span><span class="hl-6">COUNT</span><span class="hl-1">=$((</span><span class="hl-0">COUNT</span><span class="hl-1"> </span><span class="hl-2">-</span><span class="hl-1"> </span><span class="hl-8">1</span><span class="hl-1">))</span><br/><span class="hl-5">done</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="functions-and-case" class="tsd-anchor-link">Functions and case<a href="#functions-and-case" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="bash"><span class="hl-0">greet</span><span class="hl-1">() {</span><br/><span class="hl-1">  </span><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;Hello, </span><span class="hl-6">$1</span><span class="hl-2">!&quot;</span><br/><span class="hl-1">}</span><br/><span class="hl-0">greet</span><span class="hl-1"> </span><span class="hl-2">world</span><br/><br/><span class="hl-5">case</span><span class="hl-1"> </span><span class="hl-2">&quot;</span><span class="hl-6">$1</span><span class="hl-2">&quot;</span><span class="hl-1"> </span><span class="hl-5">in</span><br/><span class="hl-1">  </span><span class="hl-14">start</span><span class="hl-1">) </span><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;Starting...&quot;</span><span class="hl-1"> ;;</span><br/><span class="hl-1">  </span><span class="hl-14">stop</span><span class="hl-1">)  </span><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;Stopping...&quot;</span><span class="hl-1"> ;;</span><br/><span class="hl-1">  *)     </span><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;Usage: </span><span class="hl-6">$0</span><span class="hl-2"> {start|stop}&quot;</span><span class="hl-1"> ;;</span><br/><span class="hl-5">esac</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="heredoc" class="tsd-anchor-link">Heredoc<a href="#heredoc" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="bash"><span class="hl-0">cat</span><span class="hl-1"> &lt;&lt; </span><span class="hl-1">EOF</span><br/><span class="hl-2">line one</span><br/><span class="hl-2">line two</span><br/><span class="hl-1">EOF</span><br/><br/><span class="hl-3"># write to file</span><br/><span class="hl-0">cat</span><span class="hl-1"> &gt; </span><span class="hl-2">/tmp/config</span><span class="hl-1"> &lt;&lt; </span><span class="hl-1">EOF</span><br/><span class="hl-2">HOST=localhost</span><br/><span class="hl-2">PORT=3000</span><br/><span class="hl-1">EOF</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="set-e--set--x" class="tsd-anchor-link">set -e / set -x<a href="#set-e--set--x" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="bash"><span class="hl-0">set</span><span class="hl-1"> </span><span class="hl-4">-e</span><span class="hl-1">          </span><span class="hl-3"># exit immediately on any non-zero exit code</span><br/><span class="hl-0">set</span><span class="hl-1"> </span><span class="hl-4">-x</span><span class="hl-1">          </span><span class="hl-3"># print each command before executing (trace)</span><br/><span class="hl-0">set</span><span class="hl-1"> </span><span class="hl-2">+e</span><span class="hl-1">          </span><span class="hl-3"># disable errexit</span><br/><span class="hl-0">set</span><span class="hl-1"> </span><span class="hl-2">+x</span><span class="hl-1">          </span><span class="hl-3"># disable xtrace</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="script-files" class="tsd-anchor-link">Script Files<a href="#script-files" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-6">vfs</span><span class="hl-1">.</span><span class="hl-0">writeFile</span><span class="hl-1">(</span><span class="hl-2">&quot;/usr/local/bin/setup.sh&quot;</span><span class="hl-1">, </span><span class="hl-2">`</span><br/><span class="hl-2">#!/bin/sh</span><br/><span class="hl-2">for dir in config logs tmp; do</span><br/><span class="hl-2">  mkdir /app/$dir</span><br/><span class="hl-2">done</span><br/><span class="hl-2">`</span><span class="hl-1">);</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">client</span><span class="hl-1">.</span><span class="hl-0">exec</span><span class="hl-1">(</span><span class="hl-2">&quot;sh /usr/local/bin/setup.sh&quot;</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="login-files" class="tsd-anchor-link">Login Files<a href="#login-files" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Sourced automatically at session start, in order:</p>
+<ol>
+<li><code>/etc/environment</code> — <code>KEY=VALUE</code> pairs only, no shell syntax</li>
+<li><code>~/.profile</code> — user login script</li>
+<li><code>~/.bashrc</code> — interactive shell config</li>
+</ol>
+<pre><code class="bash"><span class="hl-4">export</span><span class="hl-1"> </span><span class="hl-6">EDITOR</span><span class="hl-1">=</span><span class="hl-6">nano</span><br/><span class="hl-4">alias</span><span class="hl-1"> </span><span class="hl-6">ll</span><span class="hl-1">=</span><span class="hl-2">&quot;ls -l&quot;</span><br/><span class="hl-0">echo</span><span class="hl-1"> </span><span class="hl-2">&quot;Welcome, </span><span class="hl-6">$USER</span><span class="hl-2">!&quot;</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="line-editing" class="tsd-anchor-link">Line Editing<a href="#line-editing" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Interactive shell supports full readline-style key bindings:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>←</code> / <code>→</code></td>
+<td>Move cursor left / right</td>
+</tr>
+<tr>
+<td><code>Home</code> / <code>Ctrl+A</code></td>
+<td>Jump to start of line</td>
+</tr>
+<tr>
+<td><code>End</code> / <code>Ctrl+E</code></td>
+<td>Jump to end of line</td>
+</tr>
+<tr>
+<td><code>Ctrl+K</code></td>
+<td>Kill to end of line</td>
+</tr>
+<tr>
+<td><code>Ctrl+U</code></td>
+<td>Kill to start of line</td>
+</tr>
+<tr>
+<td><code>Ctrl+W</code></td>
+<td>Kill word backward</td>
+</tr>
+<tr>
+<td><code>!!</code></td>
+<td>Expand to last command</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr>
+<details>
+<summary><strong>Linux Rootfs &amp; VFS PATH Resolution</strong></summary>
+<h3 id="directory-layout" class="tsd-anchor-link">Directory Layout<a href="#directory-layout" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>On every <code>VirtualShell</code> init, a realistic Linux hierarchy is bootstrapped idempotently:</p>
+<pre><code><span class="hl-1">/</span><br/><span class="hl-1">├── </span><span class="hl-6">bin</span><span class="hl-1"> -&gt; /</span><span class="hl-6">usr</span><span class="hl-1">/</span><span class="hl-0">bin</span><span class="hl-1">             (</span><span class="hl-6">symlink</span><span class="hl-1">, </span><span class="hl-6">Debian</span><span class="hl-1">-</span><span class="hl-6">style</span><span class="hl-1">)</span><br/><span class="hl-1">├── </span><span class="hl-6">sbin</span><span class="hl-1"> -&gt; /</span><span class="hl-6">usr</span><span class="hl-1">/</span><span class="hl-0">sbin</span><span class="hl-1">           (</span><span class="hl-6">symlink</span><span class="hl-1">, </span><span class="hl-6">Debian</span><span class="hl-1">-</span><span class="hl-6">style</span><span class="hl-1">)</span><br/><span class="hl-1">├── </span><span class="hl-6">lib</span><span class="hl-1">/                        (</span><span class="hl-7">ELF</span><span class="hl-1"> </span><span class="hl-6">stub</span><span class="hl-1">)</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">modules</span><span class="hl-1">/</span><br/><span class="hl-1">│   └── </span><span class="hl-6">x86_64</span><span class="hl-1">-</span><span class="hl-6">linux</span><span class="hl-1">-</span><span class="hl-6">gnu</span><span class="hl-1">/</span><br/><span class="hl-1">├── </span><span class="hl-6">lib64</span><span class="hl-1">/</span><br/><span class="hl-1">│   └── </span><span class="hl-6">ld</span><span class="hl-1">-</span><span class="hl-6">linux</span><span class="hl-1">-</span><span class="hl-6">x86</span><span class="hl-1">-64.</span><span class="hl-6">so</span><span class="hl-1">.</span><span class="hl-8">2</span><span class="hl-1">   (</span><span class="hl-6">stub</span><span class="hl-1">, </span><span class="hl-8">0o755</span><span class="hl-1">)</span><br/><span class="hl-1">├── </span><span class="hl-6">initrd</span><span class="hl-1">.</span><span class="hl-6">img</span><span class="hl-1"> -&gt; /</span><span class="hl-6">boot</span><span class="hl-1">/</span><span class="hl-6">initrd</span><span class="hl-1">.</span><span class="hl-6">img</span><span class="hl-1">-&lt;</span><span class="hl-18">kernel</span><span class="hl-1">&gt;</span><br/><span class="hl-1">├── </span><span class="hl-6">initrd</span><span class="hl-1">.</span><span class="hl-6">img</span><span class="hl-1">.</span><span class="hl-6">old</span><span class="hl-1"> -&gt; /</span><span class="hl-6">boot</span><span class="hl-1">/</span><span class="hl-6">initrd</span><span class="hl-1">.</span><span class="hl-6">img</span><span class="hl-1">-&lt;</span><span class="hl-18">kernel</span><span class="hl-1">&gt;</span><br/><span class="hl-1">├── </span><span class="hl-6">vmlinuz</span><span class="hl-1"> -&gt; /</span><span class="hl-6">boot</span><span class="hl-1">/</span><span class="hl-6">vmlinuz</span><span class="hl-1">-&lt;</span><span class="hl-18">kernel</span><span class="hl-1">&gt;</span><br/><span class="hl-1">├── </span><span class="hl-6">vmlinuz</span><span class="hl-1">.</span><span class="hl-6">old</span><span class="hl-1"> -&gt; /</span><span class="hl-6">boot</span><span class="hl-1">/</span><span class="hl-6">vmlinuz</span><span class="hl-1">-&lt;</span><span class="hl-18">kernel</span><span class="hl-1">&gt;</span><br/><span class="hl-1">├── </span><span class="hl-6">lost</span><span class="hl-1">+</span><span class="hl-6">found</span><span class="hl-1">/                 (</span><span class="hl-6">mode</span><span class="hl-1"> </span><span class="hl-8">0o700</span><span class="hl-1">, </span><span class="hl-6">ext4</span><span class="hl-1"> </span><span class="hl-6">fsck</span><span class="hl-1"> </span><span class="hl-6">dir</span><span class="hl-1">)</span><br/><span class="hl-1">│</span><br/><span class="hl-1">├── </span><span class="hl-6">boot</span><span class="hl-1">/</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">grub</span><span class="hl-1">/</span><br/><span class="hl-1">│   │   └── </span><span class="hl-6">grub</span><span class="hl-1">.</span><span class="hl-6">cfg</span><span class="hl-1">            </span><span class="hl-6">virtual</span><span class="hl-1"> </span><span class="hl-6">bootloader</span><span class="hl-1"> </span><span class="hl-6">config</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">vmlinuz</span><span class="hl-1">-&lt;</span><span class="hl-18">kernel</span><span class="hl-1">&gt;        </span><span class="hl-6">kernel</span><span class="hl-1"> </span><span class="hl-6">stub</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">initrd</span><span class="hl-1">.</span><span class="hl-6">img</span><span class="hl-1">-&lt;</span><span class="hl-18">kernel</span><span class="hl-1">&gt;     </span><span class="hl-6">initrd</span><span class="hl-1"> </span><span class="hl-6">stub</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">System</span><span class="hl-1">.</span><span class="hl-6">map</span><span class="hl-1">-&lt;</span><span class="hl-18">kernel</span><span class="hl-1">&gt;</span><br/><span class="hl-1">│   └── </span><span class="hl-6">config</span><span class="hl-1">-&lt;</span><span class="hl-18">kernel</span><span class="hl-1">&gt;</span><br/><span class="hl-1">│</span><br/><span class="hl-1">├── </span><span class="hl-6">dev</span><span class="hl-1">/</span><br/><span class="hl-1">│   ├── </span><span class="hl-4">null</span><span class="hl-1"> / </span><span class="hl-6">zero</span><span class="hl-1"> / </span><span class="hl-0">full</span><span class="hl-1">      (</span><span class="hl-8">0o666</span><span class="hl-1">)</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">random</span><span class="hl-1"> / </span><span class="hl-0">urandom</span><span class="hl-1">        (</span><span class="hl-8">0o444</span><span class="hl-1">)</span><br/><span class="hl-1">│   ├── </span><span class="hl-0">mem</span><span class="hl-1">                     (</span><span class="hl-8">0o640</span><span class="hl-1">)</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">console</span><span class="hl-1"> / </span><span class="hl-6">tty</span><span class="hl-1"> / </span><span class="hl-6">tty0</span><span class="hl-1"> / </span><span class="hl-6">tty1</span><span class="hl-1"> / </span><span class="hl-6">ttyS0</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">sda</span><span class="hl-1"> / </span><span class="hl-6">sda1</span><span class="hl-1"> / </span><span class="hl-6">sda2</span><span class="hl-1">       </span><span class="hl-6">block</span><span class="hl-1"> </span><span class="hl-6">device</span><span class="hl-1"> </span><span class="hl-6">stubs</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">loop0</span><span class="hl-1">-</span><span class="hl-6">loop7</span><span class="hl-1"> + </span><span class="hl-6">loop</span><span class="hl-1">-</span><span class="hl-6">control</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">stdin</span><span class="hl-1"> / </span><span class="hl-6">stdout</span><span class="hl-1"> / </span><span class="hl-6">stderr</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">pts</span><span class="hl-1">/</span><br/><span class="hl-1">│   └── </span><span class="hl-6">shm</span><span class="hl-1">/</span><br/><span class="hl-1">│</span><br/><span class="hl-1">├── </span><span class="hl-6">etc</span><span class="hl-1">/</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">apt</span><span class="hl-1">/</span><br/><span class="hl-1">│   │   ├── </span><span class="hl-6">sources</span><span class="hl-1">.</span><span class="hl-6">list</span><br/><span class="hl-1">│   │   ├── </span><span class="hl-6">sources</span><span class="hl-1">.</span><span class="hl-6">list</span><span class="hl-1">.</span><span class="hl-6">d</span><span class="hl-1">/</span><br/><span class="hl-1">│   │   ├── </span><span class="hl-6">trusted</span><span class="hl-1">.</span><span class="hl-6">gpg</span><span class="hl-1">.</span><span class="hl-6">d</span><span class="hl-1">/</span><br/><span class="hl-1">│   │   ├── </span><span class="hl-6">keyrings</span><span class="hl-1">/</span><br/><span class="hl-1">│   │   └── </span><span class="hl-6">apt</span><span class="hl-1">.</span><span class="hl-6">conf</span><span class="hl-1">.</span><span class="hl-6">d</span><span class="hl-1">/70</span><span class="hl-6">debconf</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">cron</span><span class="hl-1">.</span><span class="hl-6">d</span><span class="hl-1">/ + </span><span class="hl-6">cron</span><span class="hl-1">.</span><span class="hl-6">daily</span><span class="hl-1">/ + </span><span class="hl-6">cron</span><span class="hl-1">.</span><span class="hl-6">hourly</span><span class="hl-1">/ + </span><span class="hl-6">cron</span><span class="hl-1">.</span><span class="hl-6">weekly</span><span class="hl-1">/ + </span><span class="hl-6">cron</span><span class="hl-1">.</span><span class="hl-6">monthly</span><span class="hl-1">/</span><br/><span class="hl-1">│   ├── </span><span class="hl-5">default</span><span class="hl-1">/</span><span class="hl-6">locale</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">init</span><span class="hl-1">.</span><span class="hl-6">d</span><span class="hl-1">/</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">ld</span><span class="hl-1">.</span><span class="hl-6">so</span><span class="hl-1">.</span><span class="hl-6">conf</span><span class="hl-1"> + </span><span class="hl-6">ld</span><span class="hl-1">.</span><span class="hl-6">so</span><span class="hl-1">.</span><span class="hl-6">conf</span><span class="hl-1">.</span><span class="hl-6">d</span><span class="hl-1">/</span><span class="hl-6">x86_64</span><span class="hl-1">-</span><span class="hl-6">linux</span><span class="hl-1">-</span><span class="hl-6">gnu</span><span class="hl-1">.</span><span class="hl-6">conf</span><span class="hl-1"> + </span><span class="hl-6">fakeroot</span><span class="hl-1">.</span><span class="hl-6">conf</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">netplan</span><span class="hl-1">/</span><span class="hl-8">01</span><span class="hl-1">-</span><span class="hl-6">netcfg</span><span class="hl-1">.</span><span class="hl-6">yaml</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">network</span><span class="hl-1">/</span><span class="hl-6">interfaces</span><span class="hl-1">      </span><span class="hl-6">lo</span><span class="hl-1"> + </span><span class="hl-0">eth0</span><span class="hl-1"> (</span><span class="hl-7">DHCP</span><span class="hl-1">)</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">pam</span><span class="hl-1">.</span><span class="hl-6">d</span><span class="hl-1">/                  </span><span class="hl-6">common</span><span class="hl-1">-</span><span class="hl-6">auth</span><span class="hl-1">|</span><span class="hl-6">account</span><span class="hl-1">|</span><span class="hl-6">password</span><span class="hl-1">|</span><span class="hl-6">session</span><span class="hl-1"> · </span><span class="hl-6">sshd</span><span class="hl-1"> · </span><span class="hl-6">login</span><span class="hl-1"> · </span><span class="hl-6">sudo</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">security</span><span class="hl-1">/</span><span class="hl-6">limits</span><span class="hl-1">.</span><span class="hl-6">conf</span><span class="hl-1"> + </span><span class="hl-6">access</span><span class="hl-1">.</span><span class="hl-6">conf</span><br/><span class="hl-1">│   ├── </span><span class="hl-0">sudoers</span><span class="hl-1"> (</span><span class="hl-8">0o440</span><span class="hl-1">) + </span><span class="hl-6">sudoers</span><span class="hl-1">.</span><span class="hl-6">d</span><span class="hl-1">/</span><span class="hl-7">README</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">systemd</span><span class="hl-1">/</span><span class="hl-6">system</span><span class="hl-1">/ + </span><span class="hl-6">systemd</span><span class="hl-1">/</span><span class="hl-6">network</span><span class="hl-1">/ + </span><span class="hl-6">systemd</span><span class="hl-1">/</span><span class="hl-6">system</span><span class="hl-1">.</span><span class="hl-6">conf</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">debian_version</span><span class="hl-1">          </span><span class="hl-6">nyx</span><span class="hl-1">/</span><span class="hl-6">stable</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">fstab</span><span class="hl-1">                   </span><span class="hl-7">UUID</span><span class="hl-1"> </span><span class="hl-6">stubs</span><span class="hl-1"> + </span><span class="hl-6">tmpfs</span><span class="hl-1"> </span><span class="hl-6">entries</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">group</span><span class="hl-1">                   </span><span class="hl-6">synced</span><span class="hl-1"> </span><span class="hl-6">from</span><span class="hl-1"> </span><span class="hl-6">VirtualUserManager</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">hostname</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">hosts</span><span class="hl-1">                   </span><span class="hl-8">127.0</span><span class="hl-1">.</span><span class="hl-8">0.1</span><span class="hl-1"> + ::</span><span class="hl-8">1</span><span class="hl-1"> + </span><span class="hl-7">VM</span><span class="hl-1"> </span><span class="hl-6">hostname</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">issue</span><span class="hl-1"> + </span><span class="hl-6">issue</span><span class="hl-1">.</span><span class="hl-6">net</span><span class="hl-1">        </span><span class="hl-6">login</span><span class="hl-1"> </span><span class="hl-6">banner</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">locale</span><span class="hl-1">.</span><span class="hl-6">conf</span><span class="hl-1"> + </span><span class="hl-6">locale</span><span class="hl-1">.</span><span class="hl-6">gen</span><span class="hl-1"> </span><span class="hl-7">LANG</span><span class="hl-1">=</span><span class="hl-6">en_US</span><span class="hl-1">.</span><span class="hl-7">UTF</span><span class="hl-1">-</span><span class="hl-8">8</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">localtime</span><span class="hl-1"> / </span><span class="hl-6">timezone</span><span class="hl-1">    </span><span class="hl-7">UTC</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">login</span><span class="hl-1">.</span><span class="hl-6">defs</span><span class="hl-1">              </span><span class="hl-7">UID_MIN</span><span class="hl-1">=</span><span class="hl-8">1000</span><span class="hl-1"> </span><span class="hl-7">SHA512</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">lsb</span><span class="hl-1">-</span><span class="hl-6">release</span><span class="hl-1">             </span><span class="hl-6">Fortune</span><span class="hl-1"> </span><span class="hl-7">GNU</span><span class="hl-1">/</span><span class="hl-6">Linux</span><span class="hl-1"> + </span><span class="hl-6">ShellProperties</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">motd</span><span class="hl-1">                    </span><span class="hl-6">uses</span><span class="hl-1"> </span><span class="hl-6">ShellProperties</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">nsswitch</span><span class="hl-1">.</span><span class="hl-6">conf</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">os</span><span class="hl-1">-</span><span class="hl-6">release</span><span class="hl-1">              </span><span class="hl-7">NAME</span><span class="hl-1">=</span><span class="hl-2">&quot;Fortune GNU/Linux&quot;</span><span class="hl-1"> + </span><span class="hl-6">ShellProperties</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">passwd</span><span class="hl-1">                  </span><span class="hl-6">synced</span><span class="hl-1"> </span><span class="hl-6">from</span><span class="hl-1"> </span><span class="hl-6">VirtualUserManager</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">profile</span><span class="hl-1">                 </span><span class="hl-7">PATH</span><span class="hl-1"> + </span><span class="hl-7">PS1</span><span class="hl-1"> </span><span class="hl-6">defaults</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">resolv</span><span class="hl-1">.</span><span class="hl-6">conf</span><span class="hl-1">             </span><span class="hl-8">1.1</span><span class="hl-1">.</span><span class="hl-8">1.1</span><span class="hl-1"> + </span><span class="hl-8">8.8</span><span class="hl-1">.</span><span class="hl-8">8.8</span><br/><span class="hl-1">│   ├── </span><span class="hl-0">shadow</span><span class="hl-1">                  (</span><span class="hl-6">mode</span><span class="hl-1"> </span><span class="hl-8">0o640</span><span class="hl-1">, </span><span class="hl-6">fake</span><span class="hl-1"> </span><span class="hl-6">hashes</span><span class="hl-1">)</span><br/><span class="hl-1">│   └── </span><span class="hl-6">shells</span><span class="hl-1">                  /</span><span class="hl-6">bin</span><span class="hl-1">/</span><span class="hl-6">sh</span><span class="hl-1"> /</span><span class="hl-6">bin</span><span class="hl-1">/</span><span class="hl-6">bash</span><span class="hl-1"> /</span><span class="hl-6">usr</span><span class="hl-1">/</span><span class="hl-6">bin</span><span class="hl-1">/</span><span class="hl-6">bash</span><br/><span class="hl-1">│</span><br/><span class="hl-1">├── </span><span class="hl-6">home</span><span class="hl-1">/</span><br/><span class="hl-1">│   └── &lt;</span><span class="hl-6">user</span><span class="hl-1">&gt;/</span><br/><span class="hl-1">│       └── </span><span class="hl-7">README</span><span class="hl-1">.</span><span class="hl-6">txt</span><span class="hl-1">          </span><span class="hl-6">created</span><span class="hl-1"> </span><span class="hl-6">on</span><span class="hl-1"> </span><span class="hl-6">first</span><span class="hl-1"> </span><span class="hl-6">login</span><br/><span class="hl-1">├── </span><span class="hl-6">media</span><span class="hl-1">/</span><br/><span class="hl-1">├── </span><span class="hl-6">mnt</span><span class="hl-1">/</span><br/><span class="hl-1">├── </span><span class="hl-6">opt</span><span class="hl-1">/</span><br/><span class="hl-1">│   └── </span><span class="hl-6">rclone</span><span class="hl-1">/</span><br/><span class="hl-1">├── </span><span class="hl-6">srv</span><span class="hl-1">/</span><br/><span class="hl-1">│</span><br/><span class="hl-1">├── </span><span class="hl-6">proc</span><span class="hl-1">/                       </span><span class="hl-6">kernel</span><span class="hl-1"> </span><span class="hl-6">simulation</span><span class="hl-1"> </span><span class="hl-0">engine</span><span class="hl-1"> (</span><span class="hl-6">refreshed</span><span class="hl-1"> </span><span class="hl-6">on</span><span class="hl-1"> </span><span class="hl-6">demand</span><span class="hl-1">)</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">boot</span><span class="hl-1">/</span><span class="hl-6">log</span><span class="hl-1"> + </span><span class="hl-6">version</span><span class="hl-1">      </span><span class="hl-6">kernel</span><span class="hl-1"> </span><span class="hl-6">boot</span><span class="hl-1"> </span><span class="hl-6">sequence</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">net</span><span class="hl-1">/</span><span class="hl-6">dev</span><span class="hl-1"> + </span><span class="hl-6">if_inet6</span><span class="hl-1"> + </span><span class="hl-6">tcp</span><span class="hl-1"> + </span><span class="hl-6">tcp6</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">sys</span><span class="hl-1">/</span><span class="hl-6">kernel</span><span class="hl-1">/             </span><span class="hl-6">hostname</span><span class="hl-1">, </span><span class="hl-6">ostype</span><span class="hl-1">, </span><span class="hl-6">osrelease</span><span class="hl-1">, </span><span class="hl-6">pid_max</span><span class="hl-1">,</span><br/><span class="hl-1">│   │                           </span><span class="hl-6">threads</span><span class="hl-1">-</span><span class="hl-6">max</span><span class="hl-1">, </span><span class="hl-6">randomize_va_space</span><span class="hl-1">, </span><span class="hl-6">dmesg_restrict</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">sys</span><span class="hl-1">/</span><span class="hl-6">net</span><span class="hl-1">/</span><span class="hl-6">ipv4</span><span class="hl-1">/</span><span class="hl-6">ip_forward</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">sys</span><span class="hl-1">/</span><span class="hl-6">vm</span><span class="hl-1">/</span><span class="hl-6">swappiness</span><span class="hl-1"> + </span><span class="hl-6">overcommit_memory</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">self</span><span class="hl-1">/</span><span class="hl-6">mounts</span><span class="hl-1">             </span><span class="hl-6">mirrors</span><span class="hl-1"> </span><span class="hl-6">most</span><span class="hl-1"> </span><span class="hl-6">recent</span><span class="hl-1"> </span><span class="hl-6">session</span><span class="hl-2">&#39;s /proc/&lt;pid&gt;</span><span class="hl-19">/</span><br/><span class="hl-1">│   ├── </span><span class="hl-8">1</span><span class="hl-1">/                      </span><span class="hl-0">init</span><span class="hl-1"> (</span><span class="hl-6">cmdline</span><span class="hl-1">, </span><span class="hl-6">comm</span><span class="hl-1">, </span><span class="hl-6">stat</span><span class="hl-1">, </span><span class="hl-6">status</span><span class="hl-1">, </span><span class="hl-6">environ</span><span class="hl-1">, </span><span class="hl-6">fd</span><span class="hl-1">/, </span><span class="hl-6">fdinfo</span><span class="hl-1">/)</span><br/><span class="hl-1">│   ├── &lt;</span><span class="hl-6">pid</span><span class="hl-1">&gt;/                  </span><span class="hl-6">one</span><span class="hl-1"> </span><span class="hl-6">subtree</span><span class="hl-1"> </span><span class="hl-6">per</span><span class="hl-1"> </span><span class="hl-6">active</span><span class="hl-1"> </span><span class="hl-0">session</span><span class="hl-1"> (</span><span class="hl-7">TTY</span><span class="hl-1">-</span><span class="hl-6">derived</span><span class="hl-1"> </span><span class="hl-7">PID</span><span class="hl-1">)</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">cmdline</span><span class="hl-1">                 </span><span class="hl-6">kernel</span><span class="hl-1"> </span><span class="hl-6">boot</span><span class="hl-1"> </span><span class="hl-6">args</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">cpuinfo</span><span class="hl-1">                 </span><span class="hl-6">real</span><span class="hl-1"> </span><span class="hl-6">host</span><span class="hl-1"> </span><span class="hl-7">CPU</span><span class="hl-1"> </span><span class="hl-6">passthrough</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">filesystems</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">hostname</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">loadavg</span><span class="hl-1">                 </span><span class="hl-6">computed</span><span class="hl-1"> </span><span class="hl-6">dynamically</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">meminfo</span><span class="hl-1">                 </span><span class="hl-6">real</span><span class="hl-1"> </span><span class="hl-6">host</span><span class="hl-1"> </span><span class="hl-0">memory</span><span class="hl-1"> (</span><span class="hl-6">Total</span><span class="hl-1">/</span><span class="hl-6">Free</span><span class="hl-1">/</span><span class="hl-6">Available</span><span class="hl-1">/</span><span class="hl-6">Buffers</span><span class="hl-1">/</span><span class="hl-6">Cached</span><span class="hl-1">/</span><span class="hl-6">Swap</span><span class="hl-1">)</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">mounts</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">partitions</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">swaps</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">uptime</span><span class="hl-1">                  </span><span class="hl-6">computed</span><span class="hl-1"> </span><span class="hl-6">from</span><span class="hl-1"> </span><span class="hl-6">shellStartTime</span><br/><span class="hl-1">│   └── </span><span class="hl-6">version</span><span class="hl-1">                 </span><span class="hl-0">Linux</span><span class="hl-1"> &lt;</span><span class="hl-18">kernel</span><span class="hl-1">&gt; (</span><span class="hl-6">fortune</span><span class="hl-1">@</span><span class="hl-6">build</span><span class="hl-1">)</span><br/><span class="hl-1">│</span><br/><span class="hl-1">├── </span><span class="hl-6">root</span><span class="hl-1">/                       (</span><span class="hl-6">mode</span><span class="hl-1"> </span><span class="hl-8">0o700</span><span class="hl-1">)</span><br/><span class="hl-1">│   ├── .</span><span class="hl-6">ssh</span><span class="hl-1">/                   (</span><span class="hl-6">mode</span><span class="hl-1"> </span><span class="hl-8">0o700</span><span class="hl-1">)</span><br/><span class="hl-1">│   ├── .</span><span class="hl-6">config</span><span class="hl-1">/</span><span class="hl-6">pip</span><span class="hl-1">/</span><span class="hl-6">pip</span><span class="hl-1">.</span><span class="hl-6">conf</span><span class="hl-1">    </span><span class="hl-5">break</span><span class="hl-1">-</span><span class="hl-6">system</span><span class="hl-1">-</span><span class="hl-6">packages</span><span class="hl-1"> = </span><span class="hl-4">true</span><br/><span class="hl-1">│   ├── .</span><span class="hl-6">local</span><span class="hl-1">/</span><span class="hl-6">share</span><span class="hl-1">/</span><br/><span class="hl-1">│   ├── .</span><span class="hl-6">bash_logout</span><br/><span class="hl-1">│   ├── .</span><span class="hl-6">bashrc</span><span class="hl-1">                 </span><span class="hl-6">colored</span><span class="hl-1"> </span><span class="hl-7">PS1</span><span class="hl-1">, </span><span class="hl-7">PATH</span><span class="hl-1">, </span><span class="hl-6">ll</span><span class="hl-1">/</span><span class="hl-6">la</span><span class="hl-1">/</span><span class="hl-6">l</span><span class="hl-1"> </span><span class="hl-6">aliases</span><br/><span class="hl-1">│   └── .</span><span class="hl-6">profile</span><br/><span class="hl-1">│</span><br/><span class="hl-1">├── </span><span class="hl-6">run</span><span class="hl-1">/                        (</span><span class="hl-6">systemd</span><span class="hl-1"> </span><span class="hl-6">tmpfs</span><span class="hl-1"> </span><span class="hl-6">runtime</span><span class="hl-1">)</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">lock</span><span class="hl-1">/</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">systemd</span><span class="hl-1">/</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">user</span><span class="hl-1">/</span><br/><span class="hl-1">│   └── </span><span class="hl-6">utmp</span><br/><span class="hl-1">│</span><br/><span class="hl-1">├── </span><span class="hl-6">sys</span><span class="hl-1">/                        </span><span class="hl-6">sysfs</span><span class="hl-1"> </span><span class="hl-6">graph</span><span class="hl-1"> — </span><span class="hl-6">deterministic</span><span class="hl-1">, </span><span class="hl-6">seeded</span><span class="hl-1"> </span><span class="hl-6">from</span><span class="hl-1"> </span><span class="hl-0">hostname</span><span class="hl-1"> (</span><span class="hl-6">fnv1a</span><span class="hl-1">)</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">class</span><span class="hl-1">/</span><span class="hl-6">net</span><span class="hl-1">/</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">devices</span><span class="hl-1">/</span><span class="hl-6">virtual</span><span class="hl-1">/</span><span class="hl-6">dmi</span><span class="hl-1">/</span><span class="hl-6">id</span><span class="hl-1">/</span><br/><span class="hl-1">│   │   ├── </span><span class="hl-6">bios_vendor</span><span class="hl-1"> / </span><span class="hl-6">bios_version</span><span class="hl-1"> / </span><span class="hl-6">bios_date</span><br/><span class="hl-1">│   │   ├── </span><span class="hl-6">sys_vendor</span><span class="hl-1"> / </span><span class="hl-6">product_name</span><span class="hl-1"> / </span><span class="hl-6">product_family</span><span class="hl-1"> / </span><span class="hl-6">product_version</span><br/><span class="hl-1">│   │   ├── </span><span class="hl-6">product_uuid</span><span class="hl-1"> / </span><span class="hl-6">product_serial</span><br/><span class="hl-1">│   │   ├── </span><span class="hl-6">chassis_type</span><span class="hl-1"> / </span><span class="hl-6">chassis_vendor</span><span class="hl-1"> / </span><span class="hl-6">chassis_version</span><br/><span class="hl-1">│   │   ├── </span><span class="hl-6">board_name</span><br/><span class="hl-1">│   │   └── </span><span class="hl-6">modalias</span><br/><span class="hl-1">│   └── </span><span class="hl-6">kernel</span><span class="hl-1">/</span><br/><span class="hl-1">│       ├── </span><span class="hl-6">hostname</span><br/><span class="hl-1">│       ├── </span><span class="hl-6">osrelease</span><br/><span class="hl-1">│       └── </span><span class="hl-6">ostype</span><br/><span class="hl-1">│</span><br/><span class="hl-1">├── </span><span class="hl-6">tmp</span><span class="hl-1">/                        (</span><span class="hl-6">mode</span><span class="hl-1"> </span><span class="hl-8">0o1777</span><span class="hl-1">, </span><span class="hl-6">sticky</span><span class="hl-1">)</span><br/><span class="hl-1">│   └── </span><span class="hl-6">node</span><span class="hl-1">-</span><span class="hl-6">compile</span><span class="hl-1">-</span><span class="hl-6">cache</span><span class="hl-1">/</span><br/><span class="hl-1">│</span><br/><span class="hl-1">├── </span><span class="hl-6">usr</span><span class="hl-1">/</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">bin</span><span class="hl-1">/                    </span><span class="hl-6">stubs</span><span class="hl-1"> </span><span class="hl-6">for</span><span class="hl-1"> </span><span class="hl-6">all</span><span class="hl-1"> </span><span class="hl-6">built</span><span class="hl-1">-</span><span class="hl-4">in</span><span class="hl-1"> </span><span class="hl-0">commands</span><span class="hl-1"> (</span><span class="hl-6">exec</span><span class="hl-1"> </span><span class="hl-6">builtin</span><span class="hl-1"> &lt;</span><span class="hl-6">name</span><span class="hl-1">&gt;)</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">sbin</span><span class="hl-1">/</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">lib</span><span class="hl-1">/</span><br/><span class="hl-1">│   │   ├── </span><span class="hl-6">x86_64</span><span class="hl-1">-</span><span class="hl-6">linux</span><span class="hl-1">-</span><span class="hl-6">gnu</span><span class="hl-1">/</span><br/><span class="hl-1">│   │   ├── </span><span class="hl-6">python3</span><span class="hl-1">/</span><span class="hl-6">dist</span><span class="hl-1">-</span><span class="hl-6">packages</span><span class="hl-1">/</span><br/><span class="hl-1">│   │   ├── </span><span class="hl-6">python3</span><span class="hl-1">.</span><span class="hl-8">12</span><span class="hl-1">/</span><br/><span class="hl-1">│   │   └── </span><span class="hl-6">jvm</span><span class="hl-1">/</span><span class="hl-6">java</span><span class="hl-1">-</span><span class="hl-8">21</span><span class="hl-1">-</span><span class="hl-6">openjdk</span><span class="hl-1">-</span><span class="hl-6">amd64</span><span class="hl-1">/</span><br/><span class="hl-1">│   ├── </span><span class="hl-6">local</span><span class="hl-1">/</span><span class="hl-6">bin</span><span class="hl-1">|</span><span class="hl-6">lib</span><span class="hl-1">|</span><span class="hl-6">share</span><span class="hl-1">|</span><span class="hl-6">include</span><span class="hl-1">|</span><span class="hl-6">sbin</span><span class="hl-1">/</span><br/><span class="hl-1">│   └── </span><span class="hl-6">share</span><span class="hl-1">/</span><br/><span class="hl-1">│       ├── </span><span class="hl-6">doc</span><span class="hl-1">/</span><br/><span class="hl-1">│       ├── </span><span class="hl-6">man</span><span class="hl-1">/</span><span class="hl-6">man1</span><span class="hl-1">|</span><span class="hl-6">man5</span><span class="hl-1">|</span><span class="hl-6">man8</span><span class="hl-1">/</span><br/><span class="hl-1">│       ├── </span><span class="hl-6">ca</span><span class="hl-1">-</span><span class="hl-6">certificates</span><span class="hl-1">/</span><br/><span class="hl-1">│       ├── </span><span class="hl-6">common</span><span class="hl-1">-</span><span class="hl-6">licenses</span><span class="hl-1">/</span><br/><span class="hl-1">│       └── </span><span class="hl-6">zoneinfo</span><span class="hl-1">/</span><br/><span class="hl-1">│</span><br/><span class="hl-1">└── </span><span class="hl-4">var</span><span class="hl-1">/</span><br/><span class="hl-1">    ├── </span><span class="hl-6">cache</span><span class="hl-1">/</span><br/><span class="hl-1">    │   ├── </span><span class="hl-6">apt</span><span class="hl-1">/</span><span class="hl-6">archives</span><span class="hl-1">/</span><span class="hl-6">partial</span><span class="hl-1">/</span><br/><span class="hl-1">    │   ├── </span><span class="hl-6">debconf</span><span class="hl-1">/</span><br/><span class="hl-1">    │   ├── </span><span class="hl-6">fontconfig</span><span class="hl-1">/</span><br/><span class="hl-1">    │   ├── </span><span class="hl-6">ldconfig</span><span class="hl-1">/</span><br/><span class="hl-1">    │   └── </span><span class="hl-6">PackageKit</span><span class="hl-1">/</span><br/><span class="hl-1">    ├── </span><span class="hl-6">lib</span><span class="hl-1">/</span><br/><span class="hl-1">    │   ├── </span><span class="hl-6">apt</span><span class="hl-1">/</span><span class="hl-6">lists</span><span class="hl-1">/</span><span class="hl-6">partial</span><span class="hl-1">/</span><br/><span class="hl-1">    │   ├── </span><span class="hl-6">dpkg</span><span class="hl-1">/</span><br/><span class="hl-1">    │   │   ├── </span><span class="hl-6">info</span><span class="hl-1">/</span><br/><span class="hl-1">    │   │   ├── </span><span class="hl-6">updates</span><span class="hl-1">/</span><br/><span class="hl-1">    │   │   ├── </span><span class="hl-6">alternatives</span><span class="hl-1">/</span><br/><span class="hl-1">    │   │   ├── </span><span class="hl-6">available</span><br/><span class="hl-1">    │   │   └── </span><span class="hl-6">status</span><span class="hl-1">          </span><span class="hl-6">managed</span><span class="hl-1"> </span><span class="hl-6">by</span><span class="hl-1"> </span><span class="hl-6">VirtualPackageManager</span><br/><span class="hl-1">    │   ├── </span><span class="hl-6">misc</span><span class="hl-1">/</span><br/><span class="hl-1">    │   └── </span><span class="hl-6">systemd</span><span class="hl-1">/</span><br/><span class="hl-1">    ├── </span><span class="hl-6">log</span><span class="hl-1">/</span><br/><span class="hl-1">    │   ├── </span><span class="hl-6">apt</span><span class="hl-1">/</span><span class="hl-6">history</span><span class="hl-1">.</span><span class="hl-6">log</span><span class="hl-1"> + </span><span class="hl-6">term</span><span class="hl-1">.</span><span class="hl-6">log</span><br/><span class="hl-1">    │   ├── </span><span class="hl-6">auth</span><span class="hl-1">.</span><span class="hl-6">log</span><br/><span class="hl-1">    │   ├── </span><span class="hl-6">dpkg</span><span class="hl-1">.</span><span class="hl-6">log</span><br/><span class="hl-1">    │   ├── </span><span class="hl-6">journal</span><span class="hl-1">/</span><br/><span class="hl-1">    │   ├── </span><span class="hl-6">kern</span><span class="hl-1">.</span><span class="hl-6">log</span><br/><span class="hl-1">    │   ├── </span><span class="hl-6">private</span><span class="hl-1">/</span><br/><span class="hl-1">    │   └── </span><span class="hl-6">syslog</span><br/><span class="hl-1">    ├── </span><span class="hl-6">run</span><span class="hl-1"> -&gt; /</span><span class="hl-0">run</span><span class="hl-1">              (</span><span class="hl-6">legacy</span><span class="hl-1"> </span><span class="hl-6">symlink</span><span class="hl-1">)</span><br/><span class="hl-1">    ├── </span><span class="hl-6">spool</span><span class="hl-1">/</span><span class="hl-6">cron</span><span class="hl-1">/</span><br/><span class="hl-1">    └── </span><span class="hl-6">tmp</span><span class="hl-1">/</span>
+</code><button>Copy</button></pre>
+
+<pre><code class="typescript"><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-0">refreshProcFs</span><span class="hl-1">();   </span><span class="hl-3">// refresh /proc/* with current system state</span><br/><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-0">syncPasswd</span><span class="hl-1">();      </span><span class="hl-3">// sync /etc/passwd|group|shadow from user manager</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="vfs-path-resolution" class="tsd-anchor-link">VFS PATH Resolution<a href="#vfs-path-resolution" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>When a command is not a built-in, the shell searches <code>$PATH</code> in the VFS — binaries installed by <code>apt</code> become immediately accessible.</p>
+<ul>
+<li><code>/sbin</code> and <code>/usr/sbin</code> are excluded from <code>$PATH</code> for non-root users.</li>
+<li>Stubs containing <code>exec builtin &lt;name&gt;</code> delegate to the named built-in TS command.</li>
+</ul>
+<p><strong>Package-gated commands</strong> (require <code>apt install</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Package</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>node</code></td>
+<td><code>nodejs</code></td>
+</tr>
+<tr>
+<td><code>python3</code> / <code>python</code></td>
+<td><code>python3</code></td>
+</tr>
+<tr>
+<td><code>npm</code> / <code>npx</code></td>
+<td><code>npm</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="built-in-package-registry-25-packages" class="tsd-anchor-link">Built-in Package Registry (25 packages)<a href="#built-in-package-registry-25-packages" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Version</th>
+<th>Section</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>vim</code></td>
+<td>2:9.0.1378-2</td>
+<td>editors</td>
+</tr>
+<tr>
+<td><code>git</code></td>
+<td>1:2.39.2-1</td>
+<td>vcs</td>
+</tr>
+<tr>
+<td><code>python3</code></td>
+<td>3.11.2-1</td>
+<td>python</td>
+</tr>
+<tr>
+<td><code>nodejs</code></td>
+<td>18.19.0</td>
+<td>javascript</td>
+</tr>
+<tr>
+<td><code>npm</code></td>
+<td>9.2.0</td>
+<td>javascript</td>
+</tr>
+<tr>
+<td><code>curl</code></td>
+<td>7.88.1-10</td>
+<td>web</td>
+</tr>
+<tr>
+<td><code>wget</code></td>
+<td>1.21.3-1</td>
+<td>web</td>
+</tr>
+<tr>
+<td><code>htop</code></td>
+<td>3.2.2-2</td>
+<td>utils</td>
+</tr>
+<tr>
+<td><code>openssh-client</code></td>
+<td>1:9.2p1-2</td>
+<td>net</td>
+</tr>
+<tr>
+<td><code>openssh-server</code></td>
+<td>1:9.2p1-2</td>
+<td>net</td>
+</tr>
+<tr>
+<td><code>net-tools</code></td>
+<td>2.10-0.1</td>
+<td>net</td>
+</tr>
+<tr>
+<td><code>iputils-ping</code></td>
+<td>3:20221126-1</td>
+<td>net</td>
+</tr>
+<tr>
+<td><code>jq</code></td>
+<td>1.6-2.1</td>
+<td>utils</td>
+</tr>
+<tr>
+<td><code>build-essential</code></td>
+<td>12.9</td>
+<td>devel</td>
+</tr>
+<tr>
+<td><code>gcc</code></td>
+<td>4:12.2.0-3</td>
+<td>devel</td>
+</tr>
+<tr>
+<td><code>g++</code></td>
+<td>4:12.2.0-3</td>
+<td>devel</td>
+</tr>
+<tr>
+<td><code>make</code></td>
+<td>4.3-4.1</td>
+<td>devel</td>
+</tr>
+<tr>
+<td><code>less</code></td>
+<td>590-2</td>
+<td>text</td>
+</tr>
+<tr>
+<td><code>unzip</code></td>
+<td>6.0-28</td>
+<td>utils</td>
+</tr>
+<tr>
+<td><code>rsync</code></td>
+<td>3.2.7-1</td>
+<td>net</td>
+</tr>
+<tr>
+<td><code>tmux</code></td>
+<td>3.3a-3</td>
+<td>utils</td>
+</tr>
+<tr>
+<td><code>tree</code></td>
+<td>2.1.0-1</td>
+<td>utils</td>
+</tr>
+<tr>
+<td><code>ca-certificates</code></td>
+<td>20230311</td>
+<td>misc</td>
+</tr>
+<tr>
+<td><code>sudo</code></td>
+<td>1.9.13p3-1</td>
+<td>admin</td>
+</tr>
+<tr>
+<td><code>systemd</code></td>
+<td>252.22-1</td>
+<td>admin</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr>
+<details>
+<summary><strong>Configuration</strong></summary>
+<h3 id="environment-variables" class="tsd-anchor-link">Environment Variables<a href="#environment-variables" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SSH_MIMIC_FAST_PASSWORD_HASH</code></td>
+<td><code>&quot;&quot;</code></td>
+<td>Use SHA-256 instead of scrypt (dev only). Set to <code>1</code> or <code>true</code>.</td>
+</tr>
+<tr>
+<td><code>SSH_MIMIC_AUTO_SUDO_NEW_USERS</code></td>
+<td><code>&quot;true&quot;</code></td>
+<td>Auto-grant sudo to new users. Set to <code>0</code>, <code>false</code>, <code>no</code>, or <code>off</code> to disable.</td>
+</tr>
+<tr>
+<td><code>DEV_MODE</code></td>
+<td><code>&quot;&quot;</code></td>
+<td>Enable performance logging.</td>
+</tr>
+<tr>
+<td><code>RENDER_PERF</code></td>
+<td><code>&quot;&quot;</code></td>
+<td>Enable render performance logging.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="constructor-options" class="tsd-anchor-link">Constructor Options<a href="#constructor-options" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualShell</span><span class="hl-1">(</span><span class="hl-6">hostname</span><span class="hl-1">, </span><span class="hl-6">properties</span><span class="hl-1">?, </span><span class="hl-6">vfsOptions</span><span class="hl-1">?)</span><br/><span class="hl-3">// vfsOptions: { mode: &quot;memory&quot;|&quot;fs&quot;, snapshotPath?: string }</span><br/><br/><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualSshServer</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-6">port</span><span class="hl-1">, hostname?,</span><br/><span class="hl-1">  shell?,</span><br/><span class="hl-1">  maxAuthAttempts?,   </span><span class="hl-3">// default: 5</span><br/><span class="hl-1">  lockoutDurationMs?, </span><span class="hl-3">// default: 60_000</span><br/><span class="hl-1">})</span><br/><br/><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualSftpServer</span><span class="hl-1">({ </span><span class="hl-6">port</span><span class="hl-1">, hostname?, shell? })</span><br/><span class="hl-3">// or: { port, vfs, users } without a shell instance</span>
+</code><button type="button">Copy</button></pre>
+
+</details>
+<hr>
+<details>
+<summary><strong>Performance &amp; Scalability</strong></summary>
+<pre><code class="bash"><span class="hl-0">bun</span><span class="hl-1"> </span><span class="hl-2">./benchmark-virtualshell.ts</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Reports shell initialization time, command execution time, and RSS memory by concurrency. Designed to scale to <strong>1000+ parallel environments</strong>.</p>
+<ul>
+<li>SSH server is event-driven — handles many concurrent connections.</li>
+<li><code>SshClient</code> is sequential per instance — create multiple for parallel operations.</li>
+<li>Each <code>VirtualShell</code> is fully independent.</li>
+</ul>
+<p><strong>Tips:</strong></p>
+<ul>
+<li>Use <code>SSH_MIMIC_FAST_PASSWORD_HASH=1</code> in tests to skip scrypt overhead.</li>
+<li>Reuse long-lived shell instances for low-latency command bursts.</li>
+</ul>
+</details>
+<hr>
+<details>
+<summary><strong>Types &amp; TypeScript</strong></summary>
+<pre><code class="typescript"><span class="hl-5">import</span><span class="hl-1"> </span><span class="hl-5">type</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-6">VfsOptions</span><span class="hl-1">, </span><span class="hl-6">VfsPersistenceMode</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-6">VfsSnapshot</span><span class="hl-1">, </span><span class="hl-6">VfsNodeStats</span><span class="hl-1">, </span><span class="hl-6">VfsFileNode</span><span class="hl-1">, </span><span class="hl-6">VfsDirectoryNode</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-6">WriteFileOptions</span><span class="hl-1">, </span><span class="hl-6">RemoveOptions</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-6">CommandContext</span><span class="hl-1">, </span><span class="hl-6">CommandResult</span><span class="hl-1">, </span><span class="hl-6">CommandMode</span><span class="hl-1">, </span><span class="hl-6">CommandOutcome</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-6">ShellModule</span><span class="hl-1">, </span><span class="hl-6">ShellEnv</span><span class="hl-1">, </span><span class="hl-6">SudoChallenge</span><span class="hl-1">, </span><span class="hl-6">NanoEditorSession</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-6">AuditLogEntry</span><span class="hl-1">, </span><span class="hl-6">HoneyPotStats</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-6">ShellStream</span><span class="hl-1">, </span><span class="hl-6">ExecStream</span><span class="hl-1">,</span><br/><span class="hl-1">} </span><span class="hl-5">from</span><span class="hl-1"> </span><span class="hl-2">&quot;typescript-virtual-container&quot;</span><span class="hl-1">;</span>
+</code><button type="button">Copy</button></pre>
+
+</details>
+<hr>
+<h2 id="troubleshooting" class="tsd-anchor-link">Troubleshooting<a href="#troubleshooting" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p><strong><code>Error: listen EADDRINUSE :::2222</code></strong> — port already in use. Change port or stop existing process.</p>
+<p><strong>Auth always fails</strong> — root has no password by default. Verify with <code>users.verifyPassword(username, password)</code>. Check lockout: <code>ssh.clearLockout(ip)</code>.</p>
+<p><strong><code>Command 'xyz' not found</code> (exit 127)</strong> — not a registered built-in and not found in VFS <code>$PATH</code>. Register with <code>shell.addCommand()</code> or <code>apt install</code> the package.</p>
+<p><strong>Shell scripting — <code>if</code> block not working</strong> — ensure each keyword is on its own line or separated by <code>;</code>.</p>
+<p><strong><code>snapshotPath</code> required error</strong> — set <code>mode: &quot;fs&quot;</code> without <code>snapshotPath</code>: <code>new VirtualFileSystem({ mode: &quot;fs&quot;, snapshotPath: &quot;./data&quot; })</code>.</p>
+<p><strong>Variables not persisting between <code>exec()</code> calls</strong> — <code>SshClient</code> shares one <code>ShellEnv</code> per shell instance. <code>export</code> in one call is visible in the next. For isolation, create a new <code>SshClient</code>.</p>
+<p><strong><code>Too many levels of symbolic links</code></strong> — symlink chain exceeds 8 hops. Check for circular links or increase <code>maxDepth</code> in <code>resolveSymlink()</code>.</p>
+<hr>
+<h2 id="faq" class="tsd-anchor-link">FAQ<a href="#faq" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p><strong>Is this a real container runtime?</strong>
+No — it emulates SSH sessions, users, and filesystem behavior in a virtual runtime. Ideal for testing, simulations, and automation where full OS isolation is not required.</p>
+<p><strong>Can I use this in production?</strong>
+Yes for automation contexts (sandboxed command runners, test harnesses, training environments, honeypots). It is not a security boundary like a real container/VM.</p>
+<p><strong>Does the VFS touch the host filesystem?</strong>
+In <code>&quot;memory&quot;</code> mode: no. In <code>&quot;fs&quot;</code> mode: one binary file (<code>vfs-snapshot.vfsb</code>) inside <code>snapshotPath</code> only.</p>
+<p><strong>Can I run multiple isolated shells?</strong>
+Yes. Each <code>new VirtualShell(...)</code> is completely independent (separate VFS, users, env state).</p>
+<p><strong>Does the shell support <code>&amp;&amp;</code>, <code>||</code>, and <code>;</code>?</strong>
+Yes — plus pipes, redirections, <code>if</code>/<code>for</code>/<code>while</code>/<code>case</code>, and function definitions.</p>
+<p><strong>Can I use this for honeypot deployments?</strong>
+Yes — use <code>HoneyPot.attach()</code> to capture all activity, configure <code>maxAuthAttempts</code> to throttle scanners, export on shutdown.</p>
+<p><strong>Is SFTP fully supported?</strong>
+Core operations are implemented. Extended attributes and symlinks return <code>OP_UNSUPPORTED</code>.</p>
+<hr>
+<h2 id="contributing" class="tsd-anchor-link">Contributing<a href="#contributing" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ol>
+<li>Fork and create a feature branch: <code>git checkout -b feat/my-feature</code></li>
+<li>Add changes and tests.</li>
+<li>Format and lint: <code>bun format &amp;&amp; bun check</code></li>
+<li>Push and open a PR.</li>
+</ol>
+<p><strong>Standards:</strong> Biome formatting · full TypeScript (no <code>any</code>) · ✅ <strong>JSDoc on all built-in commands</strong> · async/await · <code>description</code> and <code>category</code> fields on new <code>ShellModule</code> · unit tests (prioritized for core features; advanced tests planned).</p>
+<hr>
+<h2 id="security" class="tsd-anchor-link">Security<a href="#security" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li>Passwords hashed with scrypt (N=32768, r=8, p=1) with random per-user salt.</li>
+<li>Root account always exists and cannot be deleted.</li>
+<li>Per-IP rate limiting prevents automated brute-force on the SSH server.</li>
+<li>This project does <strong>not</strong> provide kernel-level or process-level isolation.</li>
+<li>Do <strong>not</strong> expose to the public internet without understanding the risks.</li>
+</ul>
+<p>Vulnerability reports: contact maintainers privately before public disclosure — see <code>SECURITY.md</code>.</p>
+<hr>
+<h2 id="compatibility" class="tsd-anchor-link">Compatibility<a href="#compatibility" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><strong>Node.js</strong>: <code>&gt;=18</code> · <strong>Bun</strong>: Supported · <strong>TypeScript</strong>: <code>&gt;=5.0</code></li>
+<li><strong>OS</strong>: Linux, macOS, Windows (via Node/Bun)</li>
+</ul>
+<hr>
+<h2 id="license" class="tsd-anchor-link">License<a href="#license" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>MIT — see <a href="media/LICENSE">LICENSE</a>.</p>
+<hr>
+<h2 id="roadmap" class="tsd-anchor-link">Roadmap<a href="#roadmap" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Open:</p>
+<ul>
+<li>[ ] WebSocket-based remote shell client (experimental)</li>
+</ul>
+<details>
+<summary>Completed</summary>
+<ul>
+<li>[x] Custom command plugin API · per-user quotas · SSH public-key auth · per-IP rate limiting</li>
+<li>[x] Pure in-memory VFS · symlinks · binary snapshot format (VFSB, ~27% smaller than JSON+base64)</li>
+<li>[x] Linux rootfs on boot — <code>/etc</code>, <code>/proc</code>, <code>/sys</code>, <code>/dev</code>, <code>/usr</code>, <code>/var</code></li>
+<li>[x] Virtual package manager — <code>apt</code>/<code>dpkg</code>, 25 packages, VFS file writes</li>
+<li>[x] 118 built-in commands across 11 categories (added <code>zip</code>, <code>unzip</code>, <code>bzip2</code>, <code>bunzip2</code>, <code>lsof</code>, <code>strace</code>, <code>perl</code>, <code>w</code>, <code>ip</code>, <code>dmesg</code>, <code>last</code>, <code>basename</code>, <code>dirname</code>, <code>file</code>, <code>tput</code>, <code>stty</code>, <code>yes</code>, <code>fortune</code>, <code>cowsay</code>, <code>cowthink</code>, <code>cmatrix</code>, <code>sl</code>, <code>bc</code>, <code>jobs</code>, <code>bg</code>, <code>fg</code>)</li>
+<li>[x] Real shell interpreter — <code>if</code>/<code>for</code>/<code>while</code>/<code>until</code>/<code>case</code>/functions, arrays <code>arr=(...)</code>, <code>$(cmd)</code>, <code>$((expr))</code>, <code>${#VAR}</code>, <code>${var#pfx}</code> <code>${var##pfx}</code> <code>${var%sfx}</code> <code>${var%%sfx}</code> <code>${var/p/r}</code> <code>${var//p/r}</code> <code>${var:off:len}</code> <code>${arr[@]}</code>, <code>{a,b,c}</code> brace expansion, <code>{1..N}</code> ranges, <code>*.glob</code> expansion, <code>!!</code> history expansion, <code>\</code> line continuation, <code>2&gt;/dev/null</code> stderr redirect, <code>2&gt;&amp;1</code>, <code>(( x++ ))</code>, heredoc <code>&lt;&lt; EOF</code>, <code>set -e</code>/<code>set -x</code>, <code>$RANDOM</code>/<code>$LINENO</code></li>
+<li>[x] <code>curl</code>/<code>wget</code> as pure <code>fetch()</code> · VFS PATH resolution · <code>/sbin</code> root-only</li>
+<li>[x] <code>/proc/self</code> and <code>/proc/&lt;pid&gt;</code> per-session entries</li>
+<li>[x] Snapshot diff tooling — <code>diffSnapshots</code>, <code>formatDiff</code>, <code>assertDiff</code></li>
+<li>[x] <code>node</code>/<code>python3</code>/<code>npm</code>/<code>npx</code> — package-gated virtual REPL stubs</li>
+</ul>
+<!-- BUILD:changelog -->
+<ul>
+<li>[x] Web shell bundles (<code>fortune-nyx-v1.5.8-web.min.js</code>) — fully browser-native with IndexedDB VFS</li>
+<li>[x] Self-standalone CLI (<code>fortune-nyx-v1.5.8-directbash-k6.1.0.mjs</code>) — single-file interactive shell, per-user history, tab completion</li>
+</ul>
+<!-- /BUILD:changelog -->
+<ul>
+<li>[x] 120+ <code>man</code> pages — all built-in commands documented via <code>man &lt;cmd&gt;</code></li>
+<li>[x] Shared <code>tokenize.ts</code> — unified tokenizer for shell parser and runtime (eliminates duplication)</li>
+<li>[x] Full readline line editing — <code>Ctrl+A/E/K/U/W</code>, <code>Home</code>/<code>End</code>, <code>!!</code> history expansion, <code>/etc/environment</code> + <code>~/.profile</code> login sourcing</li>
+<li>[x] Interoperable archive formats — <code>tar</code> writes real POSIX ustar binary; <code>zip</code>/<code>unzip</code> use PKZIP+DEFLATE (fflate); files extracted by real system tools via SFTP</li>
+<li>[x] Overhauled <code>sed</code> — <code>d</code>/<code>p</code>/<code>=</code>/<code>q</code>, <code>-n</code> suppress, line/regex/range/<code>$</code> addresses; overhauled <code>awk</code> — <code>-v</code>, field assignment, <code>gsub</code>/<code>sub</code>/<code>substr</code>/<code>split</code>/<code>length</code>/<code>printf</code>/<code>next</code>; overhauled <code>find</code> — <code>-exec</code>, <code>-maxdepth</code>, <code>-iname</code>, <code>-not</code>/<code>!</code>, <code>-o</code>/<code>-a</code>, <code>-empty</code>, <code>-size</code></li>
+<li>[x] <code>PasswordChallenge</code> type — generic interactive password flow for <code>adduser</code>, <code>passwd</code>, <code>deluser</code></li>
+<li>[x] <code>VirtualFileSystem.mount(vPath, hostPath, { readOnly })</code> — bind-mount host directories into the VM; read-only by default; browser-safe (silent no-op)</li>
+</ul>
+</details></div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#_"><span></span></a><ul><li><a href="#table-of-contents"><span>Table of <wbr/>Contents</span></a></li><li><a href="#three-ways-to-run"><span>Three ways to run</span></a></li><li><a href="#get-started"><span>Get <wbr/>Started</span></a></li><li><ul><li><a href="#install"><span>Install</span></a></li><li><a href="#try-instantly-zero-install"><span>Try instantly (zero install)</span></a></li><li><ul><li><a href="#interactive-local-shell-persists-vfs-in-vfs-in-the-current-directory"><span>Interactive local shell — persists <wbr/>VFS in .vfs/ in the current directory</span></a></li><li><a href="#ssh-server-with-built-in-sftp-subsystem-scp-sftp-on-port-2222"><span>SSH server with built-<wbr/>in <wbr/>SFTP subsystem (scp / sftp on port 2222)</span></a></li><li><a href="#custom-ssh-port"><span>Custom <wbr/>SSH port</span></a></li><li><a href="#ssh-disabled-handler-only-no-server-started"><span>SSH disabled (handler only, no server started)</span></a></li></ul></li><li><a href="#ssh-server"><span>SSH server</span></a></li><li><a href="#web-shell-browser"><span>Web shell (browser)</span></a></li><li><a href="#programmatic-api"><span>Programmatic <wbr/>API</span></a></li></ul></li><li><a href="#how-it-works"><span>How <wbr/>It <wbr/>Works</span></a></li><li><ul><li><a href="#ssh-server-with-events"><span>SSH <wbr/>Server with <wbr/>Events</span></a></li><li><a href="#ssh-sftp-with-shared-state"><span>SSH + <wbr/>SFTP with <wbr/>Shared <wbr/>State</span></a></li><li><a href="#multi-user-environment-with-quotas"><span>Multi-<wbr/>User <wbr/>Environment with <wbr/>Quotas</span></a></li><li><a href="#persistent-state"><span>Persistent <wbr/>State</span></a></li><li><a href="#public-key-authentication"><span>Public-<wbr/>Key <wbr/>Authentication</span></a></li><li><a href="#rate-limiting"><span>Rate <wbr/>Limiting</span></a></li><li><a href="#shell-operators-and-variables"><span>Shell <wbr/>Operators and <wbr/>Variables</span></a></li><li><a href="#shell-scripting"><span>Shell <wbr/>Scripting</span></a></li><li><a href="#snapshot-based-test-fixtures"><span>Snapshot-<wbr/>Based <wbr/>Test <wbr/>Fixtures</span></a></li><li><a href="#snapshot-diff-in-tests"><span>Snapshot <wbr/>Diff in <wbr/>Tests</span></a></li><li><a href="#symlinks"><span>Symlinks</span></a></li><li><a href="#security-auditing-with-honeypot"><span>Security <wbr/>Auditing with <wbr/>Honey<wbr/>Pot</span></a></li><li><a href="#concurrent-clients"><span>Concurrent <wbr/>Clients</span></a></li><li><a href="#bashrc"><span>.bashrc</span></a></li><li><a href="#navigation"><span>Navigation</span></a></li><li><a href="#files-filesystem"><span>Files &amp; <wbr/>Filesystem</span></a></li><li><a href="#text-processing"><span>Text <wbr/>Processing</span></a></li><li><a href="#archive-compression"><span>Archive &amp; <wbr/>Compression</span></a></li><li><a href="#system"><span>System</span></a></li><li><a href="#network"><span>Network</span></a></li><li><a href="#shell-scripting-1"><span>Shell &amp; <wbr/>Scripting</span></a></li><li><a href="#misc-fun"><span>Misc &amp; <wbr/>Fun</span></a></li><li><a href="#package-management"><span>Package <wbr/>Management</span></a></li><li><a href="#users-permissions"><span>Users &amp; <wbr/>Permissions</span></a></li><li><a href="#operators-and-redirections"><span>Operators and <wbr/>Redirections</span></a></li><li><a href="#variable-expansion"><span>Variable <wbr/>Expansion</span></a></li><li><a href="#arithmetic"><span>Arithmetic</span></a></li><li><a href="#conditionals"><span>Conditionals</span></a></li><li><a href="#loops"><span>Loops</span></a></li><li><a href="#functions-and-case"><span>Functions and case</span></a></li><li><a href="#heredoc"><span>Heredoc</span></a></li><li><a href="#set-e--set--x"><span>set -<wbr/>e / set -<wbr/>x</span></a></li><li><a href="#script-files"><span>Script <wbr/>Files</span></a></li><li><a href="#login-files"><span>Login <wbr/>Files</span></a></li><li><a href="#line-editing"><span>Line <wbr/>Editing</span></a></li><li><a href="#directory-layout"><span>Directory <wbr/>Layout</span></a></li><li><a href="#vfs-path-resolution"><span>VFS <wbr/>PATH <wbr/>Resolution</span></a></li><li><a href="#built-in-package-registry-25-packages"><span>Built-<wbr/>in <wbr/>Package <wbr/>Registry (25 packages)</span></a></li><li><a href="#environment-variables"><span>Environment <wbr/>Variables</span></a></li><li><a href="#constructor-options"><span>Constructor <wbr/>Options</span></a></li></ul></li><li><a href="#troubleshooting"><span>Troubleshooting</span></a></li><li><a href="#faq"><span>FAQ</span></a></li><li><a href="#contributing"><span>Contributing</span></a></li><li><a href="#security"><span>Security</span></a></li><li><a href="#compatibility"><span>Compatibility</span></a></li><li><a href="#license"><span>License</span></a></li><li><a href="#roadmap"><span>Roadmap</span></a></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="modules.html">typescript-virtual-container</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>

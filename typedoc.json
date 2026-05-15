@@ -16,7 +16,6 @@
     "@eventProperty",
     "@example",
     "@experimental",
-    "@fires",
     "@ignore",
     "@inheritDoc",
     "@internal",
@@ -43,5 +42,10 @@
   "excludePrivate": true,
   "excludeInternal": true,
   "treatWarningsAsErrors": false,
-  "skipErrorChecking": false
+  "skipErrorChecking": false,
+  "gitRevision": "main",
+  "validation": {
+    "notExported": false,
+    "invalidLink": false
+  }
 }
