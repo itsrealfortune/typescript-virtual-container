@@ -94,18 +94,31 @@ function printPrompt(): void {
   cursor.className = 'cursor';
   cursor.textContent = '\u00a0';
 
+  const afterSpan = document.createElement('span');
+  afterSpan.className = 'after-cursor';
+
   inputLineEl.appendChild(promptSpan);
   inputLineEl.appendChild(textSpan);
   inputLineEl.appendChild(cursor);
+  inputLineEl.appendChild(afterSpan);
   out.appendChild(inputLineEl);
   scrollToBottom();
 }
 
-cmd.addEventListener('input', () => {
+function syncCursor(): void {
   if (!inputLineEl) return;
-  (inputLineEl.querySelector('.typed') as HTMLSpanElement).textContent = cmd.value;
+  const val = cmd.value;
+  const pos = cmd.selectionStart ?? val.length;
+  const before = val.slice(0, pos);
+  const ch = val[pos] ?? '\u00a0';
+  const after = val.slice(pos + (val[pos] ? 1 : 0));
+  (inputLineEl.querySelector('.typed') as HTMLSpanElement).textContent = before;
+  (inputLineEl.querySelector('.cursor') as HTMLSpanElement).textContent = ch;
+  (inputLineEl.querySelector('.after-cursor') as HTMLSpanElement).textContent = after;
   scrollToBottom();
-});
+}
+
+cmd.addEventListener('input', () => { syncCursor(); });
 
 // Wait for IndexedDB fs shim memCache
 // biome-ignore lint/suspicious/noExplicitAny: globalThis shim
@@ -226,7 +239,7 @@ cmd.addEventListener('keydown', async (e: KeyboardEvent) => {
     if (hits.length === 1) {
       // Unique match — complete inline
       cmd.value = line.slice(0, line.length - token.length) + hits[0];
-      if (inputLineEl) (inputLineEl.querySelector('.typed') as HTMLSpanElement).textContent = cmd.value;
+      syncCursor();
     } else {
       // Multiple matches — print them below current line, re-prompt
       const prevLine = inputLineEl;
@@ -237,8 +250,14 @@ cmd.addEventListener('keydown', async (e: KeyboardEvent) => {
 `);
       printPrompt();
       cmd.value = line;
-      if (inputLineEl) ((inputLineEl as HTMLSpanElement).querySelector('.typed') as HTMLSpanElement).textContent = cmd.value;
+      syncCursor();
     }
+    return;
+  }
+
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Home' || e.key === 'End') {
+    // Let the browser move cmd's internal cursor, then sync visual cursor on next tick
+    setTimeout(syncCursor, 0);
     return;
   }
 
@@ -247,7 +266,7 @@ cmd.addEventListener('keydown', async (e: KeyboardEvent) => {
     if (historyIdx < history.length - 1) {
       historyIdx++;
       cmd.value = history[history.length - 1 - historyIdx];
-      if (inputLineEl) (inputLineEl.querySelector('.typed') as HTMLSpanElement).textContent = cmd.value;
+      syncCursor();
     }
     return;
   }
@@ -256,7 +275,7 @@ cmd.addEventListener('keydown', async (e: KeyboardEvent) => {
     e.preventDefault();
     if (historyIdx > 0) { historyIdx--; cmd.value = history[history.length - 1 - historyIdx]; }
     else { historyIdx = -1; cmd.value = ''; }
-    if (inputLineEl) (inputLineEl.querySelector('.typed') as HTMLSpanElement).textContent = cmd.value;
+    syncCursor();
     return;
   }
 
@@ -265,9 +284,11 @@ cmd.addEventListener('keydown', async (e: KeyboardEvent) => {
   const value = cmd.value.trim();
   historyIdx = -1;
 
-  // Freeze input line: remove cursor span, null the ref (keeps prompt+typed in DOM)
+  // Freeze input line: restore full text, remove cursor, null the ref
   if (inputLineEl) {
+    (inputLineEl.querySelector('.typed') as HTMLSpanElement).textContent = value;
     inputLineEl.querySelector('.cursor')?.remove();
+    (inputLineEl.querySelector('.after-cursor') as HTMLSpanElement | null)?.remove();
     inputLineEl = null;
   }
 
