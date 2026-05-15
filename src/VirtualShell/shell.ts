@@ -218,7 +218,8 @@ export function startShell(
 		nanoSession = null;
 		lineBuffer = "";
 		cursorPos = 0;
-		stream.write("\r\n");
+		// Clear screen + reset SGR so nano residue is gone before next prompt
+		stream.write("\x1b[2J\x1b[H\x1b[0m");
 		renderLine();
 	}
 

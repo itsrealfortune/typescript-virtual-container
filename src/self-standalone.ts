@@ -320,15 +320,18 @@ async function runReadlineShell(): Promise<void> {
 				process.off("SIGINT", onSigint);
 				stdin.off("data", forwardInput);
 
-				// Restore to cooked mode first
-				stdin.setRawMode(false);
-
-				// Restore readline's listeners
+				// Restore readline's listeners BEFORE touching rawMode.
+				// readline re-enables raw mode itself when it resumes — calling
+				// setRawMode(false) here leaves stdin in cooked mode and causes
+				// escape sequences to print as literal text.
 				for (const l of stdinListeners) stdin.on("data", l);
 				for (const l of keypressListeners) stdin.on("keypress", l);
 
-				// Reset terminal state: show cursor, reset SGR
-				stdout.write("\x1b[?25h\x1b[0m\r\n");
+				// Reset terminal visual state only (cursor, SGR).
+				stdout.write("\x1b[?25h\x1b[0m");
+
+				// Let readline re-establish raw mode and line discipline.
+				rl.resume();
 			}
 
 			// Block SIGINT from killing the process while in nano
