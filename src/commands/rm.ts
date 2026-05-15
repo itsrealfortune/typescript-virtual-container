@@ -39,8 +39,15 @@ export const rmCommand: ShellModule = {
 		const resolved = targets.map((t) => resolvePath(cwd, t));
 		for (const r of resolved) assertPathAccess(authUser, r, "rm");
 
+		for (const r of resolved) {
+			if (!shell.vfs.exists(r)) {
+				if (force) continue;
+				return { stderr: `rm: cannot remove '${r}': No such file or directory`, exitCode: 1 };
+			}
+		}
+
 		const doRemove = (sh: VirtualShell): CommandResult => {
-			for (const r of resolved) sh.vfs.remove(r, { recursive });
+			for (const r of resolved) if (sh.vfs.exists(r)) sh.vfs.remove(r, { recursive });
 			return { exitCode: 0 };
 		};
 

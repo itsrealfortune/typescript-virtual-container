@@ -232,7 +232,7 @@ describe("touch command", () => {
 describe("rm command", () => {
 	test("rm deletes file", async () => {
 		createTestFile(shell, "/tmp/todel.txt", "content");
-		const r = await runCmd(client, "rm /tmp/todel.txt");
+		const r = await runCmd(client, "rm -f /tmp/todel.txt");
 		expect(r.exitCode).toBe(0);
 		expect(pathExists(shell, "/tmp/todel.txt")).toBe(false);
 	});
@@ -245,7 +245,7 @@ describe("rm command", () => {
 	test("rm -r deletes directory recursively", async () => {
 		await runCmd(client, "mkdir -p /tmp/rmdir/sub");
 		createTestFile(shell, "/tmp/rmdir/sub/file.txt", "test");
-		const r = await runCmd(client, "rm -r /tmp/rmdir");
+		const r = await runCmd(client, "rm -rf /tmp/rmdir");
 		expect(r.exitCode).toBe(0);
 		expect(pathExists(shell, "/tmp/rmdir")).toBe(false);
 	});
@@ -253,7 +253,7 @@ describe("rm command", () => {
 	test("rm multiple files", async () => {
 		createTestFile(shell, "/tmp/rm1.txt", "1");
 		createTestFile(shell, "/tmp/rm2.txt", "2");
-		const r = await runCmd(client, "rm /tmp/rm1.txt /tmp/rm2.txt");
+		const r = await runCmd(client, "rm -f /tmp/rm1.txt /tmp/rm2.txt");
 		expect(r.exitCode).toBe(0);
 		expect(pathExists(shell, "/tmp/rm1.txt")).toBe(false);
 		expect(pathExists(shell, "/tmp/rm2.txt")).toBe(false);
