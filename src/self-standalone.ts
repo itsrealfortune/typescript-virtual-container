@@ -6,12 +6,11 @@ import { createInterface, type Interface } from "node:readline";
 import { getCommandNames } from "./commands/registry";
 import { applyUserSwitch, makeDefaultEnv, runCommand, userHome } from "./commands/runtime";
 import { NanoEditor } from "./modules/nanoEditor";
-import { resolvePath } from "./modules/shellRuntime";
-import { buildLoginBanner, type LoginBannerState } from "./SSHMimic/loginBanner";
+import { buildLoginBanner } from "./SSHMimic/loginBanner";
 import { buildPrompt } from "./SSHMimic/prompt";
 import type { CommandResult, PasswordChallenge, SudoChallenge } from "./types/commands";
 import { getFlag, getOptionString } from "./utils/argv";
-import type VirtualFileSystem from "./VirtualFileSystem";
+import { listPathCompletions, loadHistory, readLastLogin, saveHistory, writeLastLogin } from "./utils/shellSession";
 import { VirtualShell } from "./VirtualShell";
 
 // ── CLI args ──────────────────────────────────────────────────────────────────
@@ -71,66 +70,11 @@ const virtualShell = new VirtualShell(hostname, undefined, {
 
 // ── VFS helpers ───────────────────────────────────────────────────────────────
 
-function readLastLogin(username: string): LoginBannerState | null {
-	const lastlogPath = `/home/${username}/.lastlog`;
-	if (!virtualShell.vfs.exists(lastlogPath)) return null;
-	try {
-		return JSON.parse(virtualShell.vfs.readFile(lastlogPath)) as LoginBannerState;
-	} catch {
-		return null;
-	}
-}
-
-function writeLastLogin(username: string, from: string): void {
-	virtualShell.vfs.writeFile(
-		`/home/${username}/.lastlog`,
-		JSON.stringify({ at: new Date().toISOString(), from }),
-	);
-}
-
 async function flushVfs(): Promise<void> {
 	await virtualShell.vfs.stopAutoFlush();
 }
 
-function loadHistory(authUser: string): string[] {
-	const historyPath = `${userHome(authUser)}/.bash_history`;
-	if (!virtualShell.vfs.exists(historyPath)) {
-		virtualShell.vfs.writeFile(historyPath, "");
-		return [];
-	}
-	return virtualShell.vfs
-		.readFile(historyPath)
-		.split("\n")
-		.map((line) => line.trim())
-		.filter((line) => line.length > 0);
-}
-
-function saveHistory(history: string[], authUser: string): void {
-	const data = history.length > 0 ? `${history.join("\n")}\n` : "";
-	virtualShell.vfs.writeFile(`${userHome(authUser)}/.bash_history`, data);
-}
-
 // ── Tab completion ────────────────────────────────────────────────────────────
-
-function listPathCompletions(vfs: VirtualFileSystem, cwd: string, prefix: string): string[] {
-	const slashIndex = prefix.lastIndexOf("/");
-	const dirPart = slashIndex >= 0 ? prefix.slice(0, slashIndex + 1) : "";
-	const namePart = slashIndex >= 0 ? prefix.slice(slashIndex + 1) : prefix;
-	const basePath = resolvePath(cwd, dirPart || ".");
-	try {
-		return vfs
-			.list(basePath)
-			.filter((e) => !e.startsWith(".") && e.startsWith(namePart))
-			.map((e) => {
-				const fullPath = path.posix.join(basePath, e);
-				const st = vfs.stat(fullPath);
-				return `${dirPart}${e}${st.type === "directory" ? "/" : ""}`;
-			})
-			.sort();
-	} catch {
-		return [];
-	}
-}
 
 function makeCompleter(getState: () => { cwd: string }) {
 	const commandNames = Array.from(new Set(getCommandNames())).sort();
@@ -252,7 +196,7 @@ async function runReadlineShell(): Promise<void> {
 		terminalSize.rows = stdout.rows ?? terminalSize.rows;
 	});
 
-	let history = loadHistory(authUser);
+	let history = loadHistory(virtualShell.vfs, authUser);
 
 	const rl = createInterface({
 		input: stdin,
@@ -546,8 +490,8 @@ async function runReadlineShell(): Promise<void> {
 
 	// ── Login banner ───────────────────────────────────────────────────────────
 
-	stdout.write(buildLoginBanner(hostname, virtualShell.properties, readLastLogin(authUser)));
-	writeLastLogin(authUser, remoteAddress);
+	stdout.write(buildLoginBanner(hostname, virtualShell.properties, readLastLogin(virtualShell.vfs, authUser)));
+	writeLastLogin(virtualShell.vfs, authUser, remoteAddress);
 
 	// Source login/rc files so PS1, aliases, exports are applied before first prompt.
 	for (const rcPath of ["/etc/environment", `${userHome(authUser)}/.profile`, `${userHome(authUser)}/.bashrc`]) {
@@ -585,7 +529,7 @@ async function runReadlineShell(): Promise<void> {
 			if (history.at(-1) !== inputLine) {
 				history.push(inputLine);
 				if (history.length > 500) history = history.slice(history.length - 500);
-				saveHistory(history, authUser);
+				saveHistory(virtualShell.vfs, authUser, history);
 			}
 			rlWithHistory.history = [...history].reverse();
 		}

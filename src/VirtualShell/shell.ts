@@ -1,13 +1,12 @@
 import * as path from "node:path";
 import type { ShellProperties, VirtualShell } from ".";
 import { applyUserSwitch, getCommandNames, makeDefaultEnv, runCommand, userHome } from "../commands";
+import { NanoEditor } from "../modules/nanoEditor";
 import {
 	spawnHtopProcess,
 } from "../modules/shellInteractive";
-import { NanoEditor } from "../modules/nanoEditor";
 import {
 	getVisibleHtopPidList,
-	resolvePath,
 	type TerminalSize,
 	toTtyLines,
 } from "../modules/shellRuntime";
@@ -15,7 +14,7 @@ import { buildLoginBanner } from "../SSHMimic/loginBanner";
 import { buildPrompt } from "../SSHMimic/prompt";
 import type { CommandResult, ShellEnv } from "../types/commands";
 import type { ShellStream } from "../types/streams";
-import type VirtualFileSystem from "../VirtualFileSystem";
+import { listPathCompletions, loadHistory, readLastLogin, saveHistory, writeLastLogin } from "../utils/shellSession";
 
 interface NanoSession {
 	kind: "nano";
@@ -300,28 +299,6 @@ export function startShell(
 		return { start, end };
 	}
 
-	function listPathCompletions(prefix: string): string[] {
-		const slashIndex = prefix.lastIndexOf("/");
-		const dirPart = slashIndex >= 0 ? prefix.slice(0, slashIndex + 1) : "";
-		const namePart = slashIndex >= 0 ? prefix.slice(slashIndex + 1) : prefix;
-		const basePath = resolvePath(cwd, dirPart || ".");
-
-		try {
-			return shell.vfs
-				.list(basePath)
-				.filter((entry) => entry.startsWith(namePart))
-				.filter((entry) => namePart.startsWith(".") || !entry.startsWith("."))
-				.map((entry) => {
-					const fullPath = path.posix.join(basePath, entry);
-					const st = shell.vfs.stat(fullPath);
-					const suffix = st.type === "directory" ? "/" : "";
-					return `${dirPart}${entry}${suffix}`;
-				})
-				.sort();
-		} catch {
-			return [];
-		}
-	}
 
 	function handleTabCompletion(): void {
 		const { start, end } = getTokenRange(lineBuffer, cursorPos);
@@ -335,7 +312,7 @@ export function startShell(
 		const commandCandidates = firstToken
 			? commandNames.filter((name) => name.startsWith(token))
 			: [];
-		const pathCandidates = listPathCompletions(token);
+		const pathCandidates = listPathCompletions(shell.vfs, cwd, token);
 		const candidates = Array.from(
 			new Set([...commandCandidates, ...pathCandidates]),
 		).sort();
@@ -359,48 +336,16 @@ export function startShell(
 	}
 
 	function pushHistory(cmd: string): void {
-		if (cmd.length === 0) {
-			return;
-		}
-
+		if (cmd.length === 0) return;
 		history.push(cmd);
-		if (history.length > 500) {
-			history = history.slice(history.length - 500);
-		}
-
-		const data = history.length > 0 ? `${history.join("\n")}\n` : "";
-		shell.vfs.writeFile(`${userHome(authUser)}/.bash_history`, data);
-	}
-
-	function readLastLogin(): { at: string; from: string } | null {
-		const lastlogPath = `${userHome(authUser)}/.lastlog.json`;
-		if (!shell.vfs.exists(lastlogPath)) {
-			return null;
-		}
-
-		try {
-			return JSON.parse(shell.vfs.readFile(lastlogPath)) as {
-				at: string;
-				from: string;
-			};
-		} catch {
-			return null;
-		}
-	}
-
-	function writeLastLogin(nowIso: string): void {
-		const lastlogPath = `${userHome(authUser)}/.lastlog`;
-		shell.vfs.writeFile(
-			lastlogPath,
-			JSON.stringify({ at: nowIso, from: remoteAddress }),
-		);
+		if (history.length > 500) history = history.slice(history.length - 500);
+		saveHistory(shell.vfs, authUser, history);
 	}
 
 	function renderLoginBanner(): void {
-		const last = readLastLogin();
-		const nowIso = new Date().toISOString();
+		const last = readLastLogin(shell.vfs, authUser);
 		stream.write(buildLoginBanner(hostname, properties, last));
-		writeLastLogin(nowIso);
+		writeLastLogin(shell.vfs, authUser, remoteAddress);
 	}
 
 	renderLoginBanner();
@@ -786,16 +731,3 @@ export function startShell(
 	});
 }
 
-function loadHistory(vfs: VirtualFileSystem, authUser: string): string[] {
-	const historyPath = `${userHome(authUser)}/.bash_history`;
-	if (!vfs.exists(historyPath)) {
-		vfs.writeFile(historyPath, "");
-		return [];
-	}
-
-	const raw = vfs.readFile(historyPath);
-	return raw
-		.split("\n")
-		.map((line) => line.trim())
-		.filter((line) => line.length > 0);
-}
