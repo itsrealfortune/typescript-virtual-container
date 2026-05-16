@@ -229,9 +229,15 @@ export function startShell(
 		renderLine();
 	}
 
+	let interactivePid = -1;
+
 	function finishInteractiveSession(savedContent?: string, targetPath?: string): void {
 		if (savedContent !== undefined && targetPath) {
 			shell.writeFileAsUser(authUser, targetPath, savedContent);
+		}
+		if (interactivePid !== -1) {
+			shell.users.unregisterProcess(interactivePid);
+			interactivePid = -1;
 		}
 		nanoSession = null;
 		lineBuffer = "";
@@ -246,6 +252,7 @@ export function startShell(
 		initialContent: string,
 		_tempPath: string,
 	): void {
+		interactivePid = shell.users.registerProcess(authUser, "nano", ["nano", targetPath], shellEnv.vars.__TTY ?? "?");
 		const editor = new NanoEditor({
 			stream,
 			terminalSize,
@@ -271,6 +278,7 @@ export function startShell(
 			return;
 		}
 
+		interactivePid = shell.users.registerProcess(authUser, "htop", ["htop"], shellEnv.vars.__TTY ?? "?");
 		const monitor = spawnHtopProcess(pidList, terminalSize, stream);
 
 		monitor.on("error", (error: Error) => {
@@ -286,10 +294,15 @@ export function startShell(
 	}
 
 	function startPacman(): void {
+		interactivePid = shell.users.registerProcess(authUser, "pacman", ["pacman"], shellEnv.vars.__TTY ?? "?");
 		const game = new PacmanGame({
 			stream,
 			terminalSize,
 			onExit: () => {
+				if (interactivePid !== -1) {
+					shell.users.unregisterProcess(interactivePid);
+					interactivePid = -1;
+				}
 				nanoSession = null;
 				lineBuffer = "";
 				cursorPos = 0;
