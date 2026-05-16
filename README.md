@@ -212,7 +212,7 @@ console.log(r.stdout);
 
 **What it is:** a shell emulator and virtual Linux environment for developer workflows.
 
-**What it is not:** a kernel-level security boundary. `curl`/`wget` use the native `fetch()` API — no host binary spawned. `node`/`python3`/`npm` are virtual REPL stubs, not real runtimes. `execvp` is never called. Do not expose to the public internet without additional isolation.
+**What it is not:** a fully isolated sandbox. The shell commands are contained — no host binary is ever spawned, `execvp` is never called, `node`/`python3`/`npm` are virtual stubs. But `curl`/`wget` use the real `fetch()` API (live network access), all instances share the same JS heap as the host application, and CPU/memory are not capped. Do not expose to untrusted input without additional infrastructure-level isolation.
 
 ---
 
@@ -971,8 +971,18 @@ A self-contained Linux environment implemented entirely in TypeScript. It is not
 **How is this different from a Docker container or a real VM?**
 Docker and VMs enforce kernel-level isolation and run real binaries. This project runs entirely in the JavaScript runtime — no subprocess is ever spawned, no host binary is called. The trade-off is intentional: you get zero-dependency portability (including the browser), a fully inspectable and programmable environment, and no host OS requirements. It is not a security boundary.
 
+**Is the environment fully isolated?**
+No — and this is important to understand before exposing it to untrusted input:
+
+- **Network is real.** `curl` and `wget` use the host's `fetch()` — requests reach the actual internet.
+- **The JS heap is shared.** All `VirtualShell` instances run in the same JavaScript runtime as your application. There is no memory boundary between them or between the shell and the host.
+- **No resource enforcement.** CPU usage and memory consumption are not capped by the container itself — a runaway loop consumes real host resources.
+- **Filesystem isolation holds** in `"memory"` mode (the VFS never touches the host FS) and is limited to one `.vfsb` file in `"fs"` mode.
+
+In short: the shell commands are sandboxed, the runtime is not.
+
 **Can I use this in production?**
-Yes, for the right use cases: automated test harnesses, interactive tutorials, training environments, honeypots, sandboxed command runners, and browser-based shell experiences. Do not use it as a security boundary for untrusted code — it provides no kernel-level or process-level isolation.
+Yes, for the right use cases: automated test harnesses, interactive tutorials, training environments, honeypots, and browser-based shell experiences. Do not expose it to arbitrary untrusted input without additional isolation at the infrastructure level — it is not a security boundary.
 
 **Does the VFS touch the host filesystem?**
 In `"memory"` mode: never. In `"fs"` mode: exactly one binary file (`vfs-snapshot.vfsb`) inside `snapshotPath`. In the browser: IndexedDB only.
