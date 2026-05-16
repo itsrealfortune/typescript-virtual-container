@@ -1,9 +1,13 @@
+import { execSync } from "node:child_process";
 import type { ShellModule } from "../types/commands";
 import { parseArgs } from "./command-helpers";
 
+const isBrowser =
+	typeof process === "undefined" || typeof (process as NodeJS.Process).versions?.node === "undefined";
+
 /**
- * Send ICMP ECHO_REQUEST packets using the VirtualNetworkManager for
- * configurable latency and simulated packet loss.
+ * Send ICMP ECHO_REQUEST packets — uses the real host ping when available,
+ * falls back to VirtualNetworkManager simulation in browser or when system ping is absent.
  * @category network
  * @params ["[-c <count>] <host>"]
  */
@@ -19,6 +23,26 @@ export const pingCommand: ShellModule = {
 		const host = positionals[0] ?? "localhost";
 		const countArg = flagsWithValues.get("-c");
 		const count = countArg ? Math.max(1, parseInt(countArg, 10) || 4) : 4;
+
+		// Try real system ping first (Node.js only)
+		if (!isBrowser) {
+			try {
+				const output = execSync(`ping -c ${count} ${host}`, {
+					timeout: 30000,
+					encoding: "utf8",
+					stdio: ["ignore", "pipe", "pipe"],
+				});
+				return { stdout: output, exitCode: 0 };
+			} catch (err: unknown) {
+				// System ping failed — fall through to simulation
+				const stderrMsg = err instanceof Error ? (err as Error & { stderr?: string }).stderr : "";
+				if (stderrMsg) {
+					return { stderr: stderrMsg, exitCode: 1 };
+				}
+			}
+		}
+
+		// Fallback: VirtualNetworkManager simulation
 		const lines = [`PING ${host} (${host === "localhost" ? "127.0.0.1" : host}): 56 data bytes`];
 		let transmitted = 0;
 		let received = 0;
