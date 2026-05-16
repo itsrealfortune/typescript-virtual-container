@@ -1,6 +1,6 @@
 # `typescript-virtual-container`
 
-> A complete virtual Linux environment in pure TypeScript — runs as an SSH/SFTP server, a browser-based web shell, a standalone CLI, or a full XFCE desktop simulation. Ships with a realistic Linux rootfs, a virtual package manager, a full shell interpreter, and a typed programmatic API for testing, automation, honeypots, and embedded shell experiences.
+> A complete virtual Linux environment in pure TypeScript — runs as an SSH/SFTP server, a browser-based web shell, or a standalone CLI. Ships with a realistic Linux rootfs, a virtual package manager, a full shell interpreter, and a typed programmatic API for testing, automation, honeypots, and embedded shell experiences.
 
 [![npm version](https://badge.fury.io/js/typescript-virtual-container.svg)](https://www.npmjs.com/package/typescript-virtual-container)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -12,8 +12,8 @@
 
 ## Table of Contents
 
-- [Four ways to run](#four-ways-to-run) · [Get Started](#get-started)
-- [How It Works](#how-it-works) · [Built-in Commands](#built-in-commands-149)
+- [Three ways to run](#three-ways-to-run) · [Get Started](#get-started)
+- [How It Works](#how-it-works) · [Built-in Commands](#built-in-commands-152)
 - [Shell Scripting](#shell-scripting) · [Linux Rootfs](#linux-rootfs--vfs-path-resolution)
 - [Configuration](#configuration) · [Troubleshooting](#troubleshooting)
 - [FAQ](#faq) · [Contributing](#contributing)
@@ -21,18 +21,17 @@
 
 ---
 
-## Four ways to run
+## Three ways to run
 
 <!-- BUILD:mode-table -->
 | Mode | Entry point | Use case |
 |------|-------------|----------|
 | **SSH/SFTP server** | `VirtualSshServer` / `VirtualSftpServer` | Honeypots, remote testing, training environments |
-| **Web shell** | `builds/fortune-nyx-v1.6.2-web.min.js` (ESM) | Embedded terminals, interactive tutorials, browser demos |
+| **Web shell** | `builds/fortune-nyx-v1.6.2-web.min.js` (ESM) | Embedded terminals, interactive tutorials, browser demos — run `startxfce4` for a full XFCE desktop |
 | **Standalone CLI** | `builds/fortune-nyx-v1.6.2-directbash-k6.1.0.mjs` (single file) | Local shell, one-liner demos, no install required |
-| **XFCE desktop** | `startxfce4` in the web shell | Full graphical desktop in the browser — windows, file manager, text editor, trash |
 <!-- /BUILD:mode-table -->
 
-All four modes share the same core: a pure in-memory VFS, a real shell interpreter, a virtual package manager, and a typed programmatic API.
+All three modes share the same core: a pure in-memory VFS, a real shell interpreter, a virtual package manager, and a typed programmatic API.
 
 ---
 
@@ -1023,8 +1022,9 @@ A single-user XFCE session: a panel with Applications menu and clock, draggable 
 - Passwords hashed with scrypt (N=32768, r=8, p=1) with random per-user salt.
 - Root account always exists and cannot be deleted.
 - Per-IP rate limiting prevents automated brute-force on the SSH server.
-- This project does **not** provide kernel-level or process-level isolation.
-- Do **not** expose to the public internet without understanding the risks.
+- This project does **not** provide kernel-level or process-level isolation. All `VirtualShell` instances share the same JS heap as the host application.
+- `curl` and `wget` issue real network requests via `fetch()` — they are not sandboxed.
+- Do **not** expose to untrusted input without additional infrastructure-level isolation.
 
 Vulnerability reports: contact maintainers privately before public disclosure — see `SECURITY.md`.
 
