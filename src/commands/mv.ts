@@ -1,5 +1,6 @@
+import * as path from "node:path";
 import type { ShellModule } from "../types/commands";
-import { assertPathAccess, resolvePath } from "./helpers";
+import { checkFilePermission, resolvePath } from "./helpers";
 
 /**
  * Move or rename files and directories.
@@ -23,8 +24,8 @@ export const mvCommand: ShellModule = {
 		const destPath = resolvePath(cwd, destArg);
 
 		try {
-			assertPathAccess(authUser, srcPath, "mv");
-			assertPathAccess(authUser, destPath, "mv");
+			checkFilePermission(shell.vfs, shell.users, authUser, srcPath, 2);
+			checkFilePermission(shell.vfs, shell.users, authUser, path.posix.dirname(destPath), 2);
 
 			if (!shell.vfs.exists(srcPath)) {
 				return {

@@ -1,7 +1,8 @@
+import * as path from "node:path";
 import type { CommandResult, ShellModule } from "../types/commands";
 import type { VirtualShell } from "../VirtualShell";
 import { getArg, ifFlag } from "./command-helpers";
-import { assertPathAccess, resolvePath } from "./helpers";
+import { checkFilePermission, resolvePath } from "./helpers";
 
 const FLAG_RECURSIVE = ["-r", "-R", "-rf", "-fr", "-rF", "-Fr"];
 const FLAG_FORCE = ["-f", "-rf", "-fr", "-rF", "-Fr", "--force"];
@@ -37,7 +38,7 @@ export const rmCommand: ShellModule = {
 		}
 
 		const resolved = targets.map((t) => resolvePath(cwd, t));
-		for (const r of resolved) assertPathAccess(authUser, r, "rm");
+		for (const r of resolved) checkFilePermission(shell.vfs, shell.users, authUser, path.posix.dirname(r), 2);
 
 		for (const r of resolved) {
 			if (!shell.vfs.exists(r)) {
