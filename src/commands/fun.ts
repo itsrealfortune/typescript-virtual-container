@@ -102,6 +102,11 @@ export const cowsayCommand: ShellModule = {
 	},
 };
 
+/**
+ * Generate ASCII cow thinking.
+ * @category misc
+ * @params ["[message]"]
+ */
 export const cowthinkCommand: ShellModule = {
 	name: "cowthink",
 	description: "Generate ASCII cow thinking",

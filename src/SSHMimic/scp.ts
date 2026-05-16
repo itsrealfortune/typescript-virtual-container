@@ -25,6 +25,10 @@ import type { VirtualShell } from "../VirtualShell";
 // ── Stream type ───────────────────────────────────────────────────────────────
 // ssh2 ServerChannel is a Duplex; we need both read and write + exit/stderr.
 
+/**
+ * Minimal stream interface representing an SSH channel for SCP transfers.
+ * Mirrors the ssh2 ServerChannel subset used by the SCP protocol.
+ */
 interface ScpStream {
 	write(data: Buffer | string): boolean;
 	on(event: "data", listener: (chunk: Buffer) => void): this;
@@ -65,6 +69,11 @@ function parseArgs(args: string[]): {
 
 // ── Sink mode (upload: client → server) ──────────────────────────────────────
 
+/**
+ * Handles SCP sink mode (receiving files from the client). Parses the SCP wire
+ * protocol control messages (C, D, E, T) and writes file data into the virtual
+ * filesystem.
+ */
 export function runScpSink(
 	stream: ScpStream,
 	destArg: string,
@@ -205,6 +214,11 @@ export function runScpSink(
 
 // ── Source mode (download: server → client) ───────────────────────────────────
 
+/**
+ * Handles SCP source mode (sending files to the client). Traverses the virtual
+ * filesystem and streams file contents using the SCP wire protocol control
+ * messages (C, D, E) in response to client acknowledgements.
+ */
 export function runScpSource(
 	stream: ScpStream,
 	srcArg: string,
@@ -332,6 +346,10 @@ export function runScpSource(
 
 // ── Entry point ───────────────────────────────────────────────────────────────
 
+/**
+ * Handles SCP protocol transfer by parsing the exec arguments to determine
+ * sink (upload) or source (download) mode and delegating accordingly.
+ */
 export function handleScp(
 	stream: ScpStream,
 	rawArgs: string[],

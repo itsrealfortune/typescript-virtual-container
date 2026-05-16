@@ -1,3 +1,7 @@
+/**
+ * Formats a Date object into the SSH last-login display format:
+ * e.g. "Mon Jan 02 15:04:05 2024"
+ */
 export function formatLoginDate(date: Date): string {
 	const weekday = date.toLocaleString("en-US", { weekday: "short" });
 	const month = date.toLocaleString("en-US", { month: "short" });

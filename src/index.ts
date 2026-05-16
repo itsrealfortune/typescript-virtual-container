@@ -4,9 +4,11 @@ export { SftpMimic as VirtualSftpServer, SshMimic as VirtualSshServer } from "./
 export type { SftpMimicOptions as VirtualSftpServerOptions } from "./SSHMimic/sftp";
 export { default as VirtualFileSystem } from "./VirtualFileSystem/index";
 export { VirtualPackageManager } from "./VirtualPackageManager/index";
+export { VirtualNetworkManager } from "./modules/VirtualNetworkManager";
+export type { VirtualInterface, VirtualRoute, VirtualArpEntry } from "./modules/VirtualNetworkManager";
 export { VirtualShell } from "./VirtualShell/index";
 export { VirtualUserManager } from "./VirtualUserManager/index";
-export type { VirtualActiveSession, VirtualProcess } from "./VirtualUserManager/index";
+export type { VirtualActiveSession, VirtualProcess, VirtualUserRecord, ProcessStatus } from "./VirtualUserManager/index";
 export { IdleManager } from "./VirtualShell/idleManager";
 export type { IdleManagerOptions, IdleState } from "./VirtualShell/idleManager";
 
@@ -27,6 +29,8 @@ export type {
 } from "./types/commands";
 export type { ExecStream, ShellStream } from "./types/streams";
 export type {
+	MountOptions,
+	MountPoint,
 	RemoveOptions,
 	VfsBaseNode,
 	VfsDirectoryNode,
@@ -42,6 +46,21 @@ export type {
 } from "./types/vfs";
 export type { VfsOptions, VfsPersistenceMode } from "./VirtualFileSystem/index";
 export type { ShellProperties, VirtualShellVfsLike, VirtualShellVfsOptions } from "./VirtualShell/index";
+export type {
+	PipelineCommand,
+	Pipeline,
+	Statement,
+	Script,
+	LogicalOp
+} from "./types/pipeline";
+
+export { NanoEditor } from "./modules/nanoEditor";
+export type { NanoEditorOptions, NanoExitReason } from "./modules/nanoEditor";
+
+export { parseArgs } from "./commands/command-helpers";
+
+export { createPerfLogger } from "./utils/perfLogger";
+export type { PerfLogger } from "./utils/perfLogger";
 
 export type {
 	InstalledPackage, PackageDefinition,

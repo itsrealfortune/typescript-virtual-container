@@ -21,6 +21,16 @@
 
 import * as fsSync from "node:fs";
 
+/**
+ * Journal operation type codes used in VFS write-ahead log entries.
+ *
+ * - `WRITE`  — Write file content and mode.
+ * - `MKDIR`  — Create a directory.
+ * - `REMOVE` — Delete a file or directory.
+ * - `CHMOD`  — Change file mode.
+ * - `MOVE`   — Rename / move a node.
+ * - `SYMLINK`— Create a symbolic link.
+ */
 export const JournalOp = {
 	WRITE:   0x01,
 	MKDIR:   0x02,

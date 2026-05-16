@@ -119,6 +119,11 @@ function evalTest(
 	return false;
 }
 
+/**
+ * Evaluate conditional expression.
+ * @category shell
+ * @params ["<expression>"]
+ */
 export const testCommand: ShellModule = {
 	name: "test",
 	aliases: ["["],

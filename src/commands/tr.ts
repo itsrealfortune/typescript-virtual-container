@@ -30,6 +30,11 @@ function expandTrSet(s: string): string[] {
 	return chars;
 }
 
+/**
+ * Translate or delete characters.
+ * @category text
+ * @params ["[-d] [-s] <set1> [set2]"]
+ */
 export const trCommand: ShellModule = {
 	name: "tr",
 	description: "Translate or delete characters",

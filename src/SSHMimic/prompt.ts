@@ -1,3 +1,7 @@
+/**
+ * Expands a PS1 template string by replacing escape sequences (\\u, \\h, \\w,
+ * \\$, etc.) with the corresponding user, host, and directory values.
+ */
 export function expandPs1(ps1: string, user: string, host: string, cwd: string, readlineMode = false): string {
 	const home = user === "root" ? "/root" : `/home/${user}`;
 	const withTilde =
@@ -18,6 +22,11 @@ export function expandPs1(ps1: string, user: string, host: string, cwd: string, 
 		.replace(/\\\\/g, "\\");
 }
 
+/**
+ * Builds the complete shell prompt string. If a PS1 template is provided it is
+ * expanded via expandPs1; otherwise a traditional `[user@host cwd]$` prompt
+ * with ANSI color codes is returned.
+ */
 export function buildPrompt(
 	user: string,
 	host: string,
