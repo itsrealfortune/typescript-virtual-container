@@ -1,5 +1,5 @@
 /** Command invocation mode used by shell runtime. */
-export type CommandMode = "shell" | "exec";
+export type CommandMode = "shell" | "exec" | "background";
 
 import type { VirtualShell } from "../VirtualShell";
 import type { VirtualActiveSession } from "../VirtualUserManager";

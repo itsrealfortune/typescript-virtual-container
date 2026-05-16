@@ -22,6 +22,8 @@ export interface VirtualUserRecord {
 	passwordHash: string;
 }
 
+export type ProcessStatus = "running" | "stopped" | "done";
+
 /** Runtime representation of a command currently executing in a session. */
 export interface VirtualProcess {
 	/** Unique process identifier (auto-incremented). */
@@ -36,6 +38,10 @@ export interface VirtualProcess {
 	tty: string;
 	/** ISO-8601 start timestamp. */
 	startedAt: string;
+	/** Current process state. */
+	status: ProcessStatus;
+	/** AbortController for terminating the process. */
+	abortController?: AbortController;
 }
 
 /** Runtime representation of authenticated SSH session. */
@@ -546,6 +552,7 @@ export class VirtualUserManager extends EventEmitter {
 		command: string,
 		argv: string[],
 		tty: string,
+		abortController?: AbortController,
 	): number {
 		const pid = this.nextPid++;
 		this.activeProcesses.set(pid, {
@@ -555,6 +562,8 @@ export class VirtualUserManager extends EventEmitter {
 			argv,
 			tty,
 			startedAt: new Date().toISOString(),
+			status: "running",
+			abortController,
 		});
 		return pid;
 	}
@@ -564,9 +573,26 @@ export class VirtualUserManager extends EventEmitter {
 		this.activeProcesses.delete(pid);
 	}
 
+	/** Marks a process as done (keeps it in the table briefly for jobs/ps). */
+	public markProcessDone(pid: number): void {
+		const proc = this.activeProcesses.get(pid);
+		if (proc) proc.status = "done";
+	}
+
 	/** Returns all currently running processes sorted by PID. */
 	public listProcesses(): VirtualProcess[] {
 		return Array.from(this.activeProcesses.values()).sort((a, b) => a.pid - b.pid);
+	}
+
+	/** Terminate a process by PID. Returns true if the process was found and signalled. */
+	public killProcess(pid: number): boolean {
+		const proc = this.activeProcesses.get(pid);
+		if (!proc) return false;
+		if (proc.abortController) {
+			proc.abortController.abort();
+		}
+		proc.status = "stopped";
+		return true;
 	}
 
 	private loadFromVfs(): void {
