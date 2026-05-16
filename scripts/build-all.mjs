@@ -93,7 +93,7 @@ replaceSection(
     `| Mode | Entry point | Use case |`,
     `|------|-------------|----------|`,
     `| **SSH/SFTP server** | \`VirtualSshServer\` / \`VirtualSftpServer\` | Honeypots, remote testing, training environments |`,
-    `| **Web shell** | \`builds/${web}\` (ESM) | Embedded terminals, interactive tutorials, browser demos |`,
+    `| **Web shell** | \`builds/${web}\` (ESM) | Embedded terminals, interactive tutorials, browser demos — run \`startxfce4\` for a full XFCE desktop |`,
     `| **Standalone CLI** | \`builds/${selfStandalone}\` (single file) | Local shell, one-liner demos, no install required |`,
   ].join("\n"),
 );
