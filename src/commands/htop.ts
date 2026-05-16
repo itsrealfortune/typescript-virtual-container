@@ -52,13 +52,8 @@ export const htopCommand: ShellModule = {
 	description: "Interactive system monitor",
 	category: "system",
 	params: ["[-d delay]", "[-p pid]"],
-	run: ({ mode, shell, authUser }) => {
-		// Interactive terminal mode: signal frontend to open htop panel
-		if (mode === "shell") {
-			return { openHtop: true, exitCode: 0 };
-		}
-
-		// exec / ssh / api mode: render a static htop-like snapshot
+	run: ({ shell, authUser }) => {
+		// Render ANSI snapshot in all modes — real htop child_process unavailable in-process
 		const totalMem  = os.totalmem();
 		const freeMem   = os.freemem();
 		const usedMem   = totalMem - freeMem;
