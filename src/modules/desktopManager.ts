@@ -824,6 +824,19 @@ export class DesktopManager {
     if (!el) return;
     const textarea = el.querySelector(".editor-textarea") as HTMLTextAreaElement | null;
     if (!textarea) return;
+
+    // If path is still untitled, prompt for a filename before saving
+    if (w.content.path.endsWith("untitled.txt")) {
+      const input = window.prompt("Save as:", "untitled.txt");
+      if (!input || !input.trim()) return;
+      const name = input.trim();
+      const dir = w.content.path.substring(0, w.content.path.lastIndexOf("/"));
+      w.content.path = `${dir}/${name}`;
+      // Update the path label in the toolbar
+      const pathEl = el.querySelector(".editor-path") as HTMLElement | null;
+      if (pathEl) pathEl.textContent = w.content.path;
+    }
+
     try {
       this.shell.vfs.writeFile(w.content.path, textarea.value);
       w.content.dirty = false;
