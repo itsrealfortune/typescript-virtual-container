@@ -9,7 +9,7 @@ import { getPackageManager } from "./helpers";
  */
 export const dpkgCommand: ShellModule = {
 	name: "dpkg",
-	description: "Debian package manager low-level tool",
+	description: "Fortune GNU/Linux package manager low-level tool",
 	category: "package",
 	params: ["[-l] [-s pkg] [-L pkg] [-i pkg] [--remove pkg]"],
 	run: ({ args, authUser, shell }) => {

@@ -45,7 +45,7 @@ export const dmesgCommand: ShellModule = {
 		const n = args.includes("-n") ? parseInt(args[args.indexOf("-n") + 1] ?? "20", 10) : 20;
 		const msgs = [
 			"[    0.000000] Booting Linux on physical CPU 0x0",
-			"[    0.000000] Linux version 6.1.0-fortune (gcc version 12.2.0)",
+			"[    0.000000] Linux version 6.1.0-fortune (gcc (Fortune 13.3.0-nyx1) 13.3.0)",
 			"[    0.000000] Command line: BOOT_IMAGE=/vmlinuz-6.1.0 root=/dev/sda1 ro quiet",
 			"[    0.000000] BIOS-provided physical RAM map:",
 			"[    0.000000] ACPI: IRQ0 used by override.",

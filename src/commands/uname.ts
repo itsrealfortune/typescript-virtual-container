@@ -14,7 +14,7 @@ export const unameCommand: ShellModule = {
 	run: ({ shell, args }) => {
 		const all = ifFlag(args, ["-a"]);
 		const sysname = "Linux";
-		const release = shell.properties?.kernel ?? "5.15.0";
+		const release = shell.properties?.kernel ?? "1.0.0+itsrealfortune+1-amd64";
 		const machine = shell.properties?.arch ?? "x86_64";
 		const hostname = shell.hostname;
 		if (all)

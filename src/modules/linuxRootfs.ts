@@ -72,15 +72,15 @@ function bootstrapEtc(
 			`NAME="Fortune GNU/Linux"`,
 			`PRETTY_NAME="${props.os}"`,
 			`ID=fortune`,
-			`ID_LIKE=debian`,
+			`ID_LIKE=fortune`,
 			`HOME_URL="https://github.com/itsrealfortune/typescript-virtual-container"`,
 			`VERSION_CODENAME=nyx`,
-			`VERSION_ID="24.04"`,
+			`VERSION_ID="1.0"`,
 			`FORTUNE_CODENAME=nyx`,
 		].join("\n")}\n`,
 	);
 
-	ensureFile(vfs, "/etc/debian_version", "nyx/stable\n");
+	ensureFile(vfs, "/etc/fortune_version", "nyx/stable\n");
 	ensureFile(vfs, "/etc/hostname", `${hostname}\n`);
 	ensureFile(
 		vfs,
@@ -100,8 +100,8 @@ function bootstrapEtc(
 		].join("\n")}\n`,
 	);
 
-	ensureFile(vfs, "/etc/issue", "Fortune GNU/Linux 24.04 LTS \\n \\l\n");
-	ensureFile(vfs, "/etc/issue.net", "Fortune GNU/Linux 24.04 LTS\n");
+	ensureFile(vfs, "/etc/issue", "Fortune GNU/Linux 1.0 Nyx \\n \\l\n");
+	ensureFile(vfs, "/etc/issue.net", "Fortune GNU/Linux 1.0 Nyx\n");
 	ensureFile(
 		vfs,
 		"/etc/motd",
@@ -110,7 +110,7 @@ function bootstrapEtc(
 	ensureFile(vfs, "/etc/lsb-release",
 		`${[
 			"DISTRIB_ID=Fortune",
-			"DISTRIB_RELEASE=24.04",
+			"DISTRIB_RELEASE=1.0",
 			"DISTRIB_CODENAME=nyx",
 			`DISTRIB_DESCRIPTION="${props.os}"`,
 		].join("\n")}\n`,
@@ -898,9 +898,9 @@ export function refreshProc(
 		].join("\n")}\n`,
 	);
 
-	// /proc/cmdline — Firecracker boot args
+	// /proc/cmdline — boot args
 	write(vfs, "/proc/cmdline",
-		`console=ttyS0 reboot=k panic=1 nomodule random.trust_cpu=1 ipv6.disable=1 swiotlb=noforce rdinit=/process_api init_on_free=1 -- --firecracker-init --addr 0.0.0.0:2024 --max-ws-buffer-size 32768 --block-local-connections\n`,
+		`console=ttyS0 reboot=k panic=1 nomodule random.trust_cpu=1 ipv6.disable=1 swiotlb=noforce rdinit=/process_api init_on_free=1\n`,
 	);
 
 	// /proc/filesystems — matching real container

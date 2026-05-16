@@ -430,7 +430,7 @@ OPTIONS
 	"dpkg": `DPKG(1)                  User Commands                    DPKG(1)
 
 NAME
-       dpkg - package manager for Debian-like systems
+       dpkg - package manager for Fortune GNU/Linux
 
 SYNOPSIS
        dpkg [OPTION]... ACTION
