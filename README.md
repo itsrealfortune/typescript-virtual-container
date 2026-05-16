@@ -1,6 +1,6 @@
 # `typescript-virtual-container`
 
-> A complete virtual Linux environment in pure TypeScript — runs as an SSH/SFTP server, a browser-based web shell, or a standalone CLI. Ships with a realistic Linux rootfs, a virtual package manager, a full shell interpreter, and a typed programmatic API for testing, automation, honeypots, and embedded shell experiences.
+> A complete virtual Linux environment in pure TypeScript — runs as an SSH/SFTP server, a browser-based web shell, a standalone CLI, or a full XFCE desktop simulation. Ships with a realistic Linux rootfs, a virtual package manager, a full shell interpreter, and a typed programmatic API for testing, automation, honeypots, and embedded shell experiences.
 
 [![npm version](https://badge.fury.io/js/typescript-virtual-container.svg)](https://www.npmjs.com/package/typescript-virtual-container)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -12,7 +12,7 @@
 
 ## Table of Contents
 
-- [Three ways to run](#three-ways-to-run) · [Get Started](#get-started)
+- [Four ways to run](#four-ways-to-run) · [Get Started](#get-started)
 - [How It Works](#how-it-works) · [Built-in Commands](#built-in-commands-149)
 - [Shell Scripting](#shell-scripting) · [Linux Rootfs](#linux-rootfs--vfs-path-resolution)
 - [Configuration](#configuration) · [Troubleshooting](#troubleshooting)
@@ -21,7 +21,7 @@
 
 ---
 
-## Three ways to run
+## Four ways to run
 
 <!-- BUILD:mode-table -->
 | Mode | Entry point | Use case |
@@ -29,9 +29,10 @@
 | **SSH/SFTP server** | `VirtualSshServer` / `VirtualSftpServer` | Honeypots, remote testing, training environments |
 | **Web shell** | `builds/fortune-nyx-v1.6.2-web.min.js` (ESM) | Embedded terminals, interactive tutorials, browser demos |
 | **Standalone CLI** | `builds/fortune-nyx-v1.6.2-directbash-k6.1.0.mjs` (single file) | Local shell, one-liner demos, no install required |
+| **XFCE desktop** | `startxfce4` in the web shell | Full graphical desktop in the browser — windows, file manager, text editor, trash |
 <!-- /BUILD:mode-table -->
 
-All three modes share the same core: a pure in-memory VFS, a real shell interpreter, a virtual package manager, and a typed programmatic API.
+All four modes share the same core: a pure in-memory VFS, a real shell interpreter, a virtual package manager, and a typed programmatic API.
 
 ---
 
@@ -186,13 +187,13 @@ console.log(r.stdout);
 │  per-IP rate limiting / lockout          home-dir confinement            │
 └─────────────────────────┬────────────────────────────────────────────────┘
                           │
-               ┌──────────▼──────────┐
-               │    VirtualShell     │
-               │  script parser      │  ← &&/||/; · if/for/while/case
-               │  command executor   │  ← per-session ShellEnv
-               │  .bashrc loader     │  ← /home/<user>/.bashrc
-               │  session manager    │
-               └──┬──────────────┬───┘
+               ┌──────────▼──────────┐         ┌──────────────────────────┐
+               │    VirtualShell     │────────▶ │    DesktopManager        │
+               │  script parser      │          │  XFCE panel · windows    │
+               │  command executor   │          │  Thunar · Mousepad       │
+               │  .bashrc loader     │          │  Trash · terminal windows│
+               │  session manager    │          │  (browser only)          │
+               └──┬──────────────┬───┘          └──────────────────────────┘
                   │              │
      ┌────────────▼───┐    ┌─────▼───────────────┐
      │VirtualFileSystem│   │ VirtualUserManager   │
@@ -440,9 +441,9 @@ const [r1, r2] = await Promise.all([
 ---
 
 <details>
-<summary><strong>Built-in Commands (149)</strong></summary>
+<summary><strong>Built-in Commands (152)</strong></summary>
 
-Type `help` in the shell for a grouped, colorized listing. Type `help <command>` for detailed usage. Type `man <command>` for full manual pages — all 149 commands are documented.
+Type `help` in the shell for a grouped, colorized listing. Type `help <command>` for detailed usage. Type `man <command>` for full manual pages — all commands are documented.
 
 ### Navigation
 
@@ -598,6 +599,16 @@ Type `help` in the shell for a grouped, colorized listing. Type `help <command>`
 | `history [n]` | Command history |
 | `help` | Full list: type `help` in the shell |
 
+### Desktop (browser only)
+
+| Command | Description |
+|---------|-------------|
+| `startxfce4` | Launch the XFCE desktop — blocks the shell until logout |
+| `thunar [path]` | Open the file manager window |
+| `mousepad [file]` | Open the text editor (`gedit` and `xed` are aliases) |
+
+> Desktop commands are no-ops outside the browser environment.
+
 ### Fun
 
 | Command | Description |
@@ -613,7 +624,7 @@ Type `help` in the shell for a grouped, colorized listing. Type `help <command>`
 | `pacman` | Pacman game (mock) |
 | `help` | Full list: type `help` in the shell |
 
-**ℹ️ All 149 built-in commands include complete JSDoc documentation** with `@category` and `@params` tags. See [src/commands/](https://github.com/itsrealfortune/typescript-virtual-container/tree/main/src/commands) for source code and inline documentation.
+**ℹ️ All 152 built-in commands include complete JSDoc documentation** with `@category` and `@params` tags. See [src/commands/](https://github.com/itsrealfortune/typescript-virtual-container/tree/main/src/commands) for source code and inline documentation.
 
 Custom commands: `shell.addCommand(name, params, callback)`.
 
@@ -975,6 +986,12 @@ Yes — use `HoneyPot.attach()` to capture all activity, configure `maxAuthAttem
 **Is SFTP fully supported?**
 Core operations are implemented. Extended attributes and symlinks return `OP_UNSUPPORTED`.
 
+**Does the desktop work outside the browser?**
+No — `startxfce4`, `thunar`, and `mousepad` require a DOM. In Node.js/Bun they return an error immediately. The `DesktopManager` is only instantiated in the web shell example (`examples/app.ts`).
+
+**What does the desktop simulate?**
+A single-user XFCE session: a panel with Applications menu and clock, draggable windows, a file manager (Thunar) with right-click context menu and trash support, a text editor (Mousepad) with Ctrl+S save, and terminal windows backed by real interactive shell sessions.
+
 ---
 
 ## Contributing
@@ -1018,6 +1035,8 @@ MIT — see [LICENSE](./LICENSE).
 Open:
 
 - [ ] WebSocket-based remote shell client (experimental)
+- [ ] XFCE desktop: resize windows, multi-monitor layout
+- [ ] Thunar: drag-and-drop between folders
 
 <details>
 <summary>Completed</summary>
@@ -1036,6 +1055,7 @@ Open:
 - [x] Web shell bundles (`fortune-nyx-v1.6.2-web.min.js`) — fully browser-native with IndexedDB VFS
 - [x] Self-standalone CLI (`fortune-nyx-v1.6.2-directbash-k6.1.0.mjs`) — single-file interactive shell, per-user history, tab completion
 <!-- /BUILD:changelog -->
+- [x] XFCE desktop simulation — `startxfce4` launches a full in-browser desktop with draggable windows, XFCE panel (Applications menu, clock, tray), Thunar file manager (navigate, right-click, trash, rename), Mousepad text editor (Ctrl+S, dirty indicator), terminal windows with live shell sessions, Font Awesome icons
 - [x] 127+ `man` pages — all built-in commands documented via `man <cmd>`
 - [x] Background job support — trailing `&` fires commands async; `:(){ :|:& };:` fork-bomb safely blocked by `MAX_CALL_DEPTH` guard; shell function names now accept any non-whitespace identifier (POSIX-compliant)
 - [x] Shared `tokenize.ts` — unified tokenizer for shell parser and runtime (eliminates duplication)
