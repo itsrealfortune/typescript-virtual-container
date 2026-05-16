@@ -11,6 +11,13 @@ import { runCommand } from "./runtime";
 /** Alias for clarity inside sh.ts */
 type ShellContext = CommandContext;
 
+// Module-level compiled regexes for function definition matching.
+// Rebuilt per-line inside parseBlocks would recompile on every script line — hoisted here instead.
+const _funcNamePat = "[^\\s(){}]+";
+const RE_FUNC_INLINE = new RegExp(`^(?:function\\s+)?(${_funcNamePat})\\s*\\(\\s*\\)\\s*\\{(.+)\\}\\s*$`);
+const RE_FUNC_MULTI  = new RegExp(`^(?:function\\s+)?(${_funcNamePat})\\s*\\(\\s*\\)\\s*\\{?\\s*$`);
+const RE_FUNC_KW_ONLY = new RegExp(`^function\\s+(${_funcNamePat})\\s*\\{?\\s*$`);
+
 /**
  * Expand all shell forms including $(cmd) substitution.
  * Delegates to centralised expandAsync (single-quote-aware, depth-tracked).
@@ -65,11 +72,10 @@ function parseBlocks(lines: string[]): Block[] {
 
 		// Function definition: name() { or function name { or name() { body }
 		// Shell allows any non-whitespace identifier as function name (incl. ':')
-		const funcNamePat = "[^\\s(){}]+";
-		const funcMatchInline = line.match(new RegExp(`^(?:function\\s+)?(${funcNamePat})\\s*\\(\\s*\\)\\s*\\{(.+)\\}\\s*$`));
+		const funcMatchInline = line.match(RE_FUNC_INLINE);
 		const funcMatch = funcMatchInline ?? (
-			line.match(new RegExp(`^(?:function\\s+)?(${funcNamePat})\\s*\\(\\s*\\)\\s*\\{?\\s*$`)) ||
-			line.match(new RegExp(`^function\\s+(${funcNamePat})\\s*\\{?\\s*$`))
+			line.match(RE_FUNC_MULTI) ||
+			line.match(RE_FUNC_KW_ONLY)
 		);
 		if (funcMatch) {
 			const funcName = funcMatch[1]!;

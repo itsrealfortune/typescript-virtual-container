@@ -173,16 +173,20 @@ export async function runCommandDirect(
 ): Promise<CommandResult> {
 	// Anti-loop guard: track call depth via env to avoid infinite recursion
 	_callDepth++;
-	// console.debug(`[depth=${_callDepth}] runCommandDirect: ${name}`);
 	if (_callDepth > MAX_CALL_DEPTH) {
 		_callDepth--;
-		// console.debug(`[LOOP DETECTED] runCommandDirect blocked: ${name}`);
 		return { stderr: `${name}: maximum call depth (${MAX_CALL_DEPTH}) exceeded`, exitCode: 126 };
 	}
+	// Register as visible process only at the outermost call level
+	const isTopLevel = _callDepth === 1;
+	const pid = isTopLevel
+		? shell.users.registerProcess(authUser, name, [name, ...args], env.vars.__TTY ?? "?")
+		: -1;
 	try {
 		return await _runCommandDirectInner(name, args, authUser, hostname, mode, cwd, shell, stdin, env);
 	} finally {
 		_callDepth--;
+		if (isTopLevel && pid !== -1) shell.users.unregisterProcess(pid);
 	}
 }
 

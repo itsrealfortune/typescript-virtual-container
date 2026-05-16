@@ -18,6 +18,22 @@ export interface VirtualUserRecord {
 	passwordHash: string;
 }
 
+/** Runtime representation of a command currently executing in a session. */
+export interface VirtualProcess {
+	/** Unique process identifier (auto-incremented). */
+	pid: number;
+	/** Username running the process. */
+	username: string;
+	/** Command name (argv[0]). */
+	command: string;
+	/** Full argument list (command + args). */
+	argv: string[];
+	/** TTY identifier of the owning session, or "?" for background jobs. */
+	tty: string;
+	/** ISO-8601 start timestamp. */
+	startedAt: string;
+}
+
 /** Runtime representation of authenticated SSH session. */
 export interface VirtualActiveSession {
 	/** Stable session identifier (UUID). */
@@ -58,7 +74,9 @@ export class VirtualUserManager extends EventEmitter {
 	private readonly sudoers = new Set<string>();
 	private readonly quotas = new Map<string, number>();
 	private readonly activeSessions = new Map<string, VirtualActiveSession>();
+	private readonly activeProcesses = new Map<number, VirtualProcess>();
 	private nextTty = 0;
+	private nextPid = 1000;
 
 	/**
 	 * Creates a user manager instance backed by a virtual filesystem.
@@ -501,6 +519,38 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public listUsers(): string[] {
 		return Array.from(this.users.keys()).sort();
+	}
+
+	/**
+	 * Registers a running command as a virtual process.
+	 * Returns the assigned PID so the caller can deregister on completion.
+	 */
+	public registerProcess(
+		username: string,
+		command: string,
+		argv: string[],
+		tty: string,
+	): number {
+		const pid = this.nextPid++;
+		this.activeProcesses.set(pid, {
+			pid,
+			username,
+			command,
+			argv,
+			tty,
+			startedAt: new Date().toISOString(),
+		});
+		return pid;
+	}
+
+	/** Removes a process record when the command exits. */
+	public unregisterProcess(pid: number): void {
+		this.activeProcesses.delete(pid);
+	}
+
+	/** Returns all currently running processes sorted by PID. */
+	public listProcesses(): VirtualProcess[] {
+		return Array.from(this.activeProcesses.values()).sort((a, b) => a.pid - b.pid);
 	}
 
 	private loadFromVfs(): void {
