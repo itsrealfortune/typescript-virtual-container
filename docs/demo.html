@@ -66,7 +66,9 @@
         position: fixed;
         inset: 0;
         display: none;
-        background: #2e6da4 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeBlend in='SourceGraphic' mode='multiply'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
+        background: rgba(20, 50, 90, 0.72) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeBlend in='SourceGraphic' mode='multiply'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+        backdrop-filter: blur(6px) saturate(1.4);
+        -webkit-backdrop-filter: blur(6px) saturate(1.4);
         font-family: -apple-system, 'Segoe UI', 'Noto Sans', sans-serif;
         font-size: 13px;
         color: #fff;
@@ -345,6 +347,17 @@
         overflow: hidden;
         position: relative;
         background: #1a1a1a;
+      }
+      .win-resize-handle {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 14px;
+        height: 14px;
+        cursor: se-resize;
+        background: linear-gradient(135deg, transparent 50%, #666 50%, #888 60%, transparent 60%,
+                                    transparent 70%, #666 70%, #888 80%, transparent 80%);
+        border-radius: 0 0 3px 0;
       }
       .win-terminal {
         margin: 0;
