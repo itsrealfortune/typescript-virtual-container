@@ -4,6 +4,10 @@ export type InternalNode = InternalFileNode | InternalStubNode | InternalDirecto
 interface InternalBaseNode {
 	name: string;
 	mode: number;
+	/** Owner user ID (0 = root). */
+	uid: number;
+	/** Owner group ID (0 = root). */
+	gid: number;
 	/** Unix timestamp in ms — avoids Date object overhead (~80 bytes each). */
 	createdAt: number;
 	/** Unix timestamp in ms. */

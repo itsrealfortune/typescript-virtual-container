@@ -116,6 +116,10 @@ class VirtualFileSystem extends EventEmitter {
 	private readonly mounts = new Map<string, { hostPath: string; readOnly: boolean }>();
 	/** Sorted mounts cache (longest-path-first). Rebuilt lazily on mount/unmount. */
 	private _sortedMounts: Array<[string, { hostPath: string; readOnly: boolean }]> | null = null;
+	/** Read hooks: path prefix → callback invoked before reading any file under that prefix. */
+	private readonly readHooks = new Map<string, () => void>();
+	/** Sorted read hook prefixes (longest-first) for matching. */
+	private _sortedReadHooks: string[] | null = null;
 	/** True when running in a browser environment (no host FS access). */
 	private static readonly isBrowser =
 		typeof process === "undefined" || typeof (process as NodeJS.Process).versions?.node === "undefined";
@@ -158,12 +162,14 @@ class VirtualFileSystem extends EventEmitter {
 
 	// ── Internal helpers ──────────────────────────────────────────────────────
 
-	private makeDir(name: string, mode: number): InternalDirectoryNode {
+	private makeDir(name: string, mode: number, uid = 0, gid = 0): InternalDirectoryNode {
 		const now = Date.now();
 		return {
 			type: "directory",
 			name,
 			mode,
+			uid,
+			gid,
 			createdAt: now,
 			updatedAt: now,
 		children: Object.create(null) as Record<string, InternalNode>,
@@ -177,6 +183,8 @@ class VirtualFileSystem extends EventEmitter {
 		content: Buffer,
 		mode: number,
 		compressed: boolean,
+		uid = 0,
+		gid = 0,
 	): InternalFileNode {
 		const now = Date.now();
 		return {
@@ -184,15 +192,17 @@ class VirtualFileSystem extends EventEmitter {
 			name,
 			content,
 			mode,
+			uid,
+			gid,
 			compressed,
 			createdAt: now,
 			updatedAt: now,
 		};
 	}
 
-	private makeStub(name: string, content: string, mode: number): InternalStubNode {
+	private makeStub(name: string, content: string, mode: number, uid = 0, gid = 0): InternalStubNode {
 		const now = Date.now();
-		return { type: "stub", name, stubContent: content, mode, createdAt: now, updatedAt: now };
+		return { type: "stub", name, stubContent: content, mode, uid, gid, createdAt: now, updatedAt: now };
 	}
 
 	/**
@@ -775,6 +785,50 @@ class VirtualFileSystem extends EventEmitter {
 		this._journal({ op: JournalOp.CHMOD, path: normalized, mode });
 	}
 
+	/** Changes ownership (uid/gid) of a file or directory. */
+	public chown(targetPath: string, uid: number, gid: number): void {
+		const normalized = normalizePath(targetPath);
+		const node = getNodeNormalized(this.root, normalized);
+		node.uid = uid;
+		node.gid = gid;
+		this._journal({ op: JournalOp.CHMOD, path: normalized, mode: node.mode });
+	}
+
+	/** Returns the uid and gid of a node. */
+	public getOwner(targetPath: string): { uid: number; gid: number } {
+		const node = getNodeNormalized(this.root, normalizePath(targetPath));
+		return { uid: node.uid, gid: node.gid };
+	}
+
+	/**
+	 * POSIX-style access check: does `uid`/`gid` have `want` permission on `targetPath`?
+	 * `want` is a bitmask of R_OK (4), W_OK (2), X_OK (1).
+	 * Root (uid === 0) is granted everything except X_OK without at least one x bit set.
+	 * Returns true when access is granted.
+	 */
+	public checkAccess(targetPath: string, uid: number, gid: number, want: number): boolean {
+		try {
+			const node = getNodeNormalized(this.root, normalizePath(targetPath));
+			const mode = node.mode;
+			// Root: allowed everything except execute (at least one x bit needed)
+			if (uid === 0) {
+				if (want & 1) return (mode & 0o111) !== 0;
+				return true;
+			}
+			let perm = 0;
+			if (uid === node.uid) {
+				perm = (mode >> 6) & 7; // owner bits
+			} else if (gid === node.gid) {
+				perm = (mode >> 3) & 7; // group bits
+			} else {
+				perm = mode & 7; // other bits
+			}
+			return (perm & want) === want;
+		} catch {
+			return false;
+		}
+	}
+
 	/** Returns metadata for a file or directory. */
 	public stat(targetPath: string): VfsNodeStats {
 		const m = this.resolveMount(targetPath);
@@ -789,6 +843,8 @@ class VirtualFileSystem extends EventEmitter {
 					name,
 					path: normalizePath(targetPath),
 					mode: 0o755,
+					uid: 0,
+					gid: 0,
 					createdAt: hst.birthtime,
 					updatedAt: now,
 					childrenCount: fsSync.readdirSync(m.fullHostPath).length,
@@ -799,6 +855,8 @@ class VirtualFileSystem extends EventEmitter {
 				name,
 				path: normalizePath(targetPath),
 				mode: m.readOnly ? 0o444 : 0o644,
+				uid: 0,
+				gid: 0,
 				createdAt: hst.birthtime,
 				updatedAt: now,
 				compressed: false,
@@ -815,6 +873,8 @@ class VirtualFileSystem extends EventEmitter {
 				name,
 				path: normalized,
 				mode: s.mode,
+				uid: s.uid,
+				gid: s.gid,
 				createdAt: new Date(s.createdAt),
 				updatedAt: new Date(s.updatedAt),
 				compressed: false,
@@ -828,6 +888,8 @@ class VirtualFileSystem extends EventEmitter {
 				name,
 				path: normalized,
 				mode: f.mode,
+				uid: f.uid,
+				gid: f.gid,
 				createdAt: new Date(f.createdAt),
 				updatedAt: new Date(f.updatedAt),
 				compressed: f.compressed,
@@ -840,6 +902,8 @@ class VirtualFileSystem extends EventEmitter {
 			name,
 			path: normalized,
 			mode: d.mode,
+			uid: d.uid,
+			gid: d.gid,
 			createdAt: new Date(d.createdAt),
 			updatedAt: new Date(d.updatedAt),
 			childrenCount: d._childCount,
@@ -976,6 +1040,8 @@ class VirtualFileSystem extends EventEmitter {
 			name,
 			content: Buffer.from(normalizedTarget, "utf8"),
 			mode: 0o120777,
+			uid: 0,
+			gid: 0,
 			compressed: false,
 			createdAt: Date.now(),
 			updatedAt: Date.now(),
@@ -1120,6 +1186,8 @@ class VirtualFileSystem extends EventEmitter {
 					type: "file",
 					name: child.name,
 					mode: child.mode,
+					uid: child.uid,
+					gid: child.gid,
 					createdAt: new Date(child.createdAt).toISOString(),
 					updatedAt: new Date(child.updatedAt).toISOString(),
 					compressed: false,
@@ -1135,6 +1203,8 @@ class VirtualFileSystem extends EventEmitter {
 			type: "directory",
 			name: dir.name,
 			mode: dir.mode,
+			uid: dir.uid,
+			gid: dir.gid,
 			createdAt: new Date(dir.createdAt).toISOString(),
 			updatedAt: new Date(dir.updatedAt).toISOString(),
 			children,
@@ -1146,6 +1216,8 @@ class VirtualFileSystem extends EventEmitter {
 			type: "file",
 			name: file.name,
 			mode: file.mode,
+			uid: file.uid,
+			gid: file.gid,
 			createdAt: new Date(file.createdAt).toISOString(),
 			updatedAt: new Date(file.updatedAt).toISOString(),
 			compressed: file.compressed,
@@ -1189,6 +1261,8 @@ class VirtualFileSystem extends EventEmitter {
 			type: "directory",
 			name,
 			mode: snap.mode,
+			uid: snap.uid ?? 0,
+			gid: snap.gid ?? 0,
 			createdAt: Date.parse(snap.createdAt),
 			updatedAt: Date.parse(snap.updatedAt),
 			children: Object.create(null) as Record<string, InternalNode>,
@@ -1202,6 +1276,8 @@ class VirtualFileSystem extends EventEmitter {
 					type: "file",
 					name: f.name,
 					mode: f.mode,
+					uid: f.uid ?? 0,
+					gid: f.gid ?? 0,
 					createdAt: Date.parse(f.createdAt),
 					updatedAt: Date.parse(f.updatedAt),
 					compressed: f.compressed,

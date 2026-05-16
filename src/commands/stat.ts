@@ -49,10 +49,12 @@ export const statCommand: ShellModule = {
 			return { stdout: `${out}\n`, exitCode: 0 };
 		}
 
+		const statUid = "uid" in st ? (st as { uid: number }).uid : 0;
+		const statGid = "gid" in st ? (st as { gid: number }).gid : 0;
 		const out = [
 			`  File: ${file}${isSymlink ? ` -> ${shell.vfs.resolveSymlink(p)}` : ""}`,
 			`  Size: ${size}${"\t".repeat(3)}${isSymlink ? "symbolic link" : isDir ? "directory" : "regular file"}`,
-			`Access: (${octal}/${modeStr})  Uid: (    0/    root)   Gid: (    0/    root)`,
+			`Access: (${octal}/${modeStr})  Uid: (${String(statUid).padStart(5)}/    root)   Gid: (${String(statGid).padStart(5)}/    root)`,
 			`Modify: ${ts(st.updatedAt)}`,
 			`Change: ${ts(st.updatedAt)}`,
 		].join("\n");

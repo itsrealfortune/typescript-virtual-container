@@ -7,13 +7,15 @@
  *
  *   File header:
  *     [4]  magic  = 0x56 0x46 0x53 0x21  ("VFS!")
- *     [1]  version = 0x01
+ *     [1]  version = 0x02
  *
  *   Node (recursive):
  *     [1]  type    = 0x01 (file) | 0x02 (directory)
  *     [2]  name length (uint16)
  *     [N]  name bytes (utf8)
  *     [4]  mode (uint32)
+ *     [4]  uid (uint32)
+ *     [4]  gid (uint32)
  *     [8]  createdAt ms (float64)
  *     [8]  updatedAt ms (float64)
  *
@@ -39,7 +41,7 @@ import type {
 } from "./internalTypes";
 
 const MAGIC = Buffer.from([0x56, 0x46, 0x53, 0x21]); // "VFS!"
-const VERSION = 0x01;
+const VERSION = 0x02;
 const TYPE_FILE = 0x01;
 const TYPE_DIR = 0x02;
 
@@ -98,6 +100,8 @@ function encodeNode(enc: Encoder, node: InternalNode): void {
 		enc.writeUint8(TYPE_FILE);
 		enc.writeString(f.name);
 		enc.writeUint32(f.mode);
+		enc.writeUint32(f.uid);
+		enc.writeUint32(f.gid);
 		enc.writeFloat64(f.createdAt);
 		enc.writeFloat64(f.updatedAt);
 		enc.writeUint8(f.compressed ? 0x01 : 0x00);
@@ -108,6 +112,8 @@ function encodeNode(enc: Encoder, node: InternalNode): void {
 		enc.writeUint8(TYPE_FILE);
 		enc.writeString(s.name);
 		enc.writeUint32(s.mode);
+		enc.writeUint32(s.uid);
+		enc.writeUint32(s.gid);
 		enc.writeFloat64(s.createdAt);
 		enc.writeFloat64(s.updatedAt);
 		enc.writeUint8(0x00); // not compressed
@@ -117,6 +123,8 @@ function encodeNode(enc: Encoder, node: InternalNode): void {
 		enc.writeUint8(TYPE_DIR);
 		enc.writeString(d.name);
 		enc.writeUint32(d.mode);
+		enc.writeUint32(d.uid);
+		enc.writeUint32(d.gid);
 		enc.writeFloat64(d.createdAt);
 		enc.writeFloat64(d.updatedAt);
 		const children = Object.values(d.children);
@@ -184,10 +192,12 @@ class Decoder {
 	}
 }
 
-function decodeNode(dec: Decoder): InternalNode {
+function decodeNode(dec: Decoder, includeUidGid: boolean): InternalNode {
 	const type = dec.readUint8();
 	const name = internName(dec.readString());
 	const mode = dec.readUint32();
+	const uid = includeUidGid ? dec.readUint32() : 0;
+	const gid = includeUidGid ? dec.readUint32() : 0;
 	const createdAt = dec.readFloat64();
 	const updatedAt = dec.readFloat64();
 
@@ -198,6 +208,8 @@ function decodeNode(dec: Decoder): InternalNode {
 			type: "file",
 			name,
 			mode,
+			uid,
+			gid,
 			createdAt,
 			updatedAt,
 			compressed,
@@ -209,13 +221,15 @@ function decodeNode(dec: Decoder): InternalNode {
 		const count = dec.readUint32();
 		const children = Object.create(null) as Record<string, InternalNode>;
 		for (let i = 0; i < count; i++) {
-			const child = decodeNode(dec);
+			const child = decodeNode(dec, includeUidGid);
 			children[child.name] = child;
 		}
 		return {
 			type: "directory",
 			name,
 			mode,
+			uid,
+			gid,
 			createdAt,
 			updatedAt,
 			children,
@@ -255,6 +269,8 @@ export function forkDirTree(base: InternalDirectoryNode): InternalDirectoryNode 
 		type: "directory",
 		name: base.name,
 		mode: base.mode,
+		uid: base.uid,
+		gid: base.gid,
 		createdAt: base.createdAt,
 		updatedAt: base.updatedAt,
 		children,
@@ -276,10 +292,12 @@ export function decodeVfs(buf: Buffer): InternalDirectoryNode {
 	}
 
 	const dec = new Decoder(buf);
-	// skip magic (4) + version (1)
-	for (let i = 0; i < 5; i++) dec.readUint8();
+	// skip magic (4)
+	dec.readUint8(); dec.readUint8(); dec.readUint8(); dec.readUint8();
+	const version = dec.readUint8();
+	const includeUidGid = version >= 0x02;
 
-	const root = decodeNode(dec);
+	const root = decodeNode(dec, includeUidGid);
 	if (root.type !== "directory") {
 		throw new Error("[VFS binary] Root node must be a directory");
 	}

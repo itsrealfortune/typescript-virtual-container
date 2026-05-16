@@ -123,6 +123,8 @@ type VfsStat = {
 	updatedAt:     Date;
 	size?:         number;
 	childrenCount?: number;
+	uid?:          number;
+	gid?:          number;
 };
 
 function longListing(
@@ -177,13 +179,14 @@ function longListing(
 
 	const wNlink = Math.max(...rows.map((r) => r.nlink.length));
 	const wSize  = Math.max(...rows.map((r) => r.size.length));
-	const owner  = "root";
-	const group  = "root";
 
 	const total  = items.length * 8;
-	const lines  = rows.map((r) =>
-		`${r.perms} ${r.nlink.padStart(wNlink)} ${owner} ${group} ${r.size.padStart(wSize)} ${r.date} ${r.label}`,
-	);
+	const lines  = rows.map((r, i) => {
+		const st = (() => { try { return vfs.stat(`${base}/${items[i]}`); } catch { return null; } })();
+		const uidStr = st && "uid" in st ? String((st as { uid: number }).uid) : "0";
+		const gidStr = st && "gid" in st ? String((st as { gid: number }).gid) : "0";
+		return `${r.perms} ${r.nlink.padStart(wNlink)} ${uidStr} ${gidStr} ${r.size.padStart(wSize)} ${r.date} ${r.label}`;
+	});
 
 	return `total ${total}\n${lines.join("\n")}`;
 }
@@ -221,8 +224,10 @@ export const lsCommand: ShellModule = {
 					const label = isLink
 						? `${colorize(name, color)} -> ${readlinkTarget(shell.vfs, target)}`
 						: colorize(name, color);
+					const uidStr = "uid" in st ? String((st as { uid: number }).uid) : "0";
+					const gidStr = "gid" in st ? String((st as { gid: number }).gid) : "0";
 					return {
-						stdout: `${perms} 1 root root ${size} ${formatDate(st.updatedAt)} ${label}\n`,
+						stdout: `${perms} 1 ${uidStr} ${gidStr} ${size} ${formatDate(st.updatedAt)} ${label}\n`,
 						exitCode: 0,
 					};
 				}
