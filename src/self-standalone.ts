@@ -6,6 +6,7 @@ import { createInterface, type Interface } from "node:readline";
 import { getCommandNames } from "./commands/registry";
 import { applyUserSwitch, makeDefaultEnv, runCommand, userHome } from "./commands/runtime";
 import { NanoEditor } from "./modules/nanoEditor";
+import { PacmanGame } from "./modules/pacmanGame";
 import { buildLoginBanner } from "./SSHMimic/loginBanner";
 import { buildPrompt } from "./SSHMimic/prompt";
 import type { CommandResult, PasswordChallenge, SudoChallenge } from "./types/commands";
@@ -315,6 +316,66 @@ async function runReadlineShell(): Promise<void> {
 		});
 	}
 
+	// ── pacman game ────────────────────────────────────────────────────────────
+
+	function startPacmanGame(): Promise<void> {
+		return new Promise<void>((resolve) => {
+			const stream: import("./types/streams").ShellStream = {
+				write: (data: string) => { stdout.write(data); },
+				exit: () => undefined,
+				end: () => undefined,
+				on: () => undefined,
+			};
+
+			const snapSize = { cols: stdout.columns ?? 80, rows: stdout.rows ?? 24 };
+
+			// Steal stdin listeners from readline so game gets raw input
+			const stdinListeners = stdin.listeners("data") as ((chunk: Buffer) => void)[];
+			for (const l of stdinListeners) stdin.off("data", l);
+			const keypressListeners = stdin.listeners("keypress") as ((...args: unknown[]) => void)[];
+			for (const l of keypressListeners) stdin.off("keypress", l);
+
+			function cleanup(): void {
+				process.off("SIGWINCH", onResize);
+				process.off("SIGINT", onSigint);
+				stdin.off("data", forwardInput);
+				for (const l of stdinListeners) stdin.on("data", l);
+				for (const l of keypressListeners) stdin.on("keypress", l);
+				stdout.write("\x1b[?25h\x1b[0m");
+				rl.resume();
+				resolve();
+			}
+
+			if (stdin.isTTY) stdin.setRawMode(true);
+			stdin.resume();
+
+			const game = new PacmanGame({
+				stream,
+				terminalSize: snapSize,
+				onExit: cleanup,
+			});
+
+			function forwardInput(chunk: Buffer): void {
+				game.handleInput(chunk);
+			}
+
+			function onResize(): void {
+				// game re-renders on next tick automatically
+			}
+
+			function onSigint(): void {
+				game.stop();
+				cleanup();
+			}
+
+			stdin.on("data", forwardInput);
+			process.on("SIGWINCH", onResize);
+			process.on("SIGINT", onSigint);
+
+			game.start();
+		});
+	}
+
 	// ── challenge handlers ─────────────────────────────────────────────────────
 
 	async function handleSudoChallenge(challenge: SudoChallenge): Promise<void> {
@@ -407,6 +468,12 @@ async function runReadlineShell(): Promise<void> {
 				result.openEditor.initialContent,
 				result.openEditor.tempPath,
 			);
+			prompt();
+			return;
+		}
+
+		if (result.openPacman) {
+			await startPacmanGame();
 			prompt();
 			return;
 		}

@@ -2,6 +2,7 @@ import * as path from "node:path";
 import type { ShellProperties, VirtualShell } from ".";
 import { applyUserSwitch, getCommandNames, makeDefaultEnv, runCommand, userHome } from "../commands";
 import { NanoEditor } from "../modules/nanoEditor";
+import { PacmanGame } from "../modules/pacmanGame";
 import {
 	spawnHtopProcess,
 } from "../modules/shellInteractive";
@@ -25,6 +26,11 @@ interface NanoSession {
 interface HtopSession {
 	kind: "htop";
 	process: import("node:child_process").ChildProcessWithoutNullStreams;
+}
+
+interface PacmanSession {
+	kind: "pacman";
+	game: PacmanGame;
 }
 
 
@@ -61,7 +67,7 @@ export function startShell(
 	let pendingHeredoc: { delimiter: string; lines: string[]; cmdBefore: string } | null = null;
 	const shellEnv: ShellEnv = makeDefaultEnv(authUser, hostname);
 	const sessionStack: Array<{ authUser: string; cwd: string }> = [];
-	let nanoSession: NanoSession | HtopSession | null = null;
+	let nanoSession: NanoSession | HtopSession | PacmanSession | null = null;
 	let pendingSudo: PendingSudo | null = null;
 	const buildCurrentPrompt = (): string => {
 		if (shellEnv.vars.PS1) return buildPrompt(authUser, hostname, "", shellEnv.vars.PS1, cwd);
@@ -188,6 +194,11 @@ export function startShell(
 			return;
 		}
 
+		if (result.openPacman) {
+			startPacman();
+			return;
+		}
+
 		if (result.clearScreen) {
 			stream.write("\u001b[2J\u001b[H");
 		}
@@ -268,6 +279,22 @@ export function startShell(
 		});
 
 		nanoSession = { kind: "htop", process: monitor };
+	}
+
+	function startPacman(): void {
+		const game = new PacmanGame({
+			stream,
+			terminalSize,
+			onExit: () => {
+				nanoSession = null;
+				lineBuffer = "";
+				cursorPos = 0;
+				stream.write("\x1b[2J\x1b[H\x1b[0m");
+				renderLine();
+			},
+		});
+		nanoSession = { kind: "pacman", game };
+		game.start();
 	}
 
 	function applyHistoryLine(nextLine: string): void {
@@ -356,6 +383,8 @@ export function startShell(
 		if (nanoSession) {
 			if (nanoSession.kind === "nano") {
 				nanoSession.editor.handleInput(chunk);
+			} else if (nanoSession.kind === "pacman") {
+				nanoSession.game.handleInput(chunk);
 			} else {
 				nanoSession.process.stdin.write(chunk);
 			}
@@ -651,6 +680,11 @@ export function startShell(
 						return;
 					}
 
+					if (result.openPacman) {
+						startPacman();
+						return;
+					}
+
 					if (result.sudoChallenge) {
 						startSudoPrompt(result.sudoChallenge);
 						return;
@@ -725,6 +759,8 @@ export function startShell(
 		if (nanoSession) {
 			if (nanoSession.kind === "htop") {
 				nanoSession.process.kill("SIGTERM");
+			} else if (nanoSession.kind === "pacman") {
+				nanoSession.game.stop();
 			}
 			nanoSession = null;
 		}

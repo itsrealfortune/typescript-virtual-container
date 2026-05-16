@@ -29,6 +29,8 @@ export interface CommandResult {
 	openEditor?: NanoEditorSession;
 	/** Request opening built-in htop-like screen. */
 	openHtop?: boolean;
+	/** Request opening built-in Pac-Man game. */
+	openPacman?: boolean;
 	/** Request sudo password challenge flow. */
 	sudoChallenge?: SudoChallenge;
 	/** Request a generic password challenge (adduser, passwd). */
