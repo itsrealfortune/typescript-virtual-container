@@ -1,0 +1,11 @@
+REALPATH(1)              User Commands              REALPATH(1)
+
+NAME
+       realpath - print resolved absolute file name
+
+SYNOPSIS
+       realpath [FILE...]
+
+DESCRIPTION
+       Print the resolved absolute path for each FILE,
+       with all symbolic links resolved.

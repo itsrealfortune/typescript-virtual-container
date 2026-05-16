@@ -1,6 +1,11 @@
 import * as os from "node:os";
 import type { ShellModule } from "../types/commands";
 
+/**
+ * Display processes
+ * @category system
+ * @params []
+ */
 export const topCommand: ShellModule = {
 	name: "top",
 	description: "Display processes",

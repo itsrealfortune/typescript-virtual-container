@@ -1,5 +1,10 @@
 import type { ShellModule } from "../types/commands";
 
+/**
+ * List process IDs matching a pattern
+ * @category system
+ * @params ["[-f] <pattern>"]
+ */
 export const pgrepCommand: ShellModule = {
 	name: "pgrep",
 	description: "List process IDs matching a pattern",
@@ -29,6 +34,11 @@ export const pgrepCommand: ShellModule = {
 	},
 };
 
+/**
+ * Kill processes matching a pattern
+ * @category system
+ * @params ["[-f] <pattern>"]
+ */
 export const pkillCommand: ShellModule = {
 	name: "pkill",
 	description: "Kill processes matching a pattern",

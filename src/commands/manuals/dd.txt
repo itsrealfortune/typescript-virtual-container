@@ -1,0 +1,12 @@
+DD(1)                    User Commands                    DD(1)
+
+NAME
+       dd - convert and copy a file
+
+SYNOPSIS
+       dd [OPERAND...]
+
+DESCRIPTION
+       Copy a file with optional conversions.  Operands
+       specify input file, output file, block size, and
+       count.

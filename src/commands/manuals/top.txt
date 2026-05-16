@@ -1,0 +1,11 @@
+TOP(1)                   User Commands                   TOP(1)
+
+NAME
+       top - display process information
+
+SYNOPSIS
+       top [OPTION]...
+
+DESCRIPTION
+       Display a dynamic, real-time view of running
+       processes and system resource usage.

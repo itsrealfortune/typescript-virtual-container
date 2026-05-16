@@ -1,6 +1,11 @@
 import type { ShellModule } from "../types/commands";
 import { runCommand } from "./runtime";
 
+/**
+ * Run command immune to hup signals
+ * @category system
+ * @params ["<command> [args...]"]
+ */
 export const nohupCommand: ShellModule = {
 	name: "nohup",
 	description: "Run command immune to hup signals",

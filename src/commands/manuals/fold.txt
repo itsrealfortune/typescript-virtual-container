@@ -1,0 +1,11 @@
+FOLD(1)                  User Commands                  FOLD(1)
+
+NAME
+       fold - wrap each input line to fit specified width
+
+SYNOPSIS
+       fold [OPTION]... [FILE...]
+
+DESCRIPTION
+       Wrap lines from each FILE to a specified width
+       (default 80), breaking at character boundaries.

@@ -1,0 +1,11 @@
+NC(1)                    User Commands                    NC(1)
+
+NAME
+       nc - arbitrary TCP and UDP connections
+
+SYNOPSIS
+       nc [OPTION]... HOST PORT
+
+DESCRIPTION
+       Open TCP or UDP connections to arbitrary ports,
+       useful for debugging and network exploration.

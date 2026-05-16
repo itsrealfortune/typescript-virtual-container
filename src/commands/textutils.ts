@@ -12,6 +12,11 @@ function alphaSuffix(n: number): string {
 	return result;
 }
 
+/**
+ * Join lines of two files on a common field
+ * @category text
+ * @params ["[-t sep] <file1> <file2>"]
+ */
 export const joinCommand: ShellModule = {
 	name: "join",
 	description: "Join lines of two files on a common field",
@@ -58,6 +63,11 @@ export const joinCommand: ShellModule = {
 	},
 };
 
+/**
+ * Compare two sorted files line by line
+ * @category text
+ * @params ["<file1> <file2>"]
+ */
 export const commCommand: ShellModule = {
 	name: "comm",
 	description: "Compare two sorted files line by line",
@@ -117,6 +127,11 @@ export const commCommand: ShellModule = {
 	},
 };
 
+/**
+ * Split a file into pieces
+ * @category text
+ * @params ["[-l lines] [-b bytes] <file> [prefix]"]
+ */
 export const splitCommand: ShellModule = {
 	name: "split",
 	description: "Split a file into pieces",
@@ -166,6 +181,11 @@ export const splitCommand: ShellModule = {
 	},
 };
 
+/**
+ * Split a file based on context patterns
+ * @category text
+ * @params ["<file> <pattern>..."]
+ */
 export const csplitCommand: ShellModule = {
 	name: "csplit",
 	description: "Split a file based on context patterns",

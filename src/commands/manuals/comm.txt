@@ -1,0 +1,11 @@
+COMM(1)                  User Commands                  COMM(1)
+
+NAME
+       comm - compare two sorted files line by line
+
+SYNOPSIS
+       comm [OPTION]... FILE1 FILE2
+
+DESCRIPTION
+       Compare FILE1 and FILE2 line by line, producing
+       three-column output of common and unique lines.

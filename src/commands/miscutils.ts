@@ -4,6 +4,11 @@ import type { ShellModule } from "../types/commands";
 import { parseArgs } from "./command-helpers";
 import { resolvePath } from "./helpers";
 
+/**
+ * Resolve symlinks and print absolute path
+ * @category files
+ * @params ["<path>"]
+ */
 export const realpathCommand: ShellModule = {
 	name: "realpath",
 	description: "Resolve symlinks and print absolute path",
@@ -23,6 +28,11 @@ export const realpathCommand: ShellModule = {
 	},
 };
 
+/**
+ * Compute MD5 hash of a file
+ * @category text
+ * @params ["<file>"]
+ */
 export const md5sumCommand: ShellModule = {
 	name: "md5sum",
 	description: "Compute MD5 hash of a file",
@@ -41,6 +51,11 @@ export const md5sumCommand: ShellModule = {
 	},
 };
 
+/**
+ * Compute SHA256 hash of a file
+ * @category text
+ * @params ["<file>"]
+ */
 export const sha256sumCommand: ShellModule = {
 	name: "sha256sum",
 	description: "Compute SHA256 hash of a file",
@@ -59,6 +74,11 @@ export const sha256sumCommand: ShellModule = {
 	},
 };
 
+/**
+ * Find printable strings in a file
+ * @category text
+ * @params ["<file>"]
+ */
 export const stringsCommand: ShellModule = {
 	name: "strings",
 	description: "Find printable strings in a file",
@@ -88,6 +108,11 @@ export const stringsCommand: ShellModule = {
 	},
 };
 
+/**
+ * Wrap lines to a specified width
+ * @category text
+ * @params ["[-w width] <file>"]
+ */
 export const foldCommand: ShellModule = {
 	name: "fold",
 	description: "Wrap lines to a specified width",
@@ -126,6 +151,11 @@ export const foldCommand: ShellModule = {
 	},
 };
 
+/**
+ * Convert tabs to spaces
+ * @category text
+ * @params ["[-t tabs] <file>"]
+ */
 export const expandCommand: ShellModule = {
 	name: "expand",
 	description: "Convert tabs to spaces",
@@ -156,6 +186,11 @@ export const expandCommand: ShellModule = {
 	},
 };
 
+/**
+ * Simple text formatter
+ * @category text
+ * @params ["[-w width] <file>"]
+ */
 export const fmtCommand: ShellModule = {
 	name: "fmt",
 	description: "Simple text formatter",

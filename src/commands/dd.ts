@@ -1,6 +1,11 @@
 import type { ShellModule } from "../types/commands";
 import { resolvePath } from "./helpers";
 
+/**
+ * Convert and copy a file
+ * @category files
+ * @params ["if=<file> of=<file> [bs=1024] [count=N]"]
+ */
 export const ddCommand: ShellModule = {
 	name: "dd",
 	description: "Convert and copy a file",

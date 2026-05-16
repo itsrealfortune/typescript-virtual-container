@@ -1,5 +1,10 @@
 import type { ShellModule } from "../types/commands";
 
+/**
+ * Evaluate expressions
+ * @category shell
+ * @params ["<expression>"]
+ */
 export const exprCommand: ShellModule = {
 	name: "expr",
 	description: "Evaluate expressions",

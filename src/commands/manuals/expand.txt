@@ -1,0 +1,11 @@
+EXPAND(1)                User Commands                EXPAND(1)
+
+NAME
+       expand - convert tabs to spaces
+
+SYNOPSIS
+       expand [OPTION]... [FILE...]
+
+DESCRIPTION
+       Convert tabs in each FILE to spaces, writing to
+       standard output.

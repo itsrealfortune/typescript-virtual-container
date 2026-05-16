@@ -1,0 +1,11 @@
+LSPCI(1)                 User Commands                 LSPCI(1)
+
+NAME
+       lspci - list PCI devices
+
+SYNOPSIS
+       lspci [OPTION]...
+
+DESCRIPTION
+       Display information about PCI buses and devices
+       connected to the system.

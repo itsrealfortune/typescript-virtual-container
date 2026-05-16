@@ -2,6 +2,11 @@ import type { ShellModule } from "../types/commands";
 import { parseArgs } from "./command-helpers";
 import { runCommand } from "./runtime";
 
+/**
+ * Run command with adjusted niceness
+ * @category system
+ * @params ["[-n adjustment] <command> [args...]"]
+ */
 export const niceCommand: ShellModule = {
 	name: "nice",
 	description: "Run command with adjusted niceness",

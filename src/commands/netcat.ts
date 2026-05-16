@@ -1,6 +1,11 @@
 import * as net from "node:net";
 import type { ShellModule } from "../types/commands";
 
+/**
+ * Netcat network utility
+ * @category net
+ * @params ["[-l] [-p port] [-v]"]
+ */
 export const ncCommand: ShellModule = {
 	name: "nc",
 	description: "Netcat network utility",

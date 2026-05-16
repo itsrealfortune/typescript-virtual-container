@@ -1,6 +1,11 @@
 import * as os from "node:os";
 import type { ShellModule } from "../types/commands";
 
+/**
+ * Display CPU architecture information
+ * @category system
+ * @params []
+ */
 export const lscpuCommand: ShellModule = {
 	name: "lscpu",
 	description: "Display CPU architecture information",
@@ -28,6 +33,11 @@ export const lscpuCommand: ShellModule = {
 	},
 };
 
+/**
+ * List USB devices
+ * @category system
+ * @params []
+ */
 export const lsusbCommand: ShellModule = {
 	name: "lsusb",
 	description: "List USB devices",
@@ -43,6 +53,11 @@ export const lsusbCommand: ShellModule = {
 	},
 };
 
+/**
+ * List PCI devices
+ * @category system
+ * @params []
+ */
 export const lspciCommand: ShellModule = {
 	name: "lspci",
 	description: "List PCI devices",

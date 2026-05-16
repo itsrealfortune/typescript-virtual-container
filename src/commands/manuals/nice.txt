@@ -1,0 +1,11 @@
+NICE(1)                  User Commands                  NICE(1)
+
+NAME
+       nice - run a command with modified niceness
+
+SYNOPSIS
+       nice [OPTION]... COMMAND [ARG...]
+
+DESCRIPTION
+       Run COMMAND with an adjusted scheduling priority
+       (niceness).  Higher niceness means lower priority.
