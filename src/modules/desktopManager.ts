@@ -107,6 +107,8 @@ export class DesktopManager {
   private dragState: { win: DesktopWindow; startX: number; startY: number; origX: number; origY: number } | null = null;
   private _renderGuard = false;
   private readonly trashPath = "/root/.local/share/Trash/files";
+  private docListeners: Array<{ target: EventTarget; type: string; fn: EventListener }> = [];
+  private pendingTimeouts: Set<ReturnType<typeof setTimeout>> = new Set();
 
   constructor(shell: VirtualShell, container: HTMLElement) {
     this.shell = shell;
@@ -138,6 +140,9 @@ export class DesktopManager {
     this.windows = [];
     this.menuOpen = false;
     this.dragState = null;
+    for (const id of this.pendingTimeouts) clearTimeout(id);
+    this.pendingTimeouts.clear();
+    this.removeAllDocListeners();
     this.stopResolve?.();
     this.stopResolve = null;
     this.onExit?.();
@@ -232,9 +237,11 @@ export class DesktopManager {
     }
 
     // Start shell asynchronously so the calling command can finish first
-    setTimeout(() => {
+    const tid = setTimeout(() => {
+      this.pendingTimeouts.delete(tid);
       this.shell.startInteractiveSession(stream, "root", null, "desktop", { cols, rows });
     }, 0);
+    this.pendingTimeouts.add(tid);
 
     return id;
   }
@@ -363,6 +370,18 @@ export class DesktopManager {
     } else if (win.content.type === "editor") {
       this.renderEditorContent(el, win.id, win.content);
     }
+  }
+
+  private addDocListener(target: EventTarget, type: string, fn: EventListener): void {
+    target.addEventListener(type, fn);
+    this.docListeners.push({ target, type, fn });
+  }
+
+  private removeAllDocListeners(): void {
+    for (const { target, type, fn } of this.docListeners) {
+      target.removeEventListener(type, fn);
+    }
+    this.docListeners = [];
   }
 
   private setupEventDelegation(): void {
@@ -511,7 +530,7 @@ export class DesktopManager {
     });
 
     // Close context menu on click elsewhere
-    document.addEventListener("click", () => this.closeContextMenu());
+    this.addDocListener(document, "click", () => this.closeContextMenu());
 
     // Mouse down for window dragging
     this.container.addEventListener("mousedown", (e) => {
@@ -536,17 +555,18 @@ export class DesktopManager {
     });
 
     // Mouse move for dragging
-    document.addEventListener("mousemove", (e) => {
+    this.addDocListener(document, "mousemove", (e) => {
       if (!this.dragState) return;
-      const dx = e.clientX - this.dragState.startX;
-      const dy = e.clientY - this.dragState.startY;
+      const me = e as MouseEvent;
+      const dx = me.clientX - this.dragState.startX;
+      const dy = me.clientY - this.dragState.startY;
       this.dragState.win.x = Math.max(0, this.dragState.origX + dx);
       this.dragState.win.y = Math.max(0, this.dragState.origY + dy);
       this.renderWindowPositions();
     });
 
     // Mouse up to end drag
-    document.addEventListener("mouseup", () => {
+    this.addDocListener(document, "mouseup", () => {
       this.dragState = null;
     });
 
@@ -556,11 +576,10 @@ export class DesktopManager {
     });
 
     // Keyboard input for desktop terminal windows (document-level so focus doesn't matter)
-    document.addEventListener("keydown", (e) => {
+    this.addDocListener(document, "keydown", (e) => {
       if (!this.active) return;
-      // Skip if focus is inside an editor textarea — let it handle its own keys
       if ((e.target as HTMLElement)?.classList?.contains("editor-textarea")) return;
-      this.handleKeyDown(e);
+      this.handleKeyDown(e as KeyboardEvent);
     });
   }
   // private measureCell(_renderer: WebTermRenderer): { w: number; h: number } {
@@ -631,18 +650,23 @@ export class DesktopManager {
       ` : ""}
     `;
 
-    // Task button clicks → focus/minimize
-    panel.querySelectorAll(".xfce-taskbutton").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
+    // Task button clicks → focus/minimize (use event delegation, no per-button listeners)
+    const list = panel.querySelector(".xfce-window-list");
+    if (list) {
+      const fresh = list.cloneNode(true) as HTMLElement;
+      list.replaceWith(fresh);
+      fresh.addEventListener("click", (e) => {
         e.stopPropagation();
-        const id = (btn as HTMLElement).getAttribute("data-win-id");
+        const btn = (e.target as HTMLElement).closest(".xfce-taskbutton") as HTMLElement | null;
+        if (!btn) return;
+        const id = btn.getAttribute("data-win-id");
         if (!id) return;
         const w = this.windows.find((ww) => ww.id === id);
         if (!w) return;
         if (w.focused && !w.minimized) { this.toggleMinimize(id); }
         else { this.focusWindow(id); }
       });
-    });
+    }
   }
 
   private renderDesktopIcons(): void {
@@ -752,7 +776,8 @@ export class DesktopManager {
 
   private renderEditorContent(el: HTMLElement, winId: string, content: EditorContent): void {
     const contentArea = el.querySelector(".win-content") as HTMLElement;
-    if (!contentArea || contentArea.querySelector(".editor-textarea")) return;
+    if (!contentArea) return;
+    if (contentArea.querySelector(".editor-textarea")) return;
 
     let fileText = "";
     try { fileText = this.shell.vfs.readFile(content.path); } catch { /* new file */ }
