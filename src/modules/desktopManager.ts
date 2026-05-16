@@ -70,6 +70,7 @@ export class DesktopManager {
   private onExit: (() => void) | null = null;
   private stopResolve: (() => void) | null = null;
   private dragState: { win: DesktopWindow; startX: number; startY: number; origX: number; origY: number } | null = null;
+  private resizeState: { win: DesktopWindow; startX: number; startY: number; origW: number; origH: number } | null = null;
   private _renderGuard = false;
   private readonly trashPath = "/root/.local/share/Trash/files";
   private docListeners: Array<{ target: EventTarget; type: string; fn: EventListener }> = [];
@@ -105,6 +106,7 @@ export class DesktopManager {
     this.windows = [];
     this.menuOpen = false;
     this.dragState = null;
+    this.resizeState = null;
     for (const id of this.pendingTimeouts) clearTimeout(id);
     this.pendingTimeouts.clear();
     this.removeAllDocListeners();
@@ -311,6 +313,7 @@ export class DesktopManager {
           </div>
         </div>
         <div class="win-content"></div>
+        <div class="win-resize-handle"></div>
       `;
       this.container.appendChild(el);
     }
@@ -497,6 +500,21 @@ export class DesktopManager {
     // Close context menu on click elsewhere
     this.addDocListener(document, "click", () => this.closeContextMenu());
 
+    // Mouse down for window resizing
+    this.container.addEventListener("mousedown", (e) => {
+      const handle = (e.target as HTMLElement).closest(".win-resize-handle");
+      if (!handle) return;
+      const winEl = handle.closest(".desktop-window") as HTMLElement | null;
+      if (!winEl) return;
+      const id = winEl.getAttribute("data-win-id");
+      if (!id) return;
+      const win = this.windows.find((w) => w.id === id);
+      if (!win) return;
+      this.resizeState = { win, startX: e.clientX, startY: e.clientY, origW: win.width, origH: win.height };
+      e.preventDefault();
+      e.stopPropagation();
+    });
+
     // Mouse down for window dragging
     this.container.addEventListener("mousedown", (e) => {
       const header = (e.target as HTMLElement).closest(".win-header");
@@ -519,20 +537,28 @@ export class DesktopManager {
       e.preventDefault();
     });
 
-    // Mouse move for dragging — not tracked in docListeners so it survives stop()/start() cycles
+    // Mouse move for dragging/resizing — not tracked in docListeners so it survives stop()/start() cycles
     document.addEventListener("mousemove", (e) => {
+      if (this.resizeState) {
+        const dx = e.clientX - this.resizeState.startX;
+        const dy = e.clientY - this.resizeState.startY;
+        this.resizeState.win.width = Math.max(240, this.resizeState.origW + dx);
+        this.resizeState.win.height = Math.max(120, this.resizeState.origH + dy);
+        this.renderWindowPositions();
+        return;
+      }
       if (!this.dragState) return;
-      const me = e as MouseEvent;
-      const dx = me.clientX - this.dragState.startX;
-      const dy = me.clientY - this.dragState.startY;
+      const dx = e.clientX - this.dragState.startX;
+      const dy = e.clientY - this.dragState.startY;
       this.dragState.win.x = Math.max(0, this.dragState.origX + dx);
       this.dragState.win.y = Math.max(0, this.dragState.origY + dy);
       this.renderWindowPositions();
     });
 
-    // Mouse up to end drag — same reason as mousemove above
+    // Mouse up to end drag/resize — same reason as mousemove above
     document.addEventListener("mouseup", () => {
       this.dragState = null;
+      this.resizeState = null;
     });
 
     // Paste delegation for terminal windows
@@ -717,6 +743,8 @@ export class DesktopManager {
       if (!el) continue;
       el.style.left = `${w.x}px`;
       el.style.top = `${w.y}px`;
+      el.style.width = `${w.width}px`;
+      el.style.height = `${w.height}px`;
     }
   }
 
