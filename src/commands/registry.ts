@@ -7,6 +7,7 @@ import { awkCommand } from "./awk";
 import { base64Command } from "./base64";
 import { basenameCommand, dirnameCommand } from "./basename";
 import { bcCommand } from "./bc";
+import { columnCommand, mktempCommand, nlCommand, nprocCommand, pasteCommand, shufCommand, tacCommand, timeoutCommand, waitCommand } from "./coreutils";
 import { bunzip2Command, bzip2Command } from "./bzip2";
 import { lsofCommand } from "./lsof";
 import { perlCommand } from "./perl";
@@ -232,6 +233,16 @@ const BASE_COMMANDS: ShellModule[] = [
 	straceCommand,
 	// Scripting
 	perlCommand,
+	// Coreutils (extended)
+	timeoutCommand,
+	mktempCommand,
+	nprocCommand,
+	waitCommand,
+	shufCommand,
+	pasteCommand,
+	tacCommand,
+	nlCommand,
+	columnCommand,
 ];
 
 const customCommands: ShellModule[] = [];

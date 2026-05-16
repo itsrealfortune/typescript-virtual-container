@@ -39,6 +39,8 @@ export interface Statement {
 	op?: LogicalOp;
 	/** Optional next statement in sequence. */
 	next?: Statement;
+	/** Run in background (trailing &). */
+	background?: boolean;
 }
 
 /** Top-level parse result for a script. */
