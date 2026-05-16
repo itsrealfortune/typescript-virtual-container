@@ -435,6 +435,8 @@ console.log(vfs.resolveSymlink("/usr/local/bin/app")); // /opt/myapp/bin/app
 
 ### Security Auditing with HoneyPot
 
+Attach HoneyPot to any set of virtual components to log every event with timestamps, track statistics, and detect anomalies.
+
 ```typescript
 import { HoneyPot, VirtualShell, VirtualSshServer } from "typescript-virtual-container";
 
@@ -452,6 +454,18 @@ hp.detectAnomalies().forEach(a =>
   console.log(`[${a.severity.toUpperCase()}] ${a.type}: ${a.message}`)
 );
 ```
+
+**Tracked events by source:**
+
+| Source | Events | Stats |
+|--------|--------|-------|
+| `VirtualShell` | `initialized`, `command`, `session:start`, `shell:freeze`, `shell:thaw` | `commands`, `sessionStarts`, `shellFreezes`, `shellThaws` |
+| `VirtualFileSystem` | `file:read`, `file:write`, `dir:create`, `snapshot:restore`, `snapshot:import`, `mirror:flush`, `mount`, `unmount`, `symlink:create`, `node:remove` | `fileReads`, `fileWrites`, `snapshotsRestored`, `snapshotsImported`, `mounts`, `unmounts`, `symlinksCreated`, `nodesRemoved` |
+| `VirtualUserManager` | `initialized`, `user:add`, `user:delete`, `session:register`, `session:unregister`, `key:add`, `key:remove` | `userCreated`, `userDeleted`, `sessionEnds`, `keysAdded`, `keysRemoved` |
+| `SshMimic` | `start`, `stop`, `auth:success`, `auth:failure`, `auth:lockout`, `client:connect`, `client:disconnect` | `authAttempts`, `authSuccesses`, `authFailures`, `authLockouts`, `clientConnects`, `clientDisconnects` |
+| `SftpMimic` | `start`, `stop`, `auth:success`, `auth:failure`, `client:connect`, `client:disconnect` | `authAttempts`, `authSuccesses`, `authFailures`, `clientConnects`, `clientDisconnects` |
+
+**Anomaly detection** — `hp.detectAnomalies()` flags high auth failure rates (>50%), excessive failures (>10), high command volume (>1000), and high write volume (>500).
 
 ### Concurrent Clients
 
