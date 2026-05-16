@@ -617,6 +617,34 @@ class VirtualFileSystem extends EventEmitter {
 	}
 
 	/**
+	 * Register a callback that is invoked before any read under `prefix`.
+	 * Used by /proc to refresh dynamic content on every access.
+	 */
+	public onBeforeRead(prefix: string, cb: () => void): void {
+		const normalized = normalizePath(prefix);
+		this.readHooks.set(normalized, cb);
+		this._sortedReadHooks = [...this.readHooks.keys()].sort((a, b) => b.length - a.length);
+	}
+
+	/** Remove a previously registered read hook. */
+	public offBeforeRead(prefix: string): void {
+		const normalized = normalizePath(prefix);
+		this.readHooks.delete(normalized);
+		this._sortedReadHooks = [...this.readHooks.keys()].sort((a, b) => b.length - a.length);
+	}
+
+	/** Invoke any matching read hook for `normalizedPath`. */
+	private _triggerReadHook(normalizedPath: string): void {
+		if (!this._sortedReadHooks) return;
+		for (const prefix of this._sortedReadHooks) {
+			if (normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`)) {
+				const cb = this.readHooks.get(prefix);
+				if (cb) { cb(); return; }
+			}
+		}
+	}
+
+	/**
 	 * If `targetPath` is inside a mount, return `{ hostPath, readOnly, relPath }`.
 	 * `relPath` is the path relative to the mount's host directory.
 	 * Returns `null` if the path is not under any mount.
@@ -727,6 +755,7 @@ class VirtualFileSystem extends EventEmitter {
 			return fsSync.readFileSync(m.fullHostPath, "utf8");
 		}
 		const normalized = normalizePath(targetPath);
+		this._triggerReadHook(normalized);
 		const node = getNodeNormalized(this.root, normalized);
 		if (node.type === "stub") {
 			this.emit("file:read", { path: normalized, size: node.stubContent.length });
@@ -750,6 +779,7 @@ class VirtualFileSystem extends EventEmitter {
 			return fsSync.readFileSync(m.fullHostPath);
 		}
 		const normalized = normalizePath(targetPath);
+		this._triggerReadHook(normalized);
 		const node = getNodeNormalized(this.root, normalized);
 		if (node.type === "stub") {
 			const buf = Buffer.from(node.stubContent, "utf8");
@@ -770,8 +800,10 @@ class VirtualFileSystem extends EventEmitter {
 	public exists(targetPath: string): boolean {
 		const m = this.resolveMount(targetPath);
 		if (m) return fsSync.existsSync(m.fullHostPath);
+		const normalized = normalizePath(targetPath);
+		if (normalized.startsWith("/proc/")) this._triggerReadHook(normalized);
 		try {
-			getNodeNormalized(this.root, normalizePath(targetPath));
+			getNodeNormalized(this.root, normalized);
 			return true;
 		} catch {
 			return false;
@@ -864,6 +896,7 @@ class VirtualFileSystem extends EventEmitter {
 			} satisfies VfsFileNode;
 		}
 		const normalized = normalizePath(targetPath);
+		if (normalized.startsWith("/proc")) this._triggerReadHook(normalized);
 		const node = getNodeNormalized(this.root, normalized);
 		const name = normalized === "/" ? "" : path.posix.basename(normalized);
 		if (node.type === "stub") {
@@ -937,6 +970,7 @@ class VirtualFileSystem extends EventEmitter {
 			} catch { return []; }
 		}
 		const normalized = normalizePath(dirPath);
+		if (normalized.startsWith("/proc")) this._triggerReadHook(normalized);
 		const node = getNodeNormalized(this.root, normalized);
 		if (node.type !== "directory") {
 			throw new Error(`Cannot list '${dirPath}': not a directory.`);

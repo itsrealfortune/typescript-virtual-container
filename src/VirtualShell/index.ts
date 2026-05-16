@@ -196,6 +196,10 @@ class VirtualShell extends EventEmitter {
 			await users.initialize();
 			// Bootstrap Linux rootfs (idempotent)
 			bootstrapLinuxRootfs(vfs, users, shellHostname, shellProps, startTime);
+			// Register read hook: refresh /proc dynamically on every access
+			vfs.onBeforeRead("/proc", () => {
+				refreshProc(vfs, shellProps, shellHostname, startTime, users.listActiveSessions());
+			});
 			this.emit("initialized");
 		})();
 	}
