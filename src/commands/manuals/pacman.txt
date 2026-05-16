@@ -1,0 +1,35 @@
+PACMAN(1)                User Commands                   PACMAN(1)
+
+NAME
+       pacman - play ASCII Pac-Man in the terminal
+
+SYNOPSIS
+       pacman
+
+DESCRIPTION
+       pacman launches an interactive ASCII Pac-Man game using myman
+       maze graphics. Eat all dots to win. Avoid ghosts or lose a life.
+       Eat a power pellet to enter fright mode and eat ghosts for points.
+
+CONTROLS
+       W, Up     move up
+       S, Down   move down
+       A, Left   move left
+       D, Right  move right
+       Q, Ctrl+C quit
+
+GHOSTS
+       Blinky (red)    directly chases Pac-Man
+       Pinky (pink)    targets 4 tiles ahead of Pac-Man
+       Inky (cyan)     uses Blinky's position to compute target
+       Clyde (orange)  chases when far, scatters when close
+
+SCORING
+       Dot          10 points
+       Power pellet 50 points
+       Ghost        200 points (during fright mode)
+
+NOTES
+       Ghosts slow down during fright mode. Fright mode ends after
+       a few seconds; ghosts flash before returning to normal.
+       Left and right tunnel exits wrap around the maze.

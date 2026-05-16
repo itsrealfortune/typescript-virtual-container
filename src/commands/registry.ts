@@ -34,6 +34,7 @@ import { fileCommand } from "./file";
 import { findCommand } from "./find";
 import { freeCommand } from "./free";
 import { cmatrixCommand, cowsayCommand, cowthinkCommand, fortuneCommand, slCommand, yesCommand } from "./fun";
+import { pacmanCommand } from "./pacman";
 import { grepCommand } from "./grep";
 import { groupsCommand } from "./groups";
 import { gunzipCommand, gzipCommand } from "./gzip";
@@ -180,6 +181,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	cowthinkCommand,
 	cmatrixCommand,
 	slCommand,
+	pacmanCommand,
 	htopCommand,
 	// Network
 	curlCommand,
