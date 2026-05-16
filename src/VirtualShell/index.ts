@@ -6,6 +6,7 @@ import {
 	refreshProc,
 	syncEtcPasswd,
 } from "../modules/linuxRootfs";
+import { VirtualNetworkManager } from "../modules/VirtualNetworkManager";
 import type { CommandContext, CommandResult } from "../types/commands";
 import type { ShellStream } from "../types/streams";
 import type { VfsNodeStats } from "../types/vfs";
@@ -145,6 +146,8 @@ class VirtualShell extends EventEmitter {
 	users: VirtualUserManager;
 	/** APT/dpkg package manager backed by the built-in package registry. */
 	packageManager: VirtualPackageManager;
+	/** Virtual network stack with interfaces, routes, and ARP cache. */
+	network: VirtualNetworkManager;
 	/** Hostname shown in the shell prompt and SSH ident string. */
 	hostname: string;
 	/** Distro identity strings surfaced by `uname`, `neofetch`, etc. */
@@ -182,6 +185,7 @@ class VirtualShell extends EventEmitter {
 		}
 		this.users = new VirtualUserManager(this.vfs, resolveAutoSudoForNewUsers());
 		this.packageManager = new VirtualPackageManager(this.vfs, this.users);
+		this.network = new VirtualNetworkManager();
 
 		// Store references to avoid TypeScript "used before assigned" errors
 		const vfs = this.vfs;
