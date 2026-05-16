@@ -120,6 +120,8 @@ class VirtualFileSystem extends EventEmitter {
 	private readonly readHooks = new Map<string, () => void>();
 	/** Sorted read hook prefixes (longest-first) for matching. */
 	private _sortedReadHooks: string[] | null = null;
+	/** Re-entrancy guard for read hooks — prevents infinite loop when hook triggers another read. */
+	private _inReadHook = false;
 	/** True when running in a browser environment (no host FS access). */
 	private static readonly isBrowser =
 		typeof process === "undefined" || typeof (process as NodeJS.Process).versions?.node === "undefined";
@@ -635,11 +637,16 @@ class VirtualFileSystem extends EventEmitter {
 
 	/** Invoke any matching read hook for `normalizedPath`. */
 	private _triggerReadHook(normalizedPath: string): void {
+		if (this._inReadHook) return;
 		if (!this._sortedReadHooks) return;
 		for (const prefix of this._sortedReadHooks) {
 			if (normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`)) {
 				const cb = this.readHooks.get(prefix);
-				if (cb) { cb(); return; }
+				if (cb) {
+					this._inReadHook = true;
+					try { cb(); } finally { this._inReadHook = false; }
+					return;
+				}
 			}
 		}
 	}
@@ -801,7 +808,6 @@ class VirtualFileSystem extends EventEmitter {
 		const m = this.resolveMount(targetPath);
 		if (m) return fsSync.existsSync(m.fullHostPath);
 		const normalized = normalizePath(targetPath);
-		if (normalized.startsWith("/proc/")) this._triggerReadHook(normalized);
 		try {
 			getNodeNormalized(this.root, normalized);
 			return true;
