@@ -27,7 +27,7 @@ export const pgrepCommand: ShellModule = {
 				}
 			}
 			if (results.length === 0) return { exitCode: 1 };
-			return { stdout: results.join("\n") + "\n", exitCode: 0 };
+			return { stdout: `${results.join("\n")}\n`, exitCode: 0 };
 		} catch {
 			return { stderr: "pgrep: invalid pattern\n", exitCode: 2 };
 		}

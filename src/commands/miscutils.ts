@@ -24,7 +24,7 @@ export const realpathCommand: ShellModule = {
 		const resolved = shell.vfs.isSymlink(p)
 			? shell.vfs.resolveSymlink(p)
 			: p;
-		return { stdout: path.posix.normalize(resolved) + "\n", exitCode: 0 };
+		return { stdout: `${path.posix.normalize(resolved)}\n`, exitCode: 0 };
 	},
 };
 
@@ -104,7 +104,7 @@ export const stringsCommand: ShellModule = {
 			}
 		}
 		if (current.length >= 4) results.push(current);
-		return { stdout: results.join("\n") + "\n", exitCode: 0 };
+		return { stdout: `${results.join("\n")}\n`, exitCode: 0 };
 	},
 };
 
@@ -228,6 +228,6 @@ export const fmtCommand: ShellModule = {
 			}
 		}
 		if (current) lines.push(current);
-		return { stdout: lines.join("\n") + "\n", exitCode: 0 };
+		return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 	},
 };

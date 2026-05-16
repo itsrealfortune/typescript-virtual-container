@@ -59,6 +59,6 @@ export const topCommand: ShellModule = {
 			lines.push(`${String(p.pid).padStart(5)} ${p.username.padEnd(8).slice(0, 8)}  20   0 ${String(virt).padStart(7)} ${String(res).padStart(6)} ${String(shr).padStart(6)} ${status} ${cpu.padStart(4)} ${mem.padStart(5)}   0:00.00 ${p.command}`);
 		});
 
-		return { stdout: lines.join("\n") + "\n", exitCode: 0 };
+		return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 	},
 };
