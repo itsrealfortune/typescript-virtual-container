@@ -1,0 +1,11 @@
+LSCPU(1)                 User Commands                 LSCPU(1)
+
+NAME
+       lscpu - display CPU architecture information
+
+SYNOPSIS
+       lscpu
+
+DESCRIPTION
+       Display information about the CPU architecture,
+       including cores, threads, caches, and flags.

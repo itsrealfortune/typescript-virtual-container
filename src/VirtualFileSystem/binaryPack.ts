@@ -305,8 +305,10 @@ export function decodeVfs(buf: Buffer): InternalDirectoryNode {
 }
 
 /**
- * Returns true if `buf` looks like a VFS binary snapshot (starts with magic bytes).
- * Used to auto-detect format when loading from disk.
+ * Checks whether `buf` starts with the VFS binary magic bytes, indicating a valid
+ * binary snapshot produced by {@link encodeVfs}.
+ * @param buf - The buffer to inspect.
+ * @returns `true` if the buffer begins with the VFS magic header (`"VFS!"`).
  */
 export function isBinarySnapshot(buf: Buffer): boolean {
 	return buf.length >= 4 && buf.slice(0, 4).equals(MAGIC);

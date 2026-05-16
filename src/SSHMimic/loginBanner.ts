@@ -1,11 +1,18 @@
 import type { ShellProperties } from "../VirtualShell";
 import { formatLoginDate } from "./loginFormat";
 
+/**
+ * Tracks the timestamp and origin of the user's last login for the login banner.
+ */
 export interface LoginBannerState {
 	at: string;
 	from: string;
 }
 
+/**
+ * Builds the SSH login banner displaying OS info, warranty notice, and the
+ * last login timestamp and origin.
+ */
 export function buildLoginBanner(
 	hostname: string,
 	properties: ShellProperties,

@@ -210,6 +210,17 @@ EXAMPLES
        mount | column -t
        cat /etc/passwd | column -t -s:
        column -t file.txt`,
+	"comm": `COMM(1)                  User Commands                  COMM(1)
+
+NAME
+       comm - compare two sorted files line by line
+
+SYNOPSIS
+       comm [OPTION]... FILE1 FILE2
+
+DESCRIPTION
+       Compare FILE1 and FILE2 line by line, producing
+       three-column output of common and unique lines.`,
 	"cowsay": `COWSAY(1)                User Commands                  COWSAY(1)
 
 NAME
@@ -241,6 +252,17 @@ SYNOPSIS
 
 OPTIONS
        -r     copy directories recursively`,
+	"csplit": `CSPLIT(1)                User Commands                CSPLIT(1)
+
+NAME
+       csplit - split a file into pieces by context
+
+SYNOPSIS
+       csplit [OPTION]... FILE PATTERN...
+
+DESCRIPTION
+       Split FILE into pieces based on context lines
+       matching PATTERN, creating numbered output files.`,
 	"curl": `CURL(1)                  User Commands                    CURL(1)
 
 NAME
@@ -293,6 +315,18 @@ DESCRIPTION
 EXAMPLES
        date
        date +%Y-%m-%d`,
+	"dd": `DD(1)                    User Commands                    DD(1)
+
+NAME
+       dd - convert and copy a file
+
+SYNOPSIS
+       dd [OPERAND...]
+
+DESCRIPTION
+       Copy a file with optional conversions.  Operands
+       specify input file, output file, block size, and
+       count.`,
 	"declare": `DECLARE(1)               Shell Builtins               DECLARE(1)
 
 NAME
@@ -465,6 +499,17 @@ EXAMPLES
        exit       # exit with last command's status
        exit 0     # exit successfully
        exit 1     # exit with error`,
+	"expand": `EXPAND(1)                User Commands                EXPAND(1)
+
+NAME
+       expand - convert tabs to spaces
+
+SYNOPSIS
+       expand [OPTION]... [FILE...]
+
+DESCRIPTION
+       Convert tabs in each FILE to spaces, writing to
+       standard output.`,
 	"export": `EXPORT(1)                User Commands                   EXPORT(1)
 
 NAME
@@ -485,6 +530,17 @@ EXAMPLES
        export PATH="$PATH:/usr/local/bin"
        export NODE_ENV=production
        export -p`,
+	"expr": `EXPR(1)                  User Commands                  EXPR(1)
+
+NAME
+       expr - evaluate arithmetic expressions
+
+SYNOPSIS
+       expr EXPRESSION
+
+DESCRIPTION
+       Evaluate an EXPRESSION and print its result.
+       Supports arithmetic, string, and logical operators.`,
 	"false": `FALSE(1)                 User Commands                   FALSE(1)
 
 NAME
@@ -527,6 +583,28 @@ SYNOPSIS
 OPTIONS
        -name PATTERN   base name matches shell PATTERN
        -type TYPE      file type, e.g. f for file, d for directory`,
+	"fmt": `FMT(1)                   User Commands                   FMT(1)
+
+NAME
+       fmt - simple text formatter
+
+SYNOPSIS
+       fmt [OPTION]... [FILE...]
+
+DESCRIPTION
+       Reformat paragraphs from each FILE to a specified
+       width, filling and joining lines.`,
+	"fold": `FOLD(1)                  User Commands                  FOLD(1)
+
+NAME
+       fold - wrap each input line to fit specified width
+
+SYNOPSIS
+       fold [OPTION]... [FILE...]
+
+DESCRIPTION
+       Wrap lines from each FILE to a specified width
+       (default 80), breaking at character boundaries.`,
 	"fortune": `FORTUNE(6)               Games and Amusements          FORTUNE(6)
 
 NAME
@@ -711,6 +789,17 @@ EXAMPLES
        ip addr show eth0        # show eth0 address
        ip route                 # show routing table
        ip link                  # show link info`,
+	"join": `JOIN(1)                  User Commands                  JOIN(1)
+
+NAME
+       join - join lines of two files on a common field
+
+SYNOPSIS
+       join [OPTION]... FILE1 FILE2
+
+DESCRIPTION
+       Join lines from FILE1 and FILE2 based on a common
+       field, writing to standard output.`,
 	"kill": `KILL(1)                  User Commands                    KILL(1)
 
 NAME
@@ -801,6 +890,39 @@ EXAMPLES
        lsb_release -a
        lsb_release -d
        lsb_release -rs`,
+	"lscpu": `LSCPU(1)                 User Commands                 LSCPU(1)
+
+NAME
+       lscpu - display CPU architecture information
+
+SYNOPSIS
+       lscpu
+
+DESCRIPTION
+       Display information about the CPU architecture,
+       including cores, threads, caches, and flags.`,
+	"lspci": `LSPCI(1)                 User Commands                 LSPCI(1)
+
+NAME
+       lspci - list PCI devices
+
+SYNOPSIS
+       lspci [OPTION]...
+
+DESCRIPTION
+       Display information about PCI buses and devices
+       connected to the system.`,
+	"lsusb": `LSUSB(1)                 User Commands                 LSUSB(1)
+
+NAME
+       lsusb - list USB devices
+
+SYNOPSIS
+       lsusb [OPTION]...
+
+DESCRIPTION
+       Display information about USB buses and devices
+       connected to the system.`,
 	"man": `MAN(1)                   User Commands                     MAN(1)
 
 NAME
@@ -823,6 +945,16 @@ EXAMPLES
        man ls
        man 1 printf
        man grep`,
+	"md5sum": `MD5SUM(1)                User Commands                MD5SUM(1)
+
+NAME
+       md5sum - compute and check MD5 message digest
+
+SYNOPSIS
+       md5sum [FILE...]
+
+DESCRIPTION
+       Print or check MD5 (128-bit) checksums for each FILE.`,
 	"mkdir": `MKDIR(1)                 User Commands                  MKDIR(1)
 
 NAME
@@ -879,6 +1011,17 @@ SYNOPSIS
 DESCRIPTION
        Open FILE in an interactive editor.
        Save with Ctrl+O, exit with Ctrl+X.`,
+	"nc": `NC(1)                    User Commands                    NC(1)
+
+NAME
+       nc - arbitrary TCP and UDP connections
+
+SYNOPSIS
+       nc [OPTION]... HOST PORT
+
+DESCRIPTION
+       Open TCP or UDP connections to arbitrary ports,
+       useful for debugging and network exploration.`,
 	"neofetch": `NEOFETCH(1)              User Commands                NEOFETCH(1)
 
 NAME
@@ -889,6 +1032,17 @@ SYNOPSIS
 
 DESCRIPTION
        Print OS, kernel, uptime, package count, and related system details.`,
+	"nice": `NICE(1)                  User Commands                  NICE(1)
+
+NAME
+       nice - run a command with modified niceness
+
+SYNOPSIS
+       nice [OPTION]... COMMAND [ARG...]
+
+DESCRIPTION
+       Run COMMAND with an adjusted scheduling priority
+       (niceness).  Higher niceness means lower priority.`,
 	"nl": `NL(1)                    User Commands                      NL(1)
 
 NAME
@@ -926,6 +1080,17 @@ DESCRIPTION
 
 NOTES
        Requires package installation: apt install nodejs.`,
+	"nohup": `NOHUP(1)                 User Commands                 NOHUP(1)
+
+NAME
+       nohup - run a command immune to hangups
+
+SYNOPSIS
+       nohup COMMAND [ARG...]
+
+DESCRIPTION
+       Run COMMAND such that it ignores HUP signals and
+       continues running after the terminal is closed.`,
 	"npm": `NPM(1)                   User Commands                      NPM(1)
 
 NAME
@@ -1036,6 +1201,17 @@ EXAMPLES
        paste file1 file2
        paste -d: /etc/passwd /etc/shadow
        paste -d, a.txt b.txt c.txt`,
+	"pgrep": `PGREP(1)                 User Commands                 PGREP(1)
+
+NAME
+       pgrep - look up processes by pattern
+
+SYNOPSIS
+       pgrep [OPTION]... PATTERN
+
+DESCRIPTION
+       List process IDs matching PATTERN.  By default
+       matches against process names.`,
 	"ping": `PING(8)                   User Commands                   PING(8)
 
 NAME
@@ -1046,6 +1222,17 @@ SYNOPSIS
 
 OPTIONS
        -c COUNT    stop after sending COUNT packets`,
+	"pkill": `PKILL(1)                 User Commands                 PKILL(1)
+
+NAME
+       pkill - kill processes by pattern
+
+SYNOPSIS
+       pkill [OPTION]... PATTERN
+
+DESCRIPTION
+       Send signals to processes matching PATTERN.  By
+       default sends SIGTERM.`,
 	"printf": `PRINTF(1)                User Commands                  PRINTF(1)
 
 NAME
@@ -1119,6 +1306,17 @@ SYNOPSIS
 
 OPTIONS
        -f     canonicalize by following every symlink in every component`,
+	"realpath": `REALPATH(1)              User Commands              REALPATH(1)
+
+NAME
+       realpath - print resolved absolute file name
+
+SYNOPSIS
+       realpath [FILE...]
+
+DESCRIPTION
+       Print the resolved absolute path for each FILE,
+       with all symbolic links resolved.`,
 	"return": `RETURN(1)                Shell Builtins                 RETURN(1)
 
 NAME
@@ -1215,6 +1413,17 @@ EXAMPLES
        sh -c 'echo hello'
        sh script.sh
        sh -c 'for i in 1 2 3; do echo $i; done'`,
+	"sha256sum": `SHA256SUM(1)             User Commands             SHA256SUM(1)
+
+NAME
+       sha256sum - compute and check SHA-256 message digest
+
+SYNOPSIS
+       sha256sum [FILE...]
+
+DESCRIPTION
+       Print or check SHA-256 (256-bit) checksums for each
+       FILE.`,
 	"shift": `SHIFT(1)                 Shell Builtins                  SHIFT(1)
 
 NAME
@@ -1296,6 +1505,17 @@ SYNOPSIS
 
 DESCRIPTION
        Read and execute commands from FILE in the current shell context.`,
+	"split": `SPLIT(1)                 User Commands                 SPLIT(1)
+
+NAME
+       split - split a file into pieces
+
+SYNOPSIS
+       split [OPTION]... [FILE [PREFIX]]
+
+DESCRIPTION
+       Split FILE into fixed-size pieces, creating output
+       files named PREFIXaa, PREFIXab, etc.`,
 	"ssh": `SSH(1)                   OpenSSH                          SSH(1)
 
 NAME
@@ -1317,6 +1537,17 @@ SYNOPSIS
 
 OPTIONS
        -c, --format=FORMAT   use the specified output format`,
+	"strings": `STRINGS(1)               User Commands               STRINGS(1)
+
+NAME
+       strings - print printable strings in binary files
+
+SYNOPSIS
+       strings [FILE...]
+
+DESCRIPTION
+       For each FILE, print sequences of printable
+       characters found in binary data.`,
 	"stty": `STTY(1)                  User Commands                    STTY(1)
 
 NAME
@@ -1453,6 +1684,17 @@ EXIT STATUS
 EXAMPLES
        timeout 5 sleep 10
        timeout 30 curl http://example.com/`,
+	"top": `TOP(1)                   User Commands                   TOP(1)
+
+NAME
+       top - display process information
+
+SYNOPSIS
+       top [OPTION]...
+
+DESCRIPTION
+       Display a dynamic, real-time view of running
+       processes and system resource usage.`,
 	"touch": `TOUCH(1)                 User Commands                  TOUCH(1)
 
 NAME

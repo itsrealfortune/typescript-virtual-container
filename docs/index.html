@@ -219,9 +219,48 @@ The standalone builds are intended for quick demos and testing. For production u
 </code><button type="button">Copy</button></pre>
 
 <h3 id="security-auditing-with-honeypot" class="tsd-anchor-link">Security Auditing with HoneyPot<a href="#security-auditing-with-honeypot" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Attach HoneyPot to any set of virtual components to log every event with timestamps, track statistics, and detect anomalies.</p>
 <pre><code class="typescript"><span class="hl-5">import</span><span class="hl-1"> { </span><span class="hl-6">HoneyPot</span><span class="hl-1">, </span><span class="hl-6">VirtualShell</span><span class="hl-1">, </span><span class="hl-6">VirtualSshServer</span><span class="hl-1"> } </span><span class="hl-5">from</span><span class="hl-1"> </span><span class="hl-2">&quot;typescript-virtual-container&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">shell</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualShell</span><span class="hl-1">(</span><span class="hl-2">&quot;typescript-vm&quot;</span><span class="hl-1">);</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">ssh</span><span class="hl-1">   = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualSshServer</span><span class="hl-1">({ </span><span class="hl-6">port:</span><span class="hl-1"> </span><span class="hl-8">2222</span><span class="hl-1">, </span><span class="hl-6">shell</span><span class="hl-1"> });</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">ssh</span><span class="hl-1">.</span><span class="hl-0">start</span><span class="hl-1">();</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">hp</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">HoneyPot</span><span class="hl-1">(</span><span class="hl-8">5000</span><span class="hl-1">);</span><br/><span class="hl-6">hp</span><span class="hl-1">.</span><span class="hl-0">attach</span><span class="hl-1">(</span><span class="hl-6">shell</span><span class="hl-1">, </span><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-6">vfs</span><span class="hl-1">, </span><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-6">users</span><span class="hl-1">, </span><span class="hl-6">ssh</span><span class="hl-1">);</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">stats</span><span class="hl-1"> = </span><span class="hl-6">hp</span><span class="hl-1">.</span><span class="hl-0">getStats</span><span class="hl-1">();</span><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`Commands: </span><span class="hl-4">${</span><span class="hl-6">stats</span><span class="hl-11">.</span><span class="hl-6">commands</span><span class="hl-4">}</span><span class="hl-2">, File writes: </span><span class="hl-4">${</span><span class="hl-6">stats</span><span class="hl-11">.</span><span class="hl-6">fileWrites</span><span class="hl-4">}</span><span class="hl-2">`</span><span class="hl-1">);</span><br/><br/><span class="hl-6">hp</span><span class="hl-1">.</span><span class="hl-0">detectAnomalies</span><span class="hl-1">().</span><span class="hl-0">forEach</span><span class="hl-1">(</span><span class="hl-6">a</span><span class="hl-1"> </span><span class="hl-4">=&gt;</span><br/><span class="hl-1">  </span><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`[</span><span class="hl-4">${</span><span class="hl-6">a</span><span class="hl-11">.</span><span class="hl-6">severity</span><span class="hl-11">.</span><span class="hl-0">toUpperCase</span><span class="hl-11">()</span><span class="hl-4">}</span><span class="hl-2">] </span><span class="hl-4">${</span><span class="hl-6">a</span><span class="hl-11">.</span><span class="hl-6">type</span><span class="hl-4">}</span><span class="hl-2">: </span><span class="hl-4">${</span><span class="hl-6">a</span><span class="hl-11">.</span><span class="hl-6">message</span><span class="hl-4">}</span><span class="hl-2">`</span><span class="hl-1">)</span><br/><span class="hl-1">);</span>
 </code><button type="button">Copy</button></pre>
 
+<p><strong>Tracked events by source:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Events</th>
+<th>Stats</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>VirtualShell</code></td>
+<td><code>initialized</code>, <code>command</code>, <code>session:start</code>, <code>shell:freeze</code>, <code>shell:thaw</code></td>
+<td><code>commands</code>, <code>sessionStarts</code>, <code>shellFreezes</code>, <code>shellThaws</code></td>
+</tr>
+<tr>
+<td><code>VirtualFileSystem</code></td>
+<td><code>file:read</code>, <code>file:write</code>, <code>dir:create</code>, <code>snapshot:restore</code>, <code>snapshot:import</code>, <code>mirror:flush</code>, <code>mount</code>, <code>unmount</code>, <code>symlink:create</code>, <code>node:remove</code></td>
+<td><code>fileReads</code>, <code>fileWrites</code>, <code>snapshotsRestored</code>, <code>snapshotsImported</code>, <code>mounts</code>, <code>unmounts</code>, <code>symlinksCreated</code>, <code>nodesRemoved</code></td>
+</tr>
+<tr>
+<td><code>VirtualUserManager</code></td>
+<td><code>initialized</code>, <code>user:add</code>, <code>user:delete</code>, <code>session:register</code>, <code>session:unregister</code>, <code>key:add</code>, <code>key:remove</code></td>
+<td><code>userCreated</code>, <code>userDeleted</code>, <code>sessionEnds</code>, <code>keysAdded</code>, <code>keysRemoved</code></td>
+</tr>
+<tr>
+<td><code>SshMimic</code></td>
+<td><code>start</code>, <code>stop</code>, <code>auth:success</code>, <code>auth:failure</code>, <code>auth:lockout</code>, <code>client:connect</code>, <code>client:disconnect</code></td>
+<td><code>authAttempts</code>, <code>authSuccesses</code>, <code>authFailures</code>, <code>authLockouts</code>, <code>clientConnects</code>, <code>clientDisconnects</code></td>
+</tr>
+<tr>
+<td><code>SftpMimic</code></td>
+<td><code>start</code>, <code>stop</code>, <code>auth:success</code>, <code>auth:failure</code>, <code>client:connect</code>, <code>client:disconnect</code></td>
+<td><code>authAttempts</code>, <code>authSuccesses</code>, <code>authFailures</code>, <code>clientConnects</code>, <code>clientDisconnects</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Anomaly detection</strong> — <code>hp.detectAnomalies()</code> flags high auth failure rates (&gt;50%), excessive failures (&gt;10), high command volume (&gt;1000), and high write volume (&gt;500).</p>
 <h3 id="concurrent-clients" class="tsd-anchor-link">Concurrent Clients<a href="#concurrent-clients" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <pre><code class="typescript"><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">shell</span><span class="hl-1">   = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualShell</span><span class="hl-1">(</span><span class="hl-2">&quot;typescript-vm&quot;</span><span class="hl-1">);</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">client1</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">SshClient</span><span class="hl-1">(</span><span class="hl-6">shell</span><span class="hl-1">, </span><span class="hl-2">&quot;alice&quot;</span><span class="hl-1">);</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">client2</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">SshClient</span><span class="hl-1">(</span><span class="hl-6">shell</span><span class="hl-1">, </span><span class="hl-2">&quot;bob&quot;</span><span class="hl-1">);</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> [</span><span class="hl-7">r1</span><span class="hl-1">, </span><span class="hl-7">r2</span><span class="hl-1">] = </span><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-18">Promise</span><span class="hl-1">.</span><span class="hl-0">all</span><span class="hl-1">([</span><br/><span class="hl-1">  </span><span class="hl-6">client1</span><span class="hl-1">.</span><span class="hl-0">writeFile</span><span class="hl-1">(</span><span class="hl-2">&quot;/tmp/alice.txt&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;Alice&#39;s data&quot;</span><span class="hl-1">),</span><br/><span class="hl-1">  </span><span class="hl-6">client2</span><span class="hl-1">.</span><span class="hl-0">writeFile</span><span class="hl-1">(</span><span class="hl-2">&quot;/tmp/bob.txt&quot;</span><span class="hl-1">,   </span><span class="hl-2">&quot;Bob&#39;s data&quot;</span><span class="hl-1">),</span><br/><span class="hl-1">]);</span>
 </code><button type="button">Copy</button></pre>

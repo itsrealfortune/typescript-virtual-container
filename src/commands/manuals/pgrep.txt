@@ -1,0 +1,11 @@
+PGREP(1)                 User Commands                 PGREP(1)
+
+NAME
+       pgrep - look up processes by pattern
+
+SYNOPSIS
+       pgrep [OPTION]... PATTERN
+
+DESCRIPTION
+       List process IDs matching PATTERN.  By default
+       matches against process names.

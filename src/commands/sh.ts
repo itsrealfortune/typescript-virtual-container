@@ -531,6 +531,11 @@ function splitShScript(script: string): string[] {
 	return lines;
 }
 
+/**
+ * Execute shell script or command.
+ * @category shell
+ * @params ["-c <script>", "[<file>]"]
+ */
 export const shCommand: ShellModule = {
 	name: "sh",
 	aliases: ["bash"],

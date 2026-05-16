@@ -5,6 +5,16 @@ import type { VirtualShell } from "../VirtualShell";
 
 const PROTECTED_PREFIXES = ["/.virtual-env-js/.auth", "/etc/htpasswd"] as const;
 
+/**
+ * Resolves a path string against the virtual file system.
+ * Supports `~` as shorthand for the home directory. If `inputPath` is
+ * absolute it is returned as-is; otherwise it is joined to `cwd`.
+ *
+ * @param cwd       - The current working directory
+ * @param inputPath - The path string to resolve
+ * @param homeDir   - The home directory to use for `~` expansion (defaults to `/root`)
+ * @returns The normalized absolute path
+ */
 export function resolvePath(cwd: string, inputPath: string, homeDir?: string): string {
 	if (!inputPath || inputPath.trim() === "") {
 		return cwd;
@@ -42,6 +52,14 @@ export function assertPathAccess(
 	}
 }
 
+/**
+ * Strips the filename from a URL path, extracting the last path segment.
+ * Removes query strings and fragments first. Returns `"index.html"` when
+ * no segment is found.
+ *
+ * @param url - The URL or path string to process
+ * @returns The extracted filename, or "index.html" as a fallback
+ */
 export function stripUrlFilename(url: string): string {
 	const cleaned = url.split("?")[0]?.split("#")[0] ?? url;
 	const lastPart = cleaned.split("/").filter(Boolean).pop();
@@ -74,6 +92,16 @@ function levenshtein(a: string, b: string): number {
 	return dp[a.length]![b.length]!;
 }
 
+/**
+ * Resolves a path with readable error messages by attempting an exact match
+ * first, then falling back to case-insensitive matching, and finally to a
+ * Levenshtein-distance (≤1) fuzzy match against sibling entries.
+ *
+ * @param vfs       - The virtual file system instance
+ * @param cwd       - The current working directory
+ * @param inputPath - The path string to resolve
+ * @returns The best matching path (exact, case-insensitive, or fuzzy)
+ */
 export function resolveReadablePath(
 	vfs: VirtualFileSystem,
 	cwd: string,
@@ -105,6 +133,12 @@ export function resolveReadablePath(
 	return exactPath;
 }
 
+/**
+ * Returns the active package manager associated with the given shell.
+ *
+ * @param shell - The VirtualShell instance
+ * @returns The VirtualPackageManager, or undefined if none is configured
+ */
 export function getPackageManager(
 	shell: VirtualShell,
 ): VirtualPackageManager | undefined {

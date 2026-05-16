@@ -23,7 +23,6 @@ export const statCommand: ShellModule = {
 
 		const st = shell.vfs.stat(p);
 		const isDir = st.type === "directory";
-		const _isLink = shell.vfs.isSymlink(p);
 		const isSymlink = shell.vfs.isSymlink(p);
 		const modePerm = (mode: number): string => {
 			const bits = [0o400,0o200,0o100,0o040,0o020,0o010,0o004,0o002,0o001];

@@ -1,0 +1,11 @@
+SHA256SUM(1)             User Commands             SHA256SUM(1)
+
+NAME
+       sha256sum - compute and check SHA-256 message digest
+
+SYNOPSIS
+       sha256sum [FILE...]
+
+DESCRIPTION
+       Print or check SHA-256 (256-bit) checksums for each
+       FILE.

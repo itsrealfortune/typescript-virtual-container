@@ -12,29 +12,12 @@
 
 ## Table of Contents
 
-- [Three ways to run](#three-ways-to-run)
-- [Get Started](#get-started)
-  - [Install](#install)
-  - [Try instantly (zero install)](#try-instantly-zero-install)
-  - [SSH server](#ssh-server)
-  - [Web shell (browser)](#web-shell-browser)
-  - [Programmatic API](#programmatic-api)
-- [How It Works](#how-it-works)
-- [API Reference](#api-reference)
-- [Examples](#examples)
-- [Built-in Commands (127)](#built-in-commands-127)
-- [Shell Scripting](#shell-scripting)
-- [Linux Rootfs & VFS PATH Resolution](#linux-rootfs--vfs-path-resolution)
-- [Configuration](#configuration)
-- [Performance & Scalability](#performance--scalability)
-- [Types & TypeScript](#types--typescript)
-- [Troubleshooting](#troubleshooting)
-- [FAQ](#faq)
-- [Contributing](#contributing)
-- [Security](#security)
-- [Compatibility](#compatibility)
-- [License](#license)
-- [Roadmap](#roadmap)
+- [Three ways to run](#three-ways-to-run) · [Get Started](#get-started)
+- [How It Works](#how-it-works) · [Built-in Commands](#built-in-commands-149)
+- [Shell Scripting](#shell-scripting) · [Linux Rootfs](#linux-rootfs--vfs-path-resolution)
+- [Configuration](#configuration) · [Troubleshooting](#troubleshooting)
+- [FAQ](#faq) · [Contributing](#contributing)
+- [License](#license) · [Roadmap](#roadmap)
 
 ---
 
@@ -355,35 +338,7 @@ ssh.on("auth:lockout", ({ ip, until }) => console.warn(`${ip} locked until ${unt
 ssh.clearLockout("192.168.1.100"); // manual override
 ```
 
-### Shell Operators and Variables
 
-```typescript
-const client = new SshClient(shell, "root");
-
-await client.exec("mkdir /tmp/test && echo created || echo failed");
-await client.exec("export GREETING=hello && echo $GREETING world");
-await client.exec("false; echo exit=$?"); // exit=1
-
-const r = await client.exec("echo -e 'banana\\napple\\ncherry' | sort");
-console.log(r.stdout); // apple\nbanana\ncherry
-```
-
-### Shell Scripting
-
-```typescript
-shell.vfs.writeFile("/usr/local/bin/setup.sh", `
-#!/bin/sh
-for dir in config logs tmp; do
-  mkdir /app/$dir
-  echo "Created /app/$dir"
-done
-if [ -d /app/config ]; then
-  echo "Setup complete"
-fi
-`);
-const r = await client.exec("sh /usr/local/bin/setup.sh");
-console.log(r.stdout);
-```
 
 ### Snapshot-Based Test Fixtures
 
@@ -435,6 +390,8 @@ console.log(vfs.resolveSymlink("/usr/local/bin/app")); // /opt/myapp/bin/app
 
 ### Security Auditing with HoneyPot
 
+Attach HoneyPot to any set of virtual components to log every event with timestamps, track statistics, and detect anomalies.
+
 ```typescript
 import { HoneyPot, VirtualShell, VirtualSshServer } from "typescript-virtual-container";
 
@@ -453,6 +410,18 @@ hp.detectAnomalies().forEach(a =>
 );
 ```
 
+**Tracked events by source:**
+
+| Source | Events | Stats |
+|--------|--------|-------|
+| `VirtualShell` | `initialized`, `command`, `session:start`, `shell:freeze`, `shell:thaw` | `commands`, `sessionStarts`, `shellFreezes`, `shellThaws` |
+| `VirtualFileSystem` | `file:read`, `file:write`, `dir:create`, `snapshot:restore`, `snapshot:import`, `mirror:flush`, `mount`, `unmount`, `symlink:create`, `node:remove` | `fileReads`, `fileWrites`, `snapshotsRestored`, `snapshotsImported`, `mounts`, `unmounts`, `symlinksCreated`, `nodesRemoved` |
+| `VirtualUserManager` | `initialized`, `user:add`, `user:delete`, `session:register`, `session:unregister`, `key:add`, `key:remove` | `userCreated`, `userDeleted`, `sessionEnds`, `keysAdded`, `keysRemoved` |
+| `SshMimic` | `start`, `stop`, `auth:success`, `auth:failure`, `auth:lockout`, `client:connect`, `client:disconnect` | `authAttempts`, `authSuccesses`, `authFailures`, `authLockouts`, `clientConnects`, `clientDisconnects` |
+| `SftpMimic` | `start`, `stop`, `auth:success`, `auth:failure`, `client:connect`, `client:disconnect` | `authAttempts`, `authSuccesses`, `authFailures`, `clientConnects`, `clientDisconnects` |
+
+**Anomaly detection** — `hp.detectAnomalies()` flags high auth failure rates (>50%), excessive failures (>10), high command volume (>1000), and high write volume (>500).
+
 ### Concurrent Clients
 
 ```typescript
@@ -466,202 +435,185 @@ const [r1, r2] = await Promise.all([
 ]);
 ```
 
-### .bashrc
-
-```typescript
-shell.vfs.writeFile("/home/root/.bashrc", `
-export EDITOR=nano
-export PATH="/usr/local/bin:/usr/bin:/bin"
-alias ll="ls -l"
-echo "Welcome back, root!"
-`.trim());
-// On interactive SSH login, .bashrc is sourced automatically.
-```
-
 </details>
 
 ---
 
 <details>
-<summary><strong>Built-in Commands (127)</strong></summary>
+<summary><strong>Built-in Commands (149)</strong></summary>
 
-Type `help` in the shell for a grouped, colorized listing. Type `help <command>` for detailed usage. Type `man <command>` for full manual pages — all 127 commands are documented.
+Type `help` in the shell for a grouped, colorized listing. Type `help <command>` for detailed usage. Type `man <command>` for full manual pages — all 149 commands are documented.
 
 ### Navigation
 
-| Command | Flags | Description |
-|---------|-------|-------------|
-| `cd <path>` | | Change directory |
-| `ls [path]` | `-l` `-a` | List directory (`-a` shows dotfiles) |
-| `pwd` | | Print working directory |
-| `tree [path]` | | ASCII directory tree |
+| Command | Description |
+|---------|-------------|
+| `pwd` | Print working directory |
+| `cd <path>` | Change directory |
+| `ls [path]` | List directory |
+| `tree [path]` | ASCII directory tree |
+| `help` | Full list: type `help` in the shell |
 
-### Files & Filesystem
+### Files
 
-| Command | Flags | Description |
-|---------|-------|-------------|
-| `cat <path...>` | `-n` `-b` | Concatenate and print; `-n` numbers lines, `-b` numbers non-blank |
-| `chmod <mode> <file>` | | Octal (`755`) or symbolic (`+x`, `u+x`, `go-w`, `a=rx`) |
-| `cp <src> <dest>` | `-r` | Copy file or directory |
-| `find [path]` | `-name` `-iname` `-type` `-maxdepth` `-mindepth` `-exec` `-not` `-o` `-a` `-empty` `-size` | Search for files |
-| `ln <target> <link>` | `-s` | Hard or symbolic link |
-| `readlink <path>` | `-f` | Print resolved path of symbolic link |
-| `mkdir <path>` | `-p` | Create directory |
-| `mv <src> <dest>` | | Move or rename |
-| `nano <path>` | | Interactive text editor |
-| `rm <path>` | `-r` | Remove file or directory |
-| `stat <path>` | `-c <format>` | Display file status (inode, size, mode, timestamps) |
-| `touch <path>` | | Create or update file |
+| Command | Description |
+|---------|-------------|
+| `cat <path...>` | Concatenate and print |
+| `touch <path>` | Create or update file |
+| `rm <path>` | Remove file or directory |
+| `mkdir <path>` | Create directory |
+| `cp <src> <dest>` | Copy file or directory |
+| `mv <src> <dest>` | Move or rename |
+| `chmod <mode> <file>` | Change file mode |
+| `ln <target> <link>` | Hard or symbolic link |
+| `find [path]` | Search for files |
+| `stat <path>` | Display file status |
+| `dd` | Convert and copy a file |
+| `realpath <path>` | Print resolved absolute path |
+| `help` | Full list: type `help` in the shell |
 
-### Text Processing
+### Text
 
-| Command | Flags | Description |
-|---------|-------|-------------|
-| `awk [-F <sep>] '<prog>'` | `-v var=val` | Pattern scanning — NR/NF, `BEGIN`/`END`, field assign, `gsub`/`sub`/`substr`/`split`/`length`, `printf` |
-| `base64` | `-d` | Encode/decode base64 |
-| `cut` | `-d` `-f` | Remove sections from lines |
-| `diff <f1> <f2>` | | Compare files line by line |
-| `grep <pattern> [files]` | `-i` `-v` `-n` `-r` | Search file content |
-| `head [files]` | `-n <N>` | First N lines |
-| `sed -e 's/pat/rep/[g]'` | `-n` `-i` `-e` | Stream editor — `s///[gI]`, `d`, `p`, `=`, `q`, line/regex/range addresses |
-| `sort [files]` | `-r` `-n` `-u` | Sort lines |
-| `tail [files]` | `-n <N>` | Last N lines |
-| `tee [files]` | `-a` | Read stdin, write to stdout and files |
-| `tr <set1> [set2]` | `-d` | Translate or delete characters |
-| `uniq` | `-c` `-d` `-u` | Filter repeated lines |
-| `basename <path> [suffix]` | `-a` `-s` | Strip directory and suffix from path |
-| `dirname <path>` | | Strip last component from path |
-| `file <path...>` | | Determine file type (magic bytes) |
-| `wc [files]` | `-l` `-w` `-c` | Word/line/byte count |
-| `xargs [cmd]` | | Build and execute commands from stdin |
-| `tac [files]` | | Concatenate files in reverse line order |
-| `nl [file]` | `-b` `-n` | Number lines of files |
-| `paste [files]` | `-d` | Merge lines of files side by side |
-| `shuf [file]` | `-n` `-i` | Generate random permutations of input |
-| `column [file]` | `-t` `-s` | Columnate lists; `-t` table mode |
+| Command | Description |
+|---------|-------------|
+| `grep <pattern> [files]` | Search file content |
+| `sed -e 's/pat/rep/'` | Stream editor |
+| `awk '<prog>'` | Pattern scanning and processing |
+| `sort [files]` | Sort lines |
+| `uniq` | Filter repeated lines |
+| `wc [files]` | Word/line/byte count |
+| `head [files]` | First N lines |
+| `tail [files]` | Last N lines |
+| `diff <f1> <f2>` | Compare files |
+| `tee [files]` | Read stdin, write to stdout and files |
+| `md5sum <file>` | Compute MD5 checksum |
+| `sha256sum <file>` | Compute SHA-256 checksum |
+| `fold <file>` | Wrap lines to specified width |
+| `expand <file>` | Convert tabs to spaces |
+| `fmt <file>` | Simple text formatter |
+| `help` | Full list: type `help` in the shell |
 
-### Archive & Compression
+### Archives
 
-| Command | Flags | Description |
-|---------|-------|-------------|
-| `gzip <file>` / `gunzip <file>` | `-k` `-d` | Compress / decompress (real gzip, browser-native) |
-| `bzip2 <file>` / `bunzip2 <file>` | `-k` `-d` | Compress / decompress bzip2 (VFS round-trip) |
-| `zip [-r] <archive> <files>` / `unzip <archive>` | `-l` `-d <dir>` | Real PKZIP + DEFLATE (interoperable) |
-| `tar <archive> [files]` | `-czf` `-xzf` `-tf` `-v` | Archive utility — real POSIX ustar binary format (interoperable) |
+| Command | Description |
+|---------|-------------|
+| `tar <archive> [files]` | Archive utility (POSIX ustar) |
+| `gzip <file>` / `gunzip <file>` | Compress / decompress |
+| `zip [-r] <archive> <files>` / `unzip <archive>` | PKZIP + DEFLATE archive |
+| `bzip2 <file>` / `bunzip2 <file>` | Bzip2 compress / decompress |
+| `base64` | Encode/decode base64 |
+| `help` | Full list: type `help` in the shell |
 
 ### System
 
-| Command | Flags | Description |
-|---------|-------|-------------|
-| `date` | `+format` | Current date and time |
-| `df` | `-h` | Filesystem disk space |
-| `du [path]` | `-h` `-s` | Estimate file space |
-| `free` | `-h` `-m` `-g` | Memory usage (real host data) |
-| `groups [user]` | | Group memberships |
-| `hostname` | | Print hostname |
-| `htop` | | System monitor (mock) |
-| `id [user]` | | User identity (uid/gid/groups) |
-| `dmesg` | `-n` | Print kernel ring buffer messages |
-| `ip <object>` | `addr` `route` `link` `neigh` | Modern network interface/routing tool |
-| `kill [-9] <pid>` | | Send signal (mock) |
-| `last [user]` | | Show login history |
-| `lsb_release` | `-a` `-i` `-d` `-r` `-c` | Distribution info |
-| `neofetch` | | System info (real package count and uptime) |
-| `node` | `--version` `-e` `-p` | Virtual JS runtime; **requires `apt install nodejs`** |
-| `npm` | `--version` `list` `version` | Node.js package manager (install/run stubbed); **requires `apt install npm`** |
-| `npx` | `--version` | Node.js package runner (stubbed); **requires `apt install npm`** |
-| `ping [-c <n>] <host>` | | ICMP ECHO_REQUEST (mock) |
-| `ps` | `-a` `-u` `-x` `aux` | Process status |
-| `python3` | `--version` `-c` `-V` | Virtual Python 3 interpreter; alias `python`; **requires `apt install python3`** |
-| `sleep <seconds>` | | Delay execution |
-| `uname` | `-a` `-r` `-m` | System information |
-| `bc` | | Arithmetic calculator (integer; `+` `-` `*` `/` `%` `**` `()`) |
-| `lsof` | `-i` | List open files (simulated) |
-| `strace <cmd>` | `-e` `-o` | Trace system calls (stub with realistic output) |
-| `uptime` | `-p` `-s` | Running time |
-| `w` | | Who is logged on and what they are doing |
-| `who` | | Active sessions |
-| `whoami` | | Current user |
-| `nproc` | `--all` | Print number of processing units (returns 4) |
-| `mktemp` | `-d` | Create a temporary file or directory in `/tmp` |
-| `timeout <n> <cmd>` | | Run command with time limit (simulated) |
-| `wait [job...]` | | Wait for background jobs (no-op; jobs are fire-and-forget) |
+| Command | Description |
+|---------|-------------|
+| `whoami` | Current user |
+| `id [user]` | User identity (uid/gid/groups) |
+| `uname` | System information |
+| `hostname` | Print hostname |
+| `ps` | Process status |
+| `kill [-9] <pid>` | Send signal (mock) |
+| `df` | Filesystem disk space |
+| `du [path]` | Estimate file space |
+| `free` | Memory usage (real host data) |
+| `uptime` | Running time |
+| `lsof` | List open files (simulated) |
+| `strace <cmd>` | Trace system calls (stub) |
+| `lscpu` | CPU architecture info |
+| `lspci` | PCI device listing |
+| `nice <cmd>` | Run with adjusted priority |
+| `nohup <cmd>` | Run immune to hangups |
+| `pgrep <pattern>` | Search processes by name |
+| `pkill <pattern>` | Kill processes by name |
+| `top` | Real-time process monitor (mock) |
+| `help` | Full list: type `help` in the shell |
 
 ### Network
 
-| Command | Flags | Description |
-|---------|-------|-------------|
-| `curl <url>` | `-o` `-X` `-d` `-H` `-s` `-I` `-L` `-v` | HTTP client (pure `fetch()`) |
-| `wget <url>` | `-O` `-P` `-q` | File downloader (pure `fetch()`) |
+| Command | Description |
+|---------|-------------|
+| `curl <url>` | HTTP client (pure `fetch()`) |
+| `wget <url>` | File downloader (pure `fetch()`) |
+| `ip <object>` | Network interface/routing tool |
+| `ping [-c <n>] <host>` | ICMP ECHO_REQUEST (mock) |
+| `nc <host> <port>` | TCP netcat (mock) |
+| `help` | Full list: type `help` in the shell |
 
-### Shell & Scripting
+### Session
 
-| Command | Flags | Description |
-|---------|-------|-------------|
-| `alias [name=value]` | | Define or display aliases |
-| `clear` | | Clear terminal screen |
-| `declare [name=value]` | `-i` `-r` `-x` | Declare variables; aliases `local`, `typeset` |
-| `echo <text>` | `-n` `-e` | Display text; `-e` interprets `\n` `\t` `\r` `\\` |
-| `env` | | Print session environment |
-| `exit [code]` | | Exit session |
-| `export NAME=VALUE` | | Set shell variable |
-| `false` | | Return exit code 1 |
-| `help [command]` | | List commands or show command usage |
-| `history [n]` | | Command history |
-| `jobs` | | List active jobs |
-| `bg [%n]` | | Resume job in background |
-| `fg [%n]` | | Resume job in foreground |
-| `man <command>` | | Command reference manual |
-| `printf <fmt> [args...]` | | Format and print (`%s` `%d` `%f` `%x` `\n` `\t`) |
-| `read [-r] <var...>` | `-r` `-p` | Read stdin into variable(s) |
-| `return [n]` | | Return from shell function |
-| `set [VAR=val]` | `-e` `-x` `+e` `+x` | Display or set shell variables; `-e` exit on error, `-x` trace execution |
-| `sh` | `-c <script>` `[file]` | Execute shell script — `if`/`for`/`while`/`until`/`case`/functions, arrays `arr=(a b c)`, `$((expr))`, single-quote-safe |
-| `perl` | `-e` `-p` `-n` | One-liner interpreter (`print`/`say`, `s///`, `-p`/`-n` loop) |
-| `shift [n]` | | Shift positional parameters |
-| `source <file>` | | Execute file in current env; alias `.` |
-| `test <expr>` / `[ <expr> ]` | | POSIX conditional: `-f` `-d` `-e` `-z` `-n` `-x` `-s` `=` `!=` `-eq` `-lt` `-gt` `-le` `-ge` `!` `-a` `-o` |
-| `trap [action] [signal]` | | Signal handlers; supports `EXIT` |
-| `stty` | `-a` `size` | Print/change terminal line settings |
-| `tput <cap>` | `cols` `lines` `setaf` `bold` `sgr0` | Query terminfo / output terminal escape sequences |
-| `true` | | Return exit code 0 |
-| `type <command>` | | Describe command interpretation |
-| `unalias <name>` | `-a` | Remove aliases |
-| `unset <VAR>` | | Remove shell variable |
-| `which <command>` | | Locate command in `$PATH` |
+| Command | Description |
+|---------|-------------|
+| `ssh <user>@<host>` | SSH client (mock) |
+| `sftp <user>@<host>` | SFTP client (mock) |
+| `nano <path>` | Interactive text editor |
+| `su [user]` | Switch user |
+| `sudo <cmd>` | Run as root |
+| `passwd [user]` | Change password |
+| `adduser <name> <pass>` | Create user (root only) |
+| `deluser <name>` | Delete user (root only) |
+| `last [user]` | Show login history |
+| `w` | Who is logged on and what they are doing |
+| `who` | Active sessions |
+| `help` | Full list: type `help` in the shell |
 
-### Misc & Fun
+### Package
 
-| Command | Flags | Description |
-|---------|-------|-------------|
-| `cmatrix` | | Matrix-style falling characters |
-| `cowsay [msg]` | | ASCII cow saying something |
-| `cowthink [msg]` | | ASCII cow thinking |
-| `fortune` | | Print a random adage |
-| `sl` | | Steam locomotive (cure for mistyping `ls`) |
-| `yes [string]` | | Repeatedly output string until killed |
+| Command | Description |
+|---------|-------------|
+| `apt <cmd> [pkg...]` | Package manager |
+| `dpkg` | Low-level package tool |
+| `npm` | Node.js package manager |
+| `npx` | Node.js package runner |
+| `node` | Virtual JS runtime |
+| `perl` | One-liner interpreter |
+| `python3` | Virtual Python 3 interpreter |
+| `help` | Full list: type `help` in the shell |
 
-### Package Management
+### Shell
 
-| Command | Flags | Description |
-|---------|-------|-------------|
-| `apt <cmd> [pkg...]` | | `install`, `remove`, `purge`, `update`, `upgrade`, `search`, `show`, `list` |
-| `apt-get` | | Alias for `apt` |
-| `apt-cache <cmd>` | | `search`, `show`, `policy` |
-| `dpkg` | `-l` `-s` `-L` `-r` `-P` | Low-level package tool |
-| `dpkg-query` | `-W` `-l` | Show installed package info |
+| Command | Description |
+|---------|-------------|
+| `sh` | Execute shell script |
+| `echo <text>` | Display text |
+| `printf <fmt> [args...]` | Format and print |
+| `read [-r] <var...>` | Read stdin into variable(s) |
+| `source <file>` | Execute file in current env |
+| `export NAME=VALUE` | Set shell variable |
+| `set [VAR=val]` | Display or set shell variables |
+| `unset <VAR>` | Remove shell variable |
+| `alias [name=value]` | Define or display aliases |
+| `type <command>` | Describe command interpretation |
+| `test <expr>` / `[ <expr> ]` | POSIX conditional |
+| `expr <expr>` | Evaluate expression |
+| `declare [name=value]` | Declare variables |
+| `exit [code]` | Exit session |
+| `shift [n]` | Shift positional parameters |
+| `return [n]` | Return from shell function |
+| `trap [action] [signal]` | Signal handlers |
+| `true` / `false` | Return exit code 0 / 1 |
+| `sleep <seconds>` | Delay execution |
+| `timeout <n> <cmd>` | Run command with time limit |
+| `wait [job...]` | Wait for background jobs (no-op) |
+| `history [n]` | Command history |
+| `help` | Full list: type `help` in the shell |
 
-### Users & Permissions
+### Fun
 
-| Command | Flags | Description |
-|---------|-------|-------------|
-| `adduser <name> <pass>` | | Create user (root only) |
-| `deluser <name>` | | Delete user (root only) |
-| `passwd [user]` | | Change password |
-| `su [user]` | | Switch user |
-| `sudo <cmd>` | `-i` | Run as root |
+| Command | Description |
+|---------|-------------|
+| `neofetch` | System info display |
+| `cowsay [msg]` | ASCII cow saying something |
+| `fortune` | Print a random adage |
+| `cmatrix` | Matrix-style falling characters |
+| `sl` | Steam locomotive |
+| `yes [string]` | Repeatedly output string |
+| `bc` | Arithmetic calculator |
+| `seq` | Print sequence of numbers |
+| `pacman` | Pacman game (mock) |
+| `help` | Full list: type `help` in the shell |
 
-**ℹ️ All 127 built-in commands include complete JSDoc documentation** with `@category` and `@params` tags. See [src/commands/](https://github.com/itsrealfortune/typescript-virtual-container/tree/main/src/commands) for source code and inline documentation.
+**ℹ️ All 149 built-in commands include complete JSDoc documentation** with `@category` and `@params` tags. See [src/commands/](https://github.com/itsrealfortune/typescript-virtual-container/tree/main/src/commands) for source code and inline documentation.
 
 Custom commands: `shell.addCommand(name, params, callback)`.
 
@@ -690,31 +642,12 @@ cat /tmp/out.txt >> /tmp/log.txt # append
 
 ```bash
 export NAME=world
-echo "Hello $NAME"           # Hello world
-echo "${NAME:-fallback}"     # world (or fallback if unset)
-echo "${UNSET:-default}"     # default
-echo "${NAME:+alternate}"    # alternate (only if NAME is set)
-echo "${UNSET:=assigned}"    # assigns and returns "assigned"
-echo "${#NAME}"              # 5 (string length)
-echo "${NAME:2}"             # rld (substring from offset 2)
-echo "${NAME:1:3}"           # orl (substring offset 1, length 3)
-echo "${NAME/o/0}"           # w0rld (replace first)
-echo "${NAME//l/L}"          # worLd  (replace all)
-echo "${PATH##*/}"           # strip longest prefix match
-echo "${FILE%.txt}"          # strip shortest suffix match
-echo "$?"                    # last exit code
-echo "$RANDOM"               # random integer 0–32767
-echo "$LINENO"               # current line number
-echo ~                       # /home/<user> (tilde expansion)
-
-# Arrays
-arr=(alpha beta gamma)
-echo "${arr[0]}"             # alpha
-echo "${arr[@]}"             # alpha beta gamma
-echo "${#arr[@]}"            # 3
+echo "Hello $NAME"            # basic variable
+echo "${NAME:-fallback}"      # default if unset
+echo "$(whoami)"              # command substitution
+echo $((2 + 3))               # arithmetic expansion
+echo "${HOME}"                # curly brace delimited
 ```
-
-> **Single-quote isolation** — `$VAR` and `$((...))` are never expanded inside `'...'`.
 
 ### Arithmetic
 
@@ -752,7 +685,6 @@ while [ $COUNT -lt 3 ]; do
   COUNT=$((COUNT + 1))
 done
 
-COUNT=5
 until [ $COUNT -eq 0 ]; do
   echo "Countdown: $COUNT"
   COUNT=$((COUNT - 1))
@@ -824,19 +756,15 @@ alias ll="ls -l"
 echo "Welcome, $USER!"
 ```
 
-### Line Editing
+Set `.bashrc` programmatically:
 
-Interactive shell supports full readline-style key bindings:
-
-| Key | Action |
-|-----|--------|
-| `←` / `→` | Move cursor left / right |
-| `Home` / `Ctrl+A` | Jump to start of line |
-| `End` / `Ctrl+E` | Jump to end of line |
-| `Ctrl+K` | Kill to end of line |
-| `Ctrl+U` | Kill to start of line |
-| `Ctrl+W` | Kill word backward |
-| `!!` | Expand to last command |
+```typescript
+shell.vfs.writeFile("/home/root/.bashrc", `
+export EDITOR=nano
+alias ll="ls -l"
+echo "Welcome back, root!"
+`.trim());
+```
 
 </details>
 
@@ -851,180 +779,32 @@ On every `VirtualShell` init, a realistic Linux hierarchy is bootstrapped idempo
 
 ```
 /
-├── bin -> /usr/bin             (symlink, Debian-style)
-├── sbin -> /usr/sbin           (symlink, Debian-style)
-├── lib/                        (ELF stub)
-│   ├── modules/
-│   └── x86_64-linux-gnu/
-├── lib64/
-│   └── ld-linux-x86-64.so.2   (stub, 0o755)
-├── initrd.img -> /boot/initrd.img-<kernel>
-├── initrd.img.old -> /boot/initrd.img-<kernel>
-├── vmlinuz -> /boot/vmlinuz-<kernel>
-├── vmlinuz.old -> /boot/vmlinuz-<kernel>
-├── lost+found/                 (mode 0o700, ext4 fsck dir)
-│
+├── bin/
+│   ├── [47 stubs: sh, bash, python3, ...]
 ├── boot/
-│   ├── grub/
-│   │   └── grub.cfg            virtual bootloader config
-│   ├── vmlinuz-<kernel>        kernel stub
-│   ├── initrd.img-<kernel>     initrd stub
-│   ├── System.map-<kernel>
-│   └── config-<kernel>
-│
 ├── dev/
-│   ├── null / zero / full      (0o666)
-│   ├── random / urandom        (0o444)
-│   ├── mem                     (0o640)
-│   ├── console / tty / tty0 / tty1 / ttyS0
-│   ├── sda / sda1 / sda2       block device stubs
-│   ├── loop0-loop7 + loop-control
-│   ├── stdin / stdout / stderr
-│   ├── pts/
-│   └── shm/
-│
+│   ├── null, zero, random, urandom, tty, ...
 ├── etc/
-│   ├── apt/
-│   │   ├── sources.list
-│   │   ├── sources.list.d/
-│   │   ├── trusted.gpg.d/
-│   │   ├── keyrings/
-│   │   └── apt.conf.d/70debconf
-│   ├── cron.d/ + cron.daily/ + cron.hourly/ + cron.weekly/ + cron.monthly/
-│   ├── default/locale
-│   ├── init.d/
-│   ├── ld.so.conf + ld.so.conf.d/x86_64-linux-gnu.conf + fakeroot.conf
-│   ├── netplan/01-netcfg.yaml
-│   ├── network/interfaces      lo + eth0 (DHCP)
-│   ├── pam.d/                  common-auth|account|password|session · sshd · login · sudo
-│   ├── security/limits.conf + access.conf
-│   ├── sudoers (0o440) + sudoers.d/README
-│   ├── systemd/system/ + systemd/network/ + systemd/system.conf
-│   ├── debian_version          nyx/stable
-│   ├── fstab                   UUID stubs + tmpfs entries
-│   ├── group                   synced from VirtualUserManager
-│   ├── hostname
-│   ├── hosts                   127.0.0.1 + ::1 + VM hostname
-│   ├── issue + issue.net        login banner
-│   ├── locale.conf + locale.gen LANG=en_US.UTF-8
-│   ├── localtime / timezone    UTC
-│   ├── login.defs              UID_MIN=1000 SHA512
-│   ├── lsb-release             Fortune GNU/Linux + ShellProperties
-│   ├── motd                    uses ShellProperties
-│   ├── nsswitch.conf
-│   ├── os-release              NAME="Fortune GNU/Linux" + ShellProperties
-│   ├── passwd                  synced from VirtualUserManager
-│   ├── profile                 PATH + PS1 defaults
-│   ├── resolv.conf             1.1.1.1 + 8.8.8.8
-│   ├── shadow                  (mode 0o640, fake hashes)
-│   └── shells                  /bin/sh /bin/bash /usr/bin/bash
-│
+│   ├── passwd, shadow, group, sudoers, hostname, ...
 ├── home/
-│   └── <user>/
-│       └── README.txt          created on first login
-├── media/
-├── mnt/
+│   └── root/
 ├── opt/
-│   └── rclone/
-├── srv/
-│
-├── proc/                       kernel simulation engine (refreshed on demand)
-│   ├── boot/log + version      kernel boot sequence
-│   ├── net/dev + if_inet6 + tcp + tcp6
-│   ├── sys/kernel/             hostname, ostype, osrelease, pid_max,
-│   │                           threads-max, randomize_va_space, dmesg_restrict
-│   ├── sys/net/ipv4/ip_forward
-│   ├── sys/vm/swappiness + overcommit_memory
-│   ├── self/mounts             mirrors most recent session's /proc/<pid>/
-│   ├── 1/                      init (cmdline, comm, stat, status, environ, fd/, fdinfo/)
-│   ├── <pid>/                  one subtree per active session (TTY-derived PID)
-│   ├── cmdline                 kernel boot args
-│   ├── cpuinfo                 real host CPU passthrough
-│   ├── filesystems
-│   ├── hostname
-│   ├── loadavg                 computed dynamically
-│   ├── meminfo                 real host memory (Total/Free/Available/Buffers/Cached/Swap)
-│   ├── mounts
-│   ├── partitions
-│   ├── swaps
-│   ├── uptime                  computed from shellStartTime
-│   └── version                 Linux <kernel> (fortune@build)
-│
-├── root/                       (mode 0o700)
-│   ├── .ssh/                   (mode 0o700)
-│   ├── .config/pip/pip.conf    break-system-packages = true
-│   ├── .local/share/
-│   ├── .bash_logout
-│   ├── .bashrc                 colored PS1, PATH, ll/la/l aliases
-│   └── .profile
-│
-├── run/                        (systemd tmpfs runtime)
-│   ├── lock/
-│   ├── systemd/
-│   ├── user/
-│   └── utmp
-│
-├── sys/                        sysfs graph — deterministic, seeded from hostname (fnv1a)
-│   ├── class/net/
-│   ├── devices/virtual/dmi/id/
-│   │   ├── bios_vendor / bios_version / bios_date
-│   │   ├── sys_vendor / product_name / product_family / product_version
-│   │   ├── product_uuid / product_serial
-│   │   ├── chassis_type / chassis_vendor / chassis_version
-│   │   ├── board_name
-│   │   └── modalias
-│   └── kernel/
-│       ├── hostname
-│       ├── osrelease
-│       └── ostype
-│
-├── tmp/                        (mode 0o1777, sticky)
-│   └── node-compile-cache/
-│
+├── proc/
+│   ├── (dynamic — uptime, meminfo, cpuinfo, stat, ...)
+├── root/
+├── run/
+├── sbin/
+│   └── init
+├── sys/
+├── tmp/
 ├── usr/
-│   ├── bin/                    stubs for all built-in commands (exec builtin <name>)
-│   ├── sbin/
-│   ├── lib/
-│   │   ├── x86_64-linux-gnu/
-│   │   ├── python3/dist-packages/
-│   │   ├── python3.12/
-│   │   └── jvm/java-21-openjdk-amd64/
-│   ├── local/bin|lib|share|include|sbin/
-│   └── share/
-│       ├── doc/
-│       ├── man/man1|man5|man8/
-│       ├── ca-certificates/
-│       ├── common-licenses/
-│       └── zoneinfo/
-│
+│   ├── bin/
+│   ├── lib/python3.12/
+│   ├── share/
+│   └── src/
 └── var/
-    ├── cache/
-    │   ├── apt/archives/partial/
-    │   ├── debconf/
-    │   ├── fontconfig/
-    │   ├── ldconfig/
-    │   └── PackageKit/
-    ├── lib/
-    │   ├── apt/lists/partial/
-    │   ├── dpkg/
-    │   │   ├── info/
-    │   │   ├── updates/
-    │   │   ├── alternatives/
-    │   │   ├── available
-    │   │   └── status          managed by VirtualPackageManager
-    │   ├── misc/
-    │   └── systemd/
     ├── log/
-    │   ├── apt/history.log + term.log
-    │   ├── auth.log
-    │   ├── dpkg.log
-    │   ├── journal/
-    │   ├── kern.log
-    │   ├── private/
-    │   └── syslog
-    ├── run -> /run              (legacy symlink)
-    ├── spool/cron/
-    └── tmp/
+    └── lib/apt/
 ```
 
 ```typescript

@@ -193,6 +193,11 @@ function longListing(
 
 // ─── command ─────────────────────────────────────────────────────────────────
 
+/**
+ * List directory contents.
+ * @category navigation
+ * @params ["[-la] [path]"]
+ */
 export const lsCommand: ShellModule = {
 	name: "ls",
 	description: "List directory contents",

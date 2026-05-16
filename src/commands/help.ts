@@ -123,6 +123,11 @@ function renderDetail(mod: ShellModule): string {
 
 // ─── export ───────────────────────────────────────────────────────────────────
 
+/**
+ * List all commands, or show usage for a specific command.
+ * @category shell
+ * @params ["[command]"]
+ */
 export function createHelpCommand(_getNames: () => string[]): ShellModule {
 	return {
 		name: "help",

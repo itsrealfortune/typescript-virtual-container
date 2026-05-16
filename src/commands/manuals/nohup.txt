@@ -1,0 +1,11 @@
+NOHUP(1)                 User Commands                 NOHUP(1)
+
+NAME
+       nohup - run a command immune to hangups
+
+SYNOPSIS
+       nohup COMMAND [ARG...]
+
+DESCRIPTION
+       Run COMMAND such that it ignores HUP signals and
+       continues running after the terminal is closed.

@@ -32,6 +32,7 @@ function spawnScriptProcess(
 	return proc;
 }
 
+/** Spawns the nano editor as an interactive subprocess. */
 export function spawnNanoEditorProcess(
 	tempPath: string,
 	terminalSize: TerminalSize,
@@ -44,6 +45,7 @@ export function spawnNanoEditorProcess(
 	);
 }
 
+/** Spawns htop as an interactive subprocess, filtered to the given PIDs. */
 export function spawnHtopProcess(
 	pidList: string,
 	terminalSize: TerminalSize,

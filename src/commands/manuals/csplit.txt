@@ -1,0 +1,11 @@
+CSPLIT(1)                User Commands                CSPLIT(1)
+
+NAME
+       csplit - split a file into pieces by context
+
+SYNOPSIS
+       csplit [OPTION]... FILE PATTERN...
+
+DESCRIPTION
+       Split FILE into pieces based on context lines
+       matching PATTERN, creating numbered output files.

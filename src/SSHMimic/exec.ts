@@ -9,6 +9,10 @@ function toTtyLines(text: string): string {
 		.replace(/\n/g, "\r\n");
 }
 
+/**
+ * Handles SSH exec channel requests. Runs the given command in a non-interactive
+ * shell session and writes stdout/stderr to the stream, then signals exit.
+ */
 export function runExec(
 	stream: ExecStream,
 	cmd: string,

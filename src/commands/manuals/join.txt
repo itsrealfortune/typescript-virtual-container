@@ -1,0 +1,11 @@
+JOIN(1)                  User Commands                  JOIN(1)
+
+NAME
+       join - join lines of two files on a common field
+
+SYNOPSIS
+       join [OPTION]... FILE1 FILE2
+
+DESCRIPTION
+       Join lines from FILE1 and FILE2 based on a common
+       field, writing to standard output.

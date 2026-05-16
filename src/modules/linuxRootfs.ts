@@ -829,6 +829,75 @@ export function refreshProc(
 	const numProcs = 1 + sessions.length;
 	write(vfs, "/proc/loadavg", `${load} ${load} ${load} ${numProcs}/${numProcs} 1\n`);
 
+	// /proc/stat — CPU statistics
+	const cpuCount = os.cpus().length;
+	const userJiffies = Math.floor(uptimeSec * 100);
+	const niceJiffies = Math.floor(uptimeSec * 2);
+	const systemJiffies = Math.floor(uptimeSec * 30);
+	const idleJiffies = Math.floor(uptimeSec * 800);
+	const iowaitJiffies = Math.floor(uptimeSec * 5);
+	const irqJiffies = Math.floor(uptimeSec * 1);
+	const softirqJiffies = Math.floor(uptimeSec * 2);
+	const stealJiffies = Math.floor(uptimeSec * 0);
+	const totalJiffies = userJiffies + niceJiffies + systemJiffies + idleJiffies + iowaitJiffies + irqJiffies + softirqJiffies + stealJiffies;
+	const cpuStats = `cpu  ${userJiffies} ${niceJiffies} ${systemJiffies} ${idleJiffies} ${iowaitJiffies} ${irqJiffies} ${softirqJiffies} ${stealJiffies} 0 0\n`;
+	const perCpuStats = Array.from({ length: cpuCount }, (_, i) =>
+		`cpu${i} ${Math.floor(userJiffies / cpuCount)} ${Math.floor(niceJiffies / cpuCount)} ${Math.floor(systemJiffies / cpuCount)} ${Math.floor(idleJiffies / cpuCount)} ${Math.floor(iowaitJiffies / cpuCount)} ${Math.floor(irqJiffies / cpuCount)} ${Math.floor(softirqJiffies / cpuCount)} ${Math.floor(stealJiffies / cpuCount)} 0 0`,
+	).join("\n");
+	write(vfs, "/proc/stat", `${cpuStats}${perCpuStats}\nintr ${Math.floor(totalJiffies * 2)} 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\nctxt ${Math.floor(totalJiffies * 50)}\nbtime ${Math.floor(shellStartTime / 1000)}\nprocesses ${numProcs + 10}\nprocs_running 1\nprocs_blocked 0\n`);
+
+	// /proc/vmstat — virtual memory stats
+	const pgpgin = Math.floor(totalJiffies * 0.5);
+	const pgpgout = Math.floor(totalJiffies * 0.3);
+	const pswpin = 0;
+	const pswpout = 0;
+	const pgalloc = Math.floor(totalJiffies * 2);
+	const pgfault = pgalloc + Math.floor(totalJiffies * 0.5);
+	const pgmajfault = Math.floor(totalJiffies * 0.01);
+	write(vfs, "/proc/vmstat",
+		`nr_free_pages ${Math.floor(freeMemKb / 4)}\nnr_zone_inactive_anon 0\nnr_zone_active_anon 0\nnr_zone_inactive_file ${Math.floor(cachedKb / 4)}\nnr_zone_active_file ${Math.floor(buffersKb / 4)}\nnr_zone_unevictable 0\nnr_zone_write_pending 0\nnr_mlock 0\nnr_page_table_pages ${pageTablesKb}\nnr_kernel_stack ${Math.floor(totalMemKb * 0.0005)}\nnr_bounce 0\nnr_zspages 0\nnr_free_cma 0\nnuma_hit ${Math.floor(totalJiffies * 3)}\nnuma_miss 0\nnuma_foreign 0\nnuma_interleave 0\nnuma_local ${Math.floor(totalJiffies * 3)}\nnuma_other 0\nnr_inactive_anon 0\nnr_active_anon 0\nnr_inactive_file ${Math.floor(cachedKb / 4)}\nnr_active_file ${Math.floor(buffersKb / 4)}\nnr_unevictable 0\nnr_slab_reclaimable ${Math.floor(slabKb * 0.6)}\nnr_slab_unreclaimable ${Math.floor(slabKb * 0.4)}\nnr_isolated_anon 0\nnr_isolated_file 0\nworkingset_nodes 0\nworkingset_refault 0\nworkingset_activate 0\nworkingset_restore 0\nworkingset_nodereclaim 0\nnr_anon_pages ${Math.floor(totalMemKb * 0.001)}\nnr_mapped ${Math.floor(cachedKb * 0.4)}\nnr_file_pages ${Math.floor(cachedKb * 0.8)}\nnr_dirty ${Math.floor(totalMemKb * 0.001)}\nnr_writeback 0\nnr_writeback_temp 0\nnr_shmem ${Math.floor(totalMemKb * 0.005)}\nnr_shmem_hugepages 0\nnr_shmem_pmdmapped 0\nnr_file_hugepages 0\nnr_file_pmdmapped 0\nnr_anon_transparent_hugepages 0\nnr_vmscan_write 0\nnr_vmscan_immediate_reclaim 0\nnr_dirtied ${Math.floor(totalJiffies * 2)}\nnr_written ${Math.floor(totalJiffies * 2)}\nnr_throttled_written 0\nnr_kernel_misc_reclaimable 0\nnr_reclaim_pages 0\nnr_zone_active_anon 0\nnr_zone_active_file ${Math.floor(buffersKb / 4)}\npgpgin ${pgpgin}\npgpgout ${pgpgout}\npswpin ${pswpin}\npswpout ${pswpout}\npgalloc_dma 0\npgalloc_dma32 ${Math.floor(pgalloc * 0.3)}\npgalloc_normal ${Math.floor(pgalloc * 0.7)}\npgalloc_movable 0\npgfree ${pgalloc}\npgactivate ${Math.floor(totalJiffies * 0.5)}\npgdeactivate 0\npgfault ${pgfault}\npgmajfault ${pgmajfault}\npglazyfree 0\npgrefill 0\npgsteal_kswapd 0\npgsteal_direct 0\npgscan_kswapd 0\npgscan_direct 0\npgskip_dma 0\npgskip_dma32 0\npgskip_normal 0\npgskip_movable 0\npgmigrate_success 0\npgmigrate_fail 0\ncompact_migrate_scanned 0\ncompact_free_scanned 0\ncompact_isolated 0\ncompact_stall 0\ncompact_fail 0\ncompact_success 0\nhtlb_buddy_alloc_success 0\nhtlb_buddy_alloc_fail 0\nunevictable_pgs_culled 0\nunevictable_pgs_scanned 0\nunevictable_pgs_rescued 0\nunevictable_pgs_mlocked 0\nunevictable_pgs_munlocked 0\nunevictable_pgs_cleared 0\nunevictable_pgs_stranded 0\nswap_ra 0\nswap_ra_hit 0\nnr_hugepages 0\nnr_hugepages_bootmem 0\n\n`,
+	);
+
+	// /proc/pressure — PSI (Pressure Stall Information)
+	ensureDir(vfs, "/proc/pressure");
+	const someAvg10 = (Math.random() * 0.3).toFixed(2);
+	const someAvg60 = (Math.random() * 0.2 + 0.1).toFixed(2);
+	const someAvg300 = (Math.random() * 0.1 + 0.05).toFixed(2);
+	const someTotal = Math.floor(totalJiffies * 10);
+	write(vfs, "/proc/pressure/cpu",
+		`some avg10=${someAvg10} avg60=${someAvg60} avg300=${someAvg300} total=${someTotal}\n`,
+	);
+	write(vfs, "/proc/pressure/memory",
+		`some avg10=${(Number(someAvg10) * 0.5).toFixed(2)} avg60=${(Number(someAvg60) * 0.3).toFixed(2)} avg300=${(Number(someAvg300) * 0.2).toFixed(2)} total=${Math.floor(someTotal * 0.3)}\n`,
+	);
+	write(vfs, "/proc/pressure/io",
+		`some avg10=${(Number(someAvg10) * 0.7).toFixed(2)} avg60=${(Number(someAvg60) * 0.5).toFixed(2)} avg300=${(Number(someAvg300) * 0.3).toFixed(2)} total=${Math.floor(someTotal * 0.5)}\n`,
+	);
+
+	// /proc/modules
+	write(vfs, "/proc/modules",
+		`${[
+			"virtio 163840 10 - Live 0x0000000000000000",
+			"virtio_ring 28672 10 virtio, Live 0x0000000000000000",
+			"virtio_blk 20480 10 - Live 0x0000000000000000",
+			"virtio_net 57344 10 - Live 0x0000000000000000",
+			"virtio_console 28672 10 - Live 0x0000000000000000",
+			"virtio_pci 24576 10 - Live 0x0000000000000000",
+			"virtio_pci_legacy_dev 12288 1 virtio_pci, Live 0x0000000000000000",
+			"virtio_pci_modern_dev 16384 1 virtio_pci, Live 0x0000000000000000",
+			"ext4 847872 10 - Live 0x0000000000000000",
+			"jbd2 131072 1 ext4, Live 0x0000000000000000",
+			"mbcache 16384 1 ext4, Live 0x0000000000000000",
+			"fuse 172032 10 - Live 0x0000000000000000",
+			"overlay 131072 10 - Live 0x0000000000000000",
+			"nf_tables 188416 10 - Live 0x0000000000000000",
+			"tun 49152 10 - Live 0x0000000000000000",
+			"bridge 286720 10 - Live 0x0000000000000000",
+			"dm_mod 155648 10 - Live 0x0000000000000000",
+			"crc32c_intel 24576 10 - Live 0x0000000000000000",
+		].join("\n")}\n`,
+	);
+
 	// /proc/cmdline — Firecracker boot args
 	write(vfs, "/proc/cmdline",
 		`console=ttyS0 reboot=k panic=1 nomodule random.trust_cpu=1 ipv6.disable=1 swiotlb=noforce rdinit=/process_api init_on_free=1 -- --firecracker-init --addr 0.0.0.0:2024 --max-ws-buffer-size 32768 --block-local-connections\n`,
@@ -962,8 +1031,14 @@ export function refreshProc(
 		);
 	}
 	write(vfs, "/proc/net/if_inet6", "");
+	// /proc/net/tcp — fake listening sockets
+	const tcpListen = [
+		"   0: 00000000:0016 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 10000 1 0000000000000000 100 0 0 10 0",
+		"   1: 00000000:022D 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 10001 1 0000000000000000 100 0 0 10 0",
+		"   2: 00000000:0A8C 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 10002 1 0000000000000000 100 0 0 10 0",
+	].join("\n");
 	write(vfs, "/proc/net/tcp",
-		"  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n",
+		`  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n${tcpListen}\n`,
 	);
 	write(vfs, "/proc/net/tcp6",
 		"  sl  local_address                         remote_address                        st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n",
@@ -977,7 +1052,7 @@ export function refreshProc(
 		"0000000000000000: 00000002 00000000 00010000 0001 01 10000 /run/dbus/system_bus_socket\n",
 	);
 	write(vfs, "/proc/net/sockstat",
-		"sockets: used 8\nTCP: inuse 0 orphan 0 tw 0 alloc 0 mem 0\nUDP: inuse 0 mem 0\nUDPLITE: inuse 0\nRAW: inuse 0\nFRAG: inuse 0 memory 0\n",
+		"sockets: used 11\nTCP: inuse 3 orphan 0 tw 0 alloc 3 mem 1024\nUDP: inuse 0 mem 0\nUDPLITE: inuse 0\nRAW: inuse 0\nFRAG: inuse 0 memory 0\n",
 	);
 
 	// /proc/partitions — virtio block devices
@@ -1354,62 +1429,6 @@ function bootstrapUsr(vfs: VirtualFileSystem): void {
 		"hostname", "uname", "ps", "kill", "df", "du", "curl", "wget",
 		"nano", "diff", "uniq", "xargs", "base64",
 	];
-
-	// From a real container
-	// const builtins = [
-	// 	// core
-	// 	"sh", "bash", "dash",
-	// 	"ls", "cat", "echo", "grep", "find", "sort",
-	// 	"head", "tail", "cut", "tr", "sed", "awk", "mawk", "gawk",
-	// 	"wc", "tee", "tar", "gzip", "gunzip", "bzip2", "xz",
-	// 	"touch", "mkdir", "rm", "mv", "cp", "ln", "pwd",
-	// 	"chmod", "chown", "chgrp", "env", "date", "sleep",
-	// 	"id", "whoami", "hostname", "uname", "ps", "kill",
-	// 	"df", "du", "dd", "stat", "file",
-	// 	// net
-	// 	"curl", "wget", "nc", "netcat", "ss", "ip",
-	// 	// editors
-	// 	"nano", "vi",
-	// 	// text
-	// 	"diff", "uniq", "xargs", "base64", "md5sum", "sha256sum",
-	// 	"strings", "hexdump", "od", "column", "fmt", "paste",
-	// 	"join", "comm", "split", "csplit", "fold", "expand",
-	// 	// archive
-	// 	"zip", "unzip",
-	// 	// process
-	// 	"top", "htop", "free", "uptime", "dmesg", "lsof",
-	// 	"strace", "ltrace", "pgrep", "pkill", "nohup", "nice",
-	// 	// fs
-	// 	"mount", "umount", "lsblk", "fdisk", "blkid", "e2fsck",
-	// 	// misc
-	// 	"bc", "expr", "seq", "yes", "true", "false", "test",
-	// 	"readlink", "realpath", "dirname", "basename", "mktemp",
-	// 	"install", "make",
-	// 	// dev tools
-	// 	"gcc", "gcc-13", "g++", "g++-13", "cpp", "as", "ld",
-	// 	"ar", "nm", "objdump", "objcopy", "strip", "size",
-	// 	"cc", "c++", "pkg-config",
-	// 	// package
-	// 	"apt", "apt-get", "apt-cache", "dpkg", "dpkg-query",
-	// 	"lsb_release", "add-apt-repository",
-	// 	// scripting
-	// 	"perl", "python3", "python3.12", "pipx",
-	// 	// node/npm
-	// 	"node", "npm", "npx",
-	// 	// java
-	// 	"java", "javac", "jar", "javadoc",
-	// 	// security
-	// 	"openssl", "gpg", "gpg2", "gpgv", "ssh", "ssh-keygen",
-	// 	"sudo", "su", "passwd", "adduser", "useradd",
-	// 	// misc system
-	// 	"systemctl", "journalctl", "loginctl",
-	// 	"timedatectl", "localectl",
-	// 	"lshw", "lscpu", "lsusb", "lspci",
-	// 	// text proc
-	// 	"jq", "xmllint", "pandoc",
-	// 	// multimedia
-	// 	"ffmpeg",
-	// ];
 
 	for (const bin of builtins) {
 		ensureFile(vfs, `/usr/bin/${bin}`, `#!/bin/sh\nexec builtin ${bin} "$@"\n`, 0o755);

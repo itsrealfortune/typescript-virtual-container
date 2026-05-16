@@ -1,0 +1,11 @@
+EXPR(1)                  User Commands                  EXPR(1)
+
+NAME
+       expr - evaluate arithmetic expressions
+
+SYNOPSIS
+       expr EXPRESSION
+
+DESCRIPTION
+       Evaluate an EXPRESSION and print its result.
+       Supports arithmetic, string, and logical operators.

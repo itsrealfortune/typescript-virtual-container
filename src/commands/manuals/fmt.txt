@@ -1,0 +1,11 @@
+FMT(1)                   User Commands                   FMT(1)
+
+NAME
+       fmt - simple text formatter
+
+SYNOPSIS
+       fmt [OPTION]... [FILE...]
+
+DESCRIPTION
+       Reformat paragraphs from each FILE to a specified
+       width, filling and joining lines.

@@ -12,7 +12,6 @@ export const readCommand: ShellModule = {
 	category: "shell",
 	params: ["[-r] [-p prompt] <var...>"],
 	run: ({ args, stdin, env }) => {
-		const _promptIdx = args.indexOf("-p");
 		const varNames = args.filter(
 			(a, i) => a !== "-r" && a !== "-p" && args[i - 1] !== "-p",
 		);

@@ -65,7 +65,6 @@ export const fortuneCommand: ShellModule = {
 function cowsay(message: string, dead = false): string {
 	const lines = message.split("\n");
 	const maxLen = Math.max(...lines.map(l => l.length));
-	const _border = "-".repeat(maxLen + 2);
 	const body = lines.length === 1
 		? `< ${lines[0]} >`
 		: lines.map((l, i) => {
@@ -103,6 +102,11 @@ export const cowsayCommand: ShellModule = {
 	},
 };
 
+/**
+ * Generate ASCII cow thinking.
+ * @category misc
+ * @params ["[message]"]
+ */
 export const cowthinkCommand: ShellModule = {
 	name: "cowthink",
 	description: "Generate ASCII cow thinking",

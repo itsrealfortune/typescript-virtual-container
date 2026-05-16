@@ -103,6 +103,7 @@ function applyHorizontalGradient(text: string): string {
 	return result;
 }
 
+/** System info fields used to render neofetch output. */
 export interface NeofetchInfo {
 	user: string;
 	host: string;
@@ -180,7 +181,7 @@ function countDpkgPackages(): number | undefined {
 			const data = readFileSync(filePath, "utf8");
 			const matches = data.match(/^Package:\s+/gm);
 			return matches?.length ?? 0;
-		} catch {}
+		} catch { /* dpkg status file may not exist */ }
 	}
 
 	return undefined;
@@ -198,7 +199,7 @@ function countSnapPackages(): number | undefined {
 			const entries = readdirSync(dirPath, { withFileTypes: true });
 			const count = entries.filter((entry) => entry.isDirectory()).length;
 			return count;
-		} catch {}
+		} catch { /* snap directory may not be readable */ }
 	}
 
 	return undefined;
@@ -280,6 +281,7 @@ function resolveDefaults(info: NeofetchInfo): Required<NeofetchInfo> {
 	};
 }
 
+/** Builds the full neofetch ASCII art system-info string. */
 export function buildNeofetchOutput(info: NeofetchInfo): string {
 	const fields = resolveDefaults(info);
 	const uptime = formatUptime(fields.uptimeSeconds);

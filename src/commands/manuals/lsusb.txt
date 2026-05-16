@@ -1,0 +1,11 @@
+LSUSB(1)                 User Commands                 LSUSB(1)
+
+NAME
+       lsusb - list USB devices
+
+SYNOPSIS
+       lsusb [OPTION]...
+
+DESCRIPTION
+       Display information about USB buses and devices
+       connected to the system.

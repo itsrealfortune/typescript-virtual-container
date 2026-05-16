@@ -2,6 +2,11 @@ import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 import { assertPathAccess, resolvePath } from "./helpers";
 
+/**
+ * Create links.
+ * @category files
+ * @params ["[-s] <target> <link_name>"]
+ */
 export const lnCommand: ShellModule = {
 	name: "ln",
 	description: "Create links",

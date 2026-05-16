@@ -1,6 +1,11 @@
 import type { ShellModule } from "../types/commands";
 import { evalArith } from "../utils/expand";
 
+/**
+ * Arbitrary precision calculator language.
+ * @category system
+ * @params ["[expression]"]
+ */
 export const bcCommand: ShellModule = {
 	name: "bc",
 	description: "Arbitrary precision calculator language",

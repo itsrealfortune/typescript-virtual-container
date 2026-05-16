@@ -1,3 +1,7 @@
+/**
+ * Interface for a performance logger instance.
+ * When `enabled` is false, `mark` and `done` are no-ops.
+ */
 export type PerfLogger = {
 	enabled: boolean;
 	mark: (label: string) => void;
@@ -19,12 +23,18 @@ function nowMs(): number {
 	return Date.now();
 }
 
-export function isPerfLoggingEnabled(): boolean {
+function isPerfLoggingEnabled(): boolean {
 	return (
 		isTruthyEnv(process.env.DEV_MODE) || isTruthyEnv(process.env.RENDER_PERF)
 	);
 }
 
+/**
+ * Creates a performance logger that logs elapsed-time marks to the console.
+ * Logging is only active when `DEV_MODE` or `RENDER_PERF` env vars are truthy.
+ * @param scope - A label prefixed to every log line (e.g. `"render"`).
+ * @returns A {@link PerfLogger} instance.
+ */
 export function createPerfLogger(scope: string): PerfLogger {
 	const enabled = isPerfLoggingEnabled();
 	if (!enabled) {
@@ -51,22 +61,4 @@ export function createPerfLogger(scope: string): PerfLogger {
 		mark,
 		done,
 	};
-}
-
-export async function withPerf<T>(
-	scope: string,
-	label: string,
-	work: () => Promise<T>,
-): Promise<T> {
-	const perf = createPerfLogger(scope);
-	if (!perf.enabled) {
-		return work();
-	}
-
-	perf.mark(`${label}:start`);
-	try {
-		return await work();
-	} finally {
-		perf.done(`${label}:done`);
-	}
 }

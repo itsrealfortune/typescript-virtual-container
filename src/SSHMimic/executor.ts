@@ -11,6 +11,10 @@ import type { VirtualShell } from "../VirtualShell";
 // ── Script executor (handles &&/||/;) ────────────────────────────────────────
 
 
+/**
+ * Executes a list of shell statements sequentially, respecting `&&`, `||`, and `;`
+ * operators. Accumulates stdout across statements and tracks cwd changes.
+ */
 export async function executeStatements(
 	statements: Statement[],
 	authUser: string,
@@ -90,6 +94,11 @@ export async function executeStatements(
 
 // ── Pipeline executor ─────────────────────────────────────────────────────────
 
+/**
+ * Executes a shell pipeline of commands connected by pipes. Handles redirections,
+ * input/output files, and stderr redirects. Delegates to the single-command or
+ * chained-pipeline executor based on command count.
+ */
 export async function executePipeline(
 	pipeline: Pipeline,
 	authUser: string,
@@ -248,7 +257,7 @@ async function executePipelineChain(
 			try {
 				const ex = (() => { try { return shell.vfs.readFile(sp); } catch { return ''; } })();
 				shell.writeFileAsUser(authUser, sp, cmd.stderrAppend ? ex + effectiveResult.stderr : effectiveResult.stderr);
-			} catch {}
+			} catch { /* best-effort stderr write */ }
 		}
 
 		if (i === commands.length - 1 && cmd.outputFile) {

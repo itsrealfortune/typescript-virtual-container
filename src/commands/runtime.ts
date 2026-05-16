@@ -51,6 +51,15 @@ export async function applyUserSwitch(
 	}
 }
 
+/**
+ * Creates the default shell environment variables for a given user and host.
+ * Sets PATH, HOME, USER, LOGNAME, SHELL, TERM, HOSTNAME, and a coloured PS1
+ * prompt that distinguishes root (red) from ordinary users (magenta).
+ *
+ * @param authUser - The authenticated username
+ * @param hostname - The machine hostname
+ * @returns A ShellEnv populated with default variable values
+ */
 export function makeDefaultEnv(authUser: string, hostname: string): ShellEnv {
 	return {
 		vars: {
@@ -110,7 +119,7 @@ function resolveVfsBinary(
 			if (st.type !== "file") continue;
 			if (!(st.mode & 0o111)) continue;
 			return full;
-		} catch {}
+		} catch { /* not a regular file */ }
 	}
 	return null;
 }
@@ -160,6 +169,26 @@ async function runVfsStub(
 }
 let _callDepth = 0;
 
+/**
+ * Runs a command directly by name, bypassing shell parsing and expansion.
+ * Handles variable assignments prefixing the command, shell functions
+ * (stored as `__func_<name>`), aliases, registered modules, and VFS
+ * stub binaries. Includes an anti-loop guard via a module-level call depth
+ * counter and registers the process in the user's session table.
+ *
+ * @param name            - The command name to execute
+ * @param args            - Argument array (does not include the command name)
+ * @param authUser        - The authenticated user
+ * @param hostname        - The machine hostname
+ * @param mode            - The current command mode (shell, pipe, etc.)
+ * @param cwd             - The current working directory
+ * @param shell           - The VirtualShell instance
+ * @param stdin           - Optional stdin string
+ * @param env             - The current shell environment
+ * @param background      - Whether the command is run in the background
+ * @param abortController - Optional controller to abort a background process
+ * @returns The command result
+ */
 export async function runCommandDirect(
 	name: string,
 	args: string[],
@@ -327,6 +356,23 @@ async function _runCommandDirectInner(
 	}
 }
 
+/**
+ * Parses and runs a command line string through the full execution pipeline:
+ * history expansion (`!!` / `!n`), alias expansion, sh-syntax detection
+ * (for/while/if/function/arithmetic), pipe/redirect routing via the shell
+ * parser, variable expansion, brace expansion, and glob expansion. Falls
+ * back to the `sh` interpreter for compound constructs.
+ *
+ * @param rawInput - The raw command line string to parse and run
+ * @param authUser - The authenticated user
+ * @param hostname - The machine hostname
+ * @param mode     - The current command mode (shell, pipe, etc.)
+ * @param cwd      - The current working directory
+ * @param shell    - The VirtualShell instance
+ * @param stdin    - Optional stdin string
+ * @param env      - Optional shell environment (created from defaults if omitted)
+ * @returns The command result
+ */
 export async function runCommand(
 	rawInput: string,
 	authUser: string,

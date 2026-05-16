@@ -101,6 +101,16 @@ import { whichCommand } from "./which";
 import { whoCommand } from "./who";
 import { whoamiCommand } from "./whoami";
 import { xargsCommand } from "./xargs";
+import { ddCommand } from "./dd";
+import { exprCommand } from "./expr";
+import { realpathCommand, md5sumCommand, sha256sumCommand, stringsCommand, foldCommand, expandCommand, fmtCommand } from "./miscutils";
+import { ncCommand } from "./netcat";
+import { niceCommand } from "./nice";
+import { nohupCommand } from "./nohup";
+import { pgrepCommand, pkillCommand } from "./procUtils";
+import { lscpuCommand, lsusbCommand, lspciCommand } from "./sysinfo";
+import { joinCommand, commCommand, splitCommand, csplitCommand } from "./textutils";
+import { topCommand } from "./top";
 
 const BASE_COMMANDS: ShellModule[] = [
 	// Navigation
@@ -123,6 +133,8 @@ const BASE_COMMANDS: ShellModule[] = [
 	seqCommand,
 	statCommand,
 	findCommand,
+	ddCommand,
+	realpathCommand,
 	// Text processing
 	grepCommand,
 	sedCommand,
@@ -137,6 +149,16 @@ const BASE_COMMANDS: ShellModule[] = [
 	teeCommand,
 	xargsCommand,
 	diffCommand,
+	foldCommand,
+	expandCommand,
+	fmtCommand,
+	md5sumCommand,
+	sha256sumCommand,
+	stringsCommand,
+	joinCommand,
+	commCommand,
+	splitCommand,
+	csplitCommand,
 	// Archives
 	tarCommand,
 	gzipCommand,
@@ -160,6 +182,14 @@ const BASE_COMMANDS: ShellModule[] = [
 	dateCommand,
 	sleepCommand,
 	pingCommand,
+	lscpuCommand,
+	lsusbCommand,
+	lspciCommand,
+	pgrepCommand,
+	pkillCommand,
+	topCommand,
+	niceCommand,
+	nohupCommand,
 	// Shell
 	echoCommand,
 	envCommand,
@@ -191,6 +221,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	// Network
 	curlCommand,
 	wgetCommand,
+	ncCommand,
 	// Users
 	adduserCommand,
 	passwdCommand,
@@ -229,6 +260,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	npxCommand,
 	nodeCommand,
 	python3Command,
+	exprCommand,
 	// System (extended)
 	uptimeCommand,
 	freeCommand,
@@ -270,6 +302,14 @@ function getCommandModules(): ShellModule[] {
 	return [...BASE_COMMANDS, ...customCommands, helpCommand];
 }
 
+/**
+ * Registers a command module so it can be called from the shell.
+ * The module's name and aliases are lowercased and trimmed; names must be
+ * non-empty and contain no spaces. Updates the registry incrementally and
+ * invalidates the sorted-name cache.
+ *
+ * @param module - The command module to register
+ */
 export function registerCommand(module: ShellModule): void {
 	const normalized: ShellModule = {
 		...module,
@@ -288,6 +328,16 @@ export function registerCommand(module: ShellModule): void {
 	cachedCommandNames = null;
 }
 
+/**
+ * Creates a custom user-defined command from a shell script or function.
+ * The returned module is not automatically registered; call
+ * {@link registerCommand} to add it to the registry.
+ *
+ * @param name - The command name
+ * @param params - Parameter names for the command
+ * @param run   - The handler invoked when the command is executed
+ * @returns A command module that can be passed to registerCommand
+ */
 export function createCustomCommand(
 	name: string,
 	params: string[],
@@ -296,15 +346,34 @@ export function createCustomCommand(
 	return { name, params, run };
 }
 
+/**
+ * Returns a sorted list of all registered command names (including aliases).
+ * The list is cached and rebuilt lazily when commands are added or removed.
+ *
+ * @returns A sorted array of command names
+ */
 export function getCommandNames(): string[] {
 	if (!cachedCommandNames) buildCache();
 	return cachedCommandNames!;
 }
 
+/**
+ * Returns all public command modules — built-in commands, custom commands,
+ * and the dynamically generated help command.
+ *
+ * @returns An array of all registered command modules
+ */
 export function getCommandModulesPublic(): ShellModule[] {
 	return getCommandModules();
 }
 
+/**
+ * Resolves a command module by name or alias. The lookup is case-insensitive.
+ * Builds the internal cache first if it has not been populated yet.
+ *
+ * @param name - The command or alias name to look up
+ * @returns The matching ShellModule, or undefined if not found
+ */
 export function resolveModule(name: string): ShellModule | undefined {
 	if (!cachedCommandNames) buildCache();
 	return commandRegistry.get(name.toLowerCase());

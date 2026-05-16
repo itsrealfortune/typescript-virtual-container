@@ -124,15 +124,6 @@ export class VirtualUserManager extends EventEmitter {
 
 		this.sudoers.add("root");
 
-		// Auto-create current system user for easier authentication
-		// const currentUser = process.env.USER || process.env.USERNAME;
-		// if (currentUser && currentUser !== "root" && !this.users.has(currentUser)) {
-		// 	const userPassword = this.defaultRootPassword;
-		// 	this.users.set(currentUser, this.createRecord(currentUser, userPassword));
-		// 	this.sudoers.add(currentUser);
-		// 	changed = true;
-		// }
-		
 		const homePath = "/root";
 		if (!this.vfs.exists(homePath)) {
 			this.vfs.mkdir(homePath, 0o755);

@@ -127,6 +127,7 @@ interface Ghost {
 
 // ── Options ───────────────────────────────────────────────────────────────────
 
+/** Configuration options for creating a PacmanGame instance. */
 export interface PacmanGameOptions {
 	stream: ShellStream;
 	terminalSize: TerminalSize;
@@ -135,6 +136,7 @@ export interface PacmanGameOptions {
 
 // ── PacmanGame ────────────────────────────────────────────────────────────────
 
+/** Classic Pacman game that runs in the terminal with ANSI rendering. */
 export class PacmanGame {
 	private stream: ShellStream;
 	private onExit: () => void;

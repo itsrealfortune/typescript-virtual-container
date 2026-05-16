@@ -1,0 +1,11 @@
+SPLIT(1)                 User Commands                 SPLIT(1)
+
+NAME
+       split - split a file into pieces
+
+SYNOPSIS
+       split [OPTION]... [FILE [PREFIX]]
+
+DESCRIPTION
+       Split FILE into fixed-size pieces, creating output
+       files named PREFIXaa, PREFIXab, etc.

@@ -5,6 +5,11 @@ const MANUAL_ALIASES: Record<string, string> = {
 	gunzip: "gzip",
 };
 
+/**
+ * Interface to the system reference manuals.
+ * @category shell
+ * @params ["<command>"]
+ */
 export const manCommand: ShellModule = {
 	name: "man",
 	description: "Interface to the system reference manuals",

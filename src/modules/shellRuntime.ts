@@ -1,15 +1,18 @@
 import { readFile } from "node:fs/promises";
 import * as path from "node:path";
 
+/** Terminal dimensions (columns × rows). */
 export interface TerminalSize {
 	cols: number;
 	rows: number;
 }
 
+/** Shell-escapes a string for safe use in a command line. */
 export function shellQuote(value: string): string {
 	return `'${value.replace(/'/g, `'\\''`)}'`;
 }
 
+/** Converts line endings to CRLF for TTY output. */
 export function toTtyLines(text: string): string {
 	return text
 		.replace(/\r\n/g, "\n")
@@ -17,6 +20,7 @@ export function toTtyLines(text: string): string {
 		.replace(/\n/g, "\r\n");
 }
 
+/** Wraps a command to run with a specific terminal size via stty. */
 export function withTerminalSize(
 	command: string,
 	terminalSize: TerminalSize,
@@ -32,6 +36,7 @@ export function withTerminalSize(
 	return `stty cols ${cols} rows ${rows} 2>/dev/null; ${command}`;
 }
 
+/** Resolves a path relative to a base working directory. */
 export function resolvePath(base: string, inputPath: string): string {
 	if (!inputPath || inputPath.trim() === "" || inputPath === ".") {
 		return base;
@@ -41,6 +46,7 @@ export function resolvePath(base: string, inputPath: string): string {
 		: path.posix.normalize(path.posix.join(base, inputPath));
 }
 
+/** Recursively collects all child PIDs of a given parent process. */
 export async function collectChildPids(parentPid: number): Promise<number[]> {
 	try {
 		const childrenRaw = await readFile(
@@ -63,6 +69,7 @@ export async function collectChildPids(parentPid: number): Promise<number[]> {
 	}
 }
 
+/** Returns a comma-separated PID list visible in htop, or null if none. */
 export async function getVisibleHtopPidList(
 	rootPid = process.pid,
 ): Promise<string | null> {

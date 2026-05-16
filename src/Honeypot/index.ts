@@ -45,6 +45,15 @@ export interface HoneyPotStats {
 	clientDisconnects: number;
 	shellFreezes: number;
 	shellThaws: number;
+	keysAdded: number;
+	keysRemoved: number;
+	snapshotsRestored: number;
+	snapshotsImported: number;
+	mounts: number;
+	unmounts: number;
+	symlinksCreated: number;
+	nodesRemoved: number;
+	authLockouts: number;
 }
 
 const perf: PerfLogger = createPerfLogger("HoneyPot");
@@ -72,6 +81,15 @@ export class HoneyPot {
 		clientDisconnects: 0,
 		shellFreezes: 0,
 		shellThaws: 0,
+		keysAdded: 0,
+		keysRemoved: 0,
+		snapshotsRestored: 0,
+		snapshotsImported: 0,
+		mounts: 0,
+		unmounts: 0,
+		symlinksCreated: 0,
+		nodesRemoved: 0,
+		authLockouts: 0,
 	};
 
 	private maxLogSize: number;
@@ -175,6 +193,39 @@ export class HoneyPot {
 		(vfs as EventEmitter).on("mirror:flush", () => {
 			this.log("VirtualFileSystem", "mirror:flush", {});
 		});
+
+		(vfs as EventEmitter).on("snapshot:restore", (data: Record<string, unknown>) => {
+			this.stats.snapshotsRestored++;
+			this.log("VirtualFileSystem", "snapshot:restore", data);
+		});
+
+		(vfs as EventEmitter).on("snapshot:import", (data: Record<string, unknown>) => {
+			this.stats.snapshotsImported++;
+			this.log("VirtualFileSystem", "snapshot:import", data);
+		});
+
+		(vfs as EventEmitter).on("mount", (data: Record<string, unknown>) => {
+			this.stats.mounts++;
+			this._shell?.pingIdle();
+			this.log("VirtualFileSystem", "mount", data);
+		});
+
+		(vfs as EventEmitter).on("unmount", (data: Record<string, unknown>) => {
+			this.stats.unmounts++;
+			this.log("VirtualFileSystem", "unmount", data);
+		});
+
+		(vfs as EventEmitter).on("symlink:create", (data: Record<string, unknown>) => {
+			this.stats.symlinksCreated++;
+			this._shell?.pingIdle();
+			this.log("VirtualFileSystem", "symlink:create", data);
+		});
+
+		(vfs as EventEmitter).on("node:remove", (data: Record<string, unknown>) => {
+			this.stats.nodesRemoved++;
+			this._shell?.pingIdle();
+			this.log("VirtualFileSystem", "node:remove", data);
+		});
 	}
 
 	/**
@@ -212,6 +263,22 @@ export class HoneyPot {
 				this.log("VirtualUserManager", "session:unregister", data);
 			},
 		);
+
+		(users as EventEmitter).on(
+			"key:add",
+			(data: Record<string, unknown>) => {
+				this.stats.keysAdded++;
+				this.log("VirtualUserManager", "key:add", data);
+			},
+		);
+
+		(users as EventEmitter).on(
+			"key:remove",
+			(data: Record<string, unknown>) => {
+				this.stats.keysRemoved++;
+				this.log("VirtualUserManager", "key:remove", data);
+			},
+		);
 	}
 
 	/**
@@ -241,6 +308,14 @@ export class HoneyPot {
 				this.stats.authAttempts++;
 				this.stats.authFailures++;
 				this.log("SshMimic", "auth:failure", data);
+			},
+		);
+
+		(ssh as EventEmitter).on(
+			"auth:lockout",
+			(data: Record<string, unknown>) => {
+				this.stats.authLockouts++;
+				this.log("SshMimic", "auth:lockout", data);
 			},
 		);
 
@@ -378,6 +453,15 @@ export class HoneyPot {
 			clientDisconnects: 0,
 			shellFreezes: 0,
 			shellThaws: 0,
+			keysAdded: 0,
+			keysRemoved: 0,
+			snapshotsRestored: 0,
+			snapshotsImported: 0,
+			mounts: 0,
+			unmounts: 0,
+			symlinksCreated: 0,
+			nodesRemoved: 0,
+			authLockouts: 0,
 		};
 	}
 

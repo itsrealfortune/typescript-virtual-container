@@ -1,5 +1,10 @@
 import type { ShellModule } from "../types/commands";
 
+/**
+ * Print user identity.
+ * @category system
+ * @params ["[user]"]
+ */
 export const idCommand: ShellModule = {
 	name: "id",
 	description: "Print user identity",

@@ -1,0 +1,11 @@
+PKILL(1)                 User Commands                 PKILL(1)
+
+NAME
+       pkill - kill processes by pattern
+
+SYNOPSIS
+       pkill [OPTION]... PATTERN
+
+DESCRIPTION
+       Send signals to processes matching PATTERN.  By
+       default sends SIGTERM.

@@ -21,6 +21,16 @@
 
 import * as fsSync from "node:fs";
 
+/**
+ * Journal operation type codes used in VFS write-ahead log entries.
+ *
+ * - `WRITE`  — Write file content and mode.
+ * - `MKDIR`  — Create a directory.
+ * - `REMOVE` — Delete a file or directory.
+ * - `CHMOD`  — Change file mode.
+ * - `MOVE`   — Rename / move a node.
+ * - `SYMLINK`— Create a symbolic link.
+ */
 export const JournalOp = {
 	WRITE:   0x01,
 	MKDIR:   0x02,
@@ -51,7 +61,7 @@ function writeString2(buf: Buffer, offset: number, s: string): number {
 }
 
 /** Serialise one entry to a Buffer. */
-export function encodeEntry(e: JournalEntry): Buffer {
+function encodeEntry(e: JournalEntry): Buffer {
 	const pathBuf = Buffer.from(e.path, ENC);
 	let payloadLen = 0;
 
@@ -92,7 +102,7 @@ export function encodeEntry(e: JournalEntry): Buffer {
 }
 
 /** Parse all entries from a journal Buffer. Returns empty array on corrupt data. */
-export function decodeJournal(buf: Buffer): JournalEntry[] {
+function decodeJournal(buf: Buffer): JournalEntry[] {
 	const entries: JournalEntry[] = [];
 	let off = 0;
 

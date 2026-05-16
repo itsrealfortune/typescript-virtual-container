@@ -1,0 +1,11 @@
+STRINGS(1)               User Commands               STRINGS(1)
+
+NAME
+       strings - print printable strings in binary files
+
+SYNOPSIS
+       strings [FILE...]
+
+DESCRIPTION
+       For each FILE, print sequences of printable
+       characters found in binary data.

@@ -1,5 +1,10 @@
 import type { ShellModule } from "../types/commands";
 
+/**
+ * Locate a command in PATH.
+ * @category shell
+ * @params ["<command...>"]
+ */
 export const whichCommand: ShellModule = {
 	name: "which",
 	description: "Locate a command in PATH",
