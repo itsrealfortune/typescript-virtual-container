@@ -1,4 +1,5 @@
 import type { ShellModule } from "../types/commands";
+import { resolvePath } from "./helpers";
 
 /**
  * timeout — run command with time limit (simulated: just runs the command)
@@ -88,7 +89,6 @@ export const shufCommand: ShellModule = {
 	category: "text",
 	params: ["[-n count]", "[-i lo-hi]", "[file]"],
 	run: ({ args, stdin, shell, cwd }) => {
-		const { resolvePath } = require("./helpers") as typeof import("./helpers");
 
 		// -i lo-hi: generate range
 		const iIdx = args.indexOf("-i");
@@ -139,7 +139,6 @@ export const pasteCommand: ShellModule = {
 	category: "text",
 	params: ["[-d delimiter]", "file..."],
 	run: ({ args, stdin, shell, cwd }) => {
-		const { resolvePath } = require("./helpers") as typeof import("./helpers");
 
 		let delim = "\t";
 		const files: string[] = [];
@@ -180,7 +179,6 @@ export const tacCommand: ShellModule = {
 	category: "text",
 	params: ["[file...]"],
 	run: ({ args, stdin, shell, cwd }) => {
-		const { resolvePath } = require("./helpers") as typeof import("./helpers");
 
 		let input = "";
 		if (args.length === 0 || (args.length === 1 && args[0] === "-")) {
@@ -210,7 +208,6 @@ export const nlCommand: ShellModule = {
 	category: "text",
 	params: ["[-ba] [-nrz] [file]"],
 	run: ({ args, stdin, shell, cwd }) => {
-		const { resolvePath } = require("./helpers") as typeof import("./helpers");
 
 		const fileArg = args.find((a) => !a.startsWith("-"));
 		let input = stdin ?? "";
@@ -241,7 +238,6 @@ export const columnCommand: ShellModule = {
 	category: "text",
 	params: ["[-t]", "[-s sep]", "[file]"],
 	run: ({ args, stdin, shell, cwd }) => {
-		const { resolvePath } = require("./helpers") as typeof import("./helpers");
 
 		const tableMode = args.includes("-t");
 		const sIdx = args.indexOf("-s");

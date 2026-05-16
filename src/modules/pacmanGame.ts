@@ -413,7 +413,7 @@ export class PacmanGame {
 
 			case "Pinky": {
 				// Target 4 tiles ahead of pacman (with original NES up-bug: up = up-left*4)
-				let tr = this.pacR + DR[this.pacDir] * 4;
+				const tr = this.pacR + DR[this.pacDir] * 4;
 				let tc = this.pacC + DC[this.pacDir] * 4;
 				if (this.pacDir === 3) tc = this.pacC - 4; // NES bug: facing up → also goes left
 				return [tr, tc];
@@ -422,7 +422,7 @@ export class PacmanGame {
 			case "Inky": {
 				// Pivot: 2 tiles ahead of pacman, then double-vector from Blinky
 				const blinky = this.ghosts[0]!;
-				let pr = this.pacR + DR[this.pacDir] * 2;
+				const pr = this.pacR + DR[this.pacDir] * 2;
 				let pc = this.pacC + DC[this.pacDir] * 2;
 				if (this.pacDir === 3) pc = this.pacC - 2; // NES bug mirror
 				// Target = pivot + (pivot - blinky)
