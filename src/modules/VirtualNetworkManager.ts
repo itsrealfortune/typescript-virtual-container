@@ -44,6 +44,7 @@ export interface VirtualArpEntry {
 	state: "REACHABLE" | "STALE" | "PERMANENT";
 }
 
+/** Generates a random MAC address in the 02:42:xx:xx:xx:xx range. */
 function randomMac(): string {
 	const hex = () => Math.floor(Math.random() * 256).toString(16).padStart(2, "0");
 	return `02:42:${hex()}:${hex()}:${hex()}:${hex()}`;
