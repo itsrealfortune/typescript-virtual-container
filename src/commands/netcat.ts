@@ -43,7 +43,7 @@ export const ncCommand: ShellModule = {
 		const nonFlag = args.filter((a) => !a.startsWith("-"));
 		const host = nonFlag[0];
 		const portNum = nonFlag[1] ? parseInt(nonFlag[1], 10) : NaN;
-		if (host && !isNaN(portNum)) {
+		if (host && !Number.isNaN(portNum)) {
 			return new Promise((resolve) => {
 				const socket = net.createConnection({ host, port: portNum }, () => {
 					if (verbose) {

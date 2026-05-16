@@ -111,6 +111,9 @@ import { pgrepCommand, pkillCommand } from "./procUtils";
 import { lscpuCommand, lsusbCommand, lspciCommand } from "./sysinfo";
 import { joinCommand, commCommand, splitCommand, csplitCommand } from "./textutils";
 import { topCommand } from "./top";
+import { startxfce4Command } from "./startxfce4";
+import { thunarCommand } from "./xfceDesktop";
+import { mousepadCommand } from "./mousepad";
 
 const BASE_COMMANDS: ShellModule[] = [
 	// Navigation
@@ -261,6 +264,10 @@ const BASE_COMMANDS: ShellModule[] = [
 	nodeCommand,
 	python3Command,
 	exprCommand,
+	// Desktop
+	startxfce4Command,
+	thunarCommand,
+	mousepadCommand,
 	// System (extended)
 	uptimeCommand,
 	freeCommand,

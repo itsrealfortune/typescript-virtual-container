@@ -31,7 +31,7 @@ export const exprCommand: ShellModule = {
 			const left = parseInt(args[0]!, 10);
 			const op = args[1]!;
 			const right = parseInt(args[2]!, 10);
-			if (isNaN(left) || isNaN(right)) {
+			if (Number.isNaN(left) || Number.isNaN(right)) {
 				return { stderr: "expr: non-integer argument\n", exitCode: 1 };
 			}
 			let result: number;

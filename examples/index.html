@@ -17,6 +17,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" />
     <style>
       *, *::before, *::after { box-sizing: border-box; }
       html, body { height: 100%; margin: 0; overflow: hidden; }
@@ -59,6 +60,443 @@
       #terminal {
         outline: none;
       }
+
+      /* ── Desktop ──────────────────────────────────────── */
+      #desktop {
+        position: fixed;
+        inset: 0;
+        display: none;
+        background: #2e6da4 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeBlend in='SourceGraphic' mode='multiply'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
+        font-family: -apple-system, 'Segoe UI', 'Noto Sans', sans-serif;
+        font-size: 13px;
+        color: #fff;
+        overflow: hidden;
+        z-index: 1000;
+      }
+
+      /* ── Top Panel (XFCE Greybird style) ─────────────── */
+      #desktop-panel {
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 28px;
+        background: linear-gradient(180deg, #404040 0%, #333 60%, #2c2c2c 100%);
+        border-bottom: 1px solid #1a1a1a;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        padding: 0;
+        gap: 0;
+        z-index: 2000;
+        user-select: none;
+      }
+      .xfce-menu-button {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        height: 28px;
+        padding: 0 10px;
+        background: transparent;
+        border-right: 1px solid #505050;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        color: #e8e8e8;
+        white-space: nowrap;
+        transition: background 0.1s;
+      }
+      .xfce-menu-button:hover { background: rgba(255,255,255,0.1); }
+      .xfce-menu-button:active { background: rgba(255,255,255,0.05); }
+      .xfce-logo {
+        font-size: 13px;
+        color: #c8d8e8;
+      }
+      .xfce-panel-sep {
+        width: 1px;
+        height: 18px;
+        background: #505050;
+        margin: 0 2px;
+        flex-shrink: 0;
+      }
+      .xfce-window-list {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        padding: 0 4px;
+        overflow: hidden;
+        height: 28px;
+      }
+      .xfce-taskbutton {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        height: 22px;
+        padding: 0 8px;
+        background: linear-gradient(180deg, #4a4a4a, #3e3e3e);
+        border: 1px solid #555;
+        border-bottom-color: #222;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 11px;
+        color: #ccc;
+        white-space: nowrap;
+        max-width: 160px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+        transition: background 0.1s;
+      }
+      .xfce-taskbutton:hover { background: linear-gradient(180deg, #555, #484848); color: #fff; }
+      .xfce-taskbutton.active {
+        background: linear-gradient(180deg, #4a7fc1, #3a6db0);
+        border-color: #2a5a9a;
+        color: #fff;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -1px 0 rgba(0,0,0,0.2);
+      }
+      .xfce-tray {
+        display: flex;
+        align-items: center;
+        height: 28px;
+        padding: 0 6px;
+        border-left: 1px solid #505050;
+        gap: 0;
+      }
+      .xfce-tray-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 28px;
+        padding: 0 5px;
+        font-size: 13px;
+        color: #bbb;
+        cursor: default;
+      }
+      .xfce-tray-icon:hover { color: #fff; }
+      .xfce-clock {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 28px;
+        padding: 0 8px;
+        border-left: 1px solid #505050;
+        cursor: default;
+      }
+      .xfce-clock-time {
+        font-size: 11px;
+        font-weight: 600;
+        color: #e8e8e8;
+        line-height: 1.1;
+      }
+      .xfce-clock-date {
+        font-size: 9px;
+        color: #999;
+        line-height: 1.1;
+      }
+
+      /* Applications menu */
+      .xfce-menu {
+        position: absolute;
+        top: 28px;
+        left: 0;
+        min-width: 220px;
+        background: #3a3a3a;
+        border: 1px solid #222;
+        border-top: none;
+        border-radius: 0 0 4px 4px;
+        padding: 4px 0;
+        box-shadow: 3px 6px 16px rgba(0,0,0,0.6);
+        z-index: 3000;
+      }
+      .menu-category {
+        padding: 4px 12px 2px;
+        font-size: 10px;
+        font-weight: 700;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .menu-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 16px 5px 12px;
+        cursor: pointer;
+        color: #e0e0e0;
+        font-size: 12px;
+        transition: background 0.1s;
+      }
+      .menu-item-icon { font-size: 14px; width: 18px; text-align: center; }
+      .menu-item:hover { background: #4a7fc1; color: #fff; }
+      .menu-separator { height: 1px; background: #4a4a4a; margin: 4px 0; }
+
+      /* Desktop area */
+      #desktop-area {
+        position: absolute;
+        top: 30px; left: 0; right: 0; bottom: 0;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        flex-wrap: wrap;
+        align-content: flex-start;
+        gap: 8px;
+      }
+      .desktop-icon {
+        width: 80px;
+        text-align: center;
+        cursor: pointer;
+        padding: 8px 4px;
+        border-radius: 4px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+      }
+      .desktop-icon:hover { background: rgba(255,255,255,0.12); }
+      .desktop-icon span {
+        font-size: 11px;
+        color: #fff;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        word-wrap: break-word;
+        max-width: 72px;
+      }
+      .desktop-icon-img {
+        width: 40px;
+        height: 40px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+      }
+      .desktop-icon-img i { font-size: 22px; }
+      .term-icon   i { color: #8fbc8f; }
+      .home-icon   i { color: #7eb3d8; }
+      .editor-icon i { color: #d4a96a; }
+      .trash-icon  i { color: #b07070; }
+
+      /* Windows */
+      .desktop-window {
+        position: absolute;
+        min-width: 240px;
+        min-height: 120px;
+        background: #2a2a2a;
+        border: 1px solid #555;
+        border-radius: 5px 5px 3px 3px;
+        box-shadow: 2px 4px 16px rgba(0,0,0,0.5);
+        display: flex;
+        flex-direction: column;
+      }
+      .desktop-window.win-focused {
+        border-color: #6a9cf0;
+        box-shadow: 2px 4px 20px rgba(90,140,207,0.3);
+        z-index: 500;
+      }
+      .win-header {
+        display: flex;
+        align-items: center;
+        padding: 4px 6px;
+        background: linear-gradient(180deg, #4a4a4a, #3a3a3a);
+        border-radius: 4px 4px 0 0;
+        cursor: default;
+        user-select: none;
+        flex-shrink: 0;
+      }
+      .win-focused .win-header {
+        background: linear-gradient(180deg, #5a8ccf, #4a7cbf);
+      }
+      .win-title {
+        flex: 1;
+        font-size: 12px;
+        font-weight: 600;
+        color: #eee;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .win-controls {
+        display: flex;
+        gap: 4px;
+        margin-left: 8px;
+      }
+      .win-controls button {
+        width: 18px;
+        height: 18px;
+        border: none;
+        border-radius: 2px;
+        cursor: pointer;
+        font-size: 11px;
+        line-height: 18px;
+        text-align: center;
+        padding: 0;
+        color: #fff;
+      }
+      .win-min {
+        background: #5a5a5a;
+      }
+      .win-min:hover { background: #7a7a7a; }
+      .win-close {
+        background: #c44;
+      }
+      .win-close:hover { background: #e66; }
+      .win-content {
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+        background: #1a1a1a;
+      }
+      .win-terminal {
+        margin: 0;
+        padding: 4px;
+        background: transparent;
+        color: #ddd;
+        white-space: pre;
+        outline: none;
+        font-family: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+        font-size: 13px;
+        line-height: 1.3;
+        height: 100%;
+        overflow: hidden;
+        position: absolute;
+        inset: 0;
+      }
+
+      /* Context menu */
+      .desktop-context-menu {
+        position: fixed;
+        min-width: 180px;
+        background: #2e2e2e;
+        border: 1px solid #222;
+        border-radius: 4px;
+        padding: 4px 0;
+        box-shadow: 3px 6px 16px rgba(0,0,0,0.6);
+        z-index: 9999;
+        user-select: none;
+      }
+      .ctx-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 14px;
+        font-size: 12px;
+        color: #ddd;
+        cursor: pointer;
+        transition: background 0.1s;
+      }
+      .ctx-item i { width: 14px; text-align: center; font-size: 12px; color: #aaa; }
+      .ctx-item:hover { background: #4a7fc1; color: #fff; }
+      .ctx-item:hover i { color: #fff; }
+      .ctx-item.ctx-danger { color: #e07070; }
+      .ctx-item.ctx-danger i { color: #c05050; }
+      .ctx-item.ctx-danger:hover { background: #8b2a2a; color: #fff; }
+      .ctx-item.ctx-danger:hover i { color: #ffaaaa; }
+
+      /* Editor (Mousepad) */
+      .editor-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 8px;
+        background: #2e2e2e;
+        border-bottom: 1px solid #444;
+        flex-shrink: 0;
+      }
+      .editor-save-btn {
+        padding: 2px 10px;
+        background: #4a7cbf;
+        border: none;
+        border-radius: 3px;
+        color: #fff;
+        font-size: 11px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .editor-save-btn:hover { background: #5a8ccf; }
+      .editor-path {
+        flex: 1;
+        font-size: 11px;
+        color: #888;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .editor-dirty {
+        color: #f90;
+        font-size: 14px;
+        line-height: 1;
+      }
+      .editor-textarea {
+        width: 100%;
+        height: calc(100% - 33px);
+        background: #1e1e1e;
+        color: #ddd;
+        border: none;
+        padding: 8px;
+        font-family: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+        font-size: 13px;
+        line-height: 1.4;
+        resize: none;
+        outline: none;
+        box-sizing: border-box;
+        display: block;
+      }
+
+      /* Thunar */
+      .thunar-pathbar {
+        padding: 6px 8px;
+        background: #333;
+        font-size: 11px;
+        color: #aaa;
+        border-bottom: 1px solid #444;
+      }
+      .thunar-listing {
+        padding: 4px;
+        overflow-y: auto;
+        height: calc(100% - 30px);
+      }
+      .thunar-entry {
+        padding: 3px 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .thunar-entry:hover { background: rgba(90,140,207,0.3); }
+      .thunar-entry .thunar-icon { font-size: 14px; width: 18px; text-align: center; }
+      .thunar-entry .thunar-icon .fa-folder { color: #7eb3d8; }
+      .thunar-entry .thunar-icon .fa-file { color: #aaa; }
+      .thunar-error {
+        padding: 16px;
+        color: #c66;
+        text-align: center;
+      }
+
+      /* About dialog */
+      .about-dialog {
+        padding: 24px;
+        text-align: center;
+      }
+      .about-dialog .about-logo {
+        font-size: 48px;
+        margin-bottom: 12px;
+        color: #7eb3d8;
+      }
+      .about-dialog h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+        color: #8cf;
+      }
+      .about-dialog p {
+        margin: 6px 0;
+        font-size: 12px;
+        color: #aaa;
+      }
+      .about-dialog .about-close-hint {
+        margin-top: 16px;
+        font-size: 11px;
+        color: #666;
+      }
     </style>
   </head>
   <body>
@@ -66,6 +504,7 @@
       <pre id="scrollback"></pre>
       <pre id="terminal" tabindex="0"></pre>
     </div>
+    <div id="desktop"></div>
     <script type="module" src="./app.js"></script>
   </body>
 </html>

@@ -59,7 +59,7 @@ export const joinCommand: ShellModule = {
 			}
 		}
 
-		return { stdout: results.join("\n") + "\n", exitCode: 0 };
+		return { stdout: `${results.join("\n")}\n`, exitCode: 0 };
 	},
 };
 
@@ -123,7 +123,7 @@ export const commCommand: ShellModule = {
 			results.push(`${col1}\t${col2}\t${col3}`);
 		}
 
-		return { stdout: results.join("\n") + "\n", exitCode: 0 };
+		return { stdout: `${results.join("\n")}\n`, exitCode: 0 };
 	},
 };
 

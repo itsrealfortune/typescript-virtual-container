@@ -1,6 +1,7 @@
 import { EventEmitter } from "node:events";
 import { createCustomCommand, registerCommand } from "../commands/registry";
 import { runCommand } from "../commands/runtime";
+import type { DesktopManager } from "../modules/desktopManager";
 import {
 	bootstrapLinuxRootfs,
 	refreshProc,
@@ -154,6 +155,8 @@ class VirtualShell extends EventEmitter {
 	properties: ShellProperties;
 	/** Unix ms timestamp of shell creation — used by `uptime` and `/proc/uptime`. */
 	startTime: number;
+	/** Desktop manager instance (browser-only, set by app layer). */
+	desktopManager: DesktopManager | null = null;
 	/** Idle / cold-start manager — null until `enableIdleManagement()` is called. */
 	private _idle: IdleManager | null = null;
 	private initialized: Promise<void>;
