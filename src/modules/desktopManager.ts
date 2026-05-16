@@ -840,13 +840,23 @@ export class DesktopManager {
     menu.className = "desktop-context-menu";
     menu.style.left = `${x}px`;
     menu.style.top = `${y}px`;
-    for (const item of items) {
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]!;
       const el = document.createElement("div");
       el.className = `ctx-item${item.danger ? " ctx-danger" : ""}`;
       el.innerHTML = `<i class="${item.icon}"></i><span>${this.escapeHtml(item.label)}</span>`;
-      el.addEventListener("click", (e) => { e.stopPropagation(); this.closeContextMenu(); item.action(); });
+      el.setAttribute("data-ctx-index", String(i));
       menu.appendChild(el);
     }
+    // Single delegated listener — avoids one closure per item surviving after menu.remove()
+    menu.addEventListener("click", (e) => {
+      const el = (e.target as HTMLElement).closest(".ctx-item") as HTMLElement | null;
+      if (!el) return;
+      e.stopPropagation();
+      const idx = Number(el.getAttribute("data-ctx-index"));
+      this.closeContextMenu();
+      items[idx]?.action();
+    });
     this.container.appendChild(menu);
     // Clamp to viewport
     const rect = menu.getBoundingClientRect();
