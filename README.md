@@ -965,23 +965,26 @@ import type {
 
 ## FAQ
 
-**Is this a real container runtime?**
-No — it emulates SSH sessions, users, and filesystem behavior in a virtual runtime. Ideal for testing, simulations, and automation where full OS isolation is not required.
+**What exactly is this project?**
+A self-contained Linux environment implemented entirely in TypeScript. It is not a mock, a stub, or a thin SSH wrapper — it is a full virtual container with its own filesystem (`VirtualFileSystem`), user and permission system (`VirtualUserManager`), shell interpreter, package manager, network layer, process table, and desktop environment. Each `VirtualShell` instance is an independent container that runs anywhere TypeScript runs: Node.js, Bun, or the browser.
+
+**How is this different from a Docker container or a real VM?**
+Docker and VMs enforce kernel-level isolation and run real binaries. This project runs entirely in the JavaScript runtime — no subprocess is ever spawned, no host binary is called. The trade-off is intentional: you get zero-dependency portability (including the browser), a fully inspectable and programmable environment, and no host OS requirements. It is not a security boundary.
 
 **Can I use this in production?**
-Yes for automation contexts (sandboxed command runners, test harnesses, training environments, honeypots). It is not a security boundary like a real container/VM.
+Yes, for the right use cases: automated test harnesses, interactive tutorials, training environments, honeypots, sandboxed command runners, and browser-based shell experiences. Do not use it as a security boundary for untrusted code — it provides no kernel-level or process-level isolation.
 
 **Does the VFS touch the host filesystem?**
-In `"memory"` mode: no. In `"fs"` mode: one binary file (`vfs-snapshot.vfsb`) inside `snapshotPath` only.
+In `"memory"` mode: never. In `"fs"` mode: exactly one binary file (`vfs-snapshot.vfsb`) inside `snapshotPath`. In the browser: IndexedDB only.
 
-**Can I run multiple isolated shells?**
-Yes. Each `new VirtualShell(...)` is completely independent (separate VFS, users, env state).
+**Can I run multiple isolated environments in parallel?**
+Yes. Each `new VirtualShell(...)` is fully independent — separate VFS, user database, environment state, and session manager. They share no global state.
 
 **Does the shell support `&&`, `||`, `;`, and `&`?**
-Yes — plus pipes, redirections, `if`/`for`/`while`/`case`, function definitions, and background jobs (`cmd &`).
+Yes — plus pipes, redirections, `if`/`for`/`while`/`until`/`case`, function definitions, arrays, brace expansion, glob expansion, heredocs, `set -e`/`set -x`, and background jobs (`cmd &`).
 
 **Can I use this for honeypot deployments?**
-Yes — use `HoneyPot.attach()` to capture all activity, configure `maxAuthAttempts` to throttle scanners, export on shutdown.
+Yes — `HoneyPot.attach()` captures every command, file write, auth attempt, and session event with timestamps. Configure `maxAuthAttempts` to throttle scanners. Export the audit log on shutdown.
 
 **Is SFTP fully supported?**
 Core operations are implemented. Extended attributes and symlinks return `OP_UNSUPPORTED`.
@@ -990,7 +993,7 @@ Core operations are implemented. Extended attributes and symlinks return `OP_UNS
 No — `startxfce4`, `thunar`, and `mousepad` require a DOM. In Node.js/Bun they return an error immediately. The `DesktopManager` is only instantiated in the web shell example (`examples/app.ts`).
 
 **What does the desktop simulate?**
-A single-user XFCE session: a panel with Applications menu and clock, draggable windows, a file manager (Thunar) with right-click context menu and trash support, a text editor (Mousepad) with Ctrl+S save, and terminal windows backed by real interactive shell sessions.
+A single-user XFCE session: a panel with Applications menu and clock, draggable windows, a file manager (Thunar) with navigation, right-click context menu, rename, and trash, a text editor (Mousepad) with Ctrl+S save, and terminal windows each backed by a real interactive shell session against the same VFS.
 
 ---
 
