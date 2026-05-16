@@ -1887,8 +1887,7 @@ function bootstrapMisc(vfs: VirtualFileSystem, props: ShellProperties): void {
 	ensureDir(vfs, "/mnt");
 	ensureDir(vfs, "/media");
 
-	// /boot — no kernel images in Firecracker containers (kernel is external),
-	// but maintain the directory structure for tool compatibility
+	// /boot — kernel images, initrd, and bootloader config
 	ensureDir(vfs, "/boot");
 	ensureDir(vfs, "/boot/grub");
 	ensureFile(vfs, "/boot/grub/grub.cfg",
@@ -1897,7 +1896,7 @@ function bootstrapMisc(vfs: VirtualFileSystem, props: ShellProperties): void {
 			"set default=0",
 			"set timeout=0",
 			"",
-			`menuentry "Fortune GNU/Linux" {`,
+			`menuentry "Fortune GNU/Linux 1.0 Nyx" {`,
 			`  linux   /vmlinuz-${props.kernel} root=/dev/vda rw console=ttyS0`,
 			`  initrd  /initrd.img-${props.kernel}`,
 			`}`,
@@ -1905,18 +1904,130 @@ function bootstrapMisc(vfs: VirtualFileSystem, props: ShellProperties): void {
 	);
 
 	const kver = props.kernel;
-	ensureFile(vfs, `/boot/vmlinuz-${kver}`,         "", 0o644);
-	ensureFile(vfs, `/boot/initrd.img-${kver}`,       "", 0o644);
-	ensureFile(vfs, `/boot/System.map-${kver}`,       `${kver} virtual\n`, 0o644);
-	ensureFile(vfs, `/boot/config-${kver}`,           `# Linux kernel config ${kver}\nCONFIG_VIRTIO=y\nCONFIG_VIRTIO_BLK=y\nCONFIG_VIRTIO_NET=y\nCONFIG_KVM_GUEST=y\n`, 0o644);
+	// kernel image — padded to a realistic size so ls -l /boot/ looks credible
+	const vmlinuzContent = `# Fortune GNU/Linux kernel ${kver}
+# Compressed Linux/x86_64 kernel image
+# Build: fortune@nyx-build, gcc (Fortune 13.3.0-nyx1)
+# SMP PREEMPT_DYNAMIC, virtio, kvm_guest
+`.padEnd(10240, "x");
+	ensureFile(vfs, `/boot/vmlinuz-${kver}`, vmlinuzContent, 0o644);
+	ensureFile(vfs, `/boot/initrd.img-${kver}`,
+		`${[
+			"#!/bin/sh",
+			"# Fortune GNU/Linux initramfs",
+			`# Kernel: ${kver}`,
+			"mount -t proc none /proc",
+			"mount -t sysfs none /sys",
+			"mount -t devtmpfs none /dev",
+			"echo 'Loading Fortune GNU/Linux 1.0 Nyx...'",
+			"exec /sbin/init",
+		].join("\n")}\n`,
+	0o644);
+	ensureFile(vfs, `/boot/System.map-${kver}`,
+		`${[
+			"ffffffff81000000 T _stext",
+			"ffffffff81000000 T _text",
+			"ffffffff81000000 A startup_64",
+			"ffffffff81000100 T secondary_startup_64",
+			"ffffffff81000200 T __startup_64",
+			"ffffffff81001000 T x86_64_start_kernel",
+			"ffffffff81001100 T x86_64_start_reservations",
+			"ffffffff81001200 T start_kernel",
+			"ffffffff81002000 T init_task",
+			"ffffffff81003000 T rest_init",
+			"ffffffff81004000 T kernel_init",
+			"ffffffff81005000 T kernel_init_freeable",
+			"ffffffff81006000 T do_basic_setup",
+			"ffffffffa0000000 T virtio_init",
+			"ffffffffa0001000 T virtio_devices_init",
+			"ffffffffa0010000 T virtio_blk_init",
+			"ffffffffa0020000 T virtio_net_init",
+			"ffffffffa00f0000 T fortitude_init",
+		].join("\n")}\n`,
+		0o644);
+	ensureFile(vfs, `/boot/config-${kver}`,
+		`${[
+			"#",
+			"# Linux/x86_64 6.1.0-fortune Kernel Configuration",
+			"# Fortune GNU/Linux 1.0 Nyx",
+			"#",
+			"CONFIG_64BIT=y",
+			"CONFIG_X86_64=y",
+			"CONFIG_SMP=y",
+			"CONFIG_PREEMPT=y",
+			"CONFIG_PREEMPT_DYNAMIC=y",
+			"",
+			"#",
+			"# Virtualization",
+			"#",
+			"CONFIG_HYPERVISOR_GUEST=y",
+			"CONFIG_KVM_GUEST=y",
+			"CONFIG_PARAVIRT=y",
+			"CONFIG_PARAVIRT_SPINLOCKS=y",
+			"",
+			"#",
+			"# Virtio",
+			"#",
+			"CONFIG_VIRTIO=y",
+			"CONFIG_VIRTIO_MENU=y",
+			"CONFIG_VIRTIO_BLK=y",
+			"CONFIG_VIRTIO_NET=y",
+			"CONFIG_VIRTIO_CONSOLE=y",
+			"CONFIG_VIRTIO_BALLOON=y",
+			"CONFIG_VIRTIO_MMIO=y",
+			"CONFIG_VIRTIO_INPUT=y",
+			"",
+			"#",
+			"# Block devices",
+			"#",
+			"CONFIG_BLK_DEV=y",
+			"CONFIG_EXT4_FS=y",
+			"CONFIG_TMPFS=y",
+			"CONFIG_TMPFS_XATTR=y",
+			"",
+			"#",
+			"# Networking",
+			"#",
+			"CONFIG_NET=y",
+			"CONFIG_INET=y",
+			"CONFIG_IPV6=n",
+			"CONFIG_BRIDGE=m",
+			"CONFIG_NETFILTER=y",
+			"CONFIG_NETFILTER_XTABLES=y",
+			"",
+			"#",
+			"# Console",
+			"#",
+			"CONFIG_SERIAL_8250=y",
+			"CONFIG_SERIAL_8250_CONSOLE=y",
+			"CONFIG_VT=y",
+			"CONFIG_VT_CONSOLE=y",
+			"CONFIG_HW_CONSOLE=y",
+			"",
+			"#",
+			"# Security",
+			"#",
+			"CONFIG_SECURITY=y",
+			"CONFIG_SECURITY_NETWORK=y",
+			"CONFIG_LSM=\"lockdown,yama,loadpin,safesetid,integrity\"",
+			"",
+			"#",
+			"# Virtual file system",
+			"#",
+			"CONFIG_PROC_FS=y",
+			"CONFIG_SYSFS=y",
+			"CONFIG_DEVTMPFS=y",
+			"CONFIG_DEVTMPFS_MOUNT=y",
+			"CONFIG_CONFIGFS_FS=y",
+			"CONFIG_DEBUG_FS=y",
+		].join("\n")}\n`,
+		0o644);
 
-	if (!vfs.exists("/vmlinuz"))        vfs.symlink(`/boot/vmlinuz-${kver}`,   "/vmlinuz");
-	if (!vfs.exists("/vmlinuz.old"))    vfs.symlink(`/boot/vmlinuz-${kver}`,   "/vmlinuz.old");
+	const prevKver = "1.0.0+itsrealfortune+0-amd64";
+	if (!vfs.exists("/vmlinuz"))        vfs.symlink(`/boot/vmlinuz-${kver}`,    "/vmlinuz");
+	if (!vfs.exists("/vmlinuz.old"))    vfs.symlink(`/boot/vmlinuz-${prevKver}`, "/vmlinuz.old");
 	if (!vfs.exists("/initrd.img"))     vfs.symlink(`/boot/initrd.img-${kver}`,"/initrd.img");
-	if (!vfs.exists("/initrd.img.old")) vfs.symlink(`/boot/initrd.img-${kver}`,"/initrd.img.old");
-
-	// No /snap — not present in Firecracker container
-	// /proc/cmdline confirms: no snapd boot args
+	if (!vfs.exists("/initrd.img.old")) vfs.symlink(`/boot/initrd.img-${prevKver}`,"/initrd.img.old");
 
 	// /lost+found — ext4 recovery
 	ensureDir(vfs, "/lost+found", 0o700);
