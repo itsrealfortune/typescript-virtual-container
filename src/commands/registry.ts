@@ -113,6 +113,7 @@ import { joinCommand, commCommand, splitCommand, csplitCommand } from "./textuti
 import { topCommand } from "./top";
 import { startxfce4Command } from "./startxfce4";
 import { thunarCommand } from "./xfceDesktop";
+import { mousepadCommand } from "./mousepad";
 
 const BASE_COMMANDS: ShellModule[] = [
 	// Navigation
@@ -266,6 +267,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	// Desktop
 	startxfce4Command,
 	thunarCommand,
+	mousepadCommand,
 	// System (extended)
 	uptimeCommand,
 	freeCommand,

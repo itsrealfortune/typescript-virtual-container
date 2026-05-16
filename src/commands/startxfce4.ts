@@ -4,12 +4,12 @@ export const startxfce4Command: ShellModule = {
 	name: "startxfce4",
 	aliases: ["xfce4-session"],
 	params: [],
-	run(ctx: CommandContext): CommandResult {
+	async run(ctx: CommandContext): Promise<CommandResult> {
 		const dm = ctx.shell.desktopManager;
 		if (!dm) {
 			return { stderr: "startxfce4: desktop is only available in the browser", exitCode: 1 };
 		}
-		dm.start();
+		await dm.start();
 		return { exitCode: 0 };
 	},
 };
