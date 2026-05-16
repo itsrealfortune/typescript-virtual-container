@@ -193,16 +193,17 @@ class VirtualShell extends EventEmitter {
 		const shellProps = this.properties;
 		const shellHostname = this.hostname;
 		const startTime = this.startTime;
+		const network = this.network;
 
 		// Initialize both VFS mirror and users, ensuring all is ready before auth
 		this.initialized = (async () => {
 			await vfs.restoreMirror();
 			await users.initialize();
 			// Bootstrap Linux rootfs (idempotent)
-			bootstrapLinuxRootfs(vfs, users, shellHostname, shellProps, startTime);
+			bootstrapLinuxRootfs(vfs, users, shellHostname, shellProps, startTime, [], network);
 			// Register read hook: refresh /proc dynamically on every access
 			vfs.onBeforeRead("/proc", () => {
-				refreshProc(vfs, shellProps, shellHostname, startTime, users.listActiveSessions());
+				refreshProc(vfs, shellProps, shellHostname, startTime, users.listActiveSessions(), network);
 			});
 			this.emit("initialized");
 		})();
@@ -315,6 +316,7 @@ class VirtualShell extends EventEmitter {
 			this.hostname,
 			this.startTime,
 			this.users.listActiveSessions(),
+			this.network,
 		);
 	}
 
@@ -366,6 +368,7 @@ class VirtualShell extends EventEmitter {
 			this.hostname,
 			this.startTime,
 			this.users.listActiveSessions(),
+			this.network,
 		);
 	}
 
