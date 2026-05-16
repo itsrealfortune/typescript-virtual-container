@@ -19,7 +19,7 @@ function nowMs(): number {
 	return Date.now();
 }
 
-export function isPerfLoggingEnabled(): boolean {
+function isPerfLoggingEnabled(): boolean {
 	return (
 		isTruthyEnv(process.env.DEV_MODE) || isTruthyEnv(process.env.RENDER_PERF)
 	);
@@ -51,22 +51,4 @@ export function createPerfLogger(scope: string): PerfLogger {
 		mark,
 		done,
 	};
-}
-
-export async function withPerf<T>(
-	scope: string,
-	label: string,
-	work: () => Promise<T>,
-): Promise<T> {
-	const perf = createPerfLogger(scope);
-	if (!perf.enabled) {
-		return work();
-	}
-
-	perf.mark(`${label}:start`);
-	try {
-		return await work();
-	} finally {
-		perf.done(`${label}:done`);
-	}
 }

@@ -12,10 +12,6 @@ export function normalizePath(rawPath: string): string {
 	return normalized === "" ? "/" : normalized;
 }
 
-export function splitPath(normalizedPath: string): string[] {
-	return normalizedPath.split("/").filter(Boolean);
-}
-
 export function getNode(
 	root: InternalDirectoryNode,
 	targetPath: string,

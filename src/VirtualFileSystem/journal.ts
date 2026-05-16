@@ -51,7 +51,7 @@ function writeString2(buf: Buffer, offset: number, s: string): number {
 }
 
 /** Serialise one entry to a Buffer. */
-export function encodeEntry(e: JournalEntry): Buffer {
+function encodeEntry(e: JournalEntry): Buffer {
 	const pathBuf = Buffer.from(e.path, ENC);
 	let payloadLen = 0;
 
@@ -92,7 +92,7 @@ export function encodeEntry(e: JournalEntry): Buffer {
 }
 
 /** Parse all entries from a journal Buffer. Returns empty array on corrupt data. */
-export function decodeJournal(buf: Buffer): JournalEntry[] {
+function decodeJournal(buf: Buffer): JournalEntry[] {
 	const entries: JournalEntry[] = [];
 	let off = 0;
 
