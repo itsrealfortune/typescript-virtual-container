@@ -264,7 +264,7 @@ export class WebTermRenderer {
 
 	/** Render current screen state to an HTML string for a <pre> element. */
 	renderHtml(): string {
-		let html = "";
+		const parts: string[] = [];
 		for (let r = 0; r < this.rows; r++) {
 			const row = this.screen[r]!;
 			let spanOpen = false;
@@ -277,27 +277,26 @@ export class WebTermRenderer {
 				let bg = cell.bg ?? "transparent";
 				if (cell.reverse) { [fg, bg] = [bg === "transparent" ? "#000" : bg, fg === "transparent" ? "#000" : fg]; }
 				if (isCursor) {
-					// Isoler le curseur dans son propre span pour éviter que sa couleur
-					// inversée ne déborde sur les cellules vides adjacentes.
-					if (spanOpen) { html += "</span>"; spanOpen = false; lastStyle = ""; }
+					// Isolate cursor in its own span so reversed colour doesn't bleed onto adjacent blank cells.
+					if (spanOpen) { parts.push("</span>"); spanOpen = false; lastStyle = ""; }
 					const curFg = bg === "transparent" ? "#000" : bg;
 					const boldPart = cell.bold ? "font-weight:bold;" : "";
-					html += `<span style="color:${curFg};background:#ccc;${boldPart}">${escHtml(cell.ch)}</span>`;
+					parts.push(`<span style="color:${curFg};background:#ccc;${boldPart}">${escHtml(cell.ch)}</span>`);
 				} else {
 					const style = `color:${fg};background:${bg};${cell.bold ? "font-weight:bold;" : ""}`;
 					if (style !== lastStyle) {
-						if (spanOpen) html += "</span>";
-						html += `<span style="${style}">`;
+						if (spanOpen) parts.push("</span>");
+						parts.push(`<span style="${style}">`);
 						spanOpen = true;
 						lastStyle = style;
 					}
-					html += escHtml(cell.ch);
+					parts.push(escHtml(cell.ch));
 				}
 			}
-			if (spanOpen) html += "</span>";
-			if (r < this.rows - 1) html += "\n";
+			if (spanOpen) parts.push("</span>");
+			if (r < this.rows - 1) parts.push("\n");
 		}
-		return html;
+		return parts.join("");
 	}
 
 	get cursorRow(): number { return this.curRow; }
@@ -316,7 +315,7 @@ export class WebTermRenderer {
 	clearScrollback(): void { this.scrollback = []; }
 
 	renderScrollbackHtml(): string {
-		let html = "";
+		const parts: string[] = [];
 		for (const row of this.scrollback) {
 			let spanOpen = false;
 			let lastStyle = "";
@@ -326,17 +325,17 @@ export class WebTermRenderer {
 				if (cell.reverse) { [fg, bg] = [bg === "transparent" ? "#000" : bg, fg === "transparent" ? "#000" : fg]; }
 				const style = `color:${fg};background:${bg};${cell.bold ? "font-weight:bold;" : ""}`;
 				if (style !== lastStyle) {
-					if (spanOpen) html += "</span>";
-					html += `<span style="${style}">`;
+					if (spanOpen) parts.push("</span>");
+					parts.push(`<span style="${style}">`);
 					spanOpen = true;
 					lastStyle = style;
 				}
-				html += escHtml(cell.ch);
+				parts.push(escHtml(cell.ch));
 			}
-			if (spanOpen) html += "</span>";
-			html += "\n";
+			if (spanOpen) parts.push("</span>");
+			parts.push("\n");
 		}
-		return html;
+		return parts.join("");
 	}
 }
 
