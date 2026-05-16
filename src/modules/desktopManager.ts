@@ -546,6 +546,41 @@ export class DesktopManager {
       if ((e.target as HTMLElement)?.classList?.contains("editor-textarea")) return;
       this.handleKeyDown(e as KeyboardEvent);
     });
+
+    // Editor: delegate keydown (Ctrl+S save, stop propagation to terminal)
+    this.container.addEventListener("keydown", (e) => {
+      const textarea = e.target as HTMLElement;
+      if (!textarea.classList.contains("editor-textarea")) return;
+      e.stopPropagation();
+      if (e.ctrlKey && e.key === "s") {
+        e.preventDefault();
+        const winId = textarea.getAttribute("data-win-id");
+        if (winId) this.saveEditor(winId);
+      }
+    });
+
+    // Editor: delegate input → dirty flag
+    this.container.addEventListener("input", (e) => {
+      const textarea = e.target as HTMLElement;
+      if (!textarea.classList.contains("editor-textarea")) return;
+      const winId = textarea.getAttribute("data-win-id");
+      if (!winId) return;
+      const w = this.windows.find((ww) => ww.id === winId);
+      if (!w || w.content.type !== "editor") return;
+      w.content.dirty = true;
+      const dot = textarea.closest(".win-content")?.querySelector(".editor-dirty") as HTMLElement | null;
+      if (dot) dot.style.display = "";
+      if (!w.title.startsWith("*")) w.title = `*${w.title}`;
+    });
+
+    // Editor: delegate save button click
+    this.container.addEventListener("click", (e) => {
+      const btn = (e.target as HTMLElement).closest(".editor-save-btn") as HTMLElement | null;
+      if (!btn) return;
+      e.stopPropagation();
+      const winId = btn.getAttribute("data-win-id");
+      if (winId) this.saveEditor(winId);
+    }, true); // capture phase so it fires before the generic click handler
   }
   // ── Rendering ──────────────────────────────────────────────────────
 
@@ -752,28 +787,6 @@ export class DesktopManager {
       <textarea class="editor-textarea" data-win-id="${winId}" spellcheck="false">${this.escapeHtml(fileText)}</textarea>
     `;
 
-    const textarea = contentArea.querySelector(".editor-textarea") as HTMLTextAreaElement;
-    const dirtyDot = contentArea.querySelector(".editor-dirty") as HTMLElement;
-
-    textarea.addEventListener("input", () => {
-      content.dirty = true;
-      dirtyDot.style.display = "";
-      const w = this.windows.find((ww) => ww.id === winId);
-      if (w && !w.title.startsWith("*")) w.title = `*${w.title}`;
-    });
-
-    textarea.addEventListener("keydown", (e) => {
-      e.stopPropagation(); // don't send keys to terminal
-      if (e.ctrlKey && e.key === "s") {
-        e.preventDefault();
-        this.saveEditor(winId);
-      }
-    });
-
-    contentArea.querySelector(".editor-save-btn")?.addEventListener("click", (e) => {
-      e.stopPropagation();
-      this.saveEditor(winId);
-    });
   }
 
   private saveEditor(winId: string): void {
