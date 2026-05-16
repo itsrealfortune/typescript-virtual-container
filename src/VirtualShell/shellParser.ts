@@ -141,6 +141,19 @@ function splitByLogicalOps(input: string): Segment[] {
 			continue;
 		}
 		if (ch === "&" && input[i + 1] !== "&") {
+			// &> redirect (stdout+stderr) — keep in current segment, not a background op
+			if (input[i + 1] === ">") {
+				current += ch;
+				i++;
+				continue;
+			}
+			// 2>&1 — the & is part of a redirection target, not a background op
+			const trimmed = current.trimEnd();
+			if (trimmed.endsWith(">") || trimmed.endsWith("2>") || trimmed.endsWith(">>")) {
+				current += ch;
+				i++;
+				continue;
+			}
 			// trailing & → background job; treat like ; for sequencing
 			flush(";", true);
 			i++;
@@ -241,6 +254,16 @@ function parseCommandWithRedirections(token: string): PipelineCommand {
 				throw new Error("Syntax error: expected filename after >");
 			outputFile = parts[i];
 			appendOutput = false;
+			i++;
+		} else if (part === "&>" || part === "&>>") {
+			// &> file — redirect both stdout and stderr to file
+			const append = part === "&>>";
+			i++;
+			if (i >= parts.length)
+				throw new Error(`Syntax error: expected filename after ${part}`);
+			outputFile = parts[i];
+			appendOutput = append;
+			stderrToStdout = true;
 			i++;
 		} else if (part === "2>&1") {
 			stderrToStdout = true;
