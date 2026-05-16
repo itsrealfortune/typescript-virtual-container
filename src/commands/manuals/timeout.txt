@@ -1,0 +1,23 @@
+TIMEOUT(1)               User Commands                  TIMEOUT(1)
+
+NAME
+       timeout - run a command with a time limit
+
+SYNOPSIS
+       timeout DURATION COMMAND [ARG]...
+
+DESCRIPTION
+       Start COMMAND, and kill it if still running after DURATION seconds.
+       In this environment, the time limit is simulated and the command
+       always runs to completion.
+
+OPTIONS
+       DURATION    An integer number of seconds (e.g. 5).
+
+EXIT STATUS
+       124  if the command times out
+       Otherwise the exit status of COMMAND.
+
+EXAMPLES
+       timeout 5 sleep 10
+       timeout 30 curl http://example.com/

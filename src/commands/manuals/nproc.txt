@@ -1,0 +1,18 @@
+NPROC(1)                 User Commands                    NPROC(1)
+
+NAME
+       nproc - print the number of processing units available
+
+SYNOPSIS
+       nproc [OPTION]...
+
+DESCRIPTION
+       Print the number of processing units available to the current process.
+       In this environment, always returns 4.
+
+OPTIONS
+       --all    print the number of installed processors
+
+EXAMPLES
+       nproc
+       make -j$(nproc)

@@ -1,0 +1,22 @@
+COLUMN(1)                User Commands                   COLUMN(1)
+
+NAME
+       column - columnate lists
+
+SYNOPSIS
+       column [OPTION]... [FILE]...
+
+DESCRIPTION
+       The column utility formats its input into multiple columns.
+       Rows are filled before columns. Input is taken from FILE or stdin.
+
+OPTIONS
+       -t    determine the number of columns the input contains and create
+             a table (useful for pretty-printing)
+       -s    specify a set of characters to be used to delimit columns
+             (default: whitespace)
+
+EXAMPLES
+       mount | column -t
+       cat /etc/passwd | column -t -s:
+       column -t file.txt

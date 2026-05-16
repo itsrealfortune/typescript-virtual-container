@@ -1,0 +1,25 @@
+MKTEMP(1)                User Commands                   MKTEMP(1)
+
+NAME
+       mktemp - create a temporary file or directory
+
+SYNOPSIS
+       mktemp [OPTION]... [TEMPLATE]
+
+DESCRIPTION
+       Create a temporary file or directory, safely, and print its name.
+       TEMPLATE must contain at least 3 consecutive 'X's in last component.
+       If TEMPLATE is not specified, use tmp.XXXXXXXXXX.
+       Files are created in /tmp.
+
+OPTIONS
+       -d    create a directory, not a file
+
+EXIT STATUS
+       0  on success
+       1  if the file/directory could not be created
+
+EXAMPLES
+       mktemp
+       mktemp -d
+       mktemp /tmp/foo.XXXXXX

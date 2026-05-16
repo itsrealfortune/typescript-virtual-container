@@ -1,0 +1,24 @@
+NL(1)                    User Commands                      NL(1)
+
+NAME
+       nl - number lines of files
+
+SYNOPSIS
+       nl [OPTION]... [FILE]...
+
+DESCRIPTION
+       Write each FILE to standard output, with line numbers added.
+       With no FILE, or when FILE is -, read standard input.
+
+OPTIONS
+       -b, --body-numbering=STYLE    use STYLE for numbering body lines
+             a    number all lines
+             t    number only non-empty lines (default)
+       -n, --number-format=FORMAT    use FORMAT for line numbers
+             ln   left justified, no leading zeros
+             rn   right justified, no leading zeros (default)
+             rz   right justified, leading zeros
+
+EXAMPLES
+       nl /etc/passwd
+       cat file.txt | nl

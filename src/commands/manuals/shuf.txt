@@ -1,0 +1,22 @@
+SHUF(1)                  User Commands                    SHUF(1)
+
+NAME
+       shuf - generate random permutations
+
+SYNOPSIS
+       shuf [OPTION]... [FILE]
+       shuf -i LO-HI [OPTION]...
+       shuf -e [OPTION]... [ARG]...
+
+DESCRIPTION
+       Write a random permutation of the input lines to standard output.
+
+OPTIONS
+       -i LO-HI    treat each number LO through HI as an input line
+       -n COUNT    output at most COUNT lines
+       -e           treat each ARG as an input line
+
+EXAMPLES
+       shuf /etc/passwd
+       shuf -i 1-10
+       shuf -n 3 /etc/hosts

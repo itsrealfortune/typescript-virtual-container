@@ -1,0 +1,18 @@
+TAC(1)                   User Commands                     TAC(1)
+
+NAME
+       tac - concatenate and print files in reverse
+
+SYNOPSIS
+       tac [OPTION]... [FILE]...
+
+DESCRIPTION
+       Write each FILE to standard output, last line first.
+       With no FILE, or when FILE is -, read standard input.
+
+OPTIONS
+       -s, --separator=STRING    use STRING as the record separator
+
+EXAMPLES
+       tac /var/log/syslog
+       echo -e "a\nb\nc" | tac
