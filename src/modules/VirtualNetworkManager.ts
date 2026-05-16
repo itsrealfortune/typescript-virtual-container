@@ -6,6 +6,10 @@
  * to produce dynamic, deterministic output instead of hardcoded strings.
  */
 
+/**
+ * A virtual network interface, either loopback or ethernet,
+ * with MAC address, MTU, IPv4/IPv6 addresses, and link state.
+ */
 export interface VirtualInterface {
 	name: string;
 	type: "loopback" | "ether";
@@ -17,6 +21,10 @@ export interface VirtualInterface {
 	ipv6: string;
 }
 
+/**
+ * A routing table entry mapping a destination subnet
+ * to a gateway and outbound device.
+ */
 export interface VirtualRoute {
 	destination: string;
 	gateway: string;
@@ -25,6 +33,10 @@ export interface VirtualRoute {
 	flags: string;
 }
 
+/**
+ * An ARP cache entry mapping an IP address to a MAC address
+ * on a specific device, with neighbour reachability state.
+ */
 export interface VirtualArpEntry {
 	ip: string;
 	mac: string;
@@ -37,6 +49,10 @@ function randomMac(): string {
 	return `02:42:${hex()}:${hex()}:${hex()}:${hex()}`;
 }
 
+/**
+ * Virtual network stack with routing table, ARP cache, and interface management.
+ * Provides dynamic data for `ip`, `ping`, and `/proc/net/*`.
+ */
 export class VirtualNetworkManager {
 	private interfaces: VirtualInterface[] = [
 		{
@@ -71,22 +87,46 @@ export class VirtualNetworkManager {
 		{ ip: "10.0.0.1", mac: "02:42:0a:00:00:01", device: "eth0", state: "REACHABLE" },
 	];
 
+	/**
+	 * Returns a copy of all configured interfaces.
+	 * @returns Array of VirtualInterface objects.
+	 */
 	public getInterfaces(): VirtualInterface[] {
 		return [...this.interfaces];
 	}
 
+	/**
+	 * Returns a copy of the routing table.
+	 * @returns Array of VirtualRoute objects.
+	 */
 	public getRoutes(): VirtualRoute[] {
 		return [...this.routes];
 	}
 
+	/**
+	 * Returns a copy of the ARP cache.
+	 * @returns Array of VirtualArpEntry objects.
+	 */
 	public getArpCache(): VirtualArpEntry[] {
 		return [...this.arpCache];
 	}
 
+	/**
+	 * Adds a new route to the routing table.
+	 * @param dest Destination network or "default".
+	 * @param gateway Gateway IP address.
+	 * @param netmask Subnet mask (e.g. "255.255.255.0").
+	 * @param device Outbound device name (e.g. "eth0").
+	 */
 	public addRoute(dest: string, gateway: string, netmask: string, device: string): void {
 		this.routes.push({ destination: dest, gateway, netmask, device, flags: "UG" });
 	}
 
+	/**
+	 * Removes a route by destination network.
+	 * @param dest Destination network to remove.
+	 * @returns True if a route was removed, false if no match.
+	 */
 	public delRoute(dest: string): boolean {
 		const idx = this.routes.findIndex((r) => r.destination === dest);
 		if (idx === -1) return false;
@@ -94,6 +134,12 @@ export class VirtualNetworkManager {
 		return true;
 	}
 
+	/**
+	 * Sets the administrative state of an interface.
+	 * @param name Interface name ("lo", "eth0", etc.).
+	 * @param state Desired state: "UP" or "DOWN".
+	 * @returns True if the interface was found and updated, false otherwise.
+	 */
 	public setInterfaceState(name: string, state: "UP" | "DOWN"): boolean {
 		const iface = this.interfaces.find((i) => i.name === name);
 		if (!iface) return false;
@@ -101,6 +147,13 @@ export class VirtualNetworkManager {
 		return true;
 	}
 
+	/**
+	 * Sets the IPv4 address and prefix length on an interface.
+	 * @param name Interface name.
+	 * @param ipv4 New IPv4 address.
+	 * @param mask New subnet mask prefix length (e.g. 24).
+	 * @returns True if the interface was found and updated, false otherwise.
+	 */
 	public setInterfaceIp(name: string, ipv4: string, mask: number): boolean {
 		const iface = this.interfaces.find((i) => i.name === name);
 		if (!iface) return false;
@@ -109,7 +162,11 @@ export class VirtualNetworkManager {
 		return true;
 	}
 
-	/** Ping simulation: returns latency in ms, or -1 if unreachable. */
+	/**
+	 * Simulates an ICMP ping to the given host.
+	 * @param host Target IP address or hostname.
+	 * @returns Latency in milliseconds if reachable, -1 if unreachable.
+	 */
 	public ping(host: string): number {
 		// Loopback always works
 		if (host === "127.0.0.1" || host === "localhost" || host === "::1") {
@@ -125,7 +182,10 @@ export class VirtualNetworkManager {
 		return 0.8 + Math.random() * 5;
 	}
 
-	/** Get formatted output for `ip addr`. */
+	/**
+	 * Formats all interfaces as `ip addr` output.
+	 * @returns Formatted string mimicking `ip addr` command.
+	 */
 	public formatIpAddr(): string {
 		const lines: string[] = [];
 		let idx = 1;
@@ -144,7 +204,10 @@ export class VirtualNetworkManager {
 		return lines.join("\n");
 	}
 
-	/** Get formatted output for `ip route`. */
+	/**
+	 * Formats the routing table as `ip route` output.
+	 * @returns Formatted string mimicking `ip route` command.
+	 */
 	public formatIpRoute(): string {
 		return this.routes.map((r) => {
 			if (r.destination === "default") {
@@ -154,7 +217,10 @@ export class VirtualNetworkManager {
 		}).join("\n");
 	}
 
-	/** Get formatted output for `ip link`. */
+	/**
+	 * Formats all interfaces as `ip link` output.
+	 * @returns Formatted string mimicking `ip link` command.
+	 */
 	public formatIpLink(): string {
 		const lines: string[] = [];
 		let idx = 1;
@@ -169,7 +235,10 @@ export class VirtualNetworkManager {
 		return lines.join("\n");
 	}
 
-	/** Get formatted output for `ip neigh`. */
+	/**
+	 * Formats the ARP cache as `ip neigh` output.
+	 * @returns Formatted string mimicking `ip neigh` command.
+	 */
 	public formatIpNeigh(): string {
 		return this.arpCache.map((e) =>
 			`${e.ip} dev ${e.device} lladdr ${e.mac} ${e.state}`
