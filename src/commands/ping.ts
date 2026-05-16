@@ -1,9 +1,25 @@
-import { execSync } from "node:child_process";
 import type { ShellModule } from "../types/commands";
 import { parseArgs } from "./command-helpers";
 
 const isBrowser =
 	typeof process === "undefined" || typeof (process as NodeJS.Process).versions?.node === "undefined";
+
+/** Lazily import execSync — avoids static import that breaks browser polyfills. */
+async function execPing(count: number, host: string): Promise<{ stdout: string } | { stderr: string } | null> {
+	try {
+		const { execSync } = await import("node:child_process");
+		const output = execSync(`ping -c ${count} ${host}`, {
+			timeout: 30000,
+			encoding: "utf8",
+			stdio: ["ignore", "pipe", "pipe"],
+		});
+		return { stdout: output as string };
+	} catch (err: unknown) {
+		const stderrMsg = err instanceof Error ? (err as Error & { stderr?: string }).stderr : "";
+		if (stderrMsg) return { stderr: stderrMsg };
+		return null;
+	}
+}
 
 /**
  * Send ICMP ECHO_REQUEST packets — uses the real host ping when available,
@@ -16,7 +32,7 @@ export const pingCommand: ShellModule = {
 	description: "Send ICMP ECHO_REQUEST to network hosts",
 	category: "network",
 	params: ["[-c <count>] <host>"],
-	run: ({ args, shell }) => {
+	run: async ({ args, shell }) => {
 		const { flagsWithValues, positionals } = parseArgs(args, {
 			flagsWithValue: ["-c", "-i", "-W"],
 		});
@@ -26,20 +42,8 @@ export const pingCommand: ShellModule = {
 
 		// Try real system ping first (Node.js only)
 		if (!isBrowser) {
-			try {
-				const output = execSync(`ping -c ${count} ${host}`, {
-					timeout: 30000,
-					encoding: "utf8",
-					stdio: ["ignore", "pipe", "pipe"],
-				});
-				return { stdout: output, exitCode: 0 };
-			} catch (err: unknown) {
-				// System ping failed — fall through to simulation
-				const stderrMsg = err instanceof Error ? (err as Error & { stderr?: string }).stderr : "";
-				if (stderrMsg) {
-					return { stderr: stderrMsg, exitCode: 1 };
-				}
-			}
+			const result = await execPing(count, host);
+			if (result) return { ...result, exitCode: "stdout" in result ? 0 : 1 };
 		}
 
 		// Fallback: VirtualNetworkManager simulation
