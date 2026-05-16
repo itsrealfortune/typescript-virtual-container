@@ -4,12 +4,13 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
-  "version": "1.5.10",
+  "version": "1.5.11",
   "files": [
     "dist/",
     "README.md",
     "LICENSE",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "scripts/postinstall.js"
   ],
   "license": "MIT",
   "repository": {
