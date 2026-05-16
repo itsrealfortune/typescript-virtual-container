@@ -25,7 +25,7 @@ export const jobsCommand: ShellModule = {
 			return `${label}  ${String(p.pid).padStart(5)} ${status.padEnd(8)} ${p.argv.join(" ")}`;
 		});
 
-		return { stdout: lines.join("\n") + "\n", exitCode: 0 };
+		return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 	},
 };
 

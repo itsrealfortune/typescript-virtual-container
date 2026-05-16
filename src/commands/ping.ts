@@ -60,6 +60,6 @@ export const pingCommand: ShellModule = {
 		const lossPct = ((lost / transmitted) * 100).toFixed(0);
 		lines.push(`--- ${host} ping statistics ---`);
 		lines.push(`${transmitted} packets transmitted, ${received} received, ${lossPct}% packet loss`);
-		return { stdout: lines.join("\n") + "\n", exitCode: 0 };
+		return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 	},
 };

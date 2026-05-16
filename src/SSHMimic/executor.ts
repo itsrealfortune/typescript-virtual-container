@@ -105,7 +105,6 @@ export async function executePipeline(
 	if (pipeline.commands.length === 0) return { exitCode: 0 };
 
 	const shellEnv: ShellEnv = env ?? { vars: {}, lastExitCode: 0 };
-	const isBackground = mode === "background";
 
 	if (pipeline.commands.length === 1) {
 		return executeSingleCommandWithRedirections(

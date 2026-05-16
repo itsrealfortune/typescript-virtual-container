@@ -12,7 +12,6 @@ export const killCommand: ShellModule = {
 	category: "system",
 	params: ["[-9] <pid>"],
 	run: ({ args, shell }) => {
-		const sig9 = args.includes("-9") || args.includes("-SIGKILL");
 		const pidStr = args.find((a) => !a.startsWith("-"));
 		if (!pidStr) return { stderr: "kill: no pid specified", exitCode: 1 };
 		const pid = parseInt(pidStr, 10);

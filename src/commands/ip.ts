@@ -39,7 +39,7 @@ export const ipCommand: ShellModule = {
 				if (dev) net.setInterfaceIp(dev, "0.0.0.0", 0);
 				return { exitCode: 0 };
 			}
-			return { stdout: net.formatIpAddr() + "\n", exitCode: 0 };
+			return { stdout: `${net.formatIpAddr()}\n`, exitCode: 0 };
 		}
 		if (obj === "route" || obj === "r" || obj === "ro") {
 			if (cmd === "add") {
@@ -56,7 +56,7 @@ export const ipCommand: ShellModule = {
 				if (dest && dest !== "del") net.delRoute(dest);
 				return { exitCode: 0 };
 			}
-			return { stdout: net.formatIpRoute() + "\n", exitCode: 0 };
+			return { stdout: `${net.formatIpRoute()}\n`, exitCode: 0 };
 		}
 		if (obj === "link" || obj === "l") {
 			if (cmd === "set") {
@@ -65,10 +65,10 @@ export const ipCommand: ShellModule = {
 				if (args.includes("down") && dev) net.setInterfaceState(dev, "DOWN");
 				return { exitCode: 0 };
 			}
-			return { stdout: net.formatIpLink() + "\n", exitCode: 0 };
+			return { stdout: `${net.formatIpLink()}\n`, exitCode: 0 };
 		}
 		if (obj === "neigh" || obj === "n") {
-			return { stdout: net.formatIpNeigh() + "\n", exitCode: 0 };
+			return { stdout: `${net.formatIpNeigh()}\n`, exitCode: 0 };
 		}
 		if (["set", "add", "del", "flush", "change", "replace"].includes(cmd)) {
 			return { exitCode: 0 }; // silently succeed mutations
