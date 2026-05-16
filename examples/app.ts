@@ -1,5 +1,6 @@
 import { VirtualShell } from '../src/index.js';
 import { WebTermRenderer } from '../src/modules/webTermRenderer.js';
+import { DesktopManager } from '../src/modules/desktopManager.js';
 import type { ShellStream } from '../src/types/streams.js';
 
 // ── Wait for IndexedDB fs shim ────────────────────────────────────────────────
@@ -146,6 +147,11 @@ function keyToBytes(e: KeyboardEvent): Uint8Array | null {
 }
 
 terminal.addEventListener('keydown', (e: KeyboardEvent) => {
+  // Route to desktop if active
+  if (desktopManager?.isActive()) {
+    desktopManager.handleKeyDown(e);
+    return;
+  }
   // Allow browser shortcuts (Ctrl+C copy, Ctrl+V paste, F12, etc.)
   if (e.metaKey) return;
   if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'a') && !e.altKey) {
@@ -185,6 +191,11 @@ window.addEventListener('resize', () => {
   // shell.ts listens to stream resize via terminalSize ref — not exposed,
   // but a full redraw from the shell side happens on next output anyway.
 });
+
+// ── Desktop ────────────────────────────────────────────────────────────
+
+const desktopEl = document.getElementById('desktop') as HTMLDivElement;
+let desktopManager: DesktopManager | null = null;
 
 // ── GPU detection ─────────────────────────────────────────────────────────────
 
@@ -228,6 +239,14 @@ if (isFirstRun) {
 }
 
 window.addEventListener('beforeunload', () => { shell.vfs.flushMirror(); });
+
+// ── Desktop integration ───────────────────────────────────────────────────────
+
+desktopManager = new DesktopManager(shell, desktopEl);
+shell.desktopManager = desktopManager;
+desktopManager.setOnExit(() => {
+  terminal.focus();
+});
 
 // ── Start interactive session ─────────────────────────────────────────────────
 
