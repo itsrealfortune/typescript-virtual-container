@@ -519,8 +519,8 @@ export class DesktopManager {
       e.preventDefault();
     });
 
-    // Mouse move for dragging
-    this.addDocListener(document, "mousemove", (e) => {
+    // Mouse move for dragging — not tracked in docListeners so it survives stop()/start() cycles
+    document.addEventListener("mousemove", (e) => {
       if (!this.dragState) return;
       const me = e as MouseEvent;
       const dx = me.clientX - this.dragState.startX;
@@ -530,8 +530,8 @@ export class DesktopManager {
       this.renderWindowPositions();
     });
 
-    // Mouse up to end drag
-    this.addDocListener(document, "mouseup", () => {
+    // Mouse up to end drag — same reason as mousemove above
+    document.addEventListener("mouseup", () => {
       this.dragState = null;
     });
 
