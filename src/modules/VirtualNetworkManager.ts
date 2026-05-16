@@ -32,7 +32,7 @@ export interface VirtualArpEntry {
 	state: "REACHABLE" | "STALE" | "PERMANENT";
 }
 
-function randomMAC(): string {
+function randomMac(): string {
 	const hex = () => Math.floor(Math.random() * 256).toString(16).padStart(2, "0");
 	return `02:42:${hex()}:${hex()}:${hex()}:${hex()}`;
 }
@@ -52,7 +52,7 @@ export class VirtualNetworkManager {
 		{
 			name: "eth0",
 			type: "ether",
-			mac: randomMAC(),
+			mac: randomMac(),
 			mtu: 1500,
 			state: "UP",
 			ipv4: "10.0.0.2",
