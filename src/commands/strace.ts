@@ -12,7 +12,6 @@ export const straceCommand: ShellModule = {
 	run: ({ args }) => {
 		const cmd = args.find((a) => !a.startsWith("-"));
 		if (!cmd) return { stderr: "strace: must have PROG [ARGS] or -p PID", exitCode: 1 };
-		const _pid = Math.floor(Math.random() * 30000) + 1000;
 		const lines = [
 			`execve("/usr/bin/${cmd}", ["${cmd}"${args.slice(1).map((a) => `, "${a}"`).join("")}], 0x... /* ... vars */) = 0`,
 			`brk(NULL)                               = 0x${(Math.random() * 0xfffff | 0).toString(16)}000`,

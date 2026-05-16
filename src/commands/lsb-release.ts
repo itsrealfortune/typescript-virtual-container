@@ -32,7 +32,7 @@ export const lsbReleaseCommand: ShellModule = {
 						.replace(/^"|"$/g, "")
 						.trim();
 			}
-		} catch {}
+		} catch { /* /etc/os-release may not exist */ }
 
 		const all = ifFlag(args, ["-a", "--all"]);
 		const showId = ifFlag(args, ["-i", "--id"]);

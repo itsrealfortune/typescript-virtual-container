@@ -659,7 +659,7 @@ async function _gracefulShutdown(signal: string): Promise<void> {
 	if (_shuttingDown) return;
 	_shuttingDown = true;
 	process.stdout.write(`\n[${signal}] Saving VFS...\n`);
-	try { await virtualShell.vfs.stopAutoFlush(); } catch {}
+	try { await virtualShell.vfs.stopAutoFlush(); } catch { /* best-effort flush on shutdown */ }
 	process.exit(0);
 }
 process.on("SIGTERM", () => { void _gracefulShutdown("SIGTERM"); });

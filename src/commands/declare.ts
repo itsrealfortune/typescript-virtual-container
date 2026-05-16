@@ -16,8 +16,6 @@ export const declareCommand: ShellModule = {
 		if (!env) return { exitCode: 0 };
 
 		const integer = ifFlag(args, ["-i"]);
-		const _readonly = ifFlag(args, ["-r"]);
-		const _export_ = ifFlag(args, ["-x"]);
 		const printAll = args.filter((a) => !a.startsWith("-")).length === 0;
 
 		if (printAll) {

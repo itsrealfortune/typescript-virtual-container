@@ -1355,62 +1355,6 @@ function bootstrapUsr(vfs: VirtualFileSystem): void {
 		"nano", "diff", "uniq", "xargs", "base64",
 	];
 
-	// From a real container
-	// const builtins = [
-	// 	// core
-	// 	"sh", "bash", "dash",
-	// 	"ls", "cat", "echo", "grep", "find", "sort",
-	// 	"head", "tail", "cut", "tr", "sed", "awk", "mawk", "gawk",
-	// 	"wc", "tee", "tar", "gzip", "gunzip", "bzip2", "xz",
-	// 	"touch", "mkdir", "rm", "mv", "cp", "ln", "pwd",
-	// 	"chmod", "chown", "chgrp", "env", "date", "sleep",
-	// 	"id", "whoami", "hostname", "uname", "ps", "kill",
-	// 	"df", "du", "dd", "stat", "file",
-	// 	// net
-	// 	"curl", "wget", "nc", "netcat", "ss", "ip",
-	// 	// editors
-	// 	"nano", "vi",
-	// 	// text
-	// 	"diff", "uniq", "xargs", "base64", "md5sum", "sha256sum",
-	// 	"strings", "hexdump", "od", "column", "fmt", "paste",
-	// 	"join", "comm", "split", "csplit", "fold", "expand",
-	// 	// archive
-	// 	"zip", "unzip",
-	// 	// process
-	// 	"top", "htop", "free", "uptime", "dmesg", "lsof",
-	// 	"strace", "ltrace", "pgrep", "pkill", "nohup", "nice",
-	// 	// fs
-	// 	"mount", "umount", "lsblk", "fdisk", "blkid", "e2fsck",
-	// 	// misc
-	// 	"bc", "expr", "seq", "yes", "true", "false", "test",
-	// 	"readlink", "realpath", "dirname", "basename", "mktemp",
-	// 	"install", "make",
-	// 	// dev tools
-	// 	"gcc", "gcc-13", "g++", "g++-13", "cpp", "as", "ld",
-	// 	"ar", "nm", "objdump", "objcopy", "strip", "size",
-	// 	"cc", "c++", "pkg-config",
-	// 	// package
-	// 	"apt", "apt-get", "apt-cache", "dpkg", "dpkg-query",
-	// 	"lsb_release", "add-apt-repository",
-	// 	// scripting
-	// 	"perl", "python3", "python3.12", "pipx",
-	// 	// node/npm
-	// 	"node", "npm", "npx",
-	// 	// java
-	// 	"java", "javac", "jar", "javadoc",
-	// 	// security
-	// 	"openssl", "gpg", "gpg2", "gpgv", "ssh", "ssh-keygen",
-	// 	"sudo", "su", "passwd", "adduser", "useradd",
-	// 	// misc system
-	// 	"systemctl", "journalctl", "loginctl",
-	// 	"timedatectl", "localectl",
-	// 	"lshw", "lscpu", "lsusb", "lspci",
-	// 	// text proc
-	// 	"jq", "xmllint", "pandoc",
-	// 	// multimedia
-	// 	"ffmpeg",
-	// ];
-
 	for (const bin of builtins) {
 		ensureFile(vfs, `/usr/bin/${bin}`, `#!/bin/sh\nexec builtin ${bin} "$@"\n`, 0o755);
 	}

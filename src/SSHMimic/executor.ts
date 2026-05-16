@@ -248,7 +248,7 @@ async function executePipelineChain(
 			try {
 				const ex = (() => { try { return shell.vfs.readFile(sp); } catch { return ''; } })();
 				shell.writeFileAsUser(authUser, sp, cmd.stderrAppend ? ex + effectiveResult.stderr : effectiveResult.stderr);
-			} catch {}
+			} catch { /* best-effort stderr write */ }
 		}
 
 		if (i === commands.length - 1 && cmd.outputFile) {

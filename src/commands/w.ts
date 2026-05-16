@@ -30,7 +30,7 @@ export const wCommand: ShellModule = {
 			try {
 				const log = JSON.parse(shell.vfs.readFile(logPath));
 				loginTime = new Date(log.at).toTimeString().slice(0, 5);
-			} catch {}
+			} catch { /* login log may be absent */ }
 		}
 
 		const header = ` ${timeStr} up ${uptimeStr},  1 user,  load average: 0.${Math.floor(Math.random() * 30).toString().padStart(2,"0")}, 0.${Math.floor(Math.random() * 15).toString().padStart(2,"0")}, 0.${Math.floor(Math.random() * 10).toString().padStart(2,"0")}`;

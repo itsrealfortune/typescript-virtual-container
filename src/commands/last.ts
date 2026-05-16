@@ -23,7 +23,7 @@ export const lastCommand: ShellModule = {
 					month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false,
 				}).replace(",", "")}`;
 				lines.push(`${target.padEnd(10)} pts/0        ${(log.from ?? "browser").padEnd(16)} ${ds}   still logged in`);
-			} catch {}
+			} catch { /* log entry may be corrupt */ }
 		}
 		lines.push("");
 		lines.push(`wtmp begins ${new Date().toDateString()}`);

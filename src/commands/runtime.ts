@@ -110,7 +110,7 @@ function resolveVfsBinary(
 			if (st.type !== "file") continue;
 			if (!(st.mode & 0o111)) continue;
 			return full;
-		} catch {}
+		} catch { /* not a regular file */ }
 	}
 	return null;
 }

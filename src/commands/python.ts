@@ -18,7 +18,6 @@ import { ifFlag } from "./command-helpers";
 import { resolvePath } from "./helpers";
 
 const VERSION = "Python 3.11.2";
-const _VERSION_SHORT = "3.11.2";
 const VERSION_INFO = "3.11.2 (default, Mar 13 2023, 12:18:29) [GCC 12.2.0]";
 
 // ─── Python value type ────────────────────────────────────────────────────────
@@ -1810,7 +1809,6 @@ class Interpreter {
 		if (line.startsWith("if ") && line.endsWith(":")) {
 			const cond = line.slice(3, -1).trim();
 			const body = this.collectBlock(lines, idx + 1, indent);
-			const _skip = body.length + 1;
 
 			if (pyBool(this.pyEval(cond, scope))) {
 				this.execBlock(
@@ -1965,13 +1963,11 @@ class Interpreter {
 				} else break;
 			}
 
-			let _caughtErr: PyError | null = null;
 			try {
 				this.runBlockInScope(tryBody, scope);
 				if (elseBody.length) this.runBlockInScope(elseBody, scope);
 			} catch (e) {
 				if (e instanceof PyError) {
-					_caughtErr = e;
 					let handled = false;
 					for (const clause of exceptClauses) {
 						if (

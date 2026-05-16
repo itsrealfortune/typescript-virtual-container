@@ -340,14 +340,6 @@ export class WebTermRenderer {
 	}
 }
 
-// const ANSI_NORMAL_TO_BRIGHT: Record<string, string> = {
-// 	"#000": "#555", "#c00": "#f55", "#0c0": "#5f5", "#cc0": "#ff5",
-// 	"#00c": "#55f", "#c0c": "#f5f", "#0cc": "#5ff", "#ccc": "#fff",
-// };
-// function boldBright(fg: string): string {
-// 	return ANSI_NORMAL_TO_BRIGHT[fg] ?? fg;
-// }
-
 function escHtml(ch: string): string {
 	if (ch === "&") return "&amp;";
 	if (ch === "<") return "&lt;";

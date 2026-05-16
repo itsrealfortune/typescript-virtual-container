@@ -963,7 +963,7 @@ export class VirtualPackageManager {
 				}
 				try {
 					if (this.vfs.exists(filePath)) this.vfs.remove(filePath);
-				} catch {}
+				} catch { /* best-effort cleanup */ }
 			}
 
 			// Run remove hook
