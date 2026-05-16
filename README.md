@@ -22,7 +22,7 @@
 - [How It Works](#how-it-works)
 - [API Reference](#api-reference)
 - [Examples](#examples)
-- [Built-in Commands (118)](#built-in-commands-118)
+- [Built-in Commands (127)](#built-in-commands-127)
 - [Shell Scripting](#shell-scripting)
 - [Linux Rootfs & VFS PATH Resolution](#linux-rootfs--vfs-path-resolution)
 - [Configuration](#configuration)
@@ -483,9 +483,9 @@ echo "Welcome back, root!"
 ---
 
 <details>
-<summary><strong>Built-in Commands (118)</strong></summary>
+<summary><strong>Built-in Commands (127)</strong></summary>
 
-Type `help` in the shell for a grouped, colorized listing. Type `help <command>` for detailed usage. Type `man <command>` for full manual pages — all 118 commands are documented.
+Type `help` in the shell for a grouped, colorized listing. Type `help <command>` for detailed usage. Type `man <command>` for full manual pages — all 127 commands are documented.
 
 ### Navigation
 
@@ -534,6 +534,11 @@ Type `help` in the shell for a grouped, colorized listing. Type `help <command>`
 | `file <path...>` | | Determine file type (magic bytes) |
 | `wc [files]` | `-l` `-w` `-c` | Word/line/byte count |
 | `xargs [cmd]` | | Build and execute commands from stdin |
+| `tac [files]` | | Concatenate files in reverse line order |
+| `nl [file]` | `-b` `-n` | Number lines of files |
+| `paste [files]` | `-d` | Merge lines of files side by side |
+| `shuf [file]` | `-n` `-i` | Generate random permutations of input |
+| `column [file]` | `-t` `-s` | Columnate lists; `-t` table mode |
 
 ### Archive & Compression
 
@@ -577,6 +582,10 @@ Type `help` in the shell for a grouped, colorized listing. Type `help <command>`
 | `w` | | Who is logged on and what they are doing |
 | `who` | | Active sessions |
 | `whoami` | | Current user |
+| `nproc` | `--all` | Print number of processing units (returns 4) |
+| `mktemp` | `-d` | Create a temporary file or directory in `/tmp` |
+| `timeout <n> <cmd>` | | Run command with time limit (simulated) |
+| `wait [job...]` | | Wait for background jobs (no-op; jobs are fire-and-forget) |
 
 ### Network
 
@@ -652,7 +661,7 @@ Type `help` in the shell for a grouped, colorized listing. Type `help <command>`
 | `su [user]` | | Switch user |
 | `sudo <cmd>` | `-i` | Run as root |
 
-**ℹ️ All 118 built-in commands include complete JSDoc documentation** with `@category` and `@params` tags. See [src/commands/](https://github.com/itsrealfortune/typescript-virtual-container/tree/main/src/commands) for source code and inline documentation.
+**ℹ️ All 127 built-in commands include complete JSDoc documentation** with `@category` and `@params` tags. See [src/commands/](https://github.com/itsrealfortune/typescript-virtual-container/tree/main/src/commands) for source code and inline documentation.
 
 Custom commands: `shell.addCommand(name, params, callback)`.
 
@@ -1177,8 +1186,8 @@ In `"memory"` mode: no. In `"fs"` mode: one binary file (`vfs-snapshot.vfsb`) in
 **Can I run multiple isolated shells?**
 Yes. Each `new VirtualShell(...)` is completely independent (separate VFS, users, env state).
 
-**Does the shell support `&&`, `||`, and `;`?**
-Yes — plus pipes, redirections, `if`/`for`/`while`/`case`, and function definitions.
+**Does the shell support `&&`, `||`, `;`, and `&`?**
+Yes — plus pipes, redirections, `if`/`for`/`while`/`case`, function definitions, and background jobs (`cmd &`).
 
 **Can I use this for honeypot deployments?**
 Yes — use `HoneyPot.attach()` to capture all activity, configure `maxAuthAttempts` to throttle scanners, export on shutdown.
@@ -1237,7 +1246,7 @@ Open:
 - [x] Pure in-memory VFS · symlinks · binary snapshot format (VFSB, ~27% smaller than JSON+base64)
 - [x] Linux rootfs on boot — `/etc`, `/proc`, `/sys`, `/dev`, `/usr`, `/var`
 - [x] Virtual package manager — `apt`/`dpkg`, 25 packages, VFS file writes
-- [x] 118 built-in commands across 11 categories (added `zip`, `unzip`, `bzip2`, `bunzip2`, `lsof`, `strace`, `perl`, `w`, `ip`, `dmesg`, `last`, `basename`, `dirname`, `file`, `tput`, `stty`, `yes`, `fortune`, `cowsay`, `cowthink`, `cmatrix`, `sl`, `bc`, `jobs`, `bg`, `fg`)
+- [x] 127 built-in commands across 11 categories (added `zip`, `unzip`, `bzip2`, `bunzip2`, `lsof`, `strace`, `perl`, `w`, `ip`, `dmesg`, `last`, `basename`, `dirname`, `file`, `tput`, `stty`, `yes`, `fortune`, `cowsay`, `cowthink`, `cmatrix`, `sl`, `bc`, `jobs`, `bg`, `fg`, `tac`, `nl`, `paste`, `shuf`, `column`, `timeout`, `mktemp`, `nproc`, `wait`)
 - [x] Real shell interpreter — `if`/`for`/`while`/`until`/`case`/functions, arrays `arr=(...)`, `$(cmd)`, `$((expr))`, `${#VAR}`, `${var#pfx}` `${var##pfx}` `${var%sfx}` `${var%%sfx}` `${var/p/r}` `${var//p/r}` `${var:off:len}` `${arr[@]}`, `{a,b,c}` brace expansion, `{1..N}` ranges, `*.glob` expansion, `!!` history expansion, `\` line continuation, `2>/dev/null` stderr redirect, `2>&1`, `(( x++ ))`, heredoc `<< EOF`, `set -e`/`set -x`, `$RANDOM`/`$LINENO`
 - [x] `curl`/`wget` as pure `fetch()` · VFS PATH resolution · `/sbin` root-only
 - [x] `/proc/self` and `/proc/<pid>` per-session entries
@@ -1247,7 +1256,8 @@ Open:
 - [x] Web shell bundles (`fortune-nyx-v1.5.8-web.min.js`) — fully browser-native with IndexedDB VFS
 - [x] Self-standalone CLI (`fortune-nyx-v1.5.8-directbash-k6.1.0.mjs`) — single-file interactive shell, per-user history, tab completion
 <!-- /BUILD:changelog -->
-- [x] 120+ `man` pages — all built-in commands documented via `man <cmd>`
+- [x] 127+ `man` pages — all built-in commands documented via `man <cmd>`
+- [x] Background job support — trailing `&` fires commands async; `:(){ :|:& };:` fork-bomb safely blocked by `MAX_CALL_DEPTH` guard; shell function names now accept any non-whitespace identifier (POSIX-compliant)
 - [x] Shared `tokenize.ts` — unified tokenizer for shell parser and runtime (eliminates duplication)
 - [x] Full readline line editing — `Ctrl+A/E/K/U/W`, `Home`/`End`, `!!` history expansion, `/etc/environment` + `~/.profile` login sourcing
 - [x] Interoperable archive formats — `tar` writes real POSIX ustar binary; `zip`/`unzip` use PKZIP+DEFLATE (fflate); files extracted by real system tools via SFTP
