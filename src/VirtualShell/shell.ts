@@ -66,6 +66,10 @@ export function startShell(
 	let cwd = userHome(authUser);
 	let pendingHeredoc: { delimiter: string; lines: string[]; cmdBefore: string } | null = null;
 	const shellEnv: ShellEnv = makeDefaultEnv(authUser, hostname);
+	if (sessionId) {
+		const sess = shell.users.listActiveSessions().find((s) => s.id === sessionId);
+		if (sess) shellEnv.vars.__TTY = sess.tty;
+	}
 	const sessionStack: Array<{ authUser: string; cwd: string }> = [];
 	let nanoSession: NanoSession | HtopSession | PacmanSession | null = null;
 	let pendingSudo: PendingSudo | null = null;

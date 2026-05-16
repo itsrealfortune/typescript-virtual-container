@@ -69,7 +69,7 @@ export const htopCommand: ShellModule = {
 		const cpuCount   = cpus.length || 4;
 		const uptimeMs   = Date.now() - shell.startTime;
 		const sessions   = shell.users.listActiveSessions();
-		const taskCount  = sessions.length + 3; // bash sessions + kernel threads
+		const taskCount  = sessions.length + shell.users.listProcesses().length + 3; // bash sessions + running cmds + kernel threads
 		const now        = new Date().toTimeString().slice(0, 8);
 
 		const memRatio  = usedMem / totalMem;
@@ -128,7 +128,7 @@ export const htopCommand: ShellModule = {
 			{ pid: 127, user: "root",    cmd: "sshd",           cpu: 0.0, mem: 0.2 },
 		];
 
-		// Active sessions
+		// Active sessions (bash processes)
 		let pid = 1000;
 		const sessionProcs = sessions.map((s) => ({
 			pid: pid++,
@@ -138,10 +138,19 @@ export const htopCommand: ShellModule = {
 			mem: (usedMem / totalMem * 100 / Math.max(sessions.length, 1) * 0.3),
 		}));
 
+		// Currently running commands
+		const runningProcs = shell.users.listProcesses().map((p) => ({
+			pid: p.pid,
+			user: p.username,
+			cmd: p.argv.join(" ").slice(0, 40),
+			cpu: Math.random() * 2.0 + 0.1,
+			mem: (usedMem / totalMem * 100 * 0.5),
+		}));
+
 		// htop itself
 		const htopProc = { pid: pid++, user: authUser, cmd: "htop", cpu: 0.1, mem: 0.1 };
 
-		const procs = [...sysProcs, ...sessionProcs, htopProc];
+		const procs = [...sysProcs, ...sessionProcs, ...runningProcs, htopProc];
 
 		for (const p of procs) {
 			const virt = fmtBytes(Math.floor(Math.random() * 200 * 1024 * 1024 + 10 * 1024 * 1024));
