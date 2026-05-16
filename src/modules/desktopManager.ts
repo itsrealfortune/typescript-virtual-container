@@ -1,6 +1,7 @@
 import type { VirtualShell } from "../VirtualShell";
 import type { ShellStream } from "../types/streams";
 import { WebTermRenderer } from "./webTermRenderer";
+import { keyToBytes } from "../utils/keyToBytes";
 
 function toChunk(bytes: Uint8Array): Buffer {
   const g = globalThis as unknown as Record<string, { from: (d: Uint8Array) => Buffer } | undefined>;
@@ -53,42 +54,6 @@ export interface DesktopState {
   menuOpen: boolean;
   clock: string;
   focusedWindowId: string | null;
-}
-
-// ── Keyboard encoding (mirrors app.ts keyToBytes) ─────────────────────
-
-function desktopKeyToBytes(e: KeyboardEvent): Uint8Array | null {
-  const enc = new TextEncoder();
-
-  if (e.ctrlKey && !e.altKey) {
-    const k = e.key.toLowerCase();
-    if (k.length === 1 && k >= "a" && k <= "z") return new Uint8Array([k.charCodeAt(0) - 96]);
-    if (e.key === "[")  return new Uint8Array([27]);
-    if (e.key === "\\") return new Uint8Array([28]);
-    if (e.key === "]")  return new Uint8Array([29]);
-    if (e.key === "_" || e.key === "/") return new Uint8Array([31]);
-    if (e.key === "Backspace") return new Uint8Array([8]);
-  }
-
-  if (e.altKey && !e.ctrlKey && e.key.length === 1) {
-    return new Uint8Array([27, e.key.charCodeAt(0)]);
-  }
-
-  switch (e.key) {
-    case "ArrowUp":    return new Uint8Array([27, 91, 65]);
-    case "ArrowDown":  return new Uint8Array([27, 91, 66]);
-    case "ArrowRight": return new Uint8Array([27, 91, 67]);
-    case "ArrowLeft":  return new Uint8Array([27, 91, 68]);
-    case "Backspace":  return new Uint8Array([127]);
-    case "Enter":      return new Uint8Array([13]);
-    case "Tab":        return new Uint8Array([9]);
-    case "Escape":     return new Uint8Array([27]);
-    default:
-      if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
-        return enc.encode(e.key);
-      }
-      return null;
-  }
 }
 
 // ── Desktop Manager ───────────────────────────────────────────────────
@@ -180,7 +145,7 @@ export class DesktopManager {
       e.preventDefault();
     }
 
-    const bytes = desktopKeyToBytes(e);
+    const bytes = keyToBytes(e);
     if (!bytes) return;
     for (const l of focusedTerm.dataListeners) l(toChunk(bytes));
   }
@@ -582,16 +547,6 @@ export class DesktopManager {
       this.handleKeyDown(e as KeyboardEvent);
     });
   }
-  // private measureCell(_renderer: WebTermRenderer): { w: number; h: number } {
-  //   const probe = document.createElement("span");
-  //   probe.style.cssText = "position:absolute;visibility:hidden;white-space:pre;font:inherit;";
-  //   probe.textContent = "X";
-  //   this.container.appendChild(probe);
-  //   const rect = probe.getBoundingClientRect();
-  //   this.container.removeChild(probe);
-  //   return { w: rect.width || 8, h: rect.height || 16 };
-  // }
-
   // ── Rendering ──────────────────────────────────────────────────────
 
   private renderAll(): void {
@@ -611,51 +566,26 @@ export class DesktopManager {
     if (!panel) {
       panel = document.createElement("div");
       panel.id = "desktop-panel";
-      this.container.prepend(panel);
-    }
-
-    const now = new Date();
-    const time = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    const date = now.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
-
-    panel.innerHTML = `
-      <div class="xfce-menu-button">
-        <i class="fa-solid fa-paw xfce-logo"></i>
-        Applications
-      </div>
-      <div class="xfce-window-list">
-        ${this.windows.map((w) =>
-          `<span class="xfce-taskbutton${w.focused ? " active" : ""}" data-win-id="${w.id}">${this.escapeHtml(w.title)}</span>`
-        ).join("")}
-      </div>
-      <div class="xfce-tray">
-        <span class="xfce-tray-icon" title="Network"><i class="fa-solid fa-wifi"></i></span>
-        <span class="xfce-tray-icon" title="Volume"><i class="fa-solid fa-volume-high"></i></span>
-      </div>
-      <div class="xfce-clock">
-        <span class="xfce-clock-time">${time}</span>
-        <span class="xfce-clock-date">${date}</span>
-      </div>
-      ${this.menuOpen ? `
-        <div class="xfce-menu">
-          <div class="menu-category">System</div>
-          <div class="menu-item" data-action="terminal"><span class="menu-item-icon"><i class="fa-solid fa-terminal"></i></span>Terminal</div>
-          <div class="menu-item" data-action="thunar"><span class="menu-item-icon"><i class="fa-solid fa-folder-open"></i></span>File Manager</div>
-          <div class="menu-item" data-action="editor"><span class="menu-item-icon"><i class="fa-solid fa-file-pen"></i></span>Text Editor</div>
-          <div class="menu-separator"></div>
-          <div class="menu-item" data-action="about"><span class="menu-item-icon"><i class="fa-solid fa-circle-info"></i></span>About Fortune GNU/Linux</div>
-          <div class="menu-separator"></div>
-          <div class="menu-item" data-action="logout"><span class="menu-item-icon"><i class="fa-solid fa-power-off"></i></span>Log Out</div>
+      panel.innerHTML = `
+        <div class="xfce-menu-button">
+          <i class="fa-solid fa-paw xfce-logo"></i>
+          Applications
         </div>
-      ` : ""}
-    `;
+        <div class="xfce-window-list"></div>
+        <div class="xfce-tray">
+          <span class="xfce-tray-icon" title="Network"><i class="fa-solid fa-wifi"></i></span>
+          <span class="xfce-tray-icon" title="Volume"><i class="fa-solid fa-volume-high"></i></span>
+        </div>
+        <div class="xfce-clock">
+          <span class="xfce-clock-time"></span>
+          <span class="xfce-clock-date"></span>
+        </div>
+      `;
+      this.container.prepend(panel);
 
-    // Task button clicks → focus/minimize (use event delegation, no per-button listeners)
-    const list = panel.querySelector(".xfce-window-list");
-    if (list) {
-      const fresh = list.cloneNode(true) as HTMLElement;
-      list.replaceWith(fresh);
-      fresh.addEventListener("click", (e) => {
+      // Delegated click on window list — attached once
+      const list = panel.querySelector(".xfce-window-list") as HTMLElement;
+      list.addEventListener("click", (e) => {
         e.stopPropagation();
         const btn = (e.target as HTMLElement).closest(".xfce-taskbutton") as HTMLElement | null;
         if (!btn) return;
@@ -666,6 +596,37 @@ export class DesktopManager {
         if (w.focused && !w.minimized) { this.toggleMinimize(id); }
         else { this.focusWindow(id); }
       });
+    }
+
+    // Update only what changes: task buttons, clock, menu
+    const list = panel.querySelector(".xfce-window-list") as HTMLElement;
+    list.innerHTML = this.windows.map((w) =>
+      `<span class="xfce-taskbutton${w.focused ? " active" : ""}" data-win-id="${w.id}">${this.escapeHtml(w.title)}</span>`
+    ).join("");
+
+    const now = new Date();
+    const timeEl = panel.querySelector(".xfce-clock-time");
+    const dateEl = panel.querySelector(".xfce-clock-date");
+    if (timeEl) timeEl.textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    if (dateEl) dateEl.textContent = now.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+
+    let menu = panel.querySelector(".xfce-menu") as HTMLElement | null;
+    if (this.menuOpen && !menu) {
+      menu = document.createElement("div");
+      menu.className = "xfce-menu";
+      menu.innerHTML = `
+        <div class="menu-category">System</div>
+        <div class="menu-item" data-action="terminal"><span class="menu-item-icon"><i class="fa-solid fa-terminal"></i></span>Terminal</div>
+        <div class="menu-item" data-action="thunar"><span class="menu-item-icon"><i class="fa-solid fa-folder-open"></i></span>File Manager</div>
+        <div class="menu-item" data-action="editor"><span class="menu-item-icon"><i class="fa-solid fa-file-pen"></i></span>Text Editor</div>
+        <div class="menu-separator"></div>
+        <div class="menu-item" data-action="about"><span class="menu-item-icon"><i class="fa-solid fa-circle-info"></i></span>About Fortune GNU/Linux</div>
+        <div class="menu-separator"></div>
+        <div class="menu-item" data-action="logout"><span class="menu-item-icon"><i class="fa-solid fa-power-off"></i></span>Log Out</div>
+      `;
+      panel.appendChild(menu);
+    } else if (!this.menuOpen && menu) {
+      menu.remove();
     }
   }
 
@@ -851,12 +812,13 @@ export class DesktopManager {
   }
 
   private updateClock(): void {
-    const timeEl = this.container.querySelector(".xfce-clock-time");
-    const dateEl = this.container.querySelector(".xfce-clock-date");
-    if (!timeEl || !dateEl) return;
+    const panel = this.container.querySelector("#desktop-panel");
+    if (!panel) return;
     const now = new Date();
-    timeEl.textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    dateEl.textContent = now.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+    const timeEl = panel.querySelector(".xfce-clock-time");
+    const dateEl = panel.querySelector(".xfce-clock-date");
+    if (timeEl) timeEl.textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    if (dateEl) dateEl.textContent = now.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
   }
 
   private showContextMenu(x: number, y: number, items: Array<{ label: string; icon: string; danger?: boolean; action: () => void }>): void {
@@ -949,8 +911,11 @@ export class DesktopManager {
   }
 
   private escapeHtml(s: string): string {
-    const div = document.createElement("div");
-    div.textContent = s;
-    return div.innerHTML;
+    return s
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 }
