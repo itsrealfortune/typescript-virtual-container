@@ -21,4 +21,6 @@ export function arch(){
 }
 export function release(){ return 'web'; }
 export function uptime(){ return Math.floor(performance.now()/1000); }
-export default { totalmem, freemem, cpus, platform, type, arch, release, uptime };
+export function endianness(){ return 'LE'; }
+export function loadavg(){ return [0,0,0]; }
+export default { totalmem, freemem, cpus, platform, type, arch, release, uptime, endianness, loadavg };

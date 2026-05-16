@@ -1,4 +1,3 @@
-import * as net from "node:net";
 import type { ShellModule } from "../types/commands";
 
 /**
@@ -12,6 +11,11 @@ export const ncCommand: ShellModule = {
 	category: "net",
 	params: ["[-l] [-p port] [-v]"],
 	run: async ({ args }) => {
+		let mod: typeof import("node:net");
+		try { mod = await import("node:net") as typeof import("node:net"); }
+		catch { return { stderr: "nc: not available in this environment\n", exitCode: 1 }; }
+		const net = mod;
+
 		const isListen = args.includes("-l");
 		const pIdx = args.indexOf("-p");
 		const port = pIdx !== -1 && args[pIdx + 1] ? parseInt(args[pIdx + 1]!, 10) : undefined;
