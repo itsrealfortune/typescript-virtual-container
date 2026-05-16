@@ -1,6 +1,7 @@
+import * as path from "node:path";
 import type { ShellModule } from "../types/commands";
 import { getArg } from "./command-helpers";
-import { assertPathAccess, resolvePath } from "./helpers";
+import { checkFilePermission, resolvePath } from "./helpers";
 
 /**
  * Create one or more directories.
@@ -23,7 +24,7 @@ export const mkdirCommand: ShellModule = {
 				return { stderr: "mkdir: missing operand", exitCode: 1 };
 			}
 			const target = resolvePath(cwd, dir);
-			assertPathAccess(authUser, target, "mkdir");
+			checkFilePermission(shell.vfs, shell.users, authUser, path.posix.dirname(target), 2);
 			shell.vfs.mkdir(target);
 		}
 		return { exitCode: 0 };

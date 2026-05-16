@@ -6,6 +6,7 @@ import {
 	refreshProc,
 	syncEtcPasswd,
 } from "../modules/linuxRootfs";
+import { VirtualNetworkManager } from "../modules/VirtualNetworkManager";
 import type { CommandContext, CommandResult } from "../types/commands";
 import type { ShellStream } from "../types/streams";
 import type { VfsNodeStats } from "../types/vfs";
@@ -145,6 +146,8 @@ class VirtualShell extends EventEmitter {
 	users: VirtualUserManager;
 	/** APT/dpkg package manager backed by the built-in package registry. */
 	packageManager: VirtualPackageManager;
+	/** Virtual network stack with interfaces, routes, and ARP cache. */
+	network: VirtualNetworkManager;
 	/** Hostname shown in the shell prompt and SSH ident string. */
 	hostname: string;
 	/** Distro identity strings surfaced by `uname`, `neofetch`, etc. */
@@ -182,6 +185,7 @@ class VirtualShell extends EventEmitter {
 		}
 		this.users = new VirtualUserManager(this.vfs, resolveAutoSudoForNewUsers());
 		this.packageManager = new VirtualPackageManager(this.vfs, this.users);
+		this.network = new VirtualNetworkManager();
 
 		// Store references to avoid TypeScript "used before assigned" errors
 		const vfs = this.vfs;
@@ -189,13 +193,18 @@ class VirtualShell extends EventEmitter {
 		const shellProps = this.properties;
 		const shellHostname = this.hostname;
 		const startTime = this.startTime;
+		const network = this.network;
 
 		// Initialize both VFS mirror and users, ensuring all is ready before auth
 		this.initialized = (async () => {
 			await vfs.restoreMirror();
 			await users.initialize();
 			// Bootstrap Linux rootfs (idempotent)
-			bootstrapLinuxRootfs(vfs, users, shellHostname, shellProps, startTime);
+			bootstrapLinuxRootfs(vfs, users, shellHostname, shellProps, startTime, [], network);
+			// Register read hook: refresh /proc dynamically on every access
+			vfs.onBeforeRead("/proc", () => {
+				refreshProc(vfs, shellProps, shellHostname, startTime, users.listActiveSessions(), network);
+			});
 			this.emit("initialized");
 		})();
 	}
@@ -307,6 +316,7 @@ class VirtualShell extends EventEmitter {
 			this.hostname,
 			this.startTime,
 			this.users.listActiveSessions(),
+			this.network,
 		);
 	}
 
@@ -358,6 +368,7 @@ class VirtualShell extends EventEmitter {
 			this.hostname,
 			this.startTime,
 			this.users.listActiveSessions(),
+			this.network,
 		);
 	}
 

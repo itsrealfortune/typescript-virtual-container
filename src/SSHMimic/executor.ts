@@ -29,9 +29,11 @@ export async function executeStatements(
 		const stmt = statements[i]!;
 
 		if (stmt.background) {
-			// Fire-and-forget: do not await. The MAX_CALL_DEPTH guard in runtime.ts
-			// prevents runaway recursion (fork bombs, etc.).
-			void executePipeline(stmt.pipeline, authUser, hostname, mode, currentCwd, shell, env);
+			// Background job: fire with AbortController so kill can cancel it.
+			const ac = new AbortController();
+			executePipeline(
+				stmt.pipeline, authUser, hostname, "background", currentCwd, shell, env, ac,
+			);
 			last = { exitCode: 0 };
 			env.lastExitCode = 0;
 			i++;
@@ -96,6 +98,7 @@ export async function executePipeline(
 	cwd: string,
 	shell: VirtualShell,
 	env?: ShellEnv,
+	abortController?: AbortController,
 ): Promise<CommandResult> {
 	if (!pipeline.isValid)
 		return { stderr: pipeline.error || "Syntax error", exitCode: 1 };
@@ -112,6 +115,7 @@ export async function executePipeline(
 			cwd,
 			shell,
 			shellEnv,
+			abortController,
 		);
 	}
 
@@ -134,6 +138,7 @@ async function executeSingleCommandWithRedirections(
 	cwd: string,
 	shell: VirtualShell,
 	env: ShellEnv,
+	abortController?: AbortController,
 ): Promise<CommandResult> {
 	let stdin: string | undefined;
 	if (cmd.inputFile) {
@@ -148,6 +153,7 @@ async function executeSingleCommandWithRedirections(
 		}
 	}
 
+	const isBackground = mode === "background";
 	const result = await runCommandDirect(
 		cmd.name,
 		cmd.args,
@@ -158,6 +164,8 @@ async function executeSingleCommandWithRedirections(
 		shell,
 		stdin,
 		env,
+		isBackground,
+		abortController,
 	);
 
 	if (cmd.outputFile) {

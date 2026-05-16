@@ -9,6 +9,10 @@ export interface VfsBaseNode {
 	path: string;
 	/** POSIX-like mode bits. */
 	mode: number;
+	/** Owner user ID (0 = root). */
+	uid: number;
+	/** Owner group ID (0 = root). */
+	gid: number;
 	/** Node creation timestamp. */
 	createdAt: Date;
 	/** Last update timestamp. */
@@ -52,6 +56,10 @@ export interface RemoveOptions {
 export interface VfsSnapshotBaseNode {
 	name: string;
 	mode: number;
+	/** Owner user ID (0 = root). */
+	uid: number;
+	/** Owner group ID (0 = root). */
+	gid: number;
 	/** ISO-8601 creation timestamp. */
 	createdAt: string;
 	/** ISO-8601 update timestamp. */

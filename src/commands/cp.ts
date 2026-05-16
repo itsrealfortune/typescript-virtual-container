@@ -1,6 +1,7 @@
+import * as path from "node:path";
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
-import { assertPathAccess, resolvePath } from "./helpers";
+import { checkFilePermission, resolvePath } from "./helpers";
 
 /**
  * Copy files or directories inside the virtual filesystem.
@@ -25,8 +26,8 @@ export const cpCommand: ShellModule = {
 		const destPath = resolvePath(cwd, destArg);
 
 		try {
-			assertPathAccess(authUser, srcPath, "cp");
-			assertPathAccess(authUser, destPath, "cp");
+			checkFilePermission(shell.vfs, shell.users, authUser, srcPath, 4);
+			checkFilePermission(shell.vfs, shell.users, authUser, path.posix.dirname(destPath), 2);
 
 			if (!shell.vfs.exists(srcPath)) {
 				return {

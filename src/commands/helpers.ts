@@ -110,3 +110,36 @@ export function getPackageManager(
 ): VirtualPackageManager | undefined {
 	return shell.packageManager;
 }
+
+/**
+ * POSIX-style permission check: does `authUser` have `want` access to `filePath`?
+ * `want` is a bitmask: 4=R_OK, 2=W_OK, 1=X_OK, 0=F_OK (check existence).
+ * Root bypasses all checks. Throws on EACCES.
+ */
+export function checkFilePermission(
+	vfs: VirtualFileSystem,
+	users: { getUid: (u: string) => number; getGid: (u: string) => number },
+	authUser: string,
+	filePath: string,
+	want: number,
+): void {
+	if (authUser === "root") return;
+	if (want === 0) return; // F_OK — just existence
+	assertPathAccess(authUser, filePath, "access");
+	const uid = users.getUid(authUser);
+	const gid = users.getGid(authUser);
+	if (!vfs.checkAccess(filePath, uid, gid, want)) {
+		const mode = vfs.stat(filePath).mode;
+		const permStr =
+			(mode & 0o400 ? "r" : "-") +
+			(mode & 0o200 ? "w" : "-") +
+			(mode & 0o100 ? "x" : "-") +
+			(mode & 0o040 ? "r" : "-") +
+			(mode & 0o020 ? "w" : "-") +
+			(mode & 0o010 ? "x" : "-") +
+			(mode & 0o004 ? "r" : "-") +
+			(mode & 0o002 ? "w" : "-") +
+			(mode & 0o001 ? "x" : "-");
+		throw new Error(`access: permission denied (mode=${permStr})`);
+	}
+}

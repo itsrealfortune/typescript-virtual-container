@@ -170,6 +170,8 @@ export async function runCommandDirect(
 	shell: VirtualShell,
 	stdin: string | undefined,
 	env: ShellEnv,
+	background = false,
+	abortController?: AbortController,
 ): Promise<CommandResult> {
 	// Anti-loop guard: track call depth via env to avoid infinite recursion
 	_callDepth++;
@@ -180,13 +182,22 @@ export async function runCommandDirect(
 	// Register as visible process only at the outermost call level
 	const isTopLevel = _callDepth === 1;
 	const pid = isTopLevel
-		? shell.users.registerProcess(authUser, name, [name, ...args], env.vars.__TTY ?? "?")
+		? shell.users.registerProcess(authUser, name, [name, ...args], env.vars.__TTY ?? "?", abortController)
 		: -1;
 	try {
+		if (background && abortController?.signal.aborted) {
+			return { stderr: "", exitCode: 130 };
+		}
 		return await _runCommandDirectInner(name, args, authUser, hostname, mode, cwd, shell, stdin, env);
 	} finally {
 		_callDepth--;
-		if (isTopLevel && pid !== -1) shell.users.unregisterProcess(pid);
+		if (isTopLevel && pid !== -1) {
+			if (background) {
+				shell.users.markProcessDone(pid);
+			} else {
+				shell.users.unregisterProcess(pid);
+			}
+		}
 	}
 }
 

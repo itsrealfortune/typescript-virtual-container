@@ -1,5 +1,6 @@
+import * as path from "node:path";
 import type { ShellModule } from "../types/commands";
-import { assertPathAccess, resolvePath } from "./helpers";
+import { checkFilePermission, resolvePath } from "./helpers";
 
 /**
  * Create empty files or update file timestamps.
@@ -18,9 +19,11 @@ export const touchCommand: ShellModule = {
 
 		for (const file of args) {
 			const target = resolvePath(cwd, file);
-			assertPathAccess(authUser, target, "touch");
 			if (!shell.vfs.exists(target)) {
+				checkFilePermission(shell.vfs, shell.users, authUser, path.posix.dirname(target), 2);
 				shell.writeFileAsUser(authUser, target, "");
+			} else {
+				checkFilePermission(shell.vfs, shell.users, authUser, target, 2);
 			}
 		}
 		return { exitCode: 0 };

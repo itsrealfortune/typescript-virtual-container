@@ -23,6 +23,7 @@ import VirtualFileSystem from "../VirtualFileSystem";
 import { decodeVfs } from "../VirtualFileSystem/binaryPack";
 import type { ShellProperties } from "../VirtualShell";
 import type { VirtualActiveSession, VirtualUserManager } from "../VirtualUserManager";
+import type { VirtualNetworkManager } from "./VirtualNetworkManager";
 
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -702,6 +703,7 @@ export function refreshProc(
 	hostname: string,
 	shellStartTime: number,
 	sessions: VirtualActiveSession[] = [],
+	network?: VirtualNetworkManager,
 ): void {
 	ensureDir(vfs, "/proc");
 
@@ -896,16 +898,69 @@ export function refreshProc(
 	ensureDir(vfs, "/proc/self");
 	write(vfs, "/proc/self/mounts", mountsContent);
 
-	// /proc/net
+	// /proc/net — dynamic when network manager is available
 	ensureDir(vfs, "/proc/net");
-	write(vfs, "/proc/net/dev",
-		`${[
-			"Inter-|   Receive                                                |  Transmit",
-			" face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed",
-			"    lo:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0",
-			"  eth0:  128628    1230    0   19    0     0          0         0 52027469    2045    0    0    0     0       0          0",
-		].join("\n")}\n`,
-	);
+	if (network) {
+		const ifaces = network.getInterfaces();
+		const routes = network.getRoutes();
+		const arpCache = network.getArpCache();
+
+		const ipToHex = (ip: string) =>
+			ip.split(".")
+				.reverse()
+				.map((n) => parseInt(n, 10).toString(16).padStart(2, "0"))
+				.join("")
+				.toUpperCase();
+
+		// /proc/net/dev
+		const devHeader = "Inter-|   Receive                                                |  Transmit\n face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed";
+		const devLines = ifaces.map((iface) => {
+			const name = iface.name.padStart(4);
+			if (iface.name === "lo") {
+				return `${name}:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0`;
+			}
+			const rxBytes = Math.floor(Math.random() * 200000);
+			const rxPkts = Math.floor(Math.random() * 2000);
+			const txBytes = Math.floor(Math.random() * 50000000);
+			const txPkts = Math.floor(Math.random() * 3000);
+			return `${name}: ${String(rxBytes).padStart(8)} ${String(rxPkts).padStart(7)}    0    0    0     0          0         0 ${String(txBytes).padStart(9)} ${String(txPkts).padStart(7)}    0    0    0     0       0          0`;
+		});
+		write(vfs, "/proc/net/dev", `${devHeader}\n${devLines.join("\n")}\n`);
+
+		// /proc/net/route
+		const routeLines = routes.map((r) =>
+			[
+				r.device,
+				ipToHex(r.destination === "default" ? "0.0.0.0" : r.destination),
+				ipToHex(r.gateway),
+				r.flags === "UG"
+					? "0003"
+					: r.flags === "U"
+						? "0001"
+						: "0000",
+				"0", "0", "100",
+				ipToHex(r.netmask),
+				"0", "0", "0",
+			].join("\t"),
+		);
+		write(vfs, "/proc/net/route", `Iface\tDestination\tGateway\tFlags\tRefCnt\tUse\tMetric\tMask\t\tMTU\tWindow\tIRTT\n${routeLines.join("\n")}\n`);
+
+		// /proc/net/arp
+		const arpLines = arpCache.map(
+			(e) => `${e.ip.padEnd(15)} 0x1         0x2         ${e.mac.padEnd(17)}     *        ${e.device}`,
+		);
+		write(vfs, "/proc/net/arp", `IP address       HW type     Flags       HW address            Mask     Device\n${arpLines.join("\n")}\n`);
+	} else {
+		write(vfs, "/proc/net/dev",
+			"Inter-|   Receive                                                |  Transmit\n face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed\n    lo:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0\n  eth0:  128628    1230    0   19    0     0          0         0 52027469    2045    0    0    0     0       0          0\n",
+		);
+		write(vfs, "/proc/net/route",
+			"Iface\tDestination\tGateway\tFlags\tRefCnt\tUse\tMetric\tMask\t\tMTU\tWindow\tIRTT\neth0\t00000000\t0101A8C0\t0003\t0\t0\t100\t00000000\t0\t0\t0\neth0\t0000A8C0\t00000000\t0001\t0\t0\t100\t00FFFFFF\t0\t0\t0\n",
+		);
+		write(vfs, "/proc/net/arp",
+			"IP address       HW type     Flags       HW address            Mask     Device\n",
+		);
+	}
 	write(vfs, "/proc/net/if_inet6", "");
 	write(vfs, "/proc/net/tcp",
 		"  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n",
@@ -915,14 +970,6 @@ export function refreshProc(
 	);
 	write(vfs, "/proc/net/udp",
 		"  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n",
-	);
-	write(vfs, "/proc/net/route",
-		"Iface\tDestination\tGateway\tFlags\tRefCnt\tUse\tMetric\tMask\t\tMTU\tWindow\tIRTT\n" +
-		"eth0\t00000000\t0101A8C0\t0003\t0\t0\t100\t00000000\t0\t0\t0\n" +
-		"eth0\t0000A8C0\t00000000\t0001\t0\t0\t100\t00FFFFFF\t0\t0\t0\n",
-	);
-	write(vfs, "/proc/net/arp",
-		"IP address       HW type     Flags       HW address            Mask     Device\n",
 	);
 	write(vfs, "/proc/net/fib_trie", "Local:\n  +-- 0.0.0.0/0 3 0 5\n");
 	write(vfs, "/proc/net/unix",
@@ -1917,6 +1964,7 @@ export function bootstrapLinuxRootfs(
 	props: ShellProperties,
 	shellStartTime: number,
 	sessions: VirtualActiveSession[] = [],
+	network?: VirtualNetworkManager,
 ): void {
 	const snapshot = getStaticRootfsSnapshot(hostname, props);
 	const hasRestoredData = vfs.getMode() === "fs" && vfs.exists("/home");
@@ -1928,7 +1976,7 @@ export function bootstrapLinuxRootfs(
 	}
 
 	bootstrapRoot(vfs);
-	refreshProc(vfs, props, hostname, shellStartTime, sessions);
+	refreshProc(vfs, props, hostname, shellStartTime, sessions, network);
 	syncEtcPasswd(vfs, users);
 }
 
@@ -1950,13 +1998,14 @@ export function createLinuxRootfsEngine(
 	props: ShellProperties,
 	hostname: string,
 	startTime: number,
+	network?: VirtualNetworkManager,
 ) {
 	return {
 		boot(users: VirtualUserManager, sessions: VirtualActiveSession[] = []) {
-			bootstrapLinuxRootfs(vfs, users, hostname, props, startTime, sessions);
+			bootstrapLinuxRootfs(vfs, users, hostname, props, startTime, sessions, network);
 		},
 		tick(sessions: VirtualActiveSession[] = []) {
-			refreshProc(vfs, props, hostname, startTime, sessions);
+			refreshProc(vfs, props, hostname, startTime, sessions, network);
 		},
 	};
 }

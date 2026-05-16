@@ -1,6 +1,6 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
-import { assertPathAccess, resolveReadablePath } from "./helpers";
+import { checkFilePermission, resolveReadablePath } from "./helpers";
 
 /**
  * Concatenate and print files to stdout.
@@ -28,7 +28,7 @@ export const catCommand: ShellModule = {
 		const parts: string[] = [];
 		for (const fileArg of fileArgs) {
 			const target = resolveReadablePath(shell.vfs, cwd, fileArg);
-			assertPathAccess(authUser, target, "cat");
+			checkFilePermission(shell.vfs, shell.users, authUser, target, 4);
 			parts.push(shell.vfs.readFile(target));
 		}
 

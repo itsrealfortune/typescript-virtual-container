@@ -15,7 +15,9 @@ import { straceCommand } from "./strace";
 import { unzipCommand, zipCommand } from "./zip";
 import { catCommand } from "./cat";
 import { cdCommand } from "./cd";
+import { chgrpCommand } from "./chgrp";
 import { chmodCommand } from "./chmod";
+import { chownCommand } from "./chown";
 import { clearCommand } from "./clear";
 import { cpCommand } from "./cp";
 import { curlCommand } from "./curl";
@@ -116,6 +118,8 @@ const BASE_COMMANDS: ShellModule[] = [
 	lnCommand,
 	readlinkCommand,
 	chmodCommand,
+	chownCommand,
+	chgrpCommand,
 	seqCommand,
 	statCommand,
 	findCommand,

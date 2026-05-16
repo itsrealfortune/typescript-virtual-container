@@ -12,11 +12,17 @@ import type VirtualFileSystem from "../VirtualFileSystem";
 export interface VirtualUserRecord {
 	/** Unique login name. */
 	username: string;
+	/** Numeric user ID. */
+	uid: number;
+	/** Primary group ID. */
+	gid: number;
 	/** Per-user random salt used for password hashing. */
 	salt: string;
 	/** Scrypt-derived password hash in hex encoding. */
 	passwordHash: string;
 }
+
+export type ProcessStatus = "running" | "stopped" | "done";
 
 /** Runtime representation of a command currently executing in a session. */
 export interface VirtualProcess {
@@ -32,6 +38,10 @@ export interface VirtualProcess {
 	tty: string;
 	/** ISO-8601 start timestamp. */
 	startedAt: string;
+	/** Current process state. */
+	status: ProcessStatus;
+	/** AbortController for terminating the process. */
+	abortController?: AbortController;
 }
 
 /** Runtime representation of authenticated SSH session. */
@@ -77,6 +87,8 @@ export class VirtualUserManager extends EventEmitter {
 	private readonly activeProcesses = new Map<number, VirtualProcess>();
 	private nextTty = 0;
 	private nextPid = 1000;
+	private nextUid = 1001;
+	private nextGid = 1001;
 
 	/**
 	 * Creates a user manager instance backed by a virtual filesystem.
@@ -521,6 +533,16 @@ export class VirtualUserManager extends EventEmitter {
 		return Array.from(this.users.keys()).sort();
 	}
 
+	/** Returns the numeric UID for a username, or 0 if unknown. */
+	public getUid(username: string): number {
+		return this.users.get(username)?.uid ?? 0;
+	}
+
+	/** Returns the primary GID for a username, or 0 if unknown. */
+	public getGid(username: string): number {
+		return this.users.get(username)?.gid ?? 0;
+	}
+
 	/**
 	 * Registers a running command as a virtual process.
 	 * Returns the assigned PID so the caller can deregister on completion.
@@ -530,6 +552,7 @@ export class VirtualUserManager extends EventEmitter {
 		command: string,
 		argv: string[],
 		tty: string,
+		abortController?: AbortController,
 	): number {
 		const pid = this.nextPid++;
 		this.activeProcesses.set(pid, {
@@ -539,6 +562,8 @@ export class VirtualUserManager extends EventEmitter {
 			argv,
 			tty,
 			startedAt: new Date().toISOString(),
+			status: "running",
+			abortController,
 		});
 		return pid;
 	}
@@ -548,9 +573,26 @@ export class VirtualUserManager extends EventEmitter {
 		this.activeProcesses.delete(pid);
 	}
 
+	/** Marks a process as done (keeps it in the table briefly for jobs/ps). */
+	public markProcessDone(pid: number): void {
+		const proc = this.activeProcesses.get(pid);
+		if (proc) proc.status = "done";
+	}
+
 	/** Returns all currently running processes sorted by PID. */
 	public listProcesses(): VirtualProcess[] {
 		return Array.from(this.activeProcesses.values()).sort((a, b) => a.pid - b.pid);
+	}
+
+	/** Terminate a process by PID. Returns true if the process was found and signalled. */
+	public killProcess(pid: number): boolean {
+		const proc = this.activeProcesses.get(pid);
+		if (!proc) return false;
+		if (proc.abortController) {
+			proc.abortController.abort();
+		}
+		proc.status = "stopped";
+		return true;
 	}
 
 	private loadFromVfs(): void {
@@ -572,12 +614,20 @@ export class VirtualUserManager extends EventEmitter {
 				continue;
 			}
 
-			const [username, salt, passwordHash] = parts;
-			if (!username || !salt || !passwordHash) {
-				continue;
+			// Format: username:uid:gid:salt:passwordHash (new) or username:salt:passwordHash (legacy)
+			if (parts.length >= 5) {
+				const [username, uidStr, gidStr, salt, passwordHash] = parts;
+				if (!username || !salt || !passwordHash) continue;
+				const uid = parseInt(uidStr ?? "1001", 10);
+				const gid = parseInt(gidStr ?? "1001", 10);
+				this.users.set(username, { username, uid, gid, salt, passwordHash });
+			} else {
+				const [username, salt, passwordHash] = parts;
+				if (!username || !salt || !passwordHash) continue;
+				const uid = username === "root" ? 0 : this.nextUid++;
+				const gid = username === "root" ? 0 : this.nextGid++;
+				this.users.set(username, { username, uid, gid, salt, passwordHash });
 			}
-
-			this.users.set(username, { username, salt, passwordHash });
 		}
 	}
 
@@ -629,7 +679,7 @@ export class VirtualUserManager extends EventEmitter {
 		const authContent = Array.from(this.users.values())
 			.sort((left, right) => left.username.localeCompare(right.username))
 			.map((record) =>
-				[record.username, record.salt, record.passwordHash].join(":"),
+				[record.username, record.uid, record.gid, record.salt, record.passwordHash].join(":"),
 			)
 			.join("\n");
 		const sudoersContent = Array.from(this.sudoers.values()).sort().join("\n");
@@ -680,7 +730,9 @@ export class VirtualUserManager extends EventEmitter {
 		return true;
 	}
 
-	private createRecord(username: string, password: string): VirtualUserRecord {
+	private createRecord(username: string, password: string, uid?: number, gid?: number): VirtualUserRecord {
+		const assignedUid = uid ?? (username === "root" ? 0 : this.nextUid++);
+		const assignedGid = gid ?? (username === "root" ? 0 : this.nextGid++);
 		// Cache key is a hash of the inputs — never store plaintext password in memory
 		const cacheKey = createHash("sha256").update(username).update(":").update(password).digest("hex");
 		const cached = VirtualUserManager.recordCache.get(cacheKey);
@@ -691,6 +743,8 @@ export class VirtualUserManager extends EventEmitter {
 		const salt = randomBytes(16).toString("hex");
 		const record = {
 			username,
+			uid: assignedUid,
+			gid: assignedGid,
 			salt,
 			// Hash uses the generated salt — verifyPassword must use record.salt
 			passwordHash: this.hashPassword(password, salt),
