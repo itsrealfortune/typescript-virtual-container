@@ -188,6 +188,28 @@ OPTIONS
 
 EXAMPLES
        cmatrix`,
+	"column": `COLUMN(1)                User Commands                   COLUMN(1)
+
+NAME
+       column - columnate lists
+
+SYNOPSIS
+       column [OPTION]... [FILE]...
+
+DESCRIPTION
+       The column utility formats its input into multiple columns.
+       Rows are filled before columns. Input is taken from FILE or stdin.
+
+OPTIONS
+       -t    determine the number of columns the input contains and create
+             a table (useful for pretty-printing)
+       -s    specify a set of characters to be used to delimit columns
+             (default: whitespace)
+
+EXAMPLES
+       mount | column -t
+       cat /etc/passwd | column -t -s:
+       column -t file.txt`,
 	"cowsay": `COWSAY(1)                User Commands                  COWSAY(1)
 
 NAME
@@ -811,6 +833,31 @@ SYNOPSIS
 
 OPTIONS
        -p     no error if existing, make parent directories as needed`,
+	"mktemp": `MKTEMP(1)                User Commands                   MKTEMP(1)
+
+NAME
+       mktemp - create a temporary file or directory
+
+SYNOPSIS
+       mktemp [OPTION]... [TEMPLATE]
+
+DESCRIPTION
+       Create a temporary file or directory, safely, and print its name.
+       TEMPLATE must contain at least 3 consecutive 'X's in last component.
+       If TEMPLATE is not specified, use tmp.XXXXXXXXXX.
+       Files are created in /tmp.
+
+OPTIONS
+       -d    create a directory, not a file
+
+EXIT STATUS
+       0  on success
+       1  if the file/directory could not be created
+
+EXAMPLES
+       mktemp
+       mktemp -d
+       mktemp /tmp/foo.XXXXXX`,
 	"mv": `MV(1)                    User Commands                      MV(1)
 
 NAME
@@ -842,6 +889,30 @@ SYNOPSIS
 
 DESCRIPTION
        Print OS, kernel, uptime, package count, and related system details.`,
+	"nl": `NL(1)                    User Commands                      NL(1)
+
+NAME
+       nl - number lines of files
+
+SYNOPSIS
+       nl [OPTION]... [FILE]...
+
+DESCRIPTION
+       Write each FILE to standard output, with line numbers added.
+       With no FILE, or when FILE is -, read standard input.
+
+OPTIONS
+       -b, --body-numbering=STYLE    use STYLE for numbering body lines
+             a    number all lines
+             t    number only non-empty lines (default)
+       -n, --number-format=FORMAT    use FORMAT for line numbers
+             ln   left justified, no leading zeros
+             rn   right justified, no leading zeros (default)
+             rz   right justified, leading zeros
+
+EXAMPLES
+       nl /etc/passwd
+       cat file.txt | nl`,
 	"node": `NODE(1)                  User Commands                    NODE(1)
 
 NAME
@@ -868,6 +939,24 @@ DESCRIPTION
 
 NOTES
        Requires package installation: apt install npm.`,
+	"nproc": `NPROC(1)                 User Commands                    NPROC(1)
+
+NAME
+       nproc - print the number of processing units available
+
+SYNOPSIS
+       nproc [OPTION]...
+
+DESCRIPTION
+       Print the number of processing units available to the current process.
+       In this environment, always returns 4.
+
+OPTIONS
+       --all    print the number of installed processors
+
+EXAMPLES
+       nproc
+       make -j$(nproc)`,
 	"npx": `NPX(1)                   User Commands                      NPX(1)
 
 NAME
@@ -881,6 +970,41 @@ DESCRIPTION
 
 NOTES
        Requires package installation: apt install npm.`,
+	"pacman": `PACMAN(1)                User Commands                   PACMAN(1)
+
+NAME
+       pacman - play ASCII Pac-Man in the terminal
+
+SYNOPSIS
+       pacman
+
+DESCRIPTION
+       pacman launches an interactive ASCII Pac-Man game using myman
+       maze graphics. Eat all dots to win. Avoid ghosts or lose a life.
+       Eat a power pellet to enter fright mode and eat ghosts for points.
+
+CONTROLS
+       W, Up     move up
+       S, Down   move down
+       A, Left   move left
+       D, Right  move right
+       Q, Ctrl+C quit
+
+GHOSTS
+       Blinky (red)    directly chases Pac-Man
+       Pinky (pink)    targets 4 tiles ahead of Pac-Man
+       Inky (cyan)     uses Blinky's position to compute target
+       Clyde (orange)  chases when far, scatters when close
+
+SCORING
+       Dot          10 points
+       Power pellet 50 points
+       Ghost        200 points (during fright mode)
+
+NOTES
+       Ghosts slow down during fright mode. Fright mode ends after
+       a few seconds; ghosts flash before returning to normal.
+       Left and right tunnel exits wrap around the maze.`,
 	"passwd": `PASSWD(1)                 User Commands                 PASSWD(1)
 
 NAME
@@ -892,6 +1016,26 @@ SYNOPSIS
 DESCRIPTION
        Update the authentication token (password) for USER.
        Without USER, change the current user's password.`,
+	"paste": `PASTE(1)                 User Commands                   PASTE(1)
+
+NAME
+       paste - merge lines of files
+
+SYNOPSIS
+       paste [OPTION]... [FILE]...
+
+DESCRIPTION
+       Write lines consisting of the sequentially corresponding lines from
+       each FILE, separated by TABs, to standard output.
+
+OPTIONS
+       -d, --delimiters=LIST    use characters from LIST instead of TABs
+       -s, --serial             paste one file at a time instead of in parallel
+
+EXAMPLES
+       paste file1 file2
+       paste -d: /etc/passwd /etc/shadow
+       paste -d, a.txt b.txt c.txt`,
 	"ping": `PING(8)                   User Commands                   PING(8)
 
 NAME
@@ -1081,6 +1225,28 @@ SYNOPSIS
 
 DESCRIPTION
        Rename positional parameters by discarding the first N arguments.`,
+	"shuf": `SHUF(1)                  User Commands                    SHUF(1)
+
+NAME
+       shuf - generate random permutations
+
+SYNOPSIS
+       shuf [OPTION]... [FILE]
+       shuf -i LO-HI [OPTION]...
+       shuf -e [OPTION]... [ARG]...
+
+DESCRIPTION
+       Write a random permutation of the input lines to standard output.
+
+OPTIONS
+       -i LO-HI    treat each number LO through HI as an input line
+       -n COUNT    output at most COUNT lines
+       -e           treat each ARG as an input line
+
+EXAMPLES
+       shuf /etc/passwd
+       shuf -i 1-10
+       shuf -n 3 /etc/hosts`,
 	"sl": `SL(1)                    User Commands                      SL(1)
 
 NAME
@@ -1196,6 +1362,24 @@ SYNOPSIS
 OPTIONS
        -i          run login shell as target user
        -u USER     run command as USER`,
+	"tac": `TAC(1)                   User Commands                     TAC(1)
+
+NAME
+       tac - concatenate and print files in reverse
+
+SYNOPSIS
+       tac [OPTION]... [FILE]...
+
+DESCRIPTION
+       Write each FILE to standard output, last line first.
+       With no FILE, or when FILE is -, read standard input.
+
+OPTIONS
+       -s, --separator=STRING    use STRING as the record separator
+
+EXAMPLES
+       tac /var/log/syslog
+       echo -e "a\\nb\\nc" | tac`,
 	"tail": `TAIL(1)                  User Commands                    TAIL(1)
 
 NAME
@@ -1246,6 +1430,29 @@ SYNOPSIS
 
 DESCRIPTION
        Evaluate conditional expressions for scripts and shell logic.`,
+	"timeout": `TIMEOUT(1)               User Commands                  TIMEOUT(1)
+
+NAME
+       timeout - run a command with a time limit
+
+SYNOPSIS
+       timeout DURATION COMMAND [ARG]...
+
+DESCRIPTION
+       Start COMMAND, and kill it if still running after DURATION seconds.
+       In this environment, the time limit is simulated and the command
+       always runs to completion.
+
+OPTIONS
+       DURATION    An integer number of seconds (e.g. 5).
+
+EXIT STATUS
+       124  if the command times out
+       Otherwise the exit status of COMMAND.
+
+EXAMPLES
+       timeout 5 sleep 10
+       timeout 30 curl http://example.com/`,
 	"touch": `TOUCH(1)                 User Commands                  TOUCH(1)
 
 NAME
@@ -1407,6 +1614,26 @@ DESCRIPTION
        The following entries are displayed for each user: login name,
        the tty name, the remote host, login time, idle time, JCPU, PCPU,
        and the command line of the current process.`,
+	"wait": `WAIT(1)                  Bash Builtin Commands             WAIT(1)
+
+NAME
+       wait - wait for job completion
+
+SYNOPSIS
+       wait [jobspec or pid ...]
+
+DESCRIPTION
+       Wait for each specified process or job and return its termination
+       status. If no arguments are given, wait for all currently active
+       background jobs.
+
+       In this environment, background jobs are fire-and-forget; wait
+       returns immediately with exit code 0.
+
+EXAMPLES
+       sleep 5 &
+       wait
+       echo "done"`,
 	"wc": `WC(1)                    User Commands                      WC(1)
 
 NAME

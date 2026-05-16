@@ -1,0 +1,20 @@
+WAIT(1)                  Bash Builtin Commands             WAIT(1)
+
+NAME
+       wait - wait for job completion
+
+SYNOPSIS
+       wait [jobspec or pid ...]
+
+DESCRIPTION
+       Wait for each specified process or job and return its termination
+       status. If no arguments are given, wait for all currently active
+       background jobs.
+
+       In this environment, background jobs are fire-and-forget; wait
+       returns immediately with exit code 0.
+
+EXAMPLES
+       sleep 5 &
+       wait
+       echo "done"

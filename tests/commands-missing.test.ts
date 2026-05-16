@@ -230,9 +230,10 @@ describe("command chaining and sequencing", () => {
 	});
 
 	test("background execution (&)", async () => {
-		const r = await runCmd(client, "sleep 0.01 & echo 'foreground' || echo 'done'");
+		const r = await runCmd(client, "sleep 0.01 & echo 'foreground'");
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
-		expect(r.stdout).toBeUndefined();
+		// foreground command runs and produces output; background job is fire-and-forget
+		expect(r.stdout?.trim()).toBe("foreground");
 	});
 });
 

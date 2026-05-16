@@ -27,6 +27,17 @@ export async function executeStatements(
 
 	while (i < statements.length) {
 		const stmt = statements[i]!;
+
+		if (stmt.background) {
+			// Fire-and-forget: do not await. The MAX_CALL_DEPTH guard in runtime.ts
+			// prevents runaway recursion (fork bombs, etc.).
+			void executePipeline(stmt.pipeline, authUser, hostname, mode, currentCwd, shell, env);
+			last = { exitCode: 0 };
+			env.lastExitCode = 0;
+			i++;
+			continue;
+		}
+
 		last = await executePipeline(
 			stmt.pipeline,
 			authUser,

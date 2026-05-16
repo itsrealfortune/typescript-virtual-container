@@ -55,7 +55,7 @@ export function expandGlob(pattern: string, entries: string[]): string[] {
 // ── Internal parser ───────────────────────────────────────────────────────────
 
 function parseStatements(input: string): Statement[] {
-	// Split by ;, &&, || — respecting quotes and parens
+	// Split by ;, &&, ||, & — respecting quotes and parens
 	const segments = splitByLogicalOps(input);
 	const statements: Statement[] = [];
 
@@ -63,6 +63,7 @@ function parseStatements(input: string): Statement[] {
 		const commands = parsePipeline(seg.text.trim());
 		const stmt: Statement = { pipeline: { commands, isValid: true } };
 		if (seg.op) stmt.op = seg.op;
+		if (seg.background) stmt.background = true;
 		statements.push(stmt);
 	}
 
@@ -72,6 +73,7 @@ function parseStatements(input: string): Statement[] {
 interface Segment {
 	text: string;
 	op?: LogicalOp;
+	background?: boolean;
 }
 
 function splitByLogicalOps(input: string): Segment[] {
@@ -82,8 +84,8 @@ function splitByLogicalOps(input: string): Segment[] {
 	let qChar = "";
 	let i = 0;
 
-	const flush = (op?: LogicalOp) => {
-		if (current.trim()) segments.push({ text: current, op });
+	const flush = (op?: LogicalOp, background?: boolean) => {
+		if (current.trim()) segments.push({ text: current, op, background });
 		current = "";
 	};
 
@@ -136,6 +138,25 @@ function splitByLogicalOps(input: string): Segment[] {
 		if (ch2 === "||") {
 			flush("||");
 			i += 2;
+			continue;
+		}
+		if (ch === "&" && input[i + 1] !== "&") {
+			// &> redirect (stdout+stderr) — keep in current segment, not a background op
+			if (input[i + 1] === ">") {
+				current += ch;
+				i++;
+				continue;
+			}
+			// 2>&1 — the & is part of a redirection target, not a background op
+			const trimmed = current.trimEnd();
+			if (trimmed.endsWith(">") || trimmed.endsWith("2>") || trimmed.endsWith(">>")) {
+				current += ch;
+				i++;
+				continue;
+			}
+			// trailing & → background job; treat like ; for sequencing
+			flush(";", true);
+			i++;
 			continue;
 		}
 		if (ch === ";") {
@@ -233,6 +254,16 @@ function parseCommandWithRedirections(token: string): PipelineCommand {
 				throw new Error("Syntax error: expected filename after >");
 			outputFile = parts[i];
 			appendOutput = false;
+			i++;
+		} else if (part === "&>" || part === "&>>") {
+			// &> file — redirect both stdout and stderr to file
+			const append = part === "&>>";
+			i++;
+			if (i >= parts.length)
+				throw new Error(`Syntax error: expected filename after ${part}`);
+			outputFile = parts[i];
+			appendOutput = append;
+			stderrToStdout = true;
 			i++;
 		} else if (part === "2>&1") {
 			stderrToStdout = true;

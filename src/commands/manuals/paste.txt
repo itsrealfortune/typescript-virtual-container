@@ -1,0 +1,20 @@
+PASTE(1)                 User Commands                   PASTE(1)
+
+NAME
+       paste - merge lines of files
+
+SYNOPSIS
+       paste [OPTION]... [FILE]...
+
+DESCRIPTION
+       Write lines consisting of the sequentially corresponding lines from
+       each FILE, separated by TABs, to standard output.
+
+OPTIONS
+       -d, --delimiters=LIST    use characters from LIST instead of TABs
+       -s, --serial             paste one file at a time instead of in parallel
+
+EXAMPLES
+       paste file1 file2
+       paste -d: /etc/passwd /etc/shadow
+       paste -d, a.txt b.txt c.txt

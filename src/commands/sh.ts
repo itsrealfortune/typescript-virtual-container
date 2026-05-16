@@ -64,10 +64,12 @@ function parseBlocks(lines: string[]): Block[] {
 		}
 
 		// Function definition: name() { or function name { or name() { body }
-		const funcMatchInline = line.match(/^(?:function\s+)?(\w+)\s*\(\s*\)\s*\{(.+)\}\s*$/);
+		// Shell allows any non-whitespace identifier as function name (incl. ':')
+		const funcNamePat = "[^\\s(){}]+";
+		const funcMatchInline = line.match(new RegExp(`^(?:function\\s+)?(${funcNamePat})\\s*\\(\\s*\\)\\s*\\{(.+)\\}\\s*$`));
 		const funcMatch = funcMatchInline ?? (
-			line.match(/^(?:function\s+)?(\w+)\s*\(\s*\)\s*\{?\s*$/) ||
-			line.match(/^function\s+(\w+)\s*\{?\s*$/)
+			line.match(new RegExp(`^(?:function\\s+)?(${funcNamePat})\\s*\\(\\s*\\)\\s*\\{?\\s*$`)) ||
+			line.match(new RegExp(`^function\\s+(${funcNamePat})\\s*\\{?\\s*$`))
 		);
 		if (funcMatch) {
 			const funcName = funcMatch[1]!;

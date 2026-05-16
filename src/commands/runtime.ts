@@ -235,6 +235,38 @@ async function _runCommandDirectInner(
 		}
 	}
 
+	// Shell function defined via sh.ts (stored as __func_<name>)
+	const funcBody = env.vars[`__func_${name}`];
+	if (funcBody) {
+		const shMod = resolveModule("sh");
+		if (!shMod) return { stderr: `${name}: sh not available`, exitCode: 127 };
+		const savedPositional: Record<string, string | undefined> = {};
+		args.forEach((a, i) => {
+			savedPositional[String(i + 1)] = env.vars[String(i + 1)];
+			env.vars[String(i + 1)] = a;
+		});
+		savedPositional["0"] = env.vars["0"];
+		env.vars["0"] = name;
+		try {
+			return await shMod.run({
+				authUser, hostname,
+				activeSessions: shell.users.listActiveSessions(),
+				rawInput: funcBody,
+				mode,
+				args: ["-c", funcBody],
+				stdin,
+				cwd,
+				shell,
+				env,
+			});
+		} finally {
+			for (const [k, v] of Object.entries(savedPositional)) {
+				if (v === undefined) delete env.vars[k];
+				else env.vars[k] = v;
+			}
+		}
+	}
+
 	const aliasVal = env.vars[`__alias_${name}`];
 	if (aliasVal) {
 		return runCommand(
