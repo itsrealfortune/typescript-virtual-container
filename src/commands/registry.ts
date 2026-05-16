@@ -101,6 +101,16 @@ import { whichCommand } from "./which";
 import { whoCommand } from "./who";
 import { whoamiCommand } from "./whoami";
 import { xargsCommand } from "./xargs";
+import { ddCommand } from "./dd";
+import { exprCommand } from "./expr";
+import { realpathCommand, md5sumCommand, sha256sumCommand, stringsCommand, foldCommand, expandCommand, fmtCommand } from "./miscutils";
+import { ncCommand } from "./netcat";
+import { niceCommand } from "./nice";
+import { nohupCommand } from "./nohup";
+import { pgrepCommand, pkillCommand } from "./procUtils";
+import { lscpuCommand, lsusbCommand, lspciCommand } from "./sysinfo";
+import { joinCommand, commCommand, splitCommand, csplitCommand } from "./textutils";
+import { topCommand } from "./top";
 
 const BASE_COMMANDS: ShellModule[] = [
 	// Navigation
@@ -123,6 +133,8 @@ const BASE_COMMANDS: ShellModule[] = [
 	seqCommand,
 	statCommand,
 	findCommand,
+	ddCommand,
+	realpathCommand,
 	// Text processing
 	grepCommand,
 	sedCommand,
@@ -137,6 +149,16 @@ const BASE_COMMANDS: ShellModule[] = [
 	teeCommand,
 	xargsCommand,
 	diffCommand,
+	foldCommand,
+	expandCommand,
+	fmtCommand,
+	md5sumCommand,
+	sha256sumCommand,
+	stringsCommand,
+	joinCommand,
+	commCommand,
+	splitCommand,
+	csplitCommand,
 	// Archives
 	tarCommand,
 	gzipCommand,
@@ -160,6 +182,14 @@ const BASE_COMMANDS: ShellModule[] = [
 	dateCommand,
 	sleepCommand,
 	pingCommand,
+	lscpuCommand,
+	lsusbCommand,
+	lspciCommand,
+	pgrepCommand,
+	pkillCommand,
+	topCommand,
+	niceCommand,
+	nohupCommand,
 	// Shell
 	echoCommand,
 	envCommand,
@@ -191,6 +221,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	// Network
 	curlCommand,
 	wgetCommand,
+	ncCommand,
 	// Users
 	adduserCommand,
 	passwdCommand,
@@ -229,6 +260,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	npxCommand,
 	nodeCommand,
 	python3Command,
+	exprCommand,
 	// System (extended)
 	uptimeCommand,
 	freeCommand,
