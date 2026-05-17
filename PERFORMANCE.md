@@ -1,3 +1,8 @@
+---
+title: Performance
+group: Guides
+---
+
 # Performance — typescript-virtual-container
 
 ## Benchmark
@@ -71,7 +76,8 @@ Measures 4 dimensions concurrently: parallel init, command latency, VFS I/O thro
 
 ---
 
-## Performance Tips
+<details>
+<summary>Performance Tips — hashing, reuse, memory mode, snapshots</summary>
 
 ### 1. Fast password hashing (tests/CI)
 
@@ -114,9 +120,12 @@ Default: 64 KB. Files above threshold are evicted from RAM after flush. Set to `
 
 The write-ahead journal flushes after 500 writes or 30 seconds. For bulk imports, call `flushMirror()` periodically to keep the journal small.
 
+</details>
+
 ---
 
-## Memory Management
+<details>
+<summary>Memory Management — internal structures, eviction, journal</summary>
 
 ### Internal data structures
 
@@ -141,11 +150,16 @@ The write-ahead journal flushes after 500 writes or 30 seconds. For bulk imports
 - On startup: replay journal for crash recovery
 - Truncated after successful flush
 
+</details>
+
 ---
 
-## Scaling
+<details>
+<summary>Scaling — 1000+ parallel environments</summary>
 
 - **Designed for 1000+ parallel environments** (per README)
 - Each `VirtualShell` is fully independent — no shared global state
 - `VirtualSshServer` is event-driven — handles many concurrent connections
 - `SshClient` is sequential per instance; create multiple for parallel operations
+
+</details>

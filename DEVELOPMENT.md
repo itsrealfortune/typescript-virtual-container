@@ -1,3 +1,8 @@
+---
+title: Development Guide
+group: Guides
+---
+
 # Development Guide — typescript-virtual-container
 
 ## Prerequisites
@@ -17,7 +22,8 @@ bun install
 
 ---
 
-## Available Scripts
+<details>
+<summary>Available Scripts — build, test, format, docs, benchmark, publish</summary>
 
 ### Build
 
@@ -69,9 +75,12 @@ bun run benchmark      # append to benchmark-results.txt
 bun run deploy:npm     # bun publish --access public
 ```
 
+</details>
+
 ---
 
-## Project Structure
+<details>
+<summary>Project Structure</summary>
 
 ```
 src/
@@ -99,9 +108,12 @@ src/
 └── Honeypot/                   # Security auditing
 ```
 
+</details>
+
 ---
 
-## Toolchain
+<details>
+<summary>Toolchain — TypeScript, esbuild, Biome, Bun, TypeDoc</summary>
 
 | Tool | Purpose | Config |
 |---|---|---|
@@ -111,15 +123,20 @@ src/
 | **Bun** | Runtime + test runner | `bun:test` (no external test lib) |
 | **TypeDoc** | API docs | `typedoc.json` (entry: `src/index.ts`, output: `docs/`) |
 
+</details>
+
 ---
 
-## TypeScript Config Highlights
+<details>
+<summary>TypeScript Config Highlights</summary>
 
 - `target: ESNext`, `module: Preserve`, `moduleResolution: bundler`
 - `strict: true`, `noUncheckedIndexedAccess: true`, `noImplicitOverride: true`
 - `rewriteRelativeImportExtensions: true` — no `.js` extension needed in imports
 - `verbatimModuleSyntax: true` — forces `type` keyword on type-only imports
 - `outDir: dist`, `declaration: true`, `composite: true`
+
+</details>
 
 ---
 
@@ -160,7 +177,8 @@ export const myCommand: ShellModule = {
 
 ---
 
-## Code Conventions
+<details>
+<summary>Code Conventions — types, commits, branch naming</summary>
 
 - **No `any`** — use explicit types
 - **JSDoc** on all new commands (`@category`, `@params`)
@@ -189,9 +207,12 @@ refactor: use array+join instead of string concat in render methods
 test: add edge case tests for chmod with symbolic mode
 ```
 
+</details>
+
 ---
 
-## CI/CD
+<details>
+<summary>CI/CD — GitHub Actions (3 workflows)</summary>
 
 GitHub Actions (3 workflows in `.github/workflows/`):
 
@@ -199,9 +220,12 @@ GitHub Actions (3 workflows in `.github/workflows/`):
 - **Lint/Format** — runs `bun check`
 - **Publish** — publishes to npm on tag
 
+</details>
+
 ---
 
-## Web Polyfills
+<details>
+<summary>Web Polyfills — Node.js → browser compatibility</summary>
 
 Browser builds use esbuild aliases to replace Node.js built-ins:
 
@@ -216,3 +240,5 @@ Browser builds use esbuild aliases to replace Node.js built-ins:
 | `node:child_process` | `polyfills/node_child_process/` |
 | `node:zlib` | `polyfills/node_zlib/` |
 | `node:vm` | `polyfills/node_vm/` |
+
+</details>

@@ -1,8 +1,14 @@
+---
+title: Commands Reference
+group: Guides
+---
+
 # Commands Reference — typescript-virtual-container
 
 ~112 built-in commands across 13 categories. Each command implements the `ShellModule` interface.
 
-## Architecture
+<details>
+<summary>Architecture — registry, runtime, execution pipeline</summary>
 
 | File | Purpose |
 |---|---|
@@ -36,6 +42,8 @@ interface ShellModule {
 6. **Brace expansion** — `{a,b,c}` → `a b c`
 7. **Glob expansion** — `*.txt` → matching VFS files
 8. **Command resolution** — variable assignments → shell function → alias → registered module → VFS binary stub → error 127
+
+</details>
 
 ---
 

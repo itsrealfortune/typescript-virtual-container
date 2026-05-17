@@ -6,6 +6,7 @@
   "name": "typescript-virtual-container",
   "includeVersion": true,
   "readme": "README.md",
+  "projectDocuments": ["ARCHITECTURE.md", "COMMANDS.md", "DEVELOPMENT.md", "HONEYPOT.md", "PERFORMANCE.md", "TESTING.md"],
   "blockTags": [
     "@abstract",
     "@alpha",

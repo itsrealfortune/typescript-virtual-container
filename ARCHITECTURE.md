@@ -1,3 +1,8 @@
+---
+title: Architecture
+group: Guides
+---
+
 # Architecture — typescript-virtual-container v1.6.3
 
 **Repository**: `github.com/itsrealfortune/typescript-virtual-container`
@@ -20,7 +25,8 @@ Storage (VFS) → Auth (UserManager) → Software (PackageManager)
 
 ---
 
-## 1. Source Structure
+<details>
+<summary>1. Source Structure — 168 files, 31,758 lines</summary>
 
 **Total source files**: 168 `.ts` files
 **Total source lines**: 31,758
@@ -99,19 +105,22 @@ src/
 │   └── VirtualNetworkManager.ts       (256 lines) — Virtual networking stack
 │
 └── utils/                             (8 .ts files)
-    ├── expand.ts                       (664 lines) — Shell variable expansion
-    ├── tokenize.ts                     — Command tokenizer
-    ├── argv.ts                         — CLI argument helpers
-    ├── glob.ts                         — Glob pattern matching
-    ├── keyToBytes.ts                   — Key conversion utility
-    ├── perfLogger.ts                   — Performance logging
-    ├── shellSession.ts                 — Session state helpers
-    └── vfsDiff.ts                      (275 lines) — VFS diff utility
+    ├── expand.ts                      (664 lines) — Shell variable expansion
+    ├── tokenize.ts                    — Command tokenizer
+    ├── argv.ts                        — CLI argument helpers
+    ├── glob.ts                        — Glob pattern matching
+    ├── keyToBytes.ts                  — Key conversion utility
+    ├── perfLogger.ts                  — Performance logging
+    ├── shellSession.ts                — Session state helpers
+    └── vfsDiff.ts                     (275 lines) — VFS diff utility
 ```
+
+</details>
 
 ---
 
-## 2. Commands (`src/commands/`)
+<details>
+<summary>2. Commands — 120 files, ~112 built-in commands</summary>
 
 **Total command modules**: 120 `.ts` files (including index, registry, runtime, helpers, manuals-bundle), yielding ~112 distinct built-in commands.
 
@@ -140,9 +149,12 @@ src/
 - Commands are registered centrally in `src/commands/registry.ts` via `import` + `registerCommand()` calls.
 - The registry accumulates all ~112 commands and exports them as a unified map.
 
+</details>
+
 ---
 
-## 3. Types (`src/types/`)
+<details>
+<summary>3. Types — 5 files</summary>
 
 | File | Lines | Key Types Exported |
 |---|---|---|
@@ -152,9 +164,12 @@ src/
 | `streams.ts` | 32 | `ExecStream`, `ShellStream` |
 | `tar-stream.d.ts` | — | Third-party type augmentation for tar-stream |
 
+</details>
+
 ---
 
-## 4. VirtualFileSystem (`src/VirtualFileSystem/`)
+<details>
+<summary>4. VirtualFileSystem — 5 files, 1,988 lines</summary>
 
 **Files** (5): `index.ts` (1,339), `internalTypes.ts` (49), `path.ts` (104), `binaryPack.ts` (315), `journal.ts` (181) — **1,888 lines total**
 
@@ -176,9 +191,12 @@ src/
 
 `writeFile`, `readFile`, `mkdir`, `exists`, `stat`, `list`, `remove`, `chmod`, `symlink`, `toSnapshot`, `fromSnapshot`, `importSnapshot`, `mount`, `unmount`, `flushMirror`, `restoreMirror`.
 
+</details>
+
 ---
 
-## 5. VirtualShell (`src/VirtualShell/`)
+<details>
+<summary>5. VirtualShell — 4 files</summary>
 
 **Files** (4): `index.ts` (486 lines), `shell.ts` (784 lines), `shellParser.ts` (299 lines), `idleManager.ts`
 
@@ -187,9 +205,12 @@ src/
 - **`shellParser.ts`** — Parses shell input into a typed AST (`Script` → `Statement` → `Pipeline` → `PipelineCommand`). Handles pipes, redirections, logical operators (`&&`, `||`, `;`), backgrounding (`&`), and command grouping.
 - **`idleManager.ts`** — Tracks session idle time, emits freeze/thaw events for honeypot integration, supports configurable timeout.
 
+</details>
+
 ---
 
-## 6. SSHMimic (`src/SSHMimic/`)
+<details>
+<summary>6. SSHMimic — 9 files, ~2,140 lines</summary>
 
 **Files** (9): `index.ts` (356), `executor.ts` (293), `exec.ts`, `scp.ts` (375), `sftp.ts` (888), `hostKey.ts`, `prompt.ts`, `loginBanner.ts`, `loginFormat.ts` — **~2,140 lines total**
 
@@ -202,9 +223,12 @@ src/
 - **`loginBanner.ts`** — Generates SSH pre-auth banner.
 - **`loginFormat.ts`** — Last-login style messages.
 
+</details>
+
 ---
 
-## 7. SSHClient (`src/SSHClient/`)
+<details>
+<summary>7. SSHClient — 1 file, 270 lines</summary>
 
 **1 file**, `index.ts` (270 lines)
 
@@ -213,9 +237,12 @@ src/
 - Methods: `exec(command)`, `cd(path)`, `ls(path)`, `getCwd()`, `getHome()`.
 - Binds to a `VirtualShell` instance and a username.
 
+</details>
+
 ---
 
-## 8. Honeypot (`src/Honeypot/`)
+<details>
+<summary>8. Honeypot — 1 file, 541 lines</summary>
 
 **1 file**, `index.ts` (541 lines)
 
@@ -226,9 +253,12 @@ src/
 - Provides `getAuditLog()`, `getStats()`, `clearLog()`, `toJSON()`.
 - Designed for forensic analysis and anomaly detection.
 
+</details>
+
 ---
 
-## 9. VirtualUserManager (`src/VirtualUserManager/`)
+<details>
+<summary>9. VirtualUserManager — 1 file, 853 lines</summary>
 
 **1 file**, `index.ts` (853 lines)
 
@@ -240,9 +270,12 @@ src/
 - Process tracking: `createProcess`, `updateProcessStatus`, `getProcessTable` with PID, command, TTY, abort controller.
 - Syncs `/etc/passwd`, `/etc/group`, `/etc/shadow` via callbacks.
 
+</details>
+
 ---
 
-## 10. VirtualPackageManager (`src/VirtualPackageManager/`)
+<details>
+<summary>10. VirtualPackageManager — 1 file, 1,027 lines</summary>
 
 **1 file**, `index.ts` (1,027 lines)
 
@@ -254,9 +287,12 @@ src/
 - Built-in registry with ~30+ packages including `vim`, `build-essential`, `python3`, `nodejs`, `git`, `curl`, `htop`, `neofetch`, `gcc`, `make`, etc.
 - Recursive dependency resolution with cycle detection.
 
+</details>
+
 ---
 
-## 11. Modules (`src/modules/`)
+<details>
+<summary>11. Modules — 9 files</summary>
 
 **9 files**:
 
@@ -272,9 +308,12 @@ src/
 | `shellInteractive.ts` | — | Interactive shell session controller |
 | `shellRuntime.ts` | — | Shell runtime helpers |
 
+</details>
+
 ---
 
-## 12. Utils (`src/utils/`)
+<details>
+<summary>12. Utils — 8 files</summary>
 
 **8 files**:
 
@@ -289,9 +328,12 @@ src/
 | `shellSession.ts` | — | Session state serialization |
 | `vfsDiff.ts` | 275 | VFS snapshot diffing: three-way comparison of two snapshots, produces structured `VfsDiff` with additions/modifications/deletions |
 
+</details>
+
 ---
 
-## 13. Tests (`tests/`)
+<details>
+<summary>13. Tests — 14 test files, 4,791 lines</summary>
 
 **Total test files**: 15 (14 `.test.ts` + 1 `test-helper.ts`)
 **Total test lines**: 4,791
@@ -325,9 +367,12 @@ src/
 - **Helper pattern**: Shared `test-helper.ts` for common fixtures/setup
 - **Coverage**: Heavy on integration tests running actual commands against a `VirtualShell` instance; lighter on pure unit tests for individual functions.
 
+</details>
+
 ---
 
-## 14. Build Output
+<details>
+<summary>14. Build Output — builds/ + dist/</summary>
 
 ### `builds/` (3 artifacts)
 
@@ -357,9 +402,12 @@ dist/
 └── Honeypot/            (2 files)
 ```
 
+</details>
+
 ---
 
-## 15. Docs (`docs/`)
+<details>
+<summary>15. Docs — 90 files, 9,053 lines</summary>
 
 **Total files**: 90 (79 HTML + 11 non-HTML)
 **Total lines**: 9,053
@@ -385,9 +433,12 @@ docs/
 
 **44 public interfaces** and **12 type aliases** documented.
 
+</details>
+
 ---
 
-## 16. Git History
+<details>
+<summary>16. Git History — 735 commits, 4 contributors</summary>
 
 | Metric | Value |
 |---|---|
@@ -402,9 +453,12 @@ docs/
 | **Active branch** | `main` |
 | **Branch naming convention** | `feat/*`, `fix/*`, `chore/*`, `build/*`, `format/*`, `test/*`, `upgrade/*`, `docs/*` |
 
+</details>
+
 ---
 
-## 17. Architectural Observations
+<details>
+<summary>17. Architectural Observations — 10 key points</summary>
 
 1. **Clean layered architecture**: The system is organized in clear layers — VFS (storage) → UserManager (auth) → PackageManager (software) → Shell (interaction) → SSHMimic/SSHClient (transport) → Honeypot (observability).
 
@@ -430,3 +484,5 @@ docs/
 9. **Testing maturity**: 14 test files, ~4,800 lines, organized by domain. Uses Bun's test runner with sequential execution pattern.
 
 10. **Modern toolchain**: TypeScript 6.x, esbuild (for bundling), Biome (for formatting/linting), Bun (for testing/running), GH Actions CI (3 workflows).
+
+</details>

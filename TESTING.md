@@ -1,3 +1,8 @@
+---
+title: Testing Guide
+group: Guides
+---
+
 # Testing Guide — typescript-virtual-container
 
 ## Framework
@@ -129,7 +134,8 @@ pathExists(shell, path)    // → boolean
 cleanupTestEnv(shell)      // no-op (ephemeral in-memory)
 ```
 
----
+<details>
+<summary>Special Test Patterns — SFTP, SSH exec, naming, CI</summary>
 
 ## SFTP Tests — Special Pattern
 
@@ -150,8 +156,6 @@ await server.stop();
 
 Use `try/finally` to guarantee cleanup.
 
----
-
 ## SSH Exec Tests — Stream Mock Pattern
 
 ```typescript
@@ -164,8 +168,6 @@ const stream = {
 runExec(stream as never, "echo hello", "root", "localhost", shell);
 ```
 
----
-
 ## Naming Conventions
 
 | Convention | Example |
@@ -176,8 +178,6 @@ runExec(stream as never, "echo hello", "root", "localhost", shell);
 | Section comments | `// ─── ECHO tests ───` |
 | VM names | Unique per file (`"test-core"`, `"test-missing"`) |
 
----
-
 ## CI
 
 Tests run via GitHub Actions using `bun run test` (sequential salve mode). Environment variables:
@@ -185,3 +185,5 @@ Tests run via GitHub Actions using `bun run test` (sequential salve mode). Envir
 ```bash
 SSH_MIMIC_FAST_PASSWORD_HASH=1  # Skip scrypt, use SHA-256 (faster in CI)
 ```
+
+</details>
