@@ -2,7 +2,7 @@
 
 ## Current Focus
 
-- **XFCE Desktop Polish** — multi-monitor layout, Thunar drag-and-drop
+- **XFCE Desktop Polish** — pathbar editable, New File/Folder
 - **Performance & Memory** — continued optimization of the VFS and shell runtime
 - **Command Completeness** — filling gaps in the POSIX command set
 
@@ -11,8 +11,6 @@
 ## Planned
 
 - [ ] **WebSocket remote shell client** — experimental real-time shell over WebSocket
-- [ ] **XFCE desktop: multi-monitor layout** — span desktop across multiple display areas
-- [ ] **Thunar: drag-and-drop** — move files between folders via drag-and-drop
 
 ---
 
@@ -51,6 +49,7 @@
 - [x] Terminal windows — live interactive shell sessions
 - [x] Font Awesome icons
 - [x] Frosted glass window styling
+- [x] Thunar: drag-and-drop — move files between folders via drag-and-drop
 
 ### SSH & Networking
 - [x] SSH server (ssh2) — password + public-key auth
