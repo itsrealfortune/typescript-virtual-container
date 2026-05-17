@@ -29,13 +29,17 @@ export interface AboutContent {
   type: "about";
 }
 
+export interface TaskManagerContent {
+  type: "taskmanager";
+}
+
 export interface EditorContent {
   type: "editor";
   path: string;
   dirty: boolean;
 }
 
-export type WindowContent = TerminalContent | ThunarContent | AboutContent | EditorContent;
+export type WindowContent = TerminalContent | ThunarContent | AboutContent | EditorContent | TaskManagerContent;
 
 export interface DesktopWindow {
   id: string;
@@ -287,6 +291,15 @@ export class DesktopManager {
     });
   }
 
+  createTaskManagerWindow(): string {
+    return this.createWindow({
+      title: "Task Manager",
+      width: 640,
+      height: 420,
+      content: { type: "taskmanager" },
+    });
+  }
+
   closeWindow(id: string): void {
     const idx = this.windows.findIndex((w) => w.id === id);
     if (idx === -1) return;
@@ -382,6 +395,8 @@ export class DesktopManager {
       this.renderAboutContent(el);
     } else if (win.content.type === "editor") {
       this.renderEditorContent(el, win.id, win.content);
+    } else if (win.content.type === "taskmanager") {
+      this.renderTaskManagerContent(el, win.id);
     }
   }
 
@@ -450,6 +465,7 @@ export class DesktopManager {
         if (action === "terminal") this.createTerminalWindow();
         else if (action === "home") this.createThunarWindow("/root");
         else if (action === "editor") this.createEditorWindow();
+        else if (action === "taskmanager") this.createTaskManagerWindow();
         else if (action === "trash") this.createThunarWindow(this.trashPath);
         e.stopPropagation();
         return;
@@ -463,12 +479,42 @@ export class DesktopManager {
         return;
       }
 
+      // Task Manager: kill button
+      if (target.classList.contains("taskmgr-kill")) {
+        const pid = Number(target.getAttribute("data-pid"));
+        if (pid) {
+          this.shell.users.killProcess(pid);
+          const winId = target.closest(".desktop-window")?.getAttribute("data-win-id");
+          if (winId) this.renderTaskManagerContent(
+            this.container.querySelector(`.desktop-window[data-win-id="${winId}"]`) as HTMLElement,
+            winId,
+          );
+        }
+        e.stopPropagation();
+        return;
+      }
+
+      // Task Manager: refresh button
+      if (target.classList.contains("taskmgr-refresh") || target.closest(".taskmgr-refresh")) {
+        const btn = target.classList.contains("taskmgr-refresh")
+          ? target
+          : target.closest(".taskmgr-refresh") as HTMLElement;
+        const winId = btn.getAttribute("data-win-id");
+        if (winId) this.renderTaskManagerContent(
+          this.container.querySelector(`.desktop-window[data-win-id="${winId}"]`) as HTMLElement,
+          winId,
+        );
+        e.stopPropagation();
+        return;
+      }
+
       // Menu items
       if (target.classList.contains("menu-item")) {
         const action = target.getAttribute("data-action");
         if (action === "terminal") this.createTerminalWindow();
         else if (action === "thunar") this.createThunarWindow();
         else if (action === "editor") this.createEditorWindow();
+        else if (action === "taskmanager") this.createTaskManagerWindow();
         else if (action === "about") this.createAboutWindow();
         else if (action === "logout") this.stop();
         this.menuOpen = false;
@@ -666,6 +712,7 @@ export class DesktopManager {
         <div class="menu-item" data-action="terminal"><span class="menu-item-icon"><i class="fa-solid fa-terminal"></i></span>Terminal</div>
         <div class="menu-item" data-action="thunar"><span class="menu-item-icon"><i class="fa-solid fa-folder-open"></i></span>File Manager</div>
         <div class="menu-item" data-action="editor"><span class="menu-item-icon"><i class="fa-solid fa-file-pen"></i></span>Text Editor</div>
+        <div class="menu-item" data-action="taskmanager"><span class="menu-item-icon"><i class="fa-solid fa-chart-bar"></i></span>Task Manager</div>
         <div class="menu-separator"></div>
         <div class="menu-item" data-action="about"><span class="menu-item-icon"><i class="fa-solid fa-circle-info"></i></span>About Fortune GNU/Linux</div>
         <div class="menu-separator"></div>
@@ -696,6 +743,10 @@ export class DesktopManager {
       <div class="desktop-icon" data-action="editor">
         <div class="desktop-icon-img editor-icon"><i class="fa-solid fa-file-pen"></i></div>
         <span>Text Editor</span>
+      </div>
+      <div class="desktop-icon" data-action="taskmanager">
+        <div class="desktop-icon-img taskmgr-icon"><i class="fa-solid fa-chart-bar"></i></div>
+        <span>Task Manager</span>
       </div>
       <div class="desktop-icon" data-action="trash">
         <div class="desktop-icon-img trash-icon"><i class="fa-solid fa-trash-can"></i></div>
@@ -810,6 +861,52 @@ export class DesktopManager {
         <p>Kernel: ${this.shell.properties.kernel}</p>
         <p>Architecture: ${this.shell.properties.arch}</p>
         <p class="about-close-hint">Close this window to return</p>
+      </div>
+    `;
+  }
+
+  private renderTaskManagerContent(el: HTMLElement, winId: string): void {
+    const contentArea = el.querySelector(".win-content") as HTMLElement;
+    if (!contentArea) return;
+
+    const sessions = this.shell.users.listActiveSessions();
+    const processes = this.shell.users.listProcesses();
+
+    let rows = "";
+    for (let i = 0; i < sessions.length; i++) {
+      const s = sessions[i]!;
+      const pid = 1000 + i;
+      rows += `<tr>
+        <td>${pid}</td>
+        <td>${this.escapeHtml(s.username)}</td>
+        <td>bash</td>
+        <td>${this.escapeHtml(s.tty)}</td>
+        <td><span class="taskmgr-status running">running</span></td>
+        <td><button class="taskmgr-kill" data-pid="${pid}">Kill</button></td>
+      </tr>`;
+    }
+    for (const p of processes) {
+      const statusClass = p.status === "running" ? "running" : p.status === "stopped" ? "stopped" : "done";
+      rows += `<tr>
+        <td>${p.pid}</td>
+        <td>${this.escapeHtml(p.username)}</td>
+        <td>${this.escapeHtml(p.command)}</td>
+        <td>${this.escapeHtml(p.tty)}</td>
+        <td><span class="taskmgr-status ${statusClass}">${p.status}</span></td>
+        <td><button class="taskmgr-kill" data-pid="${p.pid}">Kill</button></td>
+      </tr>`;
+    }
+
+    contentArea.innerHTML = `
+      <div class="taskmgr-toolbar">
+        <span class="taskmgr-count">${sessions.length + processes.length} processes</span>
+        <button class="taskmgr-refresh" data-win-id="${winId}"><i class="fa-solid fa-rotate"></i> Refresh</button>
+      </div>
+      <div class="taskmgr-table-wrap">
+        <table class="taskmgr-table">
+          <thead><tr><th>PID</th><th>User</th><th>Command</th><th>TTY</th><th>Status</th><th></th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
       </div>
     `;
   }
