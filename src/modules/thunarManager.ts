@@ -1,6 +1,19 @@
 import type { VirtualShell } from "../VirtualShell";
 import type { DesktopWindow, ThunarContent } from "./desktopManager";
 
+function copyPath(path: string): void {
+  navigator.clipboard.writeText(path).catch(() => {
+    const ta = document.createElement("textarea");
+    ta.value = path;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+  });
+}
+
 interface ContextMenuItem {
   label: string;
   icon: string;
@@ -90,6 +103,7 @@ export class ThunarManager {
                   }
                 },
                 { label: "Rename", icon: "fa-solid fa-pencil", action: () => this.renamePrompt(path, winId) },
+                { label: "Copy Path", icon: "fa-solid fa-copy", action: () => copyPath(path) },
                 { label: "Move to Trash", icon: "fa-solid fa-trash-can", danger: true, action: () => this.moveToTrash(path, winId) },
               ]
           );
