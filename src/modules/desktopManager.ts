@@ -1,9 +1,9 @@
 import type { VirtualShell } from "../VirtualShell";
 import type { ShellStream } from "../types/streams";
 import { keyToBytes } from "../utils/keyToBytes";
-import { WebTermRenderer } from "./webTermRenderer";
+import { clearSession, loadSession, saveSession } from "./sessionManager";
 import { ThunarManager } from "./thunarManager";
-import { saveSession, loadSession, clearSession } from "./sessionManager";
+import { WebTermRenderer } from "./webTermRenderer";
 
 function toChunk(bytes: Uint8Array): Buffer {
   const g = globalThis as unknown as Record<string, { from: (d: Uint8Array) => Buffer } | undefined>;
@@ -418,8 +418,8 @@ export class DesktopManager {
         <div class="win-header">
           <span class="win-title">${this.escapeHtml(win.title)}</span>
           <div class="win-controls">
-            <button class="win-max">□</button>
             <button class="win-min">─</button>
+            <button class="win-max"></button>
             <button class="win-close">✕</button>
           </div>
         </div>
@@ -440,7 +440,8 @@ export class DesktopManager {
     el.style.zIndex = String(win.zIndex);
     el.classList.toggle("win-focused", win.focused);
     const maxBtn = el.querySelector(".win-max") as HTMLElement | null;
-    if (maxBtn) maxBtn.textContent = win.maximized ? "🗗" : "□";
+    const maxSpan = `<span style="font-size: 18px; position: relative; bottom:2px;">CHAR</span>`
+    if (maxBtn) maxBtn.innerHTML = win.maximized ? maxSpan.replace("CHAR", "🗗") : maxSpan.replace("CHAR", "□");
 
     if (win.content.type === "terminal") {
       this.renderTerminalContentById(win.id);
