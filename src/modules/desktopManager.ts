@@ -50,6 +50,8 @@ export interface DesktopWindow {
   width: number;
   height: number;
   minimized: boolean;
+  maximized: boolean;
+  savedRect: { x: number; y: number; width: number; height: number } | null;
   focused: boolean;
   zIndex: number;
   content: WindowContent;
@@ -164,6 +166,8 @@ export class DesktopManager {
       w.width = sw.width;
       w.height = sw.height;
       w.minimized = sw.minimized;
+      w.maximized = sw.maximized ?? false;
+      w.savedRect = sw.savedRect ?? null;
       w.zIndex = sw.zIndex;
     }
     this.zCounter = Math.max(this.zCounter, ...saved.map(s => s.zIndex)) + 1;
@@ -336,6 +340,32 @@ export class DesktopManager {
     else this.renderAll();
   }
 
+  toggleMaximize(id: string): void {
+    const w = this.windows.find((ww) => ww.id === id);
+    if (!w) return;
+    if (w.maximized) {
+      this.unmaximize(w);
+    } else {
+      w.savedRect = { x: w.x, y: w.y, width: w.width, height: w.height };
+      w.x = 0;
+      w.y = 0;
+      w.width = this.container.clientWidth;
+      w.height = this.container.clientHeight;
+      w.maximized = true;
+    }
+    this.renderAll();
+  }
+
+  private unmaximize(w: DesktopWindow): void {
+    if (w.savedRect) {
+      w.x = w.savedRect.x;
+      w.y = w.savedRect.y;
+      w.width = w.savedRect.width;
+      w.height = w.savedRect.height;
+    }
+    w.maximized = false;
+  }
+
   focusWindow(id: string): void {
     for (const w of this.windows) w.focused = false;
     const w = this.windows.find((ww) => ww.id === id);
@@ -361,6 +391,8 @@ export class DesktopManager {
       width: opts.width,
       height: opts.height,
       minimized: false,
+      maximized: false,
+      savedRect: null,
       focused: true,
       zIndex: ++this.zCounter,
       content: opts.content,
@@ -384,6 +416,7 @@ export class DesktopManager {
         <div class="win-header">
           <span class="win-title">${this.escapeHtml(win.title)}</span>
           <div class="win-controls">
+            <button class="win-max">□</button>
             <button class="win-min">─</button>
             <button class="win-close">✕</button>
           </div>
@@ -404,6 +437,8 @@ export class DesktopManager {
     el.style.height = `${win.height}px`;
     el.style.zIndex = String(win.zIndex);
     el.classList.toggle("win-focused", win.focused);
+    const maxBtn = el.querySelector(".win-max") as HTMLElement | null;
+    if (maxBtn) maxBtn.textContent = win.maximized ? "🗗" : "□";
 
     if (win.content.type === "terminal") {
       this.renderTerminalContentById(win.id);
@@ -448,6 +483,14 @@ export class DesktopManager {
       if (target.classList.contains("win-min")) {
         const id = target.closest(".desktop-window")?.getAttribute("data-win-id");
         if (id) this.toggleMinimize(id);
+        e.stopPropagation();
+        return;
+      }
+
+      // Maximize button
+      if (target.classList.contains("win-max")) {
+        const id = target.closest(".desktop-window")?.getAttribute("data-win-id");
+        if (id) this.toggleMaximize(id);
         e.stopPropagation();
         return;
       }
@@ -591,6 +634,10 @@ export class DesktopManager {
       if (!win) return;
       this.focusWindow(id);
 
+      if (win.maximized) {
+        this.unmaximize(win);
+      }
+
       this.dragState = {
         win,
         startX: e.clientX,
@@ -623,6 +670,17 @@ export class DesktopManager {
     document.addEventListener("mouseup", () => {
       this.dragState = null;
       this.resizeState = null;
+    });
+
+    // Double-click title bar → toggle maximize
+    this.container.addEventListener("dblclick", (e) => {
+      if (!this.active) return;
+      const header = (e.target as HTMLElement).closest(".win-header");
+      if (header) {
+        const id = header.closest(".desktop-window")?.getAttribute("data-win-id");
+        if (id) this.toggleMaximize(id);
+        e.stopPropagation();
+      }
     });
 
     // Paste delegation for terminal windows

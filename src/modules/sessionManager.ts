@@ -7,6 +7,8 @@ interface SerializedWindow {
   width: number;
   height: number;
   minimized: boolean;
+  maximized: boolean;
+  savedRect: { x: number; y: number; width: number; height: number } | null;
   zIndex: number;
   contentType: string;
   contentPath?: string;
@@ -23,6 +25,8 @@ export function saveSession(windows: DesktopWindow[]): void {
       x: w.x, y: w.y,
       width: w.width, height: w.height,
       minimized: w.minimized,
+      maximized: w.maximized,
+      savedRect: w.savedRect,
       zIndex: w.zIndex,
     };
     if (w.content.type === "terminal") {
