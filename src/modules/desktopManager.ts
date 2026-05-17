@@ -2,6 +2,7 @@ import type { VirtualShell } from "../VirtualShell";
 import type { ShellStream } from "../types/streams";
 import { keyToBytes } from "../utils/keyToBytes";
 import { WebTermRenderer } from "./webTermRenderer";
+import { ThunarManager } from "./thunarManager";
 
 function toChunk(bytes: Uint8Array): Buffer {
   const g = globalThis as unknown as Record<string, { from: (d: Uint8Array) => Buffer } | undefined>;
@@ -75,10 +76,21 @@ export class DesktopManager {
   private readonly trashPath = "/root/.local/share/Trash/files";
   private docListeners: Array<{ target: EventTarget; type: string; fn: EventListener }> = [];
   private pendingTimeouts: Set<ReturnType<typeof setTimeout>> = new Set();
+  private thunar: ThunarManager;
 
   constructor(shell: VirtualShell, container: HTMLElement) {
     this.shell = shell;
     this.container = container;
+    this.thunar = new ThunarManager({
+      shell: this.shell,
+      windows: this.windows,
+      trashPath: this.trashPath,
+      renderWindowElement: (w) => this.renderWindowElement(w),
+      showContextMenu: (x, y, items) => this.showContextMenu(x, y, items),
+      closeContextMenu: () => this.closeContextMenu(),
+      createEditorWindow: (path) => this.createEditorWindow(path),
+      escapeHtml: (s) => this.escapeHtml(s),
+    }, container);
     this.setupEventDelegation();
   }
 
@@ -332,7 +344,7 @@ export class DesktopManager {
     if (win.content.type === "terminal") {
       this.renderTerminalContentById(win.id);
     } else if (win.content.type === "thunar") {
-      this.renderThunarContent(el, win.content);
+      this.thunar.renderContent(el, win.content);
     } else if (win.content.type === "about") {
       this.renderAboutContent(el);
     } else if (win.content.type === "editor") {
@@ -438,123 +450,8 @@ export class DesktopManager {
       }
     });
 
-    // Double-click on Thunar entries
-    this.container.addEventListener("dblclick", (e) => {
-      const entry = (e.target as HTMLElement).closest(".thunar-entry") as HTMLElement | null;
-      if (!entry) return;
-      const path = entry.getAttribute("data-path");
-      const type = entry.getAttribute("data-type");
-      if (!path) return;
-      if (type === "directory") {
-        const winEl = entry.closest(".desktop-window");
-        const id = winEl?.getAttribute("data-win-id");
-        const w = id ? this.windows.find((ww) => ww.id === id) : null;
-        if (w && w.content.type === "thunar") {
-          w.content.path = path;
-          w.title = `Thunar: ${path}`;
-          const wEl = this.container.querySelector(`.desktop-window[data-win-id="${w.id}"] .win-content`) as HTMLElement | null;
-          if (wEl) wEl.removeAttribute("data-thunar-path");
-          this.renderWindowElement(w);
-        }
-      } else {
-        this.createEditorWindow(path);
-      }
-      e.stopPropagation();
-    });
-
-    // Context menu on Thunar entries and listing
-    this.container.addEventListener("contextmenu", (e) => {
-      const winEl = (e.target as HTMLElement).closest(".desktop-window") as HTMLElement | null;
-      const winId = winEl?.getAttribute("data-win-id") ?? null;
-      const w = winId ? this.windows.find((ww) => ww.id === winId) : null;
-
-      if (w && w.content.type === "thunar") {
-        e.preventDefault();
-        e.stopPropagation();
-        const entry = (e.target as HTMLElement).closest(".thunar-entry") as HTMLElement | null;
-        if (entry) {
-          const path = entry.getAttribute("data-path");
-          const type = entry.getAttribute("data-type");
-          if (!path) return;
-          const inTrash = path.startsWith(this.trashPath);
-          this.showContextMenu(e.clientX, e.clientY, inTrash
-            ? [
-                { label: "Restore", icon: "fa-solid fa-rotate-left", action: () => this.trashRestore(path, winId) },
-                { label: "Delete permanently", icon: "fa-solid fa-circle-xmark", danger: true, action: () => this.trashDelete(path, winId) },
-              ]
-            : [
-                { label: type === "directory" ? "Open folder" : "Open", icon: type === "directory" ? "fa-solid fa-folder-open" : "fa-solid fa-file-pen", action: () => {
-                    if (type === "directory") {
-                      const w2 = this.windows.find((ww) => ww.id === winId);
-                      if (w2 && w2.content.type === "thunar") {
-                        w2.content.path = path;
-                        w2.title = `Thunar: ${path}`;
-                        const wEl = this.container.querySelector(`.desktop-window[data-win-id="${w2.id}"] .win-content`) as HTMLElement | null;
-                        if (wEl) wEl.removeAttribute("data-thunar-path");
-                        this.renderWindowElement(w2);
-                      }
-                    } else { this.createEditorWindow(path); }
-                  }
-                },
-                { label: "Rename", icon: "fa-solid fa-pencil", action: () => this.renamePrompt(path, winId) },
-                { label: "Move to Trash", icon: "fa-solid fa-trash-can", danger: true, action: () => this.moveToTrash(path, winId) },
-              ]
-          );
-        } else {
-          const thunarPath = w.content.path;
-          this.showContextMenu(e.clientX, e.clientY, [
-            { label: "New Folder", icon: "fa-solid fa-folder-plus", action: () => this.createNewFolder(thunarPath, winId) },
-            { label: "New File", icon: "fa-solid fa-file-circle-plus", action: () => this.createNewFile(thunarPath, winId) },
-          ]);
-        }
-        return;
-      }
-
-      // Not in Thunar — close any open context menu but let browser menu show
-      this.closeContextMenu();
-    });
-
     // Close context menu on click elsewhere
     this.addDocListener(document, "click", () => this.closeContextMenu());
-
-    // Thunar pathbar click → inline edit
-    this.container.addEventListener("click", (e) => {
-      const pathbar = (e.target as HTMLElement).closest(".thunar-pathbar") as HTMLElement | null;
-      if (!pathbar || pathbar.querySelector("input")) return;
-      e.stopPropagation();
-      const winEl = pathbar.closest(".desktop-window") as HTMLElement | null;
-      const winId = winEl?.getAttribute("data-win-id");
-      if (!winId || !winEl) return;
-      const w = this.windows.find((ww) => ww.id === winId);
-      if (!w || w.content.type !== "thunar") return;
-
-      const currentPath = w.content.path;
-      pathbar.innerHTML = `<input class="thunar-path-input" type="text" value="${this.escapeHtml(currentPath)}" />`;
-      const input = pathbar.querySelector("input") as HTMLInputElement;
-      input.focus();
-      input.select();
-
-      const commit = (targetPath: string) => {
-        const thunarContent = w.content as ThunarContent;
-        thunarContent.path = targetPath;
-        w.title = `Thunar: ${targetPath}`;
-        const contentArea = winEl.querySelector(".win-content") as HTMLElement | null;
-        if (contentArea) contentArea.removeAttribute("data-thunar-path");
-        this.renderWindowElement(w);
-      };
-
-      input.addEventListener("keydown", (ev) => {
-        if (ev.key === "Enter") {
-          ev.preventDefault();
-          const val = input.value.trim();
-          if (val && val !== currentPath) commit(val);
-          else pathbar.textContent = `Location: ${currentPath}`;
-        }
-        if (ev.key === "Escape") pathbar.textContent = `Location: ${currentPath}`;
-      });
-      input.addEventListener("blur", () => { pathbar.textContent = `Location: ${currentPath}`; });
-
-    });
 
     // Mouse down for window resizing
     this.container.addEventListener("mousedown", (e) => {
@@ -663,73 +560,6 @@ export class DesktopManager {
       const winId = btn.getAttribute("data-win-id");
       if (winId) this.saveEditor(winId);
     }, true); // capture phase so it fires before the generic click handler
-
-    // ── Thunar drag-and-drop ──────────────────────────────────────────
-
-    this.container.addEventListener("dragstart", (e) => {
-      const entry = (e.target as HTMLElement).closest(".thunar-entry") as HTMLElement | null;
-      if (!entry) return;
-      const path = entry.getAttribute("data-path");
-      if (!path) return;
-      e.dataTransfer!.setData("text/plain", path);
-      e.dataTransfer!.effectAllowed = "move";
-    });
-
-    this.container.addEventListener("dragover", (e) => {
-      const entry = (e.target as HTMLElement).closest(".thunar-entry") as HTMLElement | null;
-      if (entry && entry.getAttribute("data-type") === "directory") {
-        e.preventDefault();
-      }
-    });
-
-    this.container.addEventListener("dragenter", (e) => {
-      const entry = (e.target as HTMLElement).closest(".thunar-entry") as HTMLElement | null;
-      if (entry && entry.getAttribute("data-type") === "directory") {
-        entry.classList.add("drag-over");
-      }
-    });
-
-    this.container.addEventListener("dragleave", (e) => {
-      const entry = (e.target as HTMLElement).closest(".thunar-entry") as HTMLElement | null;
-      if (entry) {
-        entry.classList.remove("drag-over");
-      }
-    });
-
-    this.container.addEventListener("drop", (e) => {
-      e.preventDefault();
-      const srcPath = e.dataTransfer?.getData("text/plain");
-      if (!srcPath) return;
-
-      const entry = (e.target as HTMLElement).closest(".thunar-entry") as HTMLElement | null;
-      if (!entry) return;
-      const destDir = entry.getAttribute("data-path");
-      const destType = entry.getAttribute("data-type");
-      if (!destDir || destType !== "directory") return;
-      if (srcPath === destDir) return;
-
-      const name = srcPath.split("/").pop();
-      if (!name) return;
-      const dest = `${destDir}/${name}`;
-
-      try {
-        const st = this.shell.vfs.stat(srcPath);
-        if (st.type === "directory") {
-          this.moveDirectory(srcPath, dest);
-        } else {
-          const content = this.shell.vfs.readFile(srcPath);
-          this.shell.vfs.writeFile(dest, content);
-          this.shell.vfs.remove(srcPath);
-        }
-        const srcWinEl = (e.target as HTMLElement).closest(".desktop-window") as HTMLElement | null;
-        const srcWinId = srcWinEl?.getAttribute("data-win-id");
-        if (srcWinId) this.refreshThunarWindow(srcWinId);
-      } catch (err) {
-        console.error("drop failed", err);
-      }
-
-      document.querySelectorAll(".thunar-entry.drag-over").forEach((el) => {el.classList.remove("drag-over")});
-    });
   }
   // ── Rendering ──────────────────────────────────────────────────────
 
@@ -884,43 +714,6 @@ export class DesktopManager {
     if (!pre.parentNode) el.appendChild(pre);
   }
 
-  private renderThunarContent(el: HTMLElement, content: ThunarContent): void {
-    const contentArea = el.querySelector(".win-content") as HTMLElement;
-    if (!contentArea) return;
-    const targetPath = content.path;
-    if (contentArea.getAttribute("data-thunar-path") === targetPath) return;
-    contentArea.setAttribute("data-thunar-path", targetPath);
-    const parentPath = targetPath === "/" ? null : targetPath.replace(/\/[^/]+$/, "") || "/";
-    const parentEntry = parentPath
-      ? `<div class="thunar-entry" data-path="${this.escapeHtml(parentPath)}" data-type="directory"><span class="thunar-icon"><i class="fa-solid fa-folder"></i></span><span>..</span></div>`
-      : "";
-    let listing = "";
-    try {
-      const entries = this.shell.vfs.list(targetPath);
-      listing = entries
-        .filter((e) => e !== "." && e !== "..")
-        .map((e: string) => {
-          try {
-            const st = this.shell.vfs.stat(`${targetPath}/${e}`);
-            const icon = st.type === "directory"
-              ? `<i class="fa-solid fa-folder"></i>`
-              : `<i class="fa-regular fa-file"></i>`;
-            const fullPath = `${targetPath}/${e}`;
-            return `<div class="thunar-entry" draggable="true" data-path="${this.escapeHtml(fullPath)}" data-type="${st.type}"><span class="thunar-icon">${icon}</span><span>${this.escapeHtml(e)}</span></div>`;
-          } catch {
-            return `<div class="thunar-entry"><span class="thunar-icon"><i class="fa-solid fa-circle-question"></i></span><span>${this.escapeHtml(e)}</span></div>`;
-          }
-        })
-        .join("");
-    } catch {
-      listing = `<div class="thunar-error">Could not read ${this.escapeHtml(targetPath)}</div>`;
-    }
-    contentArea.innerHTML = `
-      <div class="thunar-pathbar">Location: ${this.escapeHtml(targetPath)}</div>
-      <div class="thunar-listing">${parentEntry}${listing}</div>
-    `;
-  }
-
   private renderEditorContent(el: HTMLElement, winId: string, content: EditorContent): void {
     const contentArea = el.querySelector(".win-content") as HTMLElement;
     if (!contentArea) return;
@@ -1030,124 +823,6 @@ export class DesktopManager {
 
   private closeContextMenu(): void {
     this.container.querySelector(".desktop-context-menu")?.remove();
-  }
-
-  private ensureTrashDir(): void {
-    const parts = this.trashPath.split("/").filter(Boolean);
-    let cur = "";
-    for (const p of parts) {
-      cur += `/${p}`;
-      if (!this.shell.vfs.exists(cur)) this.shell.vfs.mkdir(cur, 0o700);
-    }
-  }
-
-  private refreshThunarWindow(winId: string | null): void {
-    if (!winId) return;
-    const w = this.windows.find((ww) => ww.id === winId);
-    if (!w || w.content.type !== "thunar") return;
-    const wEl = this.container.querySelector(`.desktop-window[data-win-id="${winId}"] .win-content`) as HTMLElement | null;
-    if (wEl) wEl.removeAttribute("data-thunar-path");
-    this.renderWindowElement(w);
-  }
-
-  private moveToTrash(path: string, winId: string | null): void {
-    this.ensureTrashDir();
-    const name = path.split("/").pop() ?? "file";
-    let dest = `${this.trashPath}/${name}`;
-    let i = 1;
-    while (this.shell.vfs.exists(dest)) dest = `${this.trashPath}/${name}.${i++}`;
-    try {
-      const content = this.shell.vfs.readFile(path);
-      this.shell.vfs.writeFile(dest, content);
-      this.shell.vfs.remove(path);
-    } catch {
-      // directory: not supported for now, just remove
-      try { this.shell.vfs.remove(path, { recursive: true }); } catch { /* ignore */ }
-    }
-    this.refreshThunarWindow(winId);
-  }
-
-  private trashRestore(path: string, winId: string | null): void {
-    const name = path.split("/").pop() ?? "file";
-    const dest = `/root/${name}`;
-    try {
-      const content = this.shell.vfs.readFile(path);
-      this.shell.vfs.writeFile(dest, content);
-      this.shell.vfs.remove(path);
-    } catch { /* ignore */ }
-    this.refreshThunarWindow(winId);
-  }
-
-  private trashDelete(path: string, winId: string | null): void {
-    try { this.shell.vfs.remove(path, { recursive: true }); } catch { /* ignore */ }
-    this.refreshThunarWindow(winId);
-  }
-
-  private moveDirectory(src: string, dest: string): void {
-    this.shell.vfs.mkdir(dest, 0o755);
-    const entries = this.shell.vfs.list(src);
-    for (const e of entries) {
-      if (e === "." || e === "..") continue;
-      const srcPath = `${src}/${e}`;
-      const destPath = `${dest}/${e}`;
-      try {
-        const st = this.shell.vfs.stat(srcPath);
-        if (st.type === "directory") {
-          this.moveDirectory(srcPath, destPath);
-        } else {
-          const content = this.shell.vfs.readFile(srcPath);
-          this.shell.vfs.writeFile(destPath, content);
-          this.shell.vfs.remove(srcPath);
-        }
-      } catch { /* skip */ }
-    }
-    this.shell.vfs.remove(src);
-  }
-
-  private createNewFolder(parentPath: string, winId: string | null): void {
-    const name = window.prompt("New folder name:", "untitled folder");
-    if (!name?.trim()) return;
-    const dir = `${parentPath}/${name.trim()}`;
-    if (this.shell.vfs.exists(dir)) {
-      window.alert(`"${name.trim()}" already exists.`);
-      return;
-    }
-    try {
-      this.shell.vfs.mkdir(dir, 0o755);
-      this.refreshThunarWindow(winId);
-    } catch (err) {
-      console.error("create folder failed", err);
-    }
-  }
-
-  private createNewFile(parentPath: string, winId: string | null): void {
-    const name = window.prompt("New file name:", "untitled.txt");
-    if (!name?.trim()) return;
-    const file = `${parentPath}/${name.trim()}`;
-    if (this.shell.vfs.exists(file)) {
-      window.alert(`"${name.trim()}" already exists.`);
-      return;
-    }
-    try {
-      this.shell.vfs.writeFile(file, "");
-      this.refreshThunarWindow(winId);
-    } catch (err) {
-      console.error("create file failed", err);
-    }
-  }
-
-  private renamePrompt(path: string, winId: string | null): void {
-    const oldName = path.split("/").pop() ?? "";
-    const newName = window.prompt("Rename:", oldName);
-    if (!newName || newName === oldName) return;
-    const dir = path.substring(0, path.lastIndexOf("/"));
-    const dest = `${dir}/${newName}`;
-    try {
-      const content = this.shell.vfs.readFile(path);
-      this.shell.vfs.writeFile(dest, content);
-      this.shell.vfs.remove(path);
-    } catch { /* ignore */ }
-    this.refreshThunarWindow(winId);
   }
 
   private escapeHtml(s: string): string {
