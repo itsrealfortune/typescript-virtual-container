@@ -2,8 +2,8 @@
 
 ## Current Focus
 
-- **XFCE Desktop Polish** — pathbar editable, New File/Folder
-- **Performance & Memory** — continued optimization of the VFS and shell runtime
+- **GUI Task Manager** — xfce4-taskmanager window with process list, CPU/mem per PID, kill button
+- **Clipboard partagé** — copy/paste between terminal, Mousepad, and Thunar
 - **Command Completeness** — filling gaps in the POSIX command set
 
 ---
@@ -11,10 +11,13 @@
 ## Planned
 
 - [ ] **WebSocket remote shell client** — experimental real-time shell over WebSocket
+- [ ] **Session multi-user** — switch user from panel (login screen, isolated `/home`)
+- [ ] **WebWorker sandbox isolation** — security boundary between shells
+- [ ] **Full POSIX shell compliance** — shell interpreter coverage
 
 ---
 
-## Completed (v1.0.0 → v1.6.3)
+## Completed (v1.0.0 → v1.7.0)
 
 ### Core Engine
 - [x] Pure in-memory VFS with binary snapshot format (VFSB, ~27% smaller than JSON+base64)
@@ -50,6 +53,7 @@
 - [x] Font Awesome icons
 - [x] Frosted glass window styling
 - [x] Thunar: drag-and-drop — move files between folders via drag-and-drop
+- [x] Session save/restore — window positions/types/paths persist to localStorage across tab close
 
 ### SSH & Networking
 - [x] SSH server (ssh2) — password + public-key auth
