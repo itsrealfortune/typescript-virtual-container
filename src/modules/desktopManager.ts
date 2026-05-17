@@ -491,8 +491,9 @@ export class DesktopManager {
       }
 
       // Maximize button
-      if (target.classList.contains("win-max")) {
-        const id = target.closest(".desktop-window")?.getAttribute("data-win-id");
+      const maxBtn = target.closest(".win-max");
+      if (maxBtn) {
+        const id = maxBtn.closest(".desktop-window")?.getAttribute("data-win-id");
         if (id) this.toggleMaximize(id);
         e.stopPropagation();
         return;
