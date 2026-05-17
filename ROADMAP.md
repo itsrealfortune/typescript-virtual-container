@@ -2,7 +2,7 @@
 
 ## Current Focus
 
-- **XFCE Desktop Polish** — window resize, multi-monitor layout, Thunar drag-and-drop
+- **XFCE Desktop Polish** — multi-monitor layout, Thunar drag-and-drop
 - **Performance & Memory** — continued optimization of the VFS and shell runtime
 - **Command Completeness** — filling gaps in the POSIX command set
 
@@ -13,12 +13,6 @@
 - [ ] **WebSocket remote shell client** — experimental real-time shell over WebSocket
 - [ ] **XFCE desktop: multi-monitor layout** — span desktop across multiple display areas
 - [ ] **Thunar: drag-and-drop** — move files between folders via drag-and-drop
-
----
-
-## In Progress
-
-- [ ] **AGPL v3 license draft** — dual-licensing exploration (MIT + AGPL)
 
 ---
 
