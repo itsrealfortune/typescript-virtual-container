@@ -440,8 +440,7 @@ export class DesktopManager {
     el.style.zIndex = String(win.zIndex);
     el.classList.toggle("win-focused", win.focused);
     const maxBtn = el.querySelector(".win-max") as HTMLElement | null;
-    const maxSpan = `<span style="font-size: 18px; position: relative; bottom:2px;">CHAR</span>`
-    if (maxBtn) maxBtn.innerHTML = win.maximized ? maxSpan.replace("CHAR", "🗗") : maxSpan.replace("CHAR", "□");
+    if (maxBtn) maxBtn.textContent = win.maximized ? "🗗" : "□";
 
     if (win.content.type === "terminal") {
       this.renderTerminalContentById(win.id);
