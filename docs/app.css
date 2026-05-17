@@ -313,10 +313,10 @@ body {
   padding: 0;
   color: #fff;
 }
-.win-min {
+.win-min, .win-max {
   background: #5a5a5a;
 }
-.win-min:hover { background: #7a7a7a; }
+.win-min:hover, .win-max:hover { background: #7a7a7a; }
 .win-close {
   background: #c44;
 }
