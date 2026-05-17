@@ -11,7 +11,6 @@
 ## Planned
 
 - [ ] **WebSocket remote shell client** — experimental real-time shell over WebSocket
-- [ ] **XFCE desktop: window resize** — draggable resize handles (currently fixed-size)
 - [ ] **XFCE desktop: multi-monitor layout** — span desktop across multiple display areas
 - [ ] **Thunar: drag-and-drop** — move files between folders via drag-and-drop
 
@@ -20,7 +19,6 @@
 ## In Progress
 
 - [ ] **AGPL v3 license draft** — dual-licensing exploration (MIT + AGPL)
-- [ ] **UID/GID file ownership** — complete the permission model with proper ownership tracking
 
 ---
 
@@ -53,6 +51,7 @@
 - [x] `startxfce4` — full in-browser XFCE desktop
 - [x] XFCE panel — Applications menu, clock, system tray
 - [x] Draggable windows with focus management
+- [x] Window resize — draggable bottom-right resize handle
 - [x] Thunar file manager — navigate, right-click, trash, rename
 - [x] Mousepad text editor — Ctrl+S, dirty indicator, syntax highlighting
 - [x] Terminal windows — live interactive shell sessions
@@ -74,6 +73,7 @@
 - [x] SSH public-key authentication
 - [x] Honeypot — audit logging, 20+ metrics, anomaly detection
 - [x] User quotas (per-user disk space limits)
+- [x] UID/GID file ownership — chown, chgrp, POSIX permission checks
 - [x] /sbin root-only PATH restriction
 
 ### Testing & Tooling

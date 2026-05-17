@@ -280,7 +280,7 @@ src/
 
 | File | Lines | Purpose |
 |---|---|---|
-| `expand.ts` | 664 | Centralized shell variable expansion: tilde, $?, $$, $#, ${VAR:-default}, ${#VAR}, $((arithmetic)), `${VAR//pat/rep}` |
+| `expand.ts` | 664 | Centralized shell variable expansion: tilde, `$?`, `$$`, `$#`, `${VAR}`, `$((arithmetic))`, pattern substitution |
 | `tokenize.ts` | — | Shell command tokenizer (splits raw input into tokens respecting quotes, escaping) |
 | `argv.ts` | — | CLI argument parser (getFlag, getOption, getOptionInt) |
 | `glob.ts` | — | Glob pattern → RegExp conversion for path matching |
