@@ -479,11 +479,25 @@ export class DesktopManager {
         return;
       }
 
+      // Task Manager: close desktop window
+      if (target.classList.contains("taskmgr-close")) {
+        const closeWinId = target.getAttribute("data-win-id");
+        if (closeWinId) this.closeWindow(closeWinId);
+        e.stopPropagation();
+        return;
+      }
+
       // Task Manager: kill button
       if (target.classList.contains("taskmgr-kill")) {
         const pid = Number(target.getAttribute("data-pid"));
         if (pid) {
-          this.shell.users.killProcess(pid);
+          const sessions = this.shell.users.listActiveSessions();
+          const sessionIdx = pid - 1000;
+          if (sessionIdx >= 0 && sessionIdx < sessions.length) {
+            this.shell.users.unregisterSession(sessions[sessionIdx]!.id);
+          } else {
+            this.shell.users.killProcess(pid);
+          }
           const winId = target.closest(".desktop-window")?.getAttribute("data-win-id");
           if (winId) this.renderTaskManagerContent(
             this.container.querySelector(`.desktop-window[data-win-id="${winId}"]`) as HTMLElement,
@@ -871,8 +885,26 @@ export class DesktopManager {
 
     const sessions = this.shell.users.listActiveSessions();
     const processes = this.shell.users.listProcesses();
+    const desktopWindows = this.windows.filter(w => w.id !== winId && w.content.type !== "taskmanager");
 
     let rows = "";
+
+    for (const w of desktopWindows) {
+      const icon = w.content.type === "terminal" ? "fa-terminal"
+        : w.content.type === "thunar" ? "fa-folder-open"
+        : w.content.type === "editor" ? "fa-file-pen"
+        : w.content.type === "about" ? "fa-circle-info"
+        : "fa-window-restore";
+      rows += `<tr>
+        <td>—</td>
+        <td>root</td>
+        <td><i class="fa-solid ${icon}"></i> ${this.escapeHtml(w.title)}</td>
+        <td>desktop</td>
+        <td><span class="taskmgr-status running">running</span></td>
+        <td><button class="taskmgr-close" data-win-id="${w.id}">Close</button></td>
+      </tr>`;
+    }
+
     for (let i = 0; i < sessions.length; i++) {
       const s = sessions[i]!;
       const pid = 1000 + i;
@@ -897,9 +929,11 @@ export class DesktopManager {
       </tr>`;
     }
 
+    const total = desktopWindows.length + sessions.length + processes.length;
+
     contentArea.innerHTML = `
       <div class="taskmgr-toolbar">
-        <span class="taskmgr-count">${sessions.length + processes.length} processes</span>
+        <span class="taskmgr-count">${total} processes</span>
         <button class="taskmgr-refresh" data-win-id="${winId}"><i class="fa-solid fa-rotate"></i> Refresh</button>
       </div>
       <div class="taskmgr-table-wrap">
