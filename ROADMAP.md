@@ -2,8 +2,6 @@
 
 ## Current Focus
 
-- **GUI Task Manager** — xfce4-taskmanager window with process list, CPU/mem per PID, kill button
-- **Clipboard partagé** — copy/paste between terminal, Mousepad, and Thunar
 - **Command Completeness** — filling gaps in the POSIX command set
 
 ---
@@ -53,7 +51,11 @@
 - [x] Font Awesome icons
 - [x] Frosted glass window styling
 - [x] Thunar: drag-and-drop — move files between folders via drag-and-drop
+- [x] Thunar: Copy Path — right-click → copy full path to system clipboard
 - [x] Session save/restore — window positions/types/paths persist to localStorage across tab close
+- [x] GUI Task Manager — process table (PID/User/Command/TTY/Status), Kill/Close buttons, auto-refresh
+- [x] Maximize button — `□` button + double-click title bar toggles fullscreen (respects panel height)
+- [x] Kill actually works — abort signal racing for shell processes, session unregistration, desktop window close
 
 ### SSH & Networking
 - [x] SSH server (ssh2) — password + public-key auth
