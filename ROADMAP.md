@@ -17,6 +17,9 @@
 
 ## Completed (v1.0.0 → v1.7.0)
 
+<details>
+<summary>See full changelog</summary>
+
 ### Core Engine
 - [x] Pure in-memory VFS with binary snapshot format (VFSB, ~27% smaller than JSON+base64)
 - [x] Linux rootfs on boot — `/etc`, `/proc`, `/sys`, `/dev`, `/usr`, `/var`
@@ -93,6 +96,8 @@
 - [x] Node.js polyfills for browser builds
 - [x] npm package — `typescript-virtual-container`
 - [x] TypeDoc API documentation (11 classes, 44 interfaces)
+
+</details>
 
 ---
 
