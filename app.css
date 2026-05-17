@@ -313,10 +313,11 @@ body {
   padding: 0;
   color: #fff;
 }
-.win-min {
+.win-min, .win-max {
   background: #5a5a5a;
 }
-.win-min:hover { background: #7a7a7a; }
+.win-min:hover, .win-max:hover { background: #7a7a7a; }
+.win-max { font-size: 14px; }
 .win-close {
   background: #c44;
 }
@@ -489,4 +490,104 @@ body {
   margin-top: 16px;
   font-size: 11px;
   color: #666;
+}
+
+/* ── Task Manager ────────────────────────────────────────────── */
+
+.taskmgr-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: #2a2a2a;
+  border-bottom: 1px solid #444;
+}
+
+.taskmgr-count {
+  flex: 1;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.taskmgr-refresh {
+  background: #3a3a3a;
+  border: 1px solid #555;
+  color: #ddd;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  border-radius: 3px;
+}
+
+.taskmgr-refresh:hover {
+  background: #4a4a4a;
+  color: #fff;
+}
+
+.taskmgr-table-wrap {
+  overflow: auto;
+  flex: 1;
+}
+
+.taskmgr-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-family: "Courier New", monospace;
+}
+
+.taskmgr-table th {
+  background: #333;
+  color: #ccc;
+  text-align: left;
+  padding: 4px 8px;
+  border-bottom: 1px solid #555;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.taskmgr-table td {
+  padding: 3px 8px;
+  border-bottom: 1px solid #333;
+  color: #ddd;
+}
+
+.taskmgr-table tr:nth-child(even) td {
+  background: #252525;
+}
+
+.taskmgr-table tr:hover td {
+  background: #2a3a4a;
+}
+
+.taskmgr-status {
+  font-weight: bold;
+}
+
+.taskmgr-status.running {
+  color: #4caf50;
+}
+
+.taskmgr-status.stopped {
+  color: #f44336;
+}
+
+.taskmgr-status.done {
+  color: #888;
+}
+
+.taskmgr-kill {
+  background: #5a1a1a;
+  border: 1px solid #833;
+  color: #f88;
+  padding: 1px 8px;
+  cursor: pointer;
+  font-size: 11px;
+  border-radius: 2px;
+}
+
+.taskmgr-kill:hover {
+  background: #7a2222;
+  color: #fff;
 }
