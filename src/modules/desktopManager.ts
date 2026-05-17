@@ -31,6 +31,7 @@ export interface AboutContent {
 
 export interface TaskManagerContent {
   type: "taskmanager";
+  refreshInterval?: ReturnType<typeof setInterval>;
 }
 
 export interface EditorContent {
@@ -123,6 +124,11 @@ export class DesktopManager {
     this.container.style.display = "none";
     if (this.clockInterval) clearInterval(this.clockInterval);
     this.clockInterval = undefined;
+    for (const w of this.windows) {
+      if (w.content.type === "taskmanager" && w.content.refreshInterval) {
+        clearInterval(w.content.refreshInterval);
+      }
+    }
     this.windows = [];
     this.menuOpen = false;
     this.dragState = null;
@@ -292,17 +298,29 @@ export class DesktopManager {
   }
 
   createTaskManagerWindow(): string {
-    return this.createWindow({
+    const id = this.createWindow({
       title: "Task Manager",
       width: 640,
       height: 420,
       content: { type: "taskmanager" },
     });
+    const w = this.windows.find(ww => ww.id === id);
+    if (w && w.content.type === "taskmanager") {
+      w.content.refreshInterval = setInterval(() => {
+        const el = this.container.querySelector(`.desktop-window[data-win-id="${id}"]`) as HTMLElement | null;
+        if (el) this.renderTaskManagerContent(el, id);
+      }, 3000);
+    }
+    return id;
   }
 
   closeWindow(id: string): void {
     const idx = this.windows.findIndex((w) => w.id === id);
     if (idx === -1) return;
+    const w = this.windows[idx]!;
+    if (w.content.type === "taskmanager" && w.content.refreshInterval) {
+      clearInterval(w.content.refreshInterval);
+    }
     this.windows.splice(idx, 1);
     if (this.windows.length > 0) {
       this.focusWindow(this.windows[this.windows.length - 1]!.id);
