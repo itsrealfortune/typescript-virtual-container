@@ -1,0 +1,315 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>Performance | typescript-virtual-container - v1.7.0</title><meta name="description" content="Documentation for typescript-virtual-container"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="../index" class="title">typescript-virtual-container - v1.7.0</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><ul class="tsd-breadcrumb" aria-label="Breadcrumb"><li><a href="" aria-current="page">Performance</a></li></ul></div><div class="tsd-panel tsd-typography"><h1 id="performance-typescript-virtual-container" class="tsd-anchor-link">Performance — typescript-virtual-container<a href="#performance-typescript-virtual-container" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<h2 id="benchmark" class="tsd-anchor-link">Benchmark<a href="#benchmark" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Run the official benchmark:</p>
+<pre><code class="bash"><span class="hl-0">bun</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">benchmark</span><span class="hl-1">    </span><span class="hl-3"># → benchmark-results.txt</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Measures 4 dimensions concurrently: parallel init, command latency, VFS I/O throughput, memory.</p>
+<h2 id="results-bun-1311-48s-wall-time" class="tsd-anchor-link">Results (Bun 1.3.11, ~4.8s wall time)<a href="#results-bun-1311-48s-wall-time" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="parallel-shell-initialization" class="tsd-anchor-link">Parallel Shell Initialization<a href="#parallel-shell-initialization" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Shells</th>
+<th>Init (ms)</th>
+<th>ms/shell</th>
+<th>Cmd (ms)</th>
+<th>Ops/sec</th>
+<th>RSS</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>162</td>
+<td>162.0</td>
+<td>79</td>
+<td>38</td>
+<td>165 MB</td>
+</tr>
+<tr>
+<td>2</td>
+<td>140</td>
+<td>70.0</td>
+<td>852</td>
+<td>7</td>
+<td>184 MB</td>
+</tr>
+<tr>
+<td>5</td>
+<td>940</td>
+<td>188.0</td>
+<td>1</td>
+<td>15,000</td>
+<td>209 MB</td>
+</tr>
+<tr>
+<td>10</td>
+<td>56</td>
+<td>5.6</td>
+<td>1</td>
+<td>30,000</td>
+<td>212 MB</td>
+</tr>
+<tr>
+<td>20</td>
+<td>196</td>
+<td>9.8</td>
+<td>1</td>
+<td>60,000</td>
+<td>214 MB</td>
+</tr>
+<tr>
+<td>50</td>
+<td>489</td>
+<td>9.8</td>
+<td>1</td>
+<td>150,000</td>
+<td>212 MB</td>
+</tr>
+<tr>
+<td>100</td>
+<td>803</td>
+<td>8.0</td>
+<td>4</td>
+<td>75,000</td>
+<td>216 MB</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>~8–10 ms per shell</strong> at scale (10–100 shells)</li>
+<li>Command throughput peaks at <strong>150,000 ops/sec</strong> (50 shells)</li>
+<li>RSS scales <strong>sub-linearly</strong>: +42% for 100x more shells (152 → 216 MB)</li>
+</ul>
+<h3 id="command-latency-n500-single-shell" class="tsd-anchor-link">Command Latency (N=500, single shell)<a href="#command-latency-n500-single-shell" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>p50</th>
+<th>p95</th>
+<th>p99</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>echo hello</code></td>
+<td>0.01 ms</td>
+<td>0.59 ms</td>
+<td>195 ms</td>
+</tr>
+<tr>
+<td><code>ls /etc</code></td>
+<td>0.11 ms</td>
+<td>0.21 ms</td>
+<td>0.85 ms</td>
+</tr>
+<tr>
+<td><code>cat /etc/passwd</code></td>
+<td>0.01 ms</td>
+<td>0.03 ms</td>
+<td>0.10 ms</td>
+</tr>
+<tr>
+<td><code>grep root /etc/passwd</code></td>
+<td>0.02 ms</td>
+<td>0.06 ms</td>
+<td>0.14 ms</td>
+</tr>
+<tr>
+<td><code>ls -la /</code></td>
+<td>1.59 ms</td>
+<td>2.63 ms</td>
+<td>6.94 ms</td>
+</tr>
+<tr>
+<td><code>pwd</code></td>
+<td>0.00 ms</td>
+<td>0.00 ms</td>
+<td>0.02 ms</td>
+</tr>
+<tr>
+<td><code>date</code></td>
+<td>0.00 ms</td>
+<td>0.01 ms</td>
+<td>0.02 ms</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Most commands are <strong>sub-millisecond at p50</strong></li>
+<li><code>echo hello</code> has high p99 (195 ms) due to GC pauses in long iterations</li>
+<li><code>ls -la /</code> is heaviest at ~1.6 ms p50 (full root directory listing)</li>
+</ul>
+<h3 id="vfs-io-throughput-direct-no-command-parsing" class="tsd-anchor-link">VFS I/O Throughput (direct, no command parsing)<a href="#vfs-io-throughput-direct-no-command-parsing" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>Size</th>
+<th>Time</th>
+<th>Throughput</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Write 1,000 small files</td>
+<td>0.5 MB</td>
+<td>5 ms</td>
+<td><strong>97.7 MB/s</strong></td>
+</tr>
+<tr>
+<td>Read 1,000 small files</td>
+<td>0.5 MB</td>
+<td>2 ms</td>
+<td><strong>244.1 MB/s</strong></td>
+</tr>
+<tr>
+<td>Write 1 large file</td>
+<td>10 MB</td>
+<td>6 ms</td>
+<td><strong>1.6 GB/s</strong></td>
+</tr>
+<tr>
+<td>Read 1 large file</td>
+<td>10 MB</td>
+<td>9 ms</td>
+<td><strong>1.1 GB/s</strong></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>VFS is in-memory (Buffer ops) — near memory-bandwidth limited</li>
+<li>Large contiguous I/O achieves <strong>&gt;1 GB/s</strong></li>
+</ul>
+<h3 id="memory-rss" class="tsd-anchor-link">Memory (RSS)<a href="#memory-rss" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Shells</th>
+<th>Heap used</th>
+<th>Heap total</th>
+<th>External</th>
+<th>RSS</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>0.2 MB</td>
+<td>14.3 MB</td>
+<td>24.8 MB</td>
+<td>152 MB</td>
+</tr>
+<tr>
+<td>10</td>
+<td>39.7 MB</td>
+<td>28.8 MB</td>
+<td>9.9 MB</td>
+<td>182 MB</td>
+</tr>
+<tr>
+<td>50</td>
+<td>24.5 MB</td>
+<td>31.9 MB</td>
+<td>16.7 MB</td>
+<td>184 MB</td>
+</tr>
+<tr>
+<td>100</td>
+<td>57.1 MB</td>
+<td>50.8 MB</td>
+<td>33.2 MB</td>
+<td>209 MB</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Base RSS floor ~150 MB (Bun runtime + bundled Linux rootfs)</li>
+<li>~0.65 MB per additional shell at scale</li>
+<li>GC-driven variance in heapUsed (not linear)</li>
+</ul>
+<hr>
+<details>
+<summary>Performance Tips — hashing, reuse, memory mode, snapshots</summary>
+<h3 id="1-fast-password-hashing-testsci" class="tsd-anchor-link">1. Fast password hashing (tests/CI)<a href="#1-fast-password-hashing-testsci" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="bash"><span class="hl-6">SSH_MIMIC_FAST_PASSWORD_HASH</span><span class="hl-1">=</span><span class="hl-2">1</span><span class="hl-1">  </span><span class="hl-3"># SHA-256 instead of scrypt (N=32768)</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Scrypt is the single largest init-time cost. Skip it in tests.</p>
+<h3 id="2-reuse-shell-instances" class="tsd-anchor-link">2. Reuse shell instances<a href="#2-reuse-shell-instances" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Long-lived <code>VirtualShell</code> instances avoid re-init overhead. Create multiple <code>SshClient</code> objects for parallel operations against the same shell.</p>
+<h3 id="3-memory-mode-for-speed" class="tsd-anchor-link">3. Memory mode for speed<a href="#3-memory-mode-for-speed" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualShell</span><span class="hl-1">(</span><span class="hl-2">&quot;vm&quot;</span><span class="hl-1">, </span><span class="hl-4">undefined</span><span class="hl-1">, { </span><span class="hl-6">mode:</span><span class="hl-1"> </span><span class="hl-2">&quot;memory&quot;</span><span class="hl-1"> }) </span><span class="hl-3">// default, no disk I/O</span>
+</code><button type="button">Copy</button></pre>
+
+<p>No fsync, no eviction, no journaling overhead. Snapshot only when needed via <code>toSnapshot()</code>.</p>
+<h3 id="4-use-binary-snapshots" class="tsd-anchor-link">4. Use binary snapshots<a href="#4-use-binary-snapshots" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>The VFSB binary format is ~27% smaller than JSON+base64 and avoids string parsing.</p>
+<pre><code class="typescript"><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">snapshot</span><span class="hl-1"> = </span><span class="hl-6">vfs</span><span class="hl-1">.</span><span class="hl-0">toSnapshot</span><span class="hl-1">();           </span><span class="hl-3">// binary Buffer</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">restored</span><span class="hl-1"> = </span><span class="hl-6">VirtualFileSystem</span><span class="hl-1">.</span><span class="hl-0">fromSnapshot</span><span class="hl-1">(</span><span class="hl-6">snapshot</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="5-tune-eviction-fs-mode" class="tsd-anchor-link">5. Tune eviction (FS mode)<a href="#5-tune-eviction-fs-mode" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-1">{ </span><span class="hl-14">mode</span><span class="hl-1">: </span><span class="hl-2">&quot;fs&quot;</span><span class="hl-1">, </span><span class="hl-14">snapshotPath</span><span class="hl-1">: </span><span class="hl-2">&quot;./data&quot;</span><span class="hl-1">, </span><span class="hl-14">evictionThresholdBytes</span><span class="hl-1">: </span><span class="hl-8">128_000</span><span class="hl-1"> }</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Default: 64 KB. Files above threshold are evicted from RAM after flush. Set to <code>0</code> to disable.</p>
+<h3 id="6-batch-operations-in-fs-mode" class="tsd-anchor-link">6. Batch operations in FS mode<a href="#6-batch-operations-in-fs-mode" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>The write-ahead journal flushes after 500 writes or 30 seconds. For bulk imports, call <code>flushMirror()</code> periodically to keep the journal small.</p>
+</details>
+<hr>
+<details>
+<summary>Memory Management — internal structures, eviction, journal</summary>
+<h3 id="internal-data-structures" class="tsd-anchor-link">Internal data structures<a href="#internal-data-structures" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Strategy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>InternalDirectoryNode</code></td>
+<td>Null-prototype object vs <code>Map</code> — ~40% less RAM</td>
+</tr>
+<tr>
+<td><code>InternalFileNode</code></td>
+<td><code>Buffer</code> content, gzip-compressed on write, evictable in FS mode</td>
+</tr>
+<tr>
+<td><code>InternalStubNode</code></td>
+<td>Static content as plain string — no Buffer allocation</td>
+</tr>
+<tr>
+<td>Timestamps</td>
+<td><code>number</code> (Unix ms) instead of <code>Date</code> — ~80 bytes saved per node</td>
+</tr>
+</tbody>
+</table>
+<h3 id="eviction-system-fs-mode-only" class="tsd-anchor-link">Eviction system (FS mode only)<a href="#eviction-system-fs-mode-only" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><strong>Threshold</strong>: 64 KB default, configurable</li>
+<li><strong>Trigger</strong>: After each <code>flushMirror()</code></li>
+<li>On evict: content set to <code>Buffer.alloc(0)</code>, <code>evicted: true</code></li>
+<li>On read: lazy reload from binary snapshot</li>
+<li><strong>Disabled in memory mode</strong> (<code>evictionThreshold = 0</code>)</li>
+</ul>
+<h3 id="journal-fs-mode-only" class="tsd-anchor-link">Journal (FS mode only)<a href="#journal-fs-mode-only" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li>Write-ahead log recorded before each flush</li>
+<li>On startup: replay journal for crash recovery</li>
+<li>Truncated after successful flush</li>
+</ul>
+</details>
+<hr>
+<details>
+<summary>Scaling — 1000+ parallel environments</summary>
+<ul>
+<li><strong>Designed for 1000+ parallel environments</strong> (per README)</li>
+<li>Each <code>VirtualShell</code> is fully independent — no shared global state</li>
+<li><code>VirtualSshServer</code> is event-driven — handles many concurrent connections</li>
+<li><code>SshClient</code> is sequential per instance; create multiple for parallel operations</li>
+</ul>
+</details></div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#performance-typescript-virtual-container"><span>Performance — typescript-<wbr/>virtual-<wbr/>container</span></a><ul><li><a href="#benchmark"><span>Benchmark</span></a></li><li><a href="#results-bun-1311-48s-wall-time"><span>Results (<wbr/>Bun 1.3.11, ~4.8s wall time)</span></a></li><li><ul><li><a href="#parallel-shell-initialization"><span>Parallel <wbr/>Shell <wbr/>Initialization</span></a></li><li><a href="#command-latency-n500-single-shell"><span>Command <wbr/>Latency (<wbr/>N=500, single shell)</span></a></li><li><a href="#vfs-io-throughput-direct-no-command-parsing"><span>VFS <wbr/>I/<wbr/>O <wbr/>Throughput (direct, no command parsing)</span></a></li><li><a href="#memory-rss"><span>Memory (<wbr/>RSS)</span></a></li><li><a href="#1-fast-password-hashing-testsci"><span>1. <wbr/>Fast password hashing (tests/<wbr/>CI)</span></a></li><li><a href="#2-reuse-shell-instances"><span>2. <wbr/>Reuse shell instances</span></a></li><li><a href="#3-memory-mode-for-speed"><span>3. <wbr/>Memory mode for speed</span></a></li><li><a href="#4-use-binary-snapshots"><span>4. <wbr/>Use binary snapshots</span></a></li><li><a href="#5-tune-eviction-fs-mode"><span>5. <wbr/>Tune eviction (<wbr/>FS mode)</span></a></li><li><a href="#6-batch-operations-in-fs-mode"><span>6. <wbr/>Batch operations in <wbr/>FS mode</span></a></li><li><a href="#internal-data-structures"><span>Internal data structures</span></a></li><li><a href="#eviction-system-fs-mode-only"><span>Eviction system (<wbr/>FS mode only)</span></a></li><li><a href="#journal-fs-mode-only"><span>Journal (<wbr/>FS mode only)</span></a></li></ul></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="../modules">typescript-virtual-container - v1.7.0</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>

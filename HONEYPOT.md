@@ -1,3 +1,8 @@
+---
+title: HoneyPot Implementation Guide
+group: Guides
+---
+
 # HoneyPot Implementation Guide
 
 ## Overview
@@ -113,7 +118,8 @@ anomalies.forEach((anomaly) => {
 // Severity levels: "low", "medium", "high"
 ```
 
-## Common Patterns
+<details>
+<summary>Common Patterns — real-time monitoring, post-analysis, user analysis, compliance</summary>
 
 ### Pattern 1: Real-Time Monitoring
 
@@ -216,6 +222,8 @@ function generateComplianceReport(honeypot) {
 }
 ```
 
+</details>
+
 ## Event Types
 
 ### Authentication Events
@@ -243,7 +251,8 @@ function generateComplianceReport(honeypot) {
 
 - `command` - Command executed
 
-## Integration Examples
+<details>
+<summary>Integration Examples — database, logging service, monitoring/alerting</summary>
 
 ### With a Database
 
@@ -303,6 +312,21 @@ setInterval(() => {
 }, 10000);
 ```
 
+</details>
+
+## Best Practices
+
+1. **Initialize Early**: Attach HoneyPot right after creating components
+2. **Export Regularly**: Don't rely solely on in-memory storage
+3. **Monitor Continuously**: Use periodic checks for real-time monitoring
+4. **Archive Audit Trails**: Save audit logs for compliance/forensics
+5. **Set Appropriate Log Size**: Balance memory usage with data retention
+6. **Use Filters**: Filter large logs by type or source for analysis
+7. **Automate Anomaly Response**: Set up automated responses to detected anomalies
+
+<details>
+<summary>Performance Considerations, Cleanup, Troubleshooting</summary>
+
 ## Performance Considerations
 
 - HoneyPot maintains an in-memory buffer with configurable max size
@@ -320,16 +344,6 @@ honeypot.reset();
 // Continues to listen for new events after reset
 // Useful for clearing after each test phase
 ```
-
-## Best Practices
-
-1. **Initialize Early**: Attach HoneyPot right after creating components
-2. **Export Regularly**: Don't rely solely on in-memory storage
-3. **Monitor Continuously**: Use periodic checks for real-time monitoring
-4. **Archive Audit Trails**: Save audit logs for compliance/forensics
-5. **Set Appropriate Log Size**: Balance memory usage with data retention
-6. **Use Filters**: Filter large logs by type or source for analysis
-7. **Automate Anomaly Response**: Set up automated responses to detected anomalies
 
 ## Troubleshooting
 
@@ -350,6 +364,8 @@ honeypot.reset();
 - Check the exact event name in the events list
 - Use `honeypot.getAuditLog()` to verify events exist
 - Filter by source and type to narrow down search
+
+</details>
 
 ## See Also
 

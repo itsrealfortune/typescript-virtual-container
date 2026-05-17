@@ -1,7 +1,9 @@
 import type { VirtualShell } from "../VirtualShell";
 import type { ShellStream } from "../types/streams";
-import { WebTermRenderer } from "./webTermRenderer";
 import { keyToBytes } from "../utils/keyToBytes";
+import { clearSession, loadSession, saveSession } from "./sessionManager";
+import { ThunarManager } from "./thunarManager";
+import { WebTermRenderer } from "./webTermRenderer";
 
 function toChunk(bytes: Uint8Array): Buffer {
   const g = globalThis as unknown as Record<string, { from: (d: Uint8Array) => Buffer } | undefined>;
@@ -27,13 +29,18 @@ export interface AboutContent {
   type: "about";
 }
 
+export interface TaskManagerContent {
+  type: "taskmanager";
+  refreshInterval?: ReturnType<typeof setInterval>;
+}
+
 export interface EditorContent {
   type: "editor";
   path: string;
   dirty: boolean;
 }
 
-export type WindowContent = TerminalContent | ThunarContent | AboutContent | EditorContent;
+export type WindowContent = TerminalContent | ThunarContent | AboutContent | EditorContent | TaskManagerContent;
 
 export interface DesktopWindow {
   id: string;
@@ -43,6 +50,8 @@ export interface DesktopWindow {
   width: number;
   height: number;
   minimized: boolean;
+  maximized: boolean;
+  savedRect: { x: number; y: number; width: number; height: number } | null;
   focused: boolean;
   zIndex: number;
   content: WindowContent;
@@ -75,10 +84,21 @@ export class DesktopManager {
   private readonly trashPath = "/root/.local/share/Trash/files";
   private docListeners: Array<{ target: EventTarget; type: string; fn: EventListener }> = [];
   private pendingTimeouts: Set<ReturnType<typeof setTimeout>> = new Set();
+  private thunar: ThunarManager;
 
   constructor(shell: VirtualShell, container: HTMLElement) {
     this.shell = shell;
     this.container = container;
+    this.thunar = new ThunarManager({
+      shell: this.shell,
+      windows: this.windows,
+      trashPath: this.trashPath,
+      renderWindowElement: (w) => this.renderWindowElement(w),
+      showContextMenu: (x, y, items) => this.showContextMenu(x, y, items),
+      closeContextMenu: () => this.closeContextMenu(),
+      createEditorWindow: (path) => this.createEditorWindow(path),
+      escapeHtml: (s) => this.escapeHtml(s),
+    }, container);
     this.setupEventDelegation();
   }
 
@@ -91,6 +111,8 @@ export class DesktopManager {
     this.active = true;
     this.container.style.display = "block";
     this.renderAll();
+    this.restoreSession();
+    this.addDocListener(window, "beforeunload", () => saveSession(this.windows));
     this.clockInterval = setInterval(() => this.updateClock(), 30_000);
     return new Promise<void>((resolve) => {
       this.stopResolve = resolve;
@@ -100,9 +122,15 @@ export class DesktopManager {
   stop(): void {
     if (!this.active) return;
     this.active = false;
+    clearSession();
     this.container.style.display = "none";
     if (this.clockInterval) clearInterval(this.clockInterval);
     this.clockInterval = undefined;
+    for (const w of this.windows) {
+      if (w.content.type === "taskmanager" && w.content.refreshInterval) {
+        clearInterval(w.content.refreshInterval);
+      }
+    }
     this.windows = [];
     this.menuOpen = false;
     this.dragState = null;
@@ -113,6 +141,37 @@ export class DesktopManager {
     this.stopResolve?.();
     this.stopResolve = null;
     this.onExit?.();
+  }
+
+  private restoreSession(): void {
+    const saved = loadSession();
+    if (!saved || saved.length === 0) return;
+    const created: Array<{ saved: typeof saved[number]; id: string }> = [];
+    for (const sw of saved) {
+      let id: string;
+      switch (sw.contentType) {
+        case "terminal": id = this.createTerminalWindow(); break;
+        case "thunar":   id = this.createThunarWindow(sw.contentPath); break;
+        case "editor":   id = this.createEditorWindow(sw.contentPath); break;
+        case "about":    id = this.createAboutWindow(); break;
+        default: continue;
+      }
+      created.push({ saved: sw, id });
+    }
+    for (const { saved: sw, id } of created) {
+      const w = this.windows.find(ww => ww.id === id);
+      if (!w) continue;
+      w.x = sw.x;
+      w.y = sw.y;
+      w.width = sw.width;
+      w.height = sw.height;
+      w.minimized = sw.minimized;
+      w.maximized = sw.maximized ?? false;
+      w.savedRect = sw.savedRect ?? null;
+      w.zIndex = sw.zIndex;
+    }
+    this.zCounter = Math.max(this.zCounter, ...saved.map(s => s.zIndex)) + 1;
+    this.renderAll();
   }
 
   getFocusedTerminal(): { stream: ShellStream; dataListeners: Array<(chunk: Buffer) => void>; preEl: HTMLPreElement } | null {
@@ -242,9 +301,30 @@ export class DesktopManager {
     });
   }
 
+  createTaskManagerWindow(): string {
+    const id = this.createWindow({
+      title: "Task Manager",
+      width: 640,
+      height: 420,
+      content: { type: "taskmanager" },
+    });
+    const w = this.windows.find(ww => ww.id === id);
+    if (w && w.content.type === "taskmanager") {
+      w.content.refreshInterval = setInterval(() => {
+        const el = this.container.querySelector(`.desktop-window[data-win-id="${id}"]`) as HTMLElement | null;
+        if (el) this.renderTaskManagerContent(el, id);
+      }, 3000);
+    }
+    return id;
+  }
+
   closeWindow(id: string): void {
     const idx = this.windows.findIndex((w) => w.id === id);
     if (idx === -1) return;
+    const w = this.windows[idx]!;
+    if (w.content.type === "taskmanager" && w.content.refreshInterval) {
+      clearInterval(w.content.refreshInterval);
+    }
     this.windows.splice(idx, 1);
     if (this.windows.length > 0) {
       this.focusWindow(this.windows[this.windows.length - 1]!.id);
@@ -258,6 +338,34 @@ export class DesktopManager {
     w.minimized = !w.minimized;
     if (!w.minimized) this.focusWindow(id);
     else this.renderAll();
+  }
+
+  toggleMaximize(id: string): void {
+    const w = this.windows.find((ww) => ww.id === id);
+    if (!w) return;
+    if (w.maximized) {
+      this.unmaximize(w);
+    } else {
+      w.savedRect = { x: w.x, y: w.y, width: w.width, height: w.height };
+      const panelEl = this.container.querySelector("#desktop-panel") as HTMLElement | null;
+      const panelH = panelEl?.offsetHeight ?? 28;
+      w.x = 0;
+      w.y = panelH;
+      w.width = this.container.clientWidth;
+      w.height = this.container.clientHeight - panelH;
+      w.maximized = true;
+    }
+    this.renderAll();
+  }
+
+  private unmaximize(w: DesktopWindow): void {
+    if (w.savedRect) {
+      w.x = w.savedRect.x;
+      w.y = w.savedRect.y;
+      w.width = w.savedRect.width;
+      w.height = w.savedRect.height;
+    }
+    w.maximized = false;
   }
 
   focusWindow(id: string): void {
@@ -285,6 +393,8 @@ export class DesktopManager {
       width: opts.width,
       height: opts.height,
       minimized: false,
+      maximized: false,
+      savedRect: null,
       focused: true,
       zIndex: ++this.zCounter,
       content: opts.content,
@@ -309,6 +419,7 @@ export class DesktopManager {
           <span class="win-title">${this.escapeHtml(win.title)}</span>
           <div class="win-controls">
             <button class="win-min">─</button>
+            <button class="win-max"></button>
             <button class="win-close">✕</button>
           </div>
         </div>
@@ -328,15 +439,19 @@ export class DesktopManager {
     el.style.height = `${win.height}px`;
     el.style.zIndex = String(win.zIndex);
     el.classList.toggle("win-focused", win.focused);
+    const maxBtn = el.querySelector(".win-max") as HTMLElement | null;
+    if (maxBtn) maxBtn.textContent = win.maximized ? "🗗" : "□";
 
     if (win.content.type === "terminal") {
       this.renderTerminalContentById(win.id);
     } else if (win.content.type === "thunar") {
-      this.renderThunarContent(el, win.content);
+      this.thunar.renderContent(el, win.content);
     } else if (win.content.type === "about") {
       this.renderAboutContent(el);
     } else if (win.content.type === "editor") {
       this.renderEditorContent(el, win.id, win.content);
+    } else if (win.content.type === "taskmanager") {
+      this.renderTaskManagerContent(el, win.id);
     }
   }
 
@@ -374,6 +489,15 @@ export class DesktopManager {
         return;
       }
 
+      // Maximize button
+      const maxBtn = target.closest(".win-max");
+      if (maxBtn) {
+        const id = maxBtn.closest(".desktop-window")?.getAttribute("data-win-id");
+        if (id) this.toggleMaximize(id);
+        e.stopPropagation();
+        return;
+      }
+
       // Window header click → focus
       const header = target.closest(".win-header");
       if (header) {
@@ -385,14 +509,16 @@ export class DesktopManager {
         }
       }
 
-      // Window content click → focus
+      // Window content click → focus (don't block pathbar clicks)
       const winEl = target.closest(".desktop-window");
       if (winEl) {
         const id = winEl.getAttribute("data-win-id");
         if (id) {
           this.focusWindow(id);
-          e.stopPropagation();
-          return;
+          if (!target.closest(".thunar-pathbar")) {
+            e.stopPropagation();
+            return;
+          }
         }
       }
 
@@ -403,6 +529,7 @@ export class DesktopManager {
         if (action === "terminal") this.createTerminalWindow();
         else if (action === "home") this.createThunarWindow("/root");
         else if (action === "editor") this.createEditorWindow();
+        else if (action === "taskmanager") this.createTaskManagerWindow();
         else if (action === "trash") this.createThunarWindow(this.trashPath);
         e.stopPropagation();
         return;
@@ -416,12 +543,56 @@ export class DesktopManager {
         return;
       }
 
+      // Task Manager: close desktop window
+      if (target.classList.contains("taskmgr-close")) {
+        const closeWinId = target.getAttribute("data-win-id");
+        if (closeWinId) this.closeWindow(closeWinId);
+        e.stopPropagation();
+        return;
+      }
+
+      // Task Manager: kill button
+      if (target.classList.contains("taskmgr-kill")) {
+        const pid = Number(target.getAttribute("data-pid"));
+        if (pid) {
+          const sessions = this.shell.users.listActiveSessions();
+          const sessionIdx = pid - 1000;
+          if (sessionIdx >= 0 && sessionIdx < sessions.length) {
+            this.shell.users.unregisterSession(sessions[sessionIdx]!.id);
+          } else {
+            this.shell.users.killProcess(pid);
+          }
+          const winId = target.closest(".desktop-window")?.getAttribute("data-win-id");
+          if (winId) this.renderTaskManagerContent(
+            this.container.querySelector(`.desktop-window[data-win-id="${winId}"]`) as HTMLElement,
+            winId,
+          );
+        }
+        e.stopPropagation();
+        return;
+      }
+
+      // Task Manager: refresh button
+      if (target.classList.contains("taskmgr-refresh") || target.closest(".taskmgr-refresh")) {
+        const btn = target.classList.contains("taskmgr-refresh")
+          ? target
+          : target.closest(".taskmgr-refresh") as HTMLElement;
+        const winId = btn.getAttribute("data-win-id");
+        if (winId) this.renderTaskManagerContent(
+          this.container.querySelector(`.desktop-window[data-win-id="${winId}"]`) as HTMLElement,
+          winId,
+        );
+        e.stopPropagation();
+        return;
+      }
+
       // Menu items
       if (target.classList.contains("menu-item")) {
         const action = target.getAttribute("data-action");
         if (action === "terminal") this.createTerminalWindow();
         else if (action === "thunar") this.createThunarWindow();
         else if (action === "editor") this.createEditorWindow();
+        else if (action === "taskmanager") this.createTaskManagerWindow();
         else if (action === "about") this.createAboutWindow();
         else if (action === "logout") this.stop();
         this.menuOpen = false;
@@ -434,67 +605,6 @@ export class DesktopManager {
         this.menuOpen = false;
         this.renderPanel();
       }
-    });
-
-    // Double-click on Thunar entries
-    this.container.addEventListener("dblclick", (e) => {
-      const entry = (e.target as HTMLElement).closest(".thunar-entry") as HTMLElement | null;
-      if (!entry) return;
-      const path = entry.getAttribute("data-path");
-      const type = entry.getAttribute("data-type");
-      if (!path) return;
-      if (type === "directory") {
-        const winEl = entry.closest(".desktop-window");
-        const id = winEl?.getAttribute("data-win-id");
-        const w = id ? this.windows.find((ww) => ww.id === id) : null;
-        if (w && w.content.type === "thunar") {
-          w.content.path = path;
-          w.title = `Thunar: ${path}`;
-          const wEl = this.container.querySelector(`.desktop-window[data-win-id="${w.id}"] .win-content`) as HTMLElement | null;
-          if (wEl) wEl.removeAttribute("data-thunar-path");
-          this.renderWindowElement(w);
-        }
-      } else {
-        this.createEditorWindow(path);
-      }
-      e.stopPropagation();
-    });
-
-    // Context menu on Thunar entries
-    this.container.addEventListener("contextmenu", (e) => {
-      const entry = (e.target as HTMLElement).closest(".thunar-entry") as HTMLElement | null;
-      if (!entry) { this.closeContextMenu(); return; }
-      const path = entry.getAttribute("data-path");
-      const type = entry.getAttribute("data-type");
-      if (!path) return;
-      e.preventDefault();
-      e.stopPropagation();
-      const inTrash = path.startsWith(this.trashPath);
-      const winEl = entry.closest(".desktop-window");
-      const winId = winEl?.getAttribute("data-win-id") ?? null;
-      this.showContextMenu(e.clientX, e.clientY, inTrash
-        ? [
-            { label: "Restore", icon: "fa-solid fa-rotate-left", action: () => this.trashRestore(path, winId) },
-            { label: "Delete permanently", icon: "fa-solid fa-circle-xmark", danger: true, action: () => this.trashDelete(path, winId) },
-          ]
-        : [
-            { label: type === "directory" ? "Open folder" : "Open", icon: type === "directory" ? "fa-solid fa-folder-open" : "fa-solid fa-file-pen", action: () => {
-                if (type === "directory") {
-                  const w = winId ? this.windows.find((ww) => ww.id === winId) : null;
-                  if (w && w.content.type === "thunar") {
-                    w.content.path = path;
-                    w.title = `Thunar: ${path}`;
-                    const wEl = this.container.querySelector(`.desktop-window[data-win-id="${w.id}"] .win-content`) as HTMLElement | null;
-                    if (wEl) wEl.removeAttribute("data-thunar-path");
-                    this.renderWindowElement(w);
-                  }
-                } else { this.createEditorWindow(path); }
-              }
-            },
-            { label: "Rename", icon: "fa-solid fa-pencil", action: () => this.renamePrompt(path, winId) },
-            { label: "Move to Trash", icon: "fa-solid fa-trash-can", danger: true, action: () => this.moveToTrash(path, winId) },
-          ]
-      );
     });
 
     // Close context menu on click elsewhere
@@ -526,6 +636,10 @@ export class DesktopManager {
       const win = this.windows.find((w) => w.id === id);
       if (!win) return;
       this.focusWindow(id);
+
+      if (win.maximized) {
+        this.unmaximize(win);
+      }
 
       this.dragState = {
         win,
@@ -559,6 +673,17 @@ export class DesktopManager {
     document.addEventListener("mouseup", () => {
       this.dragState = null;
       this.resizeState = null;
+    });
+
+    // Double-click title bar → toggle maximize
+    this.container.addEventListener("dblclick", (e) => {
+      if (!this.active) return;
+      const header = (e.target as HTMLElement).closest(".win-header");
+      if (header) {
+        const id = header.closest(".desktop-window")?.getAttribute("data-win-id");
+        if (id) this.toggleMaximize(id);
+        e.stopPropagation();
+      }
     });
 
     // Paste delegation for terminal windows
@@ -680,6 +805,7 @@ export class DesktopManager {
         <div class="menu-item" data-action="terminal"><span class="menu-item-icon"><i class="fa-solid fa-terminal"></i></span>Terminal</div>
         <div class="menu-item" data-action="thunar"><span class="menu-item-icon"><i class="fa-solid fa-folder-open"></i></span>File Manager</div>
         <div class="menu-item" data-action="editor"><span class="menu-item-icon"><i class="fa-solid fa-file-pen"></i></span>Text Editor</div>
+        <div class="menu-item" data-action="taskmanager"><span class="menu-item-icon"><i class="fa-solid fa-chart-bar"></i></span>Task Manager</div>
         <div class="menu-separator"></div>
         <div class="menu-item" data-action="about"><span class="menu-item-icon"><i class="fa-solid fa-circle-info"></i></span>About Fortune GNU/Linux</div>
         <div class="menu-separator"></div>
@@ -710,6 +836,10 @@ export class DesktopManager {
       <div class="desktop-icon" data-action="editor">
         <div class="desktop-icon-img editor-icon"><i class="fa-solid fa-file-pen"></i></div>
         <span>Text Editor</span>
+      </div>
+      <div class="desktop-icon" data-action="taskmanager">
+        <div class="desktop-icon-img taskmgr-icon"><i class="fa-solid fa-chart-bar"></i></div>
+        <span>Task Manager</span>
       </div>
       <div class="desktop-icon" data-action="trash">
         <div class="desktop-icon-img trash-icon"><i class="fa-solid fa-trash-can"></i></div>
@@ -761,43 +891,6 @@ export class DesktopManager {
     if (!pre.parentNode) el.appendChild(pre);
   }
 
-  private renderThunarContent(el: HTMLElement, content: ThunarContent): void {
-    const contentArea = el.querySelector(".win-content") as HTMLElement;
-    if (!contentArea) return;
-    const targetPath = content.path;
-    if (contentArea.getAttribute("data-thunar-path") === targetPath) return;
-    contentArea.setAttribute("data-thunar-path", targetPath);
-    const parentPath = targetPath === "/" ? null : targetPath.replace(/\/[^/]+$/, "") || "/";
-    const parentEntry = parentPath
-      ? `<div class="thunar-entry" data-path="${this.escapeHtml(parentPath)}" data-type="directory"><span class="thunar-icon"><i class="fa-solid fa-folder"></i></span><span>..</span></div>`
-      : "";
-    let listing = "";
-    try {
-      const entries = this.shell.vfs.list(targetPath);
-      listing = entries
-        .filter((e) => e !== "." && e !== "..")
-        .map((e: string) => {
-          try {
-            const st = this.shell.vfs.stat(`${targetPath}/${e}`);
-            const icon = st.type === "directory"
-              ? `<i class="fa-solid fa-folder"></i>`
-              : `<i class="fa-regular fa-file"></i>`;
-            const fullPath = `${targetPath}/${e}`;
-            return `<div class="thunar-entry" data-path="${this.escapeHtml(fullPath)}" data-type="${st.type}"><span class="thunar-icon">${icon}</span><span>${this.escapeHtml(e)}</span></div>`;
-          } catch {
-            return `<div class="thunar-entry"><span class="thunar-icon"><i class="fa-solid fa-circle-question"></i></span><span>${this.escapeHtml(e)}</span></div>`;
-          }
-        })
-        .join("");
-    } catch {
-      listing = `<div class="thunar-error">Could not read ${this.escapeHtml(targetPath)}</div>`;
-    }
-    contentArea.innerHTML = `
-      <div class="thunar-pathbar">Location: ${this.escapeHtml(targetPath)}</div>
-      <div class="thunar-listing">${parentEntry}${listing}</div>
-    `;
-  }
-
   private renderEditorContent(el: HTMLElement, winId: string, content: EditorContent): void {
     const contentArea = el.querySelector(".win-content") as HTMLElement;
     if (!contentArea) return;
@@ -828,7 +921,7 @@ export class DesktopManager {
     // If path is still untitled, prompt for a filename before saving
     if (w.content.path.endsWith("untitled.txt")) {
       const input = window.prompt("Save as:", "untitled.txt");
-      if (!input || !input.trim()) return;
+      if (!input?.trim()) return;
       const name = input.trim();
       const dir = w.content.path.substring(0, w.content.path.lastIndexOf("/"));
       w.content.path = `${dir}/${name}`;
@@ -861,6 +954,72 @@ export class DesktopManager {
         <p>Kernel: ${this.shell.properties.kernel}</p>
         <p>Architecture: ${this.shell.properties.arch}</p>
         <p class="about-close-hint">Close this window to return</p>
+      </div>
+    `;
+  }
+
+  private renderTaskManagerContent(el: HTMLElement, winId: string): void {
+    const contentArea = el.querySelector(".win-content") as HTMLElement;
+    if (!contentArea) return;
+
+    const sessions = this.shell.users.listActiveSessions();
+    const processes = this.shell.users.listProcesses();
+    const desktopWindows = this.windows.filter(w => w.id !== winId && w.content.type !== "taskmanager");
+
+    let rows = "";
+
+    for (const w of desktopWindows) {
+      const icon = w.content.type === "terminal" ? "fa-terminal"
+        : w.content.type === "thunar" ? "fa-folder-open"
+        : w.content.type === "editor" ? "fa-file-pen"
+        : w.content.type === "about" ? "fa-circle-info"
+        : "fa-window-restore";
+      rows += `<tr>
+        <td>—</td>
+        <td>root</td>
+        <td><i class="fa-solid ${icon}"></i> ${this.escapeHtml(w.title)}</td>
+        <td>desktop</td>
+        <td><span class="taskmgr-status running">running</span></td>
+        <td><button class="taskmgr-close" data-win-id="${w.id}">Close</button></td>
+      </tr>`;
+    }
+
+    for (let i = 0; i < sessions.length; i++) {
+      const s = sessions[i]!;
+      const pid = 1000 + i;
+      rows += `<tr>
+        <td>${pid}</td>
+        <td>${this.escapeHtml(s.username)}</td>
+        <td>bash</td>
+        <td>${this.escapeHtml(s.tty)}</td>
+        <td><span class="taskmgr-status running">running</span></td>
+        <td><button class="taskmgr-kill" data-pid="${pid}">Kill</button></td>
+      </tr>`;
+    }
+    for (const p of processes) {
+      const statusClass = p.status === "running" ? "running" : p.status === "stopped" ? "stopped" : "done";
+      rows += `<tr>
+        <td>${p.pid}</td>
+        <td>${this.escapeHtml(p.username)}</td>
+        <td>${this.escapeHtml(p.command)}</td>
+        <td>${this.escapeHtml(p.tty)}</td>
+        <td><span class="taskmgr-status ${statusClass}">${p.status}</span></td>
+        <td><button class="taskmgr-kill" data-pid="${p.pid}">Kill</button></td>
+      </tr>`;
+    }
+
+    const total = desktopWindows.length + sessions.length + processes.length;
+
+    contentArea.innerHTML = `
+      <div class="taskmgr-toolbar">
+        <span class="taskmgr-count">${total} processes</span>
+        <button class="taskmgr-refresh" data-win-id="${winId}"><i class="fa-solid fa-rotate"></i> Refresh</button>
+      </div>
+      <div class="taskmgr-table-wrap">
+        <table class="taskmgr-table">
+          <thead><tr><th>PID</th><th>User</th><th>Command</th><th>TTY</th><th>Status</th><th></th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
       </div>
     `;
   }
@@ -907,71 +1066,6 @@ export class DesktopManager {
 
   private closeContextMenu(): void {
     this.container.querySelector(".desktop-context-menu")?.remove();
-  }
-
-  private ensureTrashDir(): void {
-    const parts = this.trashPath.split("/").filter(Boolean);
-    let cur = "";
-    for (const p of parts) {
-      cur += `/${p}`;
-      if (!this.shell.vfs.exists(cur)) this.shell.vfs.mkdir(cur, 0o700);
-    }
-  }
-
-  private refreshThunarWindow(winId: string | null): void {
-    if (!winId) return;
-    const w = this.windows.find((ww) => ww.id === winId);
-    if (!w || w.content.type !== "thunar") return;
-    const wEl = this.container.querySelector(`.desktop-window[data-win-id="${winId}"] .win-content`) as HTMLElement | null;
-    if (wEl) wEl.removeAttribute("data-thunar-path");
-    this.renderWindowElement(w);
-  }
-
-  private moveToTrash(path: string, winId: string | null): void {
-    this.ensureTrashDir();
-    const name = path.split("/").pop() ?? "file";
-    let dest = `${this.trashPath}/${name}`;
-    let i = 1;
-    while (this.shell.vfs.exists(dest)) dest = `${this.trashPath}/${name}.${i++}`;
-    try {
-      const content = this.shell.vfs.readFile(path);
-      this.shell.vfs.writeFile(dest, content);
-      this.shell.vfs.remove(path);
-    } catch {
-      // directory: not supported for now, just remove
-      try { this.shell.vfs.remove(path, { recursive: true }); } catch { /* ignore */ }
-    }
-    this.refreshThunarWindow(winId);
-  }
-
-  private trashRestore(path: string, winId: string | null): void {
-    const name = path.split("/").pop() ?? "file";
-    const dest = `/root/${name}`;
-    try {
-      const content = this.shell.vfs.readFile(path);
-      this.shell.vfs.writeFile(dest, content);
-      this.shell.vfs.remove(path);
-    } catch { /* ignore */ }
-    this.refreshThunarWindow(winId);
-  }
-
-  private trashDelete(path: string, winId: string | null): void {
-    try { this.shell.vfs.remove(path, { recursive: true }); } catch { /* ignore */ }
-    this.refreshThunarWindow(winId);
-  }
-
-  private renamePrompt(path: string, winId: string | null): void {
-    const oldName = path.split("/").pop() ?? "";
-    const newName = window.prompt("Rename:", oldName);
-    if (!newName || newName === oldName) return;
-    const dir = path.substring(0, path.lastIndexOf("/"));
-    const dest = `${dir}/${newName}`;
-    try {
-      const content = this.shell.vfs.readFile(path);
-      this.shell.vfs.writeFile(dest, content);
-      this.shell.vfs.remove(path);
-    } catch { /* ignore */ }
-    this.refreshThunarWindow(winId);
   }
 
   private escapeHtml(s: string): string {

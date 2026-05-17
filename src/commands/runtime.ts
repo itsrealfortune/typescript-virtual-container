@@ -217,7 +217,16 @@ export async function runCommandDirect(
 		if (background && abortController?.signal.aborted) {
 			return { stderr: "", exitCode: 130 };
 		}
-		return await _runCommandDirectInner(name, args, authUser, hostname, mode, cwd, shell, stdin, env);
+		const inner = _runCommandDirectInner(name, args, authUser, hostname, mode, cwd, shell, stdin, env);
+		if (abortController) {
+			const killed = new Promise<CommandResult>((resolve) => {
+				abortController.signal.addEventListener("abort", () => {
+					resolve({ stderr: "", exitCode: 130 });
+				}, { once: true });
+			});
+			return await Promise.race([inner, killed]);
+		}
+		return await inner;
 	} finally {
 		_callDepth--;
 		if (isTopLevel && pid !== -1) {

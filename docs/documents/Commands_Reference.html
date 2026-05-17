@@ -1,0 +1,1028 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>Commands Reference | typescript-virtual-container - v1.7.0</title><meta name="description" content="Documentation for typescript-virtual-container"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="../index" class="title">typescript-virtual-container - v1.7.0</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><ul class="tsd-breadcrumb" aria-label="Breadcrumb"><li><a href="" aria-current="page">Commands Reference</a></li></ul></div><div class="tsd-panel tsd-typography"><h1 id="commands-reference-typescript-virtual-container" class="tsd-anchor-link">Commands Reference — typescript-virtual-container<a href="#commands-reference-typescript-virtual-container" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p>~112 built-in commands across 13 categories. Each command implements the <code>ShellModule</code> interface.</p>
+<details>
+<summary>Architecture — registry, runtime, execution pipeline</summary>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>registry.ts</code></td>
+<td>Central registry — defines all <code>ShellModule</code> entries, provides <code>resolveModule()</code>, <code>registerCommand()</code></td>
+</tr>
+<tr>
+<td><code>runtime.ts</code></td>
+<td>Execution engine — <code>runCommand()</code> (full pipeline: history, alias, sh-syntax, pipes, redirects, brace, glob) and <code>runCommandDirect()</code></td>
+</tr>
+<tr>
+<td><code>command-helpers.ts</code></td>
+<td><code>parseArgs()</code>, <code>ifFlag()</code>, <code>getFlag()</code>, <code>getArg()</code> — argument parsing utilities</td>
+</tr>
+<tr>
+<td><code>command-executor.ts</code></td>
+<td><code>executeStatements()</code> — executes parsed AST with pipes, redirects, logical operators</td>
+</tr>
+<tr>
+<td><code>help.ts</code></td>
+<td>Dynamic <code>help</code> command — groups commands by category</td>
+</tr>
+<tr>
+<td><code>man.ts</code></td>
+<td>Manual page viewer — checks VFS then bundled <code>MANUALS</code> map</td>
+</tr>
+</tbody>
+</table>
+<h3 id="shellmodule-interface" class="tsd-anchor-link">ShellModule interface<a href="#shellmodule-interface" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-4">interface</span><span class="hl-1"> </span><span class="hl-15">ShellModule</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-6">name</span><span class="hl-1">: </span><span class="hl-15">string</span><span class="hl-1">;</span><br/><span class="hl-1">  </span><span class="hl-6">params</span><span class="hl-1">: </span><span class="hl-15">string</span><span class="hl-1">[];</span><br/><span class="hl-1">  </span><span class="hl-0">run</span><span class="hl-1">: (</span><span class="hl-6">ctx</span><span class="hl-1">: </span><span class="hl-15">CommandContext</span><span class="hl-1">) </span><span class="hl-4">=&gt;</span><span class="hl-1"> </span><span class="hl-15">CommandResult</span><span class="hl-1"> | </span><span class="hl-15">Promise</span><span class="hl-1">&lt;</span><span class="hl-15">CommandResult</span><span class="hl-1">&gt;;</span><br/><span class="hl-1">  </span><span class="hl-6">aliases</span><span class="hl-1">?: </span><span class="hl-15">string</span><span class="hl-1">[];</span><br/><span class="hl-1">  </span><span class="hl-6">description</span><span class="hl-1">?: </span><span class="hl-15">string</span><span class="hl-1">;</span><br/><span class="hl-1">  </span><span class="hl-6">category</span><span class="hl-1">?: </span><span class="hl-15">string</span><span class="hl-1">;</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="execution-pipeline" class="tsd-anchor-link">Execution pipeline<a href="#execution-pipeline" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ol>
+<li><strong>History expansion</strong> — <code>!!</code>, <code>!n</code>, <code>!-n</code> from <code>~/.bash_history</code></li>
+<li><strong>Alias expansion</strong> — <code>__alias_&lt;name&gt;</code> env var check</li>
+<li><strong>Sh-syntax detection</strong> — <code>for</code>, <code>while</code>, <code>if</code>, functions, arithmetic — routes to <code>sh</code> interpreter</li>
+<li><strong>Pipe/redirect/operator parsing</strong> — <code>|</code>, <code>&gt;</code>, <code>&lt;</code>, <code>;</code>, <code>||</code>, <code>&amp;&amp;</code></li>
+<li><strong>Variable expansion</strong> — <code>$VAR</code>, <code>${VAR}</code>, <code>$?</code>, <code>$((expr))</code>, <code>$(cmd)</code></li>
+<li><strong>Brace expansion</strong> — <code>{a,b,c}</code> → <code>a b c</code></li>
+<li><strong>Glob expansion</strong> — <code>*.txt</code> → matching VFS files</li>
+<li><strong>Command resolution</strong> — variable assignments → shell function → alias → registered module → VFS binary stub → error 127</li>
+</ol>
+</details>
+<hr>
+<h2 id="navigation" class="tsd-anchor-link">Navigation<a href="#navigation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Syntax</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pwd</code></td>
+<td><code>pwd</code></td>
+<td>Print working directory</td>
+</tr>
+<tr>
+<td><code>cd</code></td>
+<td><code>cd [directory]</code></td>
+<td>Change directory (default: <code>$HOME</code>)</td>
+</tr>
+<tr>
+<td><code>ls</code></td>
+<td><code>ls [-la] [path]</code></td>
+<td>List directory contents</td>
+</tr>
+<tr>
+<td><code>tree</code></td>
+<td><code>tree [-a] [-d] [-L N] [dir]</code></td>
+<td>Display directory tree</td>
+</tr>
+</tbody>
+</table>
+<h2 id="files-filesystem" class="tsd-anchor-link">Files &amp; Filesystem<a href="#files-filesystem" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Syntax</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cat</code></td>
+<td><code>cat [-n] [-b] &lt;file...&gt;</code></td>
+<td>Concatenate and print files</td>
+</tr>
+<tr>
+<td><code>touch</code></td>
+<td><code>touch &lt;file...&gt;</code></td>
+<td>Create empty file or update timestamps</td>
+</tr>
+<tr>
+<td><code>rm</code></td>
+<td><code>rm [-r] [-f] &lt;file...&gt;</code></td>
+<td>Remove files/directories</td>
+</tr>
+<tr>
+<td><code>mkdir</code></td>
+<td><code>mkdir [-p] &lt;directory...&gt;</code></td>
+<td>Create directories</td>
+</tr>
+<tr>
+<td><code>cp</code></td>
+<td><code>cp [-r] &lt;source&gt; &lt;dest&gt;</code></td>
+<td>Copy files/directories</td>
+</tr>
+<tr>
+<td><code>mv</code></td>
+<td><code>mv &lt;source&gt; &lt;dest&gt;</code></td>
+<td>Move or rename files</td>
+</tr>
+<tr>
+<td><code>ln</code></td>
+<td><code>ln [-s] [-f] &lt;target&gt; &lt;link_name&gt;</code></td>
+<td>Create links</td>
+</tr>
+<tr>
+<td><code>readlink</code></td>
+<td><code>readlink [-f] &lt;file&gt;</code></td>
+<td>Print resolved symlink target</td>
+</tr>
+<tr>
+<td><code>chmod</code></td>
+<td><code>chmod &lt;mode&gt; &lt;file...&gt;</code></td>
+<td>Change file mode bits</td>
+</tr>
+<tr>
+<td><code>chown</code></td>
+<td><code>chown &lt;owner&gt; &lt;file...&gt;</code></td>
+<td>Change file owner</td>
+</tr>
+<tr>
+<td><code>chgrp</code></td>
+<td><code>chgrp &lt;group&gt; &lt;file...&gt;</code></td>
+<td>Change file group</td>
+</tr>
+<tr>
+<td><code>stat</code></td>
+<td><code>stat [-c fmt] &lt;file...&gt;</code></td>
+<td>Display file status</td>
+</tr>
+<tr>
+<td><code>find</code></td>
+<td><code>find [path] [-name p] [-type t]</code></td>
+<td>Search for files</td>
+</tr>
+<tr>
+<td><code>dd</code></td>
+<td><code>dd if=&lt;f&gt; of=&lt;f&gt; [bs=N] [count=N]</code></td>
+<td>Convert and copy a file</td>
+</tr>
+<tr>
+<td><code>seq</code></td>
+<td><code>seq [-s sep] [first [inc]] last</code></td>
+<td>Print numeric sequences</td>
+</tr>
+<tr>
+<td><code>realpath</code></td>
+<td><code>realpath &lt;path&gt;</code></td>
+<td>Resolve symlinks, print absolute path</td>
+</tr>
+</tbody>
+</table>
+<h2 id="text-processing" class="tsd-anchor-link">Text Processing<a href="#text-processing" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Syntax</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>grep</code></td>
+<td><code>grep [-ivncrlq] &lt;p&gt; [file...]</code></td>
+<td>Search text with regex</td>
+</tr>
+<tr>
+<td><code>sed</code></td>
+<td><code>sed &lt;script&gt; [file...]</code></td>
+<td>Stream editor</td>
+</tr>
+<tr>
+<td><code>awk</code></td>
+<td><code>awk [-F fs] 'program' [file...]</code></td>
+<td>Pattern scanning</td>
+</tr>
+<tr>
+<td><code>sort</code></td>
+<td><code>sort [-rnu] [file...]</code></td>
+<td>Sort lines</td>
+</tr>
+<tr>
+<td><code>uniq</code></td>
+<td><code>uniq [-cdu] [in [out]]</code></td>
+<td>Report repeated lines</td>
+</tr>
+<tr>
+<td><code>wc</code></td>
+<td><code>wc [-lwc] [file...]</code></td>
+<td>Line/word/byte counts</td>
+</tr>
+<tr>
+<td><code>head</code></td>
+<td><code>head [-n N] [file...]</code></td>
+<td>First N lines</td>
+</tr>
+<tr>
+<td><code>tail</code></td>
+<td><code>tail [-n N] [file...]</code></td>
+<td>Last N lines</td>
+</tr>
+<tr>
+<td><code>cut</code></td>
+<td><code>cut [-bcdf] &lt;list&gt; [file...]</code></td>
+<td>Remove sections from lines</td>
+</tr>
+<tr>
+<td><code>tr</code></td>
+<td><code>tr [-d] &lt;set1&gt; [set2]</code></td>
+<td>Translate/delete characters</td>
+</tr>
+<tr>
+<td><code>tee</code></td>
+<td><code>tee [-a] [file...]</code></td>
+<td>Read stdin, write to stdout + files</td>
+</tr>
+<tr>
+<td><code>xargs</code></td>
+<td><code>xargs [cmd [args]]</code></td>
+<td>Build command lines from stdin</td>
+</tr>
+<tr>
+<td><code>diff</code></td>
+<td><code>diff [-uiwrq] &lt;f1&gt; &lt;f2&gt;</code></td>
+<td>Compare files</td>
+</tr>
+<tr>
+<td><code>basename</code></td>
+<td><code>basename &lt;path&gt; [suffix]</code></td>
+<td>Strip directory from path</td>
+</tr>
+<tr>
+<td><code>dirname</code></td>
+<td><code>dirname &lt;path&gt;</code></td>
+<td>Strip last component</td>
+</tr>
+<tr>
+<td><code>fold</code></td>
+<td><code>fold [-w W] [file]</code></td>
+<td>Wrap lines to width</td>
+</tr>
+<tr>
+<td><code>expand</code></td>
+<td><code>expand [-t N] [file]</code></td>
+<td>Convert tabs to spaces</td>
+</tr>
+<tr>
+<td><code>fmt</code></td>
+<td><code>fmt [-w W] [file]</code></td>
+<td>Simple text formatter</td>
+</tr>
+<tr>
+<td><code>md5sum</code></td>
+<td><code>md5sum &lt;file&gt;</code></td>
+<td>MD5 checksum</td>
+</tr>
+<tr>
+<td><code>sha256sum</code></td>
+<td><code>sha256sum &lt;file&gt;</code></td>
+<td>SHA-256 checksum</td>
+</tr>
+<tr>
+<td><code>strings</code></td>
+<td><code>strings &lt;file&gt;</code></td>
+<td>Extract printable strings</td>
+</tr>
+<tr>
+<td><code>join</code></td>
+<td><code>join [-t sep] &lt;f1&gt; &lt;f2&gt;</code></td>
+<td>Join lines on common field</td>
+</tr>
+<tr>
+<td><code>comm</code></td>
+<td><code>comm &lt;f1&gt; &lt;f2&gt;</code></td>
+<td>Compare sorted files</td>
+</tr>
+<tr>
+<td><code>split</code></td>
+<td><code>split [-l N] [-b N] &lt;f&gt; [prefix]</code></td>
+<td>Split file into pieces</td>
+</tr>
+<tr>
+<td><code>csplit</code></td>
+<td><code>csplit &lt;f&gt; &lt;pattern...&gt;</code></td>
+<td>Split by context patterns</td>
+</tr>
+<tr>
+<td><code>shuf</code></td>
+<td><code>shuf [-n N] [-i lo-hi] [file]</code></td>
+<td>Random permutation</td>
+</tr>
+<tr>
+<td><code>paste</code></td>
+<td><code>paste [-d delim] [file...]</code></td>
+<td>Merge lines side-by-side</td>
+</tr>
+<tr>
+<td><code>tac</code></td>
+<td><code>tac [file...]</code></td>
+<td>Reverse cat</td>
+</tr>
+<tr>
+<td><code>nl</code></td>
+<td><code>nl [-ba] [-nrz] [file]</code></td>
+<td>Number lines</td>
+</tr>
+<tr>
+<td><code>column</code></td>
+<td><code>column [-t] [-s sep] [file]</code></td>
+<td>Columnate lists</td>
+</tr>
+</tbody>
+</table>
+<h2 id="archive-compression" class="tsd-anchor-link">Archive &amp; Compression<a href="#archive-compression" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Syntax</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tar</code></td>
+<td><code>tar [-c|-x|-t] [-z] [-f a] [files]</code></td>
+<td>Archive utility</td>
+</tr>
+<tr>
+<td><code>gzip</code></td>
+<td><code>gzip &lt;file...&gt;</code></td>
+<td>Compress files</td>
+</tr>
+<tr>
+<td><code>gunzip</code></td>
+<td><code>gunzip &lt;file...&gt;</code></td>
+<td>Decompress gzip</td>
+</tr>
+<tr>
+<td><code>zip</code></td>
+<td><code>zip &lt;archive&gt; &lt;file...&gt;</code></td>
+<td>Create zip archives</td>
+</tr>
+<tr>
+<td><code>unzip</code></td>
+<td><code>unzip &lt;archive&gt;</code></td>
+<td>Extract zip</td>
+</tr>
+<tr>
+<td><code>bzip2</code></td>
+<td><code>bzip2 &lt;file...&gt;</code></td>
+<td>Compress with bzip2</td>
+</tr>
+<tr>
+<td><code>bunzip2</code></td>
+<td><code>bunzip2 &lt;file...&gt;</code></td>
+<td>Decompress bzip2</td>
+</tr>
+<tr>
+<td><code>base64</code></td>
+<td><code>base64 [-d] [-w cols] [file]</code></td>
+<td>Base64 encode/decode</td>
+</tr>
+</tbody>
+</table>
+<h2 id="system-information" class="tsd-anchor-link">System Information<a href="#system-information" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Syntax</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>whoami</code></td>
+<td><code>whoami</code></td>
+<td>Print effective user name</td>
+</tr>
+<tr>
+<td><code>who</code></td>
+<td><code>who [-abHq] [am i]</code></td>
+<td>Show logged-in users</td>
+</tr>
+<tr>
+<td><code>w</code></td>
+<td><code>w [user]</code></td>
+<td>Show who is logged on and activity</td>
+</tr>
+<tr>
+<td><code>hostname</code></td>
+<td><code>hostname</code></td>
+<td>Print hostname</td>
+</tr>
+<tr>
+<td><code>id</code></td>
+<td><code>id [user]</code></td>
+<td>Print user/group IDs</td>
+</tr>
+<tr>
+<td><code>groups</code></td>
+<td><code>groups [user]</code></td>
+<td>Print group memberships</td>
+</tr>
+<tr>
+<td><code>uname</code></td>
+<td><code>uname [-a] [-r] [-m]</code></td>
+<td>Print system info</td>
+</tr>
+<tr>
+<td><code>ps</code></td>
+<td><code>ps [-aux]</code></td>
+<td>Process snapshot</td>
+</tr>
+<tr>
+<td><code>kill</code></td>
+<td><code>kill [-signal] &lt;pid...&gt;</code></td>
+<td>Send signals</td>
+</tr>
+<tr>
+<td><code>df</code></td>
+<td><code>df [-h] [file...]</code></td>
+<td>Disk space usage</td>
+</tr>
+<tr>
+<td><code>du</code></td>
+<td><code>du [-hs] [file...]</code></td>
+<td>File space usage</td>
+</tr>
+<tr>
+<td><code>date</code></td>
+<td><code>date [+format]</code></td>
+<td>Print date/time</td>
+</tr>
+<tr>
+<td><code>uptime</code></td>
+<td><code>uptime [-p] [-s]</code></td>
+<td>System uptime</td>
+</tr>
+<tr>
+<td><code>free</code></td>
+<td><code>free [-hmg]</code></td>
+<td>Memory usage</td>
+</tr>
+<tr>
+<td><code>lscpu</code></td>
+<td><code>lscpu</code></td>
+<td>CPU architecture info</td>
+</tr>
+<tr>
+<td><code>lspci</code></td>
+<td><code>lspci</code></td>
+<td>List PCI devices</td>
+</tr>
+<tr>
+<td><code>lsusb</code></td>
+<td><code>lsusb</code></td>
+<td>List USB devices</td>
+</tr>
+<tr>
+<td><code>lsb_release</code></td>
+<td><code>lsb_release [-aidrcs]</code></td>
+<td>Distribution info</td>
+</tr>
+<tr>
+<td><code>lsof</code></td>
+<td><code>lsof</code></td>
+<td>List open files</td>
+</tr>
+<tr>
+<td><code>strace</code></td>
+<td><code>strace &lt;cmd&gt; [args]</code></td>
+<td>Trace syscalls</td>
+</tr>
+<tr>
+<td><code>dmesg</code></td>
+<td><code>dmesg [-nTcH]</code></td>
+<td>Kernel ring buffer</td>
+</tr>
+<tr>
+<td><code>last</code></td>
+<td><code>last [-n N] [-F] [user]</code></td>
+<td>Login history</td>
+</tr>
+<tr>
+<td><code>ip</code></td>
+<td><code>ip [addr|link|route|neigh]</code></td>
+<td>Network device/routing</td>
+</tr>
+<tr>
+<td><code>nproc</code></td>
+<td><code>nproc [--all]</code></td>
+<td>Number of CPUs</td>
+</tr>
+<tr>
+<td><code>pgrep</code></td>
+<td><code>pgrep &lt;pattern&gt;</code></td>
+<td>Lookup processes by name</td>
+</tr>
+<tr>
+<td><code>pkill</code></td>
+<td><code>pkill [-sig] &lt;pattern&gt;</code></td>
+<td>Kill processes by name</td>
+</tr>
+<tr>
+<td><code>top</code></td>
+<td><code>top</code></td>
+<td>Interactive process viewer</td>
+</tr>
+<tr>
+<td><code>nice</code></td>
+<td><code>nice [-n N] &lt;cmd&gt; [args]</code></td>
+<td>Run with adjusted priority</td>
+</tr>
+<tr>
+<td><code>nohup</code></td>
+<td><code>nohup &lt;cmd&gt; [args]</code></td>
+<td>Run immune to hangups</td>
+</tr>
+<tr>
+<td><code>bc</code></td>
+<td><code>bc [expr]</code></td>
+<td>Arbitrary precision calculator</td>
+</tr>
+</tbody>
+</table>
+<h2 id="network" class="tsd-anchor-link">Network<a href="#network" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Syntax</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>curl</code></td>
+<td><code>curl [-o f] [-X m] [-d d] [-H h] [-sILv] &lt;url&gt;</code></td>
+<td>HTTP/S transfer (real <code>fetch()</code>)</td>
+</tr>
+<tr>
+<td><code>wget</code></td>
+<td><code>wget [-O f] [-P d] [-q] &lt;url&gt;</code></td>
+<td>Non-interactive downloader</td>
+</tr>
+<tr>
+<td><code>nc</code></td>
+<td><code>nc &lt;host&gt; &lt;port&gt;</code></td>
+<td>TCP/UDP connections</td>
+</tr>
+<tr>
+<td><code>ping</code></td>
+<td><code>ping [-c N] &lt;host&gt;</code></td>
+<td>Mock ICMP echo</td>
+</tr>
+<tr>
+<td><code>ssh</code></td>
+<td><code>ssh &lt;user&gt;@&lt;host&gt;</code></td>
+<td>Mock SSH client</td>
+</tr>
+<tr>
+<td><code>sftp</code></td>
+<td><code>sftp &lt;user&gt;@&lt;host&gt;</code></td>
+<td>Mock SFTP client</td>
+</tr>
+<tr>
+<td><code>ifconfig</code></td>
+<td><code>ifconfig [-a] [interface]</code></td>
+<td>Network interface config</td>
+</tr>
+</tbody>
+</table>
+<h2 id="users-permissions" class="tsd-anchor-link">Users &amp; Permissions<a href="#users-permissions" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Syntax</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>adduser</code></td>
+<td><code>adduser &lt;username&gt;</code></td>
+<td>Create user (interactive, root-only)</td>
+</tr>
+<tr>
+<td><code>deluser</code></td>
+<td><code>deluser [-f] &lt;username&gt;</code></td>
+<td>Remove user</td>
+</tr>
+<tr>
+<td><code>passwd</code></td>
+<td><code>passwd [user]</code></td>
+<td>Change password</td>
+</tr>
+<tr>
+<td><code>sudo</code></td>
+<td><code>sudo [-i] [-u u] &lt;cmd&gt;</code></td>
+<td>Execute as another user</td>
+</tr>
+<tr>
+<td><code>su</code></td>
+<td><code>su [-] [user]</code></td>
+<td>Substitute user identity</td>
+</tr>
+<tr>
+<td><code>chmod</code></td>
+<td><code>chmod &lt;mode&gt; &lt;file...&gt;</code></td>
+<td>Change file mode bits</td>
+</tr>
+</tbody>
+</table>
+<h2 id="package-management" class="tsd-anchor-link">Package Management<a href="#package-management" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Syntax</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>apt</code></td>
+<td><code>apt &lt;install|remove|purge|update|upgrade|search|show|list&gt; [pkg...]</code></td>
+<td>Package manager frontend</td>
+</tr>
+<tr>
+<td><code>apt-cache</code></td>
+<td><code>apt-cache &lt;search|show|policy&gt; &lt;pkg&gt;</code></td>
+<td>Query package cache</td>
+</tr>
+<tr>
+<td><code>dpkg</code></td>
+<td><code>dpkg &lt;-l|-s|-L|-r|-P&gt; [pkg]</code></td>
+<td>Low-level package manager</td>
+</tr>
+<tr>
+<td><code>dpkg-query</code></td>
+<td><code>dpkg-query [-W|-l] [pkg]</code></td>
+<td>Query dpkg database</td>
+</tr>
+</tbody>
+</table>
+<h2 id="shell-scripting" class="tsd-anchor-link">Shell &amp; Scripting<a href="#shell-scripting" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Aliases</th>
+<th>Syntax</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>echo</code></td>
+<td>—</td>
+<td><code>echo [-neE] [text...]</code></td>
+<td>Display text</td>
+</tr>
+<tr>
+<td><code>printf</code></td>
+<td>—</td>
+<td><code>printf &lt;fmt&gt; [args...]</code></td>
+<td>Format and print</td>
+</tr>
+<tr>
+<td><code>read</code></td>
+<td>—</td>
+<td><code>read [-rps] [-p p] &lt;var...&gt;</code></td>
+<td>Read stdin into variables</td>
+</tr>
+<tr>
+<td><code>export</code></td>
+<td>—</td>
+<td><code>export [-p] [n[=v]...]</code></td>
+<td>Set environment variable</td>
+</tr>
+<tr>
+<td><code>unset</code></td>
+<td>—</td>
+<td><code>unset &lt;name...&gt;</code></td>
+<td>Remove variables</td>
+</tr>
+<tr>
+<td><code>set</code></td>
+<td>—</td>
+<td><code>set [var=val] [+-efhmptuvx]</code></td>
+<td>Set/display shell vars</td>
+</tr>
+<tr>
+<td><code>env</code></td>
+<td>—</td>
+<td><code>env [-i] [n=v] [cmd]</code></td>
+<td>Run in modified environment</td>
+</tr>
+<tr>
+<td><code>source</code></td>
+<td><code>.</code></td>
+<td><code>source &lt;f&gt; [args...]</code></td>
+<td>Execute file in current shell</td>
+</tr>
+<tr>
+<td><code>sh</code></td>
+<td><code>bash</code></td>
+<td><code>sh [-c s] &lt;file&gt;</code></td>
+<td>POSIX shell interpreter</td>
+</tr>
+<tr>
+<td><code>exit</code></td>
+<td>—</td>
+<td><code>exit [n]</code></td>
+<td>Exit shell</td>
+</tr>
+<tr>
+<td><code>return</code></td>
+<td>—</td>
+<td><code>return [n]</code></td>
+<td>Return from function</td>
+</tr>
+<tr>
+<td><code>shift</code></td>
+<td>—</td>
+<td><code>shift [n]</code></td>
+<td>Shift positional params</td>
+</tr>
+<tr>
+<td><code>trap</code></td>
+<td>—</td>
+<td><code>trap [a] [sig...]</code></td>
+<td>Trap signals</td>
+</tr>
+<tr>
+<td><code>test</code></td>
+<td>—</td>
+<td><code>test &lt;expr&gt;</code> or <code>[ &lt;expr&gt; ]</code></td>
+<td>Conditional expression</td>
+</tr>
+<tr>
+<td><code>alias</code></td>
+<td>—</td>
+<td><code>alias [n[=v]...]</code></td>
+<td>Define/display aliases</td>
+</tr>
+<tr>
+<td><code>unalias</code></td>
+<td>—</td>
+<td><code>unalias &lt;n...&gt; | -a</code></td>
+<td>Remove aliases</td>
+</tr>
+<tr>
+<td><code>type</code></td>
+<td>—</td>
+<td><code>type &lt;name...&gt;</code></td>
+<td>Show command interpretation</td>
+</tr>
+<tr>
+<td><code>which</code></td>
+<td>—</td>
+<td><code>which &lt;cmd...&gt;</code></td>
+<td>Locate command in $PATH</td>
+</tr>
+<tr>
+<td><code>declare</code></td>
+<td><code>local, typeset</code></td>
+<td><code>declare [-irxa] [n[=v]...]</code></td>
+<td>Declare variables</td>
+</tr>
+<tr>
+<td><code>true</code></td>
+<td>—</td>
+<td><code>true</code></td>
+<td>Do nothing, exit 0</td>
+</tr>
+<tr>
+<td><code>false</code></td>
+<td>—</td>
+<td><code>false</code></td>
+<td>Do nothing, exit 1</td>
+</tr>
+<tr>
+<td><code>help</code></td>
+<td>—</td>
+<td><code>help [command]</code></td>
+<td>List commands / show usage</td>
+</tr>
+<tr>
+<td><code>man</code></td>
+<td>—</td>
+<td><code>man &lt;command&gt;</code></td>
+<td>Display manual page</td>
+</tr>
+<tr>
+<td><code>history</code></td>
+<td>—</td>
+<td><code>history [n]</code></td>
+<td>Command history</td>
+</tr>
+<tr>
+<td><code>clear</code></td>
+<td>—</td>
+<td><code>clear</code></td>
+<td>Clear terminal</td>
+</tr>
+<tr>
+<td><code>sleep</code></td>
+<td>—</td>
+<td><code>sleep &lt;seconds&gt;</code></td>
+<td>Delay execution</td>
+</tr>
+<tr>
+<td><code>timeout</code></td>
+<td>—</td>
+<td><code>timeout &lt;d&gt; &lt;cmd&gt; [args]</code></td>
+<td>Run with time limit</td>
+</tr>
+<tr>
+<td><code>mktemp</code></td>
+<td>—</td>
+<td><code>mktemp [-d] [tpl]</code></td>
+<td>Create temp file/dir</td>
+</tr>
+<tr>
+<td><code>wait</code></td>
+<td>—</td>
+<td><code>wait [jobspec...]</code></td>
+<td>Wait for background jobs</td>
+</tr>
+<tr>
+<td><code>expr</code></td>
+<td>—</td>
+<td><code>expr &lt;expr&gt;</code></td>
+<td>Evaluate expression</td>
+</tr>
+<tr>
+<td><code>nano</code></td>
+<td>—</td>
+<td><code>nano &lt;file&gt;</code></td>
+<td>Terminal text editor</td>
+</tr>
+<tr>
+<td><code>jobs</code></td>
+<td>—</td>
+<td><code>jobs</code></td>
+<td>List background jobs</td>
+</tr>
+<tr>
+<td><code>bg</code></td>
+<td>—</td>
+<td><code>bg [jobspec]</code></td>
+<td>Resume job in background</td>
+</tr>
+<tr>
+<td><code>fg</code></td>
+<td>—</td>
+<td><code>fg [jobspec]</code></td>
+<td>Bring job to foreground</td>
+</tr>
+<tr>
+<td><code>tput</code></td>
+<td>—</td>
+<td><code>tput [-T t] &lt;cap&gt; [params]</code></td>
+<td>Terminfo query</td>
+</tr>
+<tr>
+<td><code>stty</code></td>
+<td>—</td>
+<td><code>stty [-a] [-g] [setting]</code></td>
+<td>Terminal line settings</td>
+</tr>
+<tr>
+<td><code>file</code></td>
+<td>—</td>
+<td><code>file [-bi] &lt;file...&gt;</code></td>
+<td>Determine file type</td>
+</tr>
+<tr>
+<td><code>perl</code></td>
+<td>—</td>
+<td><code>perl [-e s] [file]</code></td>
+<td>Perl interpreter (<code>apt install perl</code>)</td>
+</tr>
+<tr>
+<td><code>node</code></td>
+<td>—</td>
+<td><code>node [--version] [-e s] [-p v]</code></td>
+<td>JS runtime (<code>apt install nodejs</code>)</td>
+</tr>
+<tr>
+<td><code>npm</code></td>
+<td>—</td>
+<td><code>npm [--version] [cmd]</code></td>
+<td>Node package manager (<code>apt install npm</code>)</td>
+</tr>
+<tr>
+<td><code>npx</code></td>
+<td>—</td>
+<td><code>npx [--version] &lt;cmd&gt;</code></td>
+<td>Execute npm binaries</td>
+</tr>
+<tr>
+<td><code>python3</code></td>
+<td>—</td>
+<td><code>python3 [--version] [-V] [-c c]</code></td>
+<td>Python 3 (<code>apt install python3</code>)</td>
+</tr>
+<tr>
+<td><code>neofetch</code></td>
+<td>—</td>
+<td><code>neofetch</code></td>
+<td>System info art</td>
+</tr>
+<tr>
+<td><code>htop</code></td>
+<td>—</td>
+<td><code>htop [-d N] [-u u] [-p p]</code></td>
+<td>Interactive process viewer</td>
+</tr>
+</tbody>
+</table>
+<h2 id="fun" class="tsd-anchor-link">Fun<a href="#fun" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Syntax</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>yes</code></td>
+<td><code>yes [string]</code></td>
+<td>Output string repeatedly</td>
+</tr>
+<tr>
+<td><code>fortune</code></td>
+<td><code>fortune</code></td>
+<td>Random adage</td>
+</tr>
+<tr>
+<td><code>cowsay</code></td>
+<td><code>cowsay [msg]</code></td>
+<td>ASCII cow speaking</td>
+</tr>
+<tr>
+<td><code>cowthink</code></td>
+<td><code>cowthink [msg]</code></td>
+<td>ASCII cow thinking</td>
+</tr>
+<tr>
+<td><code>cmatrix</code></td>
+<td><code>cmatrix [-b] [-C c]</code></td>
+<td>Matrix-style falling characters</td>
+</tr>
+<tr>
+<td><code>sl</code></td>
+<td><code>sl</code></td>
+<td>Steam locomotive</td>
+</tr>
+<tr>
+<td><code>pacman</code></td>
+<td><code>pacman</code></td>
+<td>ASCII Pac-Man game</td>
+</tr>
+</tbody>
+</table>
+<h2 id="desktop-browser-only" class="tsd-anchor-link">Desktop (browser only)<a href="#desktop-browser-only" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Syntax</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>startxfce4</code></td>
+<td><code>startxfce4</code></td>
+<td>Start XFCE4 desktop session</td>
+</tr>
+<tr>
+<td><code>thunar</code></td>
+<td><code>thunar [path]</code></td>
+<td>XFCE file manager</td>
+</tr>
+<tr>
+<td><code>mousepad</code></td>
+<td><code>mousepad [file]</code></td>
+<td>XFCE text editor (<code>gedit</code>, <code>xed</code> aliases)</td>
+</tr>
+</tbody>
+</table>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#commands-reference-typescript-virtual-container"><span>Commands <wbr/>Reference — typescript-<wbr/>virtual-<wbr/>container</span></a><ul><li><ul><li><a href="#shellmodule-interface"><span>Shell<wbr/>Module interface</span></a></li><li><a href="#execution-pipeline"><span>Execution pipeline</span></a></li></ul></li><li><a href="#navigation"><span>Navigation</span></a></li><li><a href="#files-filesystem"><span>Files &amp; <wbr/>Filesystem</span></a></li><li><a href="#text-processing"><span>Text <wbr/>Processing</span></a></li><li><a href="#archive-compression"><span>Archive &amp; <wbr/>Compression</span></a></li><li><a href="#system-information"><span>System <wbr/>Information</span></a></li><li><a href="#network"><span>Network</span></a></li><li><a href="#users-permissions"><span>Users &amp; <wbr/>Permissions</span></a></li><li><a href="#package-management"><span>Package <wbr/>Management</span></a></li><li><a href="#shell-scripting"><span>Shell &amp; <wbr/>Scripting</span></a></li><li><a href="#fun"><span>Fun</span></a></li><li><a href="#desktop-browser-only"><span>Desktop (browser only)</span></a></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="../modules">typescript-virtual-container - v1.7.0</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>
