@@ -3,6 +3,7 @@ import type { ShellStream } from "../types/streams";
 import { keyToBytes } from "../utils/keyToBytes";
 import { WebTermRenderer } from "./webTermRenderer";
 import { ThunarManager } from "./thunarManager";
+import { saveSession, loadSession, clearSession } from "./sessionManager";
 
 function toChunk(bytes: Uint8Array): Buffer {
   const g = globalThis as unknown as Record<string, { from: (d: Uint8Array) => Buffer } | undefined>;
@@ -103,6 +104,8 @@ export class DesktopManager {
     this.active = true;
     this.container.style.display = "block";
     this.renderAll();
+    this.restoreSession();
+    this.addDocListener(window, "beforeunload", () => saveSession(this.windows));
     this.clockInterval = setInterval(() => this.updateClock(), 30_000);
     return new Promise<void>((resolve) => {
       this.stopResolve = resolve;
@@ -112,6 +115,7 @@ export class DesktopManager {
   stop(): void {
     if (!this.active) return;
     this.active = false;
+    clearSession();
     this.container.style.display = "none";
     if (this.clockInterval) clearInterval(this.clockInterval);
     this.clockInterval = undefined;
@@ -125,6 +129,35 @@ export class DesktopManager {
     this.stopResolve?.();
     this.stopResolve = null;
     this.onExit?.();
+  }
+
+  private restoreSession(): void {
+    const saved = loadSession();
+    if (!saved || saved.length === 0) return;
+    const created: Array<{ saved: typeof saved[number]; id: string }> = [];
+    for (const sw of saved) {
+      let id: string;
+      switch (sw.contentType) {
+        case "terminal": id = this.createTerminalWindow(); break;
+        case "thunar":   id = this.createThunarWindow(sw.contentPath); break;
+        case "editor":   id = this.createEditorWindow(sw.contentPath); break;
+        case "about":    id = this.createAboutWindow(); break;
+        default: continue;
+      }
+      created.push({ saved: sw, id });
+    }
+    for (const { saved: sw, id } of created) {
+      const w = this.windows.find(ww => ww.id === id);
+      if (!w) continue;
+      w.x = sw.x;
+      w.y = sw.y;
+      w.width = sw.width;
+      w.height = sw.height;
+      w.minimized = sw.minimized;
+      w.zIndex = sw.zIndex;
+    }
+    this.zCounter = Math.max(this.zCounter, ...saved.map(s => s.zIndex)) + 1;
+    this.renderAll();
   }
 
   getFocusedTerminal(): { stream: ShellStream; dataListeners: Array<(chunk: Buffer) => void>; preEl: HTMLPreElement } | null {
