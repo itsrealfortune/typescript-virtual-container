@@ -347,10 +347,12 @@ export class DesktopManager {
       this.unmaximize(w);
     } else {
       w.savedRect = { x: w.x, y: w.y, width: w.width, height: w.height };
+      const panelEl = this.container.querySelector("#desktop-panel") as HTMLElement | null;
+      const panelH = panelEl?.offsetHeight ?? 28;
       w.x = 0;
-      w.y = 0;
+      w.y = panelH;
       w.width = this.container.clientWidth;
-      w.height = this.container.clientHeight;
+      w.height = this.container.clientHeight - panelH;
       w.maximized = true;
     }
     this.renderAll();
