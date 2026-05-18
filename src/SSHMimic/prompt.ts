@@ -2,7 +2,7 @@
  * Expands a PS1 template string by replacing escape sequences (\\u, \\h, \\w,
  * \\$, etc.) with the corresponding user, host, and directory values.
  */
-export function expandPs1(ps1: string, user: string, host: string, cwd: string, readlineMode = false): string {
+export function expandPs1(ps1: string, user: string, host: string, cwd: string, _readlineMode = false): string {
 	const home = user === "root" ? "/root" : `/home/${user}`;
 	const withTilde =
 		cwd === home ? "~"
@@ -10,7 +10,7 @@ export function expandPs1(ps1: string, user: string, host: string, cwd: string, 
 		: cwd;
 	const base = cwd.split("/").at(-1) || "/";
 	return ps1
-		.replace(/\\\[/g, readlineMode ? "\x01" : "").replace(/\\\]/g, readlineMode ? "\x02" : "")
+		.replace(/\\\[/g, "").replace(/\\\]/g, "")
 		.replace(/\\033\[/g, "\x1b[").replace(/\\e\[/g, "\x1b[")
 		.replace(/\\u/g, user)
 		.replace(/\\h/g, host.split(".")[0] ?? host)
@@ -33,18 +33,16 @@ export function buildPrompt(
 	cwdName: string,
 	ps1?: string,
 	fullCwd?: string,
-	readlineMode = false,
+	_readlineMode = false,
 ): string {
-	if (ps1) return expandPs1(ps1, user, host, fullCwd ?? cwdName, readlineMode);
+	if (ps1) return expandPs1(ps1, user, host, fullCwd ?? cwdName);
 	const isRoot = user === "root";
-	const w = readlineMode ? "\x01" : "";
-	const ew = readlineMode ? "\x02" : "";
-	const colorUser = isRoot ? `${w}\x1b[31;1m${ew}` : `${w}\x1b[35;1m${ew}`;
-	const colorBlue = `${w}\x1b[34;1m${ew}`;
-	const colorReset = `${w}\x1b[0m${ew}`;
+	const colorUser = isRoot ? "\x1b[31;1m" : "\x1b[35;1m";
+	const colorBlue = "\x1b[34;1m";
+	const colorReset = "\x1b[0m";
 	const symbol = isRoot ? "#" : "$";
 
-	const colorCwd = `${w}\x1b[36;1m${ew}`;
+	const colorCwd = "\x1b[36;1m";
 
 	return `${colorReset}[${colorUser}${user}${colorReset}@${colorBlue}${host}${colorReset} ${colorCwd}${cwdName}]${colorReset}${symbol} `;
 }
