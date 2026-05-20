@@ -131,6 +131,12 @@ class VirtualFileSystem extends EventEmitter {
 	private static readonly isBrowser =
 		typeof process === "undefined" || typeof (process as NodeJS.Process).versions?.node === "undefined";
 
+	// ── File descriptor table ──────────────────────────────────────────────
+	/** Open file descriptors: fd → { path, flags, refCount } */
+	private readonly fdTable = new Map<number, { path: string; flags: number; refCount: number }>();
+	/** Next FD number to allocate (starts at 3 to reserve 0,1,2 for stdin/stdout/stderr). */
+	private nextFd = 3;
+
 	constructor(options: VfsOptions = {}) {
 		super();
 		this.mode = options.mode ?? "memory";
@@ -287,6 +293,123 @@ class VirtualFileSystem extends EventEmitter {
 		parent._sortedKeys = null;
 		this.emit("device:create", { path: normalized, deviceKind });
 		this._journal({ op: JournalOp.MKDIR, path: normalized, mode });
+	}
+
+	// ── File descriptor operations ─────────────────────────────────────────
+
+	/**
+	 * Opens a file and returns a file descriptor number.
+	 * Flags follow POSIX: O_RDONLY=0, O_WRONLY=1, O_RDWR=2, O_CREAT=0o100, O_TRUNC=0o1000, O_APPEND=0o2000.
+	 * FDs 0, 1, 2 are reserved for stdin, stdout, stderr.
+	 */
+	public fdOpen(targetPath: string, flags = 0): number {
+		const normalized = normalizePath(targetPath);
+		const exists = this.exists(normalized);
+
+		if (!exists && !(flags & 0o100)) {
+			throw new Error(`ENOENT: no such file or directory, open '${normalized}'`);
+		}
+
+		if (!exists && (flags & 0o100)) {
+			this.writeFile(normalized, "", { mode: 0o644 });
+		}
+
+		if (flags & 0o1000) {
+			this.writeFile(normalized, "", { mode: 0o644 });
+		}
+
+		const fd = this.nextFd++;
+		this.fdTable.set(fd, { path: normalized, flags, refCount: 1 });
+		return fd;
+	}
+
+	/**
+	 * Closes a file descriptor. If refCount reaches 0, the entry is removed.
+	 */
+	public fdClose(fd: number): void {
+		const entry = this.fdTable.get(fd);
+		if (!entry) {
+			throw new Error(`EBADF: bad file descriptor: ${fd}`);
+		}
+		entry.refCount--;
+		if (entry.refCount <= 0) {
+			this.fdTable.delete(fd);
+		}
+	}
+
+	/**
+	 * Duplicates a file descriptor, returning a new FD pointing to the same file.
+	 * The new FD shares the same flags and position conceptually.
+	 */
+	public fdDup(oldFd: number): number {
+		const entry = this.fdTable.get(oldFd);
+		if (!entry) {
+			throw new Error(`EBADF: bad file descriptor: ${oldFd}`);
+		}
+		const newFd = this.nextFd++;
+		this.fdTable.set(newFd, { path: entry.path, flags: entry.flags, refCount: 1 });
+		return newFd;
+	}
+
+	/**
+	 * Duplicates oldFd onto newFd. If newFd is already open, it is closed first.
+	 * Returns newFd.
+	 */
+	public fdDup2(oldFd: number, newFd: number): number {
+		if (oldFd === newFd) return newFd;
+		const oldEntry = this.fdTable.get(oldFd);
+		if (!oldEntry) {
+			throw new Error(`EBADF: bad file descriptor: ${oldFd}`);
+		}
+		const existing = this.fdTable.get(newFd);
+		if (existing) {
+			existing.refCount--;
+			if (existing.refCount <= 0) this.fdTable.delete(newFd);
+		}
+		this.fdTable.set(newFd, { path: oldEntry.path, flags: oldEntry.flags, refCount: 1 });
+		return newFd;
+	}
+
+	/**
+	 * Returns the path associated with an open file descriptor.
+	 */
+	public fdPath(fd: number): string {
+		const entry = this.fdTable.get(fd);
+		if (!entry) {
+			throw new Error(`EBADF: bad file descriptor: ${fd}`);
+		}
+		return entry.path;
+	}
+
+	/**
+	 * Returns the flags associated with an open file descriptor.
+	 */
+	public fdFlags(fd: number): number {
+		const entry = this.fdTable.get(fd);
+		if (!entry) {
+			throw new Error(`EBADF: bad file descriptor: ${fd}`);
+		}
+		return entry.flags;
+	}
+
+	/**
+	 * Returns a map of all open file descriptors: fd → path.
+	 * Used for /proc/self/fd/* population.
+	 */
+	public getOpenFds(): Map<number, string> {
+		const result = new Map<number, string>();
+		for (const [fd, entry] of this.fdTable) {
+			result.set(fd, entry.path);
+		}
+		return result;
+	}
+
+	/**
+	 * Clears all open file descriptors. Called when a shell session ends.
+	 */
+	public closeAllFds(): void {
+		this.fdTable.clear();
+		this.nextFd = 3;
 	}
 
 	private mkdirRecursive(targetPath: string, mode: number): void {

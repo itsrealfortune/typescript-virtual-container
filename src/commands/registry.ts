@@ -56,6 +56,7 @@ import { lsCommand } from "./ls";
 import { lsbReleaseCommand } from "./lsb-release";
 import { manCommand } from "./man";
 import { mkdirCommand } from "./mkdir";
+import { mkfifoCommand, mknodCommand } from "./mknod";
 import { mvCommand } from "./mv";
 import { nanoCommand } from "./nano";
 import { neofetchCommand } from "./neofetch";
@@ -126,6 +127,8 @@ const BASE_COMMANDS: ShellModule[] = [
 	touchCommand,
 	rmCommand,
 	mkdirCommand,
+	mknodCommand,
+	mkfifoCommand,
 	cpCommand,
 	mvCommand,
 	lnCommand,
