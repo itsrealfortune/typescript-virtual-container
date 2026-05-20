@@ -1,5 +1,5 @@
 /** Supported virtual node kinds. */
-export type VfsNodeType = "file" | "directory";
+export type VfsNodeType = "file" | "directory" | "device";
 
 /** Shared metadata fields available on file and directory stats. */
 export interface VfsBaseNode {
@@ -35,8 +35,19 @@ export interface VfsDirectoryNode extends VfsBaseNode {
 	childrenCount: number;
 }
 
-/** Union of file and directory stat responses. */
-export type VfsNodeStats = VfsFileNode | VfsDirectoryNode;
+/** Stat shape returned for device nodes. */
+export interface VfsDeviceNode extends VfsBaseNode {
+	type: "device";
+	/** Device kind identifier. */
+	deviceKind: string;
+	/** Major device number. */
+	major: number;
+	/** Minor device number. */
+	minor: number;
+}
+
+/** Union of file, directory, and device stat responses. */
+export type VfsNodeStats = VfsFileNode | VfsDirectoryNode | VfsDeviceNode;
 
 /** Optional behavior flags for writeFile operations. */
 export interface WriteFileOptions {
@@ -74,6 +85,17 @@ export interface VfsSnapshotFileNode extends VfsSnapshotBaseNode {
 	contentBase64: string;
 }
 
+/** Serialized snapshot shape for device nodes. */
+export interface VfsSnapshotDeviceNode extends VfsSnapshotBaseNode {
+	type: "device";
+	/** Device kind identifier. */
+	deviceKind: string;
+	/** Major device number. */
+	major: number;
+	/** Minor device number. */
+	minor: number;
+}
+
 /** Serialized snapshot shape for directory nodes. */
 export interface VfsSnapshotDirectoryNode extends VfsSnapshotBaseNode {
 	type: "directory";
@@ -81,7 +103,7 @@ export interface VfsSnapshotDirectoryNode extends VfsSnapshotBaseNode {
 }
 
 /** Union of serialized snapshot node variants. */
-export type VfsSnapshotNode = VfsSnapshotFileNode | VfsSnapshotDirectoryNode;
+export type VfsSnapshotNode = VfsSnapshotFileNode | VfsSnapshotDeviceNode | VfsSnapshotDirectoryNode;
 
 /** Top-level serialized filesystem snapshot. */
 export interface VfsSnapshot {

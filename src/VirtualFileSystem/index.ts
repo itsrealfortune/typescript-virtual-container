@@ -1,14 +1,17 @@
 /** biome-ignore-all lint/style/useNamingConvention: NW ? */
+import * as crypto from "node:crypto";
 import { EventEmitter } from "node:events";
 import * as fsSync from "node:fs";
 import * as path from "node:path";
 import { gunzipSync, gzipSync } from "node:zlib";
 import type {
 	RemoveOptions,
+	VfsDeviceNode,
 	VfsDirectoryNode,
 	VfsFileNode,
 	VfsNodeStats,
 	VfsSnapshot,
+	VfsSnapshotDeviceNode,
 	VfsSnapshotDirectoryNode,
 	VfsSnapshotFileNode,
 	VfsSnapshotNode,
@@ -16,10 +19,12 @@ import type {
 } from "../types/vfs";
 import { decodeVfs, encodeVfs, isBinarySnapshot } from "./binaryPack";
 import type {
+	InternalDeviceNode,
 	InternalDirectoryNode,
 	InternalFileNode,
 	InternalNode,
 	InternalStubNode,
+	DeviceKind,
 } from "./internalTypes";
 import { appendJournalEntry, JournalOp, readJournal, truncateJournal } from "./journal";
 import { getNodeNormalized, getParentDirectory, normalizePath } from "./path";
@@ -207,6 +212,30 @@ class VirtualFileSystem extends EventEmitter {
 		return { type: "stub", name, stubContent: content, mode, uid, gid, createdAt: now, updatedAt: now };
 	}
 
+	private makeDeviceNode(
+		name: string,
+		deviceKind: DeviceKind,
+		mode: number,
+		major: number,
+		minor: number,
+		uid = 0,
+		gid = 0,
+	): InternalDeviceNode {
+		const now = Date.now();
+		return {
+			type: "device",
+			name,
+			deviceKind,
+			mode,
+			uid,
+			gid,
+			major,
+			minor,
+			createdAt: now,
+			updatedAt: now,
+		};
+	}
+
 	/**
 	 * Write a lazy stub — stores content as a plain string with no Buffer allocation.
 	 * Use for static rootfs files that may never be read. On first `writeFile()`,
@@ -225,10 +254,39 @@ class VirtualFileSystem extends EventEmitter {
 		if (existing?.type === "directory") {
 			throw new Error(`Cannot write stub '${normalized}': path is a directory.`);
 		}
-		// Don't overwrite a real file or an already-promoted node
 		if (existing?.type === "file") return;
 		if (!existing) { parent._childCount++; parent._sortedKeys = null; }
 		parent.children[name] = this.makeStub(name, content, mode);
+	}
+
+	/**
+	 * Creates a special device node in the VFS.
+	 * Supported device kinds: null, zero, full, random, urandom, tty, console, ptmx, stdin, stdout, stderr.
+	 * Parent directories are created when missing.
+	 */
+	public mknod(
+		targetPath: string,
+		deviceKind: DeviceKind,
+		mode = 0o666,
+		major = 1,
+		minor = 0,
+	): void {
+		const normalized = normalizePath(targetPath);
+		const { parent, name } = getParentDirectory(
+			this.root,
+			normalized,
+			true,
+			(p) => this.mkdirRecursive(p, 0o755),
+		);
+		const existing = parent.children[name];
+		if (existing) {
+			throw new Error(`EEXIST: file already exists, '${normalized}'`);
+		}
+		parent.children[name] = this.makeDeviceNode(name, deviceKind, mode, major, minor);
+		parent._childCount++;
+		parent._sortedKeys = null;
+		this.emit("device:create", { path: normalized, deviceKind });
+		this._journal({ op: JournalOp.MKDIR, path: normalized, mode });
 	}
 
 	private mkdirRecursive(targetPath: string, mode: number): void {
@@ -703,7 +761,6 @@ class VirtualFileSystem extends EventEmitter {
 		content: string | Buffer,
 		options: WriteFileOptions = {},
 	): void {
-		// Delegate to host FS if inside a mount
 		const m = this.resolveMount(targetPath);
 		if (m) {
 			if (m.readOnly) throw new Error(`EROFS: read-only file system, open '${m.fullHostPath}'`);
@@ -727,6 +784,14 @@ class VirtualFileSystem extends EventEmitter {
 			);
 		}
 
+		if (existing?.type === "device") {
+			const dev = existing as InternalDeviceNode;
+			this._writeDeviceNode(dev, normalized);
+			dev.updatedAt = Date.now();
+			this.emit("device:write", { path: normalized });
+			return;
+		}
+
 		const rawContent = Buffer.isBuffer(content)
 			? content
 			: Buffer.from(content, "utf8");
@@ -735,14 +800,12 @@ class VirtualFileSystem extends EventEmitter {
 		const mode = options.mode ?? 0o644;
 
 		if (existing && existing.type === "file") {
-			// Update real file in place
 			const f = existing as InternalFileNode;
 			f.content = storedContent;
 			f.compressed = shouldCompress;
 			f.mode = mode;
 			f.updatedAt = Date.now();
 		} else {
-			// Create new real file — also promotes stubs (no _childCount change for stubs)
 			if (!existing) { parent._childCount++; parent._sortedKeys = null; }
 			parent.children[name] = this.makeFile(name, storedContent, mode, shouldCompress);
 		}
@@ -768,6 +831,11 @@ class VirtualFileSystem extends EventEmitter {
 			this.emit("file:read", { path: normalized, size: node.stubContent.length });
 			return node.stubContent;
 		}
+		if (node.type === "device") {
+			const content = this._readDeviceNode(node as InternalDeviceNode, normalized);
+			this.emit("file:read", { path: normalized, size: content.length });
+			return content;
+		}
 		if (node.type !== "file") {
 			throw new Error(`Cannot read '${targetPath}': not a file.`);
 		}
@@ -790,6 +858,12 @@ class VirtualFileSystem extends EventEmitter {
 		const node = getNodeNormalized(this.root, normalized);
 		if (node.type === "stub") {
 			const buf = Buffer.from(node.stubContent, "utf8");
+			this.emit("file:read", { path: normalized, size: buf.length });
+			return buf;
+		}
+		if (node.type === "device") {
+			const content = this._readDeviceNode(node as InternalDeviceNode, normalized);
+			const buf = Buffer.from(content, "binary");
 			this.emit("file:read", { path: normalized, size: buf.length });
 			return buf;
 		}
@@ -935,6 +1009,22 @@ class VirtualFileSystem extends EventEmitter {
 				size: f.evicted ? (f.size ?? 0) : f.content.length,
 			};
 		}
+		if (node.type === "device") {
+			const dev = node as InternalDeviceNode;
+			return {
+				type: "device",
+				name,
+				path: normalized,
+				mode: dev.mode,
+				uid: dev.uid,
+				gid: dev.gid,
+				createdAt: new Date(dev.createdAt),
+				updatedAt: new Date(dev.updatedAt),
+				deviceKind: dev.deviceKind,
+				major: dev.major,
+				minor: dev.minor,
+			} satisfies VfsDeviceNode;
+		}
 		const d = node as InternalDirectoryNode;
 		return {
 			type: "directory",
@@ -950,10 +1040,66 @@ class VirtualFileSystem extends EventEmitter {
 	}
 
 	/**
+	 * Reads content from a device node according to its kind.
+	 * /dev/null → empty string
+	 * /dev/zero → 4096 zero bytes
+	 * /dev/full → throws ENOSPC
+	 * /dev/random, /dev/urandom → 64 random bytes
+	 * /dev/tty, /dev/console, /dev/stdin → empty string
+	 * /dev/stdout, /dev/stderr → empty string
+	 */
+	private _readDeviceNode(node: InternalDeviceNode, path: string): string {
+		switch (node.deviceKind) {
+			case "null":
+				return "";
+			case "zero":
+				return "\0".repeat(4096);
+			case "full":
+				throw new Error(`ENOSPC: no space left on device, write '${path}'`);
+			case "random":
+			case "urandom":
+				return crypto.randomBytes(64).toString("binary");
+			case "tty":
+			case "console":
+			case "stdin":
+			case "stdout":
+			case "stderr":
+			case "ptmx":
+			default:
+				return "";
+		}
+	}
+
+	/**
+	 * Handles writes to device nodes.
+	 * /dev/null → silently discards
+	 * /dev/full → throws ENOSPC
+	 * Others → silently accepted (like a real TTY write)
+	 */
+	private _writeDeviceNode(node: InternalDeviceNode, path: string): void {
+		switch (node.deviceKind) {
+			case "full":
+				throw new Error(`ENOSPC: no space left on device, write '${path}'`);
+			case "null":
+			case "zero":
+			case "random":
+			case "urandom":
+			case "tty":
+			case "console":
+			case "stdin":
+			case "stdout":
+			case "stderr":
+			case "ptmx":
+			default:
+				break; // silently accepted
+		}
+	}
+
+	/**
 	 * Fast type-only check — no Date/string allocation.
 	 * Use instead of `stat().type` when that's all you need.
 	 */
-	public statType(targetPath: string): "file" | "directory" | null {
+	public statType(targetPath: string): "file" | "directory" | "device" | null {
 		try {
 			const m = this.resolveMount(targetPath);
 			if (m) {
@@ -962,7 +1108,9 @@ class VirtualFileSystem extends EventEmitter {
 				return s.isDirectory() ? "directory" : "file";
 			}
 			const node = getNodeNormalized(this.root, normalizePath(targetPath));
-			return node.type === "directory" ? "directory" : "file";
+			if (node.type === "directory") return "directory";
+			if (node.type === "device") return "device";
+			return "file";
 		} catch { return null; }
 	}
 
@@ -1026,7 +1174,8 @@ class VirtualFileSystem extends EventEmitter {
 
 	private computeUsage(node: InternalNode): number {
 		if (node.type === "file") return (node as InternalFileNode).content.length;
-		if (node.type === "stub") return node.stubContent.length;
+		if (node.type === "stub") return (node as InternalStubNode).stubContent.length;
+		if (node.type === "device") return 0;
 		let total = 0;
 		for (const child of Object.values((node as InternalDirectoryNode).children)) {
 			total += this.computeUsage(child);
@@ -1221,7 +1370,6 @@ class VirtualFileSystem extends EventEmitter {
 		const children: VfsSnapshotNode[] = [];
 		for (const child of Object.values(dir.children)) {
 			if (child.type === "stub") {
-				// Serialize stub as a regular file node
 				children.push({
 					type: "file",
 					name: child.name,
@@ -1235,6 +1383,20 @@ class VirtualFileSystem extends EventEmitter {
 				} satisfies VfsSnapshotFileNode);
 			} else if (child.type === "file") {
 				children.push(this.serializeFile(child as InternalFileNode));
+			} else if (child.type === "device") {
+				const dev = child as InternalDeviceNode;
+				children.push({
+					type: "device",
+					name: dev.name,
+					mode: dev.mode,
+					uid: dev.uid,
+					gid: dev.gid,
+					createdAt: new Date(dev.createdAt).toISOString(),
+					updatedAt: new Date(dev.updatedAt).toISOString(),
+					deviceKind: dev.deviceKind,
+					major: dev.major,
+					minor: dev.minor,
+				} satisfies VfsSnapshotDeviceNode);
 			} else {
 				children.push(this.serializeDir(child as InternalDirectoryNode));
 			}
@@ -1322,6 +1484,20 @@ class VirtualFileSystem extends EventEmitter {
 					updatedAt: Date.parse(f.updatedAt),
 					compressed: f.compressed,
 					content: Buffer.from(f.contentBase64, "base64"),
+				};
+			} else if (child.type === "device") {
+				const d = child as VfsSnapshotDeviceNode;
+				dir.children[d.name] = {
+					type: "device",
+					name: d.name,
+					mode: d.mode,
+					uid: d.uid ?? 0,
+					gid: d.gid ?? 0,
+					createdAt: Date.parse(d.createdAt),
+					updatedAt: Date.parse(d.updatedAt),
+					deviceKind: d.deviceKind as DeviceKind,
+					major: d.major,
+					minor: d.minor,
 				};
 			} else {
 				const sub = this.deserializeDir(
