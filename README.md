@@ -175,6 +175,29 @@ const r = await client.exec("ls /app && cat /app/config/settings.json");
 console.log(r.stdout);
 ```
 
+#### Multi-VM network (Baie)
+
+Create multiple virtual machines on a shared subnet with NAT gateway:
+
+```typescript
+import { Baie, SshClient } from "typescript-virtual-container";
+
+const baie = new Baie("lab", "10.0.1.0/24");
+const web = await baie.createVM("web");
+const db  = await baie.createVM("db");
+const dbClient = new SshClient(db, "root");
+
+// VMs communicate over the virtual switch
+await dbClient.exec("python3 -m http.server 8080 &");
+const webClient = new SshClient(web, "root");
+const r = await webClient.exec("curl http://10.0.1.3:8080");
+console.log(r.stdout); // Python HTTP server response
+
+// iptables firewall rules apply to the virtual switch
+await webClient.exec("iptables -A OUTPUT -d 10.0.1.3 -j DROP");
+// web can no longer reach db
+```
+
 ---
 
 ## How It Works
