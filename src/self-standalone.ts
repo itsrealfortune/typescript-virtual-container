@@ -221,7 +221,11 @@ async function runReadlineShell(): Promise<void> {
 				const prev = sessionStack.pop()!;
 				authUser = prev.authUser;
 				cwd = prev.cwd;
-				delete shellEnv.vars.PS1;
+				shellEnv.vars.USER = authUser;
+				shellEnv.vars.LOGNAME = authUser;
+				shellEnv.vars.HOME = userHome(authUser);
+				shellEnv.vars.PWD = cwd;
+				shellEnv.vars.PS1 = makeDefaultEnv(authUser, hostname).vars.PS1 ?? "";
 				stdout.write("logout\n");
 				void flushVfs().then(() => { prompt(); });
 				return;
@@ -518,7 +522,11 @@ async function runReadlineShell(): Promise<void> {
 				const prev = sessionStack.pop()!;
 				authUser = prev.authUser;
 				cwd = prev.cwd;
-				delete shellEnv.vars.PS1;
+				shellEnv.vars.USER = authUser;
+				shellEnv.vars.LOGNAME = authUser;
+				shellEnv.vars.HOME = userHome(authUser);
+				shellEnv.vars.PWD = cwd;
+				shellEnv.vars.PS1 = makeDefaultEnv(authUser, hostname).vars.PS1 ?? "";
 				stdout.write("logout\n");
 				// resume prompt handled by caller
 			} else {
