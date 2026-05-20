@@ -64,7 +64,7 @@ export const iptablesCommand: ShellModule = {
 
 		switch (action) {
 			case "list":
-				return { stdout: net.formatFirewall() + "\n", exitCode: 0 };
+				return { stdout: `${net.formatFirewall()}\n`, exitCode: 0 };
 
 			case "flush":
 				net.flushFirewall();
