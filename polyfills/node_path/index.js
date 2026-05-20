@@ -26,3 +26,4 @@ export function join(...parts) {
 export function normalize(p) {
   return posix.normalize(p);
 }
+export default { posix, basename, dirname, resolve, join, normalize };

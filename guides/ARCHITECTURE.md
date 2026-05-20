@@ -54,70 +54,87 @@ Storage (VFS) → Auth (UserManager) → Software (PackageManager)
 
 ```
 src/
-├── index.ts                          (86 lines) — Main barrel export
-├── stand alone.ts                     (78 lines) — CLI standalone entry point
-├── self-standalone.ts                 (674 lines) — Self-contained build entry
-├── bun.d.ts                           — Bun type declarations
+├── index.ts                          — Main barrel export
+├── stand alone.ts                    — CLI standalone entry point
+├── self-standalone.ts                — Self-contained build entry
+├── bun.d.ts                          — Bun type declarations
 │
-├── commands/                          (120 .ts files + 1 manuals/ subdir)
-│   ├── index.ts                       (9 lines) — Re-exports registry + runtime
-│   ├── registry.ts                    (387 lines) — Command registration/imports
-│   ├── runtime.ts                     (553 lines) — Command execution engine
-│   ├── command-helpers.ts             (271 lines) — Argument parsing utilities
-│   ├── helpers.ts                     — Generic helpers
-│   ├── manuals-bundle.ts              (1968 lines) — Bundled man pages
-│   ├── manuals/                       (138 .txt files) — Plain-text man pages
-│   └── 112 individual command files   (each exporting a ShellModule)
+├── commands/                         (120 .ts files + manuals/)
+│   ├── registry.ts                   — Command registration/imports
+│   ├── runtime.ts                    — Command execution engine
+│   ├── command-helpers.ts            — Argument parsing utilities
+│   ├── helpers.ts                    — Generic helpers
+│   ├── manuals-bundle.ts             — Bundled man pages
+│   └── 112 individual command files
 │
-├── types/                             (5 .ts files)
-│   ├── vfs.ts                         (106 lines) — VFS snapshot/node types
-│   ├── commands.ts                    (152 lines) — CommandContext, ShellModule, etc.
-│   ├── pipeline.ts                    (54 lines)  — Pipeline/Statement/Script AST
-│   ├── streams.ts                     (32 lines)  — ExecStream, ShellStream
-│   └── tar-stream.d.ts                — Third-party type declarations
+├── types/                            (5 .ts files)
+│   ├── vfs.ts                        — VFS snapshot/node types
+│   ├── commands.ts                   — CommandContext, ShellModule, etc.
+│   ├── pipeline.ts                   — Pipeline/Statement AST
+│   ├── streams.ts                    — ExecStream, ShellStream
+│   └── tar-stream.d.ts
 │
-├── VirtualFileSystem/                 (5 .ts files)
-│   ├── index.ts                       (1,339 lines) — Main VFS class
-│   ├── internalTypes.ts               (49 lines)  — Internal node types
-│   ├── path.ts                        (104 lines) — Path normalization
-│   ├── binaryPack.ts                  (315 lines) — Binary snapshot format
-│   └── journal.ts                     (181 lines) — Write-ahead log
+├── utils/                            (8 .ts files)
+│   ├── expand.ts                     — Shell variable expansion
+│   ├── tokenize.ts                   — Command tokenizer
+│   ├── argv.ts                       — CLI argument helpers
+│   ├── glob.ts                       — Glob pattern matching
+│   ├── keyToBytes.ts                 — Key conversion utility
+│   ├── perfLogger.ts                 — Performance logging
+│   ├── shellSession.ts               — Session state helpers
+│   └── vfsDiff.ts                    — VFS diff utility
 │
-├── VirtualShell/                      (4 .ts files)
-│   ├── index.ts                       (486 lines) — VirtualShell class
-│   ├── shell.ts                       (784 lines) — Interactive shell loop
-│   ├── shellParser.ts                 (299 lines) — Shell syntax parser
-│   └── idleManager.ts                 — Idle session management
-│
-├── VirtualUserManager/                (1 .ts file)
-│   └── index.ts                       (853 lines)
-│
-├── VirtualPackageManager/             (1 .ts file)
-│   └── index.ts                       (1,027 lines)
-│
-├── SSHMimic/                          (9 .ts files)
-│   ├── index.ts                       (356 lines) — SSH server facade
-│   ├── executor.ts                    (293 lines) — Statement executor
-│   ├── exec.ts                        — Non-interactive exec handler
-│   ├── scp.ts                         (375 lines) — SCP protocol handler
-│   ├── sftp.ts                        (888 lines) — SFTP protocol handler
-│   ├── hostKey.ts                     — SSH host key management
-│   ├── prompt.ts                      — Shell prompt formatting
-│   ├── loginBanner.ts                 — SSH login banner
-│   └── loginFormat.ts                 — Login format strings
-│
-├── SSHClient/                         (1 .ts file)
-│   └── index.ts                       (270 lines) — Programmatic command client
-│
-├── Honeypot/                          (1 .ts file)
-│   └── index.ts                       (541 lines) — Security auditing/telemetry
-│
-├── modules/                           (12 .ts files)
-│   ├── linuxRootfs.ts                 (2,140 lines) — Linux root FS bootstrap
-│   ├── nanoEditor.ts                  (953 lines) — Built-in nano editor
-│   ├── desktopManager.ts              (944 lines) — XFCE desktop simulation
-│   ├── webTermRenderer.ts             (362 lines) — Web terminal renderer
-│   ├── neofetch.ts                    (360 lines) — Neofetch display
+└── modules/                          (all core subsystems)
+    ├── VirtualFileSystem/
+    │   ├── index.ts                  — Main VFS class
+    │   ├── internalTypes.ts          — Internal node types
+    │   ├── path.ts                   — Path normalization
+    │   ├── binaryPack.ts             — Binary snapshot format
+    │   ├── permissions.ts            — POSIX permission enforcement
+    │   └── journal.ts                — Write-ahead log
+    │
+    ├── VirtualShell/
+    │   ├── index.ts                  — VirtualShell class
+    │   ├── shell.ts                  — Interactive shell loop
+    │   ├── shellParser.ts            — Shell syntax parser
+    │   └── idleManager.ts            — Idle session management
+    │
+    ├── VirtualUserManager/
+    │   ├── index.ts                  — User management
+    │   └── signals.ts                — POSIX signal definitions
+    │
+    ├── VirtualPackageManager/
+    │   └── index.ts                  — Package management
+    │
+    ├── SSHMimic/
+    │   ├── index.ts                  — SSH server facade
+    │   ├── executor.ts               — Statement executor
+    │   ├── exec.ts                   — Non-interactive exec handler
+    │   ├── scp.ts                    — SCP protocol handler
+    │   ├── sftp.ts                   — SFTP protocol handler
+    │   ├── hostKey.ts                — SSH host key management
+    │   ├── prompt.ts                 — Shell prompt formatting
+    │   ├── loginBanner.ts            — SSH login banner
+    │   └── loginFormat.ts            — Login format strings
+    │
+    ├── SSHClient/
+    │   └── index.ts                  — Programmatic command client
+    │
+    ├── Honeypot/
+    │   └── index.ts                  — Security auditing/telemetry
+    │
+    ├── linuxRootfs.ts                — Linux root FS bootstrap
+    ├── nanoEditor.ts                 — Built-in nano editor
+    ├── desktopManager.ts             — XFCE desktop simulation
+    ├── neofetch.ts                   — Neofetch display
+    ├── pacmanGame.ts                 — Built-in Pac-Man game
+    ├── VirtualNetworkManager.ts      — Virtual networking stack
+    ├── VirtualSwitch.ts              — Multi-VM switch with NAT
+    ├── VirtualProxy.ts               — Port forwarding + SOCKS5
+    ├── VirtualVpn.ts                 — Encrypted tunnel between Baies
+    ├── sysctl.ts                     — Writable /proc/sys state
+    └── sessionManager.ts             — Shell session management
+```
 │   ├── pacmanGame.ts                  (689 lines) — Built-in Pac-Man game
 │   ├── shellInteractive.ts            — Shell interaction module
 │   ├── shellRuntime.ts                — Shell runtime module

@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, test } from "bun:test";
-import type { SshClient } from "../src/SSHClient";
+import type { SshClient } from "../src/modules/SSHClient";
 import { createTestEnv } from "./test-helper";
 
 let client: InstanceType<typeof SshClient>;
@@ -109,7 +109,7 @@ describe("SSHClient API", () => {
 	});
 });
 
-import { loadOrCreateHostKey } from "../src/SSHMimic/hostKey";
+import { loadOrCreateHostKey } from "../src/modules/SSHMimic/hostKey";
 import { mkdirSync, mkdtempSync, writeFileSync, rmSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -145,7 +145,7 @@ describe("hostKey", () => {
 	});
 });
 
-import { buildLoginBanner } from "../src/SSHMimic/loginBanner";
+import { buildLoginBanner } from "../src/modules/SSHMimic/loginBanner";
 
 describe("loginBanner", () => {
 	test("buildLoginBanner returns string", () => {

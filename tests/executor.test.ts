@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 import type { SshClient, VirtualShell } from "../src";
-import { runExec } from "../src/SSHMimic/exec";
+import { runExec } from "../src/modules/SSHMimic/exec";
 import { createTestEnv, runCmd } from "./test-helper";
 
 let shell: VirtualShell;

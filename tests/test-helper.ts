@@ -1,5 +1,5 @@
 import { VirtualShell } from "../src";
-import { SshClient } from "../src/SSHClient";
+import { SshClient } from "../src/modules/SSHClient";
 
 /**
  * Test helper: creates a fresh shell & client for each test

@@ -2,9 +2,9 @@
 import { describe, expect, test } from "bun:test";
 import type { FileEntryWithStats, SFTPWrapper } from "ssh2";
 import { Client } from "ssh2";
-import { SftpMimic } from "../src/SSHMimic/sftp";
-import VirtualFileSystem from "../src/VirtualFileSystem";
-import { VirtualUserManager } from "../src/VirtualUserManager";
+import { SftpMimic } from "../src/modules/SSHMimic/sftp";
+import VirtualFileSystem from "../src/modules/VirtualFileSystem";
+import { VirtualUserManager } from "../src/modules/VirtualUserManager";
 
 // Skip by default (slow — requires SSH server). Run with:
 //   SSH_MIMIC_RUN_SFTP_TESTS=1 bun test tests/sftp.test.ts

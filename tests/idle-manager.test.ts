@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import VirtualFileSystem from "../src/VirtualFileSystem";
-import { IdleManager } from "../src/VirtualShell/idleManager";
+import VirtualFileSystem from "../src/modules/VirtualFileSystem";
+import { IdleManager } from "../src/modules/VirtualShell/idleManager";
 
 function makeVfs() {
 	return new VirtualFileSystem({ mode: "memory" });

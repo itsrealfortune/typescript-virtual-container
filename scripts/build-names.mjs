@@ -20,7 +20,7 @@ const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 const pkgVersion = pkg.version; // e.g. "1.5.0"
 
 // Kernel version — read from VirtualShell source to stay in sync
-const shellSrc = readFileSync(join(root, "src/VirtualShell/index.ts"), "utf8");
+const shellSrc = readFileSync(join(root, "src/modules/VirtualShell/index.ts"), "utf8");
 const kernelMatch = shellSrc.match(/kernel:\s*"([^"]+)"/);
 const kernelRaw = kernelMatch?.[1] ?? "unknown";
 // Shorten: "1.0.0+itsrealfortune+1-amd64" → "k1.0.0"
