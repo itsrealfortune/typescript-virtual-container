@@ -12,7 +12,7 @@ export const touchCommand: ShellModule = {
 	description: "Create or update files",
 	category: "files",
 	params: ["<file>"],
-	run: ({ authUser, shell, cwd, args }) => {
+	run: ({ authUser, shell, cwd, args, uid, gid }) => {
 		if (args.length === 0) {
 			return { stderr: "touch: missing file operand", exitCode: 1 };
 		}
@@ -21,7 +21,7 @@ export const touchCommand: ShellModule = {
 			const target = resolvePath(cwd, file);
 			if (!shell.vfs.exists(target)) {
 				checkFilePermission(shell.vfs, shell.users, authUser, path.posix.dirname(target), 2);
-				shell.writeFileAsUser(authUser, target, "");
+				shell.vfs.writeFile(target, "", uid, gid);
 			} else {
 				checkFilePermission(shell.vfs, shell.users, authUser, target, 2);
 			}

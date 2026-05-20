@@ -13,7 +13,7 @@ export const mkdirCommand: ShellModule = {
 	description: "Make directories",
 	category: "files",
 	params: ["<dir>"],
-	run: ({ authUser, shell, cwd, args }) => {
+	run: ({ authUser, shell, cwd, args, uid, gid }) => {
 		if (args.length === 0) {
 			return { stderr: "mkdir: missing operand", exitCode: 1 };
 		}
@@ -25,7 +25,7 @@ export const mkdirCommand: ShellModule = {
 			}
 			const target = resolvePath(cwd, dir);
 			checkFilePermission(shell.vfs, shell.users, authUser, path.posix.dirname(target), 2);
-			shell.vfs.mkdir(target);
+			shell.vfs.mkdir(target, 0o755, uid, gid);
 		}
 		return { exitCode: 0 };
 	},

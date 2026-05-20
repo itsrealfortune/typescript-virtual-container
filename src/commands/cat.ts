@@ -12,7 +12,7 @@ export const catCommand: ShellModule = {
 	description: "Concatenate and print files",
 	category: "files",
 	params: ["[-n] [-b] <file...>"],
-	run: ({ authUser, shell, cwd, args, stdin }) => {
+	run: ({ authUser, shell, cwd, args, stdin, uid, gid }) => {
 		const numberAll = ifFlag(args, ["-n", "--number"]);
 		const numberNonBlank = ifFlag(args, ["-b", "--number-nonblank"]);
 		const fileArgs = args.filter((a) => !a.startsWith("-"));
@@ -29,7 +29,7 @@ export const catCommand: ShellModule = {
 		for (const fileArg of fileArgs) {
 			const target = resolveReadablePath(shell.vfs, cwd, fileArg);
 			checkFilePermission(shell.vfs, shell.users, authUser, target, 4);
-			parts.push(shell.vfs.readFile(target));
+			parts.push(shell.vfs.readFile(target, uid, gid));
 		}
 
 		const combined = parts.join("");

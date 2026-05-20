@@ -13,7 +13,7 @@ export const cpCommand: ShellModule = {
 	description: "Copy files or directories",
 	category: "files",
 	params: ["[-r] <source> <dest>"],
-	run: ({ authUser, shell, cwd, args }) => {
+	run: ({ authUser, shell, cwd, args, uid, gid }) => {
 		const recursive = ifFlag(args, ["-r", "-R", "--recursive"]);
 		const positionals = args.filter((a) => !a.startsWith("-"));
 		const [srcArg, destArg] = positionals;
@@ -46,7 +46,7 @@ export const cpCommand: ShellModule = {
 					};
 				}
 				const copyDir = (from: string, to: string) => {
-					shell.vfs.mkdir(to, 0o755);
+					shell.vfs.mkdir(to, 0o755, uid, gid);
 					for (const entry of shell.vfs.list(from)) {
 						const fromEntry = `${from}/${entry}`;
 						const toEntry = `${to}/${entry}`;
@@ -54,8 +54,8 @@ export const cpCommand: ShellModule = {
 						if (stat.type === "directory") {
 							copyDir(fromEntry, toEntry);
 						} else {
-							const content = shell.vfs.readFileRaw(fromEntry);
-							shell.writeFileAsUser(authUser, toEntry, content);
+							const content = shell.vfs.readFileRaw(fromEntry, uid, gid);
+							shell.vfs.writeFile(toEntry, content, uid, gid);
 						}
 					}
 				};
@@ -71,8 +71,8 @@ export const cpCommand: ShellModule = {
 					shell.vfs.stat(destPath).type === "directory"
 						? `${destPath}/${srcArg.split("/").pop()}`
 						: destPath;
-				const content = shell.vfs.readFileRaw(srcPath);
-				shell.writeFileAsUser(authUser, finalDest, content);
+				const content = shell.vfs.readFileRaw(srcPath, uid, gid);
+				shell.vfs.writeFile(finalDest, content, uid, gid);
 			}
 
 			return { exitCode: 0 };

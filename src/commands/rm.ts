@@ -17,7 +17,7 @@ export const rmCommand: ShellModule = {
 	description: "Remove files or directories",
 	category: "files",
 	params: ["[-r|-rf|-f] <path>"],
-	run: ({ authUser, shell, cwd, args }) => {
+	run: ({ authUser, shell, cwd, args, uid, gid }) => {
 		if (args.length === 0) {
 			return { stderr: "rm: missing operand", exitCode: 1 };
 		}
@@ -48,7 +48,7 @@ export const rmCommand: ShellModule = {
 		}
 
 		const doRemove = (sh: VirtualShell): CommandResult => {
-			for (const r of resolved) if (sh.vfs.exists(r)) sh.vfs.remove(r, { recursive });
+			for (const r of resolved) if (sh.vfs.exists(r)) sh.vfs.remove(r, { recursive }, uid, gid);
 			return { exitCode: 0 };
 		};
 

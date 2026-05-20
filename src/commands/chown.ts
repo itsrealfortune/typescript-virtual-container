@@ -11,7 +11,7 @@ export const chownCommand: ShellModule = {
 	description: "Change file owner and group",
 	category: "files",
 	params: ["<owner>[:<group>] <file>"],
-	run: ({ authUser, shell, cwd, args }) => {
+	run: ({ authUser, shell, cwd, args, uid }) => {
 		const [ownerArg, fileArg] = args;
 		if (!ownerArg || !fileArg) {
 			return { stderr: "chown: missing operand", exitCode: 1 };
@@ -31,22 +31,22 @@ export const chownCommand: ShellModule = {
 				};
 			}
 
-			let uid: number | null = null;
+			let uidTarget: number | null = null;
 			let gid: number | null = null;
 
 			const colonIdx = ownerArg.indexOf(":");
 			if (colonIdx === -1) {
 				// Just a user name
-				uid = resolveUser(shell, ownerArg);
-				if (uid === null) {
+				uidTarget = resolveUser(shell, ownerArg);
+				if (uidTarget === null) {
 					return { stderr: `chown: invalid user: ${ownerArg}`, exitCode: 1 };
 				}
 			} else {
 				const userPart = ownerArg.slice(0, colonIdx);
 				const groupPart = ownerArg.slice(colonIdx + 1);
 				if (userPart) {
-					uid = resolveUser(shell, userPart);
-					if (uid === null) {
+					uidTarget = resolveUser(shell, userPart);
+					if (uidTarget === null) {
 						return { stderr: `chown: invalid user: ${userPart}`, exitCode: 1 };
 					}
 				}
@@ -59,7 +59,7 @@ export const chownCommand: ShellModule = {
 			}
 
 			const current = shell.vfs.getOwner(filePath);
-			shell.vfs.chown(filePath, uid ?? current.uid, gid ?? current.gid);
+			shell.vfs.chown(filePath, uidTarget ?? current.uid, gid ?? current.gid, uid);
 			return { exitCode: 0 };
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);

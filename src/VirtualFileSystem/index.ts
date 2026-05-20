@@ -421,7 +421,7 @@ class VirtualFileSystem extends EventEmitter {
 		this.nextFd = 3;
 	}
 
-	private mkdirRecursive(targetPath: string, mode: number): void {
+	private mkdirRecursive(targetPath: string, mode: number, uid?: number, gid?: number): void {
 		const normalized = normalizePath(targetPath);
 		if (normalized === "/") return;
 		const parts = normalized.split("/").filter(Boolean);
@@ -432,6 +432,8 @@ class VirtualFileSystem extends EventEmitter {
 			let child = current.children[part];
 			if (!child) {
 				child = this.makeDir(part, mode);
+				if (uid !== undefined) child.uid = uid;
+				if (gid !== undefined) child.gid = gid;
 				current.children[part] = child;
 				current._childCount++;
 				current._sortedKeys = null;
@@ -919,7 +921,7 @@ class VirtualFileSystem extends EventEmitter {
 		return null;
 	}
 
-		public mkdir(targetPath: string, mode: number = 0o755): void {
+		public mkdir(targetPath: string, mode: number = 0o755, uid?: number, gid?: number): void {
 		const normalized = normalizePath(targetPath);
 		const existing = (() => {
 			try {
@@ -933,7 +935,7 @@ class VirtualFileSystem extends EventEmitter {
 				`Cannot create directory '${normalized}': path is a file.`,
 			);
 		}
-		this.mkdirRecursive(normalized, mode);
+		this.mkdirRecursive(normalized, mode, uid, gid);
 	}
 
 	/**
@@ -1406,7 +1408,7 @@ class VirtualFileSystem extends EventEmitter {
 	 * Creates a symbolic link.
 	 * The link node is stored with mode `0o120777` (POSIX symlink convention).
 	 */
-	public symlink(targetPath: string, linkPath: string): void {
+	public symlink(targetPath: string, linkPath: string, uid?: number, gid?: number): void {
 		const normalizedLink = normalizePath(linkPath);
 		const normalizedTarget = targetPath.startsWith("/")
 			? normalizePath(targetPath)
@@ -1422,8 +1424,8 @@ class VirtualFileSystem extends EventEmitter {
 			name,
 			content: Buffer.from(normalizedTarget, "utf8"),
 			mode: 0o120777,
-			uid: 0,
-			gid: 0,
+			uid: uid ?? 0,
+			gid: gid ?? 0,
 			compressed: false,
 			createdAt: Date.now(),
 			updatedAt: Date.now(),
