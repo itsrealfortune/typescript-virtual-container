@@ -188,10 +188,10 @@ const db  = await baie.createVM("db");
 const dbClient = new SshClient(db, "root");
 
 // VMs communicate over the virtual switch
-await dbClient.exec("python3 -m http.server 8080 &");
+await dbClient.exec("nc -l -p 8080 -v &");
 const webClient = new SshClient(web, "root");
-const r = await webClient.exec("curl http://10.0.1.3:8080");
-console.log(r.stdout); // Python HTTP server response
+const r = await webClient.exec("echo 'hello from web' | nc 10.0.1.3 8080");
+console.log(r.stdout); // 'hello from web'
 
 // iptables firewall rules apply to the virtual switch
 await webClient.exec("iptables -A OUTPUT -d 10.0.1.3 -j DROP");
