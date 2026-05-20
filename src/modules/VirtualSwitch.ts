@@ -95,7 +95,7 @@ export class VirtualSwitch {
 		const port: VmPort = { mac, ip, shell };
 		this.ipToMac.set(ip, mac);
 		// Register in ARP cache
-		this.network["arpCache"].push({ ip, mac, device: "eth0", state: "REACHABLE" } as never);
+		this.network.arpCache.push({ ip, mac, device: "eth0", state: "REACHABLE" } as never);
 		return port;
 	}
 
