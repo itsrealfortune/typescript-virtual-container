@@ -1,11 +1,11 @@
-import { runCommandDirect } from "../commands";
-import { resolvePath } from "../commands/helpers";
-import type { CommandMode, CommandResult, ShellEnv } from "../types/commands";
+import { runCommandDirect } from "../../commands";
+import { resolvePath } from "../../commands/helpers";
+import type { CommandMode, CommandResult, ShellEnv } from "../../types/commands";
 import type {
 	Pipeline,
 	PipelineCommand,
 	Statement,
-} from "../types/pipeline";
+} from "../../types/pipeline";
 import type { VirtualShell } from "../VirtualShell";
 
 // ── Script executor (handles &&/||/;) ────────────────────────────────────────

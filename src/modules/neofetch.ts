@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import type { ShellProperties } from "../VirtualShell";
+import type { ShellProperties } from "../modules/VirtualShell";
 
 function formatUptime(seconds: number): string {
 	const totalMinutes = Math.max(1, Math.floor(seconds / 60));

@@ -1,5 +1,5 @@
+import { resolveSignal, SIGNALS } from "../modules/VirtualUserManager/signals";
 import type { ShellModule } from "../types/commands";
-import { resolveSignal, SIGNALS } from "../VirtualUserManager/signals";
 
 /**
  * Send a signal to a process by PID.

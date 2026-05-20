@@ -1,8 +1,7 @@
 import { createHash, randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
 import { EventEmitter } from "node:events";
 import * as path from "node:path";
-import type { PerfLogger } from "../utils/perfLogger";
-import { createPerfLogger } from "../utils/perfLogger";
+import { type PerfLogger, createPerfLogger } from "../../utils/perfLogger";
 import type VirtualFileSystem from "../VirtualFileSystem";
 
 /** 

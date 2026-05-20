@@ -1,6 +1,6 @@
+import type { VirtualShell } from "../modules/VirtualShell";
 import type { ShellModule } from "../types/commands";
 import type { VfsFileNode } from "../types/vfs";
-import type { VirtualShell } from "../VirtualShell";
 import { resolvePath } from "./helpers";
 
 /**

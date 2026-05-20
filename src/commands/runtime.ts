@@ -1,11 +1,11 @@
 /** biome-ignore-all lint/style/useNamingConvention: ENV VARIABLES */
-import { executeStatements } from "../SSHMimic/executor";
-import type { VirtualShell } from "../VirtualShell";
-import { parseScript } from "../VirtualShell/shellParser";
+import { executeStatements } from "../modules/SSHMimic/executor";
+import type { VirtualShell } from "../modules/VirtualShell";
+import { parseScript } from "../modules/VirtualShell/shellParser";
 import type {
-	CommandMode,
-	CommandResult,
-	ShellEnv,
+    CommandMode,
+    CommandResult,
+    ShellEnv,
 } from "../types/commands";
 import { expandAsync, expandBraces, expandGlob } from "../utils/expand";
 import { tokenizeCommand } from "../utils/tokenize";

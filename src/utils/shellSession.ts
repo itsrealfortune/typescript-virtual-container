@@ -1,7 +1,7 @@
 import * as path from "node:path";
 import { resolvePath } from "../commands/helpers";
 import { userHome } from "../commands/runtime";
-import type VirtualFileSystem from "../VirtualFileSystem";
+import type VirtualFileSystem from "../modules/VirtualFileSystem";
 
 // ── History ───────────────────────────────────────────────────────────────────
 

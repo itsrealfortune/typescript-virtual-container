@@ -9,10 +9,9 @@
  */
 
 import type { EventEmitter } from "node:events";
+import { type PerfLogger, createPerfLogger } from "../../utils/perfLogger";
 import type { SshMimic } from "../SSHMimic";
 import type { SftpMimic } from "../SSHMimic/sftp";
-import type { PerfLogger } from "../utils/perfLogger";
-import { createPerfLogger } from "../utils/perfLogger";
 import type VirtualFileSystem from "../VirtualFileSystem";
 import type { VirtualShell } from "../VirtualShell";
 import type { VirtualUserManager } from "../VirtualUserManager";

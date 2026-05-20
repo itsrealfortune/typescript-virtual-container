@@ -6,8 +6,8 @@ import type {
 	Script,
 	Statement,
 	Subshell,
-} from "../types/pipeline";
-import { tokenizeCommand } from "../utils/tokenize";
+} from "../../types/pipeline";
+import { tokenizeCommand } from "../../utils/tokenize";
 
 // ── Public API ───────────────────────────────────────────────────────────────
 

@@ -13,8 +13,8 @@
  * - sticky (0o1000): only owner can delete files in directory
  */
 
-import type { InternalDirectoryNode } from "../VirtualFileSystem/internalTypes";
-import { getNodeNormalized, normalizePath } from "../VirtualFileSystem/path";
+import type { InternalDirectoryNode } from "./internalTypes";
+import { getNodeNormalized, normalizePath } from "./path";
 
 /** Permission check flags */
 export const R_OK = 4;

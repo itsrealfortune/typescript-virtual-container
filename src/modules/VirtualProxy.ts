@@ -12,7 +12,7 @@
  */
 
 import * as net from "node:net";
-import type { VirtualShell } from "../VirtualShell";
+import type { VirtualShell } from "./VirtualShell";
 import type { VirtualSwitch } from "./VirtualSwitch";
 
 /** A port forwarding rule. */

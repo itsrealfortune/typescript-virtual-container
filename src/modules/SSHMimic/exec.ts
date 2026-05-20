@@ -1,5 +1,5 @@
-import { makeDefaultEnv, runCommand, userHome } from "../commands";
-import type { ExecStream } from "../types/streams";
+import { makeDefaultEnv, runCommand, userHome } from "../../commands";
+import type { ExecStream } from "../../types/streams";
 import type { VirtualShell } from "../VirtualShell";
 
 function toTtyLines(text: string): string {

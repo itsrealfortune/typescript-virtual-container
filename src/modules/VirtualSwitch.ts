@@ -6,8 +6,8 @@
  * partition, bandwidth accounting.
  */
 
-import { VirtualShell } from "../VirtualShell";
 import { VirtualNetworkManager } from "./VirtualNetworkManager";
+import { VirtualShell } from "./VirtualShell";
 
 export type MacAddress = string;
 

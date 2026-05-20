@@ -1,20 +1,14 @@
 import { EventEmitter } from "node:events";
-import { createCustomCommand, registerCommand } from "../commands/registry";
-import { runCommand } from "../commands/runtime";
-import type { DesktopManager } from "../modules/desktopManager";
-import {
-	bootstrapLinuxRootfs,
-	refreshProc,
-	syncEtcPasswd,
-} from "../modules/linuxRootfs";
-import { defaultSysctlState, resolveSysctlPath, type SysctlState } from "../modules/sysctl";
-import { VirtualNetworkManager } from "../modules/VirtualNetworkManager";
-import type { CommandContext, CommandResult } from "../types/commands";
-import type { ShellStream } from "../types/streams";
-import type { VfsNodeStats } from "../types/vfs";
-import type { PerfLogger } from "../utils/perfLogger";
-import { createPerfLogger } from "../utils/perfLogger";
+import { createCustomCommand, registerCommand, runCommand } from "../../commands";
+import type { CommandContext, CommandResult } from "../../types/commands";
+import type { ShellStream } from "../../types/streams";
+import type { VfsNodeStats } from "../../types/vfs";
+import { type PerfLogger, createPerfLogger } from "../../utils/perfLogger";
+import type { DesktopManager } from "../desktopManager";
+import { bootstrapLinuxRootfs, refreshProc, syncEtcPasswd } from "../linuxRootfs";
+import { type SysctlState, defaultSysctlState, resolveSysctlPath } from "../sysctl";
 import VirtualFileSystem, { type VfsOptions } from "../VirtualFileSystem";
+import { VirtualNetworkManager } from "../VirtualNetworkManager";
 import { VirtualPackageManager } from "../VirtualPackageManager";
 import { VirtualUserManager } from "../VirtualUserManager";
 import { IdleManager, type IdleManagerOptions } from "./idleManager";

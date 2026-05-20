@@ -1,21 +1,16 @@
-import * as path from "node:path";
+import path from "node:path";
 import type { ShellProperties, VirtualShell } from ".";
-import { applyUserSwitch, getCommandNames, makeDefaultEnv, runCommand, userHome } from "../commands";
-import { NanoEditor } from "../modules/nanoEditor";
-import { PacmanGame } from "../modules/pacmanGame";
-import {
-	spawnHtopProcess,
-} from "../modules/shellInteractive";
-import {
-	getVisibleHtopPidList,
-	type TerminalSize,
-	toTtyLines,
-} from "../modules/shellRuntime";
+import { applyUserSwitch, getCommandNames, makeDefaultEnv, runCommand, userHome } from "../../commands";
+import type { CommandResult, ShellEnv } from "../../types/commands";
+import type { ShellStream } from "../../types/streams";
+import { listPathCompletions, loadHistory, readLastLogin, saveHistory, writeLastLogin } from "../../utils/shellSession";
+import { NanoEditor } from "../nanoEditor";
+import { PacmanGame } from "../pacmanGame";
+import { spawnHtopProcess } from "../shellInteractive";
+import { getVisibleHtopPidList, type TerminalSize, toTtyLines } from "../shellRuntime";
 import { buildLoginBanner } from "../SSHMimic/loginBanner";
 import { buildPrompt } from "../SSHMimic/prompt";
-import type { CommandResult, ShellEnv } from "../types/commands";
-import type { ShellStream } from "../types/streams";
-import { listPathCompletions, loadHistory, readLastLogin, saveHistory, writeLastLogin } from "../utils/shellSession";
+
 
 interface NanoSession {
 	kind: "nano";

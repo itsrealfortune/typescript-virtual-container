@@ -19,8 +19,8 @@
  */
 
 import { basename } from "node:path";
-import { resolvePath } from "../modules/shellRuntime";
 import type { VirtualShell } from "../VirtualShell";
+import { resolvePath } from "../shellRuntime";
 
 // ── Stream type ───────────────────────────────────────────────────────────────
 // ssh2 ServerChannel is a Duplex; we need both read and write + exit/stderr.

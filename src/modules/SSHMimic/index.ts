@@ -1,8 +1,8 @@
 import { EventEmitter } from "node:events";
 import { Server as SshServer } from "ssh2";
+import { userHome } from "../../commands";
+import { createPerfLogger, type PerfLogger } from "../../utils/perfLogger";
 import { VirtualShell } from "../VirtualShell";
-import { userHome } from "../commands";
-import { createPerfLogger, type PerfLogger } from "../utils/perfLogger";
 import { runExec } from "./exec";
 import { loadOrCreateHostKey } from "./hostKey";
 import { handleScp } from "./scp";
@@ -360,3 +360,4 @@ class SshMimic extends EventEmitter {
 
 export { SftpMimic } from "./sftp";
 export { SshMimic };
+

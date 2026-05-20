@@ -1,5 +1,5 @@
+import type { VirtualShell } from "../modules/VirtualShell";
 import type { CommandResult, ShellModule } from "../types/commands";
-import type { VirtualShell } from "../VirtualShell";
 
 /**
  * Delete a user. Root-only.

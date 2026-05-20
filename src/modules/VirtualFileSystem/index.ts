@@ -5,26 +5,26 @@ import * as fsSync from "node:fs";
 import * as path from "node:path";
 import { gunzipSync, gzipSync } from "node:zlib";
 import type {
-	RemoveOptions,
-	VfsDeviceNode,
-	VfsDirectoryNode,
-	VfsFileNode,
-	VfsNodeStats,
-	VfsSnapshot,
-	VfsSnapshotDeviceNode,
-	VfsSnapshotDirectoryNode,
-	VfsSnapshotFileNode,
-	VfsSnapshotNode,
-	WriteFileOptions,
-} from "../types/vfs";
+    RemoveOptions,
+    VfsDeviceNode,
+    VfsDirectoryNode,
+    VfsFileNode,
+    VfsNodeStats,
+    VfsSnapshot,
+    VfsSnapshotDeviceNode,
+    VfsSnapshotDirectoryNode,
+    VfsSnapshotFileNode,
+    VfsSnapshotNode,
+    WriteFileOptions,
+} from "../../types/vfs";
 import { decodeVfs, encodeVfs, isBinarySnapshot } from "./binaryPack";
 import type {
-	InternalDeviceNode,
-	InternalDirectoryNode,
-	InternalFileNode,
-	InternalNode,
-	InternalStubNode,
-	DeviceKind,
+    DeviceKind,
+    InternalDeviceNode,
+    InternalDirectoryNode,
+    InternalFileNode,
+    InternalNode,
+    InternalStubNode,
 } from "./internalTypes";
 import { appendJournalEntry, JournalOp, readJournal, truncateJournal } from "./journal";
 import { getNodeNormalized, getParentDirectory, normalizePath } from "./path";
