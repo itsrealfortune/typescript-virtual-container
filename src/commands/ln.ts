@@ -40,7 +40,7 @@ export const lnCommand: ShellModule = {
 					};
 				}
 				const content = shell.vfs.readFile(srcPath, uid, gid);
-				shell.vfs.writeFile(linkPath, content, uid, gid);
+				shell.vfs.writeFile(linkPath, content, {}, uid, gid);
 			} else {
 				shell.vfs.symlink(targetPath, linkPath, uid, gid);
 			}

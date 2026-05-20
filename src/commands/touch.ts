@@ -21,7 +21,7 @@ export const touchCommand: ShellModule = {
 			const target = resolvePath(cwd, file);
 			if (!shell.vfs.exists(target)) {
 				checkFilePermission(shell.vfs, shell.users, authUser, path.posix.dirname(target), 2);
-				shell.vfs.writeFile(target, "", uid, gid);
+				shell.vfs.writeFile(target, "", {}, uid, gid);
 			} else {
 				checkFilePermission(shell.vfs, shell.users, authUser, target, 2);
 			}

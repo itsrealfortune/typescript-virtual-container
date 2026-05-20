@@ -54,8 +54,8 @@ export const cpCommand: ShellModule = {
 						if (stat.type === "directory") {
 							copyDir(fromEntry, toEntry);
 						} else {
-							const content = shell.vfs.readFileRaw(fromEntry, uid, gid);
-							shell.vfs.writeFile(toEntry, content, uid, gid);
+							const content = shell.vfs.readFileRaw(fromEntry);
+							shell.vfs.writeFile(toEntry, content, {}, uid, gid);
 						}
 					}
 				};
@@ -71,8 +71,8 @@ export const cpCommand: ShellModule = {
 					shell.vfs.stat(destPath).type === "directory"
 						? `${destPath}/${srcArg.split("/").pop()}`
 						: destPath;
-				const content = shell.vfs.readFileRaw(srcPath, uid, gid);
-				shell.vfs.writeFile(finalDest, content, uid, gid);
+				const content = shell.vfs.readFileRaw(srcPath);
+				shell.vfs.writeFile(finalDest, content, {}, uid, gid);
 			}
 
 			return { exitCode: 0 };
