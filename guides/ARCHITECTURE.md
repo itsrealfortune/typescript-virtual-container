@@ -21,7 +21,26 @@ The system is organized in clear, layered architecture:
 ```
 Storage (VFS) → Auth (UserManager) → Software (PackageManager)
 → Interaction (Shell) → Transport (SSH) → Observability (Honeypot)
-```
+                                                      ↓
+                               ┌──────────────────────┘
+                               ▼
+                        Virtual Network
+                   ┌──────────────────────┐
+                   │  VirtualSwitch       │
+                   │  - subnet, ARP, NAT  │
+                   │  - DNS, traffic      │
+                   │    shaping, LB       │
+                   ├──────────────────────┤
+                   │  VirtualProxy        │
+                   │  - port forwarding   │
+                   │  - SOCKS5 proxy      │
+                   ├──────────────────────┤
+                   │  VirtualVpn          │
+                   │  - encrypted tunnel  │
+                   │    between Baies     │
+                   └──────────────────────┘
+                        Baie orchestrator
+
 
 ---
 
@@ -93,7 +112,7 @@ src/
 ├── Honeypot/                          (1 .ts file)
 │   └── index.ts                       (541 lines) — Security auditing/telemetry
 │
-├── modules/                           (9 .ts files)
+├── modules/                           (12 .ts files)
 │   ├── linuxRootfs.ts                 (2,140 lines) — Linux root FS bootstrap
 │   ├── nanoEditor.ts                  (953 lines) — Built-in nano editor
 │   ├── desktopManager.ts              (944 lines) — XFCE desktop simulation
@@ -102,7 +121,11 @@ src/
 │   ├── pacmanGame.ts                  (689 lines) — Built-in Pac-Man game
 │   ├── shellInteractive.ts            — Shell interaction module
 │   ├── shellRuntime.ts                — Shell runtime module
-│   └── VirtualNetworkManager.ts       (256 lines) — Virtual networking stack
+│   ├── VirtualNetworkManager.ts       (358 lines) — Virtual networking stack
+│   ├── VirtualSwitch.ts               (437 lines) — Multi-VM switch with NAT
+│   ├── VirtualProxy.ts                (198 lines) — Port forwarding + SOCKS5
+│   ├── sysctl.ts                      (193 lines) — Writable /proc/sys state
+│   └── VirtualVpn.ts                  (96 lines)  — Encrypted tunnel between Baies
 │
 └── utils/                             (8 .ts files)
     ├── expand.ts                      (664 lines) — Shell variable expansion
