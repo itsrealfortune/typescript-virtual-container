@@ -27,7 +27,7 @@ export const bzip2Command: ShellModule = {
 	description: "Compress files using Burrows-Wheeler algorithm",
 	category: "archive",
 	params: ["[-k] [-d] <file>"],
-	run: ({ authUser, shell, cwd, args }) => {
+	run: ({ shell, cwd, args, uid, gid }) => {
 		const keepOrig = args.includes("-k") || args.includes("--keep");
 		const decompress = args.includes("-d") || args.includes("--decompress");
 		const file = args.find((a) => !a.startsWith("-"));
@@ -42,15 +42,15 @@ export const bzip2Command: ShellModule = {
 			const result = vfsBunzip2(raw);
 			if (!result) return { stderr: `bzip2: ${file}: data integrity error`, exitCode: 2 };
 			const dest = p.slice(0, -4);
-			shell.writeFileAsUser(authUser, dest, result);
-			if (!keepOrig) shell.vfs.remove(p);
+			shell.vfs.writeFile(dest, result, {}, uid, gid);
+			if (!keepOrig) shell.vfs.remove(p, { recursive: false }, uid, gid);
 			return { exitCode: 0 };
 		}
 
 		if (file.endsWith(".bz2")) return { stderr: `bzip2: ${file}: already has .bz2 suffix -- unchanged`, exitCode: 1 };
 		const raw = shell.vfs.readFileRaw(p);
-		shell.vfs.writeFile(`${p}.bz2`, vfsBzip2(raw));
-		if (!keepOrig) shell.vfs.remove(p);
+		shell.vfs.writeFile(`${p}.bz2`, vfsBzip2(raw), {}, uid, gid);
+		if (!keepOrig) shell.vfs.remove(p, { recursive: false }, uid, gid);
 		return { exitCode: 0 };
 	},
 };
@@ -65,7 +65,7 @@ export const bunzip2Command: ShellModule = {
 	category: "archive",
 	aliases: ["bzcat"],
 	params: ["[-k] <file>"],
-	run: ({ authUser, shell, cwd, args }) => {
+	run: ({ shell, cwd, args, uid, gid }) => {
 		const keepOrig = args.includes("-k") || args.includes("--keep");
 		const file = args.find((a) => !a.startsWith("-"));
 		if (!file) return { stderr: "bunzip2: no file specified", exitCode: 1 };
@@ -76,8 +76,8 @@ export const bunzip2Command: ShellModule = {
 		const result = vfsBunzip2(raw);
 		if (!result) return { stderr: `bunzip2: ${file}: data integrity error`, exitCode: 2 };
 		const dest = p.slice(0, -4);
-		shell.writeFileAsUser(authUser, dest, result);
-		if (!keepOrig) shell.vfs.remove(p);
+		shell.vfs.writeFile(dest, result, {}, uid, gid);
+		if (!keepOrig) shell.vfs.remove(p, { recursive: false }, uid, gid);
 		return { exitCode: 0 };
 	},
 };

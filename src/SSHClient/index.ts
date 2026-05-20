@@ -167,12 +167,16 @@ export class SshClient {
 	async writeFile(path: string, content: string): Promise<CommandResult> {
 		perf.mark("writeFile");
 		const vfs = this.shell.getVfs();
-		if (!vfs) {
+		const users = this.shell.getUsers();
+
+		if (!vfs || !users) {
 			throw new Error("SSH client not started");
 		}
 
+		const uid = users.getUid(this.username);
+		const gid = users.getGid(this.username);
 		try {
-			this.shell.writeFileAsUser(this.username, path, content);
+			vfs.writeFile(path, content, {}, uid, gid);
 			return { stdout: `File '${path}' written`, exitCode: 0 };
 		} catch (error) {
 			return {

@@ -12,7 +12,7 @@ export const sedCommand: ShellModule = {
 	description: "Stream editor for filtering and transforming text",
 	category: "text",
 	params: ["[-n] [-e <expr>] [file]"],
-	run: ({ authUser, shell, cwd, args, stdin }) => {
+	run: ({ shell, cwd, args, stdin, uid, gid }) => {
 		const inPlace = ifFlag(args, ["-i"]);
 		const suppressAuto = ifFlag(args, ["-n"]);
 
@@ -210,7 +210,7 @@ export const sedCommand: ShellModule = {
 
 		if (inPlace && fileArg) {
 			const p = resolvePath(cwd, fileArg);
-			shell.writeFileAsUser(authUser, p, result);
+			shell.vfs.writeFile(p, result, {}, uid, gid);
 			return { exitCode: 0 };
 		}
 

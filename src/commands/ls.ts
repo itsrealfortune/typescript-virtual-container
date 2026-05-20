@@ -1,6 +1,6 @@
 import type { ShellModule } from "../types/commands";
 import { getArg, ifFlag } from "./command-helpers";
-import { assertPathAccess, resolvePath } from "./helpers";
+import { checkFilePermission, resolvePath } from "./helpers";
 
 // ─── ANSI color codes (matches GNU ls --color=auto / LS_COLORS defaults) ────
 
@@ -138,6 +138,7 @@ function longListing(
 		isSymlink: (p: string) => boolean;
 		readFile:  (p: string) => string;
 	},
+	users: { getUsername: (uid: number) => string | null; getGroup: (gid: number) => string | null },
 	dir: string,
 	items: string[],
 ): string {
@@ -190,8 +191,10 @@ function longListing(
 	const total  = items.length * 8;
 	const lines  = rows.map((r, i) => {
 		const st = (() => { try { return vfs.stat(`${base}/${items[i]}`); } catch { return null; } })();
-		const uidStr = st && "uid" in st ? String((st as { uid: number }).uid) : "0";
-		const gidStr = st && "gid" in st ? String((st as { gid: number }).gid) : "0";
+		const uid = st && "uid" in st ? (st as { uid: number }).uid : 0;
+		const gid = st && "gid" in st ? (st as { gid: number }).gid : 0;
+		const uidStr = users.getUsername(uid) ?? String(uid);
+		const gidStr = users.getGroup(gid) ?? String(gid);
 		return `${r.perms} ${r.nlink.padStart(wNlink)} ${uidStr} ${gidStr} ${r.size.padStart(wSize)} ${r.date} ${r.label}`;
 	});
 
@@ -218,7 +221,7 @@ export const lsCommand: ShellModule = {
 			flags: ["-l", "--long", "-a", "--all", "-la", "-al"],
 		});
 		const target = resolvePath(cwd, targetArg ?? cwd);
-		assertPathAccess(authUser, target, "ls");
+		checkFilePermission(shell.vfs, shell.users, authUser, target, 4);
 
 		// Single file or symlink
 		if (shell.vfs.exists(target)) {
@@ -236,8 +239,10 @@ export const lsCommand: ShellModule = {
 					const label = isLink
 						? `${colorize(name, color)} -> ${readlinkTarget(shell.vfs, target)}`
 						: colorize(name, color);
-					const uidStr = "uid" in st ? String((st as { uid: number }).uid) : "0";
-					const gidStr = "gid" in st ? String((st as { gid: number }).gid) : "0";
+					const uid = "uid" in st ? (st as { uid: number }).uid : 0;
+					const gid = "gid" in st ? (st as { gid: number }).gid : 0;
+					const uidStr = shell.users.getUsername(uid) ?? String(uid);
+					const gidStr = shell.users.getGroup(gid) ?? String(gid);
 					return {
 						stdout: `${perms} 1 ${uidStr} ${gidStr} ${size} ${formatDate(st.updatedAt)} ${label}\n`,
 						exitCode: 0,
@@ -252,7 +257,7 @@ export const lsCommand: ShellModule = {
 			.filter((name) => showHidden || !name.startsWith("."));
 
 		const rendered = longFormat
-			? longListing(shell.vfs, target, items)
+			? longListing(shell.vfs, shell.users, target, items)
 			: shortListing(shell.vfs, target, items);
 
 		return { stdout: `${rendered}\n`, exitCode: 0 };

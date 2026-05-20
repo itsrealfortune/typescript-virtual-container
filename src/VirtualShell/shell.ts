@@ -233,7 +233,9 @@ export function startShell(
 
 	function finishInteractiveSession(savedContent?: string, targetPath?: string): void {
 		if (savedContent !== undefined && targetPath) {
-			shell.writeFileAsUser(authUser, targetPath, savedContent);
+			const uid = shell.users.getUid(authUser);
+			const gid = shell.users.getGid(authUser);
+			shell.vfs.writeFile(targetPath, savedContent, {}, uid, gid);
 		}
 		if (interactivePid !== -1) {
 			shell.users.unregisterProcess(interactivePid);
@@ -515,29 +517,26 @@ export function startShell(
 		for (let i = 0; i < input.length; i += 1) {
 			const ch = input[i]!;
 
-			if (ch === "\u0004") {
-				lineBuffer = "";
-				cursorPos = 0;
-				historyIndex = null;
-				historyDraft = "";
-				stream.write("logout\r\n");
-				if (sessionStack.length > 0) {
-					const prev = sessionStack.pop()!;
-					authUser = prev.authUser;
-					cwd = prev.cwd;
-					shellEnv.vars.USER = authUser;
-					shellEnv.vars.LOGNAME = authUser;
-					shellEnv.vars.HOME = userHome(authUser);
-					shellEnv.vars.PWD = cwd;
-					shell.users.updateSession(sessionId, authUser, remoteAddress);
-					renderLine();
-				} else {
-					stream.exit(0);
-					stream.end();
-					return;
-				}
-				continue;
+		if (ch === "\u0004") {
+			lineBuffer = "";
+			cursorPos = 0;
+			historyIndex = null;
+			historyDraft = "";
+			stream.write("logout\r\n");
+			if (sessionStack.length > 0) {
+				const prev = sessionStack.pop()!;
+				authUser = prev.authUser;
+				cwd = prev.cwd;
+				shell.users.updateSession(sessionId, authUser, remoteAddress);
+				shellEnv.vars.PS1 = makeDefaultEnv(authUser, hostname).vars.PS1 ?? "";
+				renderLine();
+			} else {
+				stream.exit(0);
+				stream.end();
+				return;
 			}
+			continue;
+		}
 
 			if (ch === "\t") {
 				handleTabCompletion();
@@ -719,18 +718,15 @@ export function startShell(
 						stream.write(`${toTtyLines(result.stderr)}\r\n`);
 					}
 
-					if (result.closeSession) {
-						stream.write("logout\r\n");
-						if (sessionStack.length > 0) {
-							const prev = sessionStack.pop()!;
-							authUser = prev.authUser;
-							cwd = prev.cwd;
-							shellEnv.vars.USER = authUser;
-							shellEnv.vars.LOGNAME = authUser;
-							shellEnv.vars.HOME = userHome(authUser);
-							shellEnv.vars.PWD = cwd;
-							shell.users.updateSession(sessionId, authUser, remoteAddress);
-						} else {
+			if (result.closeSession) {
+					stream.write("logout\r\n");
+					if (sessionStack.length > 0) {
+						const prev = sessionStack.pop()!;
+						authUser = prev.authUser;
+						cwd = prev.cwd;
+						shell.users.updateSession(sessionId, authUser, remoteAddress);
+						shellEnv.vars.PS1 = makeDefaultEnv(authUser, hostname).vars.PS1 ?? "";
+					} else {
 							stream.exit(result.exitCode ?? 0);
 							stream.end();
 							return;

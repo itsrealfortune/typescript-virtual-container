@@ -108,7 +108,7 @@ export class VirtualUserManager extends EventEmitter {
 		private readonly vfs: VirtualFileSystem,
 		// private readonly defaultRootPassword: string = process.env
 		// .SSH_MIMIC_ROOT_PASSWORD || "root",
-		private readonly autoSudoForNewUsers: boolean = true,
+		private readonly autoSudoForNewUsers: boolean = false,
 	) {
 		super();
 		perf.mark("constructor");
@@ -308,15 +308,57 @@ export class VirtualUserManager extends EventEmitter {
 		if (this.autoSudoForNewUsers) {
 			this.sudoers.add(username);
 		}
+		const record = this.users.get(username)!;
+		const uid = record.uid;
+		const gid = record.gid;
 		const homePath = username === "root" ? "/root" : `/home/${username}`;
 		if (!this.vfs.exists(homePath)) {
-			this.vfs.mkdir(homePath, 0o755);
+			this.vfs.mkdir(homePath, 0o700, uid, gid);
 			this.vfs.writeFile(
 				`${homePath}/README.txt`,
 				`Welcome to the virtual environment, ${username}`,
+				{},
+				uid,
+				gid,
 			);
 		}
 		await this.persist();
+		this.emit("user:add", { username });
+	}
+
+	/**
+	 * Ensure a user exists in the database. Creates them with a non-root UID
+	 * if they are missing. Used during SSH login for unknown users.
+	 */
+	public ensureUser(username: string): void {
+		if (this.users.has(username)) return;
+		if (username === "root") {
+			this.users.set("root", this.createRecord("root", ""));
+			return;
+		}
+		this.users.set(username, this.createRecord(username, ""));
+		if (this.autoSudoForNewUsers) {
+			this.sudoers.add(username);
+		}
+		const uid = this.nextUid - 1;
+		const gid = this.nextGid - 1;
+		const homePath = `/home/${username}`;
+		if (!this.vfs.exists(homePath)) {
+			this.vfs.mkdir(homePath, 0o700, uid, gid);
+		} else {
+			// Ensure existing home dir is owned by the user
+			try { this.vfs.chown(homePath, uid, gid, 0); } catch { /* best-effort */ }
+		}
+		if (!this.vfs.exists(`${homePath}/README.txt`)) {
+			this.vfs.writeFile(
+				`${homePath}/README.txt`,
+				`Welcome to the virtual environment, ${username}`,
+				{},
+				uid,
+				gid,
+			);
+		}
+		void this.persist();
 		this.emit("user:add", { username });
 	}
 
@@ -539,6 +581,22 @@ export class VirtualUserManager extends EventEmitter {
 	/** Returns the primary GID for a username, or 0 if unknown. */
 	public getGid(username: string): number {
 		return this.users.get(username)?.gid ?? 0;
+	}
+
+	/** Returns the username for a numeric UID, or null if unknown. */
+	public getUsername(uid: number): string | null {
+		for (const [name, record] of this.users) {
+			if (record.uid === uid) return name;
+		}
+		return null;
+	}
+
+	/** Returns the group name for a numeric GID, or null if unknown. */
+	public getGroup(gid: number): string | null {
+		for (const [name, record] of this.users) {
+			if (record.gid === gid) return name;
+		}
+		return null;
 	}
 
 	/**

@@ -7,20 +7,20 @@ function makeVfs() {
 }
 
 describe("VirtualUserManager auto sudo", () => {
-	test("adds new users to sudoers by default", async () => {
+	test("does not auto-add sudoers by default", async () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
 		await users.initialize();
 		await users.addUser("alice", "alice-pass");
-		expect(users.isSudoer("alice")).toBe(true);
+		expect(users.isSudoer("alice")).toBe(false);
 	});
 
-	test("does not auto-add sudoers when disabled", async () => {
+	test("auto-adds sudoers when explicitly enabled", async () => {
 		const vfs = makeVfs();
-		const users = new VirtualUserManager(vfs, false);
+		const users = new VirtualUserManager(vfs, true);
 		await users.initialize();
 		await users.addUser("bob", "bob-pass");
-		expect(users.isSudoer("bob")).toBe(false);
+		expect(users.isSudoer("bob")).toBe(true);
 	});
 
 	test("updates password for existing user", async () => {

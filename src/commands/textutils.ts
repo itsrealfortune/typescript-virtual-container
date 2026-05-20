@@ -137,7 +137,7 @@ export const splitCommand: ShellModule = {
 	description: "Split a file into pieces",
 	category: "text",
 	params: ["[-l lines] [-b bytes] <file> [prefix]"],
-	run: ({ authUser, shell, cwd, args }) => {
+	run: ({ shell, cwd, args, uid, gid }) => {
 		const { flagsWithValues, positionals } = parseArgs(args, {
 			flagsWithValue: ["-l", "-b"],
 		});
@@ -155,14 +155,14 @@ export const splitCommand: ShellModule = {
 			return { stderr: `split: ${fileArg}: No such file or directory\n`, exitCode: 1 };
 		}
 
-		const content = shell.vfs.readFile(p);
+		const content = shell.vfs.readFile(p, uid, gid);
 
 		if (bytesPerFile !== undefined) {
 			let chunkIndex = 0;
 			for (let i = 0; i < content.length; i += bytesPerFile) {
 				const chunk = content.slice(i, i + bytesPerFile);
 				const outPath = resolvePath(cwd, `${prefix}${alphaSuffix(chunkIndex)}`);
-				shell.writeFileAsUser(authUser, outPath, chunk);
+				shell.vfs.writeFile(outPath, chunk, {}, uid, gid);
 				chunkIndex++;
 			}
 			return { exitCode: 0 };
@@ -173,7 +173,7 @@ export const splitCommand: ShellModule = {
 		for (let i = 0; i < allLines.length; i += linesPerFile) {
 			const chunk = allLines.slice(i, i + linesPerFile).join("\n");
 			const outPath = resolvePath(cwd, `${prefix}${alphaSuffix(chunkIndex)}`);
-			shell.writeFileAsUser(authUser, outPath, chunk);
+			shell.vfs.writeFile(outPath, chunk, {}, uid, gid);
 			chunkIndex++;
 		}
 

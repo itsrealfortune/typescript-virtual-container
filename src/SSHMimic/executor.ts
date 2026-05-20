@@ -225,18 +225,20 @@ async function executeSingleCommandWithRedirections(
 	if (cmd.outputFile) {
 		const outputPath = resolvePath(cwd, cmd.outputFile);
 		const output = result.stdout || "";
+		const uid = shell.users.getUid(authUser);
+		const gid = shell.users.getGid(authUser);
 		try {
 			if (cmd.appendOutput) {
 				const existing = (() => {
 					try {
-						return shell.vfs.readFile(outputPath);
+						return shell.vfs.readFile(outputPath, uid, gid);
 					} catch {
 						return "";
 					}
 				})();
-				shell.writeFileAsUser(authUser, outputPath, existing + output);
+				shell.vfs.writeFile(outputPath, existing + output, {}, uid, gid);
 			} else {
-				shell.writeFileAsUser(authUser, outputPath, output);
+				shell.vfs.writeFile(outputPath, output, {}, uid, gid);
 			}
 			return { ...result, stdout: "" };
 		} catch {
@@ -299,27 +301,31 @@ async function executePipelineChain(
 		// 2>file — redirect stderr to file
 		if (cmd.stderrFile && effectiveResult.stderr) {
 			const sp = resolvePath(cwd, cmd.stderrFile);
+			const uid = shell.users.getUid(authUser);
+			const gid = shell.users.getGid(authUser);
 			try {
-				const ex = (() => { try { return shell.vfs.readFile(sp); } catch { return ''; } })();
-				shell.writeFileAsUser(authUser, sp, cmd.stderrAppend ? ex + effectiveResult.stderr : effectiveResult.stderr);
+				const ex = (() => { try { return shell.vfs.readFile(sp, uid, gid); } catch { return ''; } })();
+				shell.vfs.writeFile(sp, cmd.stderrAppend ? ex + effectiveResult.stderr : effectiveResult.stderr, {}, uid, gid);
 			} catch { /* best-effort stderr write */ }
 		}
 
 		if (i === commands.length - 1 && cmd.outputFile) {
 			const outputPath = resolvePath(cwd, cmd.outputFile);
 			const output = result.stdout || "";
+			const uid = shell.users.getUid(authUser);
+			const gid = shell.users.getGid(authUser);
 			try {
 				if (cmd.appendOutput) {
 					const existing = (() => {
 						try {
-							return shell.vfs.readFile(outputPath);
+							return shell.vfs.readFile(outputPath, uid, gid);
 						} catch {
 							return "";
 						}
 					})();
-					shell.writeFileAsUser(authUser, outputPath, existing + output);
+					shell.vfs.writeFile(outputPath, existing + output, {}, uid, gid);
 				} else {
-					shell.writeFileAsUser(authUser, outputPath, output);
+					shell.vfs.writeFile(outputPath, output, {}, uid, gid);
 				}
 				currentOutput = "";
 			} catch {

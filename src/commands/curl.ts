@@ -12,7 +12,7 @@ export const curlCommand: ShellModule = {
 	description: "Transfer data from or to a server (pure fetch)",
 	category: "network",
 	params: ["[options] <url>"],
-	run: async ({ authUser, cwd, args, shell }) => {
+	run: async ({ authUser, cwd, args, shell, uid, gid }) => {
 		const { flagsWithValues, positionals } = parseArgs(args, {
 			flagsWithValue: [
 				"-o",
@@ -127,7 +127,7 @@ export const curlCommand: ShellModule = {
 		if (outputPath) {
 			const target = resolvePath(cwd, outputPath);
 			assertPathAccess(authUser, target, "curl");
-			shell.writeFileAsUser(authUser, target, body);
+			shell.vfs.writeFile(target, body, {}, uid, gid);
 			if (!silent)
 				stderrLines.push(
 					`  % Total    % Received\n100 ${body.length}  100 ${body.length}`,

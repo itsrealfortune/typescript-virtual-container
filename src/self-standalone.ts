@@ -225,6 +225,7 @@ async function runReadlineShell(): Promise<void> {
 				shellEnv.vars.LOGNAME = authUser;
 				shellEnv.vars.HOME = userHome(authUser);
 				shellEnv.vars.PWD = cwd;
+				shellEnv.vars.PS1 = makeDefaultEnv(authUser, hostname).vars.PS1 ?? "";
 				stdout.write("logout\n");
 				void flushVfs().then(() => { prompt(); });
 				return;
@@ -288,13 +289,17 @@ async function runReadlineShell(): Promise<void> {
 				content: initialContent,
 				filename: path.posix.basename(targetPath),
 				onSave: (content) => {
-					virtualShell.writeFileAsUser(authUser, targetPath, content);
+					const uid = virtualShell.users.getUid(authUser);
+					const gid = virtualShell.users.getGid(authUser);
+					virtualShell.vfs.writeFile(targetPath, content, {}, uid, gid);
 					void flushVfs();
 				},
 				onExit: (reason, content) => {
 					cleanup();
 					if (reason === "saved") {
-						virtualShell.writeFileAsUser(authUser, targetPath, content);
+						const uid = virtualShell.users.getUid(authUser);
+						const gid = virtualShell.users.getGid(authUser);
+						virtualShell.vfs.writeFile(targetPath, content, {}, uid, gid);
 						void flushVfs();
 					}
 					resolve();
@@ -521,6 +526,7 @@ async function runReadlineShell(): Promise<void> {
 				shellEnv.vars.LOGNAME = authUser;
 				shellEnv.vars.HOME = userHome(authUser);
 				shellEnv.vars.PWD = cwd;
+				shellEnv.vars.PS1 = makeDefaultEnv(authUser, hostname).vars.PS1 ?? "";
 				stdout.write("logout\n");
 				// resume prompt handled by caller
 			} else {

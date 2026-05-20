@@ -28,7 +28,7 @@ import type {
 } from "./internalTypes";
 import { appendJournalEntry, JournalOp, readJournal, truncateJournal } from "./journal";
 import { getNodeNormalized, getParentDirectory, normalizePath } from "./path";
-import { enforceChmod, enforceChown, enforceDelete, enforceAccess, R_OK, W_OK } from "./permissions";
+import { enforceAccess, enforceChmod, enforceChown, enforceDelete, enforcePathTraversal, R_OK, W_OK } from "./permissions";
 
 // ── Persistence options ───────────────────────────────────────────────────────
 
@@ -966,6 +966,10 @@ class VirtualFileSystem extends EventEmitter {
 			: Buffer.from(content, "utf8");
 		this._triggerWriteHook(normalized, rawContent);
 
+		if (uid !== undefined && gid !== undefined) {
+			enforcePathTraversal(this.root, normalized, uid, gid);
+		}
+
 		const { parent, name } = getParentDirectory(
 			this.root,
 			normalized,
@@ -1002,10 +1006,12 @@ class VirtualFileSystem extends EventEmitter {
 			f.content = storedContent;
 			f.compressed = shouldCompress;
 			f.mode = mode;
+			if (uid !== undefined) f.uid = uid;
+			if (gid !== undefined) f.gid = gid;
 			f.updatedAt = Date.now();
 		} else {
 			if (!existing) { parent._childCount++; parent._sortedKeys = null; }
-			parent.children[name] = this.makeFile(name, storedContent, mode, shouldCompress);
+			parent.children[name] = this.makeFile(name, storedContent, mode, shouldCompress, uid, gid);
 		}
 
 		this.emit("file:write", { path: normalized, size: storedContent.length });
@@ -1031,6 +1037,10 @@ class VirtualFileSystem extends EventEmitter {
 		if (resolved !== null) {
 			this.emit("file:read", { path: normalized, size: resolved.length });
 			return resolved;
+		}
+
+		if (uid !== undefined && gid !== undefined) {
+			enforcePathTraversal(this.root, normalized, uid, gid);
 		}
 
 		const node = getNodeNormalized(this.root, normalized);
@@ -1494,6 +1504,7 @@ class VirtualFileSystem extends EventEmitter {
 		const normalized = normalizePath(targetPath);
 		if (normalized === "/") throw new Error("Cannot remove root directory.");
 		if (uid !== undefined && gid !== undefined) {
+			enforcePathTraversal(this.root, normalized, uid, gid);
 			const parentPath = normalized.split("/").slice(0, -1).join("/") || "/";
 			const name = normalized.split("/").pop() ?? "";
 			enforceDelete(this.root, parentPath, name, uid, gid);
