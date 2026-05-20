@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 import { VirtualShell } from "../src";
-import { SshClient } from "../src/SSHClient";
+import { SshClient } from "../src/modules/SSHClient";
 
 // Skip slow network tests by default. Run with:
 //   SSH_MIMIC_RUN_NETWORK_TESTS=1 bun test tests/new-features.test.ts

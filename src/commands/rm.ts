@@ -1,6 +1,6 @@
 import * as path from "node:path";
+import type { VirtualShell } from "../modules/VirtualShell";
 import type { CommandResult, ShellModule } from "../types/commands";
-import type { VirtualShell } from "../VirtualShell";
 import { getArg, ifFlag } from "./command-helpers";
 import { checkFilePermission, resolvePath } from "./helpers";
 

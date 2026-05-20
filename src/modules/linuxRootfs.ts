@@ -19,11 +19,11 @@
  */
 
 import * as os from "node:os";
-import VirtualFileSystem from "../VirtualFileSystem";
-import { decodeVfs } from "../VirtualFileSystem/binaryPack";
-import type { ShellProperties } from "../VirtualShell";
-import type { VirtualActiveSession, VirtualUserManager } from "../VirtualUserManager";
+import type { ShellProperties } from "../modules/VirtualShell";
+import VirtualFileSystem from "./VirtualFileSystem";
+import { decodeVfs } from "./VirtualFileSystem/binaryPack";
 import type { VirtualNetworkManager } from "./VirtualNetworkManager";
+import type { VirtualActiveSession, VirtualUserManager } from "./VirtualUserManager";
 
 
 // ─── helpers ────────────────────────────────────────────────────────────────

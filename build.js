@@ -17,6 +17,7 @@ await esbuild.build({
         'node:child_process': './polyfills/node_child_process/index.js',
         'node:zlib': './polyfills/node_zlib/index.js',
         'node:vm': './polyfills/node_vm/index.js',
+        'node:net': './polyfills/node_net/index.js',
         'ssh2': './polyfills/ssh2/index.js',
     }, inject: ['./polyfills/process.js', './polyfills/buffer.js'],
 });

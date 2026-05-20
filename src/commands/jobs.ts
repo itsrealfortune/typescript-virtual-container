@@ -1,5 +1,5 @@
+import type { VirtualProcess } from "../modules/VirtualUserManager";
 import type { ShellModule } from "../types/commands";
-import type { VirtualProcess } from "../VirtualUserManager";
 
 function parseJobspec(arg: string | undefined, procs: VirtualProcess[]): VirtualProcess | undefined {
 	if (!arg) {

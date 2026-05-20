@@ -95,6 +95,12 @@ export const wgetCommand: ShellModule = {
 
 		let response: Response;
 		try {
+			const parsedUrl = new URL(url);
+			const dstPort = parsedUrl.port ? parseInt(parsedUrl.port, 10) : (parsedUrl.protocol === "https:" ? 443 : 80);
+			const fwAction = shell.network.checkFirewall("OUTPUT", "tcp", undefined, parsedUrl.hostname, dstPort);
+			if (fwAction === "DROP" || fwAction === "REJECT") {
+				return { stderr: `wget: unable to connect to ${parsedUrl.hostname}:${dstPort}: Connection refused\n`, exitCode: 4 };
+			}
 			response = await fetch(url, {
 				headers: { "User-Agent": "Wget/1.21.3 (Fortune GNU/Linux)" },
 			});

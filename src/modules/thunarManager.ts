@@ -1,4 +1,4 @@
-import type { VirtualShell } from "../VirtualShell";
+import type { VirtualShell } from "../modules/VirtualShell";
 import type { DesktopWindow, ThunarContent } from "./desktopManager";
 
 function copyPath(path: string): void {

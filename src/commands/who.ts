@@ -1,4 +1,4 @@
-import { formatLoginDate } from "../SSHMimic/loginFormat";
+import { formatLoginDate } from "../modules/SSHMimic/loginFormat";
 import type { ShellModule } from "../types/commands";
 
 /**

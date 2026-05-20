@@ -1,5 +1,5 @@
+import type { DeviceKind } from "../modules/VirtualFileSystem/internalTypes";
 import type { ShellModule } from "../types/commands";
-import type { DeviceKind } from "../VirtualFileSystem/internalTypes";
 
 const DEVICE_KINDS: DeviceKind[] = [
 	"null", "zero", "full", "random", "urandom",

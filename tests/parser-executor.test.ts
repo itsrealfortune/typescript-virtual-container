@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { VirtualShell } from "../src";
-import { executePipeline } from "../src/SSHMimic/executor";
-import { parseShellPipeline } from "../src/VirtualShell/shellParser";
+import { executePipeline } from "../src/modules/SSHMimic/executor";
+import { parseShellPipeline } from "../src/modules/VirtualShell/shellParser";
 
 describe("Pipeline parser and executor", () => {
 	test("parses simple pipeline", () => {

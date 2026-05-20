@@ -1,21 +1,28 @@
-export { HoneyPot } from "./Honeypot/index";
-export { SshClient } from "./SSHClient/index";
-export { SftpMimic as VirtualSftpServer, SshMimic as VirtualSshServer } from "./SSHMimic/index";
-export type { SftpMimicOptions as VirtualSftpServerOptions } from "./SSHMimic/sftp";
-export { default as VirtualFileSystem } from "./VirtualFileSystem/index";
-export { VirtualPackageManager } from "./VirtualPackageManager/index";
+export { HoneyPot } from "./modules/Honeypot/index";
+export { SshClient } from "./modules/SSHClient/index";
+export { SftpMimic as VirtualSftpServer, SshMimic as VirtualSshServer } from "./modules/SSHMimic/index";
+export type { SftpMimicOptions as VirtualSftpServerOptions } from "./modules/SSHMimic/sftp";
+export { default as VirtualFileSystem } from "./modules/VirtualFileSystem/index";
 export { VirtualNetworkManager } from "./modules/VirtualNetworkManager";
-export type { VirtualInterface, VirtualRoute, VirtualArpEntry } from "./modules/VirtualNetworkManager";
-export { VirtualShell } from "./VirtualShell/index";
-export { VirtualUserManager } from "./VirtualUserManager/index";
-export type { VirtualActiveSession, VirtualProcess, VirtualUserRecord, ProcessStatus } from "./VirtualUserManager/index";
-export { IdleManager } from "./VirtualShell/idleManager";
-export type { IdleManagerOptions, IdleState } from "./VirtualShell/idleManager";
+export type { VirtualArpEntry, VirtualInterface, VirtualRoute } from "./modules/VirtualNetworkManager";
+export { VirtualPackageManager } from "./modules/VirtualPackageManager/index";
+export { VirtualProxy } from "./modules/VirtualProxy";
+export { IdleManager } from "./modules/VirtualShell/idleManager";
+export type { IdleManagerOptions, IdleState } from "./modules/VirtualShell/idleManager";
+export { VirtualShell } from "./modules/VirtualShell/index";
+export { Baie, VirtualSwitch } from "./modules/VirtualSwitch";
+export type { DnsRecord, LoadBalancerRule, MacAddress, Packet, PacketResult, TrafficRule, VmPort } from "./modules/VirtualSwitch";
+export { VirtualUserManager } from "./modules/VirtualUserManager/index";
+export type { ProcessStatus, VirtualActiveSession, VirtualProcess, VirtualUserRecord } from "./modules/VirtualUserManager/index";
+export { VirtualVpn } from "./modules/VirtualVpn";
+export type { VpnOptions } from "./modules/VirtualVpn";
 
 export type {
 	AuditLogEntry,
 	HoneyPotStats
-} from "./Honeypot/index";
+} from "./modules/Honeypot/index";
+export type { VfsOptions, VfsPersistenceMode } from "./modules/VirtualFileSystem/index";
+export type { ShellProperties, VirtualShellVfsLike, VirtualShellVfsOptions } from "./modules/VirtualShell/index";
 export type {
 	CommandContext,
 	CommandMode,
@@ -27,6 +34,9 @@ export type {
 	ShellModule,
 	SudoChallenge
 } from "./types/commands";
+export type {
+	LogicalOp, Pipeline, PipelineCommand, Script, Statement
+} from "./types/pipeline";
 export type { ExecStream, ShellStream } from "./types/streams";
 export type {
 	MountOptions,
@@ -44,15 +54,6 @@ export type {
 	VfsSnapshotNode,
 	WriteFileOptions
 } from "./types/vfs";
-export type { VfsOptions, VfsPersistenceMode } from "./VirtualFileSystem/index";
-export type { ShellProperties, VirtualShellVfsLike, VirtualShellVfsOptions } from "./VirtualShell/index";
-export type {
-	PipelineCommand,
-	Pipeline,
-	Statement,
-	Script,
-	LogicalOp
-} from "./types/pipeline";
 
 export { NanoEditor } from "./modules/nanoEditor";
 export type { NanoEditorOptions, NanoExitReason } from "./modules/nanoEditor";
@@ -65,7 +66,7 @@ export type { PerfLogger } from "./utils/perfLogger";
 export type {
 	InstalledPackage, PackageDefinition,
 	PackageFile
-} from "./VirtualPackageManager/index";
+} from "./modules/VirtualPackageManager/index";
 
 export {
 	assertDiff, diffSnapshots,

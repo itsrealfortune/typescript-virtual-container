@@ -161,6 +161,16 @@ describeNetwork("curl command", () => {
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 
+	test("curl blocked by firewall", async () => {
+		const r = await runCmd(client, "iptables -A OUTPUT -d 127.0.0.1 -j DROP");
+		// curl to localhost — blocked by OUTPUT rule
+		const r2 = await runCmd(client, "curl http://127.0.0.1");
+		const output = (r2.stderr ?? "") + (r2.stdout ?? "");
+		expect(output).toContain("Connection refused");
+		expect(r2.exitCode).toBe(7);
+		await runCmd(client, "iptables -F");
+	});
+
 	test("curl -I head request", async () => {
 		const r = await runCmd(client, "curl -I http://example.com 2>/dev/null | head -1 || echo 'header'");
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);

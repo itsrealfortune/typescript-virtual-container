@@ -7,12 +7,12 @@ import { getCommandNames } from "./commands/registry";
 import { applyUserSwitch, makeDefaultEnv, runCommand, userHome } from "./commands/runtime";
 import { NanoEditor } from "./modules/nanoEditor";
 import { PacmanGame } from "./modules/pacmanGame";
-import { buildLoginBanner } from "./SSHMimic/loginBanner";
-import { buildPrompt } from "./SSHMimic/prompt";
+import { buildLoginBanner } from "./modules/SSHMimic/loginBanner";
+import { buildPrompt } from "./modules/SSHMimic/prompt";
+import { VirtualShell } from "./modules/VirtualShell";
 import type { CommandResult, PasswordChallenge, SudoChallenge } from "./types/commands";
 import { getFlag, getOptionString } from "./utils/argv";
 import { listPathCompletions, loadHistory, readLastLogin, saveHistory, writeLastLogin } from "./utils/shellSession";
-import { VirtualShell } from "./VirtualShell";
 
 // ── CLI args ──────────────────────────────────────────────────────────────────
 

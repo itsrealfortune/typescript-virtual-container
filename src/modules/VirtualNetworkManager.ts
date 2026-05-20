@@ -97,7 +97,7 @@ export class VirtualNetworkManager {
 		{ destination: "127.0.0.0", gateway: "0.0.0.0", netmask: "255.0.0.0", device: "lo", flags: "U" },
 	];
 
-	private arpCache: VirtualArpEntry[] = [
+	public arpCache: VirtualArpEntry[] = [
 		{ ip: "10.0.0.1", mac: "02:42:0a:00:00:01", device: "eth0", state: "REACHABLE" },
 	];
 

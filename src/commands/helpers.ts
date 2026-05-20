@@ -1,7 +1,7 @@
 import * as path from "node:path";
-import type VirtualFileSystem from "../VirtualFileSystem";
-import type { VirtualPackageManager } from "../VirtualPackageManager";
-import type { VirtualShell } from "../VirtualShell";
+import type VirtualFileSystem from "../modules/VirtualFileSystem";
+import type { VirtualPackageManager } from "../modules/VirtualPackageManager";
+import type { VirtualShell } from "../modules/VirtualShell";
 
 const PROTECTED_PREFIXES = ["/.virtual-env-js/.auth", "/etc/htpasswd"] as const;
 

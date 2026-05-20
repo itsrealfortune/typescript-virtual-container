@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import VirtualFileSystem from "../src/VirtualFileSystem";
+import VirtualFileSystem from "../src/modules/VirtualFileSystem";
 
 function makeVfs() {
 	return new VirtualFileSystem();

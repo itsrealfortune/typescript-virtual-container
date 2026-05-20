@@ -175,7 +175,20 @@ const r = await client.exec("ls /app && cat /app/config/settings.json");
 console.log(r.stdout);
 ```
 
+#### Multi-VM, proxy, VPN, and hosting examples
+
+See [`guides/EXAMPLES.md`](guides/EXAMPLES.md) for:
+
+- **Baie** — multi-VM network on a shared subnet
+- **VirtualProxy** — port forwarding and SOCKS5 proxy
+- **Multi-tier lab** — web/api/db with firewall isolation
+- **Hosting platform** — multi-tenant with SSH per tenant
+- **VirtualVpn** — encrypted tunnel between Baie instances
+- **Traffic shaping, DNS, load balancer, partition**
+
 ---
+
+## How It Works
 
 ## How It Works
 

@@ -1,4 +1,4 @@
-import type { VirtualShell } from "../VirtualShell";
+import type { VirtualShell } from "../modules/VirtualShell";
 import type { ShellStream } from "../types/streams";
 import { keyToBytes } from "../utils/keyToBytes";
 import { clearSession, loadSession, saveSession } from "./sessionManager";
