@@ -1,3 +1,7 @@
+**typescript-virtual-container v1.7.1**
+
+***
+
 # `typescript-virtual-container`
 
 > A complete virtual Linux environment in pure TypeScript — runs as an SSH/SFTP server, a browser-based web shell, or a standalone CLI. Ships with a realistic Linux rootfs, a virtual package manager, a full shell interpreter, and a typed programmatic API for testing, automation, honeypots, and embedded shell experiences.
@@ -177,7 +181,7 @@ console.log(r.stdout);
 
 #### Multi-VM, proxy, VPN, and hosting examples
 
-See [`guides/EXAMPLES.md`](guides/EXAMPLES.md) for:
+See [`guides/EXAMPLES.md`](_media/EXAMPLES.md) for:
 
 - **Baie** — multi-VM network on a shared subnet
 - **VirtualProxy** — port forwarding and SOCKS5 proxy
@@ -354,8 +358,6 @@ const ssh = new VirtualSshServer({
 ssh.on("auth:lockout", ({ ip, until }) => console.warn(`${ip} locked until ${until}`));
 ssh.clearLockout("192.168.1.100"); // manual override
 ```
-
-
 
 ### Snapshot-Based Test Fixtures
 
@@ -1056,7 +1058,7 @@ Vulnerability reports: contact maintainers privately before public disclosure �
 
 ## License
 
-MIT — see [LICENSE](./LICENSE).
+MIT — see [LICENSE](_media/LICENSE).
 
 ---
 

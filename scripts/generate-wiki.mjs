@@ -7,7 +7,7 @@
  *
  * Usage:
  *   node scripts/generate-wiki.mjs                # generate wiki/ directory
- *   node scripts/generate-wiki.mjs --push         # generate + push to wiki repo
+ *   node scripts/generate-wiki.mjs --push --auto  # generate + push to wiki repo
  *
  * Environment:
  *   GH_TOKEN    — GitHub token with repo and wiki write access
@@ -24,6 +24,13 @@ const wikiDir = join(root, "wiki");
 const shouldPush = process.argv.includes("--push");
 const autoToken = process.argv.includes("--auto");
 
+const repoOwner = () => {
+	const url = execSync("git remote get-url origin", { cwd: root }).toString().trim();
+	return url.replace("https://github.com/", "").replace(/\.git$/, "");
+};
+
+const wikiUrl = (token) => `https://oauth2:${token}@github.com/${repoOwner()}.wiki.git`;
+
 function resolveToken() {
 	if (process.env.GH_TOKEN) return process.env.GH_TOKEN;
 	if (autoToken) {
@@ -37,114 +44,16 @@ function resolveToken() {
 	return null;
 }
 
-function repoUrl() {
-	return execSync("git remote get-url origin", { cwd: root })
-		.toString().trim().replace(/\.git$/, "");
-}
-
-/**
- * Create the GitHub Wiki repository if it doesn't exist.
- * Uses the GitHub API to initialize the wiki.
- */
 function ensureWikiRepo(token) {
-	const apiUrl = `https://api.github.com/repos/${repoUrl().replace("https://github.com/", "")}`;
 	try {
-		// Check if wiki repo is accessible
-		execSync(
-			`git ls-remote https://oauth2:${token}@github.com/${repoUrl().replace("https://github.com/", "")}.wiki.git HEAD`,
-			{ stdio: "pipe", timeout: 10000 },
-		);
+		execSync(`git ls-remote ${wikiUrl(token)} HEAD`, { stdio: "pipe", timeout: 10000 });
 	} catch {
-		// Wiki doesn't exist — create it via API by pushing
 		console.log("Wiki repo not found. Creating first page to initialize...");
 		const tmpDir = join(wikiDir, ".wiki-bootstrap");
 		mkdirSync(tmpDir, { recursive: true });
 		writeFileSync(join(tmpDir, "Home.md"), "# Wiki\n");
-		execSync(
-			`cd "${tmpDir}" && git init && git add -A && git commit -m "Init wiki"`,
-			{ stdio: "pipe" },
-		);
-		execSync(
-			`cd "${tmpDir}" && git remote add origin https://oauth2:${token}@github.com/${repoUrl().replace("https://github.com/", "")}.wiki.git && git push -f origin master`,
-			{ stdio: "pipe" },
-		);
-		execSync(`rm -rf "${tmpDir}"`);
-		console.log("Wiki initialized.");
-	}
-}
-
-function repoUrl() {
-	return execSync("git remote get-url origin", { cwd: root })
-		.toString().trim().replace(/\.git$/, "");
-}
-
-/**
- * Create the GitHub Wiki repository if it doesn't exist.
- * Uses the GitHub API to initialize the wiki.
- */
-function ensureWikiRepo() {
-	const token = process.env.GH_TOKEN;
-	if (!token) {
-		console.error("Error: GH_TOKEN environment variable required for --push");
-		process.exit(1);
-	}
-	const apiUrl = `https://api.github.com/repos/${repoUrl().replace("https://github.com/", "")}`;
-	try {
-		// Check if wiki repo is accessible
-		execSync(
-			`git ls-remote https://oauth2:${token}@github.com/${repoUrl().replace("https://github.com/", "")}.wiki.git HEAD`,
-			{ stdio: "pipe", timeout: 10000 },
-		);
-	} catch {
-		// Wiki doesn't exist — create it via API by pushing
-		console.log("Wiki repo not found. Creating first page to initialize...");
-		const tmpDir = join(wikiDir, ".wiki-bootstrap");
-		mkdirSync(tmpDir, { recursive: true });
-		writeFileSync(join(tmpDir, "Home.md"), "# Wiki\n");
-		execSync(
-			`cd "${tmpDir}" && git init && git add -A && git commit -m "Init wiki"`,
-			{ stdio: "pipe" },
-		);
-		execSync(
-			`cd "${tmpDir}" && git remote add origin https://oauth2:${token}@github.com/${repoUrl().replace("https://github.com/", "")}.wiki.git && git push -f origin master`,
-			{ stdio: "pipe" },
-		);
-		execSync(`rm -rf "${tmpDir}"`);
-		console.log("Wiki initialized.");
-	}
-}
-
-function repoUrl() {
-	return execSync("git remote get-url origin", { cwd: root })
-		.toString().trim().replace(/\.git$/, "");
-}
-
-/**
- * Create the GitHub Wiki repository if it doesn't exist.
- * Uses the GitHub API to initialize the wiki.
- */
-function ensureWikiRepo(token) {
-	const apiUrl = `https://api.github.com/repos/${repoUrl().replace("https://github.com/", "")}`;
-	try {
-		// Check if wiki repo is accessible
-		execSync(
-			`git ls-remote https://oauth2:${token}@github.com/${repoUrl().replace("https://github.com/", "")}.wiki.git HEAD`,
-			{ stdio: "pipe", timeout: 10000 },
-		);
-	} catch {
-		// Wiki doesn't exist — create it via API by pushing
-		console.log("Wiki repo not found. Creating first page to initialize...");
-		const tmpDir = join(wikiDir, ".wiki-bootstrap");
-		mkdirSync(tmpDir, { recursive: true });
-		writeFileSync(join(tmpDir, "Home.md"), "# Wiki\n");
-		execSync(
-			`cd "${tmpDir}" && git init && git add -A && git commit -m "Init wiki"`,
-			{ stdio: "pipe" },
-		);
-		execSync(
-			`cd "${tmpDir}" && git remote add origin https://oauth2:${token}@github.com/${repoUrl().replace("https://github.com/", "")}.wiki.git && git push -f origin master`,
-			{ stdio: "pipe" },
-		);
+		execSync(`cd "${tmpDir}" && git init && git add -A && git commit -m "Init wiki"`, { stdio: "pipe" });
+		execSync(`cd "${tmpDir}" && git remote add origin ${wikiUrl(token)} && git push -f origin master`, { stdio: "pipe" });
 		execSync(`rm -rf "${tmpDir}"`);
 		console.log("Wiki initialized.");
 	}
@@ -153,13 +62,8 @@ function ensureWikiRepo(token) {
 // ── 1. Build docs using typedoc with markdown plugin ──────────────────────
 console.log("Generating wiki Markdown from JSDoc...");
 try {
-	execSync(
-		`bunx typedoc --plugin typedoc-plugin-markdown --out ${wikiDir}`,
-		{ stdio: "inherit", cwd: root },
-	);
-} catch {
-	// typedoc may exit with code 1 for warnings, that's OK
-}
+	execSync(`bunx typedoc --plugin typedoc-plugin-markdown --out ${wikiDir}`, { stdio: "inherit", cwd: root });
+} catch { /* typedoc may exit with code 1 for warnings */ }
 
 // ── 2. Copy guides/ into wiki ─────────────────────────────────────────────
 console.log("Copying guides...");
@@ -168,78 +72,65 @@ if (existsSync(guidesDir)) {
 	for (const file of ["ARCHITECTURE.md", "EXAMPLES.md", "TESTING.md", "TESTS.md"]) {
 		const src = join(guidesDir, file);
 		const dst = join(wikiDir, file);
-		if (existsSync(src)) {
-			copyFileSync(src, dst);
-			console.log(`  copied ${file}`);
-		}
+		if (existsSync(src)) { copyFileSync(src, dst); console.log(`  copied ${file}`); }
 	}
 }
 
-// ── 3. Create Home.md as the wiki entry point ────────────────────────────
+// ── 3. Create Home.md ─────────────────────────────────────────────────────
 console.log("Creating Home.md...");
-const homePath = join(wikiDir, "Home.md");
-const homeContent = `# typescript-virtual-container
-
-Virtual Linux environment in pure TypeScript — SSH/SFTP server, web shell,
-standalone CLI, and a typed programmatic API.
-
-## Quick links
-
-- [Architecture](ARCHITECTURE)
-- [Examples](EXAMPLES)
-- [Testing Guide](TESTING)
-- [Test Report](TESTS)
-- [API Reference](modules/index)
-
-## What is this?
-
-A complete virtual Linux environment that runs entirely in JavaScript —
-no Docker, no VM, no kernel. Perfect for testing, automation, honeypots,
-and embedded shell experiences.
-`;
-writeFileSync(homePath, homeContent);
+writeFileSync(join(wikiDir, "Home.md"), [
+	"# typescript-virtual-container",
+	"",
+	"Virtual Linux environment in pure TypeScript — SSH/SFTP server, web shell,",
+	"standalone CLI, and a typed programmatic API.",
+	"",
+	"## Quick links",
+	"",
+	"- [Architecture](ARCHITECTURE)",
+	"- [Examples](EXAMPLES)",
+	"- [Testing Guide](TESTING)",
+	"- [Test Report](TESTS)",
+	"- [API Reference](modules/index)",
+	"",
+	"## What is this?",
+	"",
+	"A complete virtual Linux environment that runs entirely in JavaScript —",
+	"no Docker, no VM, no kernel. Perfect for testing, automation, honeypots,",
+	"and embedded shell experiences.",
+].join("\n"));
 console.log("  created Home.md");
 
-// ── 4. Create _Sidebar.md ──────────────────────────────────────────────
+// ── 4. Create _Sidebar.md ─────────────────────────────────────────────────
 console.log("Creating _Sidebar.md...");
-const sidebarPath = join(wikiDir, "_Sidebar.md");
-const sidebarContent = `# Navigation
-
-## Guides
-- [Home](Home)
-- [Architecture](ARCHITECTURE)
-- [Examples](EXAMPLES)
-- [Testing Guide](TESTING)
-- [Test Report](TESTS)
-
-## API
-- [Modules](modules/index)
-- [Classes](classes/index)
-- [Interfaces](interfaces/index)
-- [Types](types/index)
-
-## Built-in Commands
-- [Command Reference](commands/index)
-`;
-writeFileSync(sidebarPath, sidebarContent);
+writeFileSync(join(wikiDir, "_Sidebar.md"), [
+	"# Navigation",
+	"",
+	"## Guides",
+	"- [Home](Home)",
+	"- [Architecture](ARCHITECTURE)",
+	"- [Examples](EXAMPLES)",
+	"- [Testing Guide](TESTING)",
+	"- [Test Report](TESTS)",
+	"",
+	"## API",
+	"- [Modules](modules/index)",
+	"- [Classes](classes/index)",
+	"- [Interfaces](interfaces/index)",
+	"- [Types](types/index)",
+	"",
+	"## Built-in Commands",
+	"- [Command Reference](commands/index)",
+].join("\n"));
 console.log("  created _Sidebar.md");
 
 console.log(`Wiki generated in ${wikiDir}`);
-console.log("Files:", existsSync(wikiDir) ? readFileSync(join(wikiDir, "Home.md"), "utf8").split("\n").length + " lines in Home.md" : "error");
 
+// ── 5. Push to GitHub Wiki ────────────────────────────────────────────────
 if (shouldPush) {
-	console.log("\nPushing to wiki repo...");
 	const token = resolveToken();
-	if (!token) {
-		console.error("Error: set GH_TOKEN or use --auto");
-		process.exit(1);
-	}
+	if (!token) { console.error("Error: set GH_TOKEN or use --auto"); process.exit(1); }
 	ensureWikiRepo(token);
-	const wikiUrl = `https://oauth2:${token}@github.com/${repoUrl().replace("https://github.com/", "")}.wiki.git`;
-	
 	execSync(`cd ${wikiDir} && git init && git add -A && git commit -m "Update wiki"`, { stdio: "inherit" });
-	execSync(`cd ${wikiDir} && git remote add origin ${wikiUrl} && git push -f origin master`, {
-		stdio: "inherit",
-	});
+	execSync(`cd ${wikiDir} && git remote add origin ${wikiUrl(token)} && git push -f origin master`, { stdio: "inherit" });
 	console.log("Wiki pushed!");
 }
