@@ -114,10 +114,15 @@ class SshMimic extends EventEmitter {
 	private ensureHomeDir(authUser: string): void {
 		const homePath = userHome(authUser);
 		if (!this.shell.vfs.exists(homePath)) {
-			this.shell.vfs.mkdir(homePath, 0o755);
+			const uid = this.shell.users.getUid(authUser);
+			const gid = this.shell.users.getGid(authUser);
+			this.shell.vfs.mkdir(homePath, 0o700, uid, gid);
 			this.shell.vfs.writeFile(
 				`${homePath}/README.txt`,
 				`Welcome to ${this.shell.hostname}\n`,
+				{},
+				uid,
+				gid,
 			);
 			void this.shell.vfs.stopAutoFlush();
 		}

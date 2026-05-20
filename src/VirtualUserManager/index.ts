@@ -108,7 +108,7 @@ export class VirtualUserManager extends EventEmitter {
 		private readonly vfs: VirtualFileSystem,
 		// private readonly defaultRootPassword: string = process.env
 		// .SSH_MIMIC_ROOT_PASSWORD || "root",
-		private readonly autoSudoForNewUsers: boolean = true,
+		private readonly autoSudoForNewUsers: boolean = false,
 	) {
 		super();
 		perf.mark("constructor");
@@ -308,12 +308,17 @@ export class VirtualUserManager extends EventEmitter {
 		if (this.autoSudoForNewUsers) {
 			this.sudoers.add(username);
 		}
+		const uid = this.users.get(username)!.uid;
+		const gid = this.users.get(username)!.gid;
 		const homePath = username === "root" ? "/root" : `/home/${username}`;
 		if (!this.vfs.exists(homePath)) {
-			this.vfs.mkdir(homePath, 0o755);
+			this.vfs.mkdir(homePath, 0o700, uid, gid);
 			this.vfs.writeFile(
 				`${homePath}/README.txt`,
 				`Welcome to the virtual environment, ${username}`,
+				{},
+				uid,
+				gid,
 			);
 		}
 		await this.persist();
@@ -338,7 +343,7 @@ export class VirtualUserManager extends EventEmitter {
 		const gid = this.nextGid - 1;
 		const homePath = `/home/${username}`;
 		if (!this.vfs.exists(homePath)) {
-			this.vfs.mkdir(homePath, 0o755, uid, gid);
+			this.vfs.mkdir(homePath, 0o700, uid, gid);
 			this.vfs.writeFile(
 				`${homePath}/README.txt`,
 				`Welcome to the virtual environment, ${username}`,
@@ -570,6 +575,22 @@ export class VirtualUserManager extends EventEmitter {
 	/** Returns the primary GID for a username, or 0 if unknown. */
 	public getGid(username: string): number {
 		return this.users.get(username)?.gid ?? 0;
+	}
+
+	/** Returns the username for a numeric UID, or null if unknown. */
+	public getUsername(uid: number): string | null {
+		for (const [name, record] of this.users) {
+			if (record.uid === uid) return name;
+		}
+		return null;
+	}
+
+	/** Returns the group name for a numeric GID, or null if unknown. */
+	public getGroup(gid: number): string | null {
+		for (const [name, record] of this.users) {
+			if (record.gid === gid) return name;
+		}
+		return null;
 	}
 
 	/**

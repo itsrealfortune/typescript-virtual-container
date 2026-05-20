@@ -253,10 +253,15 @@ export class SftpMimic extends EventEmitter {
 
 					const homePath = userHome(authUser);
 					if (!this.getVfs().exists(homePath)) {
-						this.getVfs().mkdir(homePath, 0o755);
+						const uid = this.getUsers().getUid(authUser);
+						const gid = this.getUsers().getGid(authUser);
+						this.getVfs().mkdir(homePath, 0o700, uid, gid);
 						this.getVfs().writeFile(
 							`${homePath}/README.txt`,
 							`Welcome to ${this.hostname}`,
+							{},
+							uid,
+							gid,
 						);
 					}
 				};
