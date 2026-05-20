@@ -69,5 +69,8 @@
   "dependencies": {
     "fflate": "^0.8.2",
     "ssh2": "^1.17.0"
+  },
+  "optionalDependencies": {
+    "tuntap": "^0.1.0"
   }
 }
