@@ -112,6 +112,10 @@ export interface ShellEnv {
 export interface CommandContext {
 	/** Authenticated user currently bound to stream. */
 	authUser: string;
+	/** Effective user ID for permission checks. */
+	uid: number;
+	/** Effective group ID for permission checks. */
+	gid: number;
 	/** Virtual hostname shown in prompt and banners. */
 	hostname: string;
 	/** Snapshot of currently active user sessions. */
