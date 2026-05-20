@@ -35,6 +35,7 @@
     "@returns",
     "@satisfies",
     "@sealed",
+    "@see",
     "@since",
     "@throws",
     "@typeParam",
