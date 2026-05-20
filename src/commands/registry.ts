@@ -48,7 +48,8 @@ import { hostnameCommand } from "./hostname";
 import { htopCommand } from "./htop";
 import { idCommand } from "./id";
 import { ipCommand } from "./ip";
-import { bgCommand, fgCommand, jobsCommand } from "./jobs";
+import { iptablesCommand } from "./iptables";
+import { jobsCommand, bgCommand, fgCommand } from "./jobs";
 import { killCommand } from "./kill";
 import { dmesgCommand, lastCommand } from "./last";
 import { lnCommand, readlinkCommand } from "./ln";
@@ -229,6 +230,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	curlCommand,
 	wgetCommand,
 	ncCommand,
+	iptablesCommand,
 	// Users
 	adduserCommand,
 	passwdCommand,
