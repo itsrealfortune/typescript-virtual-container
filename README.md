@@ -273,25 +273,35 @@ Step by step:
 #### Hosting platform (multi-tenant isolation)
 
 Use multiple Baie instances to create isolated networks for each tenant,
-with NAT and port forwarding for each.
+with SSH access, NAT, and port forwarding for each.
 
 ```typescript
-import { Baie, VirtualProxy } from "typescript-virtual-container";
+import { Baie, VirtualProxy, VirtualSshServer } from "typescript-virtual-container";
 
-async function createTenant(id: string, subnet: string) {
+async function createTenant(id: string, subnet: string, sshPort: number, httpPort: number) {
 	const baie = new Baie(`tenant-${id}`, subnet);
 	const vm = await baie.createVM("app");
+
+	// Each tenant gets their own SSH server on the VM
+	const ssh = new VirtualSshServer({ port: 0, shell: vm });
+	await ssh.start();
+
+	// Proxy: expose VM's SSH and HTTP on the host
 	const proxy = new VirtualProxy(baie);
-	return { baie, vm, proxy };
+	proxy.exposePort("app", 22, sshPort);   // host:sshPort → VM:22
+	proxy.exposePort("app", 80, httpPort);  // host:httpPort → VM:80
+
+	return { baie, vm, proxy, ssh };
 }
 
-// Each tenant gets their own isolated /24
-const alice = await createTenant("alice", "10.100.1.0/24");
-const bob   = await createTenant("bob",   "10.100.2.0/24");
+// Each tenant gets their own isolated /24, SSH on a unique host port
+const alice = await createTenant("alice", "10.100.1.0/24", 2201, 8081);
+const bob   = await createTenant("bob",   "10.100.2.0/24", 2202, 8082);
 
-// Expose each tenant's app on a different host port
-alice.proxy.exposePort("app", 80, 8081); // alice on host:8081
-bob.proxy.exposePort("app",  80, 8082); // bob   on host:8082
+// Host shell: ssh alice@localhost -p 2201
+// Host shell: ssh bob@localhost   -p 2202
+// Host shell: curl http://localhost:8081  → alice's app
+// Host shell: curl http://localhost:8082  → bob's app
 
 // Tenants cannot reach each other — separate subnets, separate switches
 ```
