@@ -529,7 +529,11 @@ export function startShell(
 				cwd = prev.cwd;
 				shell.users.updateSession(sessionId, authUser, remoteAddress);
 				delete shellEnv.vars.PS1;
-				renderLine();
+				const isRoot = authUser === "root";
+				const colorUser = isRoot ? "\x1b[31;1m" : "\x1b[35;1m";
+				const symbol = isRoot ? "#" : "$";
+				const cwdLabel = cwd === userHome(authUser) ? "~" : cwd.split("/").pop() || "/";
+				stream.write(`\r\x1b[0m[${colorUser}${authUser}\x1b[0m@\x1b[34;1m${hostname}\x1b[0m \x1b[36;1m${cwdLabel}]\x1b[0m${symbol} \u001b[K`);
 			} else {
 				stream.exit(0);
 				stream.end();
