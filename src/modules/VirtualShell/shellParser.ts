@@ -15,6 +15,8 @@ import { tokenizeCommand } from "../../utils/tokenize";
  * Parse a shell input line into a Script (sequence of statements connected
  * by && / || / ;).  Each statement contains one Pipeline (commands connected
  * by |).
+ * @param rawInput - The rawInput parameter.
+ * @returns The parsed script.
  */
 export function parseScript(rawInput: string): Script {
 	const trimmed = rawInput.trim();
@@ -28,7 +30,11 @@ export function parseScript(rawInput: string): Script {
 	}
 }
 
-/** Parse a single pipeline string (no &&/||/;) into a `Pipeline` object. */
+/**
+ * Parse a single pipeline string (no &&/||/;) into a `Pipeline` object.
+ * @param rawInput - The rawInput parameter.
+ * @returns The parsed pipeline.
+ */
 export function parseShellPipeline(rawInput: string): Pipeline {
 	const trimmed = rawInput.trim();
 	if (!trimmed) return { commands: [], isValid: true };

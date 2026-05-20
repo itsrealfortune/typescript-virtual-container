@@ -73,6 +73,11 @@ function parseArgs(args: string[]): {
  * Handles SCP sink mode (receiving files from the client). Parses the SCP wire
  * protocol control messages (C, D, E, T) and writes file data into the virtual
  * filesystem.
+ * @param stream - The stream parameter.
+ * @param destArg - The destination path argument.
+ * @param authUser - The authenticated username.
+ * @param shell - The shell parameter.
+ * @param recursive - The recursive parameter.
  */
 export function runScpSink(
 	stream: ScpStream,
@@ -220,6 +225,10 @@ export function runScpSink(
  * Handles SCP source mode (sending files to the client). Traverses the virtual
  * filesystem and streams file contents using the SCP wire protocol control
  * messages (C, D, E) in response to client acknowledgements.
+ * @param stream - The stream parameter.
+ * @param srcArg - The source path argument.
+ * @param shell - The shell parameter.
+ * @param recursive - The recursive parameter.
  */
 export function runScpSource(
 	stream: ScpStream,
@@ -351,6 +360,10 @@ export function runScpSource(
 /**
  * Handles SCP protocol transfer by parsing the exec arguments to determine
  * sink (upload) or source (download) mode and delegating accordingly.
+ * @param stream - The stream parameter.
+ * @param rawArgs - The raw arguments array.
+ * @param authUser - The authenticated username.
+ * @param shell - The shell parameter.
  */
 export function handleScp(
 	stream: ScpStream,

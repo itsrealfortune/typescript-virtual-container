@@ -368,12 +368,18 @@ class VirtualShell extends EventEmitter {
 		this.vfs.mount(vPath, hostPath, options);
 	}
 
-	/** Remove a previously mounted host directory. */
+		/**
+	 * Remove a previously mounted host directory.
+	 * @param vPath - The virtual file system path.
+	 */
 	public unmount(vPath: string): void {
 		this.vfs.unmount(vPath);
 	}
 
-	/** List all active mounts. */
+		/**
+	 * List all active mounts.
+	 * @returns The operation result.
+	 */
 	public getMounts(): Array<{ vPath: string; hostPath: string; readOnly: boolean }> {
 		return this.vfs.getMounts();
 	}
@@ -461,6 +467,7 @@ class VirtualShell extends EventEmitter {
 	 * await shell.ensureInitialized();
 	 * shell.enableIdleManagement({ idleThresholdMs: 60_000 });
 	 * ```
+	 * @param options - The options parameter.
 	 */
 	public enableIdleManagement(options?: IdleManagerOptions): void {
 		if (this._idle) return; // already enabled
@@ -483,12 +490,16 @@ class VirtualShell extends EventEmitter {
 	/**
 	 * Current idle state — `"active"` or `"frozen"`.
 	 * Returns `"active"` when idle management is disabled.
+	 * @returns The operation result.
 	 */
 	public get idleState(): "active" | "frozen" {
 		return this._idle?.state ?? "active";
 	}
 
-	/** Milliseconds since last shell activity. 0 when idle management is disabled. */
+		/**
+	 * Milliseconds since last shell activity. 0 when idle management is disabled.
+	 * @returns The numeric result.
+	 */
 	public get idleMs(): number {
 		return this._idle?.idleMs ?? 0;
 	}
