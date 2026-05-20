@@ -1,11 +1,12 @@
 import type {
+	CommandGroup,
 	LogicalOp,
 	Pipeline,
 	PipelineCommand,
 	Script,
 	Statement,
+	Subshell,
 } from "../types/pipeline";
-import { globToRegex } from "../utils/glob";
 import { tokenizeCommand } from "../utils/tokenize";
 
 // ── Public API ───────────────────────────────────────────────────────────────
@@ -39,31 +40,29 @@ export function parseShellPipeline(rawInput: string): Pipeline {
 	}
 }
 
-// ── Variable & tilde expansion ────────────────────────────────────────────────
-
-/**
- * Expand glob patterns (*, ?, [abc]) against a list of entries.
- * Returns the original pattern if no match.
- */
-export function expandGlob(pattern: string, entries: string[]): string[] {
-	if (!/[*?[]/.test(pattern)) return [pattern];
-	const regex = globToRegex(pattern);
-	const matches = entries.filter((e) => regex.test(e));
-	return matches.length > 0 ? matches.sort() : [pattern];
-}
-
 // ── Internal parser ───────────────────────────────────────────────────────────
 
 function parseStatements(input: string): Statement[] {
-	// Split by ;, &&, ||, & — respecting quotes and parens
 	const segments = splitByLogicalOps(input);
 	const statements: Statement[] = [];
 
 	for (const seg of segments) {
-		const commands = parsePipeline(seg.text.trim());
-		const stmt: Statement = { pipeline: { commands, isValid: true } };
+		const text = seg.text.trim();
+		const stmt: Statement = {};
 		if (seg.op) stmt.op = seg.op;
 		if (seg.background) stmt.background = true;
+
+		if (text.startsWith("(") && text.endsWith(")")) {
+			const inner = text.slice(1, -1).trim();
+			stmt.subshell = { statements: parseStatements(inner) } satisfies Subshell;
+		} else if (text.startsWith("{") && text.endsWith("}")) {
+			const inner = text.slice(1, -1).trim();
+			stmt.group = { statements: parseStatements(inner) } satisfies CommandGroup;
+		} else {
+			const commands = parsePipeline(text);
+			stmt.pipeline = { commands, isValid: true };
+		}
+
 		statements.push(stmt);
 	}
 

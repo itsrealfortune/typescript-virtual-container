@@ -28,6 +28,8 @@ export type ProcessStatus = "running" | "stopped" | "done";
 export interface VirtualProcess {
 	/** Unique process identifier (auto-incremented). */
 	pid: number;
+	/** Parent process ID. */
+	ppid: number;
 	/** Username running the process. */
 	username: string;
 	/** Command name (argv[0]). */
@@ -42,6 +44,12 @@ export interface VirtualProcess {
 	status: ProcessStatus;
 	/** AbortController for terminating the process. */
 	abortController?: AbortController;
+	/** Exit code set when process terminates. */
+	exitCode?: number;
+	/** Signal that terminated the process (if any). */
+	terminatedBySignal?: number;
+	/** Custom signal handlers: signal number → handler. */
+	signalHandlers: Map<number, (sig: number, pid: number) => void>;
 }
 
 /** Runtime representation of authenticated SSH session. */
@@ -465,7 +473,6 @@ export class VirtualUserManager extends EventEmitter {
 				username: session.username,
 			});
 		}
-		this.activeSessions.delete(sessionId);
 	}
 
 	/**
@@ -544,10 +551,12 @@ export class VirtualUserManager extends EventEmitter {
 		argv: string[],
 		tty: string,
 		abortController?: AbortController,
+		ppid = 1,
 	): number {
 		const pid = this.nextPid++;
 		this.activeProcesses.set(pid, {
 			pid,
+			ppid,
 			username,
 			command,
 			argv,
@@ -555,19 +564,29 @@ export class VirtualUserManager extends EventEmitter {
 			startedAt: new Date().toISOString(),
 			status: "running",
 			abortController,
+			signalHandlers: new Map(),
 		});
 		return pid;
 	}
 
 	/** Removes a process record when the command exits. */
 	public unregisterProcess(pid: number): void {
+		const proc = this.activeProcesses.get(pid);
+		if (proc) {
+			proc.status = "done";
+			// Emit SIGCHLD to parent
+			this.emit("SIGCHLD", proc.ppid, pid);
+		}
 		this.activeProcesses.delete(pid);
 	}
 
 	/** Marks a process as done (keeps it in the table briefly for jobs/ps). */
 	public markProcessDone(pid: number): void {
 		const proc = this.activeProcesses.get(pid);
-		if (proc) proc.status = "done";
+		if (proc) {
+			proc.status = "done";
+			this.emit("SIGCHLD", proc.ppid, pid);
+		}
 	}
 
 	/** Returns all currently running processes sorted by PID. */
@@ -576,14 +595,60 @@ export class VirtualUserManager extends EventEmitter {
 	}
 
 	/** Terminate a process by PID. Returns true if the process was found and signalled. */
-	public killProcess(pid: number): boolean {
+	public killProcess(pid: number, signal = 15): boolean {
 		const proc = this.activeProcesses.get(pid);
 		if (!proc) return false;
-		if (proc.abortController) {
-			proc.abortController.abort();
+
+		// SIGKILL (9) and SIGSTOP (19) cannot be caught
+		if (signal === 9) {
+			if (proc.abortController) proc.abortController.abort();
+			proc.status = "done";
+			proc.terminatedBySignal = 9;
+			proc.exitCode = 137; // 128 + 9
+			this.emit("SIGCHLD", proc.ppid, pid);
+			return true;
 		}
-		proc.status = "stopped";
+
+		if (signal === 19) { // SIGSTOP
+			proc.status = "stopped";
+			return true;
+		}
+
+		if (signal === 18) { // SIGCONT
+			if (proc.status === "stopped") proc.status = "running";
+			return true;
+		}
+
+		// Check for custom handler
+		const handler = proc.signalHandlers.get(signal);
+		if (handler) {
+			handler(signal, pid);
+			return true;
+		}
+
+		// Default action: terminate
+		if (proc.abortController) proc.abortController.abort();
+		proc.status = "done";
+		proc.terminatedBySignal = signal;
+		proc.exitCode = 128 + signal;
+		this.emit("SIGCHLD", proc.ppid, pid);
 		return true;
+	}
+
+	/** Send a signal to all processes owned by a user. */
+	public killAllUserProcesses(username: string, signal = 15): number {
+		let count = 0;
+		for (const [pid, proc] of this.activeProcesses) {
+			if (proc.username === username) {
+				if (this.killProcess(pid, signal)) count++;
+			}
+		}
+		return count;
+	}
+
+	/** Get process by PID. */
+	public getProcess(pid: number): VirtualProcess | undefined {
+		return this.activeProcesses.get(pid);
 	}
 
 	private loadFromVfs(): void {

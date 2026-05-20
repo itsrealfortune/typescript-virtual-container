@@ -1,14 +1,17 @@
 /** biome-ignore-all lint/style/useNamingConvention: NW ? */
+import * as crypto from "node:crypto";
 import { EventEmitter } from "node:events";
 import * as fsSync from "node:fs";
 import * as path from "node:path";
 import { gunzipSync, gzipSync } from "node:zlib";
 import type {
 	RemoveOptions,
+	VfsDeviceNode,
 	VfsDirectoryNode,
 	VfsFileNode,
 	VfsNodeStats,
 	VfsSnapshot,
+	VfsSnapshotDeviceNode,
 	VfsSnapshotDirectoryNode,
 	VfsSnapshotFileNode,
 	VfsSnapshotNode,
@@ -16,13 +19,16 @@ import type {
 } from "../types/vfs";
 import { decodeVfs, encodeVfs, isBinarySnapshot } from "./binaryPack";
 import type {
+	InternalDeviceNode,
 	InternalDirectoryNode,
 	InternalFileNode,
 	InternalNode,
 	InternalStubNode,
+	DeviceKind,
 } from "./internalTypes";
 import { appendJournalEntry, JournalOp, readJournal, truncateJournal } from "./journal";
 import { getNodeNormalized, getParentDirectory, normalizePath } from "./path";
+import { enforceChmod, enforceChown, enforceDelete, enforceAccess, R_OK, W_OK } from "./permissions";
 
 // ── Persistence options ───────────────────────────────────────────────────────
 
@@ -122,9 +128,23 @@ class VirtualFileSystem extends EventEmitter {
 	private _sortedReadHooks: string[] | null = null;
 	/** Re-entrancy guard for read hooks — prevents infinite loop when hook triggers another read. */
 	private _inReadHook = false;
+	/** Write hooks: path prefix → callback invoked before writing any file under that prefix. */
+	private readonly writeHooks = new Map<string, (path: string, content: string | Buffer) => void>();
+	/** Sorted write hook prefixes (longest-first) for matching. */
+	private _sortedWriteHooks: string[] | null = null;
+	/** Content resolver: path → callback that returns dynamic content (used for /proc/sys). */
+	private readonly contentResolvers = new Map<string, (path: string) => string | null>();
+	/** Sorted content resolver prefixes (longest-first). */
+	private _sortedContentResolvers: string[] | null = null;
 	/** True when running in a browser environment (no host FS access). */
 	private static readonly isBrowser =
 		typeof process === "undefined" || typeof (process as NodeJS.Process).versions?.node === "undefined";
+
+	// ── File descriptor table ──────────────────────────────────────────────
+	/** Open file descriptors: fd → { path, flags, refCount } */
+	private readonly fdTable = new Map<number, { path: string; flags: number; refCount: number }>();
+	/** Next FD number to allocate (starts at 3 to reserve 0,1,2 for stdin/stdout/stderr). */
+	private nextFd = 3;
 
 	constructor(options: VfsOptions = {}) {
 		super();
@@ -207,6 +227,30 @@ class VirtualFileSystem extends EventEmitter {
 		return { type: "stub", name, stubContent: content, mode, uid, gid, createdAt: now, updatedAt: now };
 	}
 
+	private makeDeviceNode(
+		name: string,
+		deviceKind: DeviceKind,
+		mode: number,
+		major: number,
+		minor: number,
+		uid = 0,
+		gid = 0,
+	): InternalDeviceNode {
+		const now = Date.now();
+		return {
+			type: "device",
+			name,
+			deviceKind,
+			mode,
+			uid,
+			gid,
+			major,
+			minor,
+			createdAt: now,
+			updatedAt: now,
+		};
+	}
+
 	/**
 	 * Write a lazy stub — stores content as a plain string with no Buffer allocation.
 	 * Use for static rootfs files that may never be read. On first `writeFile()`,
@@ -225,13 +269,159 @@ class VirtualFileSystem extends EventEmitter {
 		if (existing?.type === "directory") {
 			throw new Error(`Cannot write stub '${normalized}': path is a directory.`);
 		}
-		// Don't overwrite a real file or an already-promoted node
 		if (existing?.type === "file") return;
 		if (!existing) { parent._childCount++; parent._sortedKeys = null; }
 		parent.children[name] = this.makeStub(name, content, mode);
 	}
 
-	private mkdirRecursive(targetPath: string, mode: number): void {
+	/**
+	 * Creates a special device node in the VFS.
+	 * Supported device kinds: null, zero, full, random, urandom, tty, console, ptmx, stdin, stdout, stderr.
+	 * Parent directories are created when missing.
+	 */
+	public mknod(
+		targetPath: string,
+		deviceKind: DeviceKind,
+		mode = 0o666,
+		major = 1,
+		minor = 0,
+	): void {
+		const normalized = normalizePath(targetPath);
+		const { parent, name } = getParentDirectory(
+			this.root,
+			normalized,
+			true,
+			(p) => this.mkdirRecursive(p, 0o755),
+		);
+		const existing = parent.children[name];
+		if (existing) {
+			throw new Error(`EEXIST: file already exists, '${normalized}'`);
+		}
+		parent.children[name] = this.makeDeviceNode(name, deviceKind, mode, major, minor);
+		parent._childCount++;
+		parent._sortedKeys = null;
+		this.emit("device:create", { path: normalized, deviceKind });
+		this._journal({ op: JournalOp.MKDIR, path: normalized, mode });
+	}
+
+	// ── File descriptor operations ─────────────────────────────────────────
+
+	/**
+	 * Opens a file and returns a file descriptor number.
+	 * Flags follow POSIX: O_RDONLY=0, O_WRONLY=1, O_RDWR=2, O_CREAT=0o100, O_TRUNC=0o1000, O_APPEND=0o2000.
+	 * FDs 0, 1, 2 are reserved for stdin, stdout, stderr.
+	 */
+	public fdOpen(targetPath: string, flags = 0): number {
+		const normalized = normalizePath(targetPath);
+		const exists = this.exists(normalized);
+
+		if (!exists && !(flags & 0o100)) {
+			throw new Error(`ENOENT: no such file or directory, open '${normalized}'`);
+		}
+
+		if (!exists && (flags & 0o100)) {
+			this.writeFile(normalized, "", { mode: 0o644 });
+		}
+
+		if (flags & 0o1000) {
+			this.writeFile(normalized, "", { mode: 0o644 });
+		}
+
+		const fd = this.nextFd++;
+		this.fdTable.set(fd, { path: normalized, flags, refCount: 1 });
+		return fd;
+	}
+
+	/**
+	 * Closes a file descriptor. If refCount reaches 0, the entry is removed.
+	 */
+	public fdClose(fd: number): void {
+		const entry = this.fdTable.get(fd);
+		if (!entry) {
+			throw new Error(`EBADF: bad file descriptor: ${fd}`);
+		}
+		entry.refCount--;
+		if (entry.refCount <= 0) {
+			this.fdTable.delete(fd);
+		}
+	}
+
+	/**
+	 * Duplicates a file descriptor, returning a new FD pointing to the same file.
+	 * The new FD shares the same flags and position conceptually.
+	 */
+	public fdDup(oldFd: number): number {
+		const entry = this.fdTable.get(oldFd);
+		if (!entry) {
+			throw new Error(`EBADF: bad file descriptor: ${oldFd}`);
+		}
+		const newFd = this.nextFd++;
+		this.fdTable.set(newFd, { path: entry.path, flags: entry.flags, refCount: 1 });
+		return newFd;
+	}
+
+	/**
+	 * Duplicates oldFd onto newFd. If newFd is already open, it is closed first.
+	 * Returns newFd.
+	 */
+	public fdDup2(oldFd: number, newFd: number): number {
+		if (oldFd === newFd) return newFd;
+		const oldEntry = this.fdTable.get(oldFd);
+		if (!oldEntry) {
+			throw new Error(`EBADF: bad file descriptor: ${oldFd}`);
+		}
+		const existing = this.fdTable.get(newFd);
+		if (existing) {
+			existing.refCount--;
+			if (existing.refCount <= 0) this.fdTable.delete(newFd);
+		}
+		this.fdTable.set(newFd, { path: oldEntry.path, flags: oldEntry.flags, refCount: 1 });
+		return newFd;
+	}
+
+	/**
+	 * Returns the path associated with an open file descriptor.
+	 */
+	public fdPath(fd: number): string {
+		const entry = this.fdTable.get(fd);
+		if (!entry) {
+			throw new Error(`EBADF: bad file descriptor: ${fd}`);
+		}
+		return entry.path;
+	}
+
+	/**
+	 * Returns the flags associated with an open file descriptor.
+	 */
+	public fdFlags(fd: number): number {
+		const entry = this.fdTable.get(fd);
+		if (!entry) {
+			throw new Error(`EBADF: bad file descriptor: ${fd}`);
+		}
+		return entry.flags;
+	}
+
+	/**
+	 * Returns a map of all open file descriptors: fd → path.
+	 * Used for /proc/self/fd/* population.
+	 */
+	public getOpenFds(): Map<number, string> {
+		const result = new Map<number, string>();
+		for (const [fd, entry] of this.fdTable) {
+			result.set(fd, entry.path);
+		}
+		return result;
+	}
+
+	/**
+	 * Clears all open file descriptors. Called when a shell session ends.
+	 */
+	public closeAllFds(): void {
+		this.fdTable.clear();
+		this.nextFd = 3;
+	}
+
+	private mkdirRecursive(targetPath: string, mode: number, uid?: number, gid?: number): void {
 		const normalized = normalizePath(targetPath);
 		if (normalized === "/") return;
 		const parts = normalized.split("/").filter(Boolean);
@@ -242,6 +432,8 @@ class VirtualFileSystem extends EventEmitter {
 			let child = current.children[part];
 			if (!child) {
 				child = this.makeDir(part, mode);
+				if (uid !== undefined) child.uid = uid;
+				if (gid !== undefined) child.gid = gid;
 				current.children[part] = child;
 				current._childCount++;
 				current._sortedKeys = null;
@@ -518,10 +710,62 @@ class VirtualFileSystem extends EventEmitter {
 					node.size    = rawSize;
 					node.content = Buffer.alloc(0); // free heap
 					node.evicted = true;
+		}
+		}
+		}
+	}
+
+	/**
+	 * Register a callback that is invoked before any write under `prefix`.
+	 * Callback receives (normalizedPath, content). Used for /proc/sys sysctl.
+	 */
+	public onBeforeWrite(prefix: string, cb: (path: string, content: string | Buffer) => void): void {
+		const normalized = normalizePath(prefix);
+		this.writeHooks.set(normalized, cb);
+		this._sortedWriteHooks = [...this.writeHooks.keys()].sort((a, b) => b.length - a.length);
+	}
+
+	/** Remove a previously registered write hook. */
+	public offBeforeWrite(prefix: string): void {
+		const normalized = normalizePath(prefix);
+		this.writeHooks.delete(normalized);
+		this._sortedWriteHooks = [...this.writeHooks.keys()].sort((a, b) => b.length - a.length);
+	}
+
+	/** Invoke any matching write hook for `normalizedPath`. */
+	private _triggerWriteHook(normalizedPath: string, content: string | Buffer): void {
+		if (!this._sortedWriteHooks) return;
+		for (const prefix of this._sortedWriteHooks) {
+			if (normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`)) {
+				const cb = this.writeHooks.get(prefix);
+				if (cb) {
+					cb(normalizedPath, content);
+					return;
 				}
 			}
-			// stubs: nothing to evict — content is already a plain string, not a Buffer
 		}
+	}
+
+	/**
+	 * Register a content resolver for a path prefix.
+	 * Resolver returns string content or null to fall through to normal read.
+	 */
+	public registerContentResolver(prefix: string, resolver: (path: string) => string | null): void {
+		const normalized = normalizePath(prefix);
+		this.contentResolvers.set(normalized, resolver);
+		this._sortedContentResolvers = [...this.contentResolvers.keys()].sort((a, b) => b.length - a.length);
+	}
+
+	/** Resolve content for a path using registered resolvers. Returns null if no match. */
+	private _resolveContent(normalizedPath: string): string | null {
+		if (!this._sortedContentResolvers) return null;
+		for (const prefix of this._sortedContentResolvers) {
+			if (normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`)) {
+				const resolver = this.contentResolvers.get(prefix);
+				if (resolver) return resolver(normalizedPath);
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -677,7 +921,7 @@ class VirtualFileSystem extends EventEmitter {
 		return null;
 	}
 
-		public mkdir(targetPath: string, mode: number = 0o755): void {
+		public mkdir(targetPath: string, mode: number = 0o755, uid?: number, gid?: number): void {
 		const normalized = normalizePath(targetPath);
 		const existing = (() => {
 			try {
@@ -691,19 +935,21 @@ class VirtualFileSystem extends EventEmitter {
 				`Cannot create directory '${normalized}': path is a file.`,
 			);
 		}
-		this.mkdirRecursive(normalized, mode);
+		this.mkdirRecursive(normalized, mode, uid, gid);
 	}
 
 	/**
 	 * Writes UTF-8 text or binary content into a file.
 	 * Parent directories are created when missing.
+	 * If `uid`/`gid` provided, enforces write permission on existing files.
 	 */
 	public writeFile(
 		targetPath: string,
 		content: string | Buffer,
 		options: WriteFileOptions = {},
+		uid?: number,
+		gid?: number,
 	): void {
-		// Delegate to host FS if inside a mount
 		const m = this.resolveMount(targetPath);
 		if (m) {
 			if (m.readOnly) throw new Error(`EROFS: read-only file system, open '${m.fullHostPath}'`);
@@ -713,6 +959,13 @@ class VirtualFileSystem extends EventEmitter {
 			return;
 		}
 		const normalized = normalizePath(targetPath);
+
+		// Trigger write hooks (e.g., /proc/sys sysctl)
+		const rawContent = Buffer.isBuffer(content)
+			? content
+			: Buffer.from(content, "utf8");
+		this._triggerWriteHook(normalized, rawContent);
+
 		const { parent, name } = getParentDirectory(
 			this.root,
 			normalized,
@@ -727,22 +980,30 @@ class VirtualFileSystem extends EventEmitter {
 			);
 		}
 
-		const rawContent = Buffer.isBuffer(content)
-			? content
-			: Buffer.from(content, "utf8");
+		if (existing?.type === "device") {
+			const dev = existing as InternalDeviceNode;
+			this._writeDeviceNode(dev, normalized);
+			dev.updatedAt = Date.now();
+			this.emit("device:write", { path: normalized });
+			return;
+		}
+
+		// Enforce write permission on existing files
+		if (existing && uid !== undefined && gid !== undefined) {
+			enforceAccess(this.root, normalized, uid, gid, W_OK);
+		}
+
 		const shouldCompress = options.compress ?? false;
 		const storedContent = shouldCompress ? gzipSync(rawContent) : rawContent;
 		const mode = options.mode ?? 0o644;
 
 		if (existing && existing.type === "file") {
-			// Update real file in place
 			const f = existing as InternalFileNode;
 			f.content = storedContent;
 			f.compressed = shouldCompress;
 			f.mode = mode;
 			f.updatedAt = Date.now();
 		} else {
-			// Create new real file — also promotes stubs (no _childCount change for stubs)
 			if (!existing) { parent._childCount++; parent._sortedKeys = null; }
 			parent.children[name] = this.makeFile(name, storedContent, mode, shouldCompress);
 		}
@@ -754,8 +1015,9 @@ class VirtualFileSystem extends EventEmitter {
 	/**
 	 * Reads file content as a UTF-8 string.
 	 * Gzip-compressed files are transparently decompressed.
+	 * If `uid`/`gid` provided, enforces read permission.
 	 */
-	public readFile(targetPath: string): string {
+	public readFile(targetPath: string, uid?: number, gid?: number): string {
 		const m = this.resolveMount(targetPath);
 		if (m) {
 			if (!fsSync.existsSync(m.fullHostPath)) throw new Error(`ENOENT: no such file or directory, open '${m.fullHostPath}'`);
@@ -763,14 +1025,29 @@ class VirtualFileSystem extends EventEmitter {
 		}
 		const normalized = normalizePath(targetPath);
 		this._triggerReadHook(normalized);
+
+		// Check content resolvers (e.g., /proc/sys sysctl values)
+		const resolved = this._resolveContent(normalized);
+		if (resolved !== null) {
+			this.emit("file:read", { path: normalized, size: resolved.length });
+			return resolved;
+		}
+
 		const node = getNodeNormalized(this.root, normalized);
 		if (node.type === "stub") {
+			if (uid !== undefined && gid !== undefined) enforceAccess(this.root, normalized, uid, gid, R_OK);
 			this.emit("file:read", { path: normalized, size: node.stubContent.length });
 			return node.stubContent;
+		}
+		if (node.type === "device") {
+			const content = this._readDeviceNode(node as InternalDeviceNode, normalized);
+			this.emit("file:read", { path: normalized, size: content.length });
+			return content;
 		}
 		if (node.type !== "file") {
 			throw new Error(`Cannot read '${targetPath}': not a file.`);
 		}
+		if (uid !== undefined && gid !== undefined) enforceAccess(this.root, normalized, uid, gid, R_OK);
 		const f = node as InternalFileNode;
 		if (f.evicted) this._reloadEvicted(f, normalized);
 		const raw = f.compressed ? gunzipSync(f.content) : f.content;
@@ -790,6 +1067,12 @@ class VirtualFileSystem extends EventEmitter {
 		const node = getNodeNormalized(this.root, normalized);
 		if (node.type === "stub") {
 			const buf = Buffer.from(node.stubContent, "utf8");
+			this.emit("file:read", { path: normalized, size: buf.length });
+			return buf;
+		}
+		if (node.type === "device") {
+			const content = this._readDeviceNode(node as InternalDeviceNode, normalized);
+			const buf = Buffer.from(content, "binary");
 			this.emit("file:read", { path: normalized, size: buf.length });
 			return buf;
 		}
@@ -816,16 +1099,18 @@ class VirtualFileSystem extends EventEmitter {
 		}
 	}
 
-	/** Updates mode bits on a node. */
-	public chmod(targetPath: string, mode: number): void {
+	/** Updates mode bits on a node. If `uid` is provided, enforces ownership check. */
+	public chmod(targetPath: string, mode: number, uid?: number): void {
 		const normalized = normalizePath(targetPath);
+		if (uid !== undefined) enforceChmod(this.root, normalized, uid);
 		getNodeNormalized(this.root, normalized).mode = mode;
 		this._journal({ op: JournalOp.CHMOD, path: normalized, mode });
 	}
 
-	/** Changes ownership (uid/gid) of a file or directory. */
-	public chown(targetPath: string, uid: number, gid: number): void {
+	/** Changes ownership (uid/gid) of a file or directory. If `actorUid` is provided, enforces root-only check. */
+	public chown(targetPath: string, uid: number, gid: number, actorUid?: number): void {
 		const normalized = normalizePath(targetPath);
+		if (actorUid !== undefined) enforceChown(normalized, actorUid);
 		const node = getNodeNormalized(this.root, normalized);
 		node.uid = uid;
 		node.gid = gid;
@@ -935,6 +1220,22 @@ class VirtualFileSystem extends EventEmitter {
 				size: f.evicted ? (f.size ?? 0) : f.content.length,
 			};
 		}
+		if (node.type === "device") {
+			const dev = node as InternalDeviceNode;
+			return {
+				type: "device",
+				name,
+				path: normalized,
+				mode: dev.mode,
+				uid: dev.uid,
+				gid: dev.gid,
+				createdAt: new Date(dev.createdAt),
+				updatedAt: new Date(dev.updatedAt),
+				deviceKind: dev.deviceKind,
+				major: dev.major,
+				minor: dev.minor,
+			} satisfies VfsDeviceNode;
+		}
 		const d = node as InternalDirectoryNode;
 		return {
 			type: "directory",
@@ -950,10 +1251,50 @@ class VirtualFileSystem extends EventEmitter {
 	}
 
 	/**
+	 * Reads content from a device node according to its kind.
+	 * /dev/null → empty string
+	 * /dev/zero → 4096 zero bytes
+	 * /dev/full → throws ENOSPC
+	 * /dev/random, /dev/urandom → 64 random bytes
+	 * /dev/tty, /dev/console, /dev/stdin → empty string
+	 * /dev/stdout, /dev/stderr → empty string
+	 */
+	private _readDeviceNode(node: InternalDeviceNode, path: string): string {
+		switch (node.deviceKind) {
+			case "null":
+				return "";
+			case "zero":
+				return "\0".repeat(4096);
+			case "full":
+				throw new Error(`ENOSPC: no space left on device, write '${path}'`);
+			case "random":
+			case "urandom":
+				return crypto.randomBytes(64).toString("binary");
+			default:
+				return "";
+		}
+	}
+
+	/**
+	 * Handles writes to device nodes.
+	 * /dev/null → silently discards
+	 * /dev/full → throws ENOSPC
+	 * Others → silently accepted (like a real TTY write)
+	 */
+	private _writeDeviceNode(node: InternalDeviceNode, path: string): void {
+		switch (node.deviceKind) {
+			case "full":
+				throw new Error(`ENOSPC: no space left on device, write '${path}'`);
+			default:
+				break; // silently accepted
+		}
+	}
+
+	/**
 	 * Fast type-only check — no Date/string allocation.
 	 * Use instead of `stat().type` when that's all you need.
 	 */
-	public statType(targetPath: string): "file" | "directory" | null {
+	public statType(targetPath: string): "file" | "directory" | "device" | null {
 		try {
 			const m = this.resolveMount(targetPath);
 			if (m) {
@@ -962,7 +1303,9 @@ class VirtualFileSystem extends EventEmitter {
 				return s.isDirectory() ? "directory" : "file";
 			}
 			const node = getNodeNormalized(this.root, normalizePath(targetPath));
-			return node.type === "directory" ? "directory" : "file";
+			if (node.type === "directory") return "directory";
+			if (node.type === "device") return "device";
+			return "file";
 		} catch { return null; }
 	}
 
@@ -1026,7 +1369,8 @@ class VirtualFileSystem extends EventEmitter {
 
 	private computeUsage(node: InternalNode): number {
 		if (node.type === "file") return (node as InternalFileNode).content.length;
-		if (node.type === "stub") return node.stubContent.length;
+		if (node.type === "stub") return (node as InternalStubNode).stubContent.length;
+		if (node.type === "device") return 0;
 		let total = 0;
 		for (const child of Object.values((node as InternalDirectoryNode).children)) {
 			total += this.computeUsage(child);
@@ -1064,7 +1408,7 @@ class VirtualFileSystem extends EventEmitter {
 	 * Creates a symbolic link.
 	 * The link node is stored with mode `0o120777` (POSIX symlink convention).
 	 */
-	public symlink(targetPath: string, linkPath: string): void {
+	public symlink(targetPath: string, linkPath: string, uid?: number, gid?: number): void {
 		const normalizedLink = normalizePath(linkPath);
 		const normalizedTarget = targetPath.startsWith("/")
 			? normalizePath(targetPath)
@@ -1080,8 +1424,8 @@ class VirtualFileSystem extends EventEmitter {
 			name,
 			content: Buffer.from(normalizedTarget, "utf8"),
 			mode: 0o120777,
-			uid: 0,
-			gid: 0,
+			uid: uid ?? 0,
+			gid: gid ?? 0,
 			compressed: false,
 			createdAt: Date.now(),
 			updatedAt: Date.now(),
@@ -1133,8 +1477,8 @@ class VirtualFileSystem extends EventEmitter {
 		throw new Error(`Too many levels of symbolic links: ${linkPath}`);
 	}
 
-	/** Removes a file or directory node. */
-	public remove(targetPath: string, options: RemoveOptions = {}): void {
+	/** Removes a file or directory node. If `uid`/`gid` provided, enforces delete permission (including sticky bit). */
+	public remove(targetPath: string, options: RemoveOptions = {}, uid?: number, gid?: number): void {
 		const m = this.resolveMount(targetPath);
 		if (m) {
 			if (m.readOnly) throw new Error(`EROFS: read-only file system, unlink '${m.fullHostPath}'`);
@@ -1149,6 +1493,11 @@ class VirtualFileSystem extends EventEmitter {
 		}
 		const normalized = normalizePath(targetPath);
 		if (normalized === "/") throw new Error("Cannot remove root directory.");
+		if (uid !== undefined && gid !== undefined) {
+			const parentPath = normalized.split("/").slice(0, -1).join("/") || "/";
+			const name = normalized.split("/").pop() ?? "";
+			enforceDelete(this.root, parentPath, name, uid, gid);
+		}
 		const node = getNodeNormalized(this.root, normalized);
 		if (node.type === "directory") {
 			const dir = node as InternalDirectoryNode;
@@ -1221,7 +1570,6 @@ class VirtualFileSystem extends EventEmitter {
 		const children: VfsSnapshotNode[] = [];
 		for (const child of Object.values(dir.children)) {
 			if (child.type === "stub") {
-				// Serialize stub as a regular file node
 				children.push({
 					type: "file",
 					name: child.name,
@@ -1235,6 +1583,20 @@ class VirtualFileSystem extends EventEmitter {
 				} satisfies VfsSnapshotFileNode);
 			} else if (child.type === "file") {
 				children.push(this.serializeFile(child as InternalFileNode));
+			} else if (child.type === "device") {
+				const dev = child as InternalDeviceNode;
+				children.push({
+					type: "device",
+					name: dev.name,
+					mode: dev.mode,
+					uid: dev.uid,
+					gid: dev.gid,
+					createdAt: new Date(dev.createdAt).toISOString(),
+					updatedAt: new Date(dev.updatedAt).toISOString(),
+					deviceKind: dev.deviceKind,
+					major: dev.major,
+					minor: dev.minor,
+				} satisfies VfsSnapshotDeviceNode);
 			} else {
 				children.push(this.serializeDir(child as InternalDirectoryNode));
 			}
@@ -1322,6 +1684,20 @@ class VirtualFileSystem extends EventEmitter {
 					updatedAt: Date.parse(f.updatedAt),
 					compressed: f.compressed,
 					content: Buffer.from(f.contentBase64, "base64"),
+				};
+			} else if (child.type === "device") {
+				const d = child as VfsSnapshotDeviceNode;
+				dir.children[d.name] = {
+					type: "device",
+					name: d.name,
+					mode: d.mode,
+					uid: d.uid ?? 0,
+					gid: d.gid ?? 0,
+					createdAt: Date.parse(d.createdAt),
+					updatedAt: Date.parse(d.updatedAt),
+					deviceKind: d.deviceKind as DeviceKind,
+					major: d.major,
+					minor: d.minor,
 				};
 			} else {
 				const sub = this.deserializeDir(

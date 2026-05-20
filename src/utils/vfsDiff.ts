@@ -33,12 +33,12 @@ import type {
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
-/** A single changed file entry in a diff result. */
+/** A single changed node entry in a diff result. */
 export interface VfsDiffEntry {
 	/** Absolute VFS path of the changed node. */
 	path: string;
-	/** Node type — `"file"` or `"directory"`. */
-	type: "file" | "directory";
+	/** Node type — `"file"`, `"directory"`, or `"device"`. */
+	type: "file" | "directory" | "device";
 }
 
 /** A modified file entry — includes before/after content for files. */

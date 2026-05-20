@@ -1,5 +1,5 @@
 /** @internal */
-export type InternalNode = InternalFileNode | InternalStubNode | InternalDirectoryNode;
+export type InternalNode = InternalFileNode | InternalStubNode | InternalDirectoryNode | InternalDeviceNode;
 
 interface InternalBaseNode {
 	name: string;
@@ -47,3 +47,32 @@ export interface InternalDirectoryNode extends InternalBaseNode {
 	/** Cached sorted child names — null means stale, rebuilt lazily by list(). */
 	_sortedKeys: string[] | null;
 }
+
+/**
+ * Special device node — /dev/null, /dev/zero, /dev/random, /dev/urandom, etc.
+ * Read/write behavior is handled, not stored as content.
+ * @internal
+ */
+export interface InternalDeviceNode extends InternalBaseNode {
+	type: "device";
+	/** Device kind identifier. */
+	deviceKind: DeviceKind;
+	/** Major device number (for stat). */
+	major: number;
+	/** Minor device number (for stat). */
+	minor: number;
+}
+
+/** Supported device kinds. */
+export type DeviceKind =
+	| "null"
+	| "zero"
+	| "full"
+	| "random"
+	| "urandom"
+	| "tty"
+	| "console"
+	| "ptmx"
+	| "stdin"
+	| "stdout"
+	| "stderr";

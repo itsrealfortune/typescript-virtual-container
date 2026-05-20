@@ -145,19 +145,22 @@ async function runVfsStub(
 	if (builtinMatch) {
 		const builtinMod = resolveModule(builtinMatch[1]!);
 		if (builtinMod) {
+			const uid = shell.users.getUid(authUser);
+			const gid = shell.users.getGid(authUser);
 			return builtinMod.run({
-				authUser, hostname,
+				authUser, uid, gid, hostname,
 				activeSessions: shell.users.listActiveSessions(),
 				rawInput, mode, args, stdin, cwd, shell, env,
 			});
 		}
-		// Guard: missing builtin — stop here to avoid sh -c infinite loop
 		return { stderr: `${cmdName}: exec builtin '${builtinMatch[1]}' not found`, exitCode: 127 };
 	}
 	const shMod = resolveModule("sh");
 	if (shMod) {
+		const uid = shell.users.getUid(authUser);
+		const gid = shell.users.getGid(authUser);
 		return shMod.run({
-			authUser, hostname,
+			authUser, uid, gid, hostname,
 			activeSessions: shell.users.listActiveSessions(),
 			rawInput: `sh -c ${JSON.stringify(stubContent)}`,
 			mode,
@@ -210,8 +213,9 @@ export async function runCommandDirect(
 	}
 	// Register as visible process only at the outermost call level
 	const isTopLevel = _callDepth === 1;
+	const ppid = 1; // PID 1 is init
 	const pid = isTopLevel
-		? shell.users.registerProcess(authUser, name, [name, ...args], env.vars.__TTY ?? "?", abortController)
+		? shell.users.registerProcess(authUser, name, [name, ...args], env.vars.__TTY ?? "?", abortController, ppid)
 		: -1;
 	try {
 		if (background && abortController?.signal.aborted) {
@@ -301,8 +305,10 @@ async function _runCommandDirectInner(
 		savedPositional["0"] = env.vars["0"];
 		env.vars["0"] = name;
 		try {
+			const uid = shell.users.getUid(authUser);
+			const gid = shell.users.getGid(authUser);
 			return await shMod.run({
-				authUser, hostname,
+				authUser, uid, gid, hostname,
 				activeSessions: shell.users.listActiveSessions(),
 				rawInput: funcBody,
 				mode,
@@ -345,8 +351,12 @@ async function _runCommandDirectInner(
 	}
 
 	try {
+		const uid = shell.users.getUid(authUser);
+		const gid = shell.users.getGid(authUser);
 		return await mod.run({
 			authUser,
+			uid,
+			gid,
 			hostname,
 			activeSessions: shell.users.listActiveSessions(),
 			rawInput: [name, ...args].join(" "),
@@ -450,8 +460,10 @@ export async function runCommand(
 		if (isShScript && rawFirstWord !== "sh" && rawFirstWord !== "bash") {
 			const shMod = resolveModule("sh");
 			if (shMod) {
+				const uid = shell.users.getUid(authUser);
+				const gid = shell.users.getGid(authUser);
 				return await shMod.run({
-					authUser, hostname,
+					authUser, uid, gid, hostname,
 					activeSessions: shell.users.listActiveSessions(),
 					rawInput: aliasExpanded,
 					mode,
@@ -538,8 +550,12 @@ export async function runCommand(
 	}
 
 	try {
+		const uid = shell.users.getUid(authUser);
+		const gid = shell.users.getGid(authUser);
 		return await mod.run({
 			authUser,
+			uid,
+			gid,
 			hostname,
 			activeSessions: shell.users.listActiveSessions(),
 			rawInput: expanded,

@@ -5,6 +5,7 @@
  * latency and packet loss. Used by the `ip`, `ping`, and `netstat` commands
  * to produce dynamic, deterministic output instead of hardcoded strings.
  */
+/** biome-ignore-all lint/style/useNamingConvention: UPPER_CASE names for constants */
 
 /**
  * A virtual network interface, either loopback or ethernet,
@@ -42,6 +43,18 @@ export interface VirtualArpEntry {
 	mac: string;
 	device: string;
 	state: "REACHABLE" | "STALE" | "PERMANENT";
+}
+
+/**
+ * A firewall rule for the virtual network.
+ */
+export interface FirewallRule {
+	chain: "INPUT" | "OUTPUT" | "FORWARD";
+	protocol: "tcp" | "udp" | "icmp" | "all";
+	source?: string;
+	destination?: string;
+	destPort?: number;
+	action: "ACCEPT" | "DROP" | "REJECT";
 }
 
 /** Generates a random MAC address in the 02:42:xx:xx:xx:xx range. */
@@ -87,6 +100,16 @@ export class VirtualNetworkManager {
 	private arpCache: VirtualArpEntry[] = [
 		{ ip: "10.0.0.1", mac: "02:42:0a:00:00:01", device: "eth0", state: "REACHABLE" },
 	];
+
+	/** Firewall rules (iptables-style). Default policy is ACCEPT. */
+	private firewallRules: FirewallRule[] = [];
+
+	/** Default policies for each chain. */
+	private policies: Record<string, "ACCEPT" | "DROP"> = {
+		INPUT: "ACCEPT",
+		OUTPUT: "ACCEPT",
+		FORWARD: "ACCEPT",
+	};
 
 	/**
 	 * Returns a copy of all configured interfaces.
@@ -252,5 +275,84 @@ export class VirtualNetworkManager {
 
 	private _ipForDevice(device: string): string {
 		return this.interfaces.find((i) => i.name === device)?.ipv4 ?? "0.0.0.0";
+	}
+
+	// ── Firewall (iptables) ──────────────────────────────────────────────
+
+	/** Add a firewall rule. Returns the rule index. */
+	public addFirewallRule(rule: FirewallRule): number {
+		this.firewallRules.push(rule);
+		return this.firewallRules.length - 1;
+	}
+
+	/** Remove a firewall rule by index. */
+	public removeFirewallRule(index: number): boolean {
+		if (index < 0 || index >= this.firewallRules.length) return false;
+		this.firewallRules.splice(index, 1);
+		return true;
+	}
+
+	/** Get all firewall rules. */
+	public getFirewallRules(): FirewallRule[] {
+		return [...this.firewallRules];
+	}
+
+	/** Set the default policy for a chain. */
+	public setPolicy(chain: string, policy: "ACCEPT" | "DROP"): boolean {
+		if (!(chain in this.policies)) return false;
+		this.policies[chain] = policy;
+		return true;
+	}
+
+	/** Get the default policy for a chain. */
+	public getPolicy(chain: string): "ACCEPT" | "DROP" {
+		return this.policies[chain] ?? "ACCEPT";
+	}
+
+	/**
+	 * Check if a connection is allowed by the firewall.
+	 * Returns the action (ACCEPT, DROP, REJECT) for the given parameters.
+	 */
+	public checkFirewall(
+		chain: "INPUT" | "OUTPUT" | "FORWARD",
+		protocol: "tcp" | "udp" | "icmp" | "all",
+		source?: string,
+		destination?: string,
+		destPort?: number,
+	): "ACCEPT" | "DROP" | "REJECT" {
+		for (const rule of this.firewallRules) {
+			if (rule.chain !== chain) continue;
+			if (rule.protocol !== "all" && rule.protocol !== protocol) continue;
+			if (rule.source && source && rule.source !== source) continue;
+			if (rule.destination && destination && rule.destination !== destination) continue;
+			if (rule.destPort && destPort && rule.destPort !== destPort) continue;
+			return rule.action;
+		}
+		return this.policies[chain] ?? "ACCEPT";
+	}
+
+	/** Flush all firewall rules. */
+	public flushFirewall(): void {
+		this.firewallRules = [];
+	}
+
+	/** List rules in iptables -L format. */
+	public formatFirewall(): string {
+		const lines: string[] = [];
+		for (const chain of ["INPUT", "FORWARD", "OUTPUT"] as const) {
+			lines.push(`Chain ${chain} (policy ${this.policies[chain]})`);
+			lines.push("target     prot opt source               destination");
+			for (const rule of this.firewallRules) {
+				if (rule.chain !== chain) continue;
+				const target = rule.action.padEnd(10);
+				const prot = rule.protocol.padEnd(6);
+				const src = (rule.source ?? "0.0.0.0/0").padEnd(20);
+				const dst = (rule.destination ?? "0.0.0.0/0").padEnd(20);
+				const port = rule.destPort ? `dpt:${rule.destPort}` : "";
+				lines.push(`${target} ${prot}      ${src} ${dst} ${port}`);
+			}
+			lines.push("");
+		}
+		return lines.join("\n");
 	}
 }

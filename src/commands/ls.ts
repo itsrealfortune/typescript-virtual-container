@@ -23,7 +23,7 @@ function colorize(name: string, color: string): string {
 	return color ? `${color}${name}${RESET}` : name;
 }
 
-function entryColor(mode: number, type: "file" | "directory", isLink: boolean): string {
+function entryColor(mode: number, type: "file" | "directory" | "device", isLink: boolean): string {
 	if (isLink) return C_LINK;
 	if (type === "directory") {
 		const sticky  = !!(mode & 0o1000);
@@ -33,16 +33,18 @@ function entryColor(mode: number, type: "file" | "directory", isLink: boolean): 
 		if (worldW)           return C_OTHER_WX;
 		return C_DIR;
 	}
+	if (type === "device") return C_NORMAL;
 	if (mode & 0o111) return C_EXEC;
 	return C_NORMAL;
 }
 
 // ─── permissions string ──────────────────────────────────────────────────────
 
-function formatPermissions(mode: number, type: "file" | "directory", isLink: boolean): string {
+function formatPermissions(mode: number, type: "file" | "directory" | "device", isLink: boolean): string {
 	let ft: string;
 	if (isLink)                    ft = "l";
 	else if (type === "directory") ft = "d";
+	else if (type === "device")    ft = "c";
 	else                           ft = "-";
 
 	const r = (bit: number) => (mode & bit ? "r" : "-");
@@ -98,7 +100,7 @@ function readlinkTarget(vfs: { readFile: (p: string) => string }, path: string):
 
 function shortListing(
 	vfs: {
-		stat:      (p: string) => { mode: number; type: "file" | "directory" };
+		stat:      (p: string) => { mode: number; type: "file" | "directory" | "device" };
 		isSymlink: (p: string) => boolean;
 	},
 	dir: string,
@@ -108,7 +110,7 @@ function shortListing(
 	return items.map((name) => {
 		const childPath = `${base}/${name}`;
 		const isLink    = vfs.isSymlink(childPath);
-		let stat: { mode: number; type: "file" | "directory" };
+		let stat: { mode: number; type: "file" | "directory" | "device" };
 		try { stat = vfs.stat(childPath); } catch { return name; }
 		const color  = entryColor(stat.mode, stat.type, isLink);
 		return colorize(name, color);
@@ -119,12 +121,15 @@ function shortListing(
 
 type VfsStat = {
 	mode:          number;
-	type:          "file" | "directory";
+	type:          "file" | "directory" | "device";
 	updatedAt:     Date;
 	size?:         number;
 	childrenCount?: number;
 	uid?:          number;
 	gid?:          number;
+	deviceKind?:   string;
+	major?:        number;
+	minor?:        number;
 };
 
 function longListing(
@@ -159,12 +164,14 @@ function longListing(
 			? String((stat.childrenCount ?? 0) + 2)
 			: "1";
 
-		// size: links → target path length, files → bytes, dirs → children×4096
+		// size: links → target path length, files → bytes, dirs → children×4096, devices → major,minor
 		const rawSize = isLink
 			? readlinkTarget(vfs, childPath).length
 			: stat.type === "file"
 				? (stat.size ?? 0)
-				: (stat.childrenCount ?? 0) * 4096;
+				: stat.type === "device"
+					? 0
+					: (stat.childrenCount ?? 0) * 4096;
 		const size = String(rawSize);
 
 		const date  = formatDate(stat.updatedAt);

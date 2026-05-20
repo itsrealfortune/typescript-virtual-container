@@ -34,6 +34,7 @@
  */
 
 import type {
+	InternalDeviceNode,
 	InternalDirectoryNode,
 	InternalFileNode,
 	InternalNode,
@@ -41,9 +42,29 @@ import type {
 } from "./internalTypes";
 
 const MAGIC = Buffer.from([0x56, 0x46, 0x53, 0x21]); // "VFS!"
-const VERSION = 0x02;
+const VERSION = 0x03;
 const TYPE_FILE = 0x01;
 const TYPE_DIR = 0x02;
+const TYPE_DEVICE = 0x03;
+
+const DEVICE_KIND_MAP: Record<string, number> = {
+	null: 0x01,
+	zero: 0x02,
+	full: 0x03,
+	random: 0x04,
+	urandom: 0x05,
+	tty: 0x06,
+	console: 0x07,
+	ptmx: 0x08,
+	stdin: 0x09,
+	stdout: 0x0a,
+	stderr: 0x0b,
+};
+
+const DEVICE_KIND_REVERSE: Record<number, string> = {};
+for (const [k, v] of Object.entries(DEVICE_KIND_MAP)) {
+	DEVICE_KIND_REVERSE[v] = k;
+}
 
 // ── Encoder ───────────────────────────────────────────────────────────────────
 
@@ -107,7 +128,6 @@ function encodeNode(enc: Encoder, node: InternalNode): void {
 		enc.writeUint8(f.compressed ? 0x01 : 0x00);
 		enc.writeBytes(f.content);
 	} else if (node.type === "stub") {
-		// Encode stub as a regular uncompressed file node
 		const s = node as InternalStubNode;
 		enc.writeUint8(TYPE_FILE);
 		enc.writeString(s.name);
@@ -116,8 +136,20 @@ function encodeNode(enc: Encoder, node: InternalNode): void {
 		enc.writeUint32(s.gid);
 		enc.writeFloat64(s.createdAt);
 		enc.writeFloat64(s.updatedAt);
-		enc.writeUint8(0x00); // not compressed
+		enc.writeUint8(0x00);
 		enc.writeBytes(Buffer.from(s.stubContent, "utf8"));
+	} else if (node.type === "device") {
+		const d = node as InternalDeviceNode;
+		enc.writeUint8(TYPE_DEVICE);
+		enc.writeString(d.name);
+		enc.writeUint32(d.mode);
+		enc.writeUint32(d.uid);
+		enc.writeUint32(d.gid);
+		enc.writeFloat64(d.createdAt);
+		enc.writeFloat64(d.updatedAt);
+		enc.writeUint8(DEVICE_KIND_MAP[d.deviceKind] ?? 0x00);
+		enc.writeUint8(d.major);
+		enc.writeUint8(d.minor);
 	} else {
 		const d = node as InternalDirectoryNode;
 		enc.writeUint8(TYPE_DIR);
@@ -217,6 +249,25 @@ function decodeNode(dec: Decoder, includeUidGid: boolean): InternalNode {
 		} satisfies InternalFileNode;
 	}
 
+	if (type === TYPE_DEVICE) {
+		const kindCode = dec.readUint8();
+		const major = dec.readUint8();
+		const minor = dec.readUint8();
+		const deviceKind = DEVICE_KIND_REVERSE[kindCode] ?? "null";
+		return {
+			type: "device",
+			name,
+			mode,
+			uid,
+			gid,
+			createdAt,
+			updatedAt,
+			deviceKind: deviceKind as InternalDeviceNode["deviceKind"],
+			major,
+			minor,
+		} satisfies InternalDeviceNode;
+	}
+
 	if (type === TYPE_DIR) {
 		const count = dec.readUint32();
 		const children = Object.create(null) as Record<string, InternalNode>;
@@ -263,7 +314,7 @@ export function forkDirTree(base: InternalDirectoryNode): InternalDirectoryNode 
 		const child = base.children[name]!;
 		children[name] = child.type === "directory"
 			? forkDirTree(child as InternalDirectoryNode)
-			: child; // shared — file/stub nodes are immutable until replaced
+			: child;
 	}
 	return {
 		type: "directory",
@@ -275,7 +326,7 @@ export function forkDirTree(base: InternalDirectoryNode): InternalDirectoryNode 
 		updatedAt: base.updatedAt,
 		children,
 		_childCount: base._childCount,
-		_sortedKeys: base._sortedKeys, // safe to share — sorted list doesn't change for base
+		_sortedKeys: base._sortedKeys,
 	};
 }
 

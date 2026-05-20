@@ -42,7 +42,10 @@ export const duCommand: ShellModule = {
 					r = `${rel}/${e}`;
 				const st = shell.vfs.stat(full);
 				if (st.type === "directory") total += walk(full, r);
-				else {
+				else if (st.type === "device") {
+					total += 0;
+					if (!summary) lines.push(`0\t${r}`);
+				} else {
 					total += st.size;
 					if (!summary) lines.push(`${fmt(st.size)}\t${r}`);
 				}

@@ -14,6 +14,7 @@ import type { VirtualShell } from "../VirtualShell";
 /**
  * Executes a list of shell statements sequentially, respecting `&&`, `||`, and `;`
  * operators. Accumulates stdout across statements and tracks cwd changes.
+ * Handles subshells (recursively with isolated env) and command groups (in current context).
  */
 export async function executeStatements(
 	statements: Statement[],
@@ -26,20 +27,70 @@ export async function executeStatements(
 ): Promise<CommandResult> {
 	let last: CommandResult = { exitCode: 0 };
 	const accumulatedStdout: string[] = [];
-	let currentCwd = cwd; // track cwd changes from cd, su, etc.
+	let currentCwd = cwd;
 	let i = 0;
 
 	while (i < statements.length) {
 		const stmt = statements[i]!;
 
-		if (stmt.background) {
-			// Background job: fire with AbortController so kill can cancel it.
+		// Subshell: execute in isolated context
+		if (stmt.subshell) {
+			const subEnv: ShellEnv = { vars: { ...env.vars }, lastExitCode: env.lastExitCode };
+			last = await executeStatements(
+				stmt.subshell.statements,
+				authUser,
+				hostname,
+				mode,
+				currentCwd,
+				shell,
+				subEnv,
+			);
+			// Subshell cwd changes do NOT propagate to parent
+			env.lastExitCode = last.exitCode ?? 0;
+			if (last.stdout) accumulatedStdout.push(last.stdout);
+			if (last.closeSession || last.switchUser) {
+				return { ...last, stdout: accumulatedStdout.join("") || last.stdout };
+			}
+			i++;
+			continue;
+		}
+
+		// Command group: execute in current context (cwd changes propagate)
+		if (stmt.group) {
+			last = await executeStatements(
+				stmt.group.statements,
+				authUser,
+				hostname,
+				mode,
+				currentCwd,
+				shell,
+				env,
+			);
+			if (last.nextCwd && (last.exitCode ?? 0) === 0) {
+				currentCwd = last.nextCwd;
+			}
+			env.lastExitCode = last.exitCode ?? 0;
+			if (last.stdout) accumulatedStdout.push(last.stdout);
+			if (last.closeSession || last.switchUser) {
+				return { ...last, stdout: accumulatedStdout.join("") || last.stdout };
+			}
+			i++;
+			continue;
+		}
+
+		// Background job
+		if (stmt.background && stmt.pipeline) {
 			const ac = new AbortController();
 			executePipeline(
 				stmt.pipeline, authUser, hostname, "background", currentCwd, shell, env, ac,
 			);
 			last = { exitCode: 0 };
 			env.lastExitCode = 0;
+			i++;
+			continue;
+		}
+
+		if (!stmt.pipeline) {
 			i++;
 			continue;
 		}
@@ -55,12 +106,10 @@ export async function executeStatements(
 		);
 		env.lastExitCode = last.exitCode ?? 0;
 
-		// Propagate cwd changes (cd, su -l, etc.)
 		if (last.nextCwd && (last.exitCode ?? 0) === 0) {
 			currentCwd = last.nextCwd;
 		}
 
-		// Collect stdout from each statement (for echo a; echo b → "a\nb\n")
 		if (last.stdout) accumulatedStdout.push(last.stdout);
 
 		if (last.closeSession || last.switchUser) {
@@ -75,20 +124,16 @@ export async function executeStatements(
 			// always run next
 		} else if (op === "&&") {
 			if ((last.exitCode ?? 0) !== 0) {
-				// skip until next ; or end
 				while (i < statements.length && statements[i]?.op === "&&") i++;
 			}
 		} else if (op === "||") {
 			if ((last.exitCode ?? 0) === 0) {
-				// skip until next ; or end
 				while (i < statements.length && statements[i]?.op === "||") i++;
 			}
 		}
 		i++;
 	}
-	// Merge accumulated stdout (for "echo a; echo b" → "a\nb\n")
 	const merged = accumulatedStdout.join("");
-	// Preserve the deepest cwd change across the whole pipeline
 	return { ...last, stdout: merged || last.stdout, nextCwd: currentCwd !== cwd ? currentCwd : undefined };
 }
 

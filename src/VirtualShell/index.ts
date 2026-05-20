@@ -7,6 +7,7 @@ import {
 	refreshProc,
 	syncEtcPasswd,
 } from "../modules/linuxRootfs";
+import { defaultSysctlState, resolveSysctlPath, type SysctlState } from "../modules/sysctl";
 import { VirtualNetworkManager } from "../modules/VirtualNetworkManager";
 import type { CommandContext, CommandResult } from "../types/commands";
 import type { ShellStream } from "../types/streams";
@@ -159,6 +160,8 @@ class VirtualShell extends EventEmitter {
 	desktopManager: DesktopManager | null = null;
 	/** Idle / cold-start manager — null until `enableIdleManagement()` is called. */
 	private _idle: IdleManager | null = null;
+	/** Writable /proc/sys state — sysctl tunables. */
+	sysctl: SysctlState;
 	private initialized: Promise<void>;
 
 	/**
@@ -178,6 +181,7 @@ class VirtualShell extends EventEmitter {
 		this.hostname = hostname;
 		this.properties = properties || defaultShellProperties;
 		this.startTime = Date.now();
+		this.sysctl = defaultSysctlState(hostname, this.properties.kernel);
 
 		if (isVirtualShellVfsLike(vfsOptionsOrInstance)) {
 			this.vfs = vfsOptionsOrInstance as unknown as VirtualFileSystem;
@@ -197,6 +201,7 @@ class VirtualShell extends EventEmitter {
 		const shellHostname = this.hostname;
 		const startTime = this.startTime;
 		const network = this.network;
+		const sysctl = this.sysctl;
 
 		// Initialize both VFS mirror and users, ensuring all is ready before auth
 		this.initialized = (async () => {
@@ -204,10 +209,30 @@ class VirtualShell extends EventEmitter {
 			await users.initialize();
 			// Bootstrap Linux rootfs (idempotent)
 			bootstrapLinuxRootfs(vfs, users, shellHostname, shellProps, startTime, [], network);
+
 			// Register read hook: refresh /proc dynamically on every access
 			vfs.onBeforeRead("/proc", () => {
 				refreshProc(vfs, shellProps, shellHostname, startTime, users.listActiveSessions(), network);
 			});
+
+			// Register content resolver: serve sysctl values from /proc/sys/*
+			vfs.registerContentResolver("/proc/sys", (sysPath) => {
+				const resolved = resolveSysctlPath(sysctl, sysPath);
+				if (resolved) {
+					const v = resolved.value;
+					return typeof v === "number" ? `${v}\n` : v.endsWith("\n") ? v : `${v}\n`;
+				}
+				return null;
+			});
+
+			// Register write hook: update sysctl state on /proc/sys/* writes
+			vfs.onBeforeWrite("/proc/sys", (normalizedPath, content) => {
+				const resolved = resolveSysctlPath(sysctl, normalizedPath);
+				if (resolved) {
+					resolved.set(typeof content === "string" ? content.trim() : String(content));
+				}
+			});
+
 			this.emit("initialized");
 		})();
 	}

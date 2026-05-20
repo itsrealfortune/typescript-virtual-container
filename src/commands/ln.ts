@@ -12,7 +12,7 @@ export const lnCommand: ShellModule = {
 	description: "Create links",
 	category: "files",
 	params: ["[-s] <target> <link_name>"],
-	run: ({ authUser, shell, cwd, args }) => {
+	run: ({ authUser, shell, cwd, args, uid, gid }) => {
 		const symbolic = ifFlag(args, ["-s", "--symbolic"]);
 		const positionals = args.filter((a) => !a.startsWith("-"));
 		const [targetArg, linkArg] = positionals;
@@ -39,10 +39,10 @@ export const lnCommand: ShellModule = {
 						exitCode: 1,
 					};
 				}
-				const content = shell.vfs.readFile(srcPath);
-				shell.writeFileAsUser(authUser, linkPath, content);
+				const content = shell.vfs.readFile(srcPath, uid, gid);
+				shell.vfs.writeFile(linkPath, content, {}, uid, gid);
 			} else {
-				shell.vfs.symlink(targetPath, linkPath);
+				shell.vfs.symlink(targetPath, linkPath, uid, gid);
 			}
 
 			return { exitCode: 0 };

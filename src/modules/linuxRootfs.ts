@@ -1320,12 +1320,20 @@ function bootstrapSys(vfs: VirtualFileSystem, hostname: string, props: ShellProp
 function bootstrapDev(vfs: VirtualFileSystem): void {
 	ensureDir(vfs, "/dev");
 
-	// character devices — matching real Firecracker container
-	ensureFile(vfs, "/dev/null",        "", 0o666);
-	ensureFile(vfs, "/dev/zero",        "", 0o666);
-	ensureFile(vfs, "/dev/full",        "", 0o666);
-	ensureFile(vfs, "/dev/random",      "", 0o444);
-	ensureFile(vfs, "/dev/urandom",     "", 0o444);
+	// character devices with special behavior
+	vfs.mknod("/dev/null", "null", 0o666, 1, 3);
+	vfs.mknod("/dev/zero", "zero", 0o666, 1, 5);
+	vfs.mknod("/dev/full", "full", 0o666, 1, 7);
+	vfs.mknod("/dev/random", "random", 0o444, 1, 8);
+	vfs.mknod("/dev/urandom", "urandom", 0o444, 1, 9);
+	vfs.mknod("/dev/tty", "tty", 0o666, 5, 0);
+	vfs.mknod("/dev/console", "console", 0o600, 5, 1);
+	vfs.mknod("/dev/ptmx", "ptmx", 0o666, 5, 2);
+	vfs.mknod("/dev/stdin", "stdin", 0o666, 0, 0);
+	vfs.mknod("/dev/stdout", "stdout", 0o666, 1, 0);
+	vfs.mknod("/dev/stderr", "stderr", 0o666, 2, 0);
+
+	// character devices — stubs (no special read/write behavior)
 	ensureFile(vfs, "/dev/mem",         "", 0o640);
 	ensureFile(vfs, "/dev/port",        "", 0o640);
 	ensureFile(vfs, "/dev/kmsg",        "", 0o660);
@@ -1340,10 +1348,7 @@ function bootstrapDev(vfs: VirtualFileSystem): void {
 	ensureFile(vfs, "/dev/snapshot",    "", 0o660);
 
 	// terminal devices
-	ensureFile(vfs, "/dev/console",     "", 0o600);
-	ensureFile(vfs, "/dev/tty",         "", 0o666);
 	ensureFile(vfs, "/dev/ttyS0",       "", 0o660);
-	ensureFile(vfs, "/dev/ptmx",        "", 0o666);
 
 	// tty0–63 (like real env)
 	for (let i = 0; i <= 63; i++) {
@@ -1378,9 +1383,6 @@ function bootstrapDev(vfs: VirtualFileSystem): void {
 	ensureDir(vfs, "/dev/pts");
 	ensureDir(vfs, "/dev/shm");
 	ensureDir(vfs, "/dev/cpu");
-	ensureFile(vfs, "/dev/stdin",  "", 0o666);
-	ensureFile(vfs, "/dev/stdout", "", 0o666);
-	ensureFile(vfs, "/dev/stderr", "", 0o666);
 	ensureDir(vfs, "/dev/fd");
 	ensureFile(vfs, "/dev/vga_arbiter", "", 0o660);
 	ensureFile(vfs, "/dev/vsock",       "", 0o660);

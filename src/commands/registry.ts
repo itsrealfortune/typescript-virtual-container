@@ -48,7 +48,8 @@ import { hostnameCommand } from "./hostname";
 import { htopCommand } from "./htop";
 import { idCommand } from "./id";
 import { ipCommand } from "./ip";
-import { bgCommand, fgCommand, jobsCommand } from "./jobs";
+import { iptablesCommand } from "./iptables";
+import { jobsCommand, bgCommand, fgCommand } from "./jobs";
 import { killCommand } from "./kill";
 import { dmesgCommand, lastCommand } from "./last";
 import { lnCommand, readlinkCommand } from "./ln";
@@ -56,6 +57,7 @@ import { lsCommand } from "./ls";
 import { lsbReleaseCommand } from "./lsb-release";
 import { manCommand } from "./man";
 import { mkdirCommand } from "./mkdir";
+import { mkfifoCommand, mknodCommand } from "./mknod";
 import { mvCommand } from "./mv";
 import { nanoCommand } from "./nano";
 import { neofetchCommand } from "./neofetch";
@@ -80,6 +82,7 @@ import { sourceCommand } from "./source";
 import { statCommand } from "./stat";
 import { suCommand } from "./su";
 import { sudoCommand } from "./sudo";
+import { sysctlCommand } from "./sysctl";
 import { tailCommand } from "./tail";
 import { tarCommand } from "./tar";
 import { teeCommand } from "./tee";
@@ -126,6 +129,8 @@ const BASE_COMMANDS: ShellModule[] = [
 	touchCommand,
 	rmCommand,
 	mkdirCommand,
+	mknodCommand,
+	mkfifoCommand,
 	cpCommand,
 	mvCommand,
 	lnCommand,
@@ -225,11 +230,13 @@ const BASE_COMMANDS: ShellModule[] = [
 	curlCommand,
 	wgetCommand,
 	ncCommand,
+	iptablesCommand,
 	// Users
 	adduserCommand,
 	passwdCommand,
 	deluserCommand,
 	sudoCommand,
+	sysctlCommand,
 	suCommand,
 	// Misc
 	neofetchCommand,

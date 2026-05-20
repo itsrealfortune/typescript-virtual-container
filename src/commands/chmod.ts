@@ -47,7 +47,7 @@ export const chmodCommand: ShellModule = {
 	description: "Change file permissions",
 	category: "files",
 	params: ["<mode> <file>"],
-	run: ({ authUser, shell, cwd, args }) => {
+	run: ({ authUser, shell, cwd, args, uid }) => {
 		const [modeArg, fileArg] = args;
 		if (!modeArg || !fileArg) {
 			return { stderr: "chmod: missing operand", exitCode: 1 };
@@ -75,7 +75,7 @@ export const chmodCommand: ShellModule = {
 				}
 				mode = result;
 			}
-			shell.vfs.chmod(filePath, mode);
+			shell.vfs.chmod(filePath, mode, uid);
 			return { exitCode: 0 };
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
