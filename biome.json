@@ -13,8 +13,62 @@
             },
             "style": {
                 "noShoutyConstants": "warn",
-                "useNamingConvention": "error",
-                "noNonNullAssertion": "off"
+                "noNonNullAssertion": "off",
+                "useNamingConvention": {
+                    "options": {
+                        "conventions": [
+                            {
+                                "selector": {
+                                    "kind": "variable"
+                                },
+                                "match": "[ij]|(.*)"
+                            },
+                            {
+                                "match": "(.{2,})"
+                            },
+                            {
+                                "selector": {
+                                    "kind": "classMember",
+                                    "modifiers": [
+                                        "private"
+                                    ]
+                                },
+                                "match": "_(.*)"
+                            },
+                            {
+                                "selector": {
+                                    "kind": "classProperty",
+                                    "modifiers": [
+                                        "static",
+                                        "readonly"
+                                    ]
+                                },
+                                "formats": [
+                                    "CONSTANT_CASE"
+                                ]
+                            },
+                            {
+                                "selector": {
+                                    "kind": "const",
+                                    "scope": "global"
+                                },
+                                "match": "__(.+)__|_SPECIAL_|(.+)",
+                                "formats": [
+                                    "CONSTANT_CASE"
+                                ]
+                            },
+                            {
+                                "selector": {
+                                    "kind": "interface"
+                                },
+                                "match": "I(.*)|(.*?)Error",
+                                "formats": [
+                                    "PascalCase"
+                                ]
+                            }
+                        ]
+                    }
+                }
             }
         }
     },

@@ -16,7 +16,6 @@ function spawnScriptProcess(
 		stdio: ["pipe", "pipe", "pipe"],
 		env: {
 			...process.env,
-			// biome-ignore lint/style/useNamingConvention: env variable should be uppercase
 			TERM: process.env.TERM ?? "xterm-256color",
 		},
 	});
