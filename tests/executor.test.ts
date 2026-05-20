@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 import type { SshClient, VirtualShell } from "../src";
 import { createTestEnv, runCmd } from "./test-helper";
+import { runExec } from "../src/SSHMimic/exec";
 
 let shell: VirtualShell;
 let client: InstanceType<typeof SshClient>;
@@ -80,5 +81,39 @@ describe("Pipeline executor", () => {
 	test("command with stderr output", async () => {
 		const r = await runCmd(client, "echo errmsg >&2");
 		expect(r.exitCode).toBe(0);
+	});
+});
+
+describe("runExec (SSH exec channel)", () => {
+	test("runExec writes stdout and exits", async () => {
+		let exitCode: number | undefined;
+		let ended = false;
+		const written: string[] = [];
+
+		const stream = {
+			write: (s: string) => { written.push(s); },
+			stderr: { write: (_s: string) => {} },
+			exit: (code: number) => { exitCode = code; },
+			end: () => { ended = true; },
+		};
+
+		runExec(stream as any, "echo hello", "root", "test-vm", shell);
+		await Bun.sleep(50);
+		expect(written.join("")).toContain("hello");
+	});
+
+	test("runExec writes stderr", async () => {
+		const stderrWritten: string[] = [];
+
+		const stream = {
+			write: (_s: string) => {},
+			stderr: { write: (s: string) => { stderrWritten.push(s); } },
+			exit: (_code: number) => {},
+			end: () => {},
+		};
+
+		runExec(stream as any, "ls /nonexistent_path_xyz", "root", "test-vm", shell);
+		await Bun.sleep(50);
+		expect(stderrWritten.length).toBeGreaterThan(0);
 	});
 });
