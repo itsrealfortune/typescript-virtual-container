@@ -8,35 +8,38 @@ permissions:
   contents: read
 
 jobs:
-  quality:
+  typecheck:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
+      - run: bun install
+      - run: bun check
 
-      - name: Install dependencies
-        run: bun install
-
-      - name: Run typecheck
-        run: bun check
-
-      - name: Run lint
-        run: bun lint
-
-      - name: Run tests
-        run: bun test
-
-  test-battery:
-    needs:
-      - typecheck
-      - lint
-      - tests
+  lint:
     runs-on: ubuntu-latest
     steps:
-      - name: Test battery passed
-        run: echo "Typecheck, lint and tests succeeded."
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      - run: bun install
+      - run: bun lint
+
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      - run: bun install
+      - run: bun test
+
+  test-battery:
+    needs: [typecheck, lint, tests]
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Typecheck, lint and tests succeeded."
