@@ -528,7 +528,7 @@ export function startShell(
 				authUser = prev.authUser;
 				cwd = prev.cwd;
 				shell.users.updateSession(sessionId, authUser, remoteAddress);
-				shellEnv.vars.PS1 = makeDefaultEnv(authUser, hostname).vars.PS1 ?? "";
+				delete shellEnv.vars.PS1;
 				renderLine();
 			} else {
 				stream.exit(0);
