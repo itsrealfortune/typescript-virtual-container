@@ -213,8 +213,9 @@ export async function runCommandDirect(
 	}
 	// Register as visible process only at the outermost call level
 	const isTopLevel = _callDepth === 1;
+	const ppid = 1; // PID 1 is init
 	const pid = isTopLevel
-		? shell.users.registerProcess(authUser, name, [name, ...args], env.vars.__TTY ?? "?", abortController)
+		? shell.users.registerProcess(authUser, name, [name, ...args], env.vars.__TTY ?? "?", abortController, ppid)
 		: -1;
 	try {
 		if (background && abortController?.signal.aborted) {
