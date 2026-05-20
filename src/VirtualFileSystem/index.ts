@@ -127,6 +127,14 @@ class VirtualFileSystem extends EventEmitter {
 	private _sortedReadHooks: string[] | null = null;
 	/** Re-entrancy guard for read hooks — prevents infinite loop when hook triggers another read. */
 	private _inReadHook = false;
+	/** Write hooks: path prefix → callback invoked before writing any file under that prefix. */
+	private readonly writeHooks = new Map<string, (path: string, content: string | Buffer) => void>();
+	/** Sorted write hook prefixes (longest-first) for matching. */
+	private _sortedWriteHooks: string[] | null = null;
+	/** Content resolver: path → callback that returns dynamic content (used for /proc/sys). */
+	private readonly contentResolvers = new Map<string, (path: string) => string | null>();
+	/** Sorted content resolver prefixes (longest-first). */
+	private _sortedContentResolvers: string[] | null = null;
 	/** True when running in a browser environment (no host FS access). */
 	private static readonly isBrowser =
 		typeof process === "undefined" || typeof (process as NodeJS.Process).versions?.node === "undefined";
@@ -699,10 +707,62 @@ class VirtualFileSystem extends EventEmitter {
 					node.size    = rawSize;
 					node.content = Buffer.alloc(0); // free heap
 					node.evicted = true;
+		}
+		}
+		}
+	}
+
+	/**
+	 * Register a callback that is invoked before any write under `prefix`.
+	 * Callback receives (normalizedPath, content). Used for /proc/sys sysctl.
+	 */
+	public onBeforeWrite(prefix: string, cb: (path: string, content: string | Buffer) => void): void {
+		const normalized = normalizePath(prefix);
+		this.writeHooks.set(normalized, cb);
+		this._sortedWriteHooks = [...this.writeHooks.keys()].sort((a, b) => b.length - a.length);
+	}
+
+	/** Remove a previously registered write hook. */
+	public offBeforeWrite(prefix: string): void {
+		const normalized = normalizePath(prefix);
+		this.writeHooks.delete(normalized);
+		this._sortedWriteHooks = [...this.writeHooks.keys()].sort((a, b) => b.length - a.length);
+	}
+
+	/** Invoke any matching write hook for `normalizedPath`. */
+	private _triggerWriteHook(normalizedPath: string, content: string | Buffer): void {
+		if (!this._sortedWriteHooks) return;
+		for (const prefix of this._sortedWriteHooks) {
+			if (normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`)) {
+				const cb = this.writeHooks.get(prefix);
+				if (cb) {
+					cb(normalizedPath, content);
+					return;
 				}
 			}
-			// stubs: nothing to evict — content is already a plain string, not a Buffer
 		}
+	}
+
+	/**
+	 * Register a content resolver for a path prefix.
+	 * Resolver returns string content or null to fall through to normal read.
+	 */
+	public registerContentResolver(prefix: string, resolver: (path: string) => string | null): void {
+		const normalized = normalizePath(prefix);
+		this.contentResolvers.set(normalized, resolver);
+		this._sortedContentResolvers = [...this.contentResolvers.keys()].sort((a, b) => b.length - a.length);
+	}
+
+	/** Resolve content for a path using registered resolvers. Returns null if no match. */
+	private _resolveContent(normalizedPath: string): string | null {
+		if (!this._sortedContentResolvers) return null;
+		for (const prefix of this._sortedContentResolvers) {
+			if (normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`)) {
+				const resolver = this.contentResolvers.get(prefix);
+				if (resolver) return resolver(normalizedPath);
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -893,6 +953,13 @@ class VirtualFileSystem extends EventEmitter {
 			return;
 		}
 		const normalized = normalizePath(targetPath);
+
+		// Trigger write hooks (e.g., /proc/sys sysctl)
+		const rawContent = Buffer.isBuffer(content)
+			? content
+			: Buffer.from(content, "utf8");
+		this._triggerWriteHook(normalized, rawContent);
+
 		const { parent, name } = getParentDirectory(
 			this.root,
 			normalized,
@@ -915,9 +982,6 @@ class VirtualFileSystem extends EventEmitter {
 			return;
 		}
 
-		const rawContent = Buffer.isBuffer(content)
-			? content
-			: Buffer.from(content, "utf8");
 		const shouldCompress = options.compress ?? false;
 		const storedContent = shouldCompress ? gzipSync(rawContent) : rawContent;
 		const mode = options.mode ?? 0o644;
@@ -949,6 +1013,14 @@ class VirtualFileSystem extends EventEmitter {
 		}
 		const normalized = normalizePath(targetPath);
 		this._triggerReadHook(normalized);
+
+		// Check content resolvers (e.g., /proc/sys sysctl values)
+		const resolved = this._resolveContent(normalized);
+		if (resolved !== null) {
+			this.emit("file:read", { path: normalized, size: resolved.length });
+			return resolved;
+		}
+
 		const node = getNodeNormalized(this.root, normalized);
 		if (node.type === "stub") {
 			this.emit("file:read", { path: normalized, size: node.stubContent.length });

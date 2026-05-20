@@ -81,6 +81,7 @@ import { sourceCommand } from "./source";
 import { statCommand } from "./stat";
 import { suCommand } from "./su";
 import { sudoCommand } from "./sudo";
+import { sysctlCommand } from "./sysctl";
 import { tailCommand } from "./tail";
 import { tarCommand } from "./tar";
 import { teeCommand } from "./tee";
@@ -233,6 +234,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	passwdCommand,
 	deluserCommand,
 	sudoCommand,
+	sysctlCommand,
 	suCommand,
 	// Misc
 	neofetchCommand,
