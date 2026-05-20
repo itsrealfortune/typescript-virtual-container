@@ -45,7 +45,7 @@ export const curlCommand: ShellModule = {
 			};
 		}
 
-		const url = positionals[0];
+		const url = positionals.find((a) => !a.startsWith("-"));
 		if (!url) return { stderr: "curl: no URL specified", exitCode: 1 };
 
 		const outputPath =
@@ -98,6 +98,12 @@ export const curlCommand: ShellModule = {
 		let response: Response;
 		try {
 			const urlWithHttp = url.startsWith("http://") || url.startsWith("https://") ? url : `http://${url}`;
+			const parsedUrl = new URL(urlWithHttp);
+			const dstPort = parsedUrl.port ? parseInt(parsedUrl.port, 10) : (parsedUrl.protocol === "https:" ? 443 : 80);
+			const fwAction = shell.network.checkFirewall("OUTPUT", "tcp", undefined, parsedUrl.hostname, dstPort);
+			if (fwAction === "DROP" || fwAction === "REJECT") {
+				return { stderr: `curl: (7) Failed to connect to ${parsedUrl.hostname} port ${dstPort}: Connection refused`, exitCode: 7 };
+			}
 			response = await fetch(urlWithHttp, fetchOpts);
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
