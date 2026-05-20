@@ -198,6 +198,27 @@ await webClient.exec("iptables -A OUTPUT -d 10.0.1.3 -j DROP");
 // web can no longer reach db
 ```
 
+#### Expose VM ports on the host (VirtualProxy)
+
+Forward VM services to the host machine, or use the SOCKS5 proxy to route
+host traffic into the virtual network:
+
+```typescript
+import { Baie, VirtualProxy } from "typescript-virtual-container";
+
+const baie = new Baie("demo", "10.0.1.0/24");
+const web = await baie.createVM("web");
+const proxy = new VirtualProxy(baie);
+
+// Port forwarding: expose VM's port 80 on host:8080
+proxy.exposePort("web", 80, 8080);
+// curl http://localhost:8080 → reaches VM "web" port 80
+
+// SOCKS5 proxy: route any host traffic into the virtual network
+proxy.startSocksProxy(1080);
+// curl --proxy socks5://localhost:1080 http://10.0.1.2:3000
+```
+
 ---
 
 ## How It Works

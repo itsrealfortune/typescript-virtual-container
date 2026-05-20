@@ -8,6 +8,7 @@ export { VirtualNetworkManager } from "./modules/VirtualNetworkManager";
 export type { VirtualInterface, VirtualRoute, VirtualArpEntry } from "./modules/VirtualNetworkManager";
 export { Baie, VirtualSwitch } from "./modules/VirtualSwitch";
 export type { VmPort, Packet, PacketResult, MacAddress } from "./modules/VirtualSwitch";
+export { VirtualProxy } from "./modules/VirtualProxy";
 export { VirtualShell } from "./VirtualShell/index";
 export { VirtualUserManager } from "./VirtualUserManager/index";
 export type { VirtualActiveSession, VirtualProcess, VirtualUserRecord, ProcessStatus } from "./VirtualUserManager/index";
