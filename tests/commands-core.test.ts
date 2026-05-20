@@ -631,3 +631,153 @@ describe("cmp command", () => {
 		expect(r.exitCode).toBe(127);
 	});
 });
+
+describe("basename command", () => {
+	test("basename strips directory path", async () => {
+		const r = await runCmd(client, "basename /foo/bar/baz.txt");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.trim()).toBe("baz.txt");
+	});
+
+	test("basename with suffix", async () => {
+		const r = await runCmd(client, "basename /foo/bar/baz.txt .txt");
+		expect(r.stdout?.trim()).toBe("baz");
+	});
+
+	test("basename no path", async () => {
+		const r = await runCmd(client, "basename");
+		expect(r.exitCode).toBe(1);
+	});
+});
+
+describe("dirname command", () => {
+	test("dirname extracts parent path", async () => {
+		const r = await runCmd(client, "dirname /foo/bar/baz.txt");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.trim()).toBe("/foo/bar");
+	});
+
+	test("dirname no path", async () => {
+		const r = await runCmd(client, "dirname");
+		expect(r.exitCode).toBe(1);
+	});
+});
+
+describe("yes command", () => {
+	test("yes with arg", async () => {
+		const r = await runCmd(client, "yes hello | head -3");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.split("\n").filter(Boolean).length).toBe(3);
+	});
+
+	test("yes default", async () => {
+		const r = await runCmd(client, "yes | head -2");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.split("\n")[0]).toBe("y");
+	});
+
+	test("yes --version", async () => {
+		const r = await runCmd(client, "yes --version");
+		expect(r.exitCode).toBe(0);
+	});
+});
+
+describe("nohup command", () => {
+	test("nohup runs command", async () => {
+		const r = await runCmd(client, "nohup echo hello");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout).toContain("hello");
+	});
+});
+
+describe("dd command", () => {
+	test("dd copies file with if= of=", async () => {
+		createTestFile(shell, "/tmp/dd_src.txt", "hello world");
+		const r = await runCmd(client, "dd if=/tmp/dd_src.txt of=/tmp/dd_dst.txt");
+		expect(r.exitCode).toBe(0);
+		expect(readTestFile(shell, "/tmp/dd_dst.txt")).toBe("hello world");
+	});
+
+	test("dd with block size and count", async () => {
+		createTestFile(shell, "/tmp/dd_bs.txt", "abcdefghij");
+		const r = await runCmd(client, "dd if=/tmp/dd_bs.txt of=/tmp/dd_bs_out.txt bs=5 count=1");
+		expect(r.exitCode).toBe(0);
+		expect(readTestFile(shell, "/tmp/dd_bs_out.txt")).toBe("abcde");
+	});
+
+	test("dd missing if operand", async () => {
+		const r = await runCmd(client, "dd of=/tmp/out.txt");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("missing");
+	});
+});
+
+describe("mktemp command", () => {
+	test("mktemp creates temp file", async () => {
+		const r = await runCmd(client, "mktemp /tmp/test.XXXXXX");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("mktemp -d creates temp directory", async () => {
+		const r = await runCmd(client, "mktemp -d /tmp/testdir.XXXXXX");
+		expect(r.exitCode).toBe(0);
+	});
+});
+
+describe("expr command", () => {
+	test("expr addition", async () => {
+		const r = await runCmd(client, "expr 2 + 3");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.trim()).toBe("5");
+	});
+
+	test("expr subtraction", async () => {
+		const r = await runCmd(client, "expr 10 - 4");
+		expect(r.stdout?.trim()).toBe("6");
+	});
+
+	test("expr modulo", async () => {
+		const r = await runCmd(client, "expr 10 % 3");
+		expect(r.stdout?.trim()).toBe("1");
+	});
+
+	test("expr syntax error", async () => {
+		const r = await runCmd(client, "expr");
+		expect(r.exitCode).toBe(2);
+		expect(r.stderr).toContain("syntax error");
+	});
+
+	test("expr regex match", async () => {
+		const r = await runCmd(client, 'expr "hello world" : "he.*"');
+		expect(r.stdout?.trim()).toBe("11");
+	});
+});
+
+describe("nproc command", () => {
+	test("nproc returns number", async () => {
+		const r = await runCmd(client, "nproc");
+		expect(r.exitCode).toBe(0);
+		expect(parseInt(r.stdout?.trim() ?? "0")).toBeGreaterThan(0);
+	});
+});
+
+describe("dmesg command", () => {
+	test("dmesg shows boot messages", async () => {
+		const r = await runCmd(client, "dmesg");
+		expect(r.exitCode).toBe(0);
+	});
+});
+
+describe("stty command", () => {
+	test("stty --help", async () => {
+		const r = await runCmd(client, "stty --help");
+		expect(r.exitCode).toBe(0);
+	});
+});
+
+describe("tput command", () => {
+	test("tput cols", async () => {
+		const r = await runCmd(client, "tput cols");
+		expect(r.exitCode).toBe(0);
+	});
+});
