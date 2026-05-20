@@ -70,7 +70,7 @@ export function startShell(
 		const sess = shell.users.listActiveSessions().find((s) => s.id === sessionId);
 		if (sess) shellEnv.vars.__TTY = sess.tty;
 	}
-	const sessionStack: Array<{ authUser: string; cwd: string }> = [];
+	const sessionStack: Array<{ authUser: string; cwd: string; ps1?: string }> = [];
 	let nanoSession: NanoSession | HtopSession | PacmanSession | null = null;
 	let pendingSudo: PendingSudo | null = null;
 	const buildCurrentPrompt = (): string => {
@@ -216,7 +216,7 @@ export function startShell(
 		}
 
 		if (result.switchUser) {
-			sessionStack.push({ authUser, cwd });
+			sessionStack.push({ authUser, cwd, ps1: shellEnv.vars.PS1 });
 			authUser = result.switchUser;
 			cwd = result.nextCwd ?? userHome(authUser);
 			shell.users.updateSession(sessionId, authUser, remoteAddress);
@@ -528,7 +528,7 @@ export function startShell(
 				authUser = prev.authUser;
 				cwd = prev.cwd;
 				shell.users.updateSession(sessionId, authUser, remoteAddress);
-				delete shellEnv.vars.PS1;
+				shellEnv.vars.PS1 = prev.ps1 ?? "";
 				renderLine();
 			} else {
 				stream.exit(0);
@@ -725,7 +725,7 @@ export function startShell(
 						authUser = prev.authUser;
 						cwd = prev.cwd;
 						shell.users.updateSession(sessionId, authUser, remoteAddress);
-						delete shellEnv.vars.PS1;
+						shellEnv.vars.PS1 = prev.ps1 ?? "";
 					} else {
 							stream.exit(result.exitCode ?? 0);
 							stream.end();
@@ -738,7 +738,7 @@ export function startShell(
 					}
 
 					if (result.switchUser) {
-						sessionStack.push({ authUser, cwd });
+						sessionStack.push({ authUser, cwd, ps1: shellEnv.vars.PS1 });
 						authUser = result.switchUser;
 						cwd = result.nextCwd ?? userHome(authUser);
 						shellEnv.vars.PWD = cwd;
