@@ -5,6 +5,7 @@
  * latency and packet loss. Used by the `ip`, `ping`, and `netstat` commands
  * to produce dynamic, deterministic output instead of hardcoded strings.
  */
+/** biome-ignore-all lint/style/useNamingConvention: UPPER_CASE names for constants */
 
 /**
  * A virtual network interface, either loopback or ethernet,
