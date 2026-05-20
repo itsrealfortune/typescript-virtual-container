@@ -3,12 +3,19 @@ import { VirtualShell, SshClient } from "../src";
 import { createTestEnv, runCmd } from "./test-helper";
 
 let client: InstanceType<typeof SshClient>;
+let nonRootClient: InstanceType<typeof SshClient>;
+let sudoerClient: InstanceType<typeof SshClient>;
 let shell: VirtualShell;
 
 beforeAll(async () => {
 	const env = await createTestEnv("test-admin");
 	client = env.client;
 	shell = env.shell;
+	await shell.users.addUser("regular", "pass");
+	await shell.users.addUser("sudoer", "pass");
+	shell.users.addSudoer("sudoer");
+	nonRootClient = new SshClient(shell, "regular");
+	sudoerClient = new SshClient(shell, "sudoer");
 });
 
 // ─── USERADD tests ────────────────────────────────────────────────────────
@@ -543,5 +550,24 @@ describe("exit command", () => {
 		const r = await runCmd(client, "iptables -A INPUT");
 		expect(r.exitCode).toBe(1);
 		expect(r.stderr).toContain("requires chain and -j action");
+	});
+});
+
+describe("non-root su/sudo", () => {
+	test("non-root non-sudoer cannot su", async () => {
+		const r = await nonRootClient.exec("su - root -c whoami");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("permission denied");
+	});
+
+	test("non-root non-sudoer cannot sudo", async () => {
+		const r = await nonRootClient.exec("sudo whoami");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("permission denied");
+	});
+
+	test("sudoer triggers sudo challenge", async () => {
+		const r = await sudoerClient.exec("sudo whoami");
+		expect(r.exitCode).toBe(0);
 	});
 });
