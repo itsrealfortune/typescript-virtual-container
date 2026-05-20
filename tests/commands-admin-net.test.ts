@@ -2,6 +2,11 @@ import { beforeAll, describe, expect, test } from "bun:test";
 import { type VirtualShell, SshClient } from "../src";
 import { createTestEnv, runCmd } from "./test-helper";
 
+// Skip network-dependent tests by default. Run with:
+//   SSH_MIMIC_RUN_NETWORK_TESTS=1 bun test tests/commands-admin-net.test.ts
+const runNetwork = !!process.env.SSH_MIMIC_RUN_NETWORK_TESTS;
+const describeNetwork = runNetwork ? describe : describe.skip;
+
 let client: InstanceType<typeof SshClient>;
 let nonRootClient: InstanceType<typeof SshClient>;
 let sudoerClient: InstanceType<typeof SshClient>;
@@ -135,7 +140,7 @@ describe("su command", () => {
 
 // ─── CURL tests ───────────────────────────────────────────────────────────
 
-describe("curl command", () => {
+describeNetwork("curl command", () => {
 	test("curl basic request", async () => {
 		const r = await runCmd(client, "curl http://example.com 2>/dev/null | head -c 10 || echo 'response'");
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
@@ -169,7 +174,7 @@ describe("curl command", () => {
 
 // ─── WGET tests ───────────────────────────────────────────────────────────
 
-describe("wget command", () => {
+describeNetwork("wget command", () => {
 	test("wget basic download", async () => {
 		const r = await runCmd(client, "wget -q http://example.com -O /tmp/wget.html 2>/dev/null || echo 'done'");
 		expect(r.exitCode).toBe(0);
@@ -188,7 +193,7 @@ describe("wget command", () => {
 
 // ─── PING tests ───────────────────────────────────────────────────────────
 
-describe("ping command", () => {
+describeNetwork("ping command", () => {
 	test("ping localhost", async () => {
 		const r = await runCmd(client, "ping -c 1 localhost");
 		expect(r.exitCode).toBe(0);
