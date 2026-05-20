@@ -528,9 +528,7 @@ export function startShell(
 				authUser = prev.authUser;
 				cwd = prev.cwd;
 				shell.users.updateSession(sessionId, authUser, remoteAddress);
-				const newPs1 = makeDefaultEnv(authUser, hostname).vars.PS1 ?? "";
-				console.log("[DEBUG] logout: authUser=" + authUser + " ps1=" + JSON.stringify(newPs1).slice(0, 60));
-				shellEnv.vars.PS1 = newPs1;
+				delete shellEnv.vars.PS1;
 				renderLine();
 			} else {
 				stream.exit(0);
@@ -727,7 +725,7 @@ export function startShell(
 						authUser = prev.authUser;
 						cwd = prev.cwd;
 						shell.users.updateSession(sessionId, authUser, remoteAddress);
-						shellEnv.vars.PS1 = prev.ps1 ?? "";
+						delete shellEnv.vars.PS1;
 					} else {
 							stream.exit(result.exitCode ?? 0);
 							stream.end();
