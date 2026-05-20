@@ -3,9 +3,9 @@
 ## Overview
 
 - **706 tests** (686 pass, 20 skip, 0 fail)
-- **15 files**, ~1121 expect() calls
-- **~1.35s** runtime (default, without network/SFTP)
-- **71.85% line coverage**, 70.21% function coverage
+- **~~15~~ 17 files**, ~~1121~~ 1171 expect() calls
+- **~1.49s** runtime (default, without network/SFTP)
+- **73.93% line coverage**, 72.54% function coverage
 
 ## Running Tests
 
