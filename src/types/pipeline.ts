@@ -21,6 +21,18 @@ export interface PipelineCommand {
 /** Logical operator connecting two statement groups. */
 export type LogicalOp = "&&" | "||" | ";";
 
+/** A subshell: commands executed in a child shell context. */
+export interface Subshell {
+	/** Statements to execute inside the subshell. */
+	statements: Statement[];
+}
+
+/** A command group: commands executed in the current shell context. */
+export interface CommandGroup {
+	/** Statements to execute in the group. */
+	statements: Statement[];
+}
+
 /** Represents a parsed shell pipeline */
 export interface Pipeline {
 	/** List of commands in the pipeline */
@@ -34,7 +46,11 @@ export interface Pipeline {
 /** A statement: one pipeline optionally followed by && / || / ; and the next statement */
 export interface Statement {
 	/** Pipeline to execute for this statement. */
-	pipeline: Pipeline;
+	pipeline?: Pipeline;
+	/** Subshell to execute (if present instead of pipeline). */
+	subshell?: Subshell;
+	/** Command group to execute (if present instead of pipeline). */
+	group?: CommandGroup;
 	/** Operator connecting this statement to the next one. */
 	op?: LogicalOp;
 	/** Optional next statement in sequence. */
