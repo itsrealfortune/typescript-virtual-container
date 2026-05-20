@@ -123,12 +123,7 @@ function repoUrl() {
  * Create the GitHub Wiki repository if it doesn't exist.
  * Uses the GitHub API to initialize the wiki.
  */
-function ensureWikiRepo() {
-	const token = process.env.GH_TOKEN;
-	if (!token) {
-		console.error("Error: GH_TOKEN environment variable required for --push");
-		process.exit(1);
-	}
+function ensureWikiRepo(token) {
 	const apiUrl = `https://api.github.com/repos/${repoUrl().replace("https://github.com/", "")}`;
 	try {
 		// Check if wiki repo is accessible
