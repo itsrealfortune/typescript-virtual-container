@@ -81,7 +81,7 @@ export const tarCommand: ShellModule = {
 	description: "Archive utility",
 	category: "archive",
 	params: ["[-czf|-xzf|-tf] <archive> [files...]"],
-	run: ({ authUser, shell, cwd, args }) => {
+	run: ({ shell, cwd, args, uid, gid }) => {
 		// Expand combined flags: -czf → ["-c", "-z", "-f"]
 		const expanded: string[] = [];
 		let foundModeStr = false;
@@ -175,7 +175,7 @@ export const tarCommand: ShellModule = {
 			const verboseLines: string[] = [];
 			for (const { name, content } of files) {
 				const destPath = resolvePath(cwd, name);
-				shell.writeFileAsUser(authUser, destPath, content);
+				shell.vfs.writeFile(destPath, content, {}, uid, gid);
 				if (verbose) verboseLines.push(name);
 			}
 			return { stdout: verbose ? verboseLines.join("\n") : undefined, exitCode: 0 };

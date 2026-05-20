@@ -233,7 +233,9 @@ export function startShell(
 
 	function finishInteractiveSession(savedContent?: string, targetPath?: string): void {
 		if (savedContent !== undefined && targetPath) {
-			shell.writeFileAsUser(authUser, targetPath, savedContent);
+			const uid = shell.users.getUid(authUser);
+			const gid = shell.users.getGid(authUser);
+			shell.vfs.writeFile(targetPath, savedContent, {}, uid, gid);
 		}
 		if (interactivePid !== -1) {
 			shell.users.unregisterProcess(interactivePid);

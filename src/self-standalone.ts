@@ -288,13 +288,17 @@ async function runReadlineShell(): Promise<void> {
 				content: initialContent,
 				filename: path.posix.basename(targetPath),
 				onSave: (content) => {
-					virtualShell.writeFileAsUser(authUser, targetPath, content);
+					const uid = virtualShell.users.getUid(authUser);
+					const gid = virtualShell.users.getGid(authUser);
+					virtualShell.vfs.writeFile(targetPath, content, {}, uid, gid);
 					void flushVfs();
 				},
 				onExit: (reason, content) => {
 					cleanup();
 					if (reason === "saved") {
-						virtualShell.writeFileAsUser(authUser, targetPath, content);
+						const uid = virtualShell.users.getUid(authUser);
+						const gid = virtualShell.users.getGid(authUser);
+						virtualShell.vfs.writeFile(targetPath, content, {}, uid, gid);
 						void flushVfs();
 					}
 					resolve();

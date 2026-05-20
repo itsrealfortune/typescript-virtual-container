@@ -181,7 +181,9 @@ export function runScpSink(
 					// Write file to VFS
 					const content = Buffer.concat(fileChunks);
 					try {
-						shell.writeFileAsUser(authUser, pendingFile.dest, content);
+						const uid = shell.users.getUid(authUser);
+						const gid = shell.users.getGid(authUser);
+						shell.vfs.writeFile(pendingFile.dest, content, {}, uid, gid);
 					} catch (e) {
 						send(ERR(`cannot write ${pendingFile.dest}: ${String(e)}`));
 						finished = true;

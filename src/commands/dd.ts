@@ -11,7 +11,7 @@ export const ddCommand: ShellModule = {
 	description: "Convert and copy a file",
 	category: "files",
 	params: ["if=<file> of=<file> [bs=1024] [count=N]"],
-	run: ({ authUser, shell, cwd, args }) => {
+	run: ({ shell, cwd, args, uid, gid }) => {
 		const kv: Record<string, string> = {};
 		for (const arg of args) {
 			const eqIdx = arg.indexOf("=");
@@ -32,7 +32,7 @@ export const ddCommand: ShellModule = {
 		}
 
 		const bs = parseInt(kv.bs || "512", 10);
-		const content = shell.vfs.readFile(ifPath);
+		const content = shell.vfs.readFile(ifPath, uid, gid);
 		const skipBlocks = parseInt(kv.skip || "0", 10);
 		const seekBlocks = parseInt(kv.seek || "0", 10);
 		const countBlocks = kv.count !== undefined ? parseInt(kv.count, 10) : undefined;
@@ -46,7 +46,7 @@ export const ddCommand: ShellModule = {
 
 		let output: string;
 		try {
-			output = shell.vfs.readFile(ofPath);
+			output = shell.vfs.readFile(ofPath, uid, gid);
 		} catch {
 			output = "";
 		}
@@ -61,7 +61,7 @@ export const ddCommand: ShellModule = {
 			output = data;
 		}
 
-		shell.writeFileAsUser(authUser, ofPath, output);
+		shell.vfs.writeFile(ofPath, output, {}, uid, gid);
 
 		const recordsIn = Math.ceil(data.length / bs);
 		return { stdout: `${recordsIn}+0 records in\n${recordsIn}+0 records out\n`, exitCode: 0 };

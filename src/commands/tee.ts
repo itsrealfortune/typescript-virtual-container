@@ -12,7 +12,7 @@ export const teeCommand: ShellModule = {
 	description: "Read stdin, write to stdout and files",
 	category: "text",
 	params: ["[-a] <file...>"],
-	run: ({ authUser, shell, cwd, args, stdin }) => {
+	run: ({ shell, cwd, args, stdin, uid, gid }) => {
 		const append = ifFlag(args, ["-a"]);
 		const files = args.filter((a) => !a.startsWith("-"));
 		const input = stdin ?? "";
@@ -21,14 +21,14 @@ export const teeCommand: ShellModule = {
 			if (append) {
 				const existing = (() => {
 					try {
-						return shell.vfs.readFile(p);
+						return shell.vfs.readFile(p, uid, gid);
 					} catch {
 						return "";
 					}
 				})();
-				shell.writeFileAsUser(authUser, p, existing + input);
+				shell.vfs.writeFile(p, existing + input, {}, uid, gid);
 			} else {
-				shell.writeFileAsUser(authUser, p, input);
+				shell.vfs.writeFile(p, input, {}, uid, gid);
 			}
 		}
 		return { stdout: input, exitCode: 0 };

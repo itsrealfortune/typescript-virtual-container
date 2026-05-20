@@ -12,7 +12,7 @@ export const wgetCommand: ShellModule = {
 	description: "File downloader (pure fetch)",
 	category: "network",
 	params: ["[options] <url>"],
-	run: async ({ authUser, cwd, args, shell }) => {
+	run: async ({ authUser, cwd, args, shell, uid, gid }) => {
 		const { flagsWithValues, positionals } = parseArgs(args, {
 			flagsWithValue: [
 				"-O",
@@ -135,7 +135,7 @@ export const wgetCommand: ShellModule = {
 		}
 
 		if (targetPath) {
-			shell.writeFileAsUser(authUser, targetPath, body);
+			shell.vfs.writeFile(targetPath, body, {}, uid, gid);
 			if (!quiet)
 				stderrLines.push(
 					`Saving to: '${targetPath}'\n${targetPath}            100%[==================>]  ${body.length} B`,
