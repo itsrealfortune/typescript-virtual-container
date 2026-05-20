@@ -522,18 +522,15 @@ export function startShell(
 				cursorPos = 0;
 				historyIndex = null;
 				historyDraft = "";
-				stream.write("logout\r\n");
-				if (sessionStack.length > 0) {
-					const prev = sessionStack.pop()!;
-					authUser = prev.authUser;
-					cwd = prev.cwd;
-					shellEnv.vars.USER = authUser;
-					shellEnv.vars.LOGNAME = authUser;
-					shellEnv.vars.HOME = userHome(authUser);
-					shellEnv.vars.PWD = cwd;
-					shell.users.updateSession(sessionId, authUser, remoteAddress);
-					renderLine();
-				} else {
+			stream.write("logout\r\n");
+			if (sessionStack.length > 0) {
+				const prev = sessionStack.pop()!;
+				authUser = prev.authUser;
+				cwd = prev.cwd;
+				shell.users.updateSession(sessionId, authUser, remoteAddress);
+				shellEnv.vars.PS1 = makeDefaultEnv(authUser, hostname).vars.PS1 ?? "";
+				renderLine();
+			} else {
 					stream.exit(0);
 					stream.end();
 					return;
@@ -727,11 +724,8 @@ export function startShell(
 							const prev = sessionStack.pop()!;
 							authUser = prev.authUser;
 							cwd = prev.cwd;
-							shellEnv.vars.USER = authUser;
-							shellEnv.vars.LOGNAME = authUser;
-							shellEnv.vars.HOME = userHome(authUser);
-							shellEnv.vars.PWD = cwd;
 							shell.users.updateSession(sessionId, authUser, remoteAddress);
+							shellEnv.vars.PS1 = makeDefaultEnv(authUser, hostname).vars.PS1 ?? "";
 						} else {
 							stream.exit(result.exitCode ?? 0);
 							stream.end();
