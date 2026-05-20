@@ -22,6 +22,20 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
 const wikiDir = join(root, "wiki");
 const shouldPush = process.argv.includes("--push");
+const autoToken = process.argv.includes("--auto");
+
+function resolveToken() {
+	if (process.env.GH_TOKEN) return process.env.GH_TOKEN;
+	if (autoToken) {
+		try {
+			return execSync("gh auth token", { stdio: "pipe" }).toString().trim();
+		} catch {
+			console.error("Error: 'gh auth token' failed. Install gh CLI or set GH_TOKEN.");
+			process.exit(1);
+		}
+	}
+	return null;
+}
 
 function repoUrl() {
 	return execSync("git remote get-url origin", { cwd: root })
@@ -32,12 +46,7 @@ function repoUrl() {
  * Create the GitHub Wiki repository if it doesn't exist.
  * Uses the GitHub API to initialize the wiki.
  */
-function ensureWikiRepo() {
-	const token = process.env.GH_TOKEN;
-	if (!token) {
-		console.error("Error: GH_TOKEN environment variable required for --push");
-		process.exit(1);
-	}
+function ensureWikiRepo(token) {
 	const apiUrl = `https://api.github.com/repos/${repoUrl().replace("https://github.com/", "")}`;
 	try {
 		// Check if wiki repo is accessible
@@ -143,12 +152,12 @@ console.log("Files:", existsSync(wikiDir) ? readFileSync(join(wikiDir, "Home.md"
 
 if (shouldPush) {
 	console.log("\nPushing to wiki repo...");
-	const token = process.env.GH_TOKEN;
+	const token = resolveToken();
 	if (!token) {
-		console.error("Error: GH_TOKEN required for --push");
+		console.error("Error: set GH_TOKEN or use --auto");
 		process.exit(1);
 	}
-	ensureWikiRepo();
+	ensureWikiRepo(token);
 	const wikiUrl = `https://oauth2:${token}@github.com/${repoUrl().replace("https://github.com/", "")}.wiki.git`;
 	
 	execSync(`cd ${wikiDir} && git init && git add -A && git commit -m "Update wiki"`, { stdio: "inherit" });
