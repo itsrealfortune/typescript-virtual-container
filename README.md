@@ -211,7 +211,7 @@ console.log(r.stdout);
 
 **What it is:** a shell emulator and virtual Linux environment for developer workflows.
 
-**What it is not:** a fully isolated sandbox. The shell commands are contained — no host binary is ever spawned, `execvp` is never called, `node`/`python3`/`npm` are virtual stubs. But `curl`/`wget` use the real `fetch()` API (live network access), all instances share the same JS heap as the host application, and CPU/memory are not capped. Do not expose to untrusted input without additional infrastructure-level isolation.
+**What it is not:** a fully isolated sandbox. The shell commands are contained — no host binary is ever spawned, `execvp` is never called, `node`/`python3`/`npm` are virtual stubs. Permission enforcement follows POSIX semantics (owner/group/other, sticky bit, setuid) for all file operations, and unknown users are auto-provisioned with non-root UIDs. But `curl`/`wget` use the real `fetch()` API (live network access), all instances share the same JS heap as the host application, and CPU/memory are not capped. Do not expose to untrusted input without additional infrastructure-level isolation.
 
 ---
 
@@ -440,7 +440,7 @@ const [r1, r2] = await Promise.all([
 ---
 
 <details>
-<summary><strong>Built-in Commands (152)</strong></summary>
+<summary><strong>Built-in Commands (172)</strong></summary>
 
 Type `help` in the shell for a grouped, colorized listing. Type `help <command>` for detailed usage. Type `man <command>` for full manual pages — all commands are documented.
 
@@ -1077,5 +1077,15 @@ Open:
 - [x] Overhauled `sed` — `d`/`p`/`=`/`q`, `-n` suppress, line/regex/range/`$` addresses; overhauled `awk` — `-v`, field assignment, `gsub`/`sub`/`substr`/`split`/`length`/`printf`/`next`; overhauled `find` — `-exec`, `-maxdepth`, `-iname`, `-not`/`!`, `-o`/`-a`, `-empty`, `-size`
 - [x] `PasswordChallenge` type — generic interactive password flow for `adduser`, `passwd`, `deluser`
 - [x] `VirtualFileSystem.mount(vPath, hostPath, { readOnly })` — bind-mount host directories into the VM; read-only by default; browser-safe (silent no-op)
+- [x] POSIX permission enforcement — `enforceAccess`/`enforcePathTraversal`/`enforceDelete`/`enforceChown`/`enforceChmod`; all file commands pass uid/gid; path traversal checked on every read/write/remove; sticky bit semantics
+- [x] User auto-provisioning — `ensureUser()` creates unknown SSH users with non-root UID; `addUser`/`ensureUser` create homes with `0o700`; `getUsername()`/`getGroup()` resolve uid/gid to names
+- [x] Device nodes — `/dev/null`, `/dev/zero`, `/dev/urandom`, `/dev/full`, etc. with correct read/write semantics; `mknod` command
+- [x] File descriptor table — `fdOpen()`/`fdClose()`/`fdDup()` in VFS; `/proc/self/fd` population
+- [x] Subshell/command group isolation — `(cmd)` runs in copied environment; `{ cmd; }` runs in current context
+- [x] Writable `/proc/sys` — 40+ kernel tunables via sysctl content resolver + write hooks; `sysctl` command
+- [x] POSIX signal handling — `SIGKILL`/`SIGSTOP`/`SIGCONT`/`SIGCHLD`; `kill -9` terminates with exit code 137
+- [x] Firewall engine — `iptables` with INPUT/OUTPUT/FORWARD chains, first-match evaluation, policy config
+- [x] `autoSudoForNewUsers` defaults to `false` — new users are not sudoers by default
+- [x] `ls -l` shows usernames (not uid numbers) — `getUsername`/`getGroup` resolution
 
 </details>

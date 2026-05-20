@@ -481,8 +481,10 @@ docs/
 
 8. **Documentation quality**: Full TypeDoc-generated API docs with 11 classes, 44 interfaces, 12 types, 8 functions documented.
 
-9. **Testing maturity**: 14 test files, ~4,800 lines, organized by domain. Uses Bun's test runner with sequential execution pattern.
+9. **Testing maturity**: 14 test files, ~4,800 lines, organized by domain. Uses Bun's test runner with sequential execution pattern. 669 tests across 15 files cover permission enforcement (owner/group/other bits, sticky bit, path traversal, setuid), user provisioning (`ensureUser`, `getUsername`, `getGroup`), VFS operations (`chown`, `chmod`, `mkdir`, `symlink` with uid/gid), and command-level integration tests for `su`, `sudo`, `chown`, `sysctl`, `ip`, `iptables`, `bzip2`, `dd`, and more.
 
-10. **Modern toolchain**: TypeScript 6.x, esbuild (for bundling), Biome (for formatting/linting), Bun (for testing/running), GH Actions CI (3 workflows).
+10. **Permission enforcement**: POSIX permission model implemented in `src/VirtualFileSystem/permissions.ts`. VFS methods (`readFile`, `writeFile`, `remove`, `chmod`, `chown`, `mkdir`, `symlink`) accept optional `uid`/`gid` parameters. When provided, `enforceAccess` checks the permission bits (owner/group/other) with root bypass. `enforcePathTraversal` checks `x` on every parent directory component. `enforceDelete` handles sticky bit semantics. All file commands pass `uid`/`gid` from `CommandContext`.
+
+11. **Modern toolchain**: TypeScript 6.x, esbuild (for bundling), Biome (for formatting/linting), Bun (for testing/running), GH Actions CI (3 workflows).
 
 </details>
