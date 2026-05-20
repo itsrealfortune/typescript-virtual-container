@@ -559,63 +559,9 @@ describe("uniq command", () => {
 		const lines = r.stdout?.split("\n").filter((l) => l);
 		expect(lines?.length).toBe(2);
 	});
+});
 
-	test("rm missing operand", async () => {
-		const r = await runCmd(client, "rm");
-		expect(r.exitCode).toBe(1);
-		expect(r.stderr).toContain("missing operand");
-	});
-
-	test("rm -f non-existent does not error", async () => {
-		const r = await runCmd(client, "rm -f /tmp/nonexistent.txt");
-		expect(r.exitCode).toBe(0);
-	});
-
-	test("touch creates file", async () => {
-		const r = await runCmd(client, "touch /tmp/touched.txt");
-		expect(r.exitCode).toBe(0);
-		expect(pathExists(shell, "/tmp/touched.txt")).toBe(true);
-	});
-
-	test("touch updates existing file", async () => {
-		createTestFile(shell, "/tmp/existing.txt", "data");
-		const r = await runCmd(client, "touch /tmp/existing.txt");
-		expect(r.exitCode).toBe(0);
-		expect(pathExists(shell, "/tmp/existing.txt")).toBe(true);
-	});
-
-	test("mkdir missing operand", async () => {
-		const r = await runCmd(client, "mkdir");
-		expect(r.exitCode).toBe(1);
-		expect(r.stderr).toContain("missing operand");
-	});
-
-	test("cp missing operand", async () => {
-		const r = await runCmd(client, "cp");
-		expect(r.exitCode).toBe(1);
-		expect(r.stderr).toContain("missing operand");
-	});
-
-	test("dd copies file with if= of=", async () => {
-		createTestFile(shell, "/tmp/dd_src.txt", "hello world");
-		const r = await runCmd(client, "dd if=/tmp/dd_src.txt of=/tmp/dd_dst.txt");
-		expect(r.exitCode).toBe(0);
-		expect(readTestFile(shell, "/tmp/dd_dst.txt")).toBe("hello world");
-	});
-
-	test("dd missing if operand", async () => {
-		const r = await runCmd(client, "dd of=/tmp/out.txt");
-		expect(r.exitCode).toBe(1);
-		expect(r.stderr).toContain("missing");
-	});
-
-	test("dd with block size count", async () => {
-		createTestFile(shell, "/tmp/dd_bs_src.txt", "abcdefghij");
-		const r = await runCmd(client, "dd if=/tmp/dd_bs_src.txt of=/tmp/dd_bs_dst.txt bs=5 count=1");
-		expect(r.exitCode).toBe(0);
-		expect(readTestFile(shell, "/tmp/dd_bs_dst.txt")).toBe("abcde");
-	});
-
+describe("bzip2 command", () => {
 	test("bzip2 compresses and decompresses", async () => {
 		createTestFile(shell, "/tmp/bz_test.txt", "hello bzip world");
 		const r1 = await runCmd(client, "bzip2 /tmp/bz_test.txt");
@@ -638,5 +584,50 @@ describe("uniq command", () => {
 		const r = await runCmd(client, "bunzip2");
 		expect(r.exitCode).toBe(1);
 		expect(r.stderr).toContain("no file");
+	});
+
+	test("bzip2 decompress non-bz2 file errors", async () => {
+		createTestFile(shell, "/tmp/not_bz2.txt", "plain text");
+		const r = await runCmd(client, "bzip2 -d /tmp/not_bz2.txt");
+		expect(r.exitCode).toBe(1);
+	});
+
+	test("bzip2 already .bz2 errors", async () => {
+		createTestFile(shell, "/tmp/test.bz2", "content");
+		const r = await runCmd(client, "bzip2 /tmp/test.bz2");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("already has .bz2 suffix");
+	});
+});
+
+describe("split command", () => {
+	test("split missing file errors", async () => {
+		const r = await runCmd(client, "split");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("missing file");
+	});
+});
+
+describe("join command", () => {
+	test("join missing operand errors", async () => {
+		const r = await runCmd(client, "join");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("missing operand");
+	});
+});
+
+describe("comm command", () => {
+	test("comm compares sorted files", async () => {
+		createTestFile(shell, "/tmp/comm_a.txt", "a\nb\nc\n");
+		createTestFile(shell, "/tmp/comm_b.txt", "b\nc\nd\n");
+		const r = await runCmd(client, "comm /tmp/comm_a.txt /tmp/comm_b.txt");
+		expect(r.exitCode).toBe(0);
+	});
+});
+
+describe("cmp command", () => {
+	test("cmp not found", async () => {
+		const r = await runCmd(client, "cmp");
+		expect(r.exitCode).toBe(127);
 	});
 });

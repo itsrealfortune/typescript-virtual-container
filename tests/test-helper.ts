@@ -5,7 +5,7 @@ import { SshClient } from "../src/SSHClient";
  * Test helper: creates a fresh shell & client for each test
  */
 export async function createTestEnv(vmName = "test-shell") {
-	const shell = new VirtualShell(vmName);
+	const shell = new VirtualShell(vmName, undefined, { mode: "memory" } as any);
 	await shell.ensureInitialized();
 	const client = new SshClient(shell, "root");
 	return { shell, client };

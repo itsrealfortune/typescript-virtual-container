@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, test } from "bun:test";
-import { VirtualShell, SshClient } from "../src";
+import { type VirtualShell, SshClient } from "../src";
 import { createTestEnv, runCmd } from "./test-helper";
 
 let client: InstanceType<typeof SshClient>;
@@ -569,5 +569,73 @@ describe("non-root su/sudo", () => {
 	test("sudoer triggers sudo challenge", async () => {
 		const r = await sudoerClient.exec("sudo whoami");
 		expect(r.exitCode).toBe(0);
+	});
+});
+
+describe("sysctl command", () => {
+	test("sysctl lists parameters", async () => {
+		const r = await runCmd(client, "sysctl");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout).toContain("kernel.hostname");
+	});
+
+	test("sysctl get parameter", async () => {
+		const r = await runCmd(client, "sysctl kernel.hostname");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout).toContain("kernel.hostname");
+	});
+
+	test("sysctl set parameter", async () => {
+		const r = await runCmd(client, "sysctl -w net.ipv4.ip_forward=1");
+		expect(r.exitCode).toBe(0);
+		const r2 = await runCmd(client, "sysctl net.ipv4.ip_forward");
+		expect(r2.stdout).toContain("= 1");
+	});
+
+	test("sysctl unknown parameter errors", async () => {
+		const r = await runCmd(client, "sysctl unknown.parameter");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("No such file");
+	});
+});
+
+describe("ip command", () => {
+	test("ip addr show", async () => {
+		const r = await runCmd(client, "ip addr");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout).toContain("lo");
+	});
+
+	test("ip link show", async () => {
+		const r = await runCmd(client, "ip link");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout).toContain("LOOPBACK");
+	});
+
+	test("ip route show", async () => {
+		const r = await runCmd(client, "ip route");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("ip addr add", async () => {
+		const r = await runCmd(client, "ip addr add 10.0.0.1/24 dev eth0");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("ip link set up", async () => {
+		const r = await runCmd(client, "ip link set eth0 up");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("ip unknown object errors", async () => {
+		const r = await runCmd(client, "ip nonexistent");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("unknown");
+	});
+
+	test("ip no args errors", async () => {
+		const r = await runCmd(client, "ip");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("Usage");
 	});
 });
