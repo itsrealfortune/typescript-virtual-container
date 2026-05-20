@@ -595,4 +595,48 @@ describe("uniq command", () => {
 		expect(r.exitCode).toBe(1);
 		expect(r.stderr).toContain("missing operand");
 	});
+
+	test("dd copies file with if= of=", async () => {
+		createTestFile(shell, "/tmp/dd_src.txt", "hello world");
+		const r = await runCmd(client, "dd if=/tmp/dd_src.txt of=/tmp/dd_dst.txt");
+		expect(r.exitCode).toBe(0);
+		expect(readTestFile(shell, "/tmp/dd_dst.txt")).toBe("hello world");
+	});
+
+	test("dd missing if operand", async () => {
+		const r = await runCmd(client, "dd of=/tmp/out.txt");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("missing");
+	});
+
+	test("dd with block size count", async () => {
+		createTestFile(shell, "/tmp/dd_bs_src.txt", "abcdefghij");
+		const r = await runCmd(client, "dd if=/tmp/dd_bs_src.txt of=/tmp/dd_bs_dst.txt bs=5 count=1");
+		expect(r.exitCode).toBe(0);
+		expect(readTestFile(shell, "/tmp/dd_bs_dst.txt")).toBe("abcde");
+	});
+
+	test("bzip2 compresses and decompresses", async () => {
+		createTestFile(shell, "/tmp/bz_test.txt", "hello bzip world");
+		const r1 = await runCmd(client, "bzip2 /tmp/bz_test.txt");
+		expect(r1.exitCode).toBe(0);
+		expect(shell.vfs.exists("/tmp/bz_test.txt.bz2")).toBe(true);
+		expect(shell.vfs.exists("/tmp/bz_test.txt")).toBe(false);
+		const r2 = await runCmd(client, "bunzip2 /tmp/bz_test.txt.bz2");
+		expect(r2.exitCode).toBe(0);
+		expect(shell.vfs.exists("/tmp/bz_test.txt")).toBe(true);
+		expect(readTestFile(shell, "/tmp/bz_test.txt")).toBe("hello bzip world");
+	});
+
+	test("bzip2 no file errors", async () => {
+		const r = await runCmd(client, "bzip2");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("no file");
+	});
+
+	test("bunzip2 no file errors", async () => {
+		const r = await runCmd(client, "bunzip2");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("no file");
+	});
 });

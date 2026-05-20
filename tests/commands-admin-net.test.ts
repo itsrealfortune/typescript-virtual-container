@@ -99,6 +99,17 @@ describe("sudo command", () => {
 		expect(r.exitCode).toBe(0);
 		expect(r.stdout?.trim()).toBe("test");
 	});
+
+	test("sudo -i switches to root shell", async () => {
+		const r = await runCmd(client, "sudo -i whoami");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("sudo without command errors", async () => {
+		const r = await runCmd(client, "sudo");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("missing command");
+	});
 });
 
 // ─── SU tests ──────────────────────────────────────────────────────────────
@@ -486,5 +497,51 @@ describe("exit command", () => {
 		const r = await runCmd(client, "su - -c 'whoami'");
 		expect(r.exitCode).toBe(0);
 		expect(r.stdout?.trim()).toBe("root");
+	});
+
+	test("iptables list rules (empty)", async () => {
+		const r = await runCmd(client, "iptables -L");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("iptables append and list rule", async () => {
+		await runCmd(client, "iptables -A INPUT -s 10.0.0.0/8 -j DROP");
+		const r = await runCmd(client, "iptables -L");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout).toContain("DROP");
+	});
+
+	test("iptables flush rules", async () => {
+		await runCmd(client, "iptables -A INPUT -s 1.2.3.4 -j DROP");
+		await runCmd(client, "iptables -F");
+		const r = await runCmd(client, "iptables -L");
+		expect(r.stdout).not.toContain("1.2.3.4");
+	});
+
+	test("iptables set policy", async () => {
+		const r = await runCmd(client, "iptables -P INPUT DROP");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("iptables with protocol and ports", async () => {
+		const r = await runCmd(client, "iptables -A INPUT -p tcp --dport 80 -j ACCEPT");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("iptables with destination", async () => {
+		const r = await runCmd(client, "iptables -A OUTPUT -d 10.0.0.0/8 -j DROP");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("iptables unknown chain errors", async () => {
+		const r = await runCmd(client, "iptables -A UNKNOWN -j DROP");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("unknown chain");
+	});
+
+	test("iptables append missing action", async () => {
+		const r = await runCmd(client, "iptables -A INPUT");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("requires chain and -j action");
 	});
 });
