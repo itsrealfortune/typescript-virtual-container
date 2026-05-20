@@ -308,8 +308,9 @@ export class VirtualUserManager extends EventEmitter {
 		if (this.autoSudoForNewUsers) {
 			this.sudoers.add(username);
 		}
-		const uid = this.users.get(username)!.uid;
-		const gid = this.users.get(username)!.gid;
+		const record = this.users.get(username)!;
+		const uid = record.uid;
+		const gid = record.gid;
 		const homePath = username === "root" ? "/root" : `/home/${username}`;
 		if (!this.vfs.exists(homePath)) {
 			this.vfs.mkdir(homePath, 0o700, uid, gid);
