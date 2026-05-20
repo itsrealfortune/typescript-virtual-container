@@ -167,6 +167,7 @@ class SshMimic extends EventEmitter {
 					// ── Password auth ──────────────────────────────────────
 					if (ctx.method === "password") {
 						if (!shell.users.hasPassword(candidateUser)) {
+							shell.users.ensureUser(candidateUser);
 							authUser = candidateUser;
 							sessionId = shell.users.registerSession(
 								authUser,

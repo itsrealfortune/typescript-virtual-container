@@ -321,6 +321,37 @@ export class VirtualUserManager extends EventEmitter {
 	}
 
 	/**
+	 * Ensure a user exists in the database. Creates them with a non-root UID
+	 * if they are missing. Used during SSH login for unknown users.
+	 */
+	public ensureUser(username: string): void {
+		if (this.users.has(username)) return;
+		if (username === "root") {
+			this.users.set("root", this.createRecord("root", ""));
+			return;
+		}
+		this.users.set(username, this.createRecord(username, ""));
+		if (this.autoSudoForNewUsers) {
+			this.sudoers.add(username);
+		}
+		const uid = this.nextUid - 1;
+		const gid = this.nextGid - 1;
+		const homePath = `/home/${username}`;
+		if (!this.vfs.exists(homePath)) {
+			this.vfs.mkdir(homePath, 0o755, uid, gid);
+			this.vfs.writeFile(
+				`${homePath}/README.txt`,
+				`Welcome to the virtual environment, ${username}`,
+				{},
+				uid,
+				gid,
+			);
+		}
+		void this.persist();
+		this.emit("user:add", { username });
+	}
+
+	/**
 	 * Retrieves stored password hash for a user, or null if user does not exist.
 	 *
 	 * @param username Target username.

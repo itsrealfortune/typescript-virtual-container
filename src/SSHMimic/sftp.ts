@@ -272,6 +272,7 @@ export class SftpMimic extends EventEmitter {
 					if (ctx.method === "password") {
 						// If no password is set for the user, allow login without verification
 						if (!this.getUsers().hasPassword(candidateUser)) {
+							this.getUsers().ensureUser(candidateUser);
 							acceptSession(candidateUser);
 							this.emit("auth:success", { username: authUser, remoteAddress });
 							ctx.accept();
@@ -299,6 +300,7 @@ export class SftpMimic extends EventEmitter {
 						const keyboardCtx = ctx as KeyboardAuthContext;
 						// If no password is set, accept immediately
 						if (!this.getUsers().hasPassword(candidateUser)) {
+							this.getUsers().ensureUser(candidateUser);
 							acceptSession(candidateUser);
 							this.emit("auth:success", { username: authUser, remoteAddress });
 							keyboardCtx.accept();
