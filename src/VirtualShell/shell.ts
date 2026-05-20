@@ -517,11 +517,11 @@ export function startShell(
 		for (let i = 0; i < input.length; i += 1) {
 			const ch = input[i]!;
 
-			if (ch === "\u0004") {
-				lineBuffer = "";
-				cursorPos = 0;
-				historyIndex = null;
-				historyDraft = "";
+		if (ch === "\u0004") {
+			lineBuffer = "";
+			cursorPos = 0;
+			historyIndex = null;
+			historyDraft = "";
 			stream.write("logout\r\n");
 			if (sessionStack.length > 0) {
 				const prev = sessionStack.pop()!;
@@ -531,12 +531,12 @@ export function startShell(
 				shellEnv.vars.PS1 = makeDefaultEnv(authUser, hostname).vars.PS1 ?? "";
 				renderLine();
 			} else {
-					stream.exit(0);
-					stream.end();
-					return;
-				}
-				continue;
+				stream.exit(0);
+				stream.end();
+				return;
 			}
+			continue;
+		}
 
 			if (ch === "\t") {
 				handleTabCompletion();
@@ -718,15 +718,15 @@ export function startShell(
 						stream.write(`${toTtyLines(result.stderr)}\r\n`);
 					}
 
-					if (result.closeSession) {
-						stream.write("logout\r\n");
-						if (sessionStack.length > 0) {
-							const prev = sessionStack.pop()!;
-							authUser = prev.authUser;
-							cwd = prev.cwd;
-							shell.users.updateSession(sessionId, authUser, remoteAddress);
-							shellEnv.vars.PS1 = makeDefaultEnv(authUser, hostname).vars.PS1 ?? "";
-						} else {
+			if (result.closeSession) {
+					stream.write("logout\r\n");
+					if (sessionStack.length > 0) {
+						const prev = sessionStack.pop()!;
+						authUser = prev.authUser;
+						cwd = prev.cwd;
+						shell.users.updateSession(sessionId, authUser, remoteAddress);
+						delete shellEnv.vars.PS1;
+					} else {
 							stream.exit(result.exitCode ?? 0);
 							stream.end();
 							return;
