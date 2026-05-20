@@ -1,6 +1,6 @@
 import type { ShellModule } from "../types/commands";
 import { getArg, ifFlag } from "./command-helpers";
-import { assertPathAccess, resolvePath } from "./helpers";
+import { checkFilePermission, resolvePath } from "./helpers";
 
 // ─── ANSI color codes (matches GNU ls --color=auto / LS_COLORS defaults) ────
 
@@ -221,7 +221,7 @@ export const lsCommand: ShellModule = {
 			flags: ["-l", "--long", "-a", "--all", "-la", "-al"],
 		});
 		const target = resolvePath(cwd, targetArg ?? cwd);
-		assertPathAccess(authUser, target, "ls");
+		checkFilePermission(shell.vfs, shell.users, authUser, target, 4);
 
 		// Single file or symlink
 		if (shell.vfs.exists(target)) {

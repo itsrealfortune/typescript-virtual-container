@@ -344,6 +344,11 @@ export class VirtualUserManager extends EventEmitter {
 		const homePath = `/home/${username}`;
 		if (!this.vfs.exists(homePath)) {
 			this.vfs.mkdir(homePath, 0o700, uid, gid);
+		} else {
+			// Ensure existing home dir is owned by the user
+			try { this.vfs.chown(homePath, uid, gid, 0); } catch { /* best-effort */ }
+		}
+		if (!this.vfs.exists(`${homePath}/README.txt`)) {
 			this.vfs.writeFile(
 				`${homePath}/README.txt`,
 				`Welcome to the virtual environment, ${username}`,

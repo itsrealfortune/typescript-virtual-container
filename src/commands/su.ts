@@ -28,9 +28,13 @@ export const suCommand: ShellModule = {
 		).filter((a) => a !== "-" && a !== "-l" && a !== "--login");
 		const targetUser = filteredArgs.find((a) => !a.startsWith("-")) ?? "root";
 
-		// Verify target user exists
+		// Verify target user exists (create if missing, for auto-provisioning)
 		if (!shell.users.listUsers().includes(targetUser)) {
-			return { stderr: `su: user '${targetUser}' does not exist\n`, exitCode: 1 };
+			if (authUser === "root") {
+				shell.users.ensureUser(targetUser);
+			} else {
+				return { stderr: `su: user '${targetUser}' does not exist\n`, exitCode: 1 };
+			}
 		}
 
 		// Root switches freely without any password
