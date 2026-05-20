@@ -1,12 +1,14 @@
 import { beforeAll, describe, expect, test } from "bun:test";
-import { SshClient } from "../src";
+import { VirtualShell, SshClient } from "../src";
 import { createTestEnv, runCmd } from "./test-helper";
 
 let client: InstanceType<typeof SshClient>;
+let shell: VirtualShell;
 
 beforeAll(async () => {
 	const env = await createTestEnv("test-admin");
 	client = env.client;
+	shell = env.shell;
 });
 
 // ─── USERADD tests ────────────────────────────────────────────────────────
@@ -437,5 +439,52 @@ describe("exit command", () => {
 	test("exit with code 1", async () => {
 		const r = await runCmd(client, "exit 1");
 		expect(r.exitCode).not.toBe(0);
+	});
+
+	test("chown changes file owner", async () => {
+		shell.vfs.writeFile("/tmp/chown-test.txt", "data", {}, 0, 0);
+		const r = await runCmd(client, "chown 1001 /tmp/chown-test.txt");
+		expect(r.exitCode).toBe(0);
+		const owner = shell.vfs.getOwner("/tmp/chown-test.txt");
+		expect(owner.uid).toBe(1001);
+	});
+
+	test("chown missing operand", async () => {
+		const r = await runCmd(client, "chown");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("missing operand");
+	});
+
+	test("chown invalid user", async () => {
+		shell.vfs.writeFile("/tmp/chown-test2.txt", "data", {}, 0, 0);
+		const r = await runCmd(client, "chown nonexistentuser /tmp/chown-test2.txt");
+		expect(r.exitCode).toBe(1);
+	});
+
+	test("chown user:group syntax", async () => {
+		shell.vfs.writeFile("/tmp/chown-test3.txt", "data", {}, 0, 0);
+		const r = await runCmd(client, "chown 1001:1001 /tmp/chown-test3.txt");
+		expect(r.exitCode).toBe(0);
+		const owner = shell.vfs.getOwner("/tmp/chown-test3.txt");
+		expect(owner.uid).toBe(1001);
+		expect(owner.gid).toBe(1001);
+	});
+
+	test("su auto-creates non-existent user", async () => {
+		const r = await runCmd(client, "su - newauto -c 'whoami'");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.trim()).toBe("newauto");
+	});
+
+	test("su -c runs command as target user", async () => {
+		const r = await runCmd(client, "su - root -c 'echo hello'");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.trim()).toBe("hello");
+	});
+
+	test("su without target defaults to root", async () => {
+		const r = await runCmd(client, "su - -c 'whoami'");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.trim()).toBe("root");
 	});
 });

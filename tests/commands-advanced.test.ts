@@ -453,4 +453,30 @@ describe("lsb-release command", () => {
 		expect(r.exitCode).toBe(0);
 		expect(r.stdout).toMatch(/Description|Distributor/);
 	});
+
+	test("ln missing operand", async () => {
+		const r = await runCmd(client, "ln");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("missing operand");
+	});
+
+	test("ln -s missing target", async () => {
+		const r = await runCmd(client, "ln -s");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("missing operand");
+	});
+
+	test("readlink prints symlink target", async () => {
+		createTestFile(shell, "/tmp/readlink_target.txt", "data");
+		await runCmd(client, "ln -s /tmp/readlink_target.txt /tmp/readlink_link.txt");
+		const r = await runCmd(client, "readlink /tmp/readlink_link.txt");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.trim()).toBe("/tmp/readlink_target.txt");
+	});
+
+	test("readlink missing operand", async () => {
+		const r = await runCmd(client, "readlink");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("missing operand");
+	});
 });

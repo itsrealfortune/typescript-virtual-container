@@ -559,4 +559,40 @@ describe("uniq command", () => {
 		const lines = r.stdout?.split("\n").filter((l) => l);
 		expect(lines?.length).toBe(2);
 	});
+
+	test("rm missing operand", async () => {
+		const r = await runCmd(client, "rm");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("missing operand");
+	});
+
+	test("rm -f non-existent does not error", async () => {
+		const r = await runCmd(client, "rm -f /tmp/nonexistent.txt");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("touch creates file", async () => {
+		const r = await runCmd(client, "touch /tmp/touched.txt");
+		expect(r.exitCode).toBe(0);
+		expect(pathExists(shell, "/tmp/touched.txt")).toBe(true);
+	});
+
+	test("touch updates existing file", async () => {
+		createTestFile(shell, "/tmp/existing.txt", "data");
+		const r = await runCmd(client, "touch /tmp/existing.txt");
+		expect(r.exitCode).toBe(0);
+		expect(pathExists(shell, "/tmp/existing.txt")).toBe(true);
+	});
+
+	test("mkdir missing operand", async () => {
+		const r = await runCmd(client, "mkdir");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("missing operand");
+	});
+
+	test("cp missing operand", async () => {
+		const r = await runCmd(client, "cp");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("missing operand");
+	});
 });
