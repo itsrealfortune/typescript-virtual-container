@@ -15,6 +15,14 @@ import type { VirtualShell } from "../VirtualShell";
  * Executes a list of shell statements sequentially, respecting `&&`, `||`, and `;`
  * operators. Accumulates stdout across statements and tracks cwd changes.
  * Handles subshells (recursively with isolated env) and command groups (in current context).
+ * @param statements - The statements parameter.
+ * @param authUser - The authenticated username.
+ * @param hostname - The hostname parameter.
+ * @param mode - The mode parameter.
+ * @param cwd - The cwd parameter.
+ * @param shell - The shell parameter.
+ * @param env - The env parameter.
+ * @returns A promise that resolves with the result.
  */
 export async function executeStatements(
 	statements: Statement[],
@@ -143,6 +151,15 @@ export async function executeStatements(
  * Executes a shell pipeline of commands connected by pipes. Handles redirections,
  * input/output files, and stderr redirects. Delegates to the single-command or
  * chained-pipeline executor based on command count.
+ * @param pipeline - The pipeline parameter.
+ * @param authUser - The authenticated username.
+ * @param hostname - The hostname parameter.
+ * @param mode - The mode parameter.
+ * @param cwd - The cwd parameter.
+ * @param shell - The shell parameter.
+ * @param env - The env parameter.
+ * @param abortController - The abortController parameter.
+ * @returns A promise that resolves with the result.
  */
 export async function executePipeline(
 	pipeline: Pipeline,

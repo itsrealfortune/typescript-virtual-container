@@ -24,6 +24,11 @@ export const X_OK = 1;
 /**
  * Check if `uid`/`gid` can access `targetPath` with the given permission bits.
  * Throws EACCES on failure.
+ * @param root - The root parameter.
+ * @param targetPath - The target file path.
+ * @param uid - The uid parameter.
+ * @param gid - The gid parameter.
+ * @param want - The want parameter.
  */
 export function enforceAccess(
 	root: InternalDirectoryNode,
@@ -62,6 +67,10 @@ export function enforceAccess(
 /**
  * Check X_OK on every parent directory component of `targetPath`.
  * Required for path traversal. Throws EACCES on failure.
+ * @param root - The root parameter.
+ * @param targetPath - The target file path.
+ * @param uid - The uid parameter.
+ * @param gid - The gid parameter.
  */
 export function enforcePathTraversal(
 	root: InternalDirectoryNode,
@@ -88,6 +97,11 @@ export function enforcePathTraversal(
 /**
  * Check if `uid`/`gid` can delete `name` inside `dirPath`.
  * Sticky bit: only root, directory owner, or file owner can delete.
+ * @param root - The root parameter.
+ * @param dirPath - The directory path.
+ * @param name - The name parameter.
+ * @param uid - The uid parameter.
+ * @param gid - The gid parameter.
  */
 export function enforceDelete(
 	root: InternalDirectoryNode,
@@ -117,6 +131,7 @@ export function enforceDelete(
 /**
  * Check if `uid` can change ownership of `targetPath`.
  * Only root can chown.
+ * @param uid - The uid parameter.
  */
 export function enforceChown(
 	_targetPath: string,
@@ -130,6 +145,9 @@ export function enforceChown(
 /**
  * Check if `uid` can change mode of `targetPath`.
  * Must be owner or root.
+ * @param root - The root parameter.
+ * @param targetPath - The target file path.
+ * @param uid - The uid parameter.
  */
 export function enforceChmod(
 	root: InternalDirectoryNode,
@@ -145,6 +163,10 @@ export function enforceChmod(
 
 /**
  * Resolve the effective uid for executing a file, respecting setuid.
+ * @param root - The root parameter.
+ * @param targetPath - The target file path.
+ * @param originalUid - The original user ID.
+ * @returns The numeric result.
  */
 export function resolveEffectiveUid(
 	root: InternalDirectoryNode,
@@ -160,6 +182,10 @@ export function resolveEffectiveUid(
 
 /**
  * Resolve the effective gid for executing a file, respecting setgid.
+ * @param root - The root parameter.
+ * @param targetPath - The target file path.
+ * @param originalGid - The original group ID.
+ * @returns The numeric result.
  */
 export function resolveEffectiveGid(
 	root: InternalDirectoryNode,
@@ -175,6 +201,11 @@ export function resolveEffectiveGid(
 
 /**
  * Check if a file is executable by `uid`/`gid`.
+ * @param root - The root parameter.
+ * @param targetPath - The target file path.
+ * @param uid - The uid parameter.
+ * @param gid - The gid parameter.
+ * @returns The success indicator.
  */
 export function isExecutable(
 	root: InternalDirectoryNode,

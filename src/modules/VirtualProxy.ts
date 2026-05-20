@@ -104,6 +104,7 @@ export class VirtualProxy {
 
 	/**
 	 * List all active port forwards.
+	 * @returns The operation result.
 	 */
 	public listPorts(): Array<{ vmName: string; vmPort: number; hostPort: number }> {
 		return this.forwards.map((f) => ({ vmName: f.vmName, vmPort: f.vmPort, hostPort: f.hostPort }));

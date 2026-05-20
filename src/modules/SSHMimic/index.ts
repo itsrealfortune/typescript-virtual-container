@@ -35,6 +35,14 @@ interface RateLimitEntry {
 	lockedUntil: number;
 }
 
+/**
+ * SSH server simulator accepting ssh2 client connections.
+ * Routes authentication, shell, exec, and SFTP sessions to a VirtualShell.
+ *
+ * @see VirtualShell
+ * @see SftpMimic
+ * @see VirtualSshServer
+ */
 class SshMimic extends EventEmitter {
 	port: number;
 	server: SshServer | null;

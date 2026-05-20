@@ -127,6 +127,8 @@ export function defaultSysctlState(hostname: string, kernel: string): SysctlStat
 /**
  * Resolve a /proc/sys/* path to the corresponding state value.
  * Returns { value, setter } where setter can update the value.
+ * @param state - The state parameter.
+ * @param sysPath - The sysPath parameter.
  */
 export function resolveSysctlPath(
 	state: SysctlState,

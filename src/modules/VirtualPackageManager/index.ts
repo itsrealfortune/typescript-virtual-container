@@ -759,6 +759,7 @@ export class VirtualPackageManager {
 	 * Returns `true` when the given package is currently installed.
 	 *
 	 * @param name Package name (case-insensitive).
+	 * @returns The success indicator.
 	 */
 	public isInstalled(name: string): boolean {
 		this._ensureLoaded();
@@ -769,6 +770,7 @@ export class VirtualPackageManager {
 	 * Returns the total number of installed packages.
 	 *
 	 * Used by `neofetch` to populate the `Packages:` field.
+	 * @returns The numeric result.
 	 */
 	public installedCount(): number {
 		this._ensureLoaded();

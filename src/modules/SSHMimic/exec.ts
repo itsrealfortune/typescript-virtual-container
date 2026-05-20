@@ -12,6 +12,11 @@ function toTtyLines(text: string): string {
 /**
  * Handles SSH exec channel requests. Runs the given command in a non-interactive
  * shell session and writes stdout/stderr to the stream, then signals exit.
+ * @param stream - The stream parameter.
+ * @param cmd - The cmd parameter.
+ * @param authUser - The authenticated username.
+ * @param hostname - The hostname parameter.
+ * @param shell - The shell parameter.
  */
 export function runExec(
 	stream: ExecStream,

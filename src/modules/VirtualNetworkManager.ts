@@ -57,7 +57,10 @@ export interface FirewallRule {
 	action: "ACCEPT" | "DROP" | "REJECT";
 }
 
-/** Generates a random MAC address in the 02:42:xx:xx:xx:xx range. */
+/**
+ * Generates a random MAC address in the 02:42:xx:xx:xx:xx range.
+ * @returns The result string.
+ */
 function randomMac(): string {
 	const hex = () => Math.floor(Math.random() * 256).toString(16).padStart(2, "0");
 	return `02:42:${hex()}:${hex()}:${hex()}:${hex()}`;
@@ -279,32 +282,52 @@ export class VirtualNetworkManager {
 
 	// ── Firewall (iptables) ──────────────────────────────────────────────
 
-	/** Add a firewall rule. Returns the rule index. */
+		/**
+	 * Add a firewall rule. Returns the rule index.
+	 * @param rule - The rule parameter.
+	 * @returns The numeric result.
+	 */
 	public addFirewallRule(rule: FirewallRule): number {
 		this.firewallRules.push(rule);
 		return this.firewallRules.length - 1;
 	}
 
-	/** Remove a firewall rule by index. */
+		/**
+	 * Remove a firewall rule by index.
+	 * @param index - The index parameter.
+	 * @returns The success indicator.
+	 */
 	public removeFirewallRule(index: number): boolean {
 		if (index < 0 || index >= this.firewallRules.length) return false;
 		this.firewallRules.splice(index, 1);
 		return true;
 	}
 
-	/** Get all firewall rules. */
+		/**
+	 * Get all firewall rules.
+	 * @returns The firewall rules.
+	 */
 	public getFirewallRules(): FirewallRule[] {
 		return [...this.firewallRules];
 	}
 
-	/** Set the default policy for a chain. */
+		/**
+	 * Set the default policy for a chain.
+	 * @param chain - The chain parameter.
+	 * @param policy - The policy parameter.
+	 * @returns The success indicator.
+	 */
 	public setPolicy(chain: string, policy: "ACCEPT" | "DROP"): boolean {
 		if (!(chain in this.policies)) return false;
 		this.policies[chain] = policy;
 		return true;
 	}
 
-	/** Get the default policy for a chain. */
+		/**
+	 * Get the default policy for a chain.
+	 * @param chain - The chain parameter.
+	 * @returns The operation result.
+	 */
 	public getPolicy(chain: string): "ACCEPT" | "DROP" {
 		return this.policies[chain] ?? "ACCEPT";
 	}
@@ -312,6 +335,12 @@ export class VirtualNetworkManager {
 	/**
 	 * Check if a connection is allowed by the firewall.
 	 * Returns the action (ACCEPT, DROP, REJECT) for the given parameters.
+	 * @param chain - The chain parameter.
+	 * @param protocol - The protocol parameter.
+	 * @param source - The source parameter.
+	 * @param destination - The destination parameter.
+	 * @param destPort - The destPort parameter.
+	 * @returns The operation result.
 	 */
 	public checkFirewall(
 		chain: "INPUT" | "OUTPUT" | "FORWARD",
@@ -336,7 +365,10 @@ export class VirtualNetworkManager {
 		this.firewallRules = [];
 	}
 
-	/** List rules in iptables -L format. */
+		/**
+	 * List rules in iptables -L format.
+	 * @returns The result string.
+	 */
 	public formatFirewall(): string {
 		const lines: string[] = [];
 		for (const chain of ["INPUT", "FORWARD", "OUTPUT"] as const) {

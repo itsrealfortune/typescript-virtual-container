@@ -55,12 +55,19 @@ export class VirtualVpn {
 		this._registerRoutes();
 	}
 
-	/** Add a peer to this VPN (hub mode). */
+		/**
+	 * Add a peer to this VPN (hub mode).
+	 * @param peer - The peer parameter.
+	 */
 	public addPeer(peer: VirtualVpn): void {
 		this.peers.push(peer);
 	}
 
-	/** Encrypt and forward a packet to the other side. */
+		/**
+	 * Encrypt and forward a packet to the other side.
+	 * @param packet - The packet parameter.
+	 * @returns A promise that resolves with the result.
+	 */
 	public async tunnel(packet: Packet): Promise<PacketResult> {
 		const iv = randomBytes(16);
 		const encrypted = encrypt(JSON.stringify(packet), this.key, iv);

@@ -328,6 +328,7 @@ export class VirtualUserManager extends EventEmitter {
 	/**
 	 * Ensure a user exists in the database. Creates them with a non-root UID
 	 * if they are missing. Used during SSH login for unknown users.
+	 * @param username - The username.
 	 */
 	public ensureUser(username: string): void {
 		if (this.users.has(username)) return;
@@ -572,17 +573,29 @@ export class VirtualUserManager extends EventEmitter {
 		return Array.from(this.users.keys()).sort();
 	}
 
-	/** Returns the numeric UID for a username, or 0 if unknown. */
+		/**
+	 * Returns the numeric UID for a username, or 0 if unknown.
+	 * @param username - The username.
+	 * @returns The numeric result.
+	 */
 	public getUid(username: string): number {
 		return this.users.get(username)?.uid ?? 0;
 	}
 
-	/** Returns the primary GID for a username, or 0 if unknown. */
+		/**
+	 * Returns the primary GID for a username, or 0 if unknown.
+	 * @param username - The username.
+	 * @returns The numeric result.
+	 */
 	public getGid(username: string): number {
 		return this.users.get(username)?.gid ?? 0;
 	}
 
-	/** Returns the username for a numeric UID, or null if unknown. */
+		/**
+	 * Returns the username for a numeric UID, or null if unknown.
+	 * @param uid - The uid parameter.
+	 * @returns The operation result.
+	 */
 	public getUsername(uid: number): string | null {
 		for (const [name, record] of this.users) {
 			if (record.uid === uid) return name;
@@ -590,7 +603,11 @@ export class VirtualUserManager extends EventEmitter {
 		return null;
 	}
 
-	/** Returns the group name for a numeric GID, or null if unknown. */
+		/**
+	 * Returns the group name for a numeric GID, or null if unknown.
+	 * @param gid - The gid parameter.
+	 * @returns The operation result.
+	 */
 	public getGroup(gid: number): string | null {
 		for (const [name, record] of this.users) {
 			if (record.gid === gid) return name;
@@ -601,6 +618,13 @@ export class VirtualUserManager extends EventEmitter {
 	/**
 	 * Registers a running command as a virtual process.
 	 * Returns the assigned PID so the caller can deregister on completion.
+	 * @param username - The username.
+	 * @param command - The command parameter.
+	 * @param argv - The argv parameter.
+	 * @param tty - The tty parameter.
+	 * @param abortController - The abortController parameter.
+	 * @param ppid - The ppid parameter.
+	 * @returns The numeric result.
 	 */
 	public registerProcess(
 		username: string,
@@ -626,7 +650,10 @@ export class VirtualUserManager extends EventEmitter {
 		return pid;
 	}
 
-	/** Removes a process record when the command exits. */
+		/**
+	 * Removes a process record when the command exits.
+	 * @param pid - The pid parameter.
+	 */
 	public unregisterProcess(pid: number): void {
 		const proc = this.activeProcesses.get(pid);
 		if (proc) {
@@ -637,7 +664,10 @@ export class VirtualUserManager extends EventEmitter {
 		this.activeProcesses.delete(pid);
 	}
 
-	/** Marks a process as done (keeps it in the table briefly for jobs/ps). */
+		/**
+	 * Marks a process as done (keeps it in the table briefly for jobs/ps).
+	 * @param pid - The pid parameter.
+	 */
 	public markProcessDone(pid: number): void {
 		const proc = this.activeProcesses.get(pid);
 		if (proc) {
@@ -646,12 +676,20 @@ export class VirtualUserManager extends EventEmitter {
 		}
 	}
 
-	/** Returns all currently running processes sorted by PID. */
+		/**
+	 * Returns all currently running processes sorted by PID.
+	 * @returns The process list.
+	 */
 	public listProcesses(): VirtualProcess[] {
 		return Array.from(this.activeProcesses.values()).sort((a, b) => a.pid - b.pid);
 	}
 
-	/** Terminate a process by PID. Returns true if the process was found and signalled. */
+		/**
+	 * Terminate a process by PID. Returns true if the process was found and signalled.
+	 * @param pid - The pid parameter.
+	 * @param signal - The signal parameter.
+	 * @returns The success indicator.
+	 */
 	public killProcess(pid: number, signal = 15): boolean {
 		const proc = this.activeProcesses.get(pid);
 		if (!proc) return false;
@@ -692,7 +730,12 @@ export class VirtualUserManager extends EventEmitter {
 		return true;
 	}
 
-	/** Send a signal to all processes owned by a user. */
+		/**
+	 * Send a signal to all processes owned by a user.
+	 * @param username - The username.
+	 * @param signal - The signal parameter.
+	 * @returns The numeric result.
+	 */
 	public killAllUserProcesses(username: string, signal = 15): number {
 		let count = 0;
 		for (const [pid, proc] of this.activeProcesses) {
@@ -703,7 +746,11 @@ export class VirtualUserManager extends EventEmitter {
 		return count;
 	}
 
-	/** Get process by PID. */
+		/**
+	 * Get process by PID.
+	 * @param pid - The pid parameter.
+	 * @returns The process list.
+	 */
 	public getProcess(pid: number): VirtualProcess | undefined {
 		return this.activeProcesses.get(pid);
 	}
@@ -874,6 +921,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * hash) is allowed to authenticate without a credential check.
 	 *
 	 * @param username Target username.
+	 * @returns The success indicator.
 	 */
 	public hasPassword(username: string): boolean {
 		perf.mark("hasPassword");
@@ -899,6 +947,9 @@ export class VirtualUserManager extends EventEmitter {
 	 * When salt is provided (verify path), the same salt is used for a
 	 * deterministic hash. When omitted (create path), an empty salt is used
 	 * for backward compat — callers should pass the stored salt on verify.
+	 * @param password - The plaintext password.
+	 * @param salt - The salt parameter.
+	 * @returns The result string.
 	 */
 	public hashPassword(password: string, salt = ""): string {
 		if (VirtualUserManager.fastPasswordHash) {
@@ -961,6 +1012,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * Returns an empty array when no keys are registered.
 	 *
 	 * @param username Target user.
+	 * @returns The operation result.
 	 */
 	public getAuthorizedKeys(
 		username: string,

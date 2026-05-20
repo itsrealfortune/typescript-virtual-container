@@ -12,6 +12,10 @@ export interface LoginBannerState {
 /**
  * Builds the SSH login banner displaying OS info, warranty notice, and the
  * last login timestamp and origin.
+ * @param hostname - The hostname parameter.
+ * @param properties - The properties parameter.
+ * @param lastLogin - The lastLogin parameter.
+ * @returns The result string.
  */
 export function buildLoginBanner(
 	hostname: string,
