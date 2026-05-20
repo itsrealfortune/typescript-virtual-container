@@ -12,7 +12,7 @@
  * ```
  */
 
-import { createCipheriv, createDecipheriv, randomBytes, createHash } from "crypto";
+import { createCipheriv, createDecipheriv, randomBytes, createHash } from "node:crypto";
 import type { Packet, PacketResult } from "./VirtualSwitch";
 
 function deriveKey(secret: string): Buffer {
