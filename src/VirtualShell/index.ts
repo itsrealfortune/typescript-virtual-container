@@ -114,7 +114,7 @@ const perf: PerfLogger = createPerfLogger("VirtualShell");
 function resolveAutoSudoForNewUsers(): boolean {
 	const configured = process.env.SSH_MIMIC_AUTO_SUDO_NEW_USERS;
 	if (!configured) {
-		return true;
+		return false;
 	}
 
 	return !["0", "false", "no", "off"].includes(configured.toLowerCase());

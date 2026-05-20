@@ -21,7 +21,7 @@ export const sysctlCommand: ShellModule = {
 				const [name, ...rest] = pair.split("=");
 				const value = rest.join("=");
 				if (!name) continue;
-				const path = `/proc/sys/${name}`;
+				const path = `/proc/sys/${name.replace(/\./g, "/")}`;
 				const resolved = resolveSysctlPath(shell.sysctl, path);
 				if (!resolved) {
 					return { stderr: `sysctl: cannot stat '${name}': No such file or directory`, exitCode: 1 };
@@ -36,7 +36,7 @@ export const sysctlCommand: ShellModule = {
 		if (queries.length > 0) {
 			const results: string[] = [];
 			for (const name of queries) {
-				const path = `/proc/sys/${name}`;
+				const path = `/proc/sys/${name.replace(/\./g, "/")}`;
 				const resolved = resolveSysctlPath(shell.sysctl, path);
 				if (!resolved) {
 					return { stderr: `sysctl: cannot stat '${name}': No such file or directory`, exitCode: 1 };

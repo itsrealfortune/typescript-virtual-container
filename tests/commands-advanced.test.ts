@@ -453,4 +453,126 @@ describe("lsb-release command", () => {
 		expect(r.exitCode).toBe(0);
 		expect(r.stdout).toMatch(/Description|Distributor/);
 	});
+
+	test("ln missing operand", async () => {
+		const r = await runCmd(client, "ln");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("missing operand");
+	});
+
+	test("ln -s missing target", async () => {
+		const r = await runCmd(client, "ln -s");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("missing operand");
+	});
+
+	test("readlink prints symlink target", async () => {
+		createTestFile(shell, "/tmp/readlink_target.txt", "data");
+		await runCmd(client, "ln -s /tmp/readlink_target.txt /tmp/readlink_link.txt");
+		const r = await runCmd(client, "readlink /tmp/readlink_link.txt");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.trim()).toBe("/tmp/readlink_target.txt");
+	});
+
+	test("readlink missing operand", async () => {
+		const r = await runCmd(client, "readlink");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("missing operand");
+	});
+});
+
+describe("zip command", () => {
+	test("zip creates archive", async () => {
+		createTestFile(shell, "/tmp/zip_test.txt", "hello zip");
+		const r = await runCmd(client, "zip /tmp/test.zip /tmp/zip_test.txt");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("unzip extracts archive", async () => {
+		createTestFile(shell, "/tmp/unzip_test.txt", "hello unzip");
+		await runCmd(client, "zip /tmp/unzip.zip /tmp/unzip_test.txt");
+		shell.vfs.remove("/tmp/unzip_test.txt");
+		const r = await runCmd(client, "unzip /tmp/unzip.zip");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("zip list contents", async () => {
+		createTestFile(shell, "/tmp/ziplist.txt", "data");
+		await runCmd(client, "zip /tmp/ziplist.zip /tmp/ziplist.txt");
+		const r = await runCmd(client, "unzip -l /tmp/ziplist.zip");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout).toContain("ziplist.txt");
+	});
+
+	test("zip -r recursive", async () => {
+		shell.vfs.mkdir("/tmp/zipdir", 0o755);
+		createTestFile(shell, "/tmp/zipdir/a.txt", "a");
+		createTestFile(shell, "/tmp/zipdir/b.txt", "b");
+		const r = await runCmd(client, "zip -r /tmp/recursive.zip /tmp/zipdir");
+		expect(r.exitCode).toBe(0);
+	});
+});
+
+describe("strace command", () => {
+	test("strace runs command and produces output", async () => {
+		const r = await runCmd(client, "strace ls");
+		expect(r.exitCode).toBe(0);
+		expect(r.stderr).toContain("execve");
+	});
+
+	test("strace with no command errors", async () => {
+		const r = await runCmd(client, "strace");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("must have PROG");
+	});
+});
+
+describe("lsof command", () => {
+	test("lsof --help", async () => {
+		const r = await runCmd(client, "lsof --help");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("lsof -i", async () => {
+		const r = await runCmd(client, "lsof -i");
+		expect(r.exitCode).toBe(0);
+	});
+});
+
+describe("last command", () => {
+	test("last shows logins", async () => {
+		const r = await runCmd(client, "last");
+		expect(r.exitCode).toBe(0);
+	});
+});
+
+describe("w command", () => {
+	test("w shows who is logged in", async () => {
+		const r = await runCmd(client, "w");
+		expect(r.exitCode).toBe(0);
+	});
+});
+
+describe("bc command", () => {
+	test("bc simple addition", async () => {
+		const r = await runCmd(client, 'echo "2 + 3" | bc');
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("bc multiplication", async () => {
+		const r = await runCmd(client, 'echo "4 * 5" | bc');
+		expect(r.stdout?.trim()).toBe("20");
+	});
+});
+
+describe("bc command", () => {
+	test("bc simple addition", async () => {
+		const r = await runCmd(client, 'echo "2 + 3" | bc');
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("bc multiplication", async () => {
+		const r = await runCmd(client, 'echo "4 * 5" | bc');
+		expect(r.stdout?.trim()).toBe("20");
+	});
 });

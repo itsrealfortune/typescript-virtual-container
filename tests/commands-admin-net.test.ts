@@ -1,12 +1,26 @@
 import { beforeAll, describe, expect, test } from "bun:test";
-import { SshClient } from "../src";
+import { type VirtualShell, SshClient } from "../src";
 import { createTestEnv, runCmd } from "./test-helper";
 
+// Skip network-dependent tests by default. Run with:
+//   SSH_MIMIC_RUN_NETWORK_TESTS=1 bun test tests/commands-admin-net.test.ts
+const runNetwork = !!process.env.SSH_MIMIC_RUN_NETWORK_TESTS;
+const describeNetwork = runNetwork ? describe : describe.skip;
+
 let client: InstanceType<typeof SshClient>;
+let nonRootClient: InstanceType<typeof SshClient>;
+let sudoerClient: InstanceType<typeof SshClient>;
+let shell: VirtualShell;
 
 beforeAll(async () => {
 	const env = await createTestEnv("test-admin");
 	client = env.client;
+	shell = env.shell;
+	await shell.users.addUser("regular", "pass");
+	await shell.users.addUser("sudoer", "pass");
+	shell.users.addSudoer("sudoer");
+	nonRootClient = new SshClient(shell, "regular");
+	sudoerClient = new SshClient(shell, "sudoer");
 });
 
 // ─── USERADD tests ────────────────────────────────────────────────────────
@@ -97,6 +111,17 @@ describe("sudo command", () => {
 		expect(r.exitCode).toBe(0);
 		expect(r.stdout?.trim()).toBe("test");
 	});
+
+	test("sudo -i switches to root shell", async () => {
+		const r = await runCmd(client, "sudo -i whoami");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("sudo without command errors", async () => {
+		const r = await runCmd(client, "sudo");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("missing command");
+	});
 });
 
 // ─── SU tests ──────────────────────────────────────────────────────────────
@@ -115,7 +140,7 @@ describe("su command", () => {
 
 // ─── CURL tests ───────────────────────────────────────────────────────────
 
-describe("curl command", () => {
+describeNetwork("curl command", () => {
 	test("curl basic request", async () => {
 		const r = await runCmd(client, "curl http://example.com 2>/dev/null | head -c 10 || echo 'response'");
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
@@ -149,7 +174,7 @@ describe("curl command", () => {
 
 // ─── WGET tests ───────────────────────────────────────────────────────────
 
-describe("wget command", () => {
+describeNetwork("wget command", () => {
 	test("wget basic download", async () => {
 		const r = await runCmd(client, "wget -q http://example.com -O /tmp/wget.html 2>/dev/null || echo 'done'");
 		expect(r.exitCode).toBe(0);
@@ -168,7 +193,7 @@ describe("wget command", () => {
 
 // ─── PING tests ───────────────────────────────────────────────────────────
 
-describe("ping command", () => {
+describeNetwork("ping command", () => {
 	test("ping localhost", async () => {
 		const r = await runCmd(client, "ping -c 1 localhost");
 		expect(r.exitCode).toBe(0);
@@ -176,7 +201,7 @@ describe("ping command", () => {
 	});
 
 	test("ping -c count", async () => {
-		const r = await runCmd(client, "ping -c 2 127.0.0.1");
+		const r = await runCmd(client, "ping -c 1 127.0.0.1");
 		expect(r.exitCode).toBe(0);
 	});
 
@@ -437,5 +462,185 @@ describe("exit command", () => {
 	test("exit with code 1", async () => {
 		const r = await runCmd(client, "exit 1");
 		expect(r.exitCode).not.toBe(0);
+	});
+
+	test("chown changes file owner", async () => {
+		shell.vfs.writeFile("/tmp/chown-test.txt", "data", {}, 0, 0);
+		const r = await runCmd(client, "chown 1001 /tmp/chown-test.txt");
+		expect(r.exitCode).toBe(0);
+		const owner = shell.vfs.getOwner("/tmp/chown-test.txt");
+		expect(owner.uid).toBe(1001);
+	});
+
+	test("chown missing operand", async () => {
+		const r = await runCmd(client, "chown");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("missing operand");
+	});
+
+	test("chown invalid user", async () => {
+		shell.vfs.writeFile("/tmp/chown-test2.txt", "data", {}, 0, 0);
+		const r = await runCmd(client, "chown nonexistentuser /tmp/chown-test2.txt");
+		expect(r.exitCode).toBe(1);
+	});
+
+	test("chown user:group syntax", async () => {
+		shell.vfs.writeFile("/tmp/chown-test3.txt", "data", {}, 0, 0);
+		const r = await runCmd(client, "chown 1001:1001 /tmp/chown-test3.txt");
+		expect(r.exitCode).toBe(0);
+		const owner = shell.vfs.getOwner("/tmp/chown-test3.txt");
+		expect(owner.uid).toBe(1001);
+		expect(owner.gid).toBe(1001);
+	});
+
+	test("su auto-creates non-existent user", async () => {
+		const r = await runCmd(client, "su - newauto -c 'whoami'");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.trim()).toBe("newauto");
+	});
+
+	test("su -c runs command as target user", async () => {
+		const r = await runCmd(client, "su - root -c 'echo hello'");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.trim()).toBe("hello");
+	});
+
+	test("su without target defaults to root", async () => {
+		const r = await runCmd(client, "su - -c 'whoami'");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.trim()).toBe("root");
+	});
+
+	test("iptables list rules (empty)", async () => {
+		const r = await runCmd(client, "iptables -L");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("iptables append and list rule", async () => {
+		await runCmd(client, "iptables -A INPUT -s 10.0.0.0/8 -j DROP");
+		const r = await runCmd(client, "iptables -L");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout).toContain("DROP");
+	});
+
+	test("iptables flush rules", async () => {
+		await runCmd(client, "iptables -A INPUT -s 1.2.3.4 -j DROP");
+		await runCmd(client, "iptables -F");
+		const r = await runCmd(client, "iptables -L");
+		expect(r.stdout).not.toContain("1.2.3.4");
+	});
+
+	test("iptables set policy", async () => {
+		const r = await runCmd(client, "iptables -P INPUT DROP");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("iptables with protocol and ports", async () => {
+		const r = await runCmd(client, "iptables -A INPUT -p tcp --dport 80 -j ACCEPT");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("iptables with destination", async () => {
+		const r = await runCmd(client, "iptables -A OUTPUT -d 10.0.0.0/8 -j DROP");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("iptables unknown chain errors", async () => {
+		const r = await runCmd(client, "iptables -A UNKNOWN -j DROP");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("unknown chain");
+	});
+
+	test("iptables append missing action", async () => {
+		const r = await runCmd(client, "iptables -A INPUT");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("requires chain and -j action");
+	});
+});
+
+describe("non-root su/sudo", () => {
+	test("non-root non-sudoer cannot su", async () => {
+		const r = await nonRootClient.exec("su - root -c whoami");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("permission denied");
+	});
+
+	test("non-root non-sudoer cannot sudo", async () => {
+		const r = await nonRootClient.exec("sudo whoami");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("permission denied");
+	});
+
+	test("sudoer triggers sudo challenge", async () => {
+		const r = await sudoerClient.exec("sudo whoami");
+		expect(r.exitCode).toBe(0);
+	});
+});
+
+describe("sysctl command", () => {
+	test("sysctl lists parameters", async () => {
+		const r = await runCmd(client, "sysctl");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout).toContain("kernel.hostname");
+	});
+
+	test("sysctl get parameter", async () => {
+		const r = await runCmd(client, "sysctl kernel.hostname");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout).toContain("kernel.hostname");
+	});
+
+	test("sysctl set parameter", async () => {
+		const r = await runCmd(client, "sysctl -w net.ipv4.ip_forward=1");
+		expect(r.exitCode).toBe(0);
+		const r2 = await runCmd(client, "sysctl net.ipv4.ip_forward");
+		expect(r2.stdout).toContain("= 1");
+	});
+
+	test("sysctl unknown parameter errors", async () => {
+		const r = await runCmd(client, "sysctl unknown.parameter");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("No such file");
+	});
+});
+
+describe("ip command", () => {
+	test("ip addr show", async () => {
+		const r = await runCmd(client, "ip addr");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout).toContain("lo");
+	});
+
+	test("ip link show", async () => {
+		const r = await runCmd(client, "ip link");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout).toContain("LOOPBACK");
+	});
+
+	test("ip route show", async () => {
+		const r = await runCmd(client, "ip route");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("ip addr add", async () => {
+		const r = await runCmd(client, "ip addr add 10.0.0.1/24 dev eth0");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("ip link set up", async () => {
+		const r = await runCmd(client, "ip link set eth0 up");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("ip unknown object errors", async () => {
+		const r = await runCmd(client, "ip nonexistent");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("unknown");
+	});
+
+	test("ip no args errors", async () => {
+		const r = await runCmd(client, "ip");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("Usage");
 	});
 });

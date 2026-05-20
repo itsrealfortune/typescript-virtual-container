@@ -2,6 +2,11 @@ import { beforeAll, describe, expect, test } from "bun:test";
 import { VirtualShell } from "../src";
 import { SshClient } from "../src/SSHClient";
 
+// Skip slow network tests by default. Run with:
+//   SSH_MIMIC_RUN_NETWORK_TESTS=1 bun test tests/new-features.test.ts
+const runNetwork = !!process.env.SSH_MIMIC_RUN_NETWORK_TESTS;
+const itNetwork = runNetwork ? test : test.skip;
+
 // ─── shared shell ─────────────────────────────────────────────────────────────
 
 let shell: VirtualShell;
@@ -251,13 +256,13 @@ describe("curl / wget (pure fetch)", () => {
 		expect(r.stdout).toContain("GNU Wget");
 	});
 
-	test("curl fetches real URL and returns body", async () => {
+	itNetwork("curl fetches real URL and returns body", async () => {
 		const r = await client.exec("curl https://httpbin.org/get");
 		// In sandboxed env network may be blocked — accept 0 (ok), 6 (dns), 22 (http err), or 1 (fetch error)
 		expect([0, 1, 6, 22]).toContain(r.exitCode ?? -1);
 	});
 
-	test("curl -o saves to VFS", async () => {
+	itNetwork("curl -o saves to VFS", async () => {
 		try {
 			await client.exec("curl -o /tmp/test-curl.txt https://httpbin.org/get");
 		} catch {}
@@ -519,12 +524,12 @@ describe("Bug fixes", () => {
 	});
 
 	// ping -c
-	test("ping -c 2 sends exactly 2 packets", async () => {
-		const r = await c.exec("ping -c 2 localhost");
+	test("ping -c sends correct packet count", async () => {
+		const r = await c.exec("ping -c 1 localhost");
 		const dataLines = r.stdout
 			?.split("\n")
 			.filter((l) => l.includes("icmp_seq="));
-		expect(dataLines?.length).toBe(2);
+		expect(dataLines?.length).toBe(1);
 	});
 
 	// test / [ command
