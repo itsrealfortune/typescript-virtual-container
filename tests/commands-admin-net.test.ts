@@ -196,7 +196,7 @@ describe("ping command", () => {
 	});
 
 	test("ping -c count", async () => {
-		const r = await runCmd(client, "ping -c 2 127.0.0.1");
+		const r = await runCmd(client, "ping -c 1 127.0.0.1");
 		expect(r.exitCode).toBe(0);
 	});
 

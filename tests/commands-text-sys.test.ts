@@ -320,9 +320,10 @@ describe("sleep command", () => {
 		expect(elapsed).toBeGreaterThanOrEqual(10);
 	});
 
-	test("sleep with no args fails", async () => {
-		const r = await runCmd(client, "sleep 2>&1 || echo 'error'");
-		expect(r.exitCode).toBeGreaterThanOrEqual(0);
+	test("sleep with invalid arg fails instantly", async () => {
+		const r = await runCmd(client, "sleep abc");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("invalid time");
 	});
 
 	test("sleep very short duration", async () => {
