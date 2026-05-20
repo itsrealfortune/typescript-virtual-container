@@ -1254,12 +1254,6 @@ class VirtualFileSystem extends EventEmitter {
 			case "random":
 			case "urandom":
 				return crypto.randomBytes(64).toString("binary");
-			case "tty":
-			case "console":
-			case "stdin":
-			case "stdout":
-			case "stderr":
-			case "ptmx":
 			default:
 				return "";
 		}
@@ -1275,16 +1269,6 @@ class VirtualFileSystem extends EventEmitter {
 		switch (node.deviceKind) {
 			case "full":
 				throw new Error(`ENOSPC: no space left on device, write '${path}'`);
-			case "null":
-			case "zero":
-			case "random":
-			case "urandom":
-			case "tty":
-			case "console":
-			case "stdin":
-			case "stdout":
-			case "stderr":
-			case "ptmx":
 			default:
 				break; // silently accepted
 		}
