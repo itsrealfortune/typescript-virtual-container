@@ -73,6 +73,47 @@ function ensureWikiRepo(token) {
 	}
 }
 
+function repoUrl() {
+	return execSync("git remote get-url origin", { cwd: root })
+		.toString().trim().replace(/\.git$/, "");
+}
+
+/**
+ * Create the GitHub Wiki repository if it doesn't exist.
+ * Uses the GitHub API to initialize the wiki.
+ */
+function ensureWikiRepo() {
+	const token = process.env.GH_TOKEN;
+	if (!token) {
+		console.error("Error: GH_TOKEN environment variable required for --push");
+		process.exit(1);
+	}
+	const apiUrl = `https://api.github.com/repos/${repoUrl().replace("https://github.com/", "")}`;
+	try {
+		// Check if wiki repo is accessible
+		execSync(
+			`git ls-remote https://oauth2:${token}@github.com/${repoUrl().replace("https://github.com/", "")}.wiki.git HEAD`,
+			{ stdio: "pipe", timeout: 10000 },
+		);
+	} catch {
+		// Wiki doesn't exist — create it via API by pushing
+		console.log("Wiki repo not found. Creating first page to initialize...");
+		const tmpDir = join(wikiDir, ".wiki-bootstrap");
+		mkdirSync(tmpDir, { recursive: true });
+		writeFileSync(join(tmpDir, "Home.md"), "# Wiki\n");
+		execSync(
+			`cd "${tmpDir}" && git init && git add -A && git commit -m "Init wiki"`,
+			{ stdio: "pipe" },
+		);
+		execSync(
+			`cd "${tmpDir}" && git remote add origin https://oauth2:${token}@github.com/${repoUrl().replace("https://github.com/", "")}.wiki.git && git push -f origin master`,
+			{ stdio: "pipe" },
+		);
+		execSync(`rm -rf "${tmpDir}"`);
+		console.log("Wiki initialized.");
+	}
+}
+
 // ── 1. Build docs using typedoc with markdown plugin ──────────────────────
 console.log("Generating wiki Markdown from JSDoc...");
 try {
