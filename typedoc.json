@@ -6,7 +6,7 @@
   "name": "typescript-virtual-container",
   "includeVersion": true,
   "readme": "README.md",
-  "projectDocuments": ["docs/guides/ARCHITECTURE.md", "docs/guides/TESTING.md"],
+  "projectDocuments": ["guides/ARCHITECTURE.md", "guides/TESTING.md"],
   "blockTags": [
     "@abstract",
     "@alpha",

@@ -177,7 +177,7 @@ console.log(r.stdout);
 
 #### Multi-VM, proxy, VPN, and hosting examples
 
-See [`docs/guides/EXAMPLES.md`](docs/guides/EXAMPLES.md) for:
+See [`guides/EXAMPLES.md`](guides/EXAMPLES.md) for:
 
 - **Baie** — multi-VM network on a shared subnet
 - **VirtualProxy** — port forwarding and SOCKS5 proxy
