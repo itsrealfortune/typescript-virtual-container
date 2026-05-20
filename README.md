@@ -175,138 +175,20 @@ const r = await client.exec("ls /app && cat /app/config/settings.json");
 console.log(r.stdout);
 ```
 
-#### Multi-VM network (Baie)
+#### Multi-VM, proxy, VPN, and hosting examples
 
-Create multiple virtual machines on a shared subnet with NAT gateway:
+See [`docs/guides/EXAMPLES.md`](docs/guides/EXAMPLES.md) for:
 
-```typescript
-import { Baie, SshClient } from "typescript-virtual-container";
-
-const baie = new Baie("lab", "10.0.1.0/24");
-const web = await baie.createVM("web");
-const db  = await baie.createVM("db");
-const dbClient = new SshClient(db, "root");
-
-// VMs communicate over the virtual switch
-await dbClient.exec("nc -l -p 8080 -v &");
-const webClient = new SshClient(web, "root");
-const r = await webClient.exec("echo 'hello from web' | nc 10.0.1.3 8080");
-console.log(r.stdout); // 'hello from web'
-
-// iptables firewall rules apply to the virtual switch
-await webClient.exec("iptables -A OUTPUT -d 10.0.1.3 -j DROP");
-// web can no longer reach db
-```
-
-#### Expose VM ports on the host (VirtualProxy)
-
-Forward VM services to the host machine, or use the SOCKS5 proxy to route
-host traffic into the virtual network:
-
-```typescript
-import { Baie, VirtualProxy } from "typescript-virtual-container";
-
-const baie = new Baie("demo", "10.0.1.0/24");
-const web = await baie.createVM("web");
-const proxy = new VirtualProxy(baie);
-
-// Port forwarding: expose VM's port 80 on host:8080
-proxy.exposePort("web", 80, 8080);
-// curl http://localhost:8080 → reaches VM "web" port 80
-
-// SOCKS5 proxy: route any host traffic into the virtual network
-proxy.startSocksProxy(1080);
-// curl --proxy socks5://localhost:1080 http://10.0.1.2:3000
-```
-
-#### Full lab: multi-tier application with firewall
-
-This example builds a three-tier web application across three VMs on an
-isolated virtual network, then exposes it to the host.
-
-```typescript
-import { Baie, VirtualProxy, SshClient } from "typescript-virtual-container";
-
-// 1. Create a virtual datacenter with a /24 subnet
-const lab = new Baie("production", "10.0.1.0/24");
-
-// 2. Boot three VMs — each gets an IP from the subnet
-const web  = await lab.createVM("web");     // 10.0.1.2
-const api  = await lab.createVM("api");     // 10.0.1.3
-const db   = await lab.createVM("db");      // 10.0.1.4
-
-const cWeb = new SshClient(web, "root");
-const cApi = new SshClient(api, "root");
-const cDb  = new SshClient(db, "root");
-
-// 3. Start services inside each VM
-// Database: listen on port 5432 (simulated via nc)
-cDb.exec("nc -l -p 5432 -v &");
-// API: listen on port 3000
-cApi.exec("nc -l -p 3000 -v &");
-
-// 4. Verify connectivity — web reaches api via virtual IP
-const test = await cWeb.exec("echo 'GET /users' | nc 10.0.1.3 3000");
-console.log("API reachable from web:", test.exitCode === 0);
-
-// 5. Apply firewall — only web can reach api:3000
-cApi.exec("iptables -A INPUT -s 10.0.1.2 -p tcp --dport 3000 -j ACCEPT");
-cApi.exec("iptables -P INPUT DROP"); // default: block all
-
-// 6. Expose web VM on the host
-const proxy = new VirtualProxy(lab);
-proxy.exposePort("web", 80, 8080);
-console.log("curl http://localhost:8080 → web VM port 80");
-```
-
-Step by step:
-
-| Step | What happens |
-|------|-------------|
-| `new Baie("prod", "10.0.1.0/24")` | Creates a virtual switch with gateway at .1, DHCP pool .2–.254 |
-| `createVM("web")` | Boots a VirtualShell, assigns IP 10.0.1.2, registers in ARP cache |
-| `nc -l -p 5432` | Starts a TCP listener on port 5432 inside the db VM |
-| `nc 10.0.1.3 3000` | Opens a TCP connection from web to api through the VirtualSwitch |
-| `iptables -A INPUT -s 10.0.1.2 -j ACCEPT` | Restricts api ingress to web's IP only |
-| `proxy.exposePort("web", 80, 8080)` | Binds host:8080, forwards connections to the web VM's port 80 |
-
-#### Hosting platform (multi-tenant isolation)
-
-Use multiple Baie instances to create isolated networks for each tenant,
-with SSH access, NAT, and port forwarding for each.
-
-```typescript
-import { Baie, VirtualProxy, VirtualSshServer } from "typescript-virtual-container";
-
-async function createTenant(id: string, subnet: string, sshPort: number, httpPort: number) {
-	const baie = new Baie(`tenant-${id}`, subnet);
-	const vm = await baie.createVM("app");
-
-	// Each tenant gets their own SSH server on the VM
-	const ssh = new VirtualSshServer({ port: 0, shell: vm });
-	await ssh.start();
-
-	// Proxy: expose VM's SSH and HTTP on the host
-	const proxy = new VirtualProxy(baie);
-	proxy.exposePort("app", 22, sshPort);   // host:sshPort → VM:22
-	proxy.exposePort("app", 80, httpPort);  // host:httpPort → VM:80
-
-	return { baie, vm, proxy, ssh };
-}
-
-// Each tenant gets their own isolated /24, SSH on a unique host port
-const alice = await createTenant("alice", "10.100.1.0/24", 2201, 8081);
-const bob   = await createTenant("bob",   "10.100.2.0/24", 2202, 8082);
-
-// Host shell: ssh alice@localhost -p 2201
-// Host shell: ssh bob@localhost   -p 2202
-// Host shell: curl http://localhost:8081  → alice's app
-// Host shell: curl http://localhost:8082  → bob's app
-
-// Tenants cannot reach each other — separate subnets, separate switches
-```
+- **Baie** — multi-VM network on a shared subnet
+- **VirtualProxy** — port forwarding and SOCKS5 proxy
+- **Multi-tier lab** — web/api/db with firewall isolation
+- **Hosting platform** — multi-tenant with SSH per tenant
+- **VirtualVpn** — encrypted tunnel between Baie instances
+- **Traffic shaping, DNS, load balancer, partition**
 
 ---
+
+## How It Works
 
 ## How It Works
 

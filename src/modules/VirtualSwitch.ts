@@ -80,8 +80,11 @@ function cidrRange(cidr: string): { network: number; mask: number } {
 }
 
 export class VirtualSwitch {
+	/** Subnet CIDR (e.g. "10.0.1.0/24"). */
 	readonly subnet: string;
+	/** Gateway IP address (.1 of the subnet). */
 	readonly gateway: string;
+	/** Gateway MAC address. */
 	readonly gatewayMac: MacAddress;
 	private ports: Map<MacAddress, VmPort> = new Map();
 	private ipToMac: Map<string, MacAddress> = new Map();
@@ -114,6 +117,12 @@ export class VirtualSwitch {
 		this.network.setInterfaceIp("eth0", gwIp, parseInt(subnet.split("/")[1] ?? "24", 10));
 	}
 
+	/**
+	 * Attach a VM to the switch. Assigns an IP from the subnet.
+	 * @param shell - The VirtualShell to attach.
+	 * @param preferredIp - Optional specific IP (must be free).
+	 * @returns The port descriptor with assigned MAC and IP.
+	 */
 	public attach(shell: VirtualShell, preferredIp?: string): VmPort {
 		const mac = nextMac();
 		const ip = preferredIp ?? this._nextFreeIp();
@@ -124,6 +133,7 @@ export class VirtualSwitch {
 		return port;
 	}
 
+	/** Remove a VM from the switch by MAC. */
 	public detach(mac: MacAddress): void {
 		const port = this.ports.get(mac);
 		if (port) {
@@ -132,15 +142,17 @@ export class VirtualSwitch {
 		}
 	}
 
+	/** Get all attached ports (MAC → VmPort). */
 	public getPorts(): Map<MacAddress, VmPort> {
 		return new Map(this.ports);
 	}
 
+	/** Get a port by MAC address. */
 	public getPort(mac: MacAddress): VmPort | undefined {
 		return this.ports.get(mac);
 	}
 
-	/** Find a VM's IP by hostname (DNS). */
+	/** Resolve a hostname to an IP address via DNS records or VM hostnames. */
 	public resolveHostname(hostname: string): string | null {
 		const record = this.dnsRecords.find((r) => r.hostname === hostname);
 		if (record) return record.ip;
