@@ -7,7 +7,6 @@ import type {
 	Statement,
 	Subshell,
 } from "../types/pipeline";
-import { globToRegex } from "../utils/glob";
 import { tokenizeCommand } from "../utils/tokenize";
 
 // ── Public API ───────────────────────────────────────────────────────────────
@@ -39,19 +38,6 @@ export function parseShellPipeline(rawInput: string): Pipeline {
 	} catch (e) {
 		return { commands: [], isValid: false, error: (e as Error).message };
 	}
-}
-
-// ── Variable & tilde expansion ────────────────────────────────────────────────
-
-/**
- * Expand glob patterns (*, ?, [abc]) against a list of entries.
- * Returns the original pattern if no match.
- */
-export function expandGlob(pattern: string, entries: string[]): string[] {
-	if (!/[*?[]/.test(pattern)) return [pattern];
-	const regex = globToRegex(pattern);
-	const matches = entries.filter((e) => regex.test(e));
-	return matches.length > 0 ? matches.sort() : [pattern];
 }
 
 // ── Internal parser ───────────────────────────────────────────────────────────

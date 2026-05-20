@@ -473,7 +473,6 @@ export class VirtualUserManager extends EventEmitter {
 				username: session.username,
 			});
 		}
-		this.activeSessions.delete(sessionId);
 	}
 
 	/**

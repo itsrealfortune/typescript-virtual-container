@@ -879,10 +879,5 @@ export class SftpMimic extends EventEmitter {
 			devLog(`[SFTP] end event for user=${authUser}`);
 			this.handles.clear();
 		});
-
-		sftp.on("END", () => {
-			devLog(`[SFTP] END event for user=${authUser}`);
-			this.handles.clear();
-		});
 	}
 }
