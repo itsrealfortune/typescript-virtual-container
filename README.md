@@ -186,6 +186,10 @@ See [`guides/EXAMPLES.md`](guides/EXAMPLES.md) for:
 - **VirtualVpn** — encrypted tunnel between Baie instances
 - **Traffic shaping, DNS, load balancer, partition**
 
+A generated wiki with the full reference documentation is available in
+the [`wiki/`](wiki/) directory — run `npm run generate-wiki` to update it
+from the JSDoc.
+
 ---
 
 ## How It Works

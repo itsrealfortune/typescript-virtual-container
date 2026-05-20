@@ -19,6 +19,13 @@ import type { VirtualShell } from "../VirtualShell";
  */
 const perf: PerfLogger = createPerfLogger("SshClient");
 
+/**
+ * Programmatic SSH client wrapping a VirtualShell instance.
+ * Provides typed methods (exec, ls, cat, mkdir, etc.) without real SSH.
+ *
+ * @see VirtualShell
+ * @see VirtualSshServer
+ */
 export class SshClient {
 	private currentCwd = "/";
 

@@ -51,7 +51,9 @@
     "publish-only": "git add docs && git commit -m 'docs: update documentation' && git push",
     "publish-doc": "bun generate-doc && bun publish-only",
     "publish-doc-app": "bun build-all && bunx gh-pages -d docs && git add docs/app.js && git commit -m 'docs: update web terminal app' && git push",
-    "generate-manuals": "node scripts/generate-manuals-bundle.mjs"
+    "generate-manuals": "node scripts/generate-manuals-bundle.mjs",
+    "generate-wiki": "node scripts/generate-wiki.mjs",
+    "generate-wiki:push": "node scripts/generate-wiki.mjs --push --auto"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",
@@ -61,6 +63,7 @@
     "esbuild": "^0.28.0",
     "gh-pages": "^6.3.0",
     "rimraf": "^6.1.3",
+    "typedoc-plugin-markdown": "^4.11.0",
     "typescript": "^6.0.3"
   },
   "peerDependencies": {

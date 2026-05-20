@@ -168,6 +168,8 @@ function encodeNode(enc: Encoder, node: InternalNode): void {
 /**
  * Serialise an in-memory VFS root to a compact binary Buffer.
  * No base64, no JSON. ~27% smaller than the JSON+base64 format for typical VFS trees.
+ * @param root - The root parameter.
+ * @returns The buffer content.
  */
 export function encodeVfs(root: InternalDirectoryNode): Buffer {
 	const enc = new Encoder();
@@ -307,6 +309,8 @@ function internName(s: string): string {
  * (necessary for per-shell write isolation) but shares all InternalFileNode and
  * InternalStubNode references. Safe because file/stub nodes are never mutated in-place
  * — writes replace the parent's children[name] reference with a new node.
+ * @param base - The base parameter.
+ * @returns The root directory node.
  */
 export function forkDirTree(base: InternalDirectoryNode): InternalDirectoryNode {
 	const children = Object.create(null) as Record<string, InternalNode>;
@@ -333,6 +337,8 @@ export function forkDirTree(base: InternalDirectoryNode): InternalDirectoryNode 
 /**
  * Deserialise a binary Buffer produced by {@link encodeVfs} back into an
  * InternalDirectoryNode tree. Throws on magic/version mismatch or truncation.
+ * @param buf - The buf parameter.
+ * @returns The root directory node.
  */
 export function decodeVfs(buf: Buffer): InternalDirectoryNode {
 	if (buf.length < 5) throw new Error("[VFS binary] Buffer too short");

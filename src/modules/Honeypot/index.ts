@@ -136,6 +136,7 @@ export class HoneyPot {
 
 	/**
 	 * Attaches to VirtualShell events.
+	 * @param shell - The shell parameter.
 	 */
 	private attachVirtualShell(shell: VirtualShell): void {
 		(shell as EventEmitter).on("initialized", () => {
@@ -170,6 +171,7 @@ export class HoneyPot {
 	 * Attaches to VirtualFileSystem events.
 	 * Also pings the shell's idle manager so SFTP/direct VFS activity
 	 * counts as activity and prevents spurious freezes.
+	 * @param vfs - The vfs parameter.
 	 */
 	private attachVirtualFileSystem(vfs: VirtualFileSystem): void {
 		(vfs as EventEmitter).on("file:read", (data: Record<string, unknown>) => {
@@ -229,6 +231,7 @@ export class HoneyPot {
 
 	/**
 	 * Attaches to VirtualUserManager events.
+	 * @param users - The users parameter.
 	 */
 	private attachVirtualUserManager(users: VirtualUserManager): void {
 		(users as EventEmitter).on("initialized", () => {
@@ -282,6 +285,7 @@ export class HoneyPot {
 
 	/**
 	 * Attaches to SshMimic events.
+	 * @param ssh - The ssh parameter.
 	 */
 	private attachSshMimic(ssh: SshMimic): void {
 		(ssh as EventEmitter).on("start", (data: Record<string, unknown>) => {
@@ -334,6 +338,7 @@ export class HoneyPot {
 
 	/**
 	 * Attaches to SftpMimic events.
+	 * @param sftp - The sftp parameter.
 	 */
 	private attachSftpMimic(sftp: SftpMimic): void {
 		(sftp as EventEmitter).on("start", (data: Record<string, unknown>) => {
@@ -382,6 +387,7 @@ export class HoneyPot {
 	 * @param source Event source (e.g., "SshMimic", "VirtualFileSystem").
 	 * @param type Event type.
 	 * @param details Event-specific data.
+	 * @param unknown> - The unknown> parameter.
 	 */
 	private log(
 		source: string,

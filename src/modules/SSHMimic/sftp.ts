@@ -394,6 +394,9 @@ export class SftpMimic extends EventEmitter {
 	 * Resolves SFTP request paths with proper handling of relative paths.
 	 * Relative paths (including ".") are resolved relative to the user's home directory.
 	 * This is standard SFTP behavior where the "working directory" is always the home.
+	 * @param requestPath - The requestPath parameter.
+	 * @param authUser - The authenticated username.
+	 * @returns The result string.
 	 */
 	private resolveRequestPath(requestPath: string, authUser: string): string {
 		const homePath = userHome(authUser);
@@ -471,6 +474,8 @@ export class SftpMimic extends EventEmitter {
 	 * Attach SFTP handlers to an already-accepted sftp stream.
 	 * Used internally by the SSH server for the SFTP subsystem on the SSH port.
 	 * @internal
+	 * @param sftp - The sftp parameter.
+	 * @param authUser - The authenticated username.
 	 */
 	public attachSftpHandlers(sftp: SftpServerStream, authUser: string): void {
 		const getVfs = () => this.getVfs();

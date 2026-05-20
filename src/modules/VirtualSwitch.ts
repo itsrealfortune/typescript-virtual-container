@@ -79,6 +79,16 @@ function cidrRange(cidr: string): { network: number; mask: number } {
 	return { network, mask };
 }
 
+/**
+ * Virtual network switch connecting multiple VMs on a shared subnet.
+ * Handles ARP resolution, inter-VM routing, NAT gateway, traffic shaping,
+ * DNS, load balancing, network partitioning, and bandwidth accounting.
+ *
+ * @see Baie
+ * @see VirtualProxy
+ * @see VirtualVpn
+ * @see VirtualNetworkManager
+ */
 export class VirtualSwitch {
 	/** Subnet CIDR (e.g. "10.0.1.0/24"). */
 	readonly subnet: string;
@@ -133,7 +143,10 @@ export class VirtualSwitch {
 		return port;
 	}
 
-	/** Remove a VM from the switch by MAC. */
+		/**
+	 * Remove a VM from the switch by MAC.
+	 * @param mac - The mac parameter.
+	 */
 	public detach(mac: MacAddress): void {
 		const port = this.ports.get(mac);
 		if (port) {
@@ -142,17 +155,28 @@ export class VirtualSwitch {
 		}
 	}
 
-	/** Get all attached ports (MAC → VmPort). */
+		/**
+	 * Get all attached ports (MAC → VmPort).
+	 * @returns The map of entries.
+	 */
 	public getPorts(): Map<MacAddress, VmPort> {
 		return new Map(this.ports);
 	}
 
-	/** Get a port by MAC address. */
+		/**
+	 * Get a port by MAC address.
+	 * @param mac - The mac parameter.
+	 * @returns The VM port descriptor.
+	 */
 	public getPort(mac: MacAddress): VmPort | undefined {
 		return this.ports.get(mac);
 	}
 
-	/** Resolve a hostname to an IP address via DNS records or VM hostnames. */
+		/**
+	 * Resolve a hostname to an IP address via DNS records or VM hostnames.
+	 * @param hostname - The hostname parameter.
+	 * @returns The operation result.
+	 */
 	public resolveHostname(hostname: string): string | null {
 		const record = this.dnsRecords.find((r) => r.hostname === hostname);
 		if (record) return record.ip;
@@ -165,13 +189,20 @@ export class VirtualSwitch {
 
 	// ── DNS ──────────────────────────────────────────────────────────────
 
-	/** Register a DNS record. */
+		/**
+	 * Register a DNS record.
+	 * @param hostname - The hostname parameter.
+	 * @param ip - The ip parameter.
+	 */
 	public addDnsRecord(hostname: string, ip: string): void {
 		this.dnsRecords = this.dnsRecords.filter((r) => r.hostname !== hostname);
 		this.dnsRecords.push({ hostname, ip });
 	}
 
-	/** Remove a DNS record. */
+		/**
+	 * Remove a DNS record.
+	 * @param hostname - The hostname parameter.
+	 */
 	public removeDnsRecord(hostname: string): void {
 		this.dnsRecords = this.dnsRecords.filter((r) => r.hostname !== hostname);
 	}
@@ -182,17 +213,28 @@ export class VirtualSwitch {
 
 	// ── Traffic shaping ──────────────────────────────────────────────────
 
-	/** Set traffic shaping for a VM (by MAC or hostname). */
+		/**
+	 * Set traffic shaping for a VM (by MAC or hostname).
+	 * @param target - The target parameter.
+	 * @param rule - The rule parameter.
+	 */
 	public setTrafficRule(target: string, rule: TrafficRule): void {
 		this.trafficRules.set(target, rule);
 	}
 
-	/** Remove a traffic rule. */
+		/**
+	 * Remove a traffic rule.
+	 * @param target - The target parameter.
+	 */
 	public removeTrafficRule(target: string): void {
 		this.trafficRules.delete(target);
 	}
 
-	/** Apply traffic shaping to a packet. Returns modified latency. */
+		/**
+	 * Apply traffic shaping to a packet. Returns modified latency.
+	 * @param baseLatency - The baseLatency parameter.
+	 * @returns The numeric result.
+	 */
 	private _applyTrafficShape(_mac: MacAddress, baseLatency: number): number {
 		let latency = baseLatency;
 		for (const rule of this.trafficRules.values()) {
@@ -206,7 +248,10 @@ export class VirtualSwitch {
 
 	// ── Load balancer ────────────────────────────────────────────────────
 
-	/** Add a load balancer rule. */
+		/**
+	 * Add a load balancer rule.
+	 * @param rule - The rule parameter.
+	 */
 	public addLoadBalancer(rule: LoadBalancerRule): void {
 		this.loadBalancers = this.loadBalancers.filter((r) => r.name !== rule.name);
 		this.loadBalancers.push(rule);
@@ -214,14 +259,20 @@ export class VirtualSwitch {
 		this.lbConnections.set(rule.name, new Map());
 	}
 
-	/** Remove a load balancer. */
+		/**
+	 * Remove a load balancer.
+	 * @param name - The name parameter.
+	 */
 	public removeLoadBalancer(name: string): void {
 		this.loadBalancers = this.loadBalancers.filter((r) => r.name !== name);
 		this.lbCounters.delete(name);
 		this.lbConnections.delete(name);
 	}
 
-	/** Route through a load balancer. Returns the target IP and port or null. */
+		/**
+	 * Route through a load balancer. Returns the target IP and port or null.
+	 * @param port - The port parameter.
+	 */
 	public resolveLoadBalancer(port: number): { ip: string; port: number } | null {
 		for (const lb of this.loadBalancers) {
 			if (lb.port !== port || lb.targets.length === 0) continue;
@@ -252,6 +303,7 @@ export class VirtualSwitch {
 
 	/** Split the network into isolated groups. VMs in different groups
 	 *  cannot communicate.
+	 * @param groups - The groups parameter.
 	 *  Each group is an array of MAC addresses or hostnames. */
 	public setPartitions(groups: string[][]): void {
 		this.partitions = groups.map((g) => new Set(g));
@@ -262,7 +314,12 @@ export class VirtualSwitch {
 		this.partitions = [];
 	}
 
-	/** Check if two MACs are in the same partition. */
+		/**
+	 * Check if two MACs are in the same partition.
+	 * @param mac1 - The mac1 parameter.
+	 * @param mac2 - The mac2 parameter.
+	 * @returns The success indicator.
+	 */
 	private _samePartition(mac1: MacAddress, mac2: MacAddress): boolean {
 		if (this.partitions.length === 0) return true;
 		for (const group of this.partitions) {
@@ -273,12 +330,20 @@ export class VirtualSwitch {
 
 	// ── Bandwidth accounting ─────────────────────────────────────────────
 
-	/** Get total bytes sent by a MAC. */
+		/**
+	 * Get total bytes sent by a MAC.
+	 * @param mac - The mac parameter.
+	 * @returns The numeric result.
+	 */
 	public getBytesSent(mac: string): number {
 		return this.bandwidthSent.get(mac) ?? 0;
 	}
 
-	/** Get total bytes received by a MAC. */
+		/**
+	 * Get total bytes received by a MAC.
+	 * @param mac - The mac parameter.
+	 * @returns The numeric result.
+	 */
 	public getBytesReceived(mac: string): number {
 		return this.bandwidthReceived.get(mac) ?? 0;
 	}

@@ -6,6 +6,8 @@ import { dirname, resolve } from "node:path";
  * Loads an existing PEM-encoded RSA host key from `.ssh-mimic/host_rsa` under
  * the given base directory, or generates a new 2048-bit key pair and persists
  * it to disk. Returns the private key in PEM format.
+ * @param baseDir - The baseDir parameter.
+ * @returns The result string.
  */
 export function loadOrCreateHostKey(baseDir: string = process.cwd()): string {
 	const hostKeyPath = resolve(baseDir, ".ssh-mimic", "host_rsa");
