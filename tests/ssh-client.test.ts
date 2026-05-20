@@ -110,12 +110,38 @@ describe("SSHClient API", () => {
 });
 
 import { loadOrCreateHostKey } from "../src/SSHMimic/hostKey";
+import { mkdirSync, mkdtempSync, writeFileSync, rmSync, existsSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 
 describe("hostKey", () => {
-	test("loadOrGenerateHostKey returns keys", async () => {
-		const key = await loadOrCreateHostKey();
-		expect(key).toBeDefined();
-		expect(key).toBeTruthy();
+	test("loadOrCreateHostKey generates new key in temp dir", () => {
+		const tmpDir = mkdtempSync(join(tmpdir(), "hostkey-"));
+		try {
+			const key = loadOrCreateHostKey(tmpDir);
+			expect(key).toBeTruthy();
+			expect(key).toContain("BEGIN RSA PRIVATE KEY");
+			// Verify the key file was created
+			const keyPath = join(tmpDir, ".ssh-mimic", "host_rsa");
+			expect(existsSync(keyPath)).toBe(true);
+		} finally {
+			rmSync(tmpDir, { recursive: true, force: true });
+		}
+	});
+
+	test("loadOrCreateHostKey reads existing key", () => {
+		const tmpDir = mkdtempSync(join(tmpdir(), "hostkey-existing-"));
+		try {
+			// Pre-create the key file
+			const keyDir = join(tmpDir, ".ssh-mimic");
+			mkdirSync(keyDir, { recursive: true });
+			const keyPath = join(keyDir, "host_rsa");
+			writeFileSync(keyPath, "custom-key-data\n", { mode: 0o600 });
+			const key = loadOrCreateHostKey(tmpDir);
+			expect(key.trim()).toBe("custom-key-data");
+		} finally {
+			rmSync(tmpDir, { recursive: true, force: true });
+		}
 	});
 });
 

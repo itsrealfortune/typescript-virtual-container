@@ -76,4 +76,9 @@ describe("Pipeline executor", () => {
 		expect(r.stdout).toContain("a");
 		expect(r.stdout).toContain("b");
 	});
+
+	test("command with stderr output", async () => {
+		const r = await runCmd(client, "echo errmsg >&2");
+		expect(r.exitCode).toBe(0);
+	});
 });
