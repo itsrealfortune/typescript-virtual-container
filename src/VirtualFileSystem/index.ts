@@ -28,6 +28,7 @@ import type {
 } from "./internalTypes";
 import { appendJournalEntry, JournalOp, readJournal, truncateJournal } from "./journal";
 import { getNodeNormalized, getParentDirectory, normalizePath } from "./path";
+import { enforceChmod, enforceChown, enforceDelete, enforceAccess, R_OK, W_OK } from "./permissions";
 
 // ── Persistence options ───────────────────────────────────────────────────────
 
@@ -938,11 +939,14 @@ class VirtualFileSystem extends EventEmitter {
 	/**
 	 * Writes UTF-8 text or binary content into a file.
 	 * Parent directories are created when missing.
+	 * If `uid`/`gid` provided, enforces write permission on existing files.
 	 */
 	public writeFile(
 		targetPath: string,
 		content: string | Buffer,
 		options: WriteFileOptions = {},
+		uid?: number,
+		gid?: number,
 	): void {
 		const m = this.resolveMount(targetPath);
 		if (m) {
@@ -982,6 +986,11 @@ class VirtualFileSystem extends EventEmitter {
 			return;
 		}
 
+		// Enforce write permission on existing files
+		if (existing && uid !== undefined && gid !== undefined) {
+			enforceAccess(this.root, normalized, uid, gid, W_OK);
+		}
+
 		const shouldCompress = options.compress ?? false;
 		const storedContent = shouldCompress ? gzipSync(rawContent) : rawContent;
 		const mode = options.mode ?? 0o644;
@@ -1004,8 +1013,9 @@ class VirtualFileSystem extends EventEmitter {
 	/**
 	 * Reads file content as a UTF-8 string.
 	 * Gzip-compressed files are transparently decompressed.
+	 * If `uid`/`gid` provided, enforces read permission.
 	 */
-	public readFile(targetPath: string): string {
+	public readFile(targetPath: string, uid?: number, gid?: number): string {
 		const m = this.resolveMount(targetPath);
 		if (m) {
 			if (!fsSync.existsSync(m.fullHostPath)) throw new Error(`ENOENT: no such file or directory, open '${m.fullHostPath}'`);
@@ -1023,6 +1033,7 @@ class VirtualFileSystem extends EventEmitter {
 
 		const node = getNodeNormalized(this.root, normalized);
 		if (node.type === "stub") {
+			if (uid !== undefined && gid !== undefined) enforceAccess(this.root, normalized, uid, gid, R_OK);
 			this.emit("file:read", { path: normalized, size: node.stubContent.length });
 			return node.stubContent;
 		}
@@ -1034,6 +1045,7 @@ class VirtualFileSystem extends EventEmitter {
 		if (node.type !== "file") {
 			throw new Error(`Cannot read '${targetPath}': not a file.`);
 		}
+		if (uid !== undefined && gid !== undefined) enforceAccess(this.root, normalized, uid, gid, R_OK);
 		const f = node as InternalFileNode;
 		if (f.evicted) this._reloadEvicted(f, normalized);
 		const raw = f.compressed ? gunzipSync(f.content) : f.content;
@@ -1085,16 +1097,18 @@ class VirtualFileSystem extends EventEmitter {
 		}
 	}
 
-	/** Updates mode bits on a node. */
-	public chmod(targetPath: string, mode: number): void {
+	/** Updates mode bits on a node. If `uid` is provided, enforces ownership check. */
+	public chmod(targetPath: string, mode: number, uid?: number): void {
 		const normalized = normalizePath(targetPath);
+		if (uid !== undefined) enforceChmod(this.root, normalized, uid);
 		getNodeNormalized(this.root, normalized).mode = mode;
 		this._journal({ op: JournalOp.CHMOD, path: normalized, mode });
 	}
 
-	/** Changes ownership (uid/gid) of a file or directory. */
-	public chown(targetPath: string, uid: number, gid: number): void {
+	/** Changes ownership (uid/gid) of a file or directory. If `actorUid` is provided, enforces root-only check. */
+	public chown(targetPath: string, uid: number, gid: number, actorUid?: number): void {
 		const normalized = normalizePath(targetPath);
+		if (actorUid !== undefined) enforceChown(normalized, actorUid);
 		const node = getNodeNormalized(this.root, normalized);
 		node.uid = uid;
 		node.gid = gid;
@@ -1461,8 +1475,8 @@ class VirtualFileSystem extends EventEmitter {
 		throw new Error(`Too many levels of symbolic links: ${linkPath}`);
 	}
 
-	/** Removes a file or directory node. */
-	public remove(targetPath: string, options: RemoveOptions = {}): void {
+	/** Removes a file or directory node. If `uid`/`gid` provided, enforces delete permission (including sticky bit). */
+	public remove(targetPath: string, options: RemoveOptions = {}, uid?: number, gid?: number): void {
 		const m = this.resolveMount(targetPath);
 		if (m) {
 			if (m.readOnly) throw new Error(`EROFS: read-only file system, unlink '${m.fullHostPath}'`);
@@ -1477,6 +1491,11 @@ class VirtualFileSystem extends EventEmitter {
 		}
 		const normalized = normalizePath(targetPath);
 		if (normalized === "/") throw new Error("Cannot remove root directory.");
+		if (uid !== undefined && gid !== undefined) {
+			const parentPath = normalized.split("/").slice(0, -1).join("/") || "/";
+			const name = normalized.split("/").pop() ?? "";
+			enforceDelete(this.root, parentPath, name, uid, gid);
+		}
 		const node = getNodeNormalized(this.root, normalized);
 		if (node.type === "directory") {
 			const dir = node as InternalDirectoryNode;
