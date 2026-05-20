@@ -4,7 +4,7 @@ import { createTestEnv, runCmd } from "./test-helper";
 
 // Skip network-dependent tests by default. Run with:
 //   SSH_MIMIC_RUN_NETWORK_TESTS=1 bun test tests/commands-admin-net.test.ts
-const runNetwork = !!process.env.SSH_MIMIC_RUN_NETWORK_TESTS;
+const runNetwork = !!process.env.SSH_MIMIC_RUN_NETWORK_TESTS || process.argv.includes("--run-network-tests");
 const describeNetwork = runNetwork ? describe : describe.skip;
 
 let client: InstanceType<typeof SshClient>;
