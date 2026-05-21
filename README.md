@@ -818,6 +818,52 @@ Reports shell initialization time, command execution time, and RSS memory by con
 ---
 
 <details>
+<summary><strong>Memory Management &amp; Garbage Collection</strong></summary>
+
+Each `VirtualShell` holds its VFS tree, process table, sessions, and file descriptors entirely in the JS heap. For long-running servers or multi-shell deployments, two mechanisms keep memory in check:
+
+### Idle freeze/thaw
+
+After a configurable period of inactivity, the VFS tree is serialised to a compact binary buffer and the live object graph is released. On the next command the tree is reconstructed in ~0.1 ms.
+
+```ts
+await shell.ensureInitialized();
+shell.enableIdleManagement({
+  idleThresholdMs: 60_000,   // freeze after 60s of inactivity
+  checkIntervalMs: 15_000,   // check every 15s
+});
+// Events: shell.on("shell:freeze", ...) / shell.on("shell:thaw", ...)
+```
+
+### Garbage collector
+
+A background GC runs periodically (default every 30s) to free memory from:
+
+- **Terminated processes** — records with `status === "done"` are removed from the process table.
+- **Stale CPU entries** — CPU time tracking for processes that no longer exist is cleared.
+- **Closed large files** — file contents with no open file descriptors are evicted from RAM (reloaded on demand from snapshot).
+- **Node.js GC** — if `--expose-gc` is passed to the runtime, a full GC is triggered.
+
+```ts
+shell.enableIdleManagement({
+  gcIntervalMs: 30_000,  // GC runs every 30s (0 = disabled)
+});
+
+// Manual trigger
+const idle = new IdleManager(shell);
+const stats = idle.runGc();
+// stats: { terminatedProcesses, staleCpuEntries, evictedFiles, forcedGc }
+
+idle.on("gc:run", (stats) => console.log(stats));
+```
+
+> **Note:** In `"fs"` mode the existing `evictionThresholdBytes` option (default 64 KB) already evicts large files after each `flushMirror()`. The GC extends this to also evict files based on open FD state, regardless of flush timing.
+
+</details>
+
+---
+
+<details>
 <summary><strong>Types &amp; TypeScript</strong></summary>
 
 ```typescript

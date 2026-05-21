@@ -6,6 +6,11 @@
  */
 /** biome-ignore-all lint/style/useNamingConvention: to fix later*/
 
+/**
+ * Writable /proc/sys state — all tunable kernel parameters exposed via
+ * `sysctl` and `/proc/sys/*` files. Values affect simulator behavior
+ * when applicable (e.g. `net.ipv4.ip_forward`, `vm.swappiness`).
+ */
 export interface SysctlState {
 	kernel: {
 		hostname: string;

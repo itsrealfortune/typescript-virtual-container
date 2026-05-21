@@ -29,8 +29,10 @@ export const SIGNALS: Record<number, { name: string; description: string; defaul
 	12: { name: "SIGUSR2", description: "User signal 2", defaultAction: "terminate" },
 };
 
+/** Human-readable POSIX signal name (e.g. "SIGTERM", "SIGKILL"). */
 export type SignalName = keyof typeof SIGNALS extends number ? string : string;
 
+/** Callback invoked when a virtual process receives a signal. */
 export type SignalHandler = (signal: number, pid: number) => void
 
 /**

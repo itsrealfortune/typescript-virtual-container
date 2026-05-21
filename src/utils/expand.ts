@@ -360,6 +360,15 @@ function expandArithmeticChunks(input: string, env: Record<string, string>): str
 	return result + input.slice(flush);
 }
 
+/**
+ * Synchronously expand all shell variable references in a string.
+ * Handles ~, $?, $$, ${VAR:-default}, ${VAR:=assign}, ${VAR:+alternate}, $VAR, $((expr)), etc.
+ * @param input - Raw string with shell-style variable references.
+ * @param env - Environment variable map for $VAR resolution.
+ * @param lastExit - Value of $? (last exit code).
+ * @param home - Home directory for ~ expansion (defaults to env.HOME).
+ * @returns The fully expanded string.
+ */
 export function expandSync(
 	input: string,
 	env: Record<string, string>,
@@ -588,7 +597,7 @@ export async function expandAsync(
 
 /**
  * Expand a glob pattern against a VirtualShell VFS.
- * Supports * (any chars in segment) and ** (any path).
+ * Supports star (any chars in segment) and double-star (any path).
  * Returns the original pattern if no matches found (bash behavior).
  */
 type GlobVfs = {
@@ -603,6 +612,15 @@ function nodeType(vfs: GlobVfs, p: string): string | null {
 	try { return vfs.stat(p).type; } catch { return null; }
 }
 
+/**
+ * Expand a glob pattern into matching VFS paths.
+ * Supports star (any chars in segment) and double-star (any path depth).
+ * Returns the original pattern if no matches found (bash behavior).
+ * @param pattern - Glob pattern.
+ * @param cwd - Current working directory for relative patterns.
+ * @param vfs - VFS interface for listing and statting paths.
+ * @returns Array of matching absolute paths, or [pattern] if no match.
+ */
 export function expandGlob(
 	pattern: string,
 	cwd: string,
