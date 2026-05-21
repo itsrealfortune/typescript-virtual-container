@@ -74,12 +74,13 @@
 - [x] Fix parameters name convention in multiple filesand remove unused parameters (noUnusedLocals, noUnusedParameters)
 - [x] Fix all names conventions (camelCase for variables/functions, PascalCase for classes/types, UPPER_SNAKE_CASE for constants)
 - [x] Split src/modules/*.ts if they are needed to to uniformise the codebase and improve maintainability, and separate function modules from class modules
+- [x] Remove all non null assertions (`!`) from the codebase — ensure proper null checks and type guards instead
+- [x] Remove all biome and ts-ignore comments — fix underlying issues instead of silencing them
+- [x] Resolve dependabots alerts and update dependencies to address security vulnerabilities (e.g. serialize-javascript, fflate)
 </details>
 
 ## Prioty
 
-- [x] Remove all non null assertions (`!`) from the codebase — ensure proper null checks and type guards instead
-- [ ] Remove all biome and ts-ignore comments — fix underlying issues instead of silencing them
 - [ ] Add a RAM and CPU capping
 - [ ] Add a garbage collector to free up memory from deleted files, closed windows, and terminated processes, but also from closed files that are not required to be kept in memory (e.g. large files that have been closed) [refers to IdleManager]
 - [ ] Add a swap file mechanism to handle memory overflow when RAM is full (e.g. move least recently used data to disk)
@@ -88,4 +89,3 @@
 - [ ] Add a more realistic network stack that simulates latency, bandwidth limits, and packet loss, and allows for more complex network configurations (e.g. multiple interfaces, routing tables, firewall rules)
 - [ ] Add a more realistic user management system that supports user groups, permissions, and authentication mechanisms (e.g. password hashing, PAM)
 - [ ] WebSocket-based remote shell client (experimental)
-- [ ] Resolve dependabots alerts and update dependencies to address security vulnerabilities (e.g. serialize-javascript, fflate)
