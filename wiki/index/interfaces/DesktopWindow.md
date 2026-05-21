@@ -6,7 +6,7 @@
 
 # Interface: DesktopWindow
 
-Defined in: [src/modules/desktopManager.ts:45](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L45)
+Defined in: [src/modules/desktopManager.ts:65](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L65)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [src/modules/desktopManager.ts:45](https://github.com/itsrealfortune
 
 > **content**: [`WindowContent`](../type-aliases/WindowContent.md)
 
-Defined in: [src/modules/desktopManager.ts:57](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L57)
+Defined in: [src/modules/desktopManager.ts:77](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L77)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [src/modules/desktopManager.ts:57](https://github.com/itsrealfortune
 
 > **focused**: `boolean`
 
-Defined in: [src/modules/desktopManager.ts:55](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L55)
+Defined in: [src/modules/desktopManager.ts:75](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L75)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [src/modules/desktopManager.ts:55](https://github.com/itsrealfortune
 
 > **height**: `number`
 
-Defined in: [src/modules/desktopManager.ts:51](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L51)
+Defined in: [src/modules/desktopManager.ts:71](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L71)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [src/modules/desktopManager.ts:51](https://github.com/itsrealfortune
 
 > **id**: `string`
 
-Defined in: [src/modules/desktopManager.ts:46](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L46)
+Defined in: [src/modules/desktopManager.ts:66](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L66)
 
 ***
 
@@ -46,7 +46,7 @@ Defined in: [src/modules/desktopManager.ts:46](https://github.com/itsrealfortune
 
 > **maximized**: `boolean`
 
-Defined in: [src/modules/desktopManager.ts:53](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L53)
+Defined in: [src/modules/desktopManager.ts:73](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L73)
 
 ***
 
@@ -54,7 +54,7 @@ Defined in: [src/modules/desktopManager.ts:53](https://github.com/itsrealfortune
 
 > **minimized**: `boolean`
 
-Defined in: [src/modules/desktopManager.ts:52](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L52)
+Defined in: [src/modules/desktopManager.ts:72](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L72)
 
 ***
 
@@ -62,7 +62,7 @@ Defined in: [src/modules/desktopManager.ts:52](https://github.com/itsrealfortune
 
 > **savedRect**: \{ `height`: `number`; `width`: `number`; `x`: `number`; `y`: `number`; \} \| `null`
 
-Defined in: [src/modules/desktopManager.ts:54](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L54)
+Defined in: [src/modules/desktopManager.ts:74](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L74)
 
 ***
 
@@ -70,7 +70,7 @@ Defined in: [src/modules/desktopManager.ts:54](https://github.com/itsrealfortune
 
 > **title**: `string`
 
-Defined in: [src/modules/desktopManager.ts:47](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L47)
+Defined in: [src/modules/desktopManager.ts:67](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L67)
 
 ***
 
@@ -78,7 +78,7 @@ Defined in: [src/modules/desktopManager.ts:47](https://github.com/itsrealfortune
 
 > **width**: `number`
 
-Defined in: [src/modules/desktopManager.ts:50](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L50)
+Defined in: [src/modules/desktopManager.ts:70](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L70)
 
 ***
 
@@ -86,7 +86,7 @@ Defined in: [src/modules/desktopManager.ts:50](https://github.com/itsrealfortune
 
 > **x**: `number`
 
-Defined in: [src/modules/desktopManager.ts:48](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L48)
+Defined in: [src/modules/desktopManager.ts:68](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L68)
 
 ***
 
@@ -94,7 +94,7 @@ Defined in: [src/modules/desktopManager.ts:48](https://github.com/itsrealfortune
 
 > **y**: `number`
 
-Defined in: [src/modules/desktopManager.ts:49](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L49)
+Defined in: [src/modules/desktopManager.ts:69](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L69)
 
 ***
 
@@ -102,4 +102,4 @@ Defined in: [src/modules/desktopManager.ts:49](https://github.com/itsrealfortune
 
 > **zIndex**: `number`
 
-Defined in: [src/modules/desktopManager.ts:56](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L56)
+Defined in: [src/modules/desktopManager.ts:76](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L76)

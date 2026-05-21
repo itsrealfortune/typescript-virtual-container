@@ -6,7 +6,7 @@
 
 # Class: Baie
 
-Defined in: [src/modules/VirtualSwitch.ts:492](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L492)
+Defined in: [src/modules/VirtualSwitch.ts:519](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L519)
 
 High-level multi-VM orchestrator built on top of VirtualSwitch.
 
@@ -40,7 +40,7 @@ await baie.destroyVM("db-server");
 
 > **new Baie**(`name`, `subnet?`): `Baie`
 
-Defined in: [src/modules/VirtualSwitch.ts:499](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L499)
+Defined in: [src/modules/VirtualSwitch.ts:526](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L526)
 
 #### Parameters
 
@@ -62,7 +62,7 @@ Defined in: [src/modules/VirtualSwitch.ts:499](https://github.com/itsrealfortune
 
 > `readonly` **name**: `string`
 
-Defined in: [src/modules/VirtualSwitch.ts:494](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L494)
+Defined in: [src/modules/VirtualSwitch.ts:521](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L521)
 
 Human-readable name for this Baie instance.
 
@@ -72,7 +72,7 @@ Human-readable name for this Baie instance.
 
 > `readonly` **switch**: [`VirtualSwitch`](VirtualSwitch.md)
 
-Defined in: [src/modules/VirtualSwitch.ts:496](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L496)
+Defined in: [src/modules/VirtualSwitch.ts:523](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L523)
 
 The underlying network switch managing routing, DNS, and traffic shaping.
 
@@ -82,7 +82,7 @@ The underlying network switch managing routing, DNS, and traffic shaping.
 
 > **createVM**(`hostname`, `vfsOptions?`, `preferredIp?`): `Promise`\<[`VirtualShell`](VirtualShell.md)\>
 
-Defined in: [src/modules/VirtualSwitch.ts:512](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L512)
+Defined in: [src/modules/VirtualSwitch.ts:539](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L539)
 
 Create a new VM with the given hostname and optional VFS options.
 The VM is attached to the switch and auto-registered in DNS.
@@ -119,7 +119,7 @@ The initialized VirtualShell for the new VM.
 
 > **destroyVM**(`hostname`): `Promise`\<`void`\>
 
-Defined in: [src/modules/VirtualSwitch.ts:529](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L529)
+Defined in: [src/modules/VirtualSwitch.ts:556](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L556)
 
 Destroy a VM by hostname. Detaches it from the switch and removes its DNS record.
 
@@ -141,7 +141,7 @@ Hostname of the VM to destroy.
 
 > **getVM**(`hostname`): [`VirtualShell`](VirtualShell.md) \| `undefined`
 
-Defined in: [src/modules/VirtualSwitch.ts:543](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L543)
+Defined in: [src/modules/VirtualSwitch.ts:570](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L570)
 
 Get a VM by hostname.
 
@@ -165,7 +165,7 @@ The VirtualShell if found, or undefined.
 
 > **listVMs**(): `object`[]
 
-Defined in: [src/modules/VirtualSwitch.ts:551](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L551)
+Defined in: [src/modules/VirtualSwitch.ts:578](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L578)
 
 List all VMs in this Baie with their hostnames and assigned IPs.
 

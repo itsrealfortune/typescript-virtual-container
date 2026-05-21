@@ -8,7 +8,7 @@
 
 > **toTtyLines**(`text`): `string`
 
-Defined in: [src/modules/shellRuntime.ts:16](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/shellRuntime.ts#L16)
+Defined in: [src/modules/shellRuntime.ts:31](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/shellRuntime.ts#L31)
 
 Converts line endings to CRLF for TTY output.
 

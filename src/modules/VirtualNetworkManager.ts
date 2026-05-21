@@ -59,7 +59,7 @@ export interface FirewallRule {
 
 /**
  * Generates a random MAC address in the 02:42:xx:xx:xx:xx range.
- * @returns The result string.
+ * @returns A MAC address string.
  */
 function randomMac(): string {
 	const hex = () => Math.floor(Math.random() * 256).toString(16).padStart(2, "0");
@@ -67,8 +67,35 @@ function randomMac(): string {
 }
 
 /**
- * Virtual network stack with routing table, ARP cache, and interface management.
- * Provides dynamic data for `ip`, `ping`, and `/proc/net/*`.
+ * Virtual network stack with routing table, ARP cache, interface management,
+ * and iptables-style firewall. Provides dynamic data for `ip`, `ping`,
+ * `netstat`, and `/proc/net/*` commands.
+ *
+ * @example
+ * ```ts
+ * const net = new VirtualNetworkManager();
+ *
+ * // Configure interface
+ * net.setInterfaceIp("eth0", "10.0.1.5", 24);
+ * net.setInterfaceState("eth0", "UP");
+ *
+ * // Add a route
+ * net.addRoute("192.168.1.0", "10.0.1.1", "255.255.255.0", "eth0");
+ *
+ * // Ping a host
+ * const latency = net.ping("10.0.1.10"); // returns ms or -1
+ *
+ * // Firewall: block incoming SSH
+ * net.addFirewallRule({
+ *   chain: "INPUT", protocol: "tcp", destPort: 22, action: "DROP",
+ * });
+ * net.checkFirewall("INPUT", "tcp", "10.0.1.10", "10.0.1.5", 22); // "DROP"
+ *
+ * // Format output like real commands
+ * console.log(net.formatIpAddr());   // mimics `ip addr`
+ * console.log(net.formatIpRoute());  // mimics `ip route`
+ * console.log(net.formatFirewall()); // mimics `iptables -L`
+ * ```
  */
 export class VirtualNetworkManager {
 	private interfaces: VirtualInterface[] = [
@@ -284,8 +311,8 @@ export class VirtualNetworkManager {
 
 	/**
 	 * Add a firewall rule. Returns the rule index.
-	 * @param rule - The rule parameter.
-	 * @returns The numeric result.
+	 * @param rule - Firewall rule with chain, protocol, source/destination, and action.
+	 * @returns Index of the newly added rule in the rules list.
 	 */
 	public addFirewallRule(rule: FirewallRule): number {
 		this.firewallRules.push(rule);
@@ -294,8 +321,8 @@ export class VirtualNetworkManager {
 
 	/**
 	 * Remove a firewall rule by index.
-	 * @param index - The index parameter.
-	 * @returns The success indicator.
+	 * @param index - Zero-based index of the rule to remove.
+	 * @returns True if the rule was removed, false if index was out of range.
 	 */
 	public removeFirewallRule(index: number): boolean {
 		if (index < 0 || index >= this.firewallRules.length) return false;
@@ -304,18 +331,18 @@ export class VirtualNetworkManager {
 	}
 
 	/**
-	 * Get all firewall rules.
-	 * @returns The firewall rules.
+	 * Get all firewall rules as a copy.
+	 * @returns Array of FirewallRule objects.
 	 */
 	public getFirewallRules(): FirewallRule[] {
 		return [...this.firewallRules];
 	}
 
 	/**
-	 * Set the default policy for a chain.
-	 * @param chain - The chain parameter.
-	 * @param policy - The policy parameter.
-	 * @returns The success indicator.
+	 * Set the default policy for a firewall chain.
+	 * @param chain - Chain name ("INPUT", "OUTPUT", or "FORWARD").
+	 * @param policy - Default action for unmatched packets ("ACCEPT" or "DROP").
+	 * @returns True if the chain exists and was updated, false otherwise.
 	 */
 	public setPolicy(chain: string, policy: "ACCEPT" | "DROP"): boolean {
 		if (!(chain in this.policies)) return false;
@@ -324,9 +351,9 @@ export class VirtualNetworkManager {
 	}
 
 	/**
-	 * Get the default policy for a chain.
-	 * @param chain - The chain parameter.
-	 * @returns The operation result.
+	 * Get the default policy for a firewall chain.
+	 * @param chain - Chain name ("INPUT", "OUTPUT", or "FORWARD").
+	 * @returns The default policy ("ACCEPT" or "DROP").
 	 */
 	public getPolicy(chain: string): "ACCEPT" | "DROP" {
 		return this.policies[chain] ?? "ACCEPT";
@@ -334,13 +361,13 @@ export class VirtualNetworkManager {
 
 	/**
 	 * Check if a connection is allowed by the firewall.
-	 * Returns the action (ACCEPT, DROP, REJECT) for the given parameters.
-	 * @param chain - The chain parameter.
-	 * @param protocol - The protocol parameter.
-	 * @param source - The source parameter.
-	 * @param destination - The destination parameter.
-	 * @param destPort - The destPort parameter.
-	 * @returns The operation result.
+	 * Evaluates rules in order, falling back to the chain's default policy.
+	 * @param chain - Firewall chain ("INPUT", "OUTPUT", or "FORWARD").
+	 * @param protocol - Network protocol ("tcp", "udp", "icmp", or "all").
+	 * @param source - Source IP address (optional).
+	 * @param destination - Destination IP address (optional).
+	 * @param destPort - Destination port number (optional).
+	 * @returns The firewall action ("ACCEPT", "DROP", or "REJECT").
 	 */
 	public checkFirewall(
 		chain: "INPUT" | "OUTPUT" | "FORWARD",
@@ -367,7 +394,7 @@ export class VirtualNetworkManager {
 
 	/**
 	 * List rules in iptables -L format.
-	 * @returns The result string.
+	 * @returns Multi-line string formatted like `iptables -L` output.
 	 */
 	public formatFirewall(): string {
 		const lines: string[] = [];

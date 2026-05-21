@@ -6,7 +6,7 @@
 
 # Interface: TerminalContent
 
-Defined in: [src/modules/desktopManager.ts:15](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L15)
+Defined in: [src/modules/desktopManager.ts:35](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L35)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [src/modules/desktopManager.ts:15](https://github.com/itsrealfortune
 
 > **dataListeners**: (`chunk`) => `void`[]
 
-Defined in: [src/modules/desktopManager.ts:18](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L18)
+Defined in: [src/modules/desktopManager.ts:38](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L38)
 
 #### Parameters
 
@@ -32,7 +32,7 @@ Defined in: [src/modules/desktopManager.ts:18](https://github.com/itsrealfortune
 
 > `optional` **preEl?**: `HTMLPreElement`
 
-Defined in: [src/modules/desktopManager.ts:19](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L19)
+Defined in: [src/modules/desktopManager.ts:39](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L39)
 
 ***
 
@@ -40,7 +40,7 @@ Defined in: [src/modules/desktopManager.ts:19](https://github.com/itsrealfortune
 
 > `optional` **stream?**: [`ShellStream`](ShellStream.md)
 
-Defined in: [src/modules/desktopManager.ts:20](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L20)
+Defined in: [src/modules/desktopManager.ts:40](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L40)
 
 ***
 
@@ -48,7 +48,7 @@ Defined in: [src/modules/desktopManager.ts:20](https://github.com/itsrealfortune
 
 > **termRenderer**: [`WebTermRenderer`](../classes/WebTermRenderer.md)
 
-Defined in: [src/modules/desktopManager.ts:17](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L17)
+Defined in: [src/modules/desktopManager.ts:37](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L37)
 
 ***
 
@@ -56,4 +56,4 @@ Defined in: [src/modules/desktopManager.ts:17](https://github.com/itsrealfortune
 
 > **type**: `"terminal"`
 
-Defined in: [src/modules/desktopManager.ts:16](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L16)
+Defined in: [src/modules/desktopManager.ts:36](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L36)

@@ -1,3 +1,23 @@
+/**
+ * desktopManager.ts — XFCE-like desktop environment manager for browser rendering.
+ *
+ * Manages a virtual desktop with draggable, resizable, minimizable windows
+ * containing terminals, file managers (Thunar), text editors, about dialogs,
+ * and task managers. Supports session persistence via localStorage.
+ *
+ * Key features:
+ *  - Window management (create, close, minimize, maximize, focus, drag, resize)
+ *  - Terminal windows backed by WebTermRenderer and VirtualShell
+ *  - Thunar file manager with context menus and file operations
+ *  - Nano editor integration for in-browser text editing
+ *  - Task manager with live process list
+ *  - Session save/restore via localStorage
+ *
+ * Public API:
+ *  - DesktopManager     — main class managing the desktop and all windows
+ *  - DesktopWindow      — interface representing a single window
+ *  - WindowContent      — union type for window content variants
+ */
 import type { VirtualShell } from "../modules/VirtualShell";
 import type { ShellStream } from "../types/streams";
 import { keyToBytes } from "../utils/keyToBytes";

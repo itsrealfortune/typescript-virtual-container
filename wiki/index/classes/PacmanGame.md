@@ -6,7 +6,7 @@
 
 # Class: PacmanGame
 
-Defined in: [src/modules/pacmanGame.ts:140](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L140)
+Defined in: [src/modules/pacmanGame.ts:151](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L151)
 
 Classic Pacman game that runs in the terminal with ANSI rendering.
 
@@ -16,7 +16,7 @@ Classic Pacman game that runs in the terminal with ANSI rendering.
 
 > **new PacmanGame**(`opts`): `PacmanGame`
 
-Defined in: [src/modules/pacmanGame.ts:188](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L188)
+Defined in: [src/modules/pacmanGame.ts:199](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L199)
 
 #### Parameters
 
@@ -34,7 +34,7 @@ Defined in: [src/modules/pacmanGame.ts:188](https://github.com/itsrealfortune/ty
 
 > **handleInput**(`chunk`): `void`
 
-Defined in: [src/modules/pacmanGame.ts:257](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L257)
+Defined in: [src/modules/pacmanGame.ts:268](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L268)
 
 #### Parameters
 
@@ -52,7 +52,7 @@ Defined in: [src/modules/pacmanGame.ts:257](https://github.com/itsrealfortune/ty
 
 > **start**(): `void`
 
-Defined in: [src/modules/pacmanGame.ts:245](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L245)
+Defined in: [src/modules/pacmanGame.ts:256](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L256)
 
 #### Returns
 
@@ -64,7 +64,7 @@ Defined in: [src/modules/pacmanGame.ts:245](https://github.com/itsrealfortune/ty
 
 > **stop**(): `void`
 
-Defined in: [src/modules/pacmanGame.ts:252](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L252)
+Defined in: [src/modules/pacmanGame.ts:263](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L263)
 
 #### Returns
 

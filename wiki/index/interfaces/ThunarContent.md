@@ -6,7 +6,7 @@
 
 # Interface: ThunarContent
 
-Defined in: [src/modules/desktopManager.ts:23](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L23)
+Defined in: [src/modules/desktopManager.ts:43](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L43)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [src/modules/desktopManager.ts:23](https://github.com/itsrealfortune
 
 > **path**: `string`
 
-Defined in: [src/modules/desktopManager.ts:25](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L25)
+Defined in: [src/modules/desktopManager.ts:45](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L45)
 
 ***
 
@@ -22,4 +22,4 @@ Defined in: [src/modules/desktopManager.ts:25](https://github.com/itsrealfortune
 
 > **type**: `"thunar"`
 
-Defined in: [src/modules/desktopManager.ts:24](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L24)
+Defined in: [src/modules/desktopManager.ts:44](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L44)

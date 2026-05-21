@@ -8,7 +8,7 @@
 
 > **withTerminalSize**(`command`, `terminalSize`): `string`
 
-Defined in: [src/modules/shellRuntime.ts:24](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/shellRuntime.ts#L24)
+Defined in: [src/modules/shellRuntime.ts:39](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/shellRuntime.ts#L39)
 
 Wraps a command to run with a specific terminal size via stty.
 

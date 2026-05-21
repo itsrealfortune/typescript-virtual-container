@@ -79,6 +79,34 @@ const perf: PerfLogger = createPerfLogger("VirtualUserManager");
  * Persistent user, sudoers, and active-session manager for the shell runtime.
  *
  * Passwords are hashed with scrypt by default and stored in the backing virtual filesystem.
+ * Manages user accounts, process tracking, session management, and sudo access.
+ *
+ * @example
+ * ```ts
+ * const users = new VirtualUserManager(vfs);
+ * await users.initialize();
+ *
+ * // Create a user with password
+ * users.createUser("alice", "s3cret");
+ * users.setPassword("alice", "new-password");
+ *
+ * // Check authentication
+ * const ok = users.verifyPassword("alice", "new-password"); // true
+ *
+ * // Process management
+ * const pid = users.registerProcess("alice", "sleep", ["sleep", "60"], "pts/0");
+ * console.log(users.getProcess(pid)); // { pid, ppid, username, command, ... }
+ * users.killProcess(pid, 15); // SIGTERM
+ *
+ * // Session management
+ * const session = users.registerSession("alice", "192.168.1.100");
+ * console.log(users.listActiveSessions());
+ * users.closeSession(session.id);
+ *
+ * // Sudo access
+ * users.addToSudoers("alice");
+ * console.log(users.canSudo("alice")); // true
+ * ```
  */
 export class VirtualUserManager extends EventEmitter {
 	private static readonly recordCache = new Map<string, VirtualUserRecord>();

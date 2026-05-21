@@ -6,7 +6,7 @@
 
 # Interface: NeofetchInfo
 
-Defined in: [src/modules/neofetch.ts:107](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L107)
+Defined in: [src/modules/neofetch.ts:118](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L118)
 
 System info fields used to render neofetch output.
 
@@ -16,7 +16,7 @@ System info fields used to render neofetch output.
 
 > `optional` **cpu?**: `string`
 
-Defined in: [src/modules/neofetch.ts:118](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L118)
+Defined in: [src/modules/neofetch.ts:129](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L129)
 
 ***
 
@@ -24,7 +24,7 @@ Defined in: [src/modules/neofetch.ts:118](https://github.com/itsrealfortune/type
 
 > `optional` **gpu?**: `string`
 
-Defined in: [src/modules/neofetch.ts:119](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L119)
+Defined in: [src/modules/neofetch.ts:130](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L130)
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: [src/modules/neofetch.ts:119](https://github.com/itsrealfortune/type
 
 > **host**: `string`
 
-Defined in: [src/modules/neofetch.ts:109](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L109)
+Defined in: [src/modules/neofetch.ts:120](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L120)
 
 ***
 
@@ -40,7 +40,7 @@ Defined in: [src/modules/neofetch.ts:109](https://github.com/itsrealfortune/type
 
 > `optional` **kernel?**: `string`
 
-Defined in: [src/modules/neofetch.ts:111](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L111)
+Defined in: [src/modules/neofetch.ts:122](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L122)
 
 ***
 
@@ -48,7 +48,7 @@ Defined in: [src/modules/neofetch.ts:111](https://github.com/itsrealfortune/type
 
 > `optional` **memoryTotalMiB?**: `number`
 
-Defined in: [src/modules/neofetch.ts:121](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L121)
+Defined in: [src/modules/neofetch.ts:132](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L132)
 
 ***
 
@@ -56,7 +56,7 @@ Defined in: [src/modules/neofetch.ts:121](https://github.com/itsrealfortune/type
 
 > `optional` **memoryUsedMiB?**: `number`
 
-Defined in: [src/modules/neofetch.ts:120](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L120)
+Defined in: [src/modules/neofetch.ts:131](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L131)
 
 ***
 
@@ -64,7 +64,7 @@ Defined in: [src/modules/neofetch.ts:120](https://github.com/itsrealfortune/type
 
 > `optional` **osName?**: `string`
 
-Defined in: [src/modules/neofetch.ts:110](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L110)
+Defined in: [src/modules/neofetch.ts:121](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L121)
 
 ***
 
@@ -72,7 +72,7 @@ Defined in: [src/modules/neofetch.ts:110](https://github.com/itsrealfortune/type
 
 > `optional` **packages?**: `string`
 
-Defined in: [src/modules/neofetch.ts:113](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L113)
+Defined in: [src/modules/neofetch.ts:124](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L124)
 
 ***
 
@@ -80,7 +80,7 @@ Defined in: [src/modules/neofetch.ts:113](https://github.com/itsrealfortune/type
 
 > `optional` **resolution?**: `string`
 
-Defined in: [src/modules/neofetch.ts:116](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L116)
+Defined in: [src/modules/neofetch.ts:127](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L127)
 
 ***
 
@@ -88,7 +88,7 @@ Defined in: [src/modules/neofetch.ts:116](https://github.com/itsrealfortune/type
 
 > `optional` **shell?**: `string`
 
-Defined in: [src/modules/neofetch.ts:114](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L114)
+Defined in: [src/modules/neofetch.ts:125](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L125)
 
 ***
 
@@ -96,7 +96,7 @@ Defined in: [src/modules/neofetch.ts:114](https://github.com/itsrealfortune/type
 
 > `optional` **shellProps?**: [`ShellProperties`](ShellProperties.md)
 
-Defined in: [src/modules/neofetch.ts:115](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L115)
+Defined in: [src/modules/neofetch.ts:126](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L126)
 
 ***
 
@@ -104,7 +104,7 @@ Defined in: [src/modules/neofetch.ts:115](https://github.com/itsrealfortune/type
 
 > `optional` **terminal?**: `string`
 
-Defined in: [src/modules/neofetch.ts:117](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L117)
+Defined in: [src/modules/neofetch.ts:128](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L128)
 
 ***
 
@@ -112,7 +112,7 @@ Defined in: [src/modules/neofetch.ts:117](https://github.com/itsrealfortune/type
 
 > `optional` **uptimeSeconds?**: `number`
 
-Defined in: [src/modules/neofetch.ts:112](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L112)
+Defined in: [src/modules/neofetch.ts:123](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L123)
 
 ***
 
@@ -120,4 +120,4 @@ Defined in: [src/modules/neofetch.ts:112](https://github.com/itsrealfortune/type
 
 > **user**: `string`
 
-Defined in: [src/modules/neofetch.ts:108](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L108)
+Defined in: [src/modules/neofetch.ts:119](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/neofetch.ts#L119)

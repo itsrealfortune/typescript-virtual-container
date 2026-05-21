@@ -1,3 +1,14 @@
+/**
+ * neofetch.ts — system information display for the virtual environment.
+ *
+ * Generates a neofetch-style ASCII art output showing system details:
+ * hostname, kernel, uptime, packages, shell, resolution, theme, CPU,
+ * memory, and disk usage. Reads from the VFS and real system APIs.
+ *
+ * Public API:
+ *  - NeofetchInfo  — interface for the collected system information
+ *  - runNeofetch() — main function generating the formatted output
+ */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";

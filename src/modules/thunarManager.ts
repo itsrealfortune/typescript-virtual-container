@@ -1,3 +1,13 @@
+/**
+ * thunarManager.ts — Thunar-like file manager for the browser desktop.
+ *
+ * Provides a graphical file browser with directory navigation, file operations
+ * (create, delete, rename, copy path), context menus, and trash support.
+ * Renders as HTML within a DesktopWindow.
+ *
+ * Public API:
+ *  - ThunarManager — class managing file browser state and DOM rendering
+ */
 import type { VirtualShell } from "../modules/VirtualShell";
 import type { DesktopWindow, ThunarContent } from "./desktopManager";
 

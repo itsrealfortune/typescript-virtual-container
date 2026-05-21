@@ -8,7 +8,7 @@
 
 > **shellQuote**(`value`): `string`
 
-Defined in: [src/modules/shellRuntime.ts:11](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/shellRuntime.ts#L11)
+Defined in: [src/modules/shellRuntime.ts:26](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/shellRuntime.ts#L26)
 
 Shell-escapes a string for safe use in a command line.
 

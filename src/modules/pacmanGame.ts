@@ -1,3 +1,14 @@
+/**
+ * pacmanGame.ts — terminal-based Pacman game for the virtual shell.
+ *
+ * A fully playable Pacman clone rendered over a ShellStream using ANSI
+ * escape sequences. Uses the classic MyMan maze layout (36×33).
+ * Supports arrow key movement, ghost AI, power pellets, and scoring.
+ *
+ * Public API:
+ *  - PacmanGame        — main game class
+ *  - PacmanGameOptions — constructor options interface
+ */
 import type { ShellStream } from "../types/streams";
 import type { TerminalSize } from "./shellRuntime";
 

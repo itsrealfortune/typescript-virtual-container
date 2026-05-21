@@ -6,10 +6,38 @@
 
 # Class: VirtualNetworkManager
 
-Defined in: [src/modules/VirtualNetworkManager.ts:73](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L73)
+Defined in: [src/modules/VirtualNetworkManager.ts:100](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L100)
 
-Virtual network stack with routing table, ARP cache, and interface management.
-Provides dynamic data for `ip`, `ping`, and `/proc/net/*`.
+Virtual network stack with routing table, ARP cache, interface management,
+and iptables-style firewall. Provides dynamic data for `ip`, `ping`,
+`netstat`, and `/proc/net/*` commands.
+
+## Example
+
+```ts
+const net = new VirtualNetworkManager();
+
+// Configure interface
+net.setInterfaceIp("eth0", "10.0.1.5", 24);
+net.setInterfaceState("eth0", "UP");
+
+// Add a route
+net.addRoute("192.168.1.0", "10.0.1.1", "255.255.255.0", "eth0");
+
+// Ping a host
+const latency = net.ping("10.0.1.10"); // returns ms or -1
+
+// Firewall: block incoming SSH
+net.addFirewallRule({
+  chain: "INPUT", protocol: "tcp", destPort: 22, action: "DROP",
+});
+net.checkFirewall("INPUT", "tcp", "10.0.1.10", "10.0.1.5", 22); // "DROP"
+
+// Format output like real commands
+console.log(net.formatIpAddr());   // mimics `ip addr`
+console.log(net.formatIpRoute());  // mimics `ip route`
+console.log(net.formatFirewall()); // mimics `iptables -L`
+```
 
 ## Constructors
 
@@ -27,7 +55,7 @@ Provides dynamic data for `ip`, `ping`, and `/proc/net/*`.
 
 > **arpCache**: [`VirtualArpEntry`](../interfaces/VirtualArpEntry.md)[]
 
-Defined in: [src/modules/VirtualNetworkManager.ts:103](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L103)
+Defined in: [src/modules/VirtualNetworkManager.ts:130](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L130)
 
 ## Methods
 
@@ -35,7 +63,7 @@ Defined in: [src/modules/VirtualNetworkManager.ts:103](https://github.com/itsrea
 
 > **addFirewallRule**(`rule`): `number`
 
-Defined in: [src/modules/VirtualNetworkManager.ts:290](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L290)
+Defined in: [src/modules/VirtualNetworkManager.ts:317](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L317)
 
 Add a firewall rule. Returns the rule index.
 
@@ -45,13 +73,13 @@ Add a firewall rule. Returns the rule index.
 
 [`FirewallRule`](../interfaces/FirewallRule.md)
 
-The rule parameter.
+Firewall rule with chain, protocol, source/destination, and action.
 
 #### Returns
 
 `number`
 
-The numeric result.
+Index of the newly added rule in the rules list.
 
 ***
 
@@ -59,7 +87,7 @@ The numeric result.
 
 > **addRoute**(`dest`, `gateway`, `netmask`, `device`): `void`
 
-Defined in: [src/modules/VirtualNetworkManager.ts:148](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L148)
+Defined in: [src/modules/VirtualNetworkManager.ts:175](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L175)
 
 Adds a new route to the routing table.
 
@@ -99,10 +127,10 @@ Outbound device name (e.g. "eth0").
 
 > **checkFirewall**(`chain`, `protocol`, `source?`, `destination?`, `destPort?`): `"ACCEPT"` \| `"DROP"` \| `"REJECT"`
 
-Defined in: [src/modules/VirtualNetworkManager.ts:345](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L345)
+Defined in: [src/modules/VirtualNetworkManager.ts:372](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L372)
 
 Check if a connection is allowed by the firewall.
-Returns the action (ACCEPT, DROP, REJECT) for the given parameters.
+Evaluates rules in order, falling back to the chain's default policy.
 
 #### Parameters
 
@@ -110,37 +138,37 @@ Returns the action (ACCEPT, DROP, REJECT) for the given parameters.
 
 `"INPUT"` \| `"OUTPUT"` \| `"FORWARD"`
 
-The chain parameter.
+Firewall chain ("INPUT", "OUTPUT", or "FORWARD").
 
 ##### protocol
 
 `"all"` \| `"tcp"` \| `"udp"` \| `"icmp"`
 
-The protocol parameter.
+Network protocol ("tcp", "udp", "icmp", or "all").
 
 ##### source?
 
 `string`
 
-The source parameter.
+Source IP address (optional).
 
 ##### destination?
 
 `string`
 
-The destination parameter.
+Destination IP address (optional).
 
 ##### destPort?
 
 `number`
 
-The destPort parameter.
+Destination port number (optional).
 
 #### Returns
 
 `"ACCEPT"` \| `"DROP"` \| `"REJECT"`
 
-The operation result.
+The firewall action ("ACCEPT", "DROP", or "REJECT").
 
 ***
 
@@ -148,7 +176,7 @@ The operation result.
 
 > **delRoute**(`dest`): `boolean`
 
-Defined in: [src/modules/VirtualNetworkManager.ts:157](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L157)
+Defined in: [src/modules/VirtualNetworkManager.ts:184](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L184)
 
 Removes a route by destination network.
 
@@ -172,7 +200,7 @@ True if a route was removed, false if no match.
 
 > **flushFirewall**(): `void`
 
-Defined in: [src/modules/VirtualNetworkManager.ts:364](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L364)
+Defined in: [src/modules/VirtualNetworkManager.ts:391](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L391)
 
 Flush all firewall rules.
 
@@ -186,7 +214,7 @@ Flush all firewall rules.
 
 > **formatFirewall**(): `string`
 
-Defined in: [src/modules/VirtualNetworkManager.ts:372](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L372)
+Defined in: [src/modules/VirtualNetworkManager.ts:399](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L399)
 
 List rules in iptables -L format.
 
@@ -194,7 +222,7 @@ List rules in iptables -L format.
 
 `string`
 
-The result string.
+Multi-line string formatted like `iptables -L` output.
 
 ***
 
@@ -202,7 +230,7 @@ The result string.
 
 > **formatIpAddr**(): `string`
 
-Defined in: [src/modules/VirtualNetworkManager.ts:216](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L216)
+Defined in: [src/modules/VirtualNetworkManager.ts:243](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L243)
 
 Formats all interfaces as `ip addr` output.
 
@@ -218,7 +246,7 @@ Formatted string mimicking `ip addr` command.
 
 > **formatIpLink**(): `string`
 
-Defined in: [src/modules/VirtualNetworkManager.ts:251](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L251)
+Defined in: [src/modules/VirtualNetworkManager.ts:278](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L278)
 
 Formats all interfaces as `ip link` output.
 
@@ -234,7 +262,7 @@ Formatted string mimicking `ip link` command.
 
 > **formatIpNeigh**(): `string`
 
-Defined in: [src/modules/VirtualNetworkManager.ts:269](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L269)
+Defined in: [src/modules/VirtualNetworkManager.ts:296](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L296)
 
 Formats the ARP cache as `ip neigh` output.
 
@@ -250,7 +278,7 @@ Formatted string mimicking `ip neigh` command.
 
 > **formatIpRoute**(): `string`
 
-Defined in: [src/modules/VirtualNetworkManager.ts:238](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L238)
+Defined in: [src/modules/VirtualNetworkManager.ts:265](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L265)
 
 Formats the routing table as `ip route` output.
 
@@ -266,7 +294,7 @@ Formatted string mimicking `ip route` command.
 
 > **getArpCache**(): [`VirtualArpEntry`](../interfaces/VirtualArpEntry.md)[]
 
-Defined in: [src/modules/VirtualNetworkManager.ts:137](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L137)
+Defined in: [src/modules/VirtualNetworkManager.ts:164](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L164)
 
 Returns a copy of the ARP cache.
 
@@ -282,15 +310,15 @@ Array of VirtualArpEntry objects.
 
 > **getFirewallRules**(): [`FirewallRule`](../interfaces/FirewallRule.md)[]
 
-Defined in: [src/modules/VirtualNetworkManager.ts:310](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L310)
+Defined in: [src/modules/VirtualNetworkManager.ts:337](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L337)
 
-Get all firewall rules.
+Get all firewall rules as a copy.
 
 #### Returns
 
 [`FirewallRule`](../interfaces/FirewallRule.md)[]
 
-The firewall rules.
+Array of FirewallRule objects.
 
 ***
 
@@ -298,7 +326,7 @@ The firewall rules.
 
 > **getInterfaces**(): [`VirtualInterface`](../interfaces/VirtualInterface.md)[]
 
-Defined in: [src/modules/VirtualNetworkManager.ts:121](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L121)
+Defined in: [src/modules/VirtualNetworkManager.ts:148](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L148)
 
 Returns a copy of all configured interfaces.
 
@@ -314,9 +342,9 @@ Array of VirtualInterface objects.
 
 > **getPolicy**(`chain`): `"ACCEPT"` \| `"DROP"`
 
-Defined in: [src/modules/VirtualNetworkManager.ts:331](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L331)
+Defined in: [src/modules/VirtualNetworkManager.ts:358](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L358)
 
-Get the default policy for a chain.
+Get the default policy for a firewall chain.
 
 #### Parameters
 
@@ -324,13 +352,13 @@ Get the default policy for a chain.
 
 `string`
 
-The chain parameter.
+Chain name ("INPUT", "OUTPUT", or "FORWARD").
 
 #### Returns
 
 `"ACCEPT"` \| `"DROP"`
 
-The operation result.
+The default policy ("ACCEPT" or "DROP").
 
 ***
 
@@ -338,7 +366,7 @@ The operation result.
 
 > **getRoutes**(): [`VirtualRoute`](../interfaces/VirtualRoute.md)[]
 
-Defined in: [src/modules/VirtualNetworkManager.ts:129](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L129)
+Defined in: [src/modules/VirtualNetworkManager.ts:156](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L156)
 
 Returns a copy of the routing table.
 
@@ -354,7 +382,7 @@ Array of VirtualRoute objects.
 
 > **ping**(`host`): `number`
 
-Defined in: [src/modules/VirtualNetworkManager.ts:197](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L197)
+Defined in: [src/modules/VirtualNetworkManager.ts:224](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L224)
 
 Simulates an ICMP ping to the given host.
 
@@ -378,7 +406,7 @@ Latency in milliseconds if reachable, -1 if unreachable.
 
 > **removeFirewallRule**(`index`): `boolean`
 
-Defined in: [src/modules/VirtualNetworkManager.ts:300](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L300)
+Defined in: [src/modules/VirtualNetworkManager.ts:327](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L327)
 
 Remove a firewall rule by index.
 
@@ -388,13 +416,13 @@ Remove a firewall rule by index.
 
 `number`
 
-The index parameter.
+Zero-based index of the rule to remove.
 
 #### Returns
 
 `boolean`
 
-The success indicator.
+True if the rule was removed, false if index was out of range.
 
 ***
 
@@ -402,7 +430,7 @@ The success indicator.
 
 > **setInterfaceIp**(`name`, `ipv4`, `mask`): `boolean`
 
-Defined in: [src/modules/VirtualNetworkManager.ts:184](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L184)
+Defined in: [src/modules/VirtualNetworkManager.ts:211](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L211)
 
 Sets the IPv4 address and prefix length on an interface.
 
@@ -438,7 +466,7 @@ True if the interface was found and updated, false otherwise.
 
 > **setInterfaceState**(`name`, `state`): `boolean`
 
-Defined in: [src/modules/VirtualNetworkManager.ts:170](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L170)
+Defined in: [src/modules/VirtualNetworkManager.ts:197](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L197)
 
 Sets the administrative state of an interface.
 
@@ -468,9 +496,9 @@ True if the interface was found and updated, false otherwise.
 
 > **setPolicy**(`chain`, `policy`): `boolean`
 
-Defined in: [src/modules/VirtualNetworkManager.ts:320](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L320)
+Defined in: [src/modules/VirtualNetworkManager.ts:347](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L347)
 
-Set the default policy for a chain.
+Set the default policy for a firewall chain.
 
 #### Parameters
 
@@ -478,16 +506,16 @@ Set the default policy for a chain.
 
 `string`
 
-The chain parameter.
+Chain name ("INPUT", "OUTPUT", or "FORWARD").
 
 ##### policy
 
 `"ACCEPT"` \| `"DROP"`
 
-The policy parameter.
+Default action for unmatched packets ("ACCEPT" or "DROP").
 
 #### Returns
 
 `boolean`
 
-The success indicator.
+True if the chain exists and was updated, false otherwise.

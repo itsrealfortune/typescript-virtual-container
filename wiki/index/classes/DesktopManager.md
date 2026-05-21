@@ -6,7 +6,7 @@
 
 # Class: DesktopManager
 
-Defined in: [src/modules/desktopManager.ts:70](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L70)
+Defined in: [src/modules/desktopManager.ts:90](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L90)
 
 ## Constructors
 
@@ -14,7 +14,7 @@ Defined in: [src/modules/desktopManager.ts:70](https://github.com/itsrealfortune
 
 > **new DesktopManager**(`shell`, `container`): `DesktopManager`
 
-Defined in: [src/modules/desktopManager.ts:89](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L89)
+Defined in: [src/modules/desktopManager.ts:109](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L109)
 
 #### Parameters
 
@@ -36,7 +36,7 @@ Defined in: [src/modules/desktopManager.ts:89](https://github.com/itsrealfortune
 
 > **closeWindow**(`id`): `void`
 
-Defined in: [src/modules/desktopManager.ts:321](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L321)
+Defined in: [src/modules/desktopManager.ts:341](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L341)
 
 #### Parameters
 
@@ -54,7 +54,7 @@ Defined in: [src/modules/desktopManager.ts:321](https://github.com/itsrealfortun
 
 > **createAboutWindow**(): `string`
 
-Defined in: [src/modules/desktopManager.ts:295](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L295)
+Defined in: [src/modules/desktopManager.ts:315](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L315)
 
 #### Returns
 
@@ -66,7 +66,7 @@ Defined in: [src/modules/desktopManager.ts:295](https://github.com/itsrealfortun
 
 > **createEditorWindow**(`path?`): `string`
 
-Defined in: [src/modules/desktopManager.ts:284](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L284)
+Defined in: [src/modules/desktopManager.ts:304](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L304)
 
 #### Parameters
 
@@ -84,7 +84,7 @@ Defined in: [src/modules/desktopManager.ts:284](https://github.com/itsrealfortun
 
 > **createTaskManagerWindow**(): `string`
 
-Defined in: [src/modules/desktopManager.ts:304](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L304)
+Defined in: [src/modules/desktopManager.ts:324](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L324)
 
 #### Returns
 
@@ -96,7 +96,7 @@ Defined in: [src/modules/desktopManager.ts:304](https://github.com/itsrealfortun
 
 > **createTerminalWindow**(): `string`
 
-Defined in: [src/modules/desktopManager.ts:225](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L225)
+Defined in: [src/modules/desktopManager.ts:245](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L245)
 
 #### Returns
 
@@ -108,7 +108,7 @@ Defined in: [src/modules/desktopManager.ts:225](https://github.com/itsrealfortun
 
 > **createThunarWindow**(`path?`): `string`
 
-Defined in: [src/modules/desktopManager.ts:275](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L275)
+Defined in: [src/modules/desktopManager.ts:295](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L295)
 
 #### Parameters
 
@@ -126,7 +126,7 @@ Defined in: [src/modules/desktopManager.ts:275](https://github.com/itsrealfortun
 
 > **focusWindow**(`id`): `void`
 
-Defined in: [src/modules/desktopManager.ts:371](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L371)
+Defined in: [src/modules/desktopManager.ts:391](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L391)
 
 #### Parameters
 
@@ -144,7 +144,7 @@ Defined in: [src/modules/desktopManager.ts:371](https://github.com/itsrealfortun
 
 > **getFocusedTerminal**(): \{ `dataListeners`: (`chunk`) => `void`[]; `preEl`: `HTMLPreElement`; `stream`: [`ShellStream`](../interfaces/ShellStream.md); \} \| `null`
 
-Defined in: [src/modules/desktopManager.ts:177](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L177)
+Defined in: [src/modules/desktopManager.ts:197](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L197)
 
 #### Returns
 
@@ -156,7 +156,7 @@ Defined in: [src/modules/desktopManager.ts:177](https://github.com/itsrealfortun
 
 > **handleKeyDown**(`e`): `void`
 
-Defined in: [src/modules/desktopManager.ts:190](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L190)
+Defined in: [src/modules/desktopManager.ts:210](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L210)
 
 #### Parameters
 
@@ -174,7 +174,7 @@ Defined in: [src/modules/desktopManager.ts:190](https://github.com/itsrealfortun
 
 > **handlePaste**(`e`): `void`
 
-Defined in: [src/modules/desktopManager.ts:214](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L214)
+Defined in: [src/modules/desktopManager.ts:234](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L234)
 
 #### Parameters
 
@@ -192,7 +192,7 @@ Defined in: [src/modules/desktopManager.ts:214](https://github.com/itsrealfortun
 
 > **isActive**(): `boolean`
 
-Defined in: [src/modules/desktopManager.ts:105](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L105)
+Defined in: [src/modules/desktopManager.ts:125](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L125)
 
 #### Returns
 
@@ -204,7 +204,7 @@ Defined in: [src/modules/desktopManager.ts:105](https://github.com/itsrealfortun
 
 > **setOnExit**(`cb`): `void`
 
-Defined in: [src/modules/desktopManager.ts:107](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L107)
+Defined in: [src/modules/desktopManager.ts:127](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L127)
 
 #### Parameters
 
@@ -222,7 +222,7 @@ Defined in: [src/modules/desktopManager.ts:107](https://github.com/itsrealfortun
 
 > **start**(): `Promise`\<`void`\>
 
-Defined in: [src/modules/desktopManager.ts:109](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L109)
+Defined in: [src/modules/desktopManager.ts:129](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L129)
 
 #### Returns
 
@@ -234,7 +234,7 @@ Defined in: [src/modules/desktopManager.ts:109](https://github.com/itsrealfortun
 
 > **stop**(): `void`
 
-Defined in: [src/modules/desktopManager.ts:122](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L122)
+Defined in: [src/modules/desktopManager.ts:142](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L142)
 
 #### Returns
 
@@ -246,7 +246,7 @@ Defined in: [src/modules/desktopManager.ts:122](https://github.com/itsrealfortun
 
 > **toggleMaximize**(`id`): `void`
 
-Defined in: [src/modules/desktopManager.ts:343](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L343)
+Defined in: [src/modules/desktopManager.ts:363](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L363)
 
 #### Parameters
 
@@ -264,7 +264,7 @@ Defined in: [src/modules/desktopManager.ts:343](https://github.com/itsrealfortun
 
 > **toggleMinimize**(`id`): `void`
 
-Defined in: [src/modules/desktopManager.ts:335](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L335)
+Defined in: [src/modules/desktopManager.ts:355](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L355)
 
 #### Parameters
 

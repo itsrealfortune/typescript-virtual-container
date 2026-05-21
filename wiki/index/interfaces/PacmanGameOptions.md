@@ -6,7 +6,7 @@
 
 # Interface: PacmanGameOptions
 
-Defined in: [src/modules/pacmanGame.ts:131](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L131)
+Defined in: [src/modules/pacmanGame.ts:142](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L142)
 
 Configuration options for creating a PacmanGame instance.
 
@@ -16,7 +16,7 @@ Configuration options for creating a PacmanGame instance.
 
 > **onExit**: () => `void`
 
-Defined in: [src/modules/pacmanGame.ts:134](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L134)
+Defined in: [src/modules/pacmanGame.ts:145](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L145)
 
 #### Returns
 
@@ -28,7 +28,7 @@ Defined in: [src/modules/pacmanGame.ts:134](https://github.com/itsrealfortune/ty
 
 > **stream**: [`ShellStream`](ShellStream.md)
 
-Defined in: [src/modules/pacmanGame.ts:132](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L132)
+Defined in: [src/modules/pacmanGame.ts:143](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L143)
 
 ***
 
@@ -36,4 +36,4 @@ Defined in: [src/modules/pacmanGame.ts:132](https://github.com/itsrealfortune/ty
 
 > **terminalSize**: [`TerminalSize`](TerminalSize.md)
 
-Defined in: [src/modules/pacmanGame.ts:133](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L133)
+Defined in: [src/modules/pacmanGame.ts:144](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L144)

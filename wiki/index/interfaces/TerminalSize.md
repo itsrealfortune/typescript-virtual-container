@@ -6,7 +6,7 @@
 
 # Interface: TerminalSize
 
-Defined in: [src/modules/shellRuntime.ts:5](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/shellRuntime.ts#L5)
+Defined in: [src/modules/shellRuntime.ts:20](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/shellRuntime.ts#L20)
 
 Terminal dimensions (columns × rows).
 
@@ -16,7 +16,7 @@ Terminal dimensions (columns × rows).
 
 > **cols**: `number`
 
-Defined in: [src/modules/shellRuntime.ts:6](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/shellRuntime.ts#L6)
+Defined in: [src/modules/shellRuntime.ts:21](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/shellRuntime.ts#L21)
 
 ***
 
@@ -24,4 +24,4 @@ Defined in: [src/modules/shellRuntime.ts:6](https://github.com/itsrealfortune/ty
 
 > **rows**: `number`
 
-Defined in: [src/modules/shellRuntime.ts:7](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/shellRuntime.ts#L7)
+Defined in: [src/modules/shellRuntime.ts:22](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/shellRuntime.ts#L22)

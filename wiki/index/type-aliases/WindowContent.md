@@ -8,4 +8,4 @@
 
 > **WindowContent** = [`TerminalContent`](../interfaces/TerminalContent.md) \| [`ThunarContent`](../interfaces/ThunarContent.md) \| [`AboutContent`](../interfaces/AboutContent.md) \| [`EditorContent`](../interfaces/EditorContent.md) \| [`TaskManagerContent`](../interfaces/TaskManagerContent.md)
 
-Defined in: [src/modules/desktopManager.ts:43](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L43)
+Defined in: [src/modules/desktopManager.ts:63](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L63)

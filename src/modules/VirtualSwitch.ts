@@ -103,6 +103,33 @@ export function cidrRange(cidr: string): { network: number; mask: number } {
  * Handles ARP resolution, inter-VM routing, NAT gateway, traffic shaping,
  * DNS, load balancing, network partitioning, and bandwidth accounting.
  *
+ * @example
+ * ```ts
+ * const sw = new VirtualSwitch("10.0.1.0/24");
+ * const web = new VirtualShell("web-server");
+ * const db  = new VirtualShell("db-server");
+ * await web.ensureInitialized();
+ * await db.ensureInitialized();
+ *
+ * const webPort = sw.attach(web, "10.0.1.10");
+ * const dbPort  = sw.attach(db, "10.0.1.20");
+ *
+ * sw.addDnsRecord("web", "10.0.1.10");
+ * sw.addDnsRecord("db", "10.0.1.20");
+ *
+ * // Route a packet between VMs
+ * const result = await sw.route({
+ *   srcIp: "10.0.1.10", srcMac: webPort.mac,
+ *   dstIp: "10.0.1.20", protocol: "tcp", dstPort: 3306,
+ * });
+ *
+ * // Traffic shaping: add 100ms latency to web server
+ * sw.setTrafficRule(webPort.mac, { vms: ["web-server"], latencyMs: 100 });
+ *
+ * // Network partition: isolate web from db
+ * sw.setPartitions([[webPort.mac], [dbPort.mac]]);
+ * ```
+ *
  * @see Baie
  * @see VirtualProxy
  * @see VirtualVpn

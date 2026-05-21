@@ -6,7 +6,7 @@
 
 # Interface: EditorContent
 
-Defined in: [src/modules/desktopManager.ts:37](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L37)
+Defined in: [src/modules/desktopManager.ts:57](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L57)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [src/modules/desktopManager.ts:37](https://github.com/itsrealfortune
 
 > **dirty**: `boolean`
 
-Defined in: [src/modules/desktopManager.ts:40](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L40)
+Defined in: [src/modules/desktopManager.ts:60](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L60)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [src/modules/desktopManager.ts:40](https://github.com/itsrealfortune
 
 > **path**: `string`
 
-Defined in: [src/modules/desktopManager.ts:39](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L39)
+Defined in: [src/modules/desktopManager.ts:59](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L59)
 
 ***
 
@@ -30,4 +30,4 @@ Defined in: [src/modules/desktopManager.ts:39](https://github.com/itsrealfortune
 
 > **type**: `"editor"`
 
-Defined in: [src/modules/desktopManager.ts:38](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L38)
+Defined in: [src/modules/desktopManager.ts:58](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L58)

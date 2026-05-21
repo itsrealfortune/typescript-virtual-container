@@ -6,7 +6,7 @@
 
 # Class: ThunarManager
 
-Defined in: [src/modules/thunarManager.ts:35](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/thunarManager.ts#L35)
+Defined in: [src/modules/thunarManager.ts:45](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/thunarManager.ts#L45)
 
 ## Constructors
 
@@ -14,7 +14,7 @@ Defined in: [src/modules/thunarManager.ts:35](https://github.com/itsrealfortune/
 
 > **new ThunarManager**(`host`, `container`): `ThunarManager`
 
-Defined in: [src/modules/thunarManager.ts:38](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/thunarManager.ts#L38)
+Defined in: [src/modules/thunarManager.ts:48](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/thunarManager.ts#L48)
 
 #### Parameters
 
@@ -36,7 +36,7 @@ Defined in: [src/modules/thunarManager.ts:38](https://github.com/itsrealfortune/
 
 > **renderContent**(`el`, `content`): `void`
 
-Defined in: [src/modules/thunarManager.ts:231](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/thunarManager.ts#L231)
+Defined in: [src/modules/thunarManager.ts:241](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/thunarManager.ts#L241)
 
 #### Parameters
 

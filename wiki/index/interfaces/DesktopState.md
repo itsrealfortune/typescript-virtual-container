@@ -6,7 +6,7 @@
 
 # Interface: DesktopState
 
-Defined in: [src/modules/desktopManager.ts:60](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L60)
+Defined in: [src/modules/desktopManager.ts:80](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L80)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [src/modules/desktopManager.ts:60](https://github.com/itsrealfortune
 
 > **active**: `boolean`
 
-Defined in: [src/modules/desktopManager.ts:61](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L61)
+Defined in: [src/modules/desktopManager.ts:81](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L81)
 
 ***
 
@@ -22,7 +22,7 @@ Defined in: [src/modules/desktopManager.ts:61](https://github.com/itsrealfortune
 
 > **clock**: `string`
 
-Defined in: [src/modules/desktopManager.ts:64](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L64)
+Defined in: [src/modules/desktopManager.ts:84](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L84)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [src/modules/desktopManager.ts:64](https://github.com/itsrealfortune
 
 > **focusedWindowId**: `string` \| `null`
 
-Defined in: [src/modules/desktopManager.ts:65](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L65)
+Defined in: [src/modules/desktopManager.ts:85](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L85)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [src/modules/desktopManager.ts:65](https://github.com/itsrealfortune
 
 > **menuOpen**: `boolean`
 
-Defined in: [src/modules/desktopManager.ts:63](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L63)
+Defined in: [src/modules/desktopManager.ts:83](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L83)
 
 ***
 
@@ -46,4 +46,4 @@ Defined in: [src/modules/desktopManager.ts:63](https://github.com/itsrealfortune
 
 > **windows**: [`DesktopWindow`](DesktopWindow.md)[]
 
-Defined in: [src/modules/desktopManager.ts:62](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L62)
+Defined in: [src/modules/desktopManager.ts:82](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/desktopManager.ts#L82)
