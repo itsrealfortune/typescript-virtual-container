@@ -73,12 +73,15 @@
 - [x] Thunar: drag-and-drop between folders
 </details>
 
+## Urgent
+- [ ] Fix parameters name convention in multiple filesand remove unused parameters (noUnusedLocals, noUnusedParameters)
+
 ## Prioty
 
 - [ ] Remove all non null assertions (`!`) from the codebase — ensure proper null checks and type guards instead
 - [ ] Remove all biome and ts-ignore comments — fix underlying issues instead of silencing them
 - [ ] Add a RAM and CPU capping
-- [ ] Add a garbage collector to free up memory from deleted files, closed windows, and terminated processes, but also from closed files that are not required to be kept in memory (e.g. large files that have been closed)
+- [ ] Add a garbage collector to free up memory from deleted files, closed windows, and terminated processes, but also from closed files that are not required to be kept in memory (e.g. large files that have been closed) [refers to IdleManager]
 - [ ] Add a swap file mechanism to handle memory overflow when RAM is full (e.g. move least recently used data to disk)
 - [ ] Add a process scheduler to manage CPU time between running processes, ensuring fair resource allocation and preventing any single process from monopolizing the CPU
 - [ ] Add a more realistic file caching mechanism that simulates disk read/write speeds and cache eviction policies
