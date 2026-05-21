@@ -609,6 +609,7 @@ class VirtualShell extends EventEmitter {
 		this._idle = new IdleManager(this, options);
 		this._idle.on("freeze", () => this.emit("shell:freeze"));
 		this._idle.on("thaw",   () => this.emit("shell:thaw"));
+		this._idle.on("gc:run", (stats) => this.emit("gc:run", stats));
 		this._idle.start();
 	}
 

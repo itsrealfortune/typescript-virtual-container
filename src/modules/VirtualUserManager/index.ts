@@ -556,6 +556,7 @@ export class VirtualUserManager extends EventEmitter {
 			this.emit("session:unregister", {
 				sessionId,
 				username: session.username,
+				tty: session.tty,
 			});
 		}
 	}
@@ -787,6 +788,23 @@ export class VirtualUserManager extends EventEmitter {
 		let count = 0;
 		for (const [pid, proc] of this._activeProcesses) {
 			if (proc.username === username) {
+				if (this.killProcess(pid, signal)) count++;
+			}
+		}
+		return count;
+	}
+
+	/**
+	 * Kill all processes attached to a specific TTY (e.g. "pts/0").
+	 * Called when an SSH session disconnects to clean up leftover processes.
+	 * @param tty - TTY identifier (e.g. "pts/0").
+	 * @param signal - Signal number to send (default: 9 / SIGKILL).
+	 * @returns Number of processes that were killed.
+	 */
+	public killProcessesByTty(tty: string, signal = 9): number {
+		let count = 0;
+		for (const [pid, proc] of this._activeProcesses) {
+			if (proc.tty === tty) {
 				if (this.killProcess(pid, signal)) count++;
 			}
 		}

@@ -38,9 +38,28 @@ virtualShell.enableIdleManagement({
 	gcIntervalMs: 30_000,       // GC runs every 30s
 });
 
+// Log periodic GC stats
+virtualShell.on("gc:run", (stats: import(".").GcStats) => {
+	const total = process.memoryUsage().rss;
+	const shells = total - baselineRss;
+	console.debug(
+		`[GC periodic] terminated=${stats.terminatedProcesses} staleCpu=${stats.staleCpuEntries} evicted=${stats.evictedFiles} forcedGc=${stats.forcedGc} | ` +
+		`mem: shells=${Math.round(shells / 1024 / 1024)} MB total=${Math.round(total / 1024 / 1024)} MB`,
+	);
+});
+
 // Trigger GC immediately when an SSH session disconnects
-virtualShell.users.on("session:unregister", () => {
-	virtualShell.runGc();
+virtualShell.users.on("session:unregister", (data: { sessionId: string; username: string; tty: string }) => {
+	const killed = virtualShell.users.killProcessesByTty(data.tty);
+	const gcStats = virtualShell.runGc();
+	const total = process.memoryUsage().rss;
+	const shells = total - baselineRss;
+	console.debug(
+		`[GC] session=${data.sessionId.slice(0, 8)}… user=${data.username} tty=${data.tty} | ` +
+		`killed=${killed} procs | ` +
+		`gc: terminated=${gcStats?.terminatedProcesses} staleCpu=${gcStats?.staleCpuEntries} evicted=${gcStats?.evictedFiles} forcedGc=${gcStats?.forcedGc} | ` +
+		`mem: shells=${Math.round(shells / 1024 / 1024)} MB total=${Math.round(total / 1024 / 1024)} MB`,
+	);
 });
 
 // ── Servers ───────────────────────────────────────────────────────────────────
