@@ -6,7 +6,7 @@
  *  1. rimraf builds/           — clean previous artifacts
  *  2. generate-manuals-bundle  — inline all man pages
  *  3. esbuild all targets      — with dynamic output filenames
- *  4. copy web build to examples/
+ *  4. copy web build to demo/
  *  5. update README.md         — replace filenames in marked sections
  */
 
@@ -50,25 +50,25 @@ for (const cmd of targets) {
   run(cmd.replace(/\s+/g, " ").trim());
 }
 
-// // ── 4. Copy web to examples/ ─────────────────────────────────────────────────
-// const examplesDir = join(root, "examples");
-// mkdirSync(examplesDir, { recursive: true });
+// // ── 4. Copy web to demo/ ─────────────────────────────────────────────────
+// const demoDir = join(root, "demo");
+// mkdirSync(demoDir, { recursive: true });
 // copyFileSync(
 //   join(BUILDS_DIR, NAMES.web),
-//   join(examplesDir, "web.min.js"),
+//   join(demoDir, "web.min.js"),
 // );
-// console.log(`\n✓ Copied ${NAMES.web} → examples/web.min.js`);
+// console.log(`\n✓ Copied ${NAMES.web} → demo/web.min.js`);
 
 // ── 4. Build library bundle (build.js) + demo app (demo/build.js) ────────
 run("node build.js");
-run("node build.js", join(root, "examples"));
+run("node build.js", join(root, "demo"));
 
 // ── 5. Copy demo to docs/ ─────────────────────────────────────────────────────
 const docsDir = join(root, "docs");
 mkdirSync(docsDir, { recursive: true });
-copyFileSync(join(root, "examples", "app.js"), join(docsDir, "app.js"));
-copyFileSync(join(root, "examples", "index.html"), join(docsDir, "demo.html"));
-copyFileSync(join(root, "examples", "app.css"), join(docsDir, "app.css"));
+copyFileSync(join(root, "demo", "app.js"), join(docsDir, "app.js"));
+copyFileSync(join(root, "demo", "index.html"), join(docsDir, "demo.html"));
+copyFileSync(join(root, "demo", "app.css"), join(docsDir, "app.css"));
 console.log("\n✓ Copied demo/app.js → docs/app.js");
 console.log("✓ Copied demo/index.html → docs/demo.html");
 console.log("✓ Copied demo/app.css → docs/app.css");
