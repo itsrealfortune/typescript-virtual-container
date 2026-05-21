@@ -12,13 +12,16 @@ export const freeCommand: ShellModule = {
 	description: "Display amount of free and used memory",
 	category: "system",
 	params: ["[-h] [-m] [-g]"],
-	run: ({ args }) => {
+	run: ({ args, shell }) => {
 		const human = ifFlag(args, ["-h", "--human"]);
 		const mb = ifFlag(args, ["-m"]);
 		const gb = ifFlag(args, ["-g"]);
 
-		const osTotalB = os.totalmem();
-		const osFreeB = os.freemem();
+		const hostTotalB = os.totalmem();
+		const hostFreeB = os.freemem();
+		const ramCap = shell.resourceCaps?.ramCapBytes;
+		const osTotalB = ramCap != null ? Math.min(hostTotalB, ramCap) : hostTotalB;
+		const osFreeB = ramCap != null ? Math.floor(osTotalB * (hostFreeB / hostTotalB)) : hostFreeB;
 		const usedB = osTotalB - osFreeB;
 		const sharedB = Math.floor(osTotalB * 0.02);
 		const buffersB = Math.floor(osTotalB * 0.05);

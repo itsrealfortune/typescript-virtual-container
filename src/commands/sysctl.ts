@@ -29,6 +29,18 @@ export const sysctlCommand: ShellModule = {
 				resolved.set(value.trim());
 				const v = resolved.value;
 				results.push(`${name} = ${typeof v === "number" ? v : v}`);
+
+				// Sync resource caps when sysctl values change
+				if (name === "vm.ram_cap_bytes") {
+					const num = Number(value);
+					shell.resourceCaps.ramCapBytes = num > 0 ? num : undefined;
+					shell.vfs.setRamCap(shell.resourceCaps.ramCapBytes ?? null);
+				}
+				if (name === "kernel.cpu_cap_cores") {
+					const num = Number(value);
+					shell.resourceCaps.cpuCapCores = num > 0 ? num : undefined;
+					shell.users.setCpuCapCores(shell.resourceCaps.cpuCapCores ?? 0);
+				}
 			}
 			return { stdout: `${results.join("\n")}\n`, exitCode: 0 };
 		}

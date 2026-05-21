@@ -15,8 +15,11 @@ export const topCommand: ShellModule = {
 		const uptimeSec = Math.floor((Date.now() - shell.startTime) / 1000);
 		const sessions = shell.users.listActiveSessions();
 		const procs = shell.users.listProcesses();
-		const totalMem = os.totalmem();
-		const freeMem = os.freemem();
+		const hostTotalMem = os.totalmem();
+		const hostFreeMem = os.freemem();
+		const ramCap = shell.resourceCaps?.ramCapBytes;
+		const totalMem = ramCap != null ? Math.min(hostTotalMem, ramCap) : hostTotalMem;
+		const freeMem = ramCap != null ? Math.floor(totalMem * (hostFreeMem / hostTotalMem)) : hostFreeMem;
 		const usedMem = totalMem - freeMem;
 		const loadAverages = os.loadavg();
 

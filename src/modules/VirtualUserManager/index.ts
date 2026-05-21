@@ -49,6 +49,8 @@ export interface VirtualProcess {
 	terminatedBySignal?: number;
 	/** Custom signal handlers: signal number → handler. */
 	signalHandlers: Map<number, (sig: number, pid: number) => void>;
+	/** Wall-clock ms the process has been running (used for CPU enforcement). */
+	cpuTimeMs: number;
 }
 
 /** Runtime representation of authenticated SSH session. */
@@ -124,6 +126,18 @@ export class VirtualUserManager extends EventEmitter {
 	private _nextPid = 1000;
 	private _nextUid = 1001;
 	private _nextGid = 1001;
+	/** CPU cap: max cores visible to processes. 0 = uncapped. */
+	private _cpuCapCores = 0;
+	/** CPU budget per window in ms (cpuCapCores × windowMs). */
+	private _cpuBudgetMs = 0;
+	/** CPU accounting window duration in ms. */
+	private readonly _cpuWindowMs = 1000;
+	/** Wall-clock timestamp when current CPU window started. */
+	private _cpuWindowStart = Date.now();
+	/** Per-process CPU time consumed in current window (ms). */
+	private _processCpuTime = new Map<number, number>();
+	/** Watcher interval handle for CPU enforcement. */
+	private _cpuWatcher: ReturnType<typeof setInterval> | null = null;
 
 	/**
 	 * Creates a user manager instance backed by a virtual filesystem.
@@ -675,6 +689,7 @@ export class VirtualUserManager extends EventEmitter {
 			status: "running",
 			abortController,
 			signalHandlers: new Map(),
+			cpuTimeMs: 0,
 		});
 		return pid;
 	}
@@ -785,6 +800,104 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public getProcess(pid: number): VirtualProcess | undefined {
 		return this._activeProcesses.get(pid);
+	}
+
+	/**
+	 * Sets the CPU core cap. When > 0, processes that consume more than their
+	 * fair share of CPU time within a window are killed with SIGKILL.
+	 *
+	 * @param cores - Number of CPU cores allowed (0 = no cap).
+	 */
+	public setCpuCapCores(cores: number): void {
+		this._cpuCapCores = cores;
+		this._cpuBudgetMs = cores > 0 ? cores * this._cpuWindowMs : 0;
+		if (cores > 0 && !this._cpuWatcher) {
+			this._startCpuWatcher();
+		} else if (cores === 0 && this._cpuWatcher) {
+			this._stopCpuWatcher();
+		}
+	}
+
+	/**
+	 * Returns the current CPU core cap (0 = uncapped).
+	 */
+	public getCpuCapCores(): number {
+		return this._cpuCapCores;
+	}
+
+	/**
+	 * Returns the CPU time (ms) consumed by a process in the current window.
+	 * @param pid - Process ID.
+	 * @returns CPU time in ms, or 0 if process not found.
+	 */
+	public getProcessCpuTime(pid: number): number {
+		return this._processCpuTime.get(pid) ?? 0;
+	}
+
+	/**
+	 * Updates the wall-clock CPU time for a running process.
+	 * Called by the shell runtime when a command starts/stops.
+	 * @param pid - Process ID.
+	 * @param elapsedMs - Wall-clock milliseconds elapsed.
+	 */
+	public addProcessCpuTime(pid: number, elapsedMs: number): void {
+		const current = this._processCpuTime.get(pid) ?? 0;
+		this._processCpuTime.set(pid, current + elapsedMs);
+	}
+
+	/**
+	 * Starts the CPU enforcement watcher. Checks every 500ms and kills
+	 * processes that have exceeded their per-window budget.
+	 */
+	private _startCpuWatcher(): void {
+		if (this._cpuWatcher) return;
+		this._cpuWatcher = setInterval(() => this._enforceCpuCaps(), 500);
+		if (typeof this._cpuWatcher.unref === "function") {
+			this._cpuWatcher.unref();
+		}
+	}
+
+	/**
+	 * Stops the CPU enforcement watcher.
+	 */
+	private _stopCpuWatcher(): void {
+		if (this._cpuWatcher) {
+			clearInterval(this._cpuWatcher);
+			this._cpuWatcher = null;
+		}
+	}
+
+	/**
+	 * Enforces CPU cap: kills processes that exceeded their budget.
+	 */
+	private _enforceCpuCaps(): void {
+		if (this._cpuBudgetMs <= 0) return;
+
+		const now = Date.now();
+		const windowElapsed = now - this._cpuWindowStart;
+
+		// Reset window if expired
+		if (windowElapsed >= this._cpuWindowMs) {
+			this._cpuWindowStart = now;
+			this._processCpuTime.clear();
+			return;
+		}
+
+		// Check each running process
+		for (const [pid, proc] of this._activeProcesses) {
+			if (proc.status !== "running") continue;
+			const cpuTime = this._processCpuTime.get(pid) ?? 0;
+			// Update wall-clock time for running processes
+			const procStart = new Date(proc.startedAt).getTime();
+			const wallTime = Math.min(now - procStart, windowElapsed);
+			const effectiveCpu = Math.max(cpuTime, wallTime);
+
+			if (effectiveCpu > this._cpuBudgetMs) {
+				// Process exceeded budget — kill it
+				this.killProcess(pid, 9); // SIGKILL
+				this.emit("process:killed:cpu", { pid, command: proc.command, cpuTime: effectiveCpu });
+			}
+		}
 	}
 
 	private _loadFromVfs(): void {

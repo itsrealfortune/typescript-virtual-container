@@ -46,6 +46,8 @@ export const neofetchCommand: ShellModule = {
 					const count = shell.packageManager?.installedCount() ?? 0;
 					return `${count} (dpkg)`;
 				})(),
+				cpuCapCores: shell.resourceCaps?.cpuCapCores,
+				ramCapBytes: shell.resourceCaps?.ramCapBytes,
 			}),
 			exitCode: 0,
 		};

@@ -27,6 +27,7 @@ export interface SysctlState {
 		ngroups_max: number;
 		cap_last_cap: number;
 		unprivileged_userns_clone: number;
+		cpu_cap_cores: number;
 	};
 	net: {
 		ipv4: {
@@ -53,6 +54,7 @@ export interface SysctlState {
 		dirty_background_ratio: number;
 		min_free_kbytes: number;
 		vfs_cache_pressure: number;
+		ram_cap_bytes: number;
 	};
 	fs: {
 		file_max: number;
@@ -92,6 +94,7 @@ export function defaultSysctlState(hostname: string, kernel: string): SysctlStat
 			ngroups_max: 65536,
 			cap_last_cap: 40,
 			unprivileged_userns_clone: 1,
+			cpu_cap_cores: 0,
 		},
 		net: {
 			ipv4: {
@@ -118,6 +121,7 @@ export function defaultSysctlState(hostname: string, kernel: string): SysctlStat
 			dirty_background_ratio: 10,
 			min_free_kbytes: 65536,
 			vfs_cache_pressure: 100,
+			ram_cap_bytes: 0,
 		},
 		fs: {
 			file_max: 1048576,

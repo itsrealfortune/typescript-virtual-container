@@ -217,6 +217,7 @@ export async function runCommandDirect(
 	const pid = isTopLevel
 		? shell.users.registerProcess(authUser, name, [name, ...args], env.vars.__TTY ?? "?", abortController, ppid)
 		: -1;
+	const startTime = Date.now();
 	try {
 		if (background && abortController?.signal.aborted) {
 			return { stderr: "", exitCode: 130 };
@@ -234,6 +235,8 @@ export async function runCommandDirect(
 	} finally {
 		_callDepth--;
 		if (isTopLevel && pid !== -1) {
+			// Track CPU time for enforcement
+			shell.users.addProcessCpuTime(pid, Date.now() - startTime);
 			if (background) {
 				shell.users.markProcessDone(pid);
 			} else {

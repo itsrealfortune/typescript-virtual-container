@@ -130,6 +130,10 @@ export interface NeofetchInfo {
 	gpu?: string;
 	memoryUsedMiB?: number;
 	memoryTotalMiB?: number;
+	/** Optional CPU core cap — overrides host CPU count when set. */
+	cpuCapCores?: number;
+	/** Optional RAM cap in bytes — overrides host total memory when set. */
+	ramCapBytes?: number;
 }
 
 function toMiB(bytes: number): number {
@@ -233,8 +237,10 @@ function resolvePackagesLabel(): string {
 	return "n/a";
 }
 
-function resolveCpuLabel(): string {
-	const cpus = os.cpus();
+function resolveCpuLabel(info: NeofetchInfo): string {
+	const hostCpus = os.cpus();
+	const cap = info.cpuCapCores;
+	const cpus = cap != null && cap > 0 ? hostCpus.slice(0, cap) : hostCpus;
 	if (cpus.length === 0) {
 		return "unknown";
 	}
@@ -257,8 +263,11 @@ function resolveShellLabel(shell?: string): string {
 }
 
 function resolveDefaults(info: NeofetchInfo): Required<NeofetchInfo> {
-	const totalMem = os.totalmem();
-	const freeMem = os.freemem();
+	const hostTotalMem = os.totalmem();
+	const hostFreeMem = os.freemem();
+	const ramCap = info.ramCapBytes;
+	const totalMem = ramCap != null && ramCap > 0 ? Math.min(hostTotalMem, ramCap) : hostTotalMem;
+	const freeMem = ramCap != null && ramCap > 0 ? Math.floor(totalMem * (hostFreeMem / hostTotalMem)) : hostFreeMem;
 	const usedMem = Math.max(0, totalMem - freeMem);
 	const shellProps = info.shellProps;
 
@@ -285,10 +294,12 @@ function resolveDefaults(info: NeofetchInfo): Required<NeofetchInfo> {
 		},
 		resolution: info.resolution ?? shellProps?.resolution ?? "n/a (ssh)",
 		terminal: info.terminal ?? "unknown",
-		cpu: info.cpu ?? resolveCpuLabel(),
+		cpu: info.cpu ?? resolveCpuLabel(info),
 		gpu: info.gpu ?? shellProps?.gpu ?? "n/a",
 		memoryUsedMiB: info.memoryUsedMiB ?? toMiB(usedMem),
 		memoryTotalMiB: info.memoryTotalMiB ?? toMiB(totalMem),
+		cpuCapCores: info.cpuCapCores ?? 0,
+		ramCapBytes: info.ramCapBytes ?? 0,
 	};
 }
 

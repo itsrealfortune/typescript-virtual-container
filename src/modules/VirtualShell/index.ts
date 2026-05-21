@@ -69,6 +69,106 @@ export interface VirtualShellVfsOptions {
 	vfsInstance?: VirtualShellVfsLike;
 }
 
+/**
+ * Resource cap configuration for a virtual shell instance.
+ *
+ * Pass this as the 4th argument to the {@link VirtualShell} constructor to
+ * limit the RAM and CPU resources visible inside the VM. When a cap is set,
+ * every `/proc` file, sysctl entry, cgroup file, and system-monitor command
+ * (`free`, `top`, `htop`, `neofetch`, `ps`, `df`) reports the capped value
+ * instead of the real host total.
+ *
+ * **How it works — reporting vs enforcement:**
+ *
+ * 1. **Reporting (always active)** — `/proc/meminfo`, `/proc/cpuinfo`, cgroup
+ *    files, and commands like `free`/`top`/`htop` show the capped values.
+ *    This is cosmetic: the VM *looks* like it has limited resources.
+ *
+ * 2. **RAM enforcement (active when `ramCapBytes` is set)** — the VFS tracks
+ *    total bytes stored in its in-memory tree. Any `writeFile` that would
+ *    cause the total to exceed `ramCapBytes` is rejected with an `ENOMEM`
+ *    error. This means:
+ *    - `echo "big content" > /tmp/file` fails if the VFS is full.
+ *    - `dd if=/dev/zero of=/tmp/zero bs=1M count=100` fails mid-write.
+ *    - The VFS tree size includes all file content (compressed size for
+ *      compressed files). `/proc` files and stubs are included.
+ *    - Note: this caps VFS storage, not Node.js heap usage. A runaway
+ *      `python -c "x = 'a'*10**10"` will still allocate host RAM — only
+ *      VFS writes are intercepted.
+ *
+ * 3. **CPU enforcement (active when `cpuCapCores` is set)** — a background
+ *    watcher runs every 500 ms and tracks wall-clock time per process. If a
+ *    process consumes more CPU time than its per-window budget
+ *    (`cpuCapCores × 1000 ms` per second), it is killed with `SIGKILL` (exit
+ *    code 137). This means:
+ *    - `while true; do :; done` will be killed after ~N seconds (where N =
+ *      cpuCapCores).
+ *    - `dd if=/dev/zero of=/dev/null` will be killed similarly.
+ *    - Short commands (`ls`, `echo`, `cat`) are unaffected.
+ *    - The event `process:killed:cpu` is emitted with `{ pid, command, cpuTime }`.
+ *
+ * **Runtime changes:**
+ * - Both caps can be changed at runtime via sysctl:
+ *   `sysctl vm.ram_cap_bytes=1073741824` or
+ *   `sysctl kernel.cpu_cap_cores=2`.
+ * - Setting either to `0` disables enforcement for that resource.
+ *
+ * @example
+ * ```ts
+ * const shell = new VirtualShell("prod-vm", props, vfsOptions, {
+ *   ramCapBytes: 2 * 1024 * 1024 * 1024, // 2 GiB VFS storage limit
+ *   cpuCapCores: 2,                        // 2 vCPUs, processes killed after 2s CPU/window
+ * });
+ *
+ * // Inside the VM:
+ * //   free -h          → 2.0G total
+ * //   nproc            → 2
+ * //   cat /proc/cpuinfo → 2 processor blocks
+ * //   dd if=/dev/zero of=/tmp/big bs=1M count=3000 → ENOMEM after 2GB
+ * //   while true; do :; done → killed after ~2s (SIGKILL, exit 137)
+ * ```
+ */
+export interface VirtualShellResourceCaps {
+	/**
+	 * Maximum RAM visible inside the VM, in bytes.
+	 *
+	 * **Reporting**: `/proc/meminfo`, `free`, `top`, `htop`, cgroup memory files
+	 * show this value (free memory is scaled proportionally).
+	 *
+	 * **Enforcement**: the VFS tracks total bytes stored. Any `writeFile` that
+	 * would cause the tree to exceed this limit throws `ENOMEM`. This covers
+	 * all VFS writes: `echo > file`, `dd`, `cp`, `tee`, SFTP uploads, etc.
+	 * Compressed files count their compressed size. `/proc` dynamic files and
+	 * stubs are included in the total.
+	 *
+	 * Does NOT cap Node.js heap usage — a process that allocates large JS
+	 * objects without writing to the VFS will not be blocked.
+	 *
+	 * Set to `undefined` or `0` for no cap (full host passthrough).
+	 *
+	 * @example 2 * 1024 * 1024 * 1024 // 2 GiB
+	 */
+	ramCapBytes?: number;
+	/**
+	 * Maximum CPU cores visible inside the VM.
+	 *
+	 * **Reporting**: `/proc/cpuinfo` emits this many `processor` blocks,
+	 * `/proc/stat` has per-CPU lines up to this count, `nproc` returns this
+	 * value, cgroup `cpu.cfs_quota_us` = `cpuCapCores × 100 000`.
+	 *
+	 * **Enforcement**: a background watcher runs every 500 ms and tracks
+	 * wall-clock time per process. If a process exceeds the per-window budget
+	 * (`cpuCapCores × 1000 ms`), it is killed with `SIGKILL` (exit 137).
+	 * Short commands are unaffected; infinite loops and CPU-heavy commands
+	 * are terminated. Emits `process:killed:cpu` event.
+	 *
+	 * Set to `undefined` or `0` for no cap (full host passthrough).
+	 *
+	 * @example 2 // 2 vCPUs
+	 */
+	cpuCapCores?: number;
+}
+
 function hasVfsInstance(obj: unknown): obj is { vfsInstance: VirtualShellVfsLike } {
 	return (
 		typeof obj === "object" &&
@@ -156,6 +256,10 @@ class VirtualShell extends EventEmitter {
 	private _idle: IdleManager | null = null;
 	/** Writable /proc/sys state — sysctl tunables. */
 	sysctl: SysctlState;
+	/** Resource caps — RAM and CPU limits visible inside the VM. Set via the
+	 * constructor's 4th argument or at runtime through `sysctl` tunables
+	 * (`vm.ram_cap_bytes`, `kernel.cpu_cap_cores`). */
+	resourceCaps: VirtualShellResourceCaps;
 	private _initialized: Promise<void>;
 
 	/**
@@ -164,11 +268,18 @@ class VirtualShell extends EventEmitter {
 	 * @param hostname Virtual hostname used for prompts and idents.
 	 * @param properties Customizable properties shown in `uname -a` and similar commands.
 	 * @param vfsOptionsOrInstance Optional VFS persistence options (mode, snapshotPath) or an existing VFS instance.
+	 * @param resourceCaps Optional RAM and CPU resource caps. See {@link VirtualShellResourceCaps} for details.
+	 *   When `ramCapBytes` is set, `/proc/meminfo`, `free`, `top`, `htop`, and cgroup
+	 *   memory files report this ceiling instead of the host total. When `cpuCapCores`
+	 *   is set, `/proc/cpuinfo`, `/proc/stat`, `nproc`, and cgroup CPU quota are capped.
+	 *   Both fields are optional — omit for full host passthrough. Caps can also be
+	 *   changed at runtime via `sysctl vm.ram_cap_bytes` or `sysctl kernel.cpu_cap_cores`.
 	 */
 	constructor(
 		hostname: string,
 		properties?: ShellProperties,
 		vfsOptionsOrInstance?: VfsOptions | VirtualShellVfsLike | VirtualShellVfsOptions,
+		resourceCaps?: VirtualShellResourceCaps,
 	) {
 		super();
 		perf.mark("constructor");
@@ -176,6 +287,7 @@ class VirtualShell extends EventEmitter {
 		this.properties = properties || defaultShellProperties;
 		this.startTime = Date.now();
 		this.sysctl = defaultSysctlState(hostname, this.properties.kernel);
+		this.resourceCaps = resourceCaps ?? {};
 
 		if (isVirtualShellVfsLike(vfsOptionsOrInstance)) {
 			this.vfs = vfsOptionsOrInstance as unknown as VirtualFileSystem;
@@ -196,17 +308,18 @@ class VirtualShell extends EventEmitter {
 		const startTime = this.startTime;
 		const network = this.network;
 		const sysctl = this.sysctl;
+		const caps = this.resourceCaps;
 
 		// Initialize both VFS mirror and users, ensuring all is ready before auth
 		this._initialized = (async () => {
 			await vfs.restoreMirror();
 			await users.initialize();
 			// Bootstrap Linux rootfs (idempotent)
-			bootstrapLinuxRootfs(vfs, users, shellHostname, shellProps, startTime, [], network);
+			bootstrapLinuxRootfs(vfs, users, shellHostname, shellProps, startTime, [], network, caps);
 
 			// Register read hook: refresh /proc dynamically on every access
 			vfs.onBeforeRead("/proc", () => {
-				refreshProc(vfs, shellProps, shellHostname, startTime, users.listActiveSessions(), network);
+				refreshProc(vfs, shellProps, shellHostname, startTime, users.listActiveSessions(), network, caps);
 			});
 
 			// Register content resolver: serve sysctl values from /proc/sys/*
@@ -225,7 +338,27 @@ class VirtualShell extends EventEmitter {
 				if (resolved) {
 					resolved.set(typeof content === "string" ? content.trim() : String(content));
 				}
+				// Apply RAM/CPU caps in real-time when sysctl values change
+				if (normalizedPath.includes("vm/ram_cap_bytes")) {
+					const val = Number(content);
+					caps.ramCapBytes = val > 0 ? val : undefined;
+					vfs.setRamCap(caps.ramCapBytes ?? null);
+				}
+				if (normalizedPath.includes("kernel/cpu_cap_cores")) {
+					const val = Number(content);
+					caps.cpuCapCores = val > 0 ? val : undefined;
+					users.setCpuCapCores(caps.cpuCapCores ?? 0);
+				}
 			});
+
+			// Apply initial RAM cap if set
+			if (caps.ramCapBytes) {
+				vfs.setRamCap(caps.ramCapBytes);
+			}
+			// Apply initial CPU cap if set
+			if (caps.cpuCapCores) {
+				users.setCpuCapCores(caps.cpuCapCores);
+			}
 
 			this.emit("initialized");
 		})();
@@ -339,6 +472,7 @@ class VirtualShell extends EventEmitter {
 			this.startTime,
 			this.users.listActiveSessions(),
 			this.network,
+			this.resourceCaps,
 		);
 	}
 
@@ -397,6 +531,7 @@ class VirtualShell extends EventEmitter {
 			this.startTime,
 			this.users.listActiveSessions(),
 			this.network,
+			this.resourceCaps,
 		);
 	}
 

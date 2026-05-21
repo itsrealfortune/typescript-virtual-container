@@ -132,4 +132,5 @@ export type { SignalName, SignalHandler } from "./modules/VirtualUserManager/sig
 
 export type { NeofetchInfo } from "./modules/neofetch";
 export type { SysctlState } from "./modules/sysctl";
+export type { VirtualShellResourceCaps } from "./modules/VirtualShell";
 
