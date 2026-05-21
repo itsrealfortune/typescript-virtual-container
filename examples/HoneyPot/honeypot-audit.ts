@@ -12,7 +12,7 @@ import {
     SshClient,
     VirtualShell,
     VirtualSshServer,
-} from "../src/index";
+} from "../../src/index";
 
 async function demonstrateHoneypot() {
 	console.log("🍯 HoneyPot Auditing Example\n");

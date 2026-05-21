@@ -13,7 +13,7 @@ import {
     SshClient,
     VirtualShell,
     VirtualSshServer,
-} from "../src/index";
+} from "../../src/index";
 
 interface AuditReport {
 	timestamp: string;
