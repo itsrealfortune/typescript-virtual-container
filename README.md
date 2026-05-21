@@ -13,7 +13,7 @@
 ## Table of Contents
 
 - [Three ways to run](#three-ways-to-run) · [Get Started](#get-started)
-- [How It Works](#how-it-works) · [Resource Capping](#resource-capping) · [Built-in Commands](#built-in-commands-152)
+- [How It Works](#how-it-works) · [Resource Capping](#resource-capping) · [Built-in Commands](#built-in-commands-157)
 - [Shell Scripting](#shell-scripting) · [Linux Rootfs](#linux-rootfs--vfs-path-resolution)
 - [Configuration](#configuration) · [Troubleshooting](#troubleshooting)
 - [FAQ](#faq) · [Contributing](#contributing)
@@ -184,7 +184,12 @@ See [`guides/EXAMPLES.md`](guides/EXAMPLES.md) for:
 - **Multi-tier lab** — web/api/db with firewall isolation
 - **Hosting platform** — multi-tenant with SSH per tenant
 - **VirtualVpn** — encrypted tunnel between Baie instances
-- **Traffic shaping, DNS, load balancer, partition**
+- **Traffic shaping** — latency, jitter (Gaussian), packet loss, burst loss, reordering, duplication
+- **Bandwidth enforcement** — token bucket rate limiting per VM
+- **MTU enforcement** — packets exceeding interface MTU are dropped
+- **Connection tracking** — stateful conntrack with NEW/ESTABLISHED/TIME_WAIT states
+- **Advanced routing** — multiple routing tables, policy-based routing, route metrics
+- **DNS, load balancer, partition**
 
 A generated wiki with the full reference documentation is available in
 the [`wiki/`](wiki/) directory — run `npm run generate-wiki` to update it
@@ -218,6 +223,14 @@ from the JSDoc.
      │ .vfsb binary    │   │ quotas · sessions    │
      │ mode:memory|fs  │   └─────────────────────-┘
      └─────────────────┘
+                  │
+     ┌────────────▼────────────┐
+     │   VirtualNetworkManager │
+     │ interfaces · routes     │
+     │ firewall · ARP          │
+     │ conntrack · policy rules│
+     │ multi-table routing     │
+     └─────────────────────────┘
                   │
      ┌────────────▼────────────┐
      │        HoneyPot         │
@@ -427,9 +440,15 @@ Type `help` in the shell for a grouped, colorized listing. Type `help <command>`
 |---------|-------------|
 | `curl <url>` | HTTP client (pure `fetch()`) |
 | `wget <url>` | File downloader (pure `fetch()`) |
-| `ip <object>` | Network interface/routing tool |
+| `ip <object>` | Network interface/routing tool (addr, route, link, neigh, rule) |
 | `ping [-c <n>] <host>` | ICMP ECHO_REQUEST (mock) |
 | `nc <host> <port>` | TCP netcat (mock) |
+| `tc qdisc` | Traffic control — netem, tbf, htb qdiscs |
+| `ss` / `netstat` | Socket statistics and connection tracking |
+| `traceroute <host>` | Route tracing with simulated hop paths |
+| `conntrack` | Connection tracking management |
+| `ifconfig` | Legacy interface configuration |
+| `iptables` | Firewall rule management |
 | `help` | Full list: type `help` in the shell |
 
 ### Session
@@ -515,7 +534,7 @@ Type `help` in the shell for a grouped, colorized listing. Type `help <command>`
 | `pacman` | Pacman game (mock) |
 | `help` | Full list: type `help` in the shell |
 
-**ℹ️ All 152 built-in commands include complete JSDoc documentation** with `@category` and `@params` tags. See [src/commands/](https://github.com/itsrealfortune/typescript-virtual-container/tree/main/src/commands) for source code and inline documentation.
+**ℹ️ All 157 built-in commands include complete JSDoc documentation** with `@category` and `@params` tags. See [src/commands/](https://github.com/itsrealfortune/typescript-virtual-container/tree/main/src/commands) for source code and inline documentation.
 
 Custom commands: `shell.addCommand(name, params, callback)`.
 
