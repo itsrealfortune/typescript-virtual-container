@@ -19,14 +19,22 @@
 - [x] Add JSDoc to VirtualVpn.ts helper functions (deriveKey, encrypt, decrypt)
 - [x] Strip JSDoc from private methods (keep only public API documented)
 - [x] Expand index.ts with 40+ missing public API exports
-- [x] Regenerate wiki (87 files, 3769 new lines)
+- [x] Add @example to VirtualSwitch (attach, DNS, routing, traffic shaping, partitions)
+- [x] Add @example to VirtualNetworkManager (interfaces, routes, firewall, ping)
+- [x] Add @example to VirtualUserManager (users, processes, sessions, sudo)
+- [x] Add file-level JSDoc to shellInteractive.ts
+- [x] Add file-level JSDoc to shellRuntime.ts
+- [x] Add file-level JSDoc to desktopManager.ts
+- [x] Add file-level JSDoc to thunarManager.ts
+- [x] Add file-level JSDoc to neofetch.ts
+- [x] Add file-level JSDoc to pacmanGame.ts
+- [x] linuxRootfs.ts and webTermRenderer.ts already had file-level JSDoc
+- [x] Regenerate wiki (enriched with examples and file docs)
 - [x] Run `bun publish-doc` — TypeDoc HTML + wiki pushed to remote
 - [x] All 777 tests pass
 
 ## Remaining / Future
 
-- [ ] Add @example tags to remaining complex APIs (VirtualSwitch, VirtualNetworkManager, VirtualUserManager)
-- [ ] Add file-level JSDoc to modules missing it (shellInteractive, shellRuntime, desktopManager, thunarManager, linuxRootfs, neofetch, pacmanGame, webTermRenderer, commands/*)
-- [ ] Add @example tags to command modules (110+ files)
-- [ ] Consider exporting startShell and NanoEditorSession types from index.ts if needed by consumers
+- [ ] Add @example tags to command modules (110+ files) — low priority, commands are self-documenting via usage strings
+- [ ] Consider exporting startShell from index.ts if consumers need custom shell sessions
 - [ ] Add JSDoc to internal types (InternalDirectoryNode, InternalFileNode, etc.) if they become public
