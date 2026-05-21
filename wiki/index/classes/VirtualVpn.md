@@ -6,7 +6,7 @@
 
 # Class: VirtualVpn
 
-Defined in: [src/modules/VirtualVpn.ts:42](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualVpn.ts#L42)
+Defined in: [src/modules/VirtualVpn.ts:61](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualVpn.ts#L61)
 
 Encrypted tunnel between two Baie instances.
 Supports one-to-one and hub-and-spoke topologies.
@@ -17,7 +17,7 @@ Supports one-to-one and hub-and-spoke topologies.
 
 > **new VirtualVpn**(`_baieA`, `baieB`, `options`): `VirtualVpn`
 
-Defined in: [src/modules/VirtualVpn.ts:48](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualVpn.ts#L48)
+Defined in: [src/modules/VirtualVpn.ts:67](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualVpn.ts#L67)
 
 #### Parameters
 
@@ -63,9 +63,10 @@ Defined in: [src/modules/VirtualVpn.ts:48](https://github.com/itsrealfortune/typ
 
 > **addPeer**(`peer`): `void`
 
-Defined in: [src/modules/VirtualVpn.ts:62](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualVpn.ts#L62)
+Defined in: [src/modules/VirtualVpn.ts:82](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualVpn.ts#L82)
 
-Add a peer to this VPN (hub mode).
+Add a peer VPN instance for hub-and-spoke topology.
+The peer will forward traffic through this VPN to reach other subnets.
 
 #### Parameters
 
@@ -73,7 +74,7 @@ Add a peer to this VPN (hub mode).
 
 `VirtualVpn`
 
-The peer parameter.
+Another VirtualVpn instance to peer with.
 
 #### Returns
 
@@ -85,9 +86,10 @@ The peer parameter.
 
 > **tunnel**(`packet`): `Promise`\<[`PacketResult`](../interfaces/PacketResult.md)\>
 
-Defined in: [src/modules/VirtualVpn.ts:71](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualVpn.ts#L71)
+Defined in: [src/modules/VirtualVpn.ts:92](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualVpn.ts#L92)
 
-Encrypt and forward a packet to the other side.
+Encrypt a packet, simulate transit latency, decrypt on the remote side,
+and route it to the destination VM.
 
 #### Parameters
 
@@ -95,10 +97,10 @@ Encrypt and forward a packet to the other side.
 
 [`Packet`](../interfaces/Packet.md)
 
-The packet parameter.
+Network packet to tunnel across the VPN link.
 
 #### Returns
 
 `Promise`\<[`PacketResult`](../interfaces/PacketResult.md)\>
 
-A promise that resolves with the result.
+The routing result from the remote switch (ACCEPT/DROP/REJECT).

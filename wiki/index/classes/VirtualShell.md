@@ -75,7 +75,7 @@ Optional VFS persistence options (mode, snapshotPath) or an existing VFS instanc
 
 ### desktopManager
 
-> **desktopManager**: `DesktopManager` \| `null` = `null`
+> **desktopManager**: [`DesktopManager`](DesktopManager.md) \| `null` = `null`
 
 Defined in: [src/modules/VirtualShell/index.ts:154](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualShell/index.ts#L154)
 
@@ -135,7 +135,7 @@ Unix ms timestamp of shell creation — used by `uptime` and `/proc/uptime`.
 
 ### sysctl
 
-> **sysctl**: `SysctlState`
+> **sysctl**: [`SysctlState`](../interfaces/SysctlState.md)
 
 Defined in: [src/modules/VirtualShell/index.ts:158](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualShell/index.ts#L158)
 

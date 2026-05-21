@@ -6,7 +6,7 @@
 
 # Interface: NanoEditorOptions
 
-Defined in: [src/modules/nanoEditor.ts:41](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L41)
+Defined in: [src/modules/nanoEditor.ts:42](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L42)
 
 ## Properties
 
@@ -14,7 +14,9 @@ Defined in: [src/modules/nanoEditor.ts:41](https://github.com/itsrealfortune/typ
 
 > **content**: `string`
 
-Defined in: [src/modules/nanoEditor.ts:44](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L44)
+Defined in: [src/modules/nanoEditor.ts:48](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L48)
+
+Initial file content to display in the editor.
 
 ***
 
@@ -22,7 +24,9 @@ Defined in: [src/modules/nanoEditor.ts:44](https://github.com/itsrealfortune/typ
 
 > **filename**: `string`
 
-Defined in: [src/modules/nanoEditor.ts:45](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L45)
+Defined in: [src/modules/nanoEditor.ts:50](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L50)
+
+File path shown in the title bar and used for save operations.
 
 ***
 
@@ -30,7 +34,9 @@ Defined in: [src/modules/nanoEditor.ts:45](https://github.com/itsrealfortune/typ
 
 > **onExit**: (`reason`, `content`) => `void`
 
-Defined in: [src/modules/nanoEditor.ts:46](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L46)
+Defined in: [src/modules/nanoEditor.ts:52](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L52)
+
+Called when nano exits (saved or aborted). Receives the exit reason and final content.
 
 #### Parameters
 
@@ -52,7 +58,7 @@ Defined in: [src/modules/nanoEditor.ts:46](https://github.com/itsrealfortune/typ
 
 > `optional` **onSave?**: (`content`) => `void`
 
-Defined in: [src/modules/nanoEditor.ts:48](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L48)
+Defined in: [src/modules/nanoEditor.ts:54](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L54)
 
 Called on ^S / silent save — save without closing nano. Optional.
 
@@ -72,12 +78,16 @@ Called on ^S / silent save — save without closing nano. Optional.
 
 > **stream**: [`ShellStream`](ShellStream.md)
 
-Defined in: [src/modules/nanoEditor.ts:42](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L42)
+Defined in: [src/modules/nanoEditor.ts:44](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L44)
+
+Terminal output stream for rendering the editor UI.
 
 ***
 
 ### terminalSize
 
-> **terminalSize**: `TerminalSize`
+> **terminalSize**: [`TerminalSize`](TerminalSize.md)
 
-Defined in: [src/modules/nanoEditor.ts:43](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L43)
+Defined in: [src/modules/nanoEditor.ts:46](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L46)
+
+Current terminal dimensions for layout calculations.

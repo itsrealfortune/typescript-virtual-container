@@ -6,7 +6,7 @@
 
 # Interface: VpnOptions
 
-Defined in: [src/modules/VirtualVpn.ts:32](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualVpn.ts#L32)
+Defined in: [src/modules/VirtualVpn.ts:51](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualVpn.ts#L51)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [src/modules/VirtualVpn.ts:32](https://github.com/itsrealfortune/typ
 
 > **key**: `string`
 
-Defined in: [src/modules/VirtualVpn.ts:33](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualVpn.ts#L33)
+Defined in: [src/modules/VirtualVpn.ts:52](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualVpn.ts#L52)
 
 ***
 
@@ -22,6 +22,6 @@ Defined in: [src/modules/VirtualVpn.ts:33](https://github.com/itsrealfortune/typ
 
 > `optional` **latencyMs?**: `number`
 
-Defined in: [src/modules/VirtualVpn.ts:35](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualVpn.ts#L35)
+Defined in: [src/modules/VirtualVpn.ts:54](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualVpn.ts#L54)
 
 Simulated latency across the VPN link (ms). Default: 50.

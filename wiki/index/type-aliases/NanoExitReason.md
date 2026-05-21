@@ -8,4 +8,6 @@
 
 > **NanoExitReason** = `"saved"` \| `"aborted"`
 
-Defined in: [src/modules/nanoEditor.ts:39](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L39)
+Defined in: [src/modules/nanoEditor.ts:40](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L40)
+
+Reason the NanoEditor session ended: "saved" (^O/^X with save) or "aborted" (^X without save).

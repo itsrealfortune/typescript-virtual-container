@@ -43,7 +43,7 @@ Add a firewall rule. Returns the rule index.
 
 ##### rule
 
-`FirewallRule`
+[`FirewallRule`](../interfaces/FirewallRule.md)
 
 The rule parameter.
 
@@ -280,7 +280,7 @@ Array of VirtualArpEntry objects.
 
 ### getFirewallRules()
 
-> **getFirewallRules**(): `FirewallRule`[]
+> **getFirewallRules**(): [`FirewallRule`](../interfaces/FirewallRule.md)[]
 
 Defined in: [src/modules/VirtualNetworkManager.ts:310](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualNetworkManager.ts#L310)
 
@@ -288,7 +288,7 @@ Get all firewall rules.
 
 #### Returns
 
-`FirewallRule`[]
+[`FirewallRule`](../interfaces/FirewallRule.md)[]
 
 The firewall rules.
 
