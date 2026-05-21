@@ -180,6 +180,12 @@ describe("CPU capping — reporting", () => {
 		const cpuLines = (r.stdout!.match(/^cpu\d+/gm) || []).length;
 		expect(cpuLines).toBeLessThanOrEqual(2);
 	});
+
+	test("lscpu shows capped CPU count", async () => {
+		const r = await client.exec("lscpu");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout).toContain("CPU(s):              2");
+	});
 });
 
 // ─── CPU capping — enforcement API ───────────────────────────────────────────
@@ -294,6 +300,22 @@ describe("Combined RAM + CPU caps", () => {
 		expect(r.exitCode).toBe(0);
 		const processorCount = (r.stdout!.match(/^processor\s*:/gm) || []).length;
 		expect(processorCount).toBe(1);
+	});
+
+	test("lscpu shows 1 CPU", async () => {
+		const r = await client.exec("lscpu");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout).toContain("CPU(s):              1");
+	});
+
+	test("neofetch shows capped CPU and memory", async () => {
+		await client.exec("apt install neofetch");
+		const r = await client.exec("neofetch");
+		expect(r.exitCode).toBe(0);
+		// Should show 1 CPU in the CPU line
+		expect(r.stdout).toMatch(/\(1\)/);
+		// Should show capped memory (128 MiB)
+		expect(r.stdout).toContain("128MiB");
 	});
 });
 

@@ -11,8 +11,10 @@ export const lscpuCommand: ShellModule = {
 	description: "Display CPU architecture information",
 	category: "system",
 	params: [],
-	run: () => {
-		const cpus = os.cpus();
+	run: ({ shell }) => {
+		const hostCpus = os.cpus();
+		const cpuCap = shell.resourceCaps?.cpuCapCores;
+		const cpus = cpuCap != null && cpuCap > 0 ? hostCpus.slice(0, cpuCap) : hostCpus;
 		const arch = os.arch();
 		const endian = os.endianness();
 		const cores = cpus.length;
