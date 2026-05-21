@@ -377,7 +377,7 @@ export class SftpMimic extends EventEmitter {
 				});
 
 				client.on("ready", () => {
-					client.on("session", (accept, _reject) => {
+					client.on("session", (accept) => {
 						const session = accept();
 
 						// Add error handling for the session

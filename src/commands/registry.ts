@@ -299,9 +299,7 @@ const customCommands: ShellModule[] = [];
 const commandRegistry = new Map<string, ShellModule>();
 let cachedCommandNames: string[] | null = null;
 
-const helpCommand = createHelpCommand(() =>
-	getCommandModules().map((cmd) => cmd.name),
-);
+const helpCommand = createHelpCommand();
 
 function buildCache(): void {
 	commandRegistry.clear();

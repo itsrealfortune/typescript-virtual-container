@@ -1200,7 +1200,7 @@ class VirtualFileSystem extends EventEmitter {
 	 */
 	public chown(targetPath: string, uid: number, gid: number, actorUid?: number): void {
 		const normalized = normalizePath(targetPath);
-		if (actorUid !== undefined) enforceChown(normalized, actorUid);
+		if (actorUid !== undefined) enforceChown(actorUid);
 		const node = getNodeNormalized(this.root, normalized);
 		node.uid = uid;
 		node.gid = gid;

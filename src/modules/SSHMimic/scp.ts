@@ -233,7 +233,6 @@ export function runScpSink(
 export function runScpSource(
 	stream: ScpStream,
 	srcArg: string,
-	_authUser: string,
 	shell: VirtualShell,
 	recursive: boolean,
 ): void {
@@ -385,6 +384,6 @@ export function handleScp(
 	if (sink) {
 		runScpSink(stream, target, authUser, shell, recursive);
 	} else {
-		runScpSource(stream, target, authUser, shell, recursive);
+		runScpSource(stream, target, shell, recursive);
 	}
 }

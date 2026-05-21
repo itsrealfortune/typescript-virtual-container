@@ -276,7 +276,7 @@ export class NanoEditor {
 
 		// Control characters
 		if (code < 32 || code === 127) {
-			this.handleControl(ch, code);
+			this.handleControl(code);
 			return;
 		}
 
@@ -284,7 +284,7 @@ export class NanoEditor {
 		this.doInsertChar(ch);
 	}
 
-	private handleControl(_ch: string, code: number): void {
+	private handleControl(code: number): void {
 		switch (code) {
 			// Navigation
 			case 1: this.dispatch("home"); break;          // ^A
@@ -326,8 +326,8 @@ export class NanoEditor {
 	private dispatch(action: string): void {
 		if (this.mode !== "normal") return;
 		switch (action) {
-			case "up": this.moveCursor(-1, 0); break;
-			case "down": this.moveCursor(1, 0); break;
+			case "up": this.moveCursor(-1); break;
+			case "down": this.moveCursor(1); break;
 			case "left": this.moveCursorLeft(); break;
 			case "right": this.moveCursorRight(); break;
 			case "home": this.moveCursorHome(); break;
@@ -337,8 +337,8 @@ export class NanoEditor {
 			case "delete": this.doDelete(); break;
 			case "ctrl-right": this.moveWordRight(); break;
 			case "ctrl-left": this.moveWordLeft(); break;
-			case "ctrl-up": this.moveCursor(-1, 0); break;
-			case "ctrl-down": this.moveCursor(1, 0); break;
+			case "ctrl-up": this.moveCursor(-1); break;
+			case "ctrl-down": this.moveCursor(1); break;
 		}
 	}
 
@@ -467,7 +467,7 @@ export class NanoEditor {
 
 	// ── Cursor movement ───────────────────────────────────────────────────────
 
-	private moveCursor(dRow: number, _dCol: number): void {
+	private moveCursor(dRow: number): void {
 		this.cursorRow = Math.max(0, Math.min(this.lines.length - 1, this.cursorRow + dRow));
 		this.cursorCol = Math.min(this.cursorCol, this.currentLine().length);
 		const prevScrollTop = this.scrollTop;
