@@ -282,7 +282,7 @@ export class VirtualNetworkManager {
 
 	// ── Firewall (iptables) ──────────────────────────────────────────────
 
-		/**
+	/**
 	 * Add a firewall rule. Returns the rule index.
 	 * @param rule - The rule parameter.
 	 * @returns The numeric result.
@@ -292,7 +292,7 @@ export class VirtualNetworkManager {
 		return this.firewallRules.length - 1;
 	}
 
-		/**
+	/**
 	 * Remove a firewall rule by index.
 	 * @param index - The index parameter.
 	 * @returns The success indicator.
@@ -303,7 +303,7 @@ export class VirtualNetworkManager {
 		return true;
 	}
 
-		/**
+	/**
 	 * Get all firewall rules.
 	 * @returns The firewall rules.
 	 */
@@ -311,7 +311,7 @@ export class VirtualNetworkManager {
 		return [...this.firewallRules];
 	}
 
-		/**
+	/**
 	 * Set the default policy for a chain.
 	 * @param chain - The chain parameter.
 	 * @param policy - The policy parameter.
@@ -323,7 +323,7 @@ export class VirtualNetworkManager {
 		return true;
 	}
 
-		/**
+	/**
 	 * Get the default policy for a chain.
 	 * @param chain - The chain parameter.
 	 * @returns The operation result.
@@ -365,7 +365,7 @@ export class VirtualNetworkManager {
 		this.firewallRules = [];
 	}
 
-		/**
+	/**
 	 * List rules in iptables -L format.
 	 * @returns The result string.
 	 */

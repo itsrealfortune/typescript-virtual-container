@@ -368,7 +368,7 @@ class VirtualShell extends EventEmitter {
 		this.vfs.mount(vPath, hostPath, options);
 	}
 
-		/**
+	/**
 	 * Remove a previously mounted host directory.
 	 * @param vPath - The virtual file system path.
 	 */
@@ -376,7 +376,7 @@ class VirtualShell extends EventEmitter {
 		this.vfs.unmount(vPath);
 	}
 
-		/**
+	/**
 	 * List all active mounts.
 	 * @returns The operation result.
 	 */
@@ -496,7 +496,7 @@ class VirtualShell extends EventEmitter {
 		return this._idle?.state ?? "active";
 	}
 
-		/**
+	/**
 	 * Milliseconds since last shell activity. 0 when idle management is disabled.
 	 * @returns The numeric result.
 	 */

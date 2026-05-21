@@ -1,5 +1,6 @@
 import type { DesktopWindow } from "./desktopManager";
 
+/** Serialized window state for localStorage persistence. */
 interface SerializedWindow {
   title: string;
   x: number;
@@ -17,6 +18,12 @@ interface SerializedWindow {
 const STORAGE_KEY = "fortune-desktop-session";
 const VERSION = 1;
 
+/**
+ * Persist desktop window layout to localStorage.
+ * Serializes terminal, thunar, editor, and about window states.
+ * Silently ignores storage-full errors.
+ * @param windows - Array of DesktopWindow instances to serialize.
+ */
 export function saveSession(windows: DesktopWindow[]): void {
   const serialized: SerializedWindow[] = [];
   for (const w of windows) {
@@ -46,6 +53,11 @@ export function saveSession(windows: DesktopWindow[]): void {
   }
 }
 
+/**
+ * Restore desktop window layout from localStorage.
+ * Returns null if no session exists or the version doesn't match.
+ * @returns Array of serialized window descriptors, or null.
+ */
 export function loadSession(): SerializedWindow[] | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -60,6 +72,10 @@ export function loadSession(): SerializedWindow[] | null {
   }
 }
 
+/**
+ * Clear the persisted desktop session from localStorage.
+ * Silently ignores errors (e.g., storage unavailable).
+ */
 export function clearSession(): void {
   try {
     localStorage.removeItem(STORAGE_KEY);

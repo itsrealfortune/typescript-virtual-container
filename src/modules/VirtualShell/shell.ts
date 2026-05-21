@@ -43,6 +43,29 @@ interface PendingSudo {
 	}>;
 }
 
+/**
+ * Start an interactive shell session for a connected client.
+ *
+ * This is the core interactive shell engine. It handles:
+ * - Line editing with cursor movement and history navigation
+ * - Command parsing and execution (pipelines, redirects, logical operators)
+ * - Interactive programs (nano, htop, pacman game)
+ * - sudo/passwd password prompts
+ * - Login script sourcing (.profile, .bashrc, /etc/environment)
+ * - Tab completion for commands and file paths
+ * - Heredoc input collection
+ *
+ * The function runs until the stream closes or the session ends.
+ *
+ * @param properties - Shell configuration properties (hostname, banner, etc.).
+ * @param stream - The bidirectional I/O stream for the client connection.
+ * @param authUser - The authenticated username for this session.
+ * @param hostname - The VM hostname (used in prompts and banners).
+ * @param sessionId - Unique session identifier, or null for local sessions.
+ * @param remoteAddress - Client IP address (default: "unknown").
+ * @param terminalSize - Terminal dimensions in columns and rows (default: 80x24).
+ * @param shell - The VirtualShell instance providing VFS, user management, etc.
+ */
 export function startShell(
 	properties: ShellProperties,
 	stream: ShellStream,

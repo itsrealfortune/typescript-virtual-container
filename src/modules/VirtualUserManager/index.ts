@@ -328,7 +328,8 @@ export class VirtualUserManager extends EventEmitter {
 	/**
 	 * Ensure a user exists in the database. Creates them with a non-root UID
 	 * if they are missing. Used during SSH login for unknown users.
-	 * @param username - The username.
+	 * Also creates the home directory and README.txt if they don't exist.
+	 * @param username - Username to ensure exists.
 	 */
 	public ensureUser(username: string): void {
 		if (this.users.has(username)) return;
@@ -573,28 +574,28 @@ export class VirtualUserManager extends EventEmitter {
 		return Array.from(this.users.keys()).sort();
 	}
 
-		/**
+	/**
 	 * Returns the numeric UID for a username, or 0 if unknown.
-	 * @param username - The username.
-	 * @returns The numeric result.
+	 * @param username - Username to look up.
+	 * @returns UID number (0 if user not found).
 	 */
 	public getUid(username: string): number {
 		return this.users.get(username)?.uid ?? 0;
 	}
 
-		/**
+	/**
 	 * Returns the primary GID for a username, or 0 if unknown.
-	 * @param username - The username.
-	 * @returns The numeric result.
+	 * @param username - Username to look up.
+	 * @returns GID number (0 if user not found).
 	 */
 	public getGid(username: string): number {
 		return this.users.get(username)?.gid ?? 0;
 	}
 
-		/**
+	/**
 	 * Returns the username for a numeric UID, or null if unknown.
-	 * @param uid - The uid parameter.
-	 * @returns The operation result.
+	 * @param uid - User ID number to resolve.
+	 * @returns Username string, or null if UID not found.
 	 */
 	public getUsername(uid: number): string | null {
 		for (const [name, record] of this.users) {
@@ -603,10 +604,10 @@ export class VirtualUserManager extends EventEmitter {
 		return null;
 	}
 
-		/**
+	/**
 	 * Returns the group name for a numeric GID, or null if unknown.
-	 * @param gid - The gid parameter.
-	 * @returns The operation result.
+	 * @param gid - Group ID number to resolve.
+	 * @returns Group/username string, or null if GID not found.
 	 */
 	public getGroup(gid: number): string | null {
 		for (const [name, record] of this.users) {
@@ -618,13 +619,13 @@ export class VirtualUserManager extends EventEmitter {
 	/**
 	 * Registers a running command as a virtual process.
 	 * Returns the assigned PID so the caller can deregister on completion.
-	 * @param username - The username.
-	 * @param command - The command parameter.
-	 * @param argv - The argv parameter.
-	 * @param tty - The tty parameter.
-	 * @param abortController - The abortController parameter.
-	 * @param ppid - The ppid parameter.
-	 * @returns The numeric result.
+	 * @param username - User who owns the process.
+	 * @param command - Command name (first token of the command line).
+	 * @param argv - Full argument array including the command name.
+	 * @param tty - TTY device identifier (e.g. "pts/0").
+	 * @param abortController - Optional AbortController for process cancellation.
+	 * @param ppid - Parent process ID (default: 1 / init).
+	 * @returns The newly assigned PID.
 	 */
 	public registerProcess(
 		username: string,
@@ -650,9 +651,10 @@ export class VirtualUserManager extends EventEmitter {
 		return pid;
 	}
 
-		/**
+	/**
 	 * Removes a process record when the command exits.
-	 * @param pid - The pid parameter.
+	 * Emits SIGCHLD to the parent process.
+	 * @param pid - PID of the process to unregister.
 	 */
 	public unregisterProcess(pid: number): void {
 		const proc = this.activeProcesses.get(pid);
@@ -664,9 +666,10 @@ export class VirtualUserManager extends EventEmitter {
 		this.activeProcesses.delete(pid);
 	}
 
-		/**
+	/**
 	 * Marks a process as done (keeps it in the table briefly for jobs/ps).
-	 * @param pid - The pid parameter.
+	 * Sets status to "done" without removing the record immediately.
+	 * @param pid - PID of the process to mark as done.
 	 */
 	public markProcessDone(pid: number): void {
 		const proc = this.activeProcesses.get(pid);
@@ -676,7 +679,7 @@ export class VirtualUserManager extends EventEmitter {
 		}
 	}
 
-		/**
+	/**
 	 * Returns all currently running processes sorted by PID.
 	 * @returns The process list.
 	 */
@@ -684,11 +687,12 @@ export class VirtualUserManager extends EventEmitter {
 		return Array.from(this.activeProcesses.values()).sort((a, b) => a.pid - b.pid);
 	}
 
-		/**
+	/**
 	 * Terminate a process by PID. Returns true if the process was found and signalled.
-	 * @param pid - The pid parameter.
-	 * @param signal - The signal parameter.
-	 * @returns The success indicator.
+	 * Handles SIGKILL (9), SIGSTOP (19), SIGCONT (18), and custom signal handlers.
+	 * @param pid - PID of the process to kill.
+	 * @param signal - Signal number to send (default: 15 / SIGTERM).
+	 * @returns True if the process was found and signalled, false if PID not found.
 	 */
 	public killProcess(pid: number, signal = 15): boolean {
 		const proc = this.activeProcesses.get(pid);
@@ -730,11 +734,11 @@ export class VirtualUserManager extends EventEmitter {
 		return true;
 	}
 
-		/**
+	/**
 	 * Send a signal to all processes owned by a user.
-	 * @param username - The username.
-	 * @param signal - The signal parameter.
-	 * @returns The numeric result.
+	 * @param username - Username whose processes to signal.
+	 * @param signal - Signal number to send (default: 15 / SIGTERM).
+	 * @returns Number of processes that were signalled.
 	 */
 	public killAllUserProcesses(username: string, signal = 15): number {
 		let count = 0;
@@ -746,10 +750,10 @@ export class VirtualUserManager extends EventEmitter {
 		return count;
 	}
 
-		/**
-	 * Get process by PID.
-	 * @param pid - The pid parameter.
-	 * @returns The process list.
+	/**
+	 * Get process record by PID.
+	 * @param pid - PID to look up.
+	 * @returns VirtualProcess object if found, or undefined.
 	 */
 	public getProcess(pid: number): VirtualProcess | undefined {
 		return this.activeProcesses.get(pid);
@@ -921,7 +925,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * hash) is allowed to authenticate without a credential check.
 	 *
 	 * @param username Target username.
-	 * @returns The success indicator.
+	 * @returns True if the user has a password set, false otherwise.
 	 */
 	public hasPassword(username: string): boolean {
 		perf.mark("hasPassword");
