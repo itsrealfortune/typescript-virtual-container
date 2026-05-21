@@ -739,15 +739,60 @@ class VirtualFileSystem extends EventEmitter {
 				this._evictDir(node);
 			} else if (node.type === "file" && !node.evicted) {
 				const rawSize = node.compressed
-					? (node.size ?? node.content.length * 2) // estimate uncompressed
+					? (node.size ?? node.content.length * 2)
 					: node.content.length;
 				if (rawSize > this._evictionThreshold) {
 					node.size    = rawSize;
-					node.content = Buffer.alloc(0); // free heap
+					node.content = Buffer.alloc(0);
 					node.evicted = true;
 		}
 		}
 		}
+	}
+
+	/**
+	 * Returns a Set of all VFS paths that have open file descriptors.
+	 * @returns Set of absolute VFS paths with open FDs.
+	 */
+	public getOpenPaths(): Set<string> {
+		const paths = new Set<string>();
+		for (const entry of this._fdTable.values()) {
+			paths.add(entry.path);
+		}
+		return paths;
+	}
+
+	/**
+	 * Evict large files from RAM that have no open file descriptors.
+	 * Unlike `evictLargeFiles()` which evicts based on size threshold,
+	 * this only evicts files that are not currently open.
+	 * @param openPaths - Set of paths that have open FDs (skip these).
+	 * @returns Number of files evicted.
+	 */
+	public evictUnusedLargeFiles(openPaths: Set<string>): number {
+		if (this._evictionThreshold === 0) return 0;
+		return this._evictUnusedDir(this._root, openPaths, "");
+	}
+
+	private _evictUnusedDir(dir: InternalDirectoryNode, openPaths: Set<string>, prefix: string): number {
+		let evicted = 0;
+		for (const [name, node] of Object.entries(dir.children)) {
+			const fullPath = prefix ? `${prefix}/${name}` : `/${name}`;
+			if (node.type === "directory") {
+				evicted += this._evictUnusedDir(node, openPaths, fullPath);
+			} else if (node.type === "file" && !node.evicted && !openPaths.has(fullPath)) {
+				const rawSize = node.compressed
+					? (node.size ?? node.content.length * 2)
+					: node.content.length;
+				if (rawSize > this._evictionThreshold) {
+					node.size = rawSize;
+					node.content = Buffer.alloc(0);
+					node.evicted = true;
+					evicted++;
+				}
+			}
+		}
+		return evicted;
 	}
 
 	/**
