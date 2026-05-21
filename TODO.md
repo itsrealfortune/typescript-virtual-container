@@ -89,9 +89,3 @@
 - [ ] Add a more realistic user management system that supports user groups, permissions, and authentication mechanisms (e.g. password hashing, PAM)
 - [ ] WebSocket-based remote shell client (experimental)
 - [ ] Resolve dependabots alerts and update dependencies to address security vulnerabilities (e.g. serialize-javascript, fflate)
-
-## Remaining / Future
-
-- [ ] Add @example tags to command modules (110+ files) — low priority, commands are self-documenting via usage strings
-- [ ] Consider exporting startShell from index.ts if consumers need custom shell sessions
-- [ ] Add JSDoc to internal types (InternalDirectoryNode, InternalFileNode, etc.) if they become public
