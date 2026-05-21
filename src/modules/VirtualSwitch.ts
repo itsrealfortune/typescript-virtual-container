@@ -130,10 +130,10 @@ export function cidrRange(cidr: string): { network: number; mask: number } {
  * sw.setPartitions([[webPort.mac], [dbPort.mac]]);
  * ```
  *
- * @see Baie
- * @see VirtualProxy
- * @see VirtualVpn
- * @see VirtualNetworkManager
+ * @see {@link Baie}
+ * @see {@link VirtualProxy}
+ * @see {@link VirtualVpn}
+ * @see {@link VirtualNetworkManager}
  */
 export class VirtualSwitch {
 	/** Subnet CIDR (e.g. "10.0.1.0/24"). */
@@ -513,8 +513,8 @@ export class VirtualSwitch {
  * await baie.destroyVM("db-server");
  * ```
  *
- * @see VirtualSwitch
- * @see VirtualVpn
+ * @see {@link VirtualSwitch}
+ * @see {@link VirtualVpn}
  */
 export class Baie {
 	/** Human-readable name for this Baie instance. */

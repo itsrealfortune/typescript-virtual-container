@@ -53,9 +53,9 @@ interface RateLimitEntry {
  * // ssh.stop();
  * ```
  *
- * @see VirtualShell
- * @see SftpMimic
- * @see VirtualSshServer
+ * @see {@link VirtualShell}
+ * @see {@link SftpMimic}
+ * @see {@link VirtualSshServer}
  */
 class SshMimic extends EventEmitter {
 	port: number;
