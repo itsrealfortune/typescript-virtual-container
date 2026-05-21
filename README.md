@@ -13,7 +13,7 @@
 ## Table of Contents
 
 - [Three ways to run](#three-ways-to-run) · [Get Started](#get-started)
-- [How It Works](#how-it-works) · [Built-in Commands](#built-in-commands-152)
+- [How It Works](#how-it-works) · [Resource Capping](#resource-capping) · [Built-in Commands](#built-in-commands-152)
 - [Shell Scripting](#shell-scripting) · [Linux Rootfs](#linux-rootfs--vfs-path-resolution)
 - [Configuration](#configuration) · [Troubleshooting](#troubleshooting)
 - [FAQ](#faq) · [Contributing](#contributing)
@@ -228,7 +228,73 @@ from the JSDoc.
 
 **What it is:** a shell emulator and virtual Linux environment for developer workflows.
 
-**What it is not:** a fully isolated sandbox. The shell commands are contained — no host binary is ever spawned, `execvp` is never called, `node`/`python3`/`npm` are virtual stubs. Permission enforcement follows POSIX semantics (owner/group/other, sticky bit, setuid) for all file operations, and unknown users are auto-provisioned with non-root UIDs. But `curl`/`wget` use the real `fetch()` API (live network access), all instances share the same JS heap as the host application, and CPU/memory are not capped. Do not expose to untrusted input without additional infrastructure-level isolation.
+**What it is not:** a fully isolated sandbox. The shell commands are contained — no host binary is ever spawned, `execvp` is never called, `node`/`python3`/`npm` are virtual stubs. Permission enforcement follows POSIX semantics (owner/group/other, sticky bit, setuid) for all file operations, and unknown users are auto-provisioned with non-root UIDs. But `curl`/`wget` use the real `fetch()` API (live network access), all instances share the same JS heap as the host application, and resource capping is enforced at the VFS/process level (not at the kernel level). Do not expose to untrusted input without additional infrastructure-level isolation.
+
+---
+
+## Resource Capping
+
+Limit the RAM and CPU resources visible inside a virtual shell. Pass a `VirtualShellResourceCaps` object as the 4th constructor argument:
+
+```typescript
+import { VirtualShell } from "typescript-virtual-container";
+
+const shell = new VirtualShell("prod-vm", undefined, undefined, {
+  ramCapBytes: 2 * 1024 * 1024 * 1024, // 2 GiB VFS storage limit
+  cpuCapCores: 2,                        // 2 vCPUs
+});
+```
+
+### Reporting (always active)
+
+When a cap is set, every `/proc` file, sysctl entry, cgroup file, and system-monitor command reports the capped value instead of the real host total:
+
+| Command | CPU cap | RAM cap |
+|---|---|---|
+| `free` | — | ✅ |
+| `top` | — | ✅ |
+| `htop` | ✅ | ✅ |
+| `nproc` | ✅ | — |
+| `lscpu` | ✅ | — |
+| `neofetch` | ✅ | ✅ |
+| `/proc/cpuinfo` | ✅ | — |
+| `/proc/meminfo` | — | ✅ |
+| `/proc/stat` | ✅ | — |
+| cgroup files | ✅ | ✅ |
+
+### RAM enforcement
+
+When `ramCapBytes` is set, the VFS tracks total bytes stored in its in-memory tree. Any write that would cause the total to exceed the cap is rejected with an `ENOMEM` error:
+
+```bash
+$ dd if=/dev/zero of=/tmp/big bs=1M count=3000
+ENOMEM: Cannot allocate memory: write to '/tmp/big' would exceed RAM cap
+```
+
+This covers all VFS writes: `echo > file`, `dd`, `cp`, `tee`, SFTP uploads, etc. Compressed files count their compressed size.
+
+> **Note:** this caps VFS storage, not Node.js heap usage. A process that allocates large JS objects without writing to the VFS will not be blocked.
+
+### CPU enforcement
+
+When `cpuCapCores` is set, a background watcher tracks wall-clock time per process. If a process exceeds the per-window budget (`cpuCapCores × 1000 ms` per second), it is killed with `SIGKILL` (exit code 137):
+
+```bash
+$ while true; do :; done
+Killed  # exit code 137
+```
+
+Short commands (`ls`, `echo`, `cat`) are unaffected. The `process:killed:cpu` event is emitted with `{ pid, command, cpuTime }`.
+
+### Runtime changes
+
+Both caps can be changed at runtime via `sysctl`:
+
+```bash
+sysctl vm.ram_cap_bytes=1073741824   # 1 GiB
+sysctl kernel.cpu_cap_cores=2         # 2 vCPUs
+sysctl vm.ram_cap_bytes=0             # remove RAM cap
+```
 
 ---
 
