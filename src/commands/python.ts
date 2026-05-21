@@ -392,22 +392,22 @@ const MODULE_FACTORIES: Record<string, (cwd: string) => PyDict> = {
 // ─── interpreter ─────────────────────────────────────────────────────────────
 
 class Interpreter {
-	private output: string[] = [];
-	private stderr: string[] = [];
-	private modules = new Map<string, PyDict>();
+	private _output: string[] = [];
+	private _stderr: string[] = [];
+	private _modules = new Map<string, PyDict>();
 
 	constructor(private readonly cwd: string) {}
 
 	getOutput(): string {
-		return this.output.join("\n") + (this.output.length ? "\n" : "");
+		return this._output.join("\n") + (this._output.length ? "\n" : "");
 	}
 	getStderr(): string {
-		return this.stderr.join("\n") + (this.stderr.length ? "\n" : "");
+		return this._stderr.join("\n") + (this._stderr.length ? "\n" : "");
 	}
 
 	// ── tokenizer / parser helpers ──────────────────────────────────────────
 
-	private splitArgs(s: string): string[] {
+	private _splitArgs(s: string): string[] {
 		// Split on commas respecting balanced parens, brackets, braces, quotes
 		const args: string[] = [];
 		let depth = 0,
@@ -511,14 +511,14 @@ class Interpreter {
 				}
 				return result;
 			}
-			return this.splitArgs(inner).map((a) => this.pyEval(a, scope));
+			return this._splitArgs(inner).map((a) => this.pyEval(a, scope));
 		}
 
 		// Tuple (...)
 		if (expr.startsWith("(") && expr.endsWith(")")) {
 			const inner = expr.slice(1, -1).trim();
 			if (!inner) return [];
-			const parts = this.splitArgs(inner);
+			const parts = this._splitArgs(inner);
 			if (parts.length === 1 && !inner.endsWith(","))
 				return this.pyEval(parts[0]!, scope);
 			return parts.map((a) => this.pyEval(a, scope));
@@ -529,7 +529,7 @@ class Interpreter {
 			const inner = expr.slice(1, -1).trim();
 			if (!inner) return pyDict();
 			const dict = pyDict();
-			for (const entry of this.splitArgs(inner)) {
+			for (const entry of this._splitArgs(inner)) {
 				const colonIdx = entry.indexOf(":");
 				if (colonIdx === -1) continue;
 				const k = pyStr(this.pyEval(entry.slice(0, colonIdx).trim(), scope));
@@ -553,7 +553,7 @@ class Interpreter {
 			["*", "//", "/", "%"],
 		];
 		for (const ops of binaryOps) {
-			const result = this.tryBinaryOp(expr, ops, scope);
+			const result = this._tryBinaryOp(expr, ops, scope);
 			if (result !== undefined) return result;
 		}
 
@@ -566,11 +566,11 @@ class Interpreter {
 		// Subscript: expr[key] or expr[start:stop]
 		if (process.env.PY_DEBUG) console.error("eval:", JSON.stringify(expr));
 		if (expr.endsWith("]") && !expr.startsWith("[")) {
-			const bracketStart = this.findMatchingBracket(expr, "[");
+			const bracketStart = this._findMatchingBracket(expr, "[");
 			if (bracketStart !== -1) {
 				const obj = this.pyEval(expr.slice(0, bracketStart), scope);
 				const key = expr.slice(bracketStart + 1, -1);
-				return this.subscript(obj, key, scope);
+				return this._subscript(obj, key, scope);
 			}
 		}
 
@@ -579,26 +579,26 @@ class Interpreter {
 		const callMatch = expr.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*\(([\s\S]*)\)$/);
 		if (callMatch) {
 			const [, name, argsStr] = callMatch;
-			const callArgs = (argsStr?.trim() ? this.splitArgs(argsStr) : []).map(
+			const callArgs = (argsStr?.trim() ? this._splitArgs(argsStr) : []).map(
 				(a) => this.pyEval(a, scope),
 			);
-			return this.callBuiltin(name!, callArgs, scope);
+			return this._callBuiltin(name!, callArgs, scope);
 		}
 
 		// Attribute access / method call: expr.attr or expr.method(args)
 		// Uses a depth-aware scanner to find the rightmost dot at depth 0
-		const dotResult = this.findDotAccess(expr);
+		const dotResult = this._findDotAccess(expr);
 		if (dotResult) {
 			const { objExpr, attr, callPart } = dotResult;
 			const obj = this.pyEval(objExpr, scope);
 			if (callPart !== undefined) {
 				const argsInner = callPart.slice(1, -1);
 				const callArgs = argsInner.trim()
-					? this.splitArgs(argsInner).map((a) => this.pyEval(a, scope))
+					? this._splitArgs(argsInner).map((a) => this.pyEval(a, scope))
 					: [];
-				return this.callMethod(obj, attr, callArgs);
+				return this._callMethod(obj, attr, callArgs);
 			}
-			return this.getAttr(obj, attr, scope);
+			return this._getAttr(obj, attr, scope);
 		}
 
 		// Variable lookup
@@ -617,7 +617,7 @@ class Interpreter {
 					throw new PyError("NameError", `name '${parts[0]}' is not defined`);
 				})();
 			for (const part of parts.slice(1)) {
-				val = this.getAttr(val, part, scope);
+				val = this._getAttr(val, part, scope);
 			}
 			return val;
 		}
@@ -625,7 +625,7 @@ class Interpreter {
 		return NONE;
 	}
 
-	private findMatchingBracket(s: string, open: string): number {
+	private _findMatchingBracket(s: string, open: string): number {
 		const close = open === "[" ? "]" : open === "(" ? ")" : "}";
 		let depth = 0;
 		for (let i = s.length - 1; i >= 0; i--) {
@@ -642,7 +642,7 @@ class Interpreter {
 	 * Find the rightmost dot-attribute access at depth 0, respecting strings/parens.
 	 * Returns {objExpr, attr, callPart} or null if not a dot-access expression.
 	 */
-	private findDotAccess(
+	private _findDotAccess(
 		expr: string,
 	): { objExpr: string; attr: string; callPart: string | undefined } | null {
 		// Scan right to left for a dot at depth 0 (not inside strings/brackets)
@@ -682,7 +682,7 @@ class Interpreter {
 		return null;
 	}
 
-	private tryBinaryOp(
+	private _tryBinaryOp(
 		expr: string,
 		ops: string[],
 		scope: Scope,
@@ -727,14 +727,14 @@ class Interpreter {
 					const left = expr.slice(0, i).trim();
 					const right = expr.slice(i + op.length).trim();
 					if (!left || !right) continue;
-					return this.applyBinaryOp(op, left, right, scope);
+					return this._applyBinaryOp(op, left, right, scope);
 				}
 			}
 		}
 		return undefined;
 	}
 
-	private applyBinaryOp(
+	private _applyBinaryOp(
 		op: string,
 		leftExpr: string,
 		rightExpr: string,
@@ -788,7 +788,7 @@ class Interpreter {
 			}
 			case "%": {
 				if (typeof left === "string")
-					return this.pyStringFormat(
+					return this._pyStringFormat(
 						left,
 						Array.isArray(right) ? right : [right],
 					);
@@ -814,9 +814,9 @@ class Interpreter {
 			case ">=":
 				return (left as number) >= (right as number);
 			case "in":
-				return this.pyIn(right, left);
+				return this._pyIn(right, left);
 			case "not in":
-				return !this.pyIn(right, left);
+				return !this._pyIn(right, left);
 			case "is":
 				return (
 					left === right ||
@@ -831,7 +831,7 @@ class Interpreter {
 		return NONE;
 	}
 
-	private pyIn(container: PyVal, item: PyVal): boolean {
+	private _pyIn(container: PyVal, item: PyVal): boolean {
 		if (typeof container === "string")
 			return typeof item === "string" && container.includes(item);
 		if (Array.isArray(container))
@@ -840,7 +840,7 @@ class Interpreter {
 		return false;
 	}
 
-	private subscript(obj: PyVal, key: string, scope: Scope): PyVal {
+	private _subscript(obj: PyVal, key: string, scope: Scope): PyVal {
 		// Slice
 		if (key.includes(":")) {
 			const parts = key.split(":").map((p) => p.trim());
@@ -871,7 +871,7 @@ class Interpreter {
 
 	// ── attribute access ─────────────────────────────────────────────────────
 
-	private getAttr(obj: PyVal, attr: string, _scope: Scope): PyVal {
+	private _getAttr(obj: PyVal, attr: string, _scope: Scope): PyVal {
 		if (isPyDict(obj)) {
 			if (obj.data.has(attr)) return obj.data.get(attr)!;
 			// Special dict attributes
@@ -892,7 +892,7 @@ class Interpreter {
 
 	// ── method calls ──────────────────────────────────────────────────────────
 
-	private callMethod(
+	private _callMethod(
 		obj: PyVal,
 		method: string,
 		args: PyVal[],
@@ -938,7 +938,7 @@ class Interpreter {
 				case "count":
 					return obj.split(pyStr(args[0] ?? "")).length - 1;
 				case "format":
-					return this.pyStringFormat(obj, args);
+					return this._pyStringFormat(obj, args);
 				case "encode":
 					return obj; // bytes stub
 				case "decode":
@@ -1173,10 +1173,10 @@ class Interpreter {
 					? (args[1] as PyDict)
 					: undefined;
 				const indent = opts ? (opts.data.get("indent") as number) : undefined;
-				return JSON.stringify(this.pyToJs(args[0] ?? NONE), null, indent);
+				return JSON.stringify(this._pyToJs(args[0] ?? NONE), null, indent);
 			}
 			if (method === "loads") {
-				return this.jsToPy(JSON.parse(pyStr(args[0] ?? "")));
+				return this._jsToPy(JSON.parse(pyStr(args[0] ?? "")));
 			}
 		}
 
@@ -1188,7 +1188,7 @@ class Interpreter {
 				const callScope = new Map(fn.closure);
 				callScope.set("self", obj);
 				fn.params.slice(1).forEach((p, i) => callScope.set(p, args[i] ?? NONE));
-				return this.execBlock(fn.body, callScope);
+				return this._execBlock(fn.body, callScope);
 			}
 		}
 
@@ -1198,7 +1198,7 @@ class Interpreter {
 		);
 	}
 
-	private pyStringFormat(fmt: string, args: PyVal[]): string {
+	private _pyStringFormat(fmt: string, args: PyVal[]): string {
 		let i = 0;
 		return fmt.replace(/%([diouxXeEfFgGcrs%])/g, (_, spec: string) => {
 			if (spec === "%") return "%";
@@ -1219,27 +1219,27 @@ class Interpreter {
 		});
 	}
 
-	private pyToJs(v: PyVal): unknown {
+	private _pyToJs(v: PyVal): unknown {
 		if (isPyNone(v)) return null;
 		if (isPyDict(v))
 			return Object.fromEntries(
-				[...v.data.entries()].map(([k, val]) => [k, this.pyToJs(val)]),
+				[...v.data.entries()].map(([k, val]) => [k, this._pyToJs(val)]),
 			);
-		if (Array.isArray(v)) return v.map((i) => this.pyToJs(i));
+		if (Array.isArray(v)) return v.map((i) => this._pyToJs(i));
 		return v;
 	}
 
-	private jsToPy(v: unknown): PyVal {
+	private _jsToPy(v: unknown): PyVal {
 		if (v === null || v === undefined) return NONE;
 		if (typeof v === "boolean") return v;
 		if (typeof v === "number") return v;
 		if (typeof v === "string") return v;
-		if (Array.isArray(v)) return v.map((i) => this.jsToPy(i));
+		if (Array.isArray(v)) return v.map((i) => this._jsToPy(i));
 		if (typeof v === "object")
 			return pyDict(
 				Object.entries(v as Record<string, unknown>).map(([k, val]) => [
 					k,
-					this.jsToPy(val),
+					this._jsToPy(val),
 				]),
 			);
 		return NONE;
@@ -1247,12 +1247,12 @@ class Interpreter {
 
 	// ── built-in functions ────────────────────────────────────────────────────
 
-	private callBuiltin(name: string, args: PyVal[], scope: Scope): PyVal {
+	private _callBuiltin(name: string, args: PyVal[], scope: Scope): PyVal {
 		// User-defined functions
 		if (scope.has(name)) {
 			const fn: PyVal = scope.get(name) ?? NONE;
-			if (isPyFunc(fn)) return this.callFunc(fn, args, scope);
-			if (isPyClass(fn)) return this.instantiate(fn as PyClass, args);
+			if (isPyFunc(fn)) return this._callFunc(fn, args, scope);
+			if (isPyClass(fn)) return this._instantiate(fn as PyClass, args);
 			return fn;
 		}
 
@@ -1261,11 +1261,11 @@ class Interpreter {
 			case "print": {
 				const sep = " ",
 					end = "\n";
-				this.output.push(args.map(pyStr).join(sep) + end.replace(/\\n/g, ""));
+				this._output.push(args.map(pyStr).join(sep) + end.replace(/\\n/g, ""));
 				return NONE;
 			}
 			case "input": {
-				this.output.push(pyStr(args[0] ?? ""));
+				this._output.push(pyStr(args[0] ?? ""));
 				return "";
 			}
 
@@ -1377,13 +1377,13 @@ class Interpreter {
 			case "map": {
 				const fn: PyVal = args[0] ?? NONE;
 				return pyIter(args[1] ?? []).map((v) =>
-					isPyFunc(fn) ? this.callFunc(fn, [v], scope) : NONE,
+					isPyFunc(fn) ? this._callFunc(fn, [v], scope) : NONE,
 				);
 			}
 			case "filter": {
 				const fn: PyVal = args[0] ?? NONE;
 				return pyIter(args[1] ?? []).filter((v) =>
-					isPyFunc(fn) ? pyBool(this.callFunc(fn, [v], scope)) : pyBool(v),
+					isPyFunc(fn) ? pyBool(this._callFunc(fn, [v], scope)) : pyBool(v),
 				);
 			}
 			case "reduce": {
@@ -1393,7 +1393,7 @@ class Interpreter {
 				let acc: PyVal = args[2] !== undefined ? args[2] : items[0]!;
 				for (const item of args[2] !== undefined ? items : items.slice(1)) {
 					acc = isPyFunc(fn)
-						? this.callFunc(fn as PyFunc, [acc, item], scope)
+						? this._callFunc(fn as PyFunc, [acc, item], scope)
 						: NONE;
 				}
 				return acc;
@@ -1406,10 +1406,10 @@ class Interpreter {
 					: sortArg1;
 				items.sort((a, b) => {
 					const ka: PyVal = isPyFunc(keyFn)
-						? this.callFunc(keyFn, [a], scope)
+						? this._callFunc(keyFn, [a], scope)
 						: a;
 					const kb: PyVal = isPyFunc(keyFn)
-						? this.callFunc(keyFn, [b], scope)
+						? this._callFunc(keyFn, [b], scope)
 						: b;
 					return typeof ka === "number" && typeof kb === "number"
 						? ka - kb
@@ -1577,7 +1577,7 @@ class Interpreter {
 		}
 	}
 
-	private callFunc(fn: PyFunc, args: PyVal[], _scope: Scope): PyVal {
+	private _callFunc(fn: PyFunc, args: PyVal[], _scope: Scope): PyVal {
 		const callScope = new Map(fn.closure);
 		fn.params.forEach((p, i) => {
 			if (p.startsWith("*")) {
@@ -1587,17 +1587,17 @@ class Interpreter {
 			callScope.set(p, args[i] ?? NONE);
 		});
 		try {
-			return this.execBlock(fn.body, callScope);
+			return this._execBlock(fn.body, callScope);
 		} catch (e) {
 			if (e instanceof ReturnSignal) return e.value;
 			throw e;
 		}
 	}
 
-	private instantiate(cls: PyClass, args: PyVal[]): PyInstance {
+	private _instantiate(cls: PyClass, args: PyVal[]): PyInstance {
 		const inst: PyInstance = { __pytype__: "instance", cls, attrs: new Map() };
 		const init = cls.methods.get("__init__");
-		if (init) this.callMethod(inst, "__init__", args);
+		if (init) this._callMethod(inst, "__init__", args);
 		return inst;
 	}
 
@@ -1605,10 +1605,10 @@ class Interpreter {
 
 	execScript(code: string, scope: Scope): void {
 		const lines = code.split("\n");
-		this.execLines(lines, 0, scope);
+		this._execLines(lines, 0, scope);
 	}
 
-	private execLines(lines: string[], startIdx: number, scope: Scope): number {
+	private _execLines(lines: string[], startIdx: number, scope: Scope): number {
 		let i = startIdx;
 		while (i < lines.length) {
 			const raw = lines[i]!;
@@ -1616,14 +1616,14 @@ class Interpreter {
 				i++;
 				continue;
 			}
-			i = this.execStatement(lines, i, scope);
+			i = this._execStatement(lines, i, scope);
 		}
 		return i;
 	}
 
-	private execBlock(bodyLines: string[], scope: Scope): PyVal {
+	private _execBlock(bodyLines: string[], scope: Scope): PyVal {
 		try {
-			this.execLines(bodyLines, 0, scope);
+			this._execLines(bodyLines, 0, scope);
 		} catch (e) {
 			if (e instanceof ReturnSignal) return e.value;
 			throw e;
@@ -1631,7 +1631,7 @@ class Interpreter {
 		return NONE;
 	}
 
-	private getIndent(line: string): number {
+	private _getIndent(line: string): number {
 		let n = 0;
 		for (const ch of line) {
 			if (ch === " ") n++;
@@ -1641,7 +1641,7 @@ class Interpreter {
 		return n;
 	}
 
-	private collectBlock(
+	private _collectBlock(
 		lines: string[],
 		startIdx: number,
 		baseIndent: number,
@@ -1653,16 +1653,16 @@ class Interpreter {
 				block.push("");
 				continue;
 			}
-			if (this.getIndent(l) <= baseIndent) break;
+			if (this._getIndent(l) <= baseIndent) break;
 			block.push(l.slice(baseIndent + 4));
 		}
 		return block;
 	}
 
-	private execStatement(lines: string[], idx: number, scope: Scope): number {
+	private _execStatement(lines: string[], idx: number, scope: Scope): number {
 		const raw = lines[idx]!;
 		const line = raw.trim();
-		const indent = this.getIndent(raw);
+		const indent = this._getIndent(raw);
 
 		// pass
 		if (line === "pass") return idx + 1;
@@ -1721,7 +1721,7 @@ class Interpreter {
 			const factory = MODULE_FACTORIES[modName!];
 			if (factory) {
 				const mod = factory(this.cwd);
-				this.modules.set(modName!, mod);
+				this._modules.set(modName!, mod);
 				scope.set(alias ?? modName!, mod);
 			}
 			return idx + 1;
@@ -1752,7 +1752,7 @@ class Interpreter {
 				.split(",")
 				.map((p) => p.trim())
 				.filter(Boolean);
-			const body = this.collectBlock(lines, idx + 1, indent);
+			const body = this._collectBlock(lines, idx + 1, indent);
 			const fn: PyFunc = {
 				__pytype__: "func",
 				name: fnName!,
@@ -1769,7 +1769,7 @@ class Interpreter {
 		if (classMatch) {
 			const [, className, basesStr] = classMatch;
 			const bases = basesStr ? basesStr.split(",").map((s) => s.trim()) : [];
-			const body = this.collectBlock(lines, idx + 1, indent);
+			const body = this._collectBlock(lines, idx + 1, indent);
 			const cls: PyClass = {
 				__pytype__: "class",
 				name: className!,
@@ -1787,7 +1787,7 @@ class Interpreter {
 						.split(",")
 						.map((p) => p.trim())
 						.filter(Boolean);
-					const mBody = this.collectBlock(body, j + 1, 0);
+					const mBody = this._collectBlock(body, j + 1, 0);
 					cls.methods.set(mName!, {
 						__pytype__: "func",
 						name: mName!,
@@ -1807,27 +1807,27 @@ class Interpreter {
 		// if / elif / else
 		if (line.startsWith("if ") && line.endsWith(":")) {
 			const cond = line.slice(3, -1).trim();
-			const body = this.collectBlock(lines, idx + 1, indent);
+			const body = this._collectBlock(lines, idx + 1, indent);
 
 			if (pyBool(this.pyEval(cond, scope))) {
-				this.execBlock(
+				this._execBlock(
 					body,
 					new Map(scope).also?.((s) => {
 						for (const [k, v] of scope) s.set(k, v);
 					}) ?? scope,
 				);
 				// Update scope from block (assignments)
-				this.runBlockInScope(body, scope);
+				this._runBlockInScope(body, scope);
 				// Skip elif/else
 				let j = idx + 1 + body.length;
 				while (j < lines.length) {
 					const l = lines[j]!.trim();
 					if (
-						this.getIndent(lines[j]!) < indent ||
+						this._getIndent(lines[j]!) < indent ||
 						(!l.startsWith("elif") && !l.startsWith("else"))
 					)
 						break;
-					const bk = this.collectBlock(lines, j + 1, indent);
+					const bk = this._collectBlock(lines, j + 1, indent);
 					j += 1 + bk.length;
 				}
 				return j;
@@ -1838,23 +1838,23 @@ class Interpreter {
 			while (j < lines.length) {
 				const el = lines[j]!;
 				const elt = el.trim();
-				if (this.getIndent(el) !== indent) break;
+				if (this._getIndent(el) !== indent) break;
 
 				const elifMatch = elt.match(/^elif\s+(.+):$/);
 				if (elifMatch) {
-					const eBody = this.collectBlock(lines, j + 1, indent);
+					const eBody = this._collectBlock(lines, j + 1, indent);
 					if (pyBool(this.pyEval(elifMatch[1]!, scope))) {
-						this.runBlockInScope(eBody, scope);
+						this._runBlockInScope(eBody, scope);
 						j += 1 + eBody.length;
 						// Skip remaining elif/else
 						while (j < lines.length) {
 							const sl = lines[j]!.trim();
 							if (
-								this.getIndent(lines[j]!) !== indent ||
+								this._getIndent(lines[j]!) !== indent ||
 								(!sl.startsWith("elif") && !sl.startsWith("else"))
 							)
 								break;
-							const sb = this.collectBlock(lines, j + 1, indent);
+							const sb = this._collectBlock(lines, j + 1, indent);
 							j += 1 + sb.length;
 						}
 						return j;
@@ -1864,8 +1864,8 @@ class Interpreter {
 				}
 
 				if (elt === "else:") {
-					const eBody = this.collectBlock(lines, j + 1, indent);
-					this.runBlockInScope(eBody, scope);
+					const eBody = this._collectBlock(lines, j + 1, indent);
+					this._runBlockInScope(eBody, scope);
 					return j + 1 + eBody.length;
 				}
 				break;
@@ -1878,13 +1878,13 @@ class Interpreter {
 		if (forMatch) {
 			const [, target, iterExpr] = forMatch;
 			const iterable = pyIter(this.pyEval(iterExpr!.trim(), scope));
-			const body = this.collectBlock(lines, idx + 1, indent);
+			const body = this._collectBlock(lines, idx + 1, indent);
 
 			// Check for else clause
 			let elseBody: string[] = [];
 			let afterIdx = idx + 1 + body.length;
 			if (afterIdx < lines.length && lines[afterIdx]?.trim() === "else:") {
-				elseBody = this.collectBlock(lines, afterIdx + 1, indent);
+				elseBody = this._collectBlock(lines, afterIdx + 1, indent);
 				afterIdx += 1 + elseBody.length;
 			}
 
@@ -1899,7 +1899,7 @@ class Interpreter {
 					scope.set(target!.trim(), item);
 				}
 				try {
-					this.runBlockInScope(body, scope);
+					this._runBlockInScope(body, scope);
 				} catch (e) {
 					if (e instanceof BreakSignal) {
 						broken = true;
@@ -1909,7 +1909,7 @@ class Interpreter {
 					throw e;
 				}
 			}
-			if (!broken && elseBody.length) this.runBlockInScope(elseBody, scope);
+			if (!broken && elseBody.length) this._runBlockInScope(elseBody, scope);
 			return afterIdx;
 		}
 
@@ -1917,11 +1917,11 @@ class Interpreter {
 		const whileMatch = line.match(/^while\s+(.+?)\s*:$/);
 		if (whileMatch) {
 			const cond = whileMatch[1]!;
-			const body = this.collectBlock(lines, idx + 1, indent);
+			const body = this._collectBlock(lines, idx + 1, indent);
 			let iterations = 0;
 			while (pyBool(this.pyEval(cond, scope)) && iterations++ < 100000) {
 				try {
-					this.runBlockInScope(body, scope);
+					this._runBlockInScope(body, scope);
 				} catch (e) {
 					if (e instanceof BreakSignal) break;
 					if (e instanceof ContinueSignal) continue;
@@ -1933,7 +1933,7 @@ class Interpreter {
 
 		// try / except
 		if (line === "try:") {
-			const tryBody = this.collectBlock(lines, idx + 1, indent);
+			const tryBody = this._collectBlock(lines, idx + 1, indent);
 			let j = idx + 1 + tryBody.length;
 			const exceptClauses: Array<{ exc: string | null; body: string[] }> = [];
 			let finallyBody: string[] = [];
@@ -1942,29 +1942,29 @@ class Interpreter {
 			while (j < lines.length) {
 				const el = lines[j]!;
 				const elt = el.trim();
-				if (this.getIndent(el) !== indent) break;
+				if (this._getIndent(el) !== indent) break;
 				if (elt.startsWith("except")) {
 					const excMatch = elt.match(
 						/^except(?:\s+(\w+)(?:\s+as\s+(\w+))?)?\s*:$/,
 					);
 					const excName = excMatch?.[1] ?? null;
 					const excAlias = excMatch?.[2];
-					const excBody = this.collectBlock(lines, j + 1, indent);
+					const excBody = this._collectBlock(lines, j + 1, indent);
 					exceptClauses.push({ exc: excName, body: excBody });
 					if (excAlias) scope.set(excAlias, "");
 					j += 1 + excBody.length;
 				} else if (elt === "else:") {
-					elseBody = this.collectBlock(lines, j + 1, indent);
+					elseBody = this._collectBlock(lines, j + 1, indent);
 					j += 1 + elseBody.length;
 				} else if (elt === "finally:") {
-					finallyBody = this.collectBlock(lines, j + 1, indent);
+					finallyBody = this._collectBlock(lines, j + 1, indent);
 					j += 1 + finallyBody.length;
 				} else break;
 			}
 
 			try {
-				this.runBlockInScope(tryBody, scope);
-				if (elseBody.length) this.runBlockInScope(elseBody, scope);
+				this._runBlockInScope(tryBody, scope);
+				if (elseBody.length) this._runBlockInScope(elseBody, scope);
 			} catch (e) {
 				if (e instanceof PyError) {
 					let handled = false;
@@ -1974,7 +1974,7 @@ class Interpreter {
 							clause.exc === e.type ||
 							clause.exc === "Exception"
 						) {
-							this.runBlockInScope(clause.body, scope);
+							this._runBlockInScope(clause.body, scope);
 							handled = true;
 							break;
 						}
@@ -1982,7 +1982,7 @@ class Interpreter {
 					if (!handled) throw e;
 				} else throw e;
 			} finally {
-				if (finallyBody.length) this.runBlockInScope(finallyBody, scope);
+				if (finallyBody.length) this._runBlockInScope(finallyBody, scope);
 			}
 			return j;
 		}
@@ -1990,9 +1990,9 @@ class Interpreter {
 		// with
 		const withMatch = line.match(/^with\s+(.+?)\s+as\s+(\w+)\s*:$/);
 		if (withMatch) {
-			const body = this.collectBlock(lines, idx + 1, indent);
+			const body = this._collectBlock(lines, idx + 1, indent);
 			scope.set(withMatch[2]!, NONE); // stub: just set to None
-			this.runBlockInScope(body, scope);
+			this._runBlockInScope(body, scope);
 			return idx + 1 + body.length;
 		}
 
@@ -2103,8 +2103,8 @@ class Interpreter {
 		return idx + 1;
 	}
 
-	private runBlockInScope(body: string[], scope: Scope): void {
-		this.execLines(body, 0, scope);
+	private _runBlockInScope(body: string[], scope: Scope): void {
+		this._execLines(body, 0, scope);
 	}
 
 	run(code: string): { stdout: string; stderr: string; exitCode: number } {
@@ -2119,7 +2119,7 @@ class Interpreter {
 					exitCode: e.code,
 				};
 			if (e instanceof PyError) {
-				this.stderr.push(e.toString());
+				this._stderr.push(e.toString());
 				return {
 					stdout: this.getOutput(),
 					stderr: this.getStderr(),
@@ -2132,7 +2132,7 @@ class Interpreter {
 					stderr: this.getStderr(),
 					exitCode: 0,
 				};
-			this.stderr.push(`RuntimeError: ${e}`);
+			this._stderr.push(`RuntimeError: ${e}`);
 			return {
 				stdout: this.getOutput(),
 				stderr: this.getStderr(),

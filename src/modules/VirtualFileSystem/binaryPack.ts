@@ -69,49 +69,49 @@ for (const [k, v] of Object.entries(DEVICE_KIND_MAP)) {
 // ── Encoder ───────────────────────────────────────────────────────────────────
 
 class Encoder {
-	private chunks: Buffer[] = [];
+	private _chunks: Buffer[] = [];
 
 	write(buf: Buffer): void {
-		this.chunks.push(buf);
+		this._chunks.push(buf);
 	}
 
 	writeUint8(n: number): void {
 		const b = Buffer.allocUnsafe(1);
 		b.writeUInt8(n, 0);
-		this.chunks.push(b);
+		this._chunks.push(b);
 	}
 
 	writeUint16(n: number): void {
 		const b = Buffer.allocUnsafe(2);
 		b.writeUInt16LE(n, 0);
-		this.chunks.push(b);
+		this._chunks.push(b);
 	}
 
 	writeUint32(n: number): void {
 		const b = Buffer.allocUnsafe(4);
 		b.writeUInt32LE(n, 0);
-		this.chunks.push(b);
+		this._chunks.push(b);
 	}
 
 	writeFloat64(n: number): void {
 		const b = Buffer.allocUnsafe(8);
 		b.writeDoubleBE(n, 0);
-		this.chunks.push(b);
+		this._chunks.push(b);
 	}
 
 	writeString(s: string): void {
 		const encoded = Buffer.from(s, "utf8");
 		this.writeUint16(encoded.length);
-		this.chunks.push(encoded);
+		this._chunks.push(encoded);
 	}
 
 	writeBytes(bytes: Buffer): void {
 		this.writeUint32(bytes.length);
-		this.chunks.push(bytes);
+		this._chunks.push(bytes);
 	}
 
 	toBuffer(): Buffer {
-		return Buffer.concat(this.chunks);
+		return Buffer.concat(this._chunks);
 	}
 }
 
@@ -182,47 +182,47 @@ export function encodeVfs(root: InternalDirectoryNode): Buffer {
 // ── Decoder ───────────────────────────────────────────────────────────────────
 
 class Decoder {
-	private pos = 0;
+	private _pos = 0;
 	constructor(private readonly buf: Buffer) {}
 
 	readUint8(): number {
-		return this.buf.readUInt8(this.pos++);
+		return this.buf.readUInt8(this._pos++);
 	}
 
 	readUint16(): number {
-		const v = this.buf.readUInt16LE(this.pos);
-		this.pos += 2;
+		const v = this.buf.readUInt16LE(this._pos);
+		this._pos += 2;
 		return v;
 	}
 
 	readUint32(): number {
-		const v = this.buf.readUInt32LE(this.pos);
-		this.pos += 4;
+		const v = this.buf.readUInt32LE(this._pos);
+		this._pos += 4;
 		return v;
 	}
 
 	readFloat64(): number {
-		const v = this.buf.readDoubleBE(this.pos);
-		this.pos += 8;
+		const v = this.buf.readDoubleBE(this._pos);
+		this._pos += 8;
 		return v;
 	}
 
 	readString(): string {
 		const len = this.readUint16();
-		const s = this.buf.toString("utf8", this.pos, this.pos + len);
-		this.pos += len;
+		const s = this.buf.toString("utf8", this._pos, this._pos + len);
+		this._pos += len;
 		return s;
 	}
 
 	readBytes(): Buffer {
 		const len = this.readUint32();
-		const b = this.buf.slice(this.pos, this.pos + len);
-		this.pos += len;
+		const b = this.buf.slice(this._pos, this._pos + len);
+		this._pos += len;
 		return b;
 	}
 
 	remaining(): number {
-		return this.buf.length - this.pos;
+		return this.buf.length - this._pos;
 	}
 }
 

@@ -37,12 +37,12 @@ interface ForwardRule {
  * ```
  */
 export class VirtualProxy {
-	private readonly baie: { getVM: (name: string) => VirtualShell | undefined; switch: VirtualSwitch; listVMs: () => Array<{ hostname: string; ip: string; shell: VirtualShell }> };
-	private forwards: ForwardRule[] = [];
-	private socksServer: net.Server | null = null;
+	private readonly _baie: { getVM: (name: string) => VirtualShell | undefined; switch: VirtualSwitch; listVMs: () => Array<{ hostname: string; ip: string; shell: VirtualShell }> };
+	private _forwards: ForwardRule[] = [];
+	private _socksServer: net.Server | null = null;
 
 	constructor(baie: { getVM: (name: string) => VirtualShell | undefined; switch: VirtualSwitch; listVMs: () => Array<{ hostname: string; ip: string; shell: VirtualShell }> }) {
-		this.baie = baie;
+		this._baie = baie;
 	}
 
 	/**
@@ -53,21 +53,21 @@ export class VirtualProxy {
 	 * @param hostPort - Port on the host machine.
 	 */
 	public exposePort(vmName: string, vmPort: number, hostPort: number): void {
-		const existing = this.forwards.find((f) => f.hostPort === hostPort);
+		const existing = this._forwards.find((f) => f.hostPort === hostPort);
 		if (existing) {
 			existing.server.close();
-			this.forwards = this.forwards.filter((f) => f !== existing);
+			this._forwards = this._forwards.filter((f) => f !== existing);
 		}
 
 		const server = net.createServer((hostSocket) => {
-			const vm = this.baie.getVM(vmName);
+			const vm = this._baie.getVM(vmName);
 			if (!vm) {
 				hostSocket.end();
 				return;
 			}
 
 			// Find the VM's IP address
-			const vms = this.baie.listVMs();
+			const vms = this._baie.listVMs();
 			const entry = vms.find((v) => v.hostname === vmName);
 			if (!entry) {
 				hostSocket.end();
@@ -85,7 +85,7 @@ export class VirtualProxy {
 		});
 
 		server.listen(hostPort, "127.0.0.1", () => {
-			this.forwards.push({ vmName, vmPort, hostPort, server });
+			this._forwards.push({ vmName, vmPort, hostPort, server });
 		});
 	}
 
@@ -95,10 +95,10 @@ export class VirtualProxy {
 	 * @param hostPort - Host port to remove.
 	 */
 	public removePort(hostPort: number): void {
-		const rule = this.forwards.find((f) => f.hostPort === hostPort);
+		const rule = this._forwards.find((f) => f.hostPort === hostPort);
 		if (rule) {
 			rule.server.close();
-			this.forwards = this.forwards.filter((f) => f !== rule);
+			this._forwards = this._forwards.filter((f) => f !== rule);
 		}
 	}
 
@@ -107,7 +107,7 @@ export class VirtualProxy {
 	 * @returns The operation result.
 	 */
 	public listPorts(): Array<{ vmName: string; vmPort: number; hostPort: number }> {
-		return this.forwards.map((f) => ({ vmName: f.vmName, vmPort: f.vmPort, hostPort: f.hostPort }));
+		return this._forwards.map((f) => ({ vmName: f.vmName, vmPort: f.vmPort, hostPort: f.hostPort }));
 	}
 
 	/**
@@ -117,9 +117,9 @@ export class VirtualProxy {
 	 * @param port - Local port for the SOCKS5 proxy.
 	 */
 	public startSocksProxy(port: number): void {
-		if (this.socksServer) this.socksServer.close();
+		if (this._socksServer) this._socksServer.close();
 
-		this.socksServer = net.createServer((clientSocket) => {
+		this._socksServer = net.createServer((clientSocket) => {
 			clientSocket.once("data", (handshake: Buffer) => {
 				// SOCKS5 handshake: VER | NMETHODS | METHODS
 				if (handshake[0] !== 5) {
@@ -161,7 +161,7 @@ export class VirtualProxy {
 					}
 
 					// Route through the virtual switch or forward to real network
-					const dstMac = this.baie.switch.arpResolve(dstHost);
+					const dstMac = this._baie.switch.arpResolve(dstHost);
 					if (dstMac) {
 						// VM-to-VM traffic goes through the switch (already handled by NAT)
 						const vmSocket = net.createConnection(dstPort, dstHost, () => {
@@ -185,18 +185,18 @@ export class VirtualProxy {
 			});
 		});
 
-		this.socksServer.listen(port, "127.0.0.1");
+		this._socksServer.listen(port, "127.0.0.1");
 	}
 
 	/**
 	 * Stop the SOCKS5 proxy and all port forwards.
 	 */
 	public stop(): void {
-		for (const f of this.forwards) f.server.close();
-		this.forwards = [];
-		if (this.socksServer) {
-			this.socksServer.close();
-			this.socksServer = null;
+		for (const f of this._forwards) f.server.close();
+		this._forwards = [];
+		if (this._socksServer) {
+			this._socksServer.close();
+			this._socksServer = null;
 		}
 	}
 }

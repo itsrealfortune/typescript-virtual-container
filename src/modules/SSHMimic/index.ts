@@ -60,14 +60,14 @@ interface RateLimitEntry {
 class SshMimic extends EventEmitter {
 	port: number;
 	server: SshServer | null;
-	private shell: VirtualShell;
-	private readonly sftpMimic: SftpMimic | null;
+	private _shell: VirtualShell;
+	private readonly _sftpMimic: SftpMimic | null;
 
 	/** Max failed auth attempts before an IP is temporarily locked. */
-	private readonly maxAuthAttempts: number;
+	private readonly _maxAuthAttempts: number;
 	/** How long (ms) a locked IP must wait before retrying. */
-	private readonly lockoutDurationMs: number;
-	private readonly authAttempts = new Map<string, RateLimitEntry>();
+	private readonly _lockoutDurationMs: number;
+	private readonly _authAttempts = new Map<string, RateLimitEntry>();
 
 	/**
 	 * Creates a new SSH mimic server instance.
@@ -99,54 +99,54 @@ class SshMimic extends EventEmitter {
 		perf.mark("constructor");
 		this.port = port;
 		this.server = null;
-		this.shell = shell;
-		this.sftpMimic = sftp;
-		this.maxAuthAttempts = maxAuthAttempts;
-		this.lockoutDurationMs = lockoutDurationMs;
+		this._shell = shell;
+		this._sftpMimic = sftp;
+		this._maxAuthAttempts = maxAuthAttempts;
+		this._lockoutDurationMs = lockoutDurationMs;
 	}
 
 	// ── Rate limiting ────────────────────────────────────────────────────────
 
-	private isLockedOut(ip: string): boolean {
-		const entry = this.authAttempts.get(ip);
+	private _isLockedOut(ip: string): boolean {
+		const entry = this._authAttempts.get(ip);
 		if (!entry) return false;
 		if (Date.now() < entry.lockedUntil) return true;
 		if (entry.lockedUntil > 0) {
-			this.authAttempts.delete(ip);
+			this._authAttempts.delete(ip);
 		}
 		return false;
 	}
 
-	private recordFailure(ip: string): void {
-		const entry = this.authAttempts.get(ip) ?? { attempts: 0, lockedUntil: 0 };
+	private _recordFailure(ip: string): void {
+		const entry = this._authAttempts.get(ip) ?? { attempts: 0, lockedUntil: 0 };
 		entry.attempts += 1;
-		if (entry.attempts >= this.maxAuthAttempts) {
-			entry.lockedUntil = Date.now() + this.lockoutDurationMs;
+		if (entry.attempts >= this._maxAuthAttempts) {
+			entry.lockedUntil = Date.now() + this._lockoutDurationMs;
 			this.emit("auth:lockout", { ip, until: new Date(entry.lockedUntil) });
 		}
-		this.authAttempts.set(ip, entry);
+		this._authAttempts.set(ip, entry);
 	}
 
-	private recordSuccess(ip: string): void {
-		this.authAttempts.delete(ip);
+	private _recordSuccess(ip: string): void {
+		this._authAttempts.delete(ip);
 	}
 
 	// ── Home directory bootstrap ─────────────────────────────────────────────
 
-	private ensureHomeDir(authUser: string): void {
+	private _ensureHomeDir(authUser: string): void {
 		const homePath = userHome(authUser);
-		if (!this.shell.vfs.exists(homePath)) {
-			const uid = this.shell.users.getUid(authUser);
-			const gid = this.shell.users.getGid(authUser);
-			this.shell.vfs.mkdir(homePath, 0o700, uid, gid);
-			this.shell.vfs.writeFile(
+		if (!this._shell.vfs.exists(homePath)) {
+			const uid = this._shell.users.getUid(authUser);
+			const gid = this._shell.users.getGid(authUser);
+			this._shell.vfs.mkdir(homePath, 0o700, uid, gid);
+			this._shell.vfs.writeFile(
 				`${homePath}/README.txt`,
-				`Welcome to ${this.shell.hostname}\n`,
+				`Welcome to ${this._shell.hostname}\n`,
 				{},
 				uid,
 				gid,
 			);
-			void this.shell.vfs.stopAutoFlush();
+			void this._shell.vfs.stopAutoFlush();
 		}
 	}
 
@@ -159,7 +159,7 @@ class SshMimic extends EventEmitter {
 	 */
 	public async start(): Promise<number> {
 		perf.mark("start");
-		const shell = this.shell;
+		const shell = this._shell;
 		const privateKey = loadOrCreateHostKey();
 
 		await shell.ensureInitialized();
@@ -181,7 +181,7 @@ class SshMimic extends EventEmitter {
 					remoteAddress = (ctx as { ip?: string }).ip ?? remoteAddress;
 
 					// Rate-limit check
-					if (this.isLockedOut(remoteAddress)) {
+					if (this._isLockedOut(remoteAddress)) {
 						this.emit("auth:failure", {
 							username: candidateUser,
 							remoteAddress,
@@ -200,9 +200,9 @@ class SshMimic extends EventEmitter {
 								authUser,
 								remoteAddress,
 							).id;
-							this.recordSuccess(remoteAddress);
+							this._recordSuccess(remoteAddress);
 							this.emit("auth:success", { username: authUser, remoteAddress });
-							this.ensureHomeDir(authUser);
+							this._ensureHomeDir(authUser);
 							ctx.accept();
 							return;
 						}
@@ -212,7 +212,7 @@ class SshMimic extends EventEmitter {
 							ctx.password === "" ||
 							!shell.users.verifyPassword(candidateUser, ctx.password)
 						) {
-							this.recordFailure(remoteAddress);
+							this._recordFailure(remoteAddress);
 							this.emit("auth:failure", {
 								username: candidateUser,
 								remoteAddress,
@@ -223,9 +223,9 @@ class SshMimic extends EventEmitter {
 
 						authUser = candidateUser;
 						sessionId = shell.users.registerSession(authUser, remoteAddress).id;
-						this.recordSuccess(remoteAddress);
+						this._recordSuccess(remoteAddress);
 						this.emit("auth:success", { username: authUser, remoteAddress });
-						this.ensureHomeDir(authUser);
+						this._ensureHomeDir(authUser);
 						ctx.accept();
 						return;
 					}
@@ -246,7 +246,7 @@ class SshMimic extends EventEmitter {
 						);
 
 						if (!keyMatches) {
-							this.recordFailure(remoteAddress);
+							this._recordFailure(remoteAddress);
 							this.emit("auth:failure", {
 								username: candidateUser,
 								remoteAddress,
@@ -263,13 +263,13 @@ class SshMimic extends EventEmitter {
 								authUser,
 								remoteAddress,
 							).id;
-							this.recordSuccess(remoteAddress);
+							this._recordSuccess(remoteAddress);
 							this.emit("auth:success", {
 								username: authUser,
 								remoteAddress,
 								method: "publickey",
 							});
-							this.ensureHomeDir(authUser);
+							this._ensureHomeDir(authUser);
 							ctx.accept();
 						} else {
 							// Key exists but no signature yet — ssh2 will call again with signature
@@ -330,9 +330,9 @@ class SshMimic extends EventEmitter {
 						});
 
 						session.on("sftp", (acceptSftp, rejectSftp) => {
-							if (this.sftpMimic) {
+							if (this._sftpMimic) {
 								const sftp = acceptSftp();
-								this.sftpMimic.attachSftpHandlers(sftp, authUser);
+								this._sftpMimic.attachSftpHandlers(sftp, authUser);
 								// Close the SSH connection when the SFTP channel ends
 								// (scp/sftp clients open a session just for the transfer).
 								sftp.on("close", () => client.end());
@@ -362,7 +362,7 @@ class SshMimic extends EventEmitter {
 	public stop(): void {
 		perf.mark("stop");
 		// Flush pending WAL journal before closing
-		void this.shell.vfs.stopAutoFlush();
+		void this._shell.vfs.stopAutoFlush();
 		if (this.server) {
 			this.server.close(() => {
 				devLog("SSH Mimic stopped");
@@ -376,7 +376,7 @@ class SshMimic extends EventEmitter {
 	 * Useful in tests or admin tooling.
 	 */
 	public clearLockout(ip: string): void {
-		this.authAttempts.delete(ip);
+		this._authAttempts.delete(ip);
 	}
 }
 

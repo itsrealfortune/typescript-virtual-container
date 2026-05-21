@@ -164,75 +164,75 @@ export interface PacmanGameOptions {
  * ```
  */
 export class PacmanGame {
-	private stream: ShellStream;
-	private onExit: () => void;
+	private _stream: ShellStream;
+	private _onExit: () => void;
 
-	private grid: Cell[][];
-	private visualGrid: string[][];
+	private _grid: Cell[][];
+	private _visualGrid: string[][];
 
 	// Pacman — spawn r22,c16 (open dot, mid corridor left of center pillars)
-	private pacR = 22;
-	private pacC = 16;
-	private pacDir: Dir = 2;
-	private pacNextDir: Dir = 2;
-	private pacMouthOpen = true;
-	private pacAlive = true;
+	private _pacR = 22;
+	private _pacC = 16;
+	private _pacDir: Dir = 2;
+	private _pacNextDir: Dir = 2;
+	private _pacMouthOpen = true;
+	private _pacAlive = true;
 
-	private ghosts: Ghost[] = [];
+	private _ghosts: Ghost[] = [];
 
-	private score = 0;
-	private lives = 3;
-	private level = 1;
-	private dotsTotal = 0;
-	private dotsEaten = 0;
+	private _score = 0;
+	private _lives = 3;
+	private _level = 1;
+	private _dotsTotal = 0;
+	private _dotsEaten = 0;
 
-	private frightDuration = 40; // ticks at 8fps ≈ 5 s
-	private gameOver = false;
-	private won = false;
-	private msgTicks = 0;
-	private msg = "";
+	private _frightDuration = 40; // ticks at 8fps ≈ 5 s
+	private _gameOver = false;
+	private _won = false;
+	private _msgTicks = 0;
+	private _msg = "";
 
 	// Scatter/chase schedule in ticks (8fps): 7s scatter, 20s chase, 7s, 20s, 5s, ∞
-	private globalMode: GhostMode = "scatter";
-	private globalModeTick = 0;
-	private readonly modeSchedule = [56, 160, 56, 160, 40, Number.MAX_SAFE_INTEGER];
-	private modeIdx = 0;
+	private _globalMode: GhostMode = "scatter";
+	private _globalModeTick = 0;
+	private readonly _modeSchedule = [56, 160, 56, 160, 40, Number.MAX_SAFE_INTEGER];
+	private _modeIdx = 0;
 
-	private tick = 0;
-	private intervalId: ReturnType<typeof setInterval> | null = null;
-	private inputKey: Dir | null = null;
+	private _tick = 0;
+	private _intervalId: ReturnType<typeof setInterval> | null = null;
+	private _inputKey: Dir | null = null;
 	// Buffer for split ESC sequences (SSH sends \x1b and [A in separate chunks)
-	private escBuf = "";
+	private _escBuf = "";
 
 	// Death animation
-	private deathTick = 0;
-	private deathAnimating = false;
+	private _deathTick = 0;
+	private _deathAnimating = false;
 
 	// Differential render — previous rendered lines
-	private prevLines: string[] = [];
+	private _prevLines: string[] = [];
 
 	/**
 	 * Create a new Pacman game instance.
 	 * @param opts - Game configuration (stream, terminal size, exit callback).
 	 */
 	constructor(opts: PacmanGameOptions) {
-		this.stream = opts.stream;
-		this.onExit = opts.onExit;
-		this.grid = parseMaze(MAZE_TEMPLATE);
-		this.visualGrid = MAZE_TEMPLATE.map(l => Array.from(l));
-		this.countDots();
-		this.initGhosts();
+		this._stream = opts.stream;
+		this._onExit = opts.onExit;
+		this._grid = parseMaze(MAZE_TEMPLATE);
+		this._visualGrid = MAZE_TEMPLATE.map(l => Array.from(l));
+		this._countDots();
+		this._initGhosts();
 	}
 
-	private countDots(): void {
-		this.dotsTotal = 0;
-		for (const row of this.grid)
+	private _countDots(): void {
+		this._dotsTotal = 0;
+		for (const row of this._grid)
 			for (const c of row)
-				if (c === "dot" || c === "pellet") this.dotsTotal++;
+				if (c === "dot" || c === "pellet") this._dotsTotal++;
 	}
 
-	private initGhosts(): void {
-		this.ghosts = [
+	private _initGhosts(): void {
+		this._ghosts = [
 			// Blinky — always outside, top-right scatter
 			{
 				name: "Blinky", color: C.red,
@@ -276,18 +276,18 @@ export class PacmanGame {
 	 * Start the game loop. Renders the initial maze and begins the 8fps tick.
 	 */
 	start(): void {
-		this.stream.write(hide + clearScreen);
-		this.prevLines = [];
-		this.renderFull();
-		this.intervalId = setInterval(() => this.gameTick(), 125);
+		this._stream.write(hide + clearScreen);
+		this._prevLines = [];
+		this._renderFull();
+		this._intervalId = setInterval(() => this._gameTick(), 125);
 	}
 
 	/**
 	 * Stop the game loop and restore the terminal cursor.
 	 */
 	stop(): void {
-		if (this.intervalId) { clearInterval(this.intervalId); this.intervalId = null; }
-		this.stream.write(show + clearScreen + C.r);
+		if (this._intervalId) { clearInterval(this._intervalId); this._intervalId = null; }
+		this._stream.write(show + clearScreen + C.r);
 	}
 
 	/**
@@ -297,80 +297,80 @@ export class PacmanGame {
 	 */
 	handleInput(chunk: Buffer): void {
 		// Prepend any buffered partial ESC sequence from previous chunk (SSH splits \x1b and [A)
-		const data = this.escBuf + chunk.toString("utf8");
-		this.escBuf = "";
+		const data = this._escBuf + chunk.toString("utf8");
+		this._escBuf = "";
 		let i = 0;
 		while (i < data.length) {
 			const ch = data[i]!;
-			if (ch === "q" || ch === "Q" || ch === "\x03") { this.stop(); this.onExit(); return; }
+			if (ch === "q" || ch === "Q" || ch === "\x03") { this.stop(); this._onExit(); return; }
 			if (ch === "\x1b") {
 				// Need at least 2 more chars for CSI arrow sequence
 				if (i + 2 >= data.length) {
-					this.escBuf = data.slice(i);
+					this._escBuf = data.slice(i);
 					break;
 				}
 				if (data[i + 1] === "[") {
 					const code = data[i + 2];
-					if (code === "A") this.inputKey = 3;
-					else if (code === "B") this.inputKey = 1;
-					else if (code === "C") this.inputKey = 0;
-					else if (code === "D") this.inputKey = 2;
+					if (code === "A") this._inputKey = 3;
+					else if (code === "B") this._inputKey = 1;
+					else if (code === "C") this._inputKey = 0;
+					else if (code === "D") this._inputKey = 2;
 					i += 3; continue;
 				}
 				i++; continue;
 			}
-			if (ch === "w" || ch === "W") this.inputKey = 3;
-			else if (ch === "s" || ch === "S") this.inputKey = 1;
-			else if (ch === "a" || ch === "A") this.inputKey = 2;
-			else if (ch === "d" || ch === "D") this.inputKey = 0;
+			if (ch === "w" || ch === "W") this._inputKey = 3;
+			else if (ch === "s" || ch === "S") this._inputKey = 1;
+			else if (ch === "a" || ch === "A") this._inputKey = 2;
+			else if (ch === "d" || ch === "D") this._inputKey = 0;
 			i++;
 		}
 	}
 
 	// ── Game loop ─────────────────────────────────────────────────────────────
 
-	private gameTick(): void {
-		if (this.gameOver || this.won) {
-			this.msgTicks++;
-			if (this.msgTicks > 32) { this.stop(); this.onExit(); }
-			else this.renderDiff();
+	private _gameTick(): void {
+		if (this._gameOver || this._won) {
+			this._msgTicks++;
+			if (this._msgTicks > 32) { this.stop(); this._onExit(); }
+			else this._renderDiff();
 			return;
 		}
 
-		if (this.deathAnimating) {
-			this.deathTick++;
-			if (this.deathTick > 16) {
-				this.deathAnimating = false;
-				this.deathTick = 0;
-				if (this.lives <= 0) {
-					this.gameOver = true; this.msg = "GAME  OVER"; this.msgTicks = 0;
+		if (this._deathAnimating) {
+			this._deathTick++;
+			if (this._deathTick > 16) {
+				this._deathAnimating = false;
+				this._deathTick = 0;
+				if (this._lives <= 0) {
+					this._gameOver = true; this._msg = "GAME  OVER"; this._msgTicks = 0;
 				} else {
-					this.respawn();
+					this._respawn();
 				}
 			}
-			this.renderDiff();
+			this._renderDiff();
 			return;
 		}
 
-		this.tick++;
+		this._tick++;
 
 		// Queue direction
-		if (this.inputKey !== null) {
-			this.pacNextDir = this.inputKey;
-			this.inputKey = null;
+		if (this._inputKey !== null) {
+			this._pacNextDir = this._inputKey;
+			this._inputKey = null;
 		}
 
 		// Global scatter/chase schedule
-		if (this.globalMode !== "fright") {
-			this.globalModeTick++;
-			if (this.globalModeTick >= this.modeSchedule[this.modeIdx]!) {
-				this.globalModeTick = 0;
-				this.modeIdx = Math.min(this.modeIdx + 1, this.modeSchedule.length - 1);
-				this.globalMode = this.modeIdx % 2 === 0 ? "scatter" : "chase";
+		if (this._globalMode !== "fright") {
+			this._globalModeTick++;
+			if (this._globalModeTick >= this._modeSchedule[this._modeIdx]!) {
+				this._globalModeTick = 0;
+				this._modeIdx = Math.min(this._modeIdx + 1, this._modeSchedule.length - 1);
+				this._globalMode = this._modeIdx % 2 === 0 ? "scatter" : "chase";
 				// Sync all active ghosts to new global mode + force reverse (original behavior)
-				for (const g of this.ghosts) {
+				for (const g of this._ghosts) {
 					if (!g.inHouse && g.mode !== "fright" && g.mode !== "eaten") {
-						g.mode = this.globalMode;
+						g.mode = this._globalMode;
 						g.dir = (OPP[g.dir] ?? g.dir) as Dir;
 					}
 				}
@@ -378,25 +378,25 @@ export class PacmanGame {
 		}
 
 		// Snapshot ghost positions before move (for cross-collision detection)
-		const prevGhostPos = this.ghosts.map(g => ({ r: g.r, c: g.c }));
-		const prevPacR = this.pacR, prevPacC = this.pacC;
+		const prevGhostPos = this._ghosts.map(g => ({ r: g.r, c: g.c }));
+		const prevPacR = this._pacR, prevPacC = this._pacC;
 
-		this.movePacman();
-		this.pacMouthOpen = !this.pacMouthOpen;
+		this._movePacman();
+		this._pacMouthOpen = !this._pacMouthOpen;
 
-		for (const g of this.ghosts) this.moveGhost(g);
+		for (const g of this._ghosts) this._moveGhost(g);
 
-		this.checkCollisions(prevGhostPos, prevPacR, prevPacC);
-		this.renderDiff();
+		this._checkCollisions(prevGhostPos, prevPacR, prevPacC);
+		this._renderDiff();
 	}
 
 	// ── Walkability ───────────────────────────────────────────────────────────
 
-	private isWalkable(r: number, c: number, ghost = false): boolean {
+	private _isWalkable(r: number, c: number, ghost = false): boolean {
 		if (r < 0 || r >= ROWS) return false;
 		// Horizontal tunnel wrap handled elsewhere
 		const cc = ((c % COLS) + COLS) % COLS;
-		const cell = this.grid[r]?.[cc];
+		const cell = this._grid[r]?.[cc];
 		if (cell === "wall") return false;
 		if (!ghost && cell === "ghost-house") return false;
 		return cell !== undefined;
@@ -404,38 +404,38 @@ export class PacmanGame {
 
 	// ── Pacman movement ───────────────────────────────────────────────────────
 
-	private movePacman(): void {
+	private _movePacman(): void {
 		// Try queued dir
-		const qr = this.pacR + DR[this.pacNextDir];
-		const qc = ((this.pacC + DC[this.pacNextDir]) % COLS + COLS) % COLS;
-		if (this.isWalkable(qr, qc)) this.pacDir = this.pacNextDir;
+		const qr = this._pacR + DR[this._pacNextDir];
+		const qc = ((this._pacC + DC[this._pacNextDir]) % COLS + COLS) % COLS;
+		if (this._isWalkable(qr, qc)) this._pacDir = this._pacNextDir;
 
-		const mr = this.pacR + DR[this.pacDir];
-		const mc = ((this.pacC + DC[this.pacDir]) % COLS + COLS) % COLS;
-		if (this.isWalkable(mr, mc)) { this.pacR = mr; this.pacC = mc; }
+		const mr = this._pacR + DR[this._pacDir];
+		const mc = ((this._pacC + DC[this._pacDir]) % COLS + COLS) % COLS;
+		if (this._isWalkable(mr, mc)) { this._pacR = mr; this._pacC = mc; }
 
-		const cell = this.grid[this.pacR]?.[this.pacC];
+		const cell = this._grid[this._pacR]?.[this._pacC];
 		if (cell === "dot") {
-			this.grid[this.pacR]![this.pacC] = "empty";
-			this.score += 10; this.dotsEaten++;
+			this._grid[this._pacR]![this._pacC] = "empty";
+			this._score += 10; this._dotsEaten++;
 		} else if (cell === "pellet") {
-			this.grid[this.pacR]![this.pacC] = "empty";
-			this.score += 50; this.dotsEaten++;
-			this.activateFright();
+			this._grid[this._pacR]![this._pacC] = "empty";
+			this._score += 50; this._dotsEaten++;
+			this._activateFright();
 		}
 
-		if (this.dotsEaten >= this.dotsTotal) {
-			this.won = true; this.msg = " YOU  WIN!"; this.msgTicks = 0;
+		if (this._dotsEaten >= this._dotsTotal) {
+			this._won = true; this._msg = " YOU  WIN!"; this._msgTicks = 0;
 		}
 	}
 
 	// ── Ghost: fright ─────────────────────────────────────────────────────────
 
-	private activateFright(): void {
-		for (const g of this.ghosts) {
+	private _activateFright(): void {
+		for (const g of this._ghosts) {
 			if (g.mode !== "eaten") {
 				g.mode = "fright";
-				g.frightTicks = this.frightDuration;
+				g.frightTicks = this._frightDuration;
 				g.movePeriod = 2; // half speed during fright (arcade accurate)
 				if (!g.inHouse) g.dir = (OPP[g.dir] ?? g.dir) as Dir;
 			}
@@ -445,49 +445,49 @@ export class PacmanGame {
 
 	// ── Ghost: target tile (original Pac-Man logic) ───────────────────────────
 
-	private ghostTarget(g: Ghost): [number, number] {
+	private _ghostTarget(g: Ghost): [number, number] {
 		if (g.mode === "scatter") return [g.scatterR, g.scatterC];
 
 		// Chase targets — faithful to original arcade
 		switch (g.name) {
 			case "Blinky":
 				// Direct chase: target = pacman position
-				return [this.pacR, this.pacC];
+				return [this._pacR, this._pacC];
 
 			case "Pinky": {
 				// Target 4 tiles ahead of pacman (with original NES up-bug: up = up-left*4)
-				const tr = this.pacR + DR[this.pacDir] * 4;
-				let tc = this.pacC + DC[this.pacDir] * 4;
-				if (this.pacDir === 3) tc = this.pacC - 4; // NES bug: facing up → also goes left
+				const tr = this._pacR + DR[this._pacDir] * 4;
+				let tc = this._pacC + DC[this._pacDir] * 4;
+				if (this._pacDir === 3) tc = this._pacC - 4; // NES bug: facing up → also goes left
 				return [tr, tc];
 			}
 
 			case "Inky": {
 				// Pivot: 2 tiles ahead of pacman, then double-vector from Blinky
-				const blinky = this.ghosts[0]!;
-				const pr = this.pacR + DR[this.pacDir] * 2;
-				let pc = this.pacC + DC[this.pacDir] * 2;
-				if (this.pacDir === 3) pc = this.pacC - 2; // NES bug mirror
+				const blinky = this._ghosts[0]!;
+				const pr = this._pacR + DR[this._pacDir] * 2;
+				let pc = this._pacC + DC[this._pacDir] * 2;
+				if (this._pacDir === 3) pc = this._pacC - 2; // NES bug mirror
 				// Target = pivot + (pivot - blinky)
 				return [pr * 2 - blinky.r, pc * 2 - blinky.c];
 			}
 
 			case "Clyde": {
 				// Chase if dist > 8 tiles (Euclidean), else scatter corner
-				const dr = g.r - this.pacR;
-				const dc = g.c - this.pacC;
-				if (dr * dr + dc * dc > 64) return [this.pacR, this.pacC];
+				const dr = g.r - this._pacR;
+				const dc = g.c - this._pacC;
+				if (dr * dr + dc * dc > 64) return [this._pacR, this._pacC];
 				return [g.scatterR, g.scatterC];
 			}
 
 			default:
-				return [this.pacR, this.pacC];
+				return [this._pacR, this._pacC];
 		}
 	}
 
 	// ── Ghost: movement ───────────────────────────────────────────────────────
 
-	private moveGhost(g: Ghost): void {
+	private _moveGhost(g: Ghost): void {
 		// Per-ghost speed throttle
 		g.movePhase = (g.movePhase + 1) % g.movePeriod;
 		if (g.movePhase !== 0) return;
@@ -497,7 +497,7 @@ export class PacmanGame {
 
 		// In-house: bounce and navigate to exit
 		if (g.inHouse) {
-			if (this.dotsEaten < g.dotThreshold) {
+			if (this._dotsEaten < g.dotThreshold) {
 				// Bounce vertically inside house
 				const nextR = g.r + DR[g.dir];
 				if (nextR < 15 || nextR > 17) g.dir = (OPP[g.dir] ?? g.dir) as Dir;
@@ -508,7 +508,7 @@ export class PacmanGame {
 			const exitR = 14, exitC = 17;
 			if (g.r === exitR && g.c === exitC) {
 				g.inHouse = false;
-				g.mode = this.globalMode;
+				g.mode = this._globalMode;
 				g.dir = 2; // exit left into corridor
 				return;
 			}
@@ -527,7 +527,7 @@ export class PacmanGame {
 			if (g.r === homeR && g.c === homeC) {
 				g.inHouse = true;
 				g.r = 16; g.c = 17; // reset inside house
-				g.mode = this.globalMode;
+				g.mode = this._globalMode;
 				g.movePeriod = 1;
 				g.dir = 3;
 				return;
@@ -543,7 +543,7 @@ export class PacmanGame {
 		const walkable = candidates.filter(d => {
 			const nr = g.r + DR[d];
 			const nc = ((g.c + DC[d]) % COLS + COLS) % COLS;
-			return this.isWalkable(nr, nc, true);
+			return this._isWalkable(nr, nc, true);
 		});
 
 		let chosen: Dir = g.dir;
@@ -552,7 +552,7 @@ export class PacmanGame {
 			// Random walkable direction
 			if (walkable.length > 0) chosen = walkable[Math.floor(Math.random() * walkable.length)]!;
 		} else {
-			const [tR, tC] = this.ghostTarget(g);
+			const [tR, tC] = this._ghostTarget(g);
 			let best = Number.MAX_SAFE_INTEGER;
 			// Original priority: up > left > down > right when tied
 			for (const d of ([3, 2, 1, 0] as Dir[])) {
@@ -568,78 +568,78 @@ export class PacmanGame {
 		g.dir = chosen;
 		const nr = g.r + DR[g.dir];
 		const nc = ((g.c + DC[g.dir]) % COLS + COLS) % COLS;
-		if (this.isWalkable(nr, nc, true)) { g.r = nr; g.c = nc; }
+		if (this._isWalkable(nr, nc, true)) { g.r = nr; g.c = nc; }
 	}
 
 	// ── Collision ─────────────────────────────────────────────────────────────
 
-	private checkCollisions(
+	private _checkCollisions(
 		prevGhostPos: { r: number; c: number }[],
 		prevPacR: number,
 		prevPacC: number,
 	): void {
-		for (let i = 0; i < this.ghosts.length; i++) {
-			const g = this.ghosts[i]!;
+		for (let i = 0; i < this._ghosts.length; i++) {
+			const g = this._ghosts[i]!;
 			if (g.inHouse || g.mode === "eaten") continue;
 
 			// Same-cell collision
-			const sameTile = g.r === this.pacR && g.c === this.pacC;
+			const sameTile = g.r === this._pacR && g.c === this._pacC;
 			// Cross-collision: pacman and ghost swapped positions this tick
 			const prev = prevGhostPos[i]!;
-			const crossed = prev.r === this.pacR && prev.c === this.pacC
+			const crossed = prev.r === this._pacR && prev.c === this._pacC
 				&& g.r === prevPacR && g.c === prevPacC;
 
 			if (!sameTile && !crossed) continue;
 
 			if (g.mode === "fright") {
-				g.mode = "eaten"; this.score += 200;
+				g.mode = "eaten"; this._score += 200;
 			} else {
-				this.lives--;
-				this.deathAnimating = true; this.deathTick = 0; this.pacAlive = false;
+				this._lives--;
+				this._deathAnimating = true; this._deathTick = 0; this._pacAlive = false;
 				// Tick fright countdowns before returning
-				this.tickFrightCountdowns();
+				this._tickFrightCountdowns();
 				return;
 			}
 		}
-		this.tickFrightCountdowns();
+		this._tickFrightCountdowns();
 	}
 
-	private tickFrightCountdowns(): void {
-		for (const g of this.ghosts) {
+	private _tickFrightCountdowns(): void {
+		for (const g of this._ghosts) {
 			if (g.mode === "fright") {
 				g.frightTicks--;
 				if (g.frightTicks <= 0) {
-					g.mode = this.globalMode;
+					g.mode = this._globalMode;
 					g.movePeriod = 1;
 				}
 			}
 		}
 	}
 
-	private respawn(): void {
-		this.pacR = 22; this.pacC = 16; this.pacDir = 2; this.pacNextDir = 2;
-		this.pacAlive = true; this.pacMouthOpen = true;
-		this.initGhosts();
+	private _respawn(): void {
+		this._pacR = 22; this._pacC = 16; this._pacDir = 2; this._pacNextDir = 2;
+		this._pacAlive = true; this._pacMouthOpen = true;
+		this._initGhosts();
 	}
 
 	// ── Render ────────────────────────────────────────────────────────────────
 
-	private buildLines(): string[] {
+	private _buildLines(): string[] {
 		const lines: string[] = [];
 
 		// Header
-		const sc = String(this.score).padStart(6, " ");
-		const hi = String(Math.max(this.score, 24780)).padStart(6, " ");
+		const sc = String(this._score).padStart(6, " ");
+		const hi = String(Math.max(this._score, 24780)).padStart(6, " ");
 		lines.push(`${C.white}  1UP   HIGH SCORE${C.r}`);
 		lines.push(`  ${C.yellow}${sc}${C.r}   ${C.white}${hi}${C.r}`);
 
 		// Build render grid from visual template
-		const rg: string[][] = this.visualGrid.map(row => [...row]);
+		const rg: string[][] = this._visualGrid.map(row => [...row]);
 
 		// Overlay game cells
 		for (let r = 0; r < ROWS; r++) {
 			for (let c = 0; c < COLS; c++) {
-				const cell = this.grid[r]?.[c];
+				const cell = this._grid[r]?.[c];
 				const vch = rg[r]?.[c] ?? " ";
 				if (WALL_SET.has(vch)) continue;
 				if (cell === "dot") rg[r]![c] = "·";
@@ -649,33 +649,33 @@ export class PacmanGame {
 		}
 
 		// Ghosts
-		for (const g of this.ghosts) {
+		for (const g of this._ghosts) {
 			if (g.r < 0 || g.r >= ROWS || g.c < 0 || g.c >= COLS) continue;
 			let sprite: string;
 			if (g.mode === "eaten") {
 				sprite = `${C.white}ö${C.r}`;
 			} else if (g.mode === "fright") {
-				const flash = g.frightTicks < 12 && this.tick % 2 === 0;
+				const flash = g.frightTicks < 12 && this._tick % 2 === 0;
 				sprite = flash ? `${C.white}ᗣ${C.r}` : `${C.blue}ᗣ${C.r}`;
 			} else {
-				const frame = this.tick % 2 === 0 ? "ᗣ" : "ᗡ";
+				const frame = this._tick % 2 === 0 ? "ᗣ" : "ᗡ";
 				sprite = `${g.color}${frame}${C.r}`;
 			}
 			rg[g.r]![g.c] = sprite;
 		}
 
 		// Pacman
-		if (this.pacAlive || this.deathAnimating) {
+		if (this._pacAlive || this._deathAnimating) {
 			let sprite: string;
-			if (this.deathAnimating) {
+			if (this._deathAnimating) {
 				const frames = ["ᗧ","◑","◐","◒","◓","●","○"," "];
-				sprite = `${C.yellow}${frames[Math.min(this.deathTick >> 1, frames.length - 1)]}${C.r}`;
+				sprite = `${C.yellow}${frames[Math.min(this._deathTick >> 1, frames.length - 1)]}${C.r}`;
 			} else {
-				const open = (["ᗧ","ᗦ","ᗤ","ᗣ"] as const)[this.pacDir] ?? "ᗧ";
-				sprite = `${C.yellow}${this.pacMouthOpen ? open : "◯"}${C.r}`;
+				const open = (["ᗧ","ᗦ","ᗤ","ᗣ"] as const)[this._pacDir] ?? "ᗧ";
+				sprite = `${C.yellow}${this._pacMouthOpen ? open : "◯"}${C.r}`;
 			}
-			if (this.pacR >= 0 && this.pacR < ROWS && this.pacC >= 0 && this.pacC < COLS)
-				rg[this.pacR]![this.pacC] = sprite;
+			if (this._pacR >= 0 && this._pacR < ROWS && this._pacC >= 0 && this._pacC < COLS)
+				rg[this._pacR]![this._pacC] = sprite;
 		}
 
 		// Colorize maze rows
@@ -693,38 +693,38 @@ export class PacmanGame {
 		}
 
 		// Footer
-		const livesStr = `${C.yellow}ᗧ${C.r} `.repeat(Math.max(0, this.lives));
-		lines.push("", `  ${livesStr}  LEVEL ${C.yellow}${this.level}${C.r}`);
+		const livesStr = `${C.yellow}ᗧ${C.r} `.repeat(Math.max(0, this._lives));
+		lines.push("", `  ${livesStr}  LEVEL ${C.yellow}${this._level}${C.r}`);
 		lines.push(`  ${C.dim}WASD/arrows  Q=quit${C.r}`);
 
 		// Message overlay
-		if (this.msg) lines[18] = `        ${C.yellow}${C.blink}${this.msg}${C.r}`;
+		if (this._msg) lines[18] = `        ${C.yellow}${C.blink}${this._msg}${C.r}`;
 
 		return lines;
 	}
 
-	private renderFull(): void {
-		const lines = this.buildLines();
+	private _renderFull(): void {
+		const lines = this._buildLines();
 		let out = hide + clearScreen;
 		for (let i = 0; i < lines.length; i++) out += cup(i + 1, 1) + (lines[i] ?? "") + eraseEol;
-		this.stream.write(out);
-		this.prevLines = lines;
+		this._stream.write(out);
+		this._prevLines = lines;
 	}
 
-	private renderDiff(): void {
-		const lines = this.buildLines();
+	private _renderDiff(): void {
+		const lines = this._buildLines();
 		let out = "";
 		for (let i = 0; i < lines.length; i++) {
 			const line = lines[i] ?? "";
-			if (line !== this.prevLines[i]) {
+			if (line !== this._prevLines[i]) {
 				out += cup(i + 1, 1) + line + eraseEol;
 			}
 		}
 		// Clear any extra lines from previous render
-		for (let i = lines.length; i < this.prevLines.length; i++) {
+		for (let i = lines.length; i < this._prevLines.length; i++) {
 			out += cup(i + 1, 1) + eraseEol;
 		}
-		if (out) this.stream.write(out);
-		this.prevLines = lines;
+		if (out) this._stream.write(out);
+		this._prevLines = lines;
 	}
 }

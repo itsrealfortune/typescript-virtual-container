@@ -112,23 +112,23 @@ export interface DesktopState {
  * ```
  */
 export class DesktopManager {
-  private shell: VirtualShell;
-  private container: HTMLElement;
-  private active = false;
-  private windows: DesktopWindow[] = [];
-  private zCounter = 100;
-  private menuOpen = false;
-  private nextWinId = 0;
+  private _shell: VirtualShell;
+  private _container: HTMLElement;
+  private _active = false;
+  private _windows: DesktopWindow[] = [];
+  private _zCounter = 100;
+  private _menuOpen = false;
+  private _nextWinId = 0;
   private clockInterval?: ReturnType<typeof setInterval>;
-  private onExit: (() => void) | null = null;
-  private stopResolve: (() => void) | null = null;
-  private dragState: { win: DesktopWindow; startX: number; startY: number; origX: number; origY: number } | null = null;
-  private resizeState: { win: DesktopWindow; startX: number; startY: number; origW: number; origH: number } | null = null;
+  private _onExit: (() => void) | null = null;
+  private _stopResolve: (() => void) | null = null;
+  private _dragState: { win: DesktopWindow; startX: number; startY: number; origX: number; origY: number } | null = null;
+  private _resizeState: { win: DesktopWindow; startX: number; startY: number; origW: number; origH: number } | null = null;
   private _renderGuard = false;
-  private readonly trashPath = "/root/.local/share/Trash/files";
-  private docListeners: Array<{ target: EventTarget; type: string; fn: EventListener }> = [];
-  private pendingTimeouts: Set<ReturnType<typeof setTimeout>> = new Set();
-  private thunar: ThunarManager;
+  private readonly _trashPath = "/root/.local/share/Trash/files";
+  private _docListeners: Array<{ target: EventTarget; type: string; fn: EventListener }> = [];
+  private _pendingTimeouts: Set<ReturnType<typeof setTimeout>> = new Set();
+  private _thunar: ThunarManager;
 
   /**
    * Creates a desktop manager bound to a VirtualShell and DOM container.
@@ -136,26 +136,26 @@ export class DesktopManager {
    * @param container - DOM element to render the desktop into.
    */
   constructor(shell: VirtualShell, container: HTMLElement) {
-    this.shell = shell;
-    this.container = container;
-    this.thunar = new ThunarManager({
-      shell: this.shell,
-      windows: this.windows,
-      trashPath: this.trashPath,
-      renderWindowElement: (w) => this.renderWindowElement(w),
-      showContextMenu: (x, y, items) => this.showContextMenu(x, y, items),
-      closeContextMenu: () => this.closeContextMenu(),
+    this._shell = shell;
+    this._container = container;
+    this._thunar = new ThunarManager({
+      shell: this._shell,
+      windows: this._windows,
+      trashPath: this._trashPath,
+      renderWindowElement: (w) => this._renderWindowElement(w),
+      showContextMenu: (x, y, items) => this._showContextMenu(x, y, items),
+      closeContextMenu: () => this._closeContextMenu(),
       createEditorWindow: (path) => this.createEditorWindow(path),
-      escapeHtml: (s) => this.escapeHtml(s),
+      escapeHtml: (s) => this._escapeHtml(s),
     }, container);
-    this.setupEventDelegation();
+    this._setupEventDelegation();
   }
 
   /** Returns true if the desktop is currently active and rendered. */
-  isActive(): boolean { return this.active; }
+  isActive(): boolean { return this._active; }
 
   /** Set a callback invoked when the desktop is stopped. */
-  setOnExit(cb: () => void): void { this.onExit = cb; }
+  setOnExit(cb: () => void): void { this._onExit = cb; }
 
   /**
    * Start the desktop environment. Renders the desktop UI and restores
@@ -163,15 +163,15 @@ export class DesktopManager {
    * `stop()` is called.
    */
   start(): Promise<void> {
-    if (this.active) return Promise.resolve();
-    this.active = true;
-    this.container.style.display = "block";
-    this.renderAll();
-    this.restoreSession();
-    this.addDocListener(window, "beforeunload", () => saveSession(this.windows));
-    this.clockInterval = setInterval(() => this.updateClock(), 30_000);
+    if (this._active) return Promise.resolve();
+    this._active = true;
+    this._container.style.display = "block";
+    this._renderAll();
+    this._restoreSession();
+    this._addDocListener(window, "beforeunload", () => saveSession(this._windows));
+    this.clockInterval = setInterval(() => this._updateClock(), 30_000);
     return new Promise<void>((resolve) => {
-      this.stopResolve = resolve;
+      this._stopResolve = resolve;
     });
   }
 
@@ -180,30 +180,30 @@ export class DesktopManager {
    * removes event listeners, and resolves the start() promise.
    */
   stop(): void {
-    if (!this.active) return;
-    this.active = false;
+    if (!this._active) return;
+    this._active = false;
     clearSession();
-    this.container.style.display = "none";
+    this._container.style.display = "none";
     if (this.clockInterval) clearInterval(this.clockInterval);
     this.clockInterval = undefined;
-    for (const w of this.windows) {
+    for (const w of this._windows) {
       if (w.content.type === "taskmanager" && w.content.refreshInterval) {
         clearInterval(w.content.refreshInterval);
       }
     }
-    this.windows = [];
-    this.menuOpen = false;
-    this.dragState = null;
-    this.resizeState = null;
-    for (const id of this.pendingTimeouts) clearTimeout(id);
-    this.pendingTimeouts.clear();
-    this.removeAllDocListeners();
-    this.stopResolve?.();
-    this.stopResolve = null;
-    this.onExit?.();
+    this._windows = [];
+    this._menuOpen = false;
+    this._dragState = null;
+    this._resizeState = null;
+    for (const id of this._pendingTimeouts) clearTimeout(id);
+    this._pendingTimeouts.clear();
+    this._removeAllDocListeners();
+    this._stopResolve?.();
+    this._stopResolve = null;
+    this._onExit?.();
   }
 
-  private restoreSession(): void {
+  private _restoreSession(): void {
     const saved = loadSession();
     if (!saved || saved.length === 0) return;
     const created: Array<{ saved: typeof saved[number]; id: string }> = [];
@@ -219,7 +219,7 @@ export class DesktopManager {
       created.push({ saved: sw, id });
     }
     for (const { saved: sw, id } of created) {
-      const w = this.windows.find(ww => ww.id === id);
+      const w = this._windows.find(ww => ww.id === id);
       if (!w) continue;
       w.x = sw.x;
       w.y = sw.y;
@@ -230,8 +230,8 @@ export class DesktopManager {
       w.savedRect = sw.savedRect ?? null;
       w.zIndex = sw.zIndex;
     }
-    this.zCounter = Math.max(this.zCounter, ...saved.map(s => s.zIndex)) + 1;
-    this.renderAll();
+    this._zCounter = Math.max(this._zCounter, ...saved.map(s => s.zIndex)) + 1;
+    this._renderAll();
   }
 
   /**
@@ -240,7 +240,7 @@ export class DesktopManager {
    * @returns Terminal stream, data listeners, and pre element for rendering.
    */
   getFocusedTerminal(): { stream: ShellStream; dataListeners: Array<(chunk: Buffer) => void>; preEl: HTMLPreElement } | null {
-    for (const w of this.windows) {
+    for (const w of this._windows) {
       if (w.content.type === "terminal" && w.focused && !w.minimized) {
         return {
           stream: w.content.stream!,
@@ -258,11 +258,11 @@ export class DesktopManager {
    * @param e - Keyboard event from the browser.
    */
   handleKeyDown(e: KeyboardEvent): void {
-    if (!this.active) return;
+    if (!this._active) return;
 
-    if (e.key === "Escape" && this.menuOpen) {
-      this.menuOpen = false;
-      this.renderPanel();
+    if (e.key === "Escape" && this._menuOpen) {
+      this._menuOpen = false;
+      this._renderPanel();
       return;
     }
 
@@ -308,7 +308,7 @@ export class DesktopManager {
     const dataListeners: Array<(chunk: Buffer) => void> = [];
     const closeListeners: Array<() => void> = [];
 
-    const id = this.createWindow({
+    const id = this._createWindow({
       title: "Terminal",
       width: 720,
       height: 440,
@@ -324,7 +324,7 @@ export class DesktopManager {
     const stream: ShellStream = {
       write: (data: string) => {
         termRenderer.write(data);
-        this.renderTerminalContentById(winId);
+        this._renderTerminalContentById(winId);
       },
       exit: () => undefined,
       end: () => { for (const l of closeListeners) l(); },
@@ -335,17 +335,17 @@ export class DesktopManager {
     };
 
     // Attach stream to the window
-    const w = this.windows.find((ww) => ww.id === winId);
+    const w = this._windows.find((ww) => ww.id === winId);
     if (w && w.content.type === "terminal") {
       (w.content as TerminalContent).stream = stream;
     }
 
     // Start shell asynchronously so the calling command can finish first
     const tid = setTimeout(() => {
-      this.pendingTimeouts.delete(tid);
-      this.shell.startInteractiveSession(stream, "root", null, "desktop", { cols, rows });
+      this._pendingTimeouts.delete(tid);
+      this._shell.startInteractiveSession(stream, "root", null, "desktop", { cols, rows });
     }, 0);
-    this.pendingTimeouts.add(tid);
+    this._pendingTimeouts.add(tid);
 
     return id;
   }
@@ -356,7 +356,7 @@ export class DesktopManager {
    * @returns The unique window ID.
    */
   createThunarWindow(path = "/root"): string {
-    return this.createWindow({
+    return this._createWindow({
       title: `Thunar: ${path}`,
       width: 600,
       height: 400,
@@ -370,7 +370,7 @@ export class DesktopManager {
    * @returns The unique window ID.
    */
   createEditorWindow(path = "/root/untitled.txt"): string {
-    const id = this.createWindow({
+    const id = this._createWindow({
       title: `Mousepad — ${path.split("/").pop()}`,
       width: 640,
       height: 480,
@@ -385,7 +385,7 @@ export class DesktopManager {
    * @returns The unique window ID.
    */
   createAboutWindow(): string {
-    return this.createWindow({
+    return this._createWindow({
       title: "About Fortune GNU/Linux",
       width: 400,
       height: 280,
@@ -398,17 +398,17 @@ export class DesktopManager {
    * @returns The unique window ID.
    */
   createTaskManagerWindow(): string {
-    const id = this.createWindow({
+    const id = this._createWindow({
       title: "Task Manager",
       width: 640,
       height: 420,
       content: { type: "taskmanager" },
     });
-    const w = this.windows.find(ww => ww.id === id);
+    const w = this._windows.find(ww => ww.id === id);
     if (w && w.content.type === "taskmanager") {
       w.content.refreshInterval = setInterval(() => {
-        const el = this.container.querySelector(`.desktop-window[data-win-id="${id}"]`) as HTMLElement | null;
-        if (el) this.renderTaskManagerContent(el, id);
+        const el = this._container.querySelector(`.desktop-window[data-win-id="${id}"]`) as HTMLElement | null;
+        if (el) this._renderTaskManagerContent(el, id);
       }, 3000);
     }
     return id;
@@ -419,17 +419,17 @@ export class DesktopManager {
    * @param id - Window ID to close.
    */
   closeWindow(id: string): void {
-    const idx = this.windows.findIndex((w) => w.id === id);
+    const idx = this._windows.findIndex((w) => w.id === id);
     if (idx === -1) return;
-    const w = this.windows[idx]!;
+    const w = this._windows[idx]!;
     if (w.content.type === "taskmanager" && w.content.refreshInterval) {
       clearInterval(w.content.refreshInterval);
     }
-    this.windows.splice(idx, 1);
-    if (this.windows.length > 0) {
-      this.focusWindow(this.windows[this.windows.length - 1]!.id);
+    this._windows.splice(idx, 1);
+    if (this._windows.length > 0) {
+      this.focusWindow(this._windows[this._windows.length - 1]!.id);
     }
-    this.renderAll();
+    this._renderAll();
   }
 
   /**
@@ -437,11 +437,11 @@ export class DesktopManager {
    * @param id - Window ID to toggle.
    */
   toggleMinimize(id: string): void {
-    const w = this.windows.find((ww) => ww.id === id);
+    const w = this._windows.find((ww) => ww.id === id);
     if (!w) return;
     w.minimized = !w.minimized;
     if (!w.minimized) this.focusWindow(id);
-    else this.renderAll();
+    else this._renderAll();
   }
 
   /**
@@ -450,24 +450,24 @@ export class DesktopManager {
    * @param id - Window ID to toggle.
    */
   toggleMaximize(id: string): void {
-    const w = this.windows.find((ww) => ww.id === id);
+    const w = this._windows.find((ww) => ww.id === id);
     if (!w) return;
     if (w.maximized) {
-      this.unmaximize(w);
+      this._unmaximize(w);
     } else {
       w.savedRect = { x: w.x, y: w.y, width: w.width, height: w.height };
-      const panelEl = this.container.querySelector("#desktop-panel") as HTMLElement | null;
+      const panelEl = this._container.querySelector("#desktop-panel") as HTMLElement | null;
       const panelH = panelEl?.offsetHeight ?? 28;
       w.x = 0;
       w.y = panelH;
-      w.width = this.container.clientWidth;
-      w.height = this.container.clientHeight - panelH;
+      w.width = this._container.clientWidth;
+      w.height = this._container.clientHeight - panelH;
       w.maximized = true;
     }
-    this.renderAll();
+    this._renderAll();
   }
 
-  private unmaximize(w: DesktopWindow): void {
+  private _unmaximize(w: DesktopWindow): void {
     if (w.savedRect) {
       w.x = w.savedRect.x;
       w.y = w.savedRect.y;
@@ -482,21 +482,21 @@ export class DesktopManager {
    * @param id - Window ID to focus.
    */
   focusWindow(id: string): void {
-    for (const w of this.windows) w.focused = false;
-    const w = this.windows.find((ww) => ww.id === id);
+    for (const w of this._windows) w.focused = false;
+    const w = this._windows.find((ww) => ww.id === id);
     if (w) {
       w.focused = true;
-      w.zIndex = ++this.zCounter;
+      w.zIndex = ++this._zCounter;
       w.minimized = false;
     }
-    this.renderAll();
+    this._renderAll();
   }
 
   // ── Internal ──────────────────────────────────────────────────────
 
-  private createWindow(opts: { title: string; width: number; height: number; content: WindowContent }): string {
-    const id = `win-${++this.nextWinId}`;
-    const count = this.windows.length;
+  private _createWindow(opts: { title: string; width: number; height: number; content: WindowContent }): string {
+    const id = `win-${++this._nextWinId}`;
+    const count = this._windows.length;
     const offset = count * 30;
     const win: DesktopWindow = {
       id,
@@ -509,27 +509,27 @@ export class DesktopManager {
       maximized: false,
       savedRect: null,
       focused: true,
-      zIndex: ++this.zCounter,
+      zIndex: ++this._zCounter,
       content: opts.content,
     };
-    for (const w of this.windows) w.focused = false;
-    this.windows.push(win);
+    for (const w of this._windows) w.focused = false;
+    this._windows.push(win);
     // Create DOM element synchronously (not guarded) so it exists for stream writes
-    this.ensureWindowElement(win);
-    this.renderWindowElement(win);
-    this.renderAll();
+    this._ensureWindowElement(win);
+    this._renderWindowElement(win);
+    this._renderAll();
     return id;
   }
 
-  private ensureWindowElement(win: DesktopWindow): HTMLElement {
-    let el = this.container.querySelector(`.desktop-window[data-win-id="${win.id}"]`) as HTMLElement;
+  private _ensureWindowElement(win: DesktopWindow): HTMLElement {
+    let el = this._container.querySelector(`.desktop-window[data-win-id="${win.id}"]`) as HTMLElement;
     if (!el) {
       el = document.createElement("div");
       el.className = "desktop-window";
       el.setAttribute("data-win-id", win.id);
       el.innerHTML = `
         <div class="win-header">
-          <span class="win-title">${this.escapeHtml(win.title)}</span>
+          <span class="win-title">${this._escapeHtml(win.title)}</span>
           <div class="win-controls">
             <button class="win-min">─</button>
             <button class="win-max"></button>
@@ -539,13 +539,13 @@ export class DesktopManager {
         <div class="win-content"></div>
         <div class="win-resize-handle"></div>
       `;
-      this.container.appendChild(el);
+      this._container.appendChild(el);
     }
     return el;
   }
 
-  private renderWindowElement(win: DesktopWindow): void {
-    const el = this.ensureWindowElement(win);
+  private _renderWindowElement(win: DesktopWindow): void {
+    const el = this._ensureWindowElement(win);
     el.style.left = `${win.x}px`;
     el.style.top = `${win.y}px`;
     el.style.width = `${win.width}px`;
@@ -556,35 +556,35 @@ export class DesktopManager {
     if (maxBtn) maxBtn.textContent = win.maximized ? "🗗" : "□";
 
     if (win.content.type === "terminal") {
-      this.renderTerminalContentById(win.id);
+      this._renderTerminalContentById(win.id);
     } else if (win.content.type === "thunar") {
-      this.thunar.renderContent(el, win.content);
+      this._thunar.renderContent(el, win.content);
     } else if (win.content.type === "about") {
-      this.renderAboutContent(el);
+      this._renderAboutContent(el);
     } else if (win.content.type === "editor") {
-      this.renderEditorContent(el, win.id, win.content);
+      this._renderEditorContent(el, win.id, win.content);
     } else if (win.content.type === "taskmanager") {
-      this.renderTaskManagerContent(el, win.id);
+      this._renderTaskManagerContent(el, win.id);
     }
   }
 
-  private addDocListener(target: EventTarget, type: string, fn: EventListener): void {
+  private _addDocListener(target: EventTarget, type: string, fn: EventListener): void {
     target.addEventListener(type, fn);
-    this.docListeners.push({ target, type, fn });
+    this._docListeners.push({ target, type, fn });
   }
 
-  private removeAllDocListeners(): void {
-    for (const { target, type, fn } of this.docListeners) {
+  private _removeAllDocListeners(): void {
+    for (const { target, type, fn } of this._docListeners) {
       target.removeEventListener(type, fn);
     }
-    this.docListeners = [];
+    this._docListeners = [];
   }
 
-  private setupEventDelegation(): void {
+  private _setupEventDelegation(): void {
     // Delegate click events
-    this.container.addEventListener("click", (e) => {
+    this._container.addEventListener("click", (e) => {
       const target = e.target as HTMLElement;
-      if (!this.active) return;
+      if (!this._active) return;
 
       // Close button
       if (target.classList.contains("win-close")) {
@@ -643,15 +643,15 @@ export class DesktopManager {
         else if (action === "home") this.createThunarWindow("/root");
         else if (action === "editor") this.createEditorWindow();
         else if (action === "taskmanager") this.createTaskManagerWindow();
-        else if (action === "trash") this.createThunarWindow(this.trashPath);
+        else if (action === "trash") this.createThunarWindow(this._trashPath);
         e.stopPropagation();
         return;
       }
 
       // Panel menu button
       if (target.classList.contains("xfce-menu-button") || target.closest(".xfce-menu-button")) {
-        this.menuOpen = !this.menuOpen;
-        this.renderPanel();
+        this._menuOpen = !this._menuOpen;
+        this._renderPanel();
         e.stopPropagation();
         return;
       }
@@ -668,16 +668,16 @@ export class DesktopManager {
       if (target.classList.contains("taskmgr-kill")) {
         const pid = Number(target.getAttribute("data-pid"));
         if (pid) {
-          const sessions = this.shell.users.listActiveSessions();
+          const sessions = this._shell.users.listActiveSessions();
           const sessionIdx = pid - 1000;
           if (sessionIdx >= 0 && sessionIdx < sessions.length) {
-            this.shell.users.unregisterSession(sessions[sessionIdx]!.id);
+            this._shell.users.unregisterSession(sessions[sessionIdx]!.id);
           } else {
-            this.shell.users.killProcess(pid);
+            this._shell.users.killProcess(pid);
           }
           const winId = target.closest(".desktop-window")?.getAttribute("data-win-id");
-          if (winId) this.renderTaskManagerContent(
-            this.container.querySelector(`.desktop-window[data-win-id="${winId}"]`) as HTMLElement,
+          if (winId) this._renderTaskManagerContent(
+            this._container.querySelector(`.desktop-window[data-win-id="${winId}"]`) as HTMLElement,
             winId,
           );
         }
@@ -691,8 +691,8 @@ export class DesktopManager {
           ? target
           : target.closest(".taskmgr-refresh") as HTMLElement;
         const winId = btn.getAttribute("data-win-id");
-        if (winId) this.renderTaskManagerContent(
-          this.container.querySelector(`.desktop-window[data-win-id="${winId}"]`) as HTMLElement,
+        if (winId) this._renderTaskManagerContent(
+          this._container.querySelector(`.desktop-window[data-win-id="${winId}"]`) as HTMLElement,
           winId,
         );
         e.stopPropagation();
@@ -708,53 +708,53 @@ export class DesktopManager {
         else if (action === "taskmanager") this.createTaskManagerWindow();
         else if (action === "about") this.createAboutWindow();
         else if (action === "logout") this.stop();
-        this.menuOpen = false;
-        this.renderPanel();
+        this._menuOpen = false;
+        this._renderPanel();
         return;
       }
 
       // Click outside menu → close it
-      if (this.menuOpen) {
-        this.menuOpen = false;
-        this.renderPanel();
+      if (this._menuOpen) {
+        this._menuOpen = false;
+        this._renderPanel();
       }
     });
 
     // Close context menu on click elsewhere
-    this.addDocListener(document, "click", () => this.closeContextMenu());
+    this._addDocListener(document, "click", () => this._closeContextMenu());
 
     // Mouse down for window resizing
-    this.container.addEventListener("mousedown", (e) => {
+    this._container.addEventListener("mousedown", (e) => {
       const handle = (e.target as HTMLElement).closest(".win-resize-handle");
       if (!handle) return;
       const winEl = handle.closest(".desktop-window") as HTMLElement | null;
       if (!winEl) return;
       const id = winEl.getAttribute("data-win-id");
       if (!id) return;
-      const win = this.windows.find((w) => w.id === id);
+      const win = this._windows.find((w) => w.id === id);
       if (!win) return;
-      this.resizeState = { win, startX: e.clientX, startY: e.clientY, origW: win.width, origH: win.height };
+      this._resizeState = { win, startX: e.clientX, startY: e.clientY, origW: win.width, origH: win.height };
       e.preventDefault();
       e.stopPropagation();
     });
 
     // Mouse down for window dragging
-    this.container.addEventListener("mousedown", (e) => {
+    this._container.addEventListener("mousedown", (e) => {
       const header = (e.target as HTMLElement).closest(".win-header");
       if (!header) return;
       const winEl = header.closest(".desktop-window") as HTMLElement | null;
       if (!winEl) return;
       const id = winEl.getAttribute("data-win-id");
       if (!id) return;
-      const win = this.windows.find((w) => w.id === id);
+      const win = this._windows.find((w) => w.id === id);
       if (!win) return;
       this.focusWindow(id);
 
       if (win.maximized) {
-        this.unmaximize(win);
+        this._unmaximize(win);
       }
 
-      this.dragState = {
+      this._dragState = {
         win,
         startX: e.clientX,
         startY: e.clientY,
@@ -766,31 +766,31 @@ export class DesktopManager {
 
     // Mouse move for dragging/resizing — not tracked in docListeners so it survives stop()/start() cycles
     document.addEventListener("mousemove", (e) => {
-      if (this.resizeState) {
-        const dx = e.clientX - this.resizeState.startX;
-        const dy = e.clientY - this.resizeState.startY;
-        this.resizeState.win.width = Math.max(240, this.resizeState.origW + dx);
-        this.resizeState.win.height = Math.max(120, this.resizeState.origH + dy);
-        this.renderWindowPositions();
+      if (this._resizeState) {
+        const dx = e.clientX - this._resizeState.startX;
+        const dy = e.clientY - this._resizeState.startY;
+        this._resizeState.win.width = Math.max(240, this._resizeState.origW + dx);
+        this._resizeState.win.height = Math.max(120, this._resizeState.origH + dy);
+        this._renderWindowPositions();
         return;
       }
-      if (!this.dragState) return;
-      const dx = e.clientX - this.dragState.startX;
-      const dy = e.clientY - this.dragState.startY;
-      this.dragState.win.x = Math.max(0, this.dragState.origX + dx);
-      this.dragState.win.y = Math.max(0, this.dragState.origY + dy);
-      this.renderWindowPositions();
+      if (!this._dragState) return;
+      const dx = e.clientX - this._dragState.startX;
+      const dy = e.clientY - this._dragState.startY;
+      this._dragState.win.x = Math.max(0, this._dragState.origX + dx);
+      this._dragState.win.y = Math.max(0, this._dragState.origY + dy);
+      this._renderWindowPositions();
     });
 
     // Mouse up to end drag/resize — same reason as mousemove above
     document.addEventListener("mouseup", () => {
-      this.dragState = null;
-      this.resizeState = null;
+      this._dragState = null;
+      this._resizeState = null;
     });
 
     // Double-click title bar → toggle maximize
-    this.container.addEventListener("dblclick", (e) => {
-      if (!this.active) return;
+    this._container.addEventListener("dblclick", (e) => {
+      if (!this._active) return;
       const header = (e.target as HTMLElement).closest(".win-header");
       if (header) {
         const id = header.closest(".desktop-window")?.getAttribute("data-win-id");
@@ -800,36 +800,36 @@ export class DesktopManager {
     });
 
     // Paste delegation for terminal windows
-    this.container.addEventListener("paste", (e: ClipboardEvent) => {
+    this._container.addEventListener("paste", (e: ClipboardEvent) => {
       this.handlePaste(e);
     });
 
     // Keyboard input for desktop terminal windows (document-level so focus doesn't matter)
-    this.addDocListener(document, "keydown", (e) => {
-      if (!this.active) return;
+    this._addDocListener(document, "keydown", (e) => {
+      if (!this._active) return;
       if ((e.target as HTMLElement)?.classList?.contains("editor-textarea")) return;
       this.handleKeyDown(e as KeyboardEvent);
     });
 
     // Editor: delegate keydown (Ctrl+S save, stop propagation to terminal)
-    this.container.addEventListener("keydown", (e) => {
+    this._container.addEventListener("keydown", (e) => {
       const textarea = e.target as HTMLElement;
       if (!textarea.classList.contains("editor-textarea")) return;
       e.stopPropagation();
       if (e.ctrlKey && e.key === "s") {
         e.preventDefault();
         const winId = textarea.getAttribute("data-win-id");
-        if (winId) this.saveEditor(winId);
+        if (winId) this._saveEditor(winId);
       }
     });
 
     // Editor: delegate input → dirty flag
-    this.container.addEventListener("input", (e) => {
+    this._container.addEventListener("input", (e) => {
       const textarea = e.target as HTMLElement;
       if (!textarea.classList.contains("editor-textarea")) return;
       const winId = textarea.getAttribute("data-win-id");
       if (!winId) return;
-      const w = this.windows.find((ww) => ww.id === winId);
+      const w = this._windows.find((ww) => ww.id === winId);
       if (!w || w.content.type !== "editor") return;
       w.content.dirty = true;
       const dot = textarea.closest(".win-content")?.querySelector(".editor-dirty") as HTMLElement | null;
@@ -838,30 +838,30 @@ export class DesktopManager {
     });
 
     // Editor: delegate save button click
-    this.container.addEventListener("click", (e) => {
+    this._container.addEventListener("click", (e) => {
       const btn = (e.target as HTMLElement).closest(".editor-save-btn") as HTMLElement | null;
       if (!btn) return;
       e.stopPropagation();
       const winId = btn.getAttribute("data-win-id");
-      if (winId) this.saveEditor(winId);
+      if (winId) this._saveEditor(winId);
     }, true); // capture phase so it fires before the generic click handler
   }
   // ── Rendering ──────────────────────────────────────────────────────
 
-  private renderAll(): void {
+  private _renderAll(): void {
     if (this._renderGuard) return;
     this._renderGuard = true;
     try {
-      this.renderPanel();
-      this.renderDesktopIcons();
-      this.renderWindows();
+      this._renderPanel();
+      this._renderDesktopIcons();
+      this._renderWindows();
     } finally {
       this._renderGuard = false;
     }
   }
 
-  private renderPanel(): void {
-    let panel = this.container.querySelector("#desktop-panel") as HTMLElement;
+  private _renderPanel(): void {
+    let panel = this._container.querySelector("#desktop-panel") as HTMLElement;
     if (!panel) {
       panel = document.createElement("div");
       panel.id = "desktop-panel";
@@ -880,7 +880,7 @@ export class DesktopManager {
           <span class="xfce-clock-date"></span>
         </div>
       `;
-      this.container.prepend(panel);
+      this._container.prepend(panel);
 
       // Delegated click on window list — attached once
       const list = panel.querySelector(".xfce-window-list") as HTMLElement;
@@ -890,7 +890,7 @@ export class DesktopManager {
         if (!btn) return;
         const id = btn.getAttribute("data-win-id");
         if (!id) return;
-        const w = this.windows.find((ww) => ww.id === id);
+        const w = this._windows.find((ww) => ww.id === id);
         if (!w) return;
         if (w.focused && !w.minimized) { this.toggleMinimize(id); }
         else { this.focusWindow(id); }
@@ -899,8 +899,8 @@ export class DesktopManager {
 
     // Update only what changes: task buttons, clock, menu
     const list = panel.querySelector(".xfce-window-list") as HTMLElement;
-    list.innerHTML = this.windows.map((w) =>
-      `<span class="xfce-taskbutton${w.focused ? " active" : ""}" data-win-id="${w.id}">${this.escapeHtml(w.title)}</span>`
+    list.innerHTML = this._windows.map((w) =>
+      `<span class="xfce-taskbutton${w.focused ? " active" : ""}" data-win-id="${w.id}">${this._escapeHtml(w.title)}</span>`
     ).join("");
 
     const now = new Date();
@@ -910,7 +910,7 @@ export class DesktopManager {
     if (dateEl) dateEl.textContent = now.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
 
     let menu = panel.querySelector(".xfce-menu") as HTMLElement | null;
-    if (this.menuOpen && !menu) {
+    if (this._menuOpen && !menu) {
       menu = document.createElement("div");
       menu.className = "xfce-menu";
       menu.innerHTML = `
@@ -925,17 +925,17 @@ export class DesktopManager {
         <div class="menu-item" data-action="logout"><span class="menu-item-icon"><i class="fa-solid fa-power-off"></i></span>Log Out</div>
       `;
       panel.appendChild(menu);
-    } else if (!this.menuOpen && menu) {
+    } else if (!this._menuOpen && menu) {
       menu.remove();
     }
   }
 
-  private renderDesktopIcons(): void {
-    let area = this.container.querySelector("#desktop-area") as HTMLElement;
+  private _renderDesktopIcons(): void {
+    let area = this._container.querySelector("#desktop-area") as HTMLElement;
     if (!area) {
       area = document.createElement("div");
       area.id = "desktop-area";
-      this.container.appendChild(area);
+      this._container.appendChild(area);
     }
     area.innerHTML = `
       <div class="desktop-icon" data-action="terminal">
@@ -961,28 +961,28 @@ export class DesktopManager {
     `;
   }
 
-  private renderWindows(): void {
-    const existing = this.container.querySelectorAll(".desktop-window");
+  private _renderWindows(): void {
+    const existing = this._container.querySelectorAll(".desktop-window");
     for (const el of existing) {
       const id = (el as HTMLElement).getAttribute("data-win-id");
-      if (!id || !this.windows.some((w) => w.id === id && !w.minimized)) {
+      if (!id || !this._windows.some((w) => w.id === id && !w.minimized)) {
         el.remove();
       }
     }
-    for (const w of this.windows) {
+    for (const w of this._windows) {
       if (w.minimized) {
-        const el = this.container.querySelector(`.desktop-window[data-win-id="${w.id}"]`);
+        const el = this._container.querySelector(`.desktop-window[data-win-id="${w.id}"]`);
         if (el) el.remove();
       } else {
-        this.renderWindowElement(w);
+        this._renderWindowElement(w);
       }
     }
   }
 
-  private renderWindowPositions(): void {
-    for (const w of this.windows) {
+  private _renderWindowPositions(): void {
+    for (const w of this._windows) {
       if (w.minimized) continue;
-      const el = this.container.querySelector(`.desktop-window[data-win-id="${w.id}"]`) as HTMLElement;
+      const el = this._container.querySelector(`.desktop-window[data-win-id="${w.id}"]`) as HTMLElement;
       if (!el) continue;
       el.style.left = `${w.x}px`;
       el.style.top = `${w.y}px`;
@@ -991,10 +991,10 @@ export class DesktopManager {
     }
   }
 
-  private renderTerminalContentById(winId: string): void {
-    const w = this.windows.find((ww) => ww.id === winId);
+  private _renderTerminalContentById(winId: string): void {
+    const w = this._windows.find((ww) => ww.id === winId);
     if (!w || w.content.type !== "terminal") return;
-    const el = this.container.querySelector(`.desktop-window[data-win-id="${winId}"] .win-content`) as HTMLElement;
+    const el = this._container.querySelector(`.desktop-window[data-win-id="${winId}"] .win-content`) as HTMLElement;
     if (!el) return;
 
     w.content.preEl = w.content.preEl ?? document.createElement("pre");
@@ -1004,29 +1004,29 @@ export class DesktopManager {
     if (!pre.parentNode) el.appendChild(pre);
   }
 
-  private renderEditorContent(el: HTMLElement, winId: string, content: EditorContent): void {
+  private _renderEditorContent(el: HTMLElement, winId: string, content: EditorContent): void {
     const contentArea = el.querySelector(".win-content") as HTMLElement;
     if (!contentArea) return;
     if (contentArea.querySelector(".editor-textarea")) return;
 
     let fileText = "";
-    try { fileText = this.shell.vfs.readFile(content.path); } catch { /* new file */ }
+    try { fileText = this._shell.vfs.readFile(content.path); } catch { /* new file */ }
 
     contentArea.innerHTML = `
       <div class="editor-toolbar">
         <button class="editor-save-btn" data-win-id="${winId}">Save</button>
-        <span class="editor-path">${this.escapeHtml(content.path)}</span>
+        <span class="editor-path">${this._escapeHtml(content.path)}</span>
         <span class="editor-dirty" data-win-id="${winId}" style="display:none">●</span>
       </div>
-      <textarea class="editor-textarea" data-win-id="${winId}" spellcheck="false">${this.escapeHtml(fileText)}</textarea>
+      <textarea class="editor-textarea" data-win-id="${winId}" spellcheck="false">${this._escapeHtml(fileText)}</textarea>
     `;
 
   }
 
-  private saveEditor(winId: string): void {
-    const w = this.windows.find((ww) => ww.id === winId);
+  private _saveEditor(winId: string): void {
+    const w = this._windows.find((ww) => ww.id === winId);
     if (!w || w.content.type !== "editor") return;
-    const el = this.container.querySelector(`.desktop-window[data-win-id="${winId}"]`);
+    const el = this._container.querySelector(`.desktop-window[data-win-id="${winId}"]`);
     if (!el) return;
     const textarea = el.querySelector(".editor-textarea") as HTMLTextAreaElement | null;
     if (!textarea) return;
@@ -1044,7 +1044,7 @@ export class DesktopManager {
     }
 
     try {
-      this.shell.vfs.writeFile(w.content.path, textarea.value);
+      this._shell.vfs.writeFile(w.content.path, textarea.value);
       w.content.dirty = false;
       w.title = `Mousepad — ${w.content.path.split("/").pop()}`;
       const dirtyDot = el.querySelector(".editor-dirty") as HTMLElement | null;
@@ -1056,7 +1056,7 @@ export class DesktopManager {
     }
   }
 
-  private renderAboutContent(el: HTMLElement): void {
+  private _renderAboutContent(el: HTMLElement): void {
     const contentArea = el.querySelector(".win-content") as HTMLElement;
     if (!contentArea) return;
     contentArea.innerHTML = `
@@ -1064,20 +1064,20 @@ export class DesktopManager {
         <div class="about-logo"><i class="fa-brands fa-linux"></i></div>
         <h2>Fortune GNU/Linux 1.0 Nyx</h2>
         <p>A simulated Linux environment running entirely in your browser.</p>
-        <p>Kernel: ${this.shell.properties.kernel}</p>
-        <p>Architecture: ${this.shell.properties.arch}</p>
+        <p>Kernel: ${this._shell.properties.kernel}</p>
+        <p>Architecture: ${this._shell.properties.arch}</p>
         <p class="about-close-hint">Close this window to return</p>
       </div>
     `;
   }
 
-  private renderTaskManagerContent(el: HTMLElement, winId: string): void {
+  private _renderTaskManagerContent(el: HTMLElement, winId: string): void {
     const contentArea = el.querySelector(".win-content") as HTMLElement;
     if (!contentArea) return;
 
-    const sessions = this.shell.users.listActiveSessions();
-    const processes = this.shell.users.listProcesses();
-    const desktopWindows = this.windows.filter(w => w.id !== winId && w.content.type !== "taskmanager");
+    const sessions = this._shell.users.listActiveSessions();
+    const processes = this._shell.users.listProcesses();
+    const desktopWindows = this._windows.filter(w => w.id !== winId && w.content.type !== "taskmanager");
 
     let rows = "";
 
@@ -1090,7 +1090,7 @@ export class DesktopManager {
       rows += `<tr>
         <td>—</td>
         <td>root</td>
-        <td><i class="fa-solid ${icon}"></i> ${this.escapeHtml(w.title)}</td>
+        <td><i class="fa-solid ${icon}"></i> ${this._escapeHtml(w.title)}</td>
         <td>desktop</td>
         <td><span class="taskmgr-status running">running</span></td>
         <td><button class="taskmgr-close" data-win-id="${w.id}">Close</button></td>
@@ -1102,9 +1102,9 @@ export class DesktopManager {
       const pid = 1000 + i;
       rows += `<tr>
         <td>${pid}</td>
-        <td>${this.escapeHtml(s.username)}</td>
+        <td>${this._escapeHtml(s.username)}</td>
         <td>bash</td>
-        <td>${this.escapeHtml(s.tty)}</td>
+        <td>${this._escapeHtml(s.tty)}</td>
         <td><span class="taskmgr-status running">running</span></td>
         <td><button class="taskmgr-kill" data-pid="${pid}">Kill</button></td>
       </tr>`;
@@ -1113,9 +1113,9 @@ export class DesktopManager {
       const statusClass = p.status === "running" ? "running" : p.status === "stopped" ? "stopped" : "done";
       rows += `<tr>
         <td>${p.pid}</td>
-        <td>${this.escapeHtml(p.username)}</td>
-        <td>${this.escapeHtml(p.command)}</td>
-        <td>${this.escapeHtml(p.tty)}</td>
+        <td>${this._escapeHtml(p.username)}</td>
+        <td>${this._escapeHtml(p.command)}</td>
+        <td>${this._escapeHtml(p.tty)}</td>
         <td><span class="taskmgr-status ${statusClass}">${p.status}</span></td>
         <td><button class="taskmgr-kill" data-pid="${p.pid}">Kill</button></td>
       </tr>`;
@@ -1137,8 +1137,8 @@ export class DesktopManager {
     `;
   }
 
-  private updateClock(): void {
-    const panel = this.container.querySelector("#desktop-panel");
+  private _updateClock(): void {
+    const panel = this._container.querySelector("#desktop-panel");
     if (!panel) return;
     const now = new Date();
     const timeEl = panel.querySelector(".xfce-clock-time");
@@ -1147,8 +1147,8 @@ export class DesktopManager {
     if (dateEl) dateEl.textContent = now.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
   }
 
-  private showContextMenu(x: number, y: number, items: Array<{ label: string; icon: string; danger?: boolean; action: () => void }>): void {
-    this.closeContextMenu();
+  private _showContextMenu(x: number, y: number, items: Array<{ label: string; icon: string; danger?: boolean; action: () => void }>): void {
+    this._closeContextMenu();
     const menu = document.createElement("div");
     menu.className = "desktop-context-menu";
     menu.style.left = `${x}px`;
@@ -1157,7 +1157,7 @@ export class DesktopManager {
       const item = items[i]!;
       const el = document.createElement("div");
       el.className = `ctx-item${item.danger ? " ctx-danger" : ""}`;
-      el.innerHTML = `<i class="${item.icon}"></i><span>${this.escapeHtml(item.label)}</span>`;
+      el.innerHTML = `<i class="${item.icon}"></i><span>${this._escapeHtml(item.label)}</span>`;
       el.setAttribute("data-ctx-index", String(i));
       menu.appendChild(el);
     }
@@ -1167,21 +1167,21 @@ export class DesktopManager {
       if (!el) return;
       e.stopPropagation();
       const idx = Number(el.getAttribute("data-ctx-index"));
-      this.closeContextMenu();
+      this._closeContextMenu();
       items[idx]?.action();
     });
-    this.container.appendChild(menu);
+    this._container.appendChild(menu);
     // Clamp to viewport
     const rect = menu.getBoundingClientRect();
     if (rect.right > window.innerWidth) menu.style.left = `${x - rect.width}px`;
     if (rect.bottom > window.innerHeight) menu.style.top = `${y - rect.height}px`;
   }
 
-  private closeContextMenu(): void {
-    this.container.querySelector(".desktop-context-menu")?.remove();
+  private _closeContextMenu(): void {
+    this._container.querySelector(".desktop-context-menu")?.remove();
   }
 
-  private escapeHtml(s: string): string {
+  private _escapeHtml(s: string): string {
     return s
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")

@@ -109,21 +109,21 @@ const perf: PerfLogger = createPerfLogger("VirtualUserManager");
  * ```
  */
 export class VirtualUserManager extends EventEmitter {
-	private static readonly recordCache = new Map<string, VirtualUserRecord>();
-	private static readonly fastPasswordHash = resolveFastPasswordHash();
-	private readonly usersPath = "/etc/htpasswd";
-	private readonly sudoersPath = "/etc/sudoers";
-	private readonly quotasPath = "/etc/quotas";
-	private readonly authDirPath = "/.virtual-env-js/.auth";
-	private readonly users = new Map<string, VirtualUserRecord>();
-	private readonly sudoers = new Set<string>();
-	private readonly quotas = new Map<string, number>();
-	private readonly activeSessions = new Map<string, VirtualActiveSession>();
-	private readonly activeProcesses = new Map<number, VirtualProcess>();
-	private nextTty = 0;
-	private nextPid = 1000;
-	private nextUid = 1001;
-	private nextGid = 1001;
+	private static readonly _recordCache = new Map<string, VirtualUserRecord>();
+	private static readonly _fastPasswordHash = resolveFastPasswordHash();
+	private readonly _usersPath = "/etc/htpasswd";
+	private readonly _sudoersPath = "/etc/sudoers";
+	private readonly _quotasPath = "/etc/quotas";
+	private readonly _authDirPath = "/.virtual-env-js/.auth";
+	private readonly _users = new Map<string, VirtualUserRecord>();
+	private readonly _sudoers = new Set<string>();
+	private readonly _quotas = new Map<string, number>();
+	private readonly _activeSessions = new Map<string, VirtualActiveSession>();
+	private readonly _activeProcesses = new Map<number, VirtualProcess>();
+	private _nextTty = 0;
+	private _nextPid = 1000;
+	private _nextUid = 1001;
+	private _nextGid = 1001;
 
 	/**
 	 * Creates a user manager instance backed by a virtual filesystem.
@@ -132,10 +132,10 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param autoSudoForNewUsers Whether newly created users are added to sudoers.
 	 */
 	constructor(
-		private readonly vfs: VirtualFileSystem,
+		private readonly _vfs: VirtualFileSystem,
 		// private readonly defaultRootPassword: string = process.env
 		// .SSH_MIMIC_ROOT_PASSWORD || "root",
-		private readonly autoSudoForNewUsers: boolean = false,
+		private readonly _autoSudoForNewUsers: boolean = false,
 	) {
 		super();
 		perf.mark("constructor");
@@ -147,22 +147,22 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public async initialize(): Promise<void> {
 		perf.mark("initialize");
-		this.loadFromVfs();
-		this.loadSudoersFromVfs();
-		this.loadQuotasFromVfs();
+		this._loadFromVfs();
+		this._loadSudoersFromVfs();
+		this._loadQuotasFromVfs();
 
 		let changed = false;
-		if (!this.users.has("root")) {
-			this.users.set("root", this.createRecord("root", ""));
+		if (!this._users.has("root")) {
+			this._users.set("root", this._createRecord("root", ""));
 			changed = true;
 		}
 
-		this.sudoers.add("root");
+		this._sudoers.add("root");
 
 		const homePath = "/root";
-		if (!this.vfs.exists(homePath)) {
-			this.vfs.mkdir(homePath, 0o755);
-			this.vfs.writeFile(
+		if (!this._vfs.exists(homePath)) {
+			this._vfs.mkdir(homePath, 0o755);
+			this._vfs.writeFile(
 				`${homePath}/README.txt`,
 				`Welcome to the virtual environment, root`,
 			);
@@ -185,8 +185,8 @@ export class VirtualUserManager extends EventEmitter {
 		maxBytes: number,
 	): Promise<void> {
 		perf.mark("setQuotaBytes");
-		this.validateUsername(username);
-		if (!this.users.has(username)) {
+		this._validateUsername(username);
+		if (!this._users.has(username)) {
 			throw new Error(`quota: user '${username}' does not exist`);
 		}
 
@@ -194,7 +194,7 @@ export class VirtualUserManager extends EventEmitter {
 			throw new Error("quota: maxBytes must be a non-negative number");
 		}
 
-		this.quotas.set(username, Math.floor(maxBytes));
+		this._quotas.set(username, Math.floor(maxBytes));
 		await this.persist();
 	}
 
@@ -205,8 +205,8 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public async clearQuota(username: string): Promise<void> {
 		perf.mark("clearQuota");
-		this.validateUsername(username);
-		this.quotas.delete(username);
+		this._validateUsername(username);
+		this._quotas.delete(username);
 		await this.persist();
 	}
 
@@ -218,7 +218,7 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public getQuotaBytes(username: string): number | null {
 		perf.mark("getQuotaBytes");
-		return this.quotas.get(username) ?? null;
+		return this._quotas.get(username) ?? null;
 	}
 
 	/**
@@ -230,11 +230,11 @@ export class VirtualUserManager extends EventEmitter {
 	public getUsageBytes(username: string): number {
 		perf.mark("getUsageBytes");
 		const homePath = username === "root" ? "/root" : `/home/${username}`;
-		if (!this.vfs.exists(homePath)) {
+		if (!this._vfs.exists(homePath)) {
 			return 0;
 		}
 
-		return this.vfs.getUsageBytes(homePath);
+		return this._vfs.getUsageBytes(homePath);
 	}
 
 	/**
@@ -252,7 +252,7 @@ export class VirtualUserManager extends EventEmitter {
 		nextContent: string | Buffer,
 	): void {
 		perf.mark("assertWriteWithinQuota");
-		const quota = this.quotas.get(username);
+		const quota = this._quotas.get(username);
 		if (quota === undefined) {
 			return;
 		}
@@ -267,8 +267,8 @@ export class VirtualUserManager extends EventEmitter {
 
 		const currentUsage = this.getUsageBytes(username);
 		let existingSize = 0;
-		if (this.vfs.exists(normalizedPath)) {
-			const existing = this.vfs.stat(normalizedPath);
+		if (this._vfs.exists(normalizedPath)) {
+			const existing = this._vfs.stat(normalizedPath);
 			if (existing.type === "file") {
 				existingSize = existing.size;
 			}
@@ -295,7 +295,7 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public verifyPassword(username: string, password: string): boolean {
 		perf.mark("verifyPassword");
-		const record = this.users.get(username);
+		const record = this._users.get(username);
 		if (!record) {
 			// Perform a dummy hash to avoid timing leakage on unknown usernames
 			this.hashPassword(password, "");
@@ -323,25 +323,25 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public async addUser(username: string, password: string): Promise<void> {
 		perf.mark("addUser");
-		this.validateUsername(username);
-		this.validatePassword(password);
+		this._validateUsername(username);
+		this._validatePassword(password);
 
-		if (this.users.has(username)) {
+		if (this._users.has(username)) {
 			return;
 			// throw new Error(`adduser: user '${username}' already exists`);
 		}
 
-		this.users.set(username, this.createRecord(username, password));
-		if (this.autoSudoForNewUsers) {
-			this.sudoers.add(username);
+		this._users.set(username, this._createRecord(username, password));
+		if (this._autoSudoForNewUsers) {
+			this._sudoers.add(username);
 		}
-		const record = this.users.get(username)!;
+		const record = this._users.get(username)!;
 		const uid = record.uid;
 		const gid = record.gid;
 		const homePath = username === "root" ? "/root" : `/home/${username}`;
-		if (!this.vfs.exists(homePath)) {
-			this.vfs.mkdir(homePath, 0o700, uid, gid);
-			this.vfs.writeFile(
+		if (!this._vfs.exists(homePath)) {
+			this._vfs.mkdir(homePath, 0o700, uid, gid);
+			this._vfs.writeFile(
 				`${homePath}/README.txt`,
 				`Welcome to the virtual environment, ${username}`,
 				{},
@@ -360,26 +360,26 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param username - Username to ensure exists.
 	 */
 	public ensureUser(username: string): void {
-		if (this.users.has(username)) return;
+		if (this._users.has(username)) return;
 		if (username === "root") {
-			this.users.set("root", this.createRecord("root", ""));
+			this._users.set("root", this._createRecord("root", ""));
 			return;
 		}
-		this.users.set(username, this.createRecord(username, ""));
-		if (this.autoSudoForNewUsers) {
-			this.sudoers.add(username);
+		this._users.set(username, this._createRecord(username, ""));
+		if (this._autoSudoForNewUsers) {
+			this._sudoers.add(username);
 		}
-		const uid = this.nextUid - 1;
-		const gid = this.nextGid - 1;
+		const uid = this._nextUid - 1;
+		const gid = this._nextGid - 1;
 		const homePath = `/home/${username}`;
-		if (!this.vfs.exists(homePath)) {
-			this.vfs.mkdir(homePath, 0o700, uid, gid);
+		if (!this._vfs.exists(homePath)) {
+			this._vfs.mkdir(homePath, 0o700, uid, gid);
 		} else {
 			// Ensure existing home dir is owned by the user
-			try { this.vfs.chown(homePath, uid, gid, 0); } catch { /* best-effort */ }
+			try { this._vfs.chown(homePath, uid, gid, 0); } catch { /* best-effort */ }
 		}
-		if (!this.vfs.exists(`${homePath}/README.txt`)) {
-			this.vfs.writeFile(
+		if (!this._vfs.exists(`${homePath}/README.txt`)) {
+			this._vfs.writeFile(
 				`${homePath}/README.txt`,
 				`Welcome to the virtual environment, ${username}`,
 				{},
@@ -399,7 +399,7 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public getPasswordHash(username: string): string | null {
 		perf.mark("getPasswordHash");
-		const record = this.users.get(username);
+		const record = this._users.get(username);
 		return record ? record.passwordHash : null;
 	}
 
@@ -412,14 +412,14 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public async setPassword(username: string, password: string): Promise<void> {
 		perf.mark("setPassword");
-		this.validateUsername(username);
-		this.validatePassword(password);
+		this._validateUsername(username);
+		this._validatePassword(password);
 
-		if (!this.users.has(username)) {
+		if (!this._users.has(username)) {
 			throw new Error(`passwd: user '${username}' does not exist`);
 		}
 
-		this.users.set(username, this.createRecord(username, password));
+		this._users.set(username, this._createRecord(username, password));
 		await this.persist();
 	}
 
@@ -431,17 +431,17 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public async deleteUser(username: string): Promise<void> {
 		perf.mark("deleteUser");
-		this.validateUsername(username);
+		this._validateUsername(username);
 
 		if (username === "root") {
 			throw new Error("deluser: cannot delete root");
 		}
 
-		if (!this.users.delete(username)) {
+		if (!this._users.delete(username)) {
 			throw new Error(`deluser: user '${username}' does not exist`);
 		}
 
-		this.sudoers.delete(username);
+		this._sudoers.delete(username);
 
 		this.emit("user:delete", { username });
 		await this.persist();
@@ -455,7 +455,7 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public isSudoer(username: string): boolean {
 		perf.mark("isSudoer");
-		return this.sudoers.has(username);
+		return this._sudoers.has(username);
 	}
 
 	/**
@@ -466,12 +466,12 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public async addSudoer(username: string): Promise<void> {
 		perf.mark("addSudoer");
-		this.validateUsername(username);
-		if (!this.users.has(username)) {
+		this._validateUsername(username);
+		if (!this._users.has(username)) {
 			throw new Error(`sudoers: user '${username}' does not exist`);
 		}
 
-		this.sudoers.add(username);
+		this._sudoers.add(username);
 		await this.persist();
 	}
 
@@ -483,12 +483,12 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public async removeSudoer(username: string): Promise<void> {
 		perf.mark("removeSudoer");
-		this.validateUsername(username);
+		this._validateUsername(username);
 		if (username === "root") {
 			throw new Error("sudoers: cannot remove root");
 		}
 
-		this.sudoers.delete(username);
+		this._sudoers.delete(username);
 		await this.persist();
 	}
 
@@ -510,11 +510,11 @@ export class VirtualUserManager extends EventEmitter {
 		const session: VirtualActiveSession = {
 			id: randomUUID(),
 			username,
-			tty: `pts/${this.nextTty++}`,
+			tty: `pts/${this._nextTty++}`,
 			remoteAddress,
 			startedAt: new Date().toISOString(),
 		};
-		this.activeSessions.set(session.id, session);
+		this._activeSessions.set(session.id, session);
 		this.emit("session:register", {
 			sessionId: session.id,
 			username,
@@ -536,8 +536,8 @@ export class VirtualUserManager extends EventEmitter {
 			return;
 		}
 
-		const session = this.activeSessions.get(sessionId);
-		this.activeSessions.delete(sessionId);
+		const session = this._activeSessions.get(sessionId);
+		this._activeSessions.delete(sessionId);
 		if (session) {
 			this.emit("session:unregister", {
 				sessionId,
@@ -567,12 +567,12 @@ export class VirtualUserManager extends EventEmitter {
 			return;
 		}
 
-		const session = this.activeSessions.get(sessionId);
+		const session = this._activeSessions.get(sessionId);
 		if (!session) {
 			return;
 		}
 
-		this.activeSessions.set(sessionId, {
+		this._activeSessions.set(sessionId, {
 			...session,
 			username,
 			remoteAddress,
@@ -588,7 +588,7 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public listActiveSessions(): VirtualActiveSession[] {
 		perf.mark("listActiveSessions");
-		return Array.from(this.activeSessions.values()).sort((left, right) =>
+		return Array.from(this._activeSessions.values()).sort((left, right) =>
 			left.startedAt.localeCompare(right.startedAt),
 		);
 	}
@@ -599,7 +599,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns Array of username strings sorted alphabetically.
 	 */
 	public listUsers(): string[] {
-		return Array.from(this.users.keys()).sort();
+		return Array.from(this._users.keys()).sort();
 	}
 
 	/**
@@ -608,7 +608,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns UID number (0 if user not found).
 	 */
 	public getUid(username: string): number {
-		return this.users.get(username)?.uid ?? 0;
+		return this._users.get(username)?.uid ?? 0;
 	}
 
 	/**
@@ -617,7 +617,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns GID number (0 if user not found).
 	 */
 	public getGid(username: string): number {
-		return this.users.get(username)?.gid ?? 0;
+		return this._users.get(username)?.gid ?? 0;
 	}
 
 	/**
@@ -626,7 +626,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns Username string, or null if UID not found.
 	 */
 	public getUsername(uid: number): string | null {
-		for (const [name, record] of this.users) {
+		for (const [name, record] of this._users) {
 			if (record.uid === uid) return name;
 		}
 		return null;
@@ -638,7 +638,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns Group/username string, or null if GID not found.
 	 */
 	public getGroup(gid: number): string | null {
-		for (const [name, record] of this.users) {
+		for (const [name, record] of this._users) {
 			if (record.gid === gid) return name;
 		}
 		return null;
@@ -663,8 +663,8 @@ export class VirtualUserManager extends EventEmitter {
 		abortController?: AbortController,
 		ppid = 1,
 	): number {
-		const pid = this.nextPid++;
-		this.activeProcesses.set(pid, {
+		const pid = this._nextPid++;
+		this._activeProcesses.set(pid, {
 			pid,
 			ppid,
 			username,
@@ -685,13 +685,13 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param pid - PID of the process to unregister.
 	 */
 	public unregisterProcess(pid: number): void {
-		const proc = this.activeProcesses.get(pid);
+		const proc = this._activeProcesses.get(pid);
 		if (proc) {
 			proc.status = "done";
 			// Emit SIGCHLD to parent
 			this.emit("SIGCHLD", proc.ppid, pid);
 		}
-		this.activeProcesses.delete(pid);
+		this._activeProcesses.delete(pid);
 	}
 
 	/**
@@ -700,7 +700,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param pid - PID of the process to mark as done.
 	 */
 	public markProcessDone(pid: number): void {
-		const proc = this.activeProcesses.get(pid);
+		const proc = this._activeProcesses.get(pid);
 		if (proc) {
 			proc.status = "done";
 			this.emit("SIGCHLD", proc.ppid, pid);
@@ -712,7 +712,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns The process list.
 	 */
 	public listProcesses(): VirtualProcess[] {
-		return Array.from(this.activeProcesses.values()).sort((a, b) => a.pid - b.pid);
+		return Array.from(this._activeProcesses.values()).sort((a, b) => a.pid - b.pid);
 	}
 
 	/**
@@ -723,7 +723,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns True if the process was found and signalled, false if PID not found.
 	 */
 	public killProcess(pid: number, signal = 15): boolean {
-		const proc = this.activeProcesses.get(pid);
+		const proc = this._activeProcesses.get(pid);
 		if (!proc) return false;
 
 		// SIGKILL (9) and SIGSTOP (19) cannot be caught
@@ -770,7 +770,7 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public killAllUserProcesses(username: string, signal = 15): number {
 		let count = 0;
-		for (const [pid, proc] of this.activeProcesses) {
+		for (const [pid, proc] of this._activeProcesses) {
 			if (proc.username === username) {
 				if (this.killProcess(pid, signal)) count++;
 			}
@@ -784,17 +784,17 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns VirtualProcess object if found, or undefined.
 	 */
 	public getProcess(pid: number): VirtualProcess | undefined {
-		return this.activeProcesses.get(pid);
+		return this._activeProcesses.get(pid);
 	}
 
-	private loadFromVfs(): void {
-		this.users.clear();
+	private _loadFromVfs(): void {
+		this._users.clear();
 
-		if (!this.vfs.exists(this.usersPath)) {
+		if (!this._vfs.exists(this._usersPath)) {
 			return;
 		}
 
-		const raw = this.vfs.readFile(this.usersPath);
+		const raw = this._vfs.readFile(this._usersPath);
 		for (const line of raw.split("\n")) {
 			const trimmed = line.trim();
 			if (trimmed.length === 0) {
@@ -812,41 +812,41 @@ export class VirtualUserManager extends EventEmitter {
 				if (!username || !salt || !passwordHash) continue;
 				const uid = parseInt(uidStr ?? "1001", 10);
 				const gid = parseInt(gidStr ?? "1001", 10);
-				this.users.set(username, { username, uid, gid, salt, passwordHash });
+				this._users.set(username, { username, uid, gid, salt, passwordHash });
 			} else {
 				const [username, salt, passwordHash] = parts;
 				if (!username || !salt || !passwordHash) continue;
-				const uid = username === "root" ? 0 : this.nextUid++;
-				const gid = username === "root" ? 0 : this.nextGid++;
-				this.users.set(username, { username, uid, gid, salt, passwordHash });
+				const uid = username === "root" ? 0 : this._nextUid++;
+				const gid = username === "root" ? 0 : this._nextGid++;
+				this._users.set(username, { username, uid, gid, salt, passwordHash });
 			}
 		}
 	}
 
-	private loadSudoersFromVfs(): void {
-		this.sudoers.clear();
+	private _loadSudoersFromVfs(): void {
+		this._sudoers.clear();
 
-		if (!this.vfs.exists(this.sudoersPath)) {
+		if (!this._vfs.exists(this._sudoersPath)) {
 			return;
 		}
 
-		const raw = this.vfs.readFile(this.sudoersPath);
+		const raw = this._vfs.readFile(this._sudoersPath);
 		for (const line of raw.split("\n")) {
 			const username = line.trim();
 			if (username.length > 0) {
-				this.sudoers.add(username);
+				this._sudoers.add(username);
 			}
 		}
 	}
 
-	private loadQuotasFromVfs(): void {
-		this.quotas.clear();
+	private _loadQuotasFromVfs(): void {
+		this._quotas.clear();
 
-		if (!this.vfs.exists(this.quotasPath)) {
+		if (!this._vfs.exists(this._quotasPath)) {
 			return;
 		}
 
-		const raw = this.vfs.readFile(this.quotasPath);
+		const raw = this._vfs.readFile(this._quotasPath);
 		for (const line of raw.split("\n")) {
 			const trimmed = line.trim();
 			if (trimmed.length === 0) {
@@ -859,75 +859,75 @@ export class VirtualUserManager extends EventEmitter {
 				continue;
 			}
 
-			this.quotas.set(username, bytes);
+			this._quotas.set(username, bytes);
 		}
 	}
 
 	private async persist(): Promise<void> {
-		if (!this.vfs.exists(this.authDirPath)) {
-			this.vfs.mkdir(this.authDirPath, 0o700);
+		if (!this._vfs.exists(this._authDirPath)) {
+			this._vfs.mkdir(this._authDirPath, 0o700);
 		}
 
-		const authContent = Array.from(this.users.values())
+		const authContent = Array.from(this._users.values())
 			.sort((left, right) => left.username.localeCompare(right.username))
 			.map((record) =>
 				[record.username, record.uid, record.gid, record.salt, record.passwordHash].join(":"),
 			)
 			.join("\n");
-		const sudoersContent = Array.from(this.sudoers.values()).sort().join("\n");
-		const quotasContent = Array.from(this.quotas.entries())
+		const sudoersContent = Array.from(this._sudoers.values()).sort().join("\n");
+		const quotasContent = Array.from(this._quotas.entries())
 			.sort(([left], [right]) => left.localeCompare(right))
 			.map(([username, maxBytes]) => `${username}:${maxBytes}`)
 			.join("\n");
 
 		let changed = false;
 		changed =
-			this.writeIfChanged(
-				this.usersPath,
+			this._writeIfChanged(
+				this._usersPath,
 				authContent.length > 0 ? `${authContent}\n` : "",
 				0o600,
 			) || changed;
 		changed =
-			this.writeIfChanged(
-				this.sudoersPath,
+			this._writeIfChanged(
+				this._sudoersPath,
 				sudoersContent.length > 0 ? `${sudoersContent}\n` : "",
 				0o600,
 			) || changed;
 		changed =
-			this.writeIfChanged(
-				this.quotasPath,
+			this._writeIfChanged(
+				this._quotasPath,
 				quotasContent.length > 0 ? `${quotasContent}\n` : "",
 				0o600,
 			) || changed;
 
 		if (changed) {
-			await this.vfs.flushMirror();
+			await this._vfs.flushMirror();
 		}
 	}
 
-	private writeIfChanged(
+	private _writeIfChanged(
 		targetPath: string,
 		content: string,
 		mode: number,
 	): boolean {
-		if (this.vfs.exists(targetPath)) {
-			const existing = this.vfs.readFile(targetPath);
+		if (this._vfs.exists(targetPath)) {
+			const existing = this._vfs.readFile(targetPath);
 			if (existing === content) {
-				this.vfs.chmod(targetPath, mode);
+				this._vfs.chmod(targetPath, mode);
 				return false;
 			}
 		}
 
-		this.vfs.writeFile(targetPath, content, { mode });
+		this._vfs.writeFile(targetPath, content, { mode });
 		return true;
 	}
 
-	private createRecord(username: string, password: string, uid?: number, gid?: number): VirtualUserRecord {
-		const assignedUid = uid ?? (username === "root" ? 0 : this.nextUid++);
-		const assignedGid = gid ?? (username === "root" ? 0 : this.nextGid++);
+	private _createRecord(username: string, password: string, uid?: number, gid?: number): VirtualUserRecord {
+		const assignedUid = uid ?? (username === "root" ? 0 : this._nextUid++);
+		const assignedGid = gid ?? (username === "root" ? 0 : this._nextGid++);
 		// Cache key is a hash of the inputs — never store plaintext password in memory
 		const cacheKey = createHash("sha256").update(username).update(":").update(password).digest("hex");
-		const cached = VirtualUserManager.recordCache.get(cacheKey);
+		const cached = VirtualUserManager._recordCache.get(cacheKey);
 		if (cached) {
 			return cached;
 		}
@@ -942,7 +942,7 @@ export class VirtualUserManager extends EventEmitter {
 			passwordHash: this.hashPassword(password, salt),
 		};
 
-		VirtualUserManager.recordCache.set(cacheKey, record);
+		VirtualUserManager._recordCache.set(cacheKey, record);
 		return record;
 	}
 
@@ -957,7 +957,7 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public hasPassword(username: string): boolean {
 		perf.mark("hasPassword");
-		const record = this.users.get(username);
+		const record = this._users.get(username);
 		if (!record) return false;
 		// Empty password hash computed with the record's own salt
 		const emptyHash = this.hashPassword("", record.salt);
@@ -984,7 +984,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns The result string.
 	 */
 	public hashPassword(password: string, salt = ""): string {
-		if (VirtualUserManager.fastPasswordHash) {
+		if (VirtualUserManager._fastPasswordHash) {
 			return createHash("sha256")
 				.update(salt)
 				.update(password)
@@ -994,7 +994,7 @@ export class VirtualUserManager extends EventEmitter {
 		return scryptSync(password, salt || "", 32).toString("hex");
 	}
 
-	private validateUsername(username: string): void {
+	private _validateUsername(username: string): void {
 		if (!username || username.trim() === "") {
 			throw new Error("invalid username");
 		}
@@ -1004,12 +1004,12 @@ export class VirtualUserManager extends EventEmitter {
 		}
 	}
 
-	private validatePassword(password: string): void {
+	private _validatePassword(password: string): void {
 		if (!password || password.trim() === "") {
 			throw new Error("invalid password");
 		}
 	}
-	private readonly authorizedKeys = new Map<
+	private readonly _authorizedKeys = new Map<
 		string,
 		Array<{ algo: string; data: Buffer }>
 	>();
@@ -1023,9 +1023,9 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public addAuthorizedKey(username: string, algo: string, data: Buffer): void {
 		perf.mark("addAuthorizedKey");
-		const keys = this.authorizedKeys.get(username) ?? [];
+		const keys = this._authorizedKeys.get(username) ?? [];
 		keys.push({ algo, data });
-		this.authorizedKeys.set(username, keys);
+		this._authorizedKeys.set(username, keys);
 		this.emit("key:add", { username, algo });
 	}
 
@@ -1035,7 +1035,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param username Target user.
 	 */
 	public removeAuthorizedKeys(username: string): void {
-		this.authorizedKeys.delete(username);
+		this._authorizedKeys.delete(username);
 		this.emit("key:remove", { username });
 	}
 
@@ -1049,7 +1049,7 @@ export class VirtualUserManager extends EventEmitter {
 	public getAuthorizedKeys(
 		username: string,
 	): Array<{ algo: string; data: Buffer }> {
-		return this.authorizedKeys.get(username) ?? [];
+		return this._authorizedKeys.get(username) ?? [];
 	}
 }
 
