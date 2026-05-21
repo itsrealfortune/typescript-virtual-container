@@ -2,9 +2,9 @@
 
 ## Overview
 
-- **706 tests** (686 pass, 20 skip, 0 fail)
-- **~~15~~ 17 files**, ~~1121~~ 1171 expect() calls
-- **~1.49s** runtime (default, without network/SFTP)
+- **845 tests** (824 pass, 21 skip, 0 fail)
+- **22 files**, 1367 expect() calls
+- **~2.73s** runtime (default, without network/SFTP)
 - **73.93% line coverage**, 72.54% function coverage
 
 ## Running Tests
@@ -52,10 +52,11 @@ bun test tests/permissions.test.ts
 | `sftp.test.ts` | 238ms | 5 (skipped) |
 | `ssh-exec.test.ts` | 365ms | 1 |
 | `permissions.test.ts` | 85ms | 20 |
+| `network-upgrades.test.ts` | ~1s | 28 |
 | `expand.test.ts` | 73ms | 31 |
 | `command-helpers.test.ts` | 40ms | 17 |
 | `helpers.test.ts` | 37ms | 15 |
-| **Total** | **~1.35s** | **706** |
+| **Total** | **~2.73s** | **845** |
 
 ## File-by-file Coverage
 
@@ -90,6 +91,11 @@ bun test tests/permissions.test.ts
 | `id.ts` | 100% | 100% | ✅ |
 | `ip.ts` | 76% | 100% | ✅ |
 | `iptables.ts` | 92% | 67% | ✅ |
+| `tc.ts` | — | — | ✅ (network-upgrades.test.ts) |
+| `ss.ts` | — | — | ✅ (network-upgrades.test.ts) |
+| `traceroute.ts` | — | — | ✅ (network-upgrades.test.ts) |
+| `conntrack.ts` | — | — | ✅ (network-upgrades.test.ts) |
+| `ifconfig.ts` | — | — | ✅ (network-upgrades.test.ts) |
 | `kill.ts` | 67% | 100% | ✅ |
 | `ln.ts` | 86% | 100% | ✅ |
 | `ls.ts` | 95% | 95% | ✅ |
@@ -149,6 +155,18 @@ bun test tests/permissions.test.ts
 | `VirtualShell/index.ts` | 56% | 52% | 🔶 shell API layer |
 | `VirtualShell/shellParser.ts` | 92% | 100% | ✅ |
 | `VirtualPackageManager/index.ts` | 99% | 94% | ✅ |
+
+### Network modules
+
+| File | Lines | Funcs | Status |
+|------|-------|-------|--------|
+| `VirtualNetworkManager/index.ts` | — | — | ✅ (network-upgrades.test.ts) |
+| `VirtualNetworkManager/types.ts` | — | — | ✅ types only |
+| `VirtualSwitch/index.ts` | — | — | ✅ (virtual-switch.test.ts + network-upgrades.test.ts) |
+| `VirtualSwitch/types.ts` | — | — | ✅ types only |
+| `VirtualSwitch/helpers.ts` | — | — | ✅ (virtual-switch.test.ts) |
+| `VirtualVpn/index.ts` | — | — | ✅ (virtual-switch.test.ts) |
+| `VirtualProxy.ts` | — | — | ✅ (virtual-switch.test.ts) |
 
 ### Untestable / Skipped (interactive or protocol-level)
 
