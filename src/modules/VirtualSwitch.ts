@@ -279,7 +279,7 @@ export class VirtualSwitch {
 		this.trafficRules.delete(target);
 	}
 
-	private _applyTrafficShape(_mac: MacAddress, baseLatency: number): number {
+	private _applyTrafficShape(baseLatency: number): number {
 		let latency = baseLatency;
 		for (const rule of this.trafficRules.values()) {
 			if (rule.latencyMs) latency += rule.latencyMs;
@@ -437,7 +437,7 @@ export class VirtualSwitch {
 			if (dstPort) {
 				// Traffic shaping
 				let latency = 0.5 + Math.random() * 2;
-				latency = this._applyTrafficShape(packet.srcMac, latency);
+				latency = this._applyTrafficShape(latency);
 				if (latency < 0) return { action: "DROP", latencyMs: 0 };
 
 				// Bandwidth accounting

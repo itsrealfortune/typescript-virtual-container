@@ -206,7 +206,6 @@ export function startShell(
 			await startNanoEditor(
 				result.openEditor.targetPath,
 				result.openEditor.initialContent,
-				result.openEditor.tempPath,
 			);
 			return;
 		}
@@ -270,7 +269,6 @@ export function startShell(
 	function startNanoEditor(
 		targetPath: string,
 		initialContent: string,
-		_tempPath: string,
 	): void {
 		interactivePid = shell.users.registerProcess(authUser, "nano", ["nano", targetPath], shellEnv.vars.__TTY ?? "?");
 		const editor = new NanoEditor({
@@ -704,7 +702,6 @@ export function startShell(
 						await startNanoEditor(
 							result.openEditor.targetPath,
 							result.openEditor.initialContent,
-							result.openEditor.tempPath,
 						);
 						return;
 					}

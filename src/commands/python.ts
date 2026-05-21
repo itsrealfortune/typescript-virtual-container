@@ -596,7 +596,7 @@ class Interpreter {
 				const callArgs = argsInner.trim()
 					? this.splitArgs(argsInner).map((a) => this.pyEval(a, scope))
 					: [];
-				return this.callMethod(obj, attr, callArgs, scope);
+				return this.callMethod(obj, attr, callArgs);
 			}
 			return this.getAttr(obj, attr, scope);
 		}
@@ -896,7 +896,6 @@ class Interpreter {
 		obj: PyVal,
 		method: string,
 		args: PyVal[],
-		_scope: Scope,
 	): PyVal {
 		// String methods
 		if (typeof obj === "string") {
@@ -1253,7 +1252,7 @@ class Interpreter {
 		if (scope.has(name)) {
 			const fn: PyVal = scope.get(name) ?? NONE;
 			if (isPyFunc(fn)) return this.callFunc(fn, args, scope);
-			if (isPyClass(fn)) return this.instantiate(fn as PyClass, args, scope);
+			if (isPyClass(fn)) return this.instantiate(fn as PyClass, args);
 			return fn;
 		}
 
@@ -1595,10 +1594,10 @@ class Interpreter {
 		}
 	}
 
-	private instantiate(cls: PyClass, args: PyVal[], scope: Scope): PyInstance {
+	private instantiate(cls: PyClass, args: PyVal[]): PyInstance {
 		const inst: PyInstance = { __pytype__: "instance", cls, attrs: new Map() };
 		const init = cls.methods.get("__init__");
-		if (init) this.callMethod(inst, "__init__", args, scope);
+		if (init) this.callMethod(inst, "__init__", args);
 		return inst;
 	}
 

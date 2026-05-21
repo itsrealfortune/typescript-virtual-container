@@ -51,7 +51,7 @@ export const chownCommand: ShellModule = {
 					}
 				}
 				if (groupPart) {
-					gid = resolveGroup(shell, groupPart);
+					gid = resolveGroup(groupPart);
 					if (gid === null) {
 						return { stderr: `chown: invalid group: ${groupPart}`, exitCode: 1 };
 					}
@@ -76,7 +76,7 @@ function resolveUser(shell: { users: { getUid: (u: string) => number; listUsers:
 	return null;
 }
 
-function resolveGroup(_shell: { users: { getGid: (u: string) => number } }, name: string): number | null {
+function resolveGroup(name: string): number | null {
 	const num = parseInt(name, 10);
 	if (!Number.isNaN(num)) return num;
 	return 0; // fallback: root group

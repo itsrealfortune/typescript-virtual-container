@@ -128,7 +128,7 @@ function renderDetail(mod: ShellModule): string {
  * @category shell
  * @params ["[command]"]
  */
-export function createHelpCommand(_getNames: () => string[]): ShellModule {
+export function createHelpCommand(): ShellModule {
 	return {
 		name: "help",
 		description: "List all commands, or show usage for a specific command",

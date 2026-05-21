@@ -239,7 +239,6 @@ async function runReadlineShell(): Promise<void> {
 	function startNanoEditor(
 		targetPath: string,
 		initialContent: string,
-		_tempPath: string,
 	): Promise<void> {
 		return new Promise<void>((resolve) => {
 			const stream: import("./types/streams").ShellStream = {
@@ -471,7 +470,6 @@ async function runReadlineShell(): Promise<void> {
 			await startNanoEditor(
 				result.openEditor.targetPath,
 				result.openEditor.initialContent,
-				result.openEditor.tempPath,
 			);
 			prompt();
 			return;

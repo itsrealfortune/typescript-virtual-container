@@ -528,7 +528,6 @@ function writeProcPid(
 	vfs: VirtualFileSystem,
 	pid: number,
 	username: string,
-	_tty: string,
 	cmdline: string,
 	startedAt: string,
 	env: Record<string, string>,
@@ -1164,12 +1163,12 @@ export function refreshProc(
 	);
 
 	// init process (PID 1)
-	writeProcPid(vfs, 1, "root", "pts/0", "/sbin/init", new Date(shellStartTime).toISOString(), {});
+	writeProcPid(vfs, 1, "root", "/sbin/init", new Date(shellStartTime).toISOString(), {});
 
 	// per-session processes
 	for (const session of sessions) {
 		const pid = ttyToPid(session.tty);
-		writeProcPid(vfs, pid, session.username, session.tty, "bash", session.startedAt, {
+		writeProcPid(vfs, pid, session.username, "bash", session.startedAt, {
 			USER:     session.username,
 			HOME:     `/home/${session.username}`,
 			TERM:     "xterm-256color",

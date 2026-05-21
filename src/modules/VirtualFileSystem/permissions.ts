@@ -134,7 +134,6 @@ export function enforceDelete(
  * @param uid - User ID attempting the chown operation.
  */
 export function enforceChown(
-	_targetPath: string,
 	uid: number,
 ): void {
 	if (uid !== 0) {
