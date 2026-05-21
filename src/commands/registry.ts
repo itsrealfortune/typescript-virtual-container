@@ -117,6 +117,11 @@ import { topCommand } from "./top";
 import { startxfce4Command } from "./startxfce4";
 import { thunarCommand } from "./xfceDesktop";
 import { mousepadCommand } from "./mousepad";
+import { tcCommand } from "./tc";
+import { ssCommand } from "./ss";
+import { tracerouteCommand } from "./traceroute";
+import { conntrackCommand } from "./conntrack";
+import { ifconfigCommand } from "./ifconfig";
 
 const BASE_COMMANDS: ShellModule[] = [
 	// Navigation
@@ -231,6 +236,11 @@ const BASE_COMMANDS: ShellModule[] = [
 	wgetCommand,
 	ncCommand,
 	iptablesCommand,
+	tcCommand,
+	ssCommand,
+	tracerouteCommand,
+	conntrackCommand,
+	ifconfigCommand,
 	// Users
 	adduserCommand,
 	passwdCommand,

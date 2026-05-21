@@ -1,8 +1,15 @@
 import { VirtualNetworkManager } from "../VirtualNetworkManager";
 import { cidrRange, intToIp, ipToInt, nextMac } from "./helpers";
-import type { DnsRecord, LoadBalancerRule, MacAddress, Packet, PacketResult, TrafficRule, VmPort } from "./types";
+import type { DnsRecord, LoadBalancerRule, MacAddress, Packet, PacketResult, TrafficRule, VmPort, QdiscRule } from "./types";
 export { cidrRange, intToIp, ipToInt, nextMac } from "./helpers";
-export type { DnsRecord, LoadBalancerRule, LoadBalancerTarget, MacAddress, Packet, PacketResult, TrafficRule, VmPort } from "./types";
+export type { DnsRecord, LoadBalancerRule, LoadBalancerTarget, MacAddress, Packet, PacketResult, TrafficRule, VmPort, QdiscRule, ConntrackEntry } from "./types";
+
+function gaussianRandom(mean = 0, stdev = 1): number {
+	const u = 1 - Math.random();
+	const v = Math.random();
+	const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+	return z * stdev + mean;
+}
 
 export class VirtualSwitch {
 	readonly subnet: string;
@@ -18,6 +25,10 @@ export class VirtualSwitch {
 	private _bandwidthSent: Map<MacAddress, number> = new Map();
 	private _bandwidthReceived: Map<MacAddress, number> = new Map();
 	private _natPool: number = 2;
+	private _qdiscRules: Map<string, QdiscRule[]> = new Map();
+	private _bandwidthTokens: Map<MacAddress, number> = new Map();
+	private _bandwidthLastRefill: Map<MacAddress, number> = new Map();
+	private _reorderBuffer: Array<{ packet: Packet; deliverAt: number }> = [];
 
 	constructor(subnet = "10.0.1.0/24") {
 		this.subnet = subnet;
@@ -49,7 +60,6 @@ export class VirtualSwitch {
 		this._ports.set(mac, port);
 		this._ipToMac.set(ip, mac);
 
-		// Virtual network interfaces
 		this._network.arpCache.push({
 			ip,
 			mac,
@@ -59,7 +69,9 @@ export class VirtualSwitch {
 		this._network.setInterfaceIp("eth0", ip, 24);
 		this._network.setInterfaceState("eth0", "UP");
 
-		// Start latency simulation
+		this._bandwidthTokens.set(mac, 1500 * 8);
+		this._bandwidthLastRefill.set(mac, Date.now());
+
 		this._simulateLatency(port);
 
 		return port;
@@ -74,6 +86,8 @@ export class VirtualSwitch {
 			if (value === port.ip) this._dnsRecords.delete(key);
 		});
 		this._network.arpCache = this._network.arpCache.filter((e) => e.ip !== port.ip);
+		this._bandwidthTokens.delete(mac);
+		this._bandwidthLastRefill.delete(mac);
 	}
 
 	public getPorts(): Map<MacAddress, VmPort> {
@@ -85,13 +99,11 @@ export class VirtualSwitch {
 	}
 
 	public async route(packet: Packet): Promise<PacketResult> {
-		// DNS resolution
 		if (this._dnsRecords.has(packet.dstIp)) {
 			const resolvedIp = this._dnsRecords.get(packet.dstIp) as string;
 			packet = { ...packet, dstIp: resolvedIp };
 		}
 
-		// Load balancer
 		const lb = this._matchLoadBalancer(packet.dstPort);
 		if (lb) {
 			const target = this._pickTarget(lb);
@@ -100,7 +112,6 @@ export class VirtualSwitch {
 			}
 		}
 
-		// NAT for external traffic
 		if (!this._isLocalSubnet(packet.dstIp) && packet.srcIp) {
 			const natIp = this._network.formatIpAddr().match(/\binet\s+(\S+)\//)?.[1];
 			if (natIp) {
@@ -108,18 +119,43 @@ export class VirtualSwitch {
 			}
 		}
 
-		// Partition check
 		const srcPort = packet.srcMac ? this._ports.get(packet.srcMac) : undefined;
 		const dstMac = this._resolveDstMac(packet.dstIp);
 		if (srcPort && dstMac && !this._canCommunicate(srcPort.mac, dstMac)) {
 			return { action: "DROP" };
 		}
 
+		const packetSize = packet.size ?? packet.payload?.length ?? 64;
+		const mtuExceeded = this._checkMtu(packet, packetSize);
+		if (mtuExceeded) {
+			return { action: "DROP", latencyMs: 0, fragmented: true };
+		}
+
 		const dstPort = this._ports.get(dstMac ?? "");
 		if (dstPort) {
-			let latency = 0.5 + Math.random() * 2;
-			latency = this._applyTrafficShape(latency);
-			if (latency < 0) return { action: "DROP", latencyMs: 0 };
+			const bandwidthOk = this._checkBandwidthLimit(packet.srcMac, packetSize);
+			if (!bandwidthOk) {
+				return { action: "DROP", latencyMs: 0 };
+			}
+
+			const shapeResult = this._applyTrafficShape(0.5 + Math.random() * 2, packet);
+			if (shapeResult.dropped) return { action: "DROP", latencyMs: 0 };
+
+			let latency = shapeResult.latency;
+
+			if (shapeResult.reordered) {
+				this._reorderBuffer.push({ packet, deliverAt: Date.now() + latency + shapeResult.reorderDelay });
+				setTimeout(() => {
+					const idx = this._reorderBuffer.findIndex((e) => e.packet === packet);
+					if (idx !== -1) this._reorderBuffer.splice(idx, 1);
+				}, latency + shapeResult.reorderDelay);
+				return { action: "ACCEPT", latencyMs: latency + shapeResult.reorderDelay, reordered: true };
+			}
+
+			if (shapeResult.duplicated) {
+				await new Promise((r) => setTimeout(r, latency));
+				return { action: "ACCEPT", latencyMs: latency };
+			}
 
 			const size = packet.payload?.length ?? 0;
 			this._bandwidthSent.set(packet.srcMac, (this._bandwidthSent.get(packet.srcMac) ?? 0) + size);
@@ -127,17 +163,46 @@ export class VirtualSwitch {
 				this._bandwidthReceived.set(dstMac, (this._bandwidthReceived.get(dstMac) ?? 0) + size);
 			}
 
+			this._network.updateConntrack(packet.srcIp, packet.dstIp, packet.protocol, packet.srcPort, packet.dstPort, packetSize);
+
 			await new Promise((r) => setTimeout(r, latency));
 			return { action: "ACCEPT", latencyMs: latency };
 		}
 
-		// Broadcast / unknown
 		if (packet.dstIp.endsWith(".255") || packet.dstIp === "255.255.255.255") {
 			await new Promise((r) => setTimeout(r, 0.5 + Math.random()));
 			return { action: "ACCEPT" };
 		}
 
 		return { action: "DROP" };
+	}
+
+	private _checkMtu(packet: Packet, size: number): boolean {
+		const srcPort = packet.srcMac ? this._ports.get(packet.srcMac) : undefined;
+		if (!srcPort) return false;
+		const iface = this._network.getInterface("eth0");
+		if (!iface) return false;
+		return size > iface.mtu;
+	}
+
+	private _checkBandwidthLimit(mac: MacAddress, packetSize: number): boolean {
+		const rule = this._trafficRules.get(mac);
+		if (!rule?.maxBandwidthMbps) return true;
+
+		const now = Date.now();
+		const lastRefill = this._bandwidthLastRefill.get(mac) ?? now;
+		const elapsed = (now - lastRefill) / 1000;
+		const tokensToAdd = elapsed * rule.maxBandwidthMbps * 1_000_000 / 8;
+		const currentTokens = Math.min(
+			(this._bandwidthTokens.get(mac) ?? 0) + tokensToAdd,
+			rule.maxBandwidthMbps * 1_000_000 / 8,
+		);
+
+		if (currentTokens < packetSize) return false;
+
+		this._bandwidthTokens.set(mac, currentTokens - packetSize);
+		this._bandwidthLastRefill.set(mac, now);
+		return true;
 	}
 
 	public addDnsRecord(hostname: string, ip: string): void {
@@ -160,15 +225,86 @@ export class VirtualSwitch {
 		this._trafficRules.delete(target);
 	}
 
-	private _applyTrafficShape(baseLatency: number): number {
+	private _applyTrafficShape(baseLatency: number, packet: Packet): { latency: number; dropped: boolean; reordered: boolean; reorderDelay: number; duplicated: boolean } {
 		let latency = baseLatency;
-		for (const rule of this._trafficRules.values()) {
-			if (rule.latencyMs) latency += rule.latencyMs;
-			if (rule.packetLossPct && Math.random() * 100 < rule.packetLossPct) {
-				return -1;
+		let dropped = false;
+		let reordered = false;
+		let reorderDelay = 0;
+		let duplicated = false;
+
+		const qdiscs = this._qdiscRules.get(packet.srcMac) ?? [];
+
+		for (const qdisc of qdiscs) {
+			if (qdisc.latencyMs) {
+				latency += qdisc.latencyMs;
+			}
+
+			if (qdisc.jitterMs) {
+				const jitter = Math.abs(gaussianRandom(0, qdisc.jitterMs / 3));
+				latency += jitter;
+			}
+
+			if (qdisc.packetLossPct && Math.random() * 100 < qdisc.packetLossPct) {
+				return { latency: 0, dropped: true, reordered: false, reorderDelay: 0, duplicated: false };
+			}
+
+			if (qdisc.reorderPct && Math.random() * 100 < qdisc.reorderPct) {
+				reordered = true;
+				reorderDelay = qdisc.latencyMs ? qdisc.latencyMs * 2 : 10;
+				if (qdisc.reorderCorrelation) {
+					reorderDelay *= (qdisc.reorderCorrelation / 100) + 1;
+				}
+			}
+
+			if (qdisc.duplicatePct && Math.random() * 100 < qdisc.duplicatePct) {
+				duplicated = true;
 			}
 		}
-		return latency;
+
+		for (const rule of this._trafficRules.values()) {
+			if (rule.latencyMs) latency += rule.latencyMs;
+
+			if (rule.jitterMs) {
+				const jitter = Math.abs(gaussianRandom(0, rule.jitterMs / 3));
+				latency += jitter;
+			}
+
+			if (rule.packetLossPct) {
+				if (rule.burstLoss) {
+					if (Math.random() * 100 < rule.packetLossPct * 3) {
+						return { latency: 0, dropped: true, reordered: false, reorderDelay: 0, duplicated: false };
+					}
+				} else if (Math.random() * 100 < rule.packetLossPct) {
+					return { latency: 0, dropped: true, reordered: false, reorderDelay: 0, duplicated: false };
+				}
+			}
+		}
+
+		return { latency, dropped, reordered, reorderDelay, duplicated };
+	}
+
+	public addQdiscRule(mac: MacAddress, rule: QdiscRule): void {
+		const existing = this._qdiscRules.get(mac) ?? [];
+		existing.push(rule);
+		this._qdiscRules.set(mac, existing);
+	}
+
+	public removeQdiscRule(mac: MacAddress, interfaceName?: string): void {
+		if (!interfaceName) {
+			this._qdiscRules.delete(mac);
+			return;
+		}
+		const existing = this._qdiscRules.get(mac) ?? [];
+		const filtered = existing.filter((r) => r.interface !== interfaceName);
+		if (filtered.length === 0) {
+			this._qdiscRules.delete(mac);
+		} else {
+			this._qdiscRules.set(mac, filtered);
+		}
+	}
+
+	public getQdiscRules(mac: MacAddress): QdiscRule[] {
+		return [...(this._qdiscRules.get(mac) ?? [])];
 	}
 
 	public addLoadBalancer(rule: LoadBalancerRule): void {
@@ -274,10 +410,14 @@ export class VirtualSwitch {
 		this._partitions = [];
 	}
 
+	public getNetwork(): VirtualNetworkManager {
+		return this._network;
+	}
+
 	private _simulateLatency(port: VmPort): void {
 		setInterval(() => {
-			const loss = this._applyTrafficShape(0);
-			if (loss < 0 && Math.random() < 0.01) {
+			const loss = this._applyTrafficShape(0, { srcIp: port.ip, srcMac: port.mac, dstIp: port.ip, protocol: "icmp" }).dropped;
+			if (loss && Math.random() < 0.01) {
 				const virtualPacket: Packet = {
 					srcIp: port.ip,
 					srcMac: port.mac,
