@@ -79,13 +79,13 @@
 - [x] Resolve dependabots alerts and update dependencies to address security vulnerabilities (e.g. serialize-javascript, fflate)
 - [x] Add a RAM and CPU capping
 - [x] Add a garbage collector to free up memory from deleted files, closed windows, and terminated processes, but also from closed files that are not required to be kept in memory (e.g. large files that have been closed) [refers to IdleManager]
+- [x] Add a more realistic network stack that simulates latency, bandwidth limits, and packet loss, and allows for more complex network configurations (e.g. multiple interfaces, routing tables, firewall rules)
 </details>
 
-## Prioty
+## Priority
 
 - [ ] Add a swap file mechanism to handle memory overflow when RAM is full (e.g. move least recently used data to disk)
 - [ ] Add a process scheduler to manage CPU time between running processes, ensuring fair resource allocation and preventing any single process from monopolizing the CPU
 - [ ] Add a more realistic file caching mechanism that simulates disk read/write speeds and cache eviction policies
-- [ ] Add a more realistic network stack that simulates latency, bandwidth limits, and packet loss, and allows for more complex network configurations (e.g. multiple interfaces, routing tables, firewall rules)
 - [ ] Add a more realistic user management system that supports user groups, permissions, and authentication mechanisms (e.g. password hashing, PAM)
 - [ ] WebSocket-based remote shell client (experimental)
