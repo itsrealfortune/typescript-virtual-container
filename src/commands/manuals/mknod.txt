@@ -1,0 +1,20 @@
+MKNOD(1)               User Commands               MKNOD(1)
+
+NAME
+       mknod - make block or character special files
+
+SYNOPSIS
+       mknod [options] name type [major minor]
+
+OPTIONS
+       -m    set file permission bits
+       -Z    set SELinux security context
+
+DESCRIPTION
+       mknod creates a special file (character, block, or FIFO)
+       with the specified name.
+
+EXAMPLES
+       mknod /dev/null c 1 3      # create character device
+       mknod myfifo p              # create named pipe (FIFO)
+       mknod -m 660 /dev/sda b 8 0  # create block device

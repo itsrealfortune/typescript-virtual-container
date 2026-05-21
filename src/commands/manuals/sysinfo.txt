@@ -1,0 +1,14 @@
+SYSINFO(1)               User Commands               SYSINFO(1)
+
+NAME
+       sysinfo - display system information
+
+SYNOPSIS
+       sysinfo [options]
+
+DESCRIPTION
+       sysinfo displays a summary of system information
+       including OS, kernel, hostname, and hardware details.
+
+EXAMPLES
+       sysinfo    # display system information

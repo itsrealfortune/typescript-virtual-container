@@ -1,0 +1,22 @@
+CHOWN(1)               User Commands               CHOWN(1)
+
+NAME
+       chown - change file owner and group
+
+SYNOPSIS
+       chown [options] owner[:group] file...
+       chown [options] --reference=ref_file file...
+
+OPTIONS
+       -R    recursive
+       -v    verbose
+       -c    like verbose but report only when a change is made
+
+DESCRIPTION
+       chown changes the user and/or group ownership of each
+       given file.
+
+EXAMPLES
+       chown root file.txt       # change owner to root
+       chown root:staff file.txt # change owner and group
+       chown -R www-data /var/www  # recursive ownership change

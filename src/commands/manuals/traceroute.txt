@@ -1,0 +1,26 @@
+TRACEROUTE(8)       System Administration       TRACEROUTE(8)
+
+NAME
+       traceroute - print the route packets take to a network host
+
+SYNOPSIS
+       traceroute [options] host [packetlen]
+
+OPTIONS
+       -I    use ICMP Echo requests instead of UDP
+       -T    use TCP SYN
+       -m    set max TTL (default 30)
+       -w    set wait time per probe
+       -q    set number of probes per hop
+       -p    set destination port
+
+DESCRIPTION
+       traceroute tracks the route packets take from the local
+       machine to a given destination. It displays the path
+       and transit delays of packets across an IP network.
+
+EXAMPLES
+       traceroute google.com          # trace route to google
+       traceroute -I google.com       # use ICMP
+       traceroute -m 15 google.com    # max 15 hops
+       traceroute -w 2 google.com     # 2s wait per probe

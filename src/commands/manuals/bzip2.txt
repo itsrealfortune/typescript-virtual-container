@@ -1,0 +1,22 @@
+BZIP2(1)               User Commands               BZIP2(1)
+
+NAME
+       bzip2 - a block-sorting file compressor
+
+SYNOPSIS
+       bzip2 [options] [file...]
+       bunzip2 [options] [file...]
+
+OPTIONS
+       -d    decompress
+       -k    keep (don't delete) input files
+       -f    force overwrite
+
+DESCRIPTION
+       bzip2 compresses files using the Burrows-Wheeler block
+       sorting text compression algorithm and Huffman coding.
+
+EXAMPLES
+       bzip2 file.txt        # compress file.txt to file.txt.bz2
+       bzip2 -d file.txt.bz2 # decompress
+       bzip2 -k file.txt     # compress but keep original

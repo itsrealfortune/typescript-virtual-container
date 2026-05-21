@@ -1,0 +1,23 @@
+LSOF(8)           System Administration           LSOF(8)
+
+NAME
+       lsof - list open files
+
+SYNOPSIS
+       lsof [options] [file...]
+
+OPTIONS
+       -i    list only internet files
+       -p    list files for a specific PID
+       -u    list files for a specific user
+       -c    list files for a specific command
+
+DESCRIPTION
+       lsof lists information about files that are open by
+       running processes.
+
+EXAMPLES
+       lsof             # list all open files
+       lsof -i          # list all network connections
+       lsof -p 1234     # list files opened by PID 1234
+       lsof -u root     # list files opened by root

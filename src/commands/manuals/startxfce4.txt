@@ -1,0 +1,15 @@
+STARTXFCE4(1)           User Commands           STARTXFCE4(1)
+
+NAME
+       startxfce4 - start the Xfce desktop environment
+
+SYNOPSIS
+       startxfce4 [options]
+
+DESCRIPTION
+       startxfce4 starts the Xfce desktop environment session.
+       It is typically invoked from a display manager or
+       from .xinitrc.
+
+EXAMPLES
+       startxfce4    # launch Xfce session

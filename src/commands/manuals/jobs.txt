@@ -1,0 +1,23 @@
+JOBS(1)                  User Commands                  JOBS(1)
+
+NAME
+       jobs - display status of jobs in the current session
+
+SYNOPSIS
+       jobs [options]
+
+OPTIONS
+       -l    list process IDs along with job information
+       -p    list only process IDs
+       -r    show only running jobs
+       -s    show only stopped jobs
+
+DESCRIPTION
+       jobs displays the status of jobs that were started in
+       the current shell session. Each job is assigned a job
+       number.
+
+EXAMPLES
+       jobs          # list all jobs
+       jobs -l       # list jobs with PIDs
+       jobs -r       # show running jobs only

@@ -1,0 +1,22 @@
+PERL(1)                  User Commands                  PERL(1)
+
+NAME
+       perl - Practical Extraction and Report Language
+
+SYNOPSIS
+       perl [options] [programfile] [arguments]
+       perl -e 'program' [arguments]
+
+OPTIONS
+       -e    specify program on command line
+       -w    enable useful warnings
+       -v    print version and patchlevel
+
+DESCRIPTION
+       perl is a high-level, interpreted, dynamic programming
+       language known for text processing capabilities.
+
+EXAMPLES
+       perl -e 'print "Hello\n"'    # one-liner
+       perl script.pl                # run a script
+       perl -ne 'print if /pattern/' file.txt  # grep-like

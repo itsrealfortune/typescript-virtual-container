@@ -1,0 +1,24 @@
+STRACE(1)               User Commands               STRACE(1)
+
+NAME
+       strace - trace system calls and signals
+
+SYNOPSIS
+       strace [options] command [args...]
+       strace [options] -p pid
+
+OPTIONS
+       -p    attach to running process by PID
+       -c    count time, calls, and errors
+       -f    follow forks
+       -e    expression for filtering
+
+DESCRIPTION
+       strace traces system calls and signals. It is a useful
+       diagnostic, instructional, and debugging tool.
+
+EXAMPLES
+       strace ls            # trace ls system calls
+       strace -p 1234       # attach to PID 1234
+       strace -c ls         # summary of system calls
+       strace -f ./program  # trace forks too

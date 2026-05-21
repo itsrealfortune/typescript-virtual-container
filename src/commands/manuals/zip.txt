@@ -1,0 +1,25 @@
+ZIP(1)                   User Commands                   ZIP(1)
+
+NAME
+       zip - package and compress (archive) files
+
+SYNOPSIS
+       zip [options] zipfile files...
+       zip -r zipfile directory...
+
+OPTIONS
+       -r    recurse into directories
+       -d    delete entries from archive
+       -u    update changed entries
+       -l    convert line endings to LF
+       -e    encrypt with password
+
+DESCRIPTION
+       zip is a compression and file packaging utility.
+       It produces compressed archives compatible with PKZIP.
+
+EXAMPLES
+       zip archive.zip file.txt      # compress a file
+       zip -r archive.zip dir/       # compress a directory
+       zip -e secure.zip file.txt    # encrypt archive
+       zip -d archive.zip file.txt   # remove from archive

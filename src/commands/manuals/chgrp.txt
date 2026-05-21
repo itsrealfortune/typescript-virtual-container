@@ -1,0 +1,21 @@
+CHGRP(1)               User Commands               CHGRP(1)
+
+NAME
+       chgrp - change group ownership
+
+SYNOPSIS
+       chgrp [options] group file...
+       chgrp [options] --reference=ref_file file...
+
+OPTIONS
+       -R    recursive
+       -v    verbose
+       -c    like verbose but report only when a change is made
+
+DESCRIPTION
+       chgrp changes the group ownership of each given file to group.
+
+EXAMPLES
+       chgrp staff file.txt      # change group to staff
+       chgrp -R users /dir/      # recursive group change
+       chgrp --reference=ref.txt file.txt  # copy group from ref

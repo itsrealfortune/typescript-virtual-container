@@ -1,0 +1,14 @@
+XFCEDESKTOP(1)           User Commands           XFCEDESKTOP(1)
+
+NAME
+       xfceDesktop - manage Xfce desktop settings
+
+SYNOPSIS
+       xfceDesktop [options]
+
+DESCRIPTION
+       xfceDesktop provides access to Xfce desktop environment
+       settings and window management.
+
+EXAMPLES
+       xfceDesktop    # open desktop settings

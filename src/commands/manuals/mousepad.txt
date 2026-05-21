@@ -1,0 +1,15 @@
+MOUSEPAD(1)              User Commands              MOUSEPAD(1)
+
+NAME
+       mousepad - simple graphical text editor
+
+SYNOPSIS
+       mousepad [file...]
+
+DESCRIPTION
+       mousepad is a lightweight graphical text editor for
+       the Xfce desktop environment.
+
+EXAMPLES
+       mousepad            # open editor
+       mousepad file.txt   # open file.txt for editing

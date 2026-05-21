@@ -1,0 +1,28 @@
+TC(8)           System Administration           TC(8)
+
+NAME
+       tc - show / manipulate traffic control settings
+
+SYNOPSIS
+       tc [options] qdisc [show | add | change | replace | delete]
+       tc [options] class [show | add | change | replace | delete]
+       tc [options] filter [show | add | change | replace | delete]
+
+OPTIONS
+       qdisc   manage queueing disciplines
+       class   manage traffic classes
+       filter  manage packet filters
+       -s      show statistics
+
+DESCRIPTION
+       tc is used to configure Traffic Control in the Linux
+       kernel. It controls queuing disciplines, classes,
+       filters, and can simulate network conditions like
+       latency, packet loss, and bandwidth limits.
+
+EXAMPLES
+       tc qdisc show dev eth0                    # show qdiscs
+       tc qdisc add dev eth0 root netem delay 100ms  # add latency
+       tc qdisc add dev eth0 root netem loss 5%      # add packet loss
+       tc qdisc del dev eth0 root                  # remove qdisc
+       tc -s qdisc show dev eth0                   # show with stats

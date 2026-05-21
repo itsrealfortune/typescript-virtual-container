@@ -113,6 +113,44 @@ EXAMPLES
        basename /usr/bin/vim        # vim
        basename /etc/hosts .conf    # hosts
        basename -a /a/b /c/d        # b\\nd`,
+	"bc": `BC(1)                  User Commands                  BC(1)
+
+NAME
+       bc - an arbitrary precision calculator language
+
+SYNOPSIS
+       bc [options] [file...]
+
+DESCRIPTION
+       bc is a language that supports arbitrary precision numbers
+       with interactive execution of statements.
+
+EXAMPLES
+       bc           # start interactive calculator
+       echo "2+2" | bc   # calculate 2+2
+       echo "scale=2; 10/3" | bc   # division with 2 decimal places`,
+	"bzip2": `BZIP2(1)               User Commands               BZIP2(1)
+
+NAME
+       bzip2 - a block-sorting file compressor
+
+SYNOPSIS
+       bzip2 [options] [file...]
+       bunzip2 [options] [file...]
+
+OPTIONS
+       -d    decompress
+       -k    keep (don't delete) input files
+       -f    force overwrite
+
+DESCRIPTION
+       bzip2 compresses files using the Burrows-Wheeler block
+       sorting text compression algorithm and Huffman coding.
+
+EXAMPLES
+       bzip2 file.txt        # compress file.txt to file.txt.bz2
+       bzip2 -d file.txt.bz2 # decompress
+       bzip2 -k file.txt     # compress but keep original`,
 	"cat": `CAT(1)                   User Commands                    CAT(1)
 
 NAME
@@ -143,6 +181,27 @@ EXAMPLES
        cd /etc
        cd ..
        cd ~`,
+	"chgrp": `CHGRP(1)               User Commands               CHGRP(1)
+
+NAME
+       chgrp - change group ownership
+
+SYNOPSIS
+       chgrp [options] group file...
+       chgrp [options] --reference=ref_file file...
+
+OPTIONS
+       -R    recursive
+       -v    verbose
+       -c    like verbose but report only when a change is made
+
+DESCRIPTION
+       chgrp changes the group ownership of each given file to group.
+
+EXAMPLES
+       chgrp staff file.txt      # change group to staff
+       chgrp -R users /dir/      # recursive group change
+       chgrp --reference=ref.txt file.txt  # copy group from ref`,
 	"chmod": `CHMOD(1)                 User Commands                    CHMOD(1)
 
 NAME
@@ -159,6 +218,28 @@ EXAMPLES
        chmod 755 script.sh      rwxr-xr-x
        chmod 644 file.txt       rw-r--r--
        chmod +x script.sh       add execute permission`,
+	"chown": `CHOWN(1)               User Commands               CHOWN(1)
+
+NAME
+       chown - change file owner and group
+
+SYNOPSIS
+       chown [options] owner[:group] file...
+       chown [options] --reference=ref_file file...
+
+OPTIONS
+       -R    recursive
+       -v    verbose
+       -c    like verbose but report only when a change is made
+
+DESCRIPTION
+       chown changes the user and/or group ownership of each
+       given file.
+
+EXAMPLES
+       chown root file.txt       # change owner to root
+       chown root:staff file.txt # change owner and group
+       chown -R www-data /var/www  # recursive ownership change`,
 	"clear": `CLEAR(1)                 User Commands                   CLEAR(1)
 
 NAME
@@ -221,6 +302,32 @@ SYNOPSIS
 DESCRIPTION
        Compare FILE1 and FILE2 line by line, producing
        three-column output of common and unique lines.`,
+	"conntrack": `CONNTRACK(8)       System Administration       CONNTRACK(8)
+
+NAME
+       conntrack - connection tracking administration tool
+
+SYNOPSIS
+       conntrack [options]
+       conntrack -L
+       conntrack -E
+
+OPTIONS
+       -L    list all tracked connections
+       -E    show events (new, update, destroy)
+       -D    delete a connection
+       -F    flush all entries
+
+DESCRIPTION
+       conntrack interacts with the kernel connection tracking
+       subsystem. It displays, manipulates, and monitors
+       tracked network connections.
+
+EXAMPLES
+       conntrack -L              # list all connections
+       conntrack -L -p tcp       # list only TCP connections
+       conntrack -E              # monitor connection events
+       conntrack -F              # flush tracking table`,
 	"cowsay": `COWSAY(1)                User Commands                  COWSAY(1)
 
 NAME
@@ -633,6 +740,22 @@ OPTIONS
        -h     show all output fields automatically scaled
        -m     show output in mebibytes
        -g     show output in gibibytes`,
+	"fun": `FUN(6)                   Games                   FUN(6)
+
+NAME
+       fun - collection of fun commands and easter eggs
+
+SYNOPSIS
+       fun [command] [options]
+
+DESCRIPTION
+       fun provides access to various entertaining commands
+       and visual effects available in the virtual environment.
+
+EXAMPLES
+       fun cmatrix    # matrix rain effect
+       fun fortune    # random fortune quote
+       fun cowsay     # ASCII cow says your message`,
 	"grep": `GREP(1)                  User Commands                    GREP(1)
 
 NAME
@@ -789,6 +912,57 @@ EXAMPLES
        ip addr show eth0        # show eth0 address
        ip route                 # show routing table
        ip link                  # show link info`,
+	"iptables": `IPTABLES(8)       System Administration       IPTABLES(8)
+
+NAME
+       iptables - administration tool for IPv4 packet filtering and NAT
+
+SYNOPSIS
+       iptables [options] [chain] [match] [target]
+
+OPTIONS
+       -L    list all rules in a chain
+       -A    append a rule to a chain
+       -D    delete a rule from a chain
+       -F    flush all rules in a chain
+       -I    insert a rule at a given position
+       -p    protocol (tcp, udp, icmp)
+       -s    source address
+       -d    destination address
+       -j    target (ACCEPT, DROP, REJECT)
+
+DESCRIPTION
+       iptables is used to set up, maintain, and inspect the
+       tables of IPv4 packet filter rules in the Linux kernel.
+
+EXAMPLES
+       iptables -L                    # list all rules
+       iptables -A INPUT -p tcp --dport 22 -j ACCEPT  # allow SSH
+       iptables -A INPUT -p tcp --dport 80 -j ACCEPT  # allow HTTP
+       iptables -A INPUT -j DROP      # drop everything else`,
+	"jobs": `JOBS(1)                  User Commands                  JOBS(1)
+
+NAME
+       jobs - display status of jobs in the current session
+
+SYNOPSIS
+       jobs [options]
+
+OPTIONS
+       -l    list process IDs along with job information
+       -p    list only process IDs
+       -r    show only running jobs
+       -s    show only stopped jobs
+
+DESCRIPTION
+       jobs displays the status of jobs that were started in
+       the current shell session. Each job is assigned a job
+       number.
+
+EXAMPLES
+       jobs          # list all jobs
+       jobs -l       # list jobs with PIDs
+       jobs -r       # show running jobs only`,
 	"join": `JOIN(1)                  User Commands                  JOIN(1)
 
 NAME
@@ -870,6 +1044,30 @@ OPTIONS
 
 AUTHOR
        Written by Richard M. Stallman and David MacKenzie.`,
+	"lsb-release": `LSB-RELEASE(1)           User Commands           LSB-RELEASE(1)
+
+NAME
+       lsb_release - print distribution-specific information
+
+SYNOPSIS
+       lsb_release [options]
+
+OPTIONS
+       -a    show all information
+       -s    short format (no labels)
+       -d    show description
+       -r    show release number
+       -c    show codename
+       -i    show distributor ID
+
+DESCRIPTION
+       lsb_release displays certain LSB (Linux Standard Base)
+       and distribution-specific information.
+
+EXAMPLES
+       lsb_release -a    # show all info
+       lsb_release -d    # show distribution description
+       lsb_release -cs   # show codename in short format`,
 	"lsb_release": `LSB_RELEASE(1)           User Commands              LSB_RELEASE(1)
 
 NAME
@@ -901,6 +1099,29 @@ SYNOPSIS
 DESCRIPTION
        Display information about the CPU architecture,
        including cores, threads, caches, and flags.`,
+	"lsof": `LSOF(8)           System Administration           LSOF(8)
+
+NAME
+       lsof - list open files
+
+SYNOPSIS
+       lsof [options] [file...]
+
+OPTIONS
+       -i    list only internet files
+       -p    list files for a specific PID
+       -u    list files for a specific user
+       -c    list files for a specific command
+
+DESCRIPTION
+       lsof lists information about files that are open by
+       running processes.
+
+EXAMPLES
+       lsof             # list all open files
+       lsof -i          # list all network connections
+       lsof -p 1234     # list files opened by PID 1234
+       lsof -u root     # list files opened by root`,
 	"lspci": `LSPCI(1)                 User Commands                 LSPCI(1)
 
 NAME
@@ -965,6 +1186,26 @@ SYNOPSIS
 
 OPTIONS
        -p     no error if existing, make parent directories as needed`,
+	"mknod": `MKNOD(1)               User Commands               MKNOD(1)
+
+NAME
+       mknod - make block or character special files
+
+SYNOPSIS
+       mknod [options] name type [major minor]
+
+OPTIONS
+       -m    set file permission bits
+       -Z    set SELinux security context
+
+DESCRIPTION
+       mknod creates a special file (character, block, or FIFO)
+       with the specified name.
+
+EXAMPLES
+       mknod /dev/null c 1 3      # create character device
+       mknod myfifo p              # create named pipe (FIFO)
+       mknod -m 660 /dev/sda b 8 0  # create block device`,
 	"mktemp": `MKTEMP(1)                User Commands                   MKTEMP(1)
 
 NAME
@@ -990,6 +1231,21 @@ EXAMPLES
        mktemp
        mktemp -d
        mktemp /tmp/foo.XXXXXX`,
+	"mousepad": `MOUSEPAD(1)              User Commands              MOUSEPAD(1)
+
+NAME
+       mousepad - simple graphical text editor
+
+SYNOPSIS
+       mousepad [file...]
+
+DESCRIPTION
+       mousepad is a lightweight graphical text editor for
+       the Xfce desktop environment.
+
+EXAMPLES
+       mousepad            # open editor
+       mousepad file.txt   # open file.txt for editing`,
 	"mv": `MV(1)                    User Commands                      MV(1)
 
 NAME
@@ -1032,6 +1288,31 @@ SYNOPSIS
 
 DESCRIPTION
        Print OS, kernel, uptime, package count, and related system details.`,
+	"netcat": `NETCAT(1)               User Commands               NETCAT(1)
+
+NAME
+       netcat - TCP/IP swiss army knife
+
+SYNOPSIS
+       nc [options] host port
+       nc -l [options] port
+
+OPTIONS
+       -l    listen mode, for inbound connects
+       -p    specify local port
+       -u    UDP mode
+       -v    verbose
+       -z    zero-I/O mode (scanning)
+
+DESCRIPTION
+       netcat reads and writes data across network connections,
+       using TCP or UDP protocol.
+
+EXAMPLES
+       nc host 80           # connect to port 80
+       nc -l 8080           # listen on port 8080
+       nc -zv host 1-1000   # scan ports 1-1000
+       nc -u host 53        # UDP connection`,
 	"nice": `NICE(1)                  User Commands                  NICE(1)
 
 NAME
@@ -1201,6 +1482,28 @@ EXAMPLES
        paste file1 file2
        paste -d: /etc/passwd /etc/shadow
        paste -d, a.txt b.txt c.txt`,
+	"perl": `PERL(1)                  User Commands                  PERL(1)
+
+NAME
+       perl - Practical Extraction and Report Language
+
+SYNOPSIS
+       perl [options] [programfile] [arguments]
+       perl -e 'program' [arguments]
+
+OPTIONS
+       -e    specify program on command line
+       -w    enable useful warnings
+       -v    print version and patchlevel
+
+DESCRIPTION
+       perl is a high-level, interpreted, dynamic programming
+       language known for text processing capabilities.
+
+EXAMPLES
+       perl -e 'print "Hello\\n"'    # one-liner
+       perl script.pl                # run a script
+       perl -ne 'print if /pattern/' file.txt  # grep-like`,
 	"pgrep": `PGREP(1)                 User Commands                 PGREP(1)
 
 NAME
@@ -1264,6 +1567,29 @@ SYNOPSIS
 
 DESCRIPTION
        Print the absolute path of the current directory.`,
+	"python": `PYTHON(1)               User Commands               PYTHON(1)
+
+NAME
+       python - Python interpreter
+
+SYNOPSIS
+       python [options] [-c cmd | -m mod | file | -] [arg...]
+
+OPTIONS
+       -c cmd   pass command to execute
+       -m mod   run library module as a script
+       -i       enter interactive mode after executing script
+       -V       print Python version
+
+DESCRIPTION
+       python is a high-level, interpreted programming language
+       known for readability and versatility.
+
+EXAMPLES
+       python                  # start interactive interpreter
+       python script.py        # run a Python script
+       python -c 'print(2+2)'  # one-liner
+       python -m http.server   # start HTTP server`,
 	"python3": `PYTHON3(1)               User Commands                  PYTHON3(1)
 
 NAME
@@ -1516,6 +1842,34 @@ SYNOPSIS
 DESCRIPTION
        Split FILE into fixed-size pieces, creating output
        files named PREFIXaa, PREFIXab, etc.`,
+	"ss": `SS(8)           System Administration           SS(8)
+
+NAME
+       ss - another utility to investigate sockets
+
+SYNOPSIS
+       ss [options] [filter]
+
+OPTIONS
+       -t    display TCP sockets
+       -u    display UDP sockets
+       -l    display listening sockets
+       -a    display all sockets
+       -n    do not resolve service names
+       -p    show process using socket
+       -s    display summary statistics
+
+DESCRIPTION
+       ss is used to dump socket statistics. It allows showing
+       information similar to netstat but can display more
+       TCP and state information than other tools.
+
+EXAMPLES
+       ss              # list all connections
+       ss -t           # show TCP sockets
+       ss -tuln        # show listening TCP/UDP sockets
+       ss -s           # show socket statistics
+       ss -p           # show processes`,
 	"ssh": `SSH(1)                   OpenSSH                          SSH(1)
 
 NAME
@@ -1527,6 +1881,21 @@ SYNOPSIS
 DESCRIPTION
        ssh (SSH client) is a program for logging into a remote machine and
        for executing commands on a remote machine.`,
+	"startxfce4": `STARTXFCE4(1)           User Commands           STARTXFCE4(1)
+
+NAME
+       startxfce4 - start the Xfce desktop environment
+
+SYNOPSIS
+       startxfce4 [options]
+
+DESCRIPTION
+       startxfce4 starts the Xfce desktop environment session.
+       It is typically invoked from a display manager or
+       from .xinitrc.
+
+EXAMPLES
+       startxfce4    # launch Xfce session`,
 	"stat": `STAT(1)                  User Commands                    STAT(1)
 
 NAME
@@ -1537,6 +1906,30 @@ SYNOPSIS
 
 OPTIONS
        -c, --format=FORMAT   use the specified output format`,
+	"strace": `STRACE(1)               User Commands               STRACE(1)
+
+NAME
+       strace - trace system calls and signals
+
+SYNOPSIS
+       strace [options] command [args...]
+       strace [options] -p pid
+
+OPTIONS
+       -p    attach to running process by PID
+       -c    count time, calls, and errors
+       -f    follow forks
+       -e    expression for filtering
+
+DESCRIPTION
+       strace traces system calls and signals. It is a useful
+       diagnostic, instructional, and debugging tool.
+
+EXAMPLES
+       strace ls            # trace ls system calls
+       strace -p 1234       # attach to PID 1234
+       strace -c ls         # summary of system calls
+       strace -f ./program  # trace forks too`,
 	"strings": `STRINGS(1)               User Commands               STRINGS(1)
 
 NAME
@@ -1593,6 +1986,43 @@ SYNOPSIS
 OPTIONS
        -i          run login shell as target user
        -u USER     run command as USER`,
+	"sysctl": `SYSCTL(8)       System Administration       SYSCTL(8)
+
+NAME
+       sysctl - configure kernel parameters at runtime
+
+SYNOPSIS
+       sysctl [options] [variable[=value]]
+       sysctl -a
+
+OPTIONS
+       -a    display all variables
+       -w    set a variable
+       -p    load settings from /etc/sysctl.conf
+
+DESCRIPTION
+       sysctl is used to modify kernel parameters at runtime.
+       The parameters are available under /proc/sys/.
+
+EXAMPLES
+       sysctl -a                  # show all parameters
+       sysctl net.ipv4.ip_forward # read a value
+       sysctl -w net.ipv4.ip_forward=1  # set a value
+       sysctl -p                  # reload from config`,
+	"sysinfo": `SYSINFO(1)               User Commands               SYSINFO(1)
+
+NAME
+       sysinfo - display system information
+
+SYNOPSIS
+       sysinfo [options]
+
+DESCRIPTION
+       sysinfo displays a summary of system information
+       including OS, kernel, hostname, and hardware details.
+
+EXAMPLES
+       sysinfo    # display system information`,
 	"tac": `TAC(1)                   User Commands                     TAC(1)
 
 NAME
@@ -1640,6 +2070,34 @@ OPTIONS
        -f, --file=ARCHIVE     use archive file or device ARCHIVE
        -v, --verbose          verbosely list files processed
        -t, --list             list the contents of an archive`,
+	"tc": `TC(8)           System Administration           TC(8)
+
+NAME
+       tc - show / manipulate traffic control settings
+
+SYNOPSIS
+       tc [options] qdisc [show | add | change | replace | delete]
+       tc [options] class [show | add | change | replace | delete]
+       tc [options] filter [show | add | change | replace | delete]
+
+OPTIONS
+       qdisc   manage queueing disciplines
+       class   manage traffic classes
+       filter  manage packet filters
+       -s      show statistics
+
+DESCRIPTION
+       tc is used to configure Traffic Control in the Linux
+       kernel. It controls queuing disciplines, classes,
+       filters, and can simulate network conditions like
+       latency, packet loss, and bandwidth limits.
+
+EXAMPLES
+       tc qdisc show dev eth0                    # show qdiscs
+       tc qdisc add dev eth0 root netem delay 100ms  # add latency
+       tc qdisc add dev eth0 root netem loss 5%      # add packet loss
+       tc qdisc del dev eth0 root                  # remove qdisc
+       tc -s qdisc show dev eth0                   # show with stats`,
 	"tee": `TEE(1)                   User Commands                     TEE(1)
 
 NAME
@@ -1744,6 +2202,32 @@ SYNOPSIS
 
 OPTIONS
        -d     delete characters in SET1 instead of translating`,
+	"traceroute": `TRACEROUTE(8)       System Administration       TRACEROUTE(8)
+
+NAME
+       traceroute - print the route packets take to a network host
+
+SYNOPSIS
+       traceroute [options] host [packetlen]
+
+OPTIONS
+       -I    use ICMP Echo requests instead of UDP
+       -T    use TCP SYN
+       -m    set max TTL (default 30)
+       -w    set wait time per probe
+       -q    set number of probes per hop
+       -p    set destination port
+
+DESCRIPTION
+       traceroute tracks the route packets take from the local
+       machine to a given destination. It displays the path
+       and transit delays of packets across an IP network.
+
+EXAMPLES
+       traceroute google.com          # trace route to google
+       traceroute -I google.com       # use ICMP
+       traceroute -m 15 google.com    # max 15 hops
+       traceroute -w 2 google.com     # 2s wait per probe`,
 	"trap": `TRAP(1)                  Shell Builtins                   TRAP(1)
 
 NAME
@@ -1949,6 +2433,20 @@ SYNOPSIS
 
 DESCRIPTION
        Read items from stdin and execute COMMAND with those items as arguments.`,
+	"xfceDesktop": `XFCEDESKTOP(1)           User Commands           XFCEDESKTOP(1)
+
+NAME
+       xfceDesktop - manage Xfce desktop settings
+
+SYNOPSIS
+       xfceDesktop [options]
+
+DESCRIPTION
+       xfceDesktop provides access to Xfce desktop environment
+       settings and window management.
+
+EXAMPLES
+       xfceDesktop    # open desktop settings`,
 	"yes": `YES(1)                   User Commands                     YES(1)
 
 NAME
@@ -1965,4 +2463,29 @@ EXAMPLES
        yes | apt-get install pkg   # auto-confirm
        yes no | some-program       # repeatedly answer 'no'
        yes                         # output 'y' forever`,
+	"zip": `ZIP(1)                   User Commands                   ZIP(1)
+
+NAME
+       zip - package and compress (archive) files
+
+SYNOPSIS
+       zip [options] zipfile files...
+       zip -r zipfile directory...
+
+OPTIONS
+       -r    recurse into directories
+       -d    delete entries from archive
+       -u    update changed entries
+       -l    convert line endings to LF
+       -e    encrypt with password
+
+DESCRIPTION
+       zip is a compression and file packaging utility.
+       It produces compressed archives compatible with PKZIP.
+
+EXAMPLES
+       zip archive.zip file.txt      # compress a file
+       zip -r archive.zip dir/       # compress a directory
+       zip -e secure.zip file.txt    # encrypt archive
+       zip -d archive.zip file.txt   # remove from archive`,
 } as const;

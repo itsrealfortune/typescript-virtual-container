@@ -1,0 +1,25 @@
+NETCAT(1)               User Commands               NETCAT(1)
+
+NAME
+       netcat - TCP/IP swiss army knife
+
+SYNOPSIS
+       nc [options] host port
+       nc -l [options] port
+
+OPTIONS
+       -l    listen mode, for inbound connects
+       -p    specify local port
+       -u    UDP mode
+       -v    verbose
+       -z    zero-I/O mode (scanning)
+
+DESCRIPTION
+       netcat reads and writes data across network connections,
+       using TCP or UDP protocol.
+
+EXAMPLES
+       nc host 80           # connect to port 80
+       nc -l 8080           # listen on port 8080
+       nc -zv host 1-1000   # scan ports 1-1000
+       nc -u host 53        # UDP connection

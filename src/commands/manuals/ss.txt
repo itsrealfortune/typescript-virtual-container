@@ -1,0 +1,28 @@
+SS(8)           System Administration           SS(8)
+
+NAME
+       ss - another utility to investigate sockets
+
+SYNOPSIS
+       ss [options] [filter]
+
+OPTIONS
+       -t    display TCP sockets
+       -u    display UDP sockets
+       -l    display listening sockets
+       -a    display all sockets
+       -n    do not resolve service names
+       -p    show process using socket
+       -s    display summary statistics
+
+DESCRIPTION
+       ss is used to dump socket statistics. It allows showing
+       information similar to netstat but can display more
+       TCP and state information than other tools.
+
+EXAMPLES
+       ss              # list all connections
+       ss -t           # show TCP sockets
+       ss -tuln        # show listening TCP/UDP sockets
+       ss -s           # show socket statistics
+       ss -p           # show processes

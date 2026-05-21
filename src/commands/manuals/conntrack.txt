@@ -1,0 +1,26 @@
+CONNTRACK(8)       System Administration       CONNTRACK(8)
+
+NAME
+       conntrack - connection tracking administration tool
+
+SYNOPSIS
+       conntrack [options]
+       conntrack -L
+       conntrack -E
+
+OPTIONS
+       -L    list all tracked connections
+       -E    show events (new, update, destroy)
+       -D    delete a connection
+       -F    flush all entries
+
+DESCRIPTION
+       conntrack interacts with the kernel connection tracking
+       subsystem. It displays, manipulates, and monitors
+       tracked network connections.
+
+EXAMPLES
+       conntrack -L              # list all connections
+       conntrack -L -p tcp       # list only TCP connections
+       conntrack -E              # monitor connection events
+       conntrack -F              # flush tracking table

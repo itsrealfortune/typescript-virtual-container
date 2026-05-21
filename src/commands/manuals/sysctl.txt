@@ -1,0 +1,23 @@
+SYSCTL(8)       System Administration       SYSCTL(8)
+
+NAME
+       sysctl - configure kernel parameters at runtime
+
+SYNOPSIS
+       sysctl [options] [variable[=value]]
+       sysctl -a
+
+OPTIONS
+       -a    display all variables
+       -w    set a variable
+       -p    load settings from /etc/sysctl.conf
+
+DESCRIPTION
+       sysctl is used to modify kernel parameters at runtime.
+       The parameters are available under /proc/sys/.
+
+EXAMPLES
+       sysctl -a                  # show all parameters
+       sysctl net.ipv4.ip_forward # read a value
+       sysctl -w net.ipv4.ip_forward=1  # set a value
+       sysctl -p                  # reload from config

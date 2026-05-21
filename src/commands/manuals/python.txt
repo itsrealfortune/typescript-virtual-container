@@ -1,0 +1,23 @@
+PYTHON(1)               User Commands               PYTHON(1)
+
+NAME
+       python - Python interpreter
+
+SYNOPSIS
+       python [options] [-c cmd | -m mod | file | -] [arg...]
+
+OPTIONS
+       -c cmd   pass command to execute
+       -m mod   run library module as a script
+       -i       enter interactive mode after executing script
+       -V       print Python version
+
+DESCRIPTION
+       python is a high-level, interpreted programming language
+       known for readability and versatility.
+
+EXAMPLES
+       python                  # start interactive interpreter
+       python script.py        # run a Python script
+       python -c 'print(2+2)'  # one-liner
+       python -m http.server   # start HTTP server

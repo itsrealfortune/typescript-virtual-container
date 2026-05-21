@@ -1,0 +1,16 @@
+BC(1)                  User Commands                  BC(1)
+
+NAME
+       bc - an arbitrary precision calculator language
+
+SYNOPSIS
+       bc [options] [file...]
+
+DESCRIPTION
+       bc is a language that supports arbitrary precision numbers
+       with interactive execution of statements.
+
+EXAMPLES
+       bc           # start interactive calculator
+       echo "2+2" | bc   # calculate 2+2
+       echo "scale=2; 10/3" | bc   # division with 2 decimal places

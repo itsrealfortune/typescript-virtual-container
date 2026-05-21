@@ -1,0 +1,16 @@
+FUN(6)                   Games                   FUN(6)
+
+NAME
+       fun - collection of fun commands and easter eggs
+
+SYNOPSIS
+       fun [command] [options]
+
+DESCRIPTION
+       fun provides access to various entertaining commands
+       and visual effects available in the virtual environment.
+
+EXAMPLES
+       fun cmatrix    # matrix rain effect
+       fun fortune    # random fortune quote
+       fun cowsay     # ASCII cow says your message

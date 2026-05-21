@@ -1,0 +1,28 @@
+IPTABLES(8)       System Administration       IPTABLES(8)
+
+NAME
+       iptables - administration tool for IPv4 packet filtering and NAT
+
+SYNOPSIS
+       iptables [options] [chain] [match] [target]
+
+OPTIONS
+       -L    list all rules in a chain
+       -A    append a rule to a chain
+       -D    delete a rule from a chain
+       -F    flush all rules in a chain
+       -I    insert a rule at a given position
+       -p    protocol (tcp, udp, icmp)
+       -s    source address
+       -d    destination address
+       -j    target (ACCEPT, DROP, REJECT)
+
+DESCRIPTION
+       iptables is used to set up, maintain, and inspect the
+       tables of IPv4 packet filter rules in the Linux kernel.
+
+EXAMPLES
+       iptables -L                    # list all rules
+       iptables -A INPUT -p tcp --dport 22 -j ACCEPT  # allow SSH
+       iptables -A INPUT -p tcp --dport 80 -j ACCEPT  # allow HTTP
+       iptables -A INPUT -j DROP      # drop everything else
