@@ -34,7 +34,7 @@ bun install
 | `web-build` | `esbuild src/web.ts` | `builds/web.min.js` (browser ESM) |
 | `web-build-iife` | `esbuild src/web.ts --format=iife` | `builds/web-iife.min.js` (browser IIFE) |
 | `web-full-build` | `esbuild src/web-api.ts` with polyfills | `builds/web-full-api.min.js` |
-| `build-all` | `build` + `scripts/build-all.mjs` + `examples/build` | All builds + `docs/app.js` |
+| `build-all` | `build` + `scripts/build-all.mjs` + `demo/build` | All builds + `docs/app.js` |
 | `self-standalone-build` | `node scripts/build-all.mjs` | Self-contained `.mjs` + `.cjs` bundles |
 
 ### Test

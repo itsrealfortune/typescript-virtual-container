@@ -59,7 +59,7 @@ for (const cmd of targets) {
 // );
 // console.log(`\n✓ Copied ${NAMES.web} → examples/web.min.js`);
 
-// ── 4. Build library bundle (build.js) + demo app (examples/build.js) ────────
+// ── 4. Build library bundle (build.js) + demo app (demo/build.js) ────────
 run("node build.js");
 run("node build.js", join(root, "examples"));
 
@@ -69,9 +69,9 @@ mkdirSync(docsDir, { recursive: true });
 copyFileSync(join(root, "examples", "app.js"), join(docsDir, "app.js"));
 copyFileSync(join(root, "examples", "index.html"), join(docsDir, "demo.html"));
 copyFileSync(join(root, "examples", "app.css"), join(docsDir, "app.css"));
-console.log("\n✓ Copied examples/app.js → docs/app.js");
-console.log("✓ Copied examples/index.html → docs/demo.html");
-console.log("✓ Copied examples/app.css → docs/app.css");
+console.log("\n✓ Copied demo/app.js → docs/app.js");
+console.log("✓ Copied demo/index.html → docs/demo.html");
+console.log("✓ Copied demo/app.css → docs/app.css");
 
 // ── 6. Update README.md ───────────────────────────────────────────────────────
 const readmePath = join(root, "README.md");

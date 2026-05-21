@@ -1018,7 +1018,7 @@ Yes — `HoneyPot.attach()` captures every command, file write, auth attempt, an
 Core operations are implemented. Extended attributes and symlinks return `OP_UNSUPPORTED`.
 
 **Does the desktop work outside the browser?**
-No — `startxfce4`, `thunar`, and `mousepad` require a DOM. In Node.js/Bun they return an error immediately. The `DesktopManager` is only instantiated in the web shell example (`examples/app.ts`).
+No — `startxfce4`, `thunar`, and `mousepad` require a DOM. In Node.js/Bun they return an error immediately. The `DesktopManager` is only instantiated in the web shell example (`demo/app.ts`).
 
 **What does the desktop simulate?**
 A single-user XFCE session: a panel with Applications menu and clock, draggable windows, a file manager (Thunar) with navigation, right-click context menu, rename, and trash, a text editor (Mousepad) with Ctrl+S save, and terminal windows each backed by a real interactive shell session against the same VFS.
