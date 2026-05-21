@@ -71,12 +71,10 @@
 - [x] All 777 tests pass
 - [x] XFCE desktop: resize windows, multi-monitor layout
 - [x] Thunar: drag-and-drop between folders
-</details>
-
-## Urgent
 - [x] Fix parameters name convention in multiple filesand remove unused parameters (noUnusedLocals, noUnusedParameters)
 - [x] Fix all names conventions (camelCase for variables/functions, PascalCase for classes/types, UPPER_SNAKE_CASE for constants)
 - [x] Split src/modules/*.ts if they are needed to to uniformise the codebase and improve maintainability, and separate function modules from class modules
+</details>
 
 ## Prioty
 
