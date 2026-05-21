@@ -62,7 +62,11 @@ export const nprocCommand: ShellModule = {
 	description: "Print number of processing units",
 	category: "system",
 	params: ["[--all]"],
-	run: () => ({ stdout: "4", exitCode: 0 }),
+	run: ({ shell }) => {
+		const cap = shell.resourceCaps?.cpuCapCores;
+		const count = cap != null && cap > 0 ? cap : 4;
+		return { stdout: `${count}`, exitCode: 0 };
+	},
 };
 
 /**
