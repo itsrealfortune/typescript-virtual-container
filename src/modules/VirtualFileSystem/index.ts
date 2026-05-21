@@ -136,6 +136,10 @@ class VirtualFileSystem extends EventEmitter {
 	private readonly _contentResolvers = new Map<string, (path: string) => string | null>();
 	/** Sorted content resolver prefixes (longest-first). */
 	private _sortedContentResolvers: string[] | null = null;
+	/** RAM cap in bytes — writes that would exceed this are rejected with ENOMEM. */
+	private _ramCapBytes: number | null = null;
+	/** Cached total usage to avoid recomputing on every write (invalidated on writes). */
+	private _cachedUsageBytes: number | null = null;
 	/** True when running in a browser environment (no host FS access). */
 	private static readonly _isBrowser =
 		typeof process === "undefined" || typeof (process as NodeJS.Process).versions?.node === "undefined";
@@ -1056,6 +1060,18 @@ class VirtualFileSystem extends EventEmitter {
 		const storedContent = shouldCompress ? gzipSync(rawContent) : rawContent;
 		const mode = options.mode ?? 0o644;
 
+		// RAM cap enforcement: reject writes that would exceed the limit
+		if (this._ramCapBytes !== null) {
+			const currentUsage = this._getCachedUsage();
+			const existingSize = existing?.type === "file" ? (existing as InternalFileNode).content.length : 0;
+			const projectedUsage = currentUsage - existingSize + storedContent.length;
+			if (projectedUsage > this._ramCapBytes) {
+				throw new Error(
+					`ENOMEM: Cannot allocate memory: write to '${normalized}' would exceed RAM cap (${projectedUsage}/${this._ramCapBytes} bytes)`,
+				);
+			}
+		}
+
 		if (existing && existing.type === "file") {
 			const f = existing as InternalFileNode;
 			f.content = storedContent;
@@ -1071,6 +1087,7 @@ class VirtualFileSystem extends EventEmitter {
 
 		this.emit("file:write", { path: normalized, size: storedContent.length });
 		this._journal({ op: JournalOp.WRITE, path: normalized, content: rawContent, mode });
+		this._cachedUsageBytes = null; // invalidate cache
 	}
 
 	/**
@@ -1500,6 +1517,34 @@ class VirtualFileSystem extends EventEmitter {
 			total += this._computeUsage(child);
 		}
 		return total;
+	}
+
+	/**
+	 * Sets a RAM cap — writes that would cause total VFS usage to exceed this
+	 * limit are rejected with an ENOMEM error.
+	 *
+	 * @param bytes - Maximum total bytes allowed in the VFS tree, or `null` to remove the cap.
+	 */
+	public setRamCap(bytes: number | null): void {
+		this._ramCapBytes = bytes != null && bytes > 0 ? bytes : null;
+		this._cachedUsageBytes = null;
+	}
+
+	/**
+	 * Returns the current RAM cap in bytes, or `null` if uncapped.
+	 */
+	public getRamCap(): number | null {
+		return this._ramCapBytes;
+	}
+
+	/**
+	 * Returns cached total usage, recomputing if the cache is stale.
+	 */
+	private _getCachedUsage(): number {
+		if (this._cachedUsageBytes === null) {
+			this._cachedUsageBytes = this._computeUsage(this._root);
+		}
+		return this._cachedUsageBytes;
 	}
 
 	/**

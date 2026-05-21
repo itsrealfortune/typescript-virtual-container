@@ -20,6 +20,7 @@
 
 import * as os from "node:os";
 import type { ShellProperties } from "../modules/VirtualShell";
+import type { VirtualShellResourceCaps } from "../modules/VirtualShell";
 import VirtualFileSystem from "./VirtualFileSystem";
 import { decodeVfs } from "./VirtualFileSystem/binaryPack";
 import type { VirtualNetworkManager } from "./VirtualNetworkManager";
@@ -704,6 +705,7 @@ function bootProcLog(vfs: VirtualFileSystem, props: ShellProperties): void {
  * @param shellStartTime - Timestamp when the shell started (for uptime calc).
  * @param sessions - Active SSH sessions to populate /proc/<pid> for.
  * @param network - Optional network manager for /proc/net entries.
+ * @param resourceCaps - Optional RAM and CPU caps for the VM.
  */
 export function refreshProc(
 	vfs: VirtualFileSystem,
@@ -712,6 +714,7 @@ export function refreshProc(
 	shellStartTime: number,
 	sessions: VirtualActiveSession[] = [],
 	network?: VirtualNetworkManager,
+	resourceCaps?: VirtualShellResourceCaps,
 ): void {
 	ensureDir(vfs, "/proc");
 
@@ -719,15 +722,18 @@ export function refreshProc(
 	const idleSec   = Math.floor(uptimeSec * 0.9);
 	write(vfs, "/proc/uptime", `${uptimeSec}.00 ${idleSec}.00\n`);
 
-	// meminfo — real host values, Linux-compatible format
-	const totalMemKb   = Math.floor(os.totalmem() / 1024);
-	const freeMemKb    = Math.floor(os.freemem() / 1024);
-	const availMemKb   = Math.floor(freeMemKb * 0.95);
-	const buffersKb    = Math.floor(totalMemKb * 0.03);
-	const cachedKb     = Math.floor(totalMemKb * 0.08);
-	const shmemKb      = Math.floor(totalMemKb * 0.005);
-	const slabKb       = Math.floor(totalMemKb * 0.02);
-	const pageTablesKb = Math.floor(totalMemKb * 0.001);
+	// meminfo — real host values, Linux-compatible format (or capped)
+	const hostTotalMemKb = Math.floor(os.totalmem() / 1024);
+	const hostFreeMemKb  = Math.floor(os.freemem() / 1024);
+	const ramCapKb       = resourceCaps?.ramCapBytes != null ? Math.floor(resourceCaps.ramCapBytes / 1024) : null;
+	const totalMemKb     = ramCapKb != null ? Math.min(hostTotalMemKb, ramCapKb) : hostTotalMemKb;
+	const freeMemKb      = ramCapKb != null ? Math.floor(totalMemKb * (hostFreeMemKb / hostTotalMemKb)) : hostFreeMemKb;
+	const availMemKb     = Math.floor(freeMemKb * 0.95);
+	const buffersKb      = Math.floor(totalMemKb * 0.03);
+	const cachedKb       = Math.floor(totalMemKb * 0.08);
+	const shmemKb        = Math.floor(totalMemKb * 0.005);
+	const slabKb         = Math.floor(totalMemKb * 0.02);
+	const pageTablesKb   = Math.floor(totalMemKb * 0.001);
 	write(
 		vfs,
 		"/proc/meminfo",
@@ -787,8 +793,10 @@ export function refreshProc(
 		].join("\n")}\n`,
 	);
 
-	// cpuinfo — real host CPU passthrough + x86 feature flags matching Firecracker Xeon
-	const cpus = os.cpus();
+	// cpuinfo — real host CPU passthrough + x86 feature flags matching Firecracker Xeon (or capped)
+	const hostCpus = os.cpus();
+	const cpuCapCount = resourceCaps?.cpuCapCores != null ? Math.min(resourceCaps.cpuCapCores, hostCpus.length) : hostCpus.length;
+	const cpus = hostCpus.slice(0, cpuCapCount);
 	const cpuLines: string[] = [];
 	for (let i = 0; i < cpus.length; i++) {
 		const c = cpus[i];
@@ -838,7 +846,7 @@ export function refreshProc(
 	write(vfs, "/proc/loadavg", `${load} ${load} ${load} ${numProcs}/${numProcs} 1\n`);
 
 	// /proc/stat — CPU statistics
-	const cpuCount = os.cpus().length;
+	const cpuCount = cpus.length;
 	const userJiffies = Math.floor(uptimeSec * 100);
 	const niceJiffies = Math.floor(uptimeSec * 2);
 	const systemJiffies = Math.floor(uptimeSec * 30);
@@ -1126,6 +1134,7 @@ export function refreshProc(
 	write(vfs, "/proc/sys/kernel/ngroups_max",           "65536\n");
 	write(vfs, "/proc/sys/kernel/cap_last_cap",          "40\n");
 	write(vfs, "/proc/sys/kernel/unprivileged_userns_clone", "1\n");
+	write(vfs, "/proc/sys/kernel/cpu_cap_cores", `${resourceCaps?.cpuCapCores ?? 0}\n`);
 	write(vfs, "/proc/sys/net/ipv4/ip_forward",          "0\n");
 	write(vfs, "/proc/sys/net/ipv4/tcp_syncookies",      "1\n");
 	write(vfs, "/proc/sys/net/ipv4/tcp_fin_timeout",     "60\n");
@@ -1142,10 +1151,23 @@ export function refreshProc(
 	write(vfs, "/proc/sys/vm/dirty_background_ratio",    "10\n");
 	write(vfs, "/proc/sys/vm/min_free_kbytes",           "65536\n");
 	write(vfs, "/proc/sys/vm/vfs_cache_pressure",        "100\n");
+	write(vfs, "/proc/sys/vm/ram_cap_bytes", `${resourceCaps?.ramCapBytes ?? 0}\n`);
 	write(vfs, "/proc/sys/fs/file-max",                  "1048576\n");
 	write(vfs, "/proc/sys/fs/inotify/max_user_watches",  "524288\n");
 	write(vfs, "/proc/sys/fs/inotify/max_user_instances","512\n");
 	write(vfs, "/proc/sys/fs/inotify/max_queued_events", "16384\n");
+
+	// /sys/fs/cgroup — update resource caps dynamically
+	const effectiveRamCap = resourceCaps?.ramCapBytes ?? os.totalmem();
+	const effectiveCpuQuota = resourceCaps?.cpuCapCores != null ? resourceCaps.cpuCapCores * 100000 : -1;
+	ensureDir(vfs, "/sys/fs/cgroup/memory");
+	write(vfs, "/sys/fs/cgroup/memory/memory.limit_in_bytes", `${effectiveRamCap}\n`);
+	write(vfs, "/sys/fs/cgroup/memory/memory.usage_in_bytes", `${effectiveRamCap - os.freemem()}\n`);
+	write(vfs, "/sys/fs/cgroup/memory/memory.memsw.limit_in_bytes", `${effectiveRamCap}\n`);
+	ensureDir(vfs, "/sys/fs/cgroup/cpu");
+	write(vfs, "/sys/fs/cgroup/cpu/cpu.cfs_period_us", "100000\n");
+	write(vfs, "/sys/fs/cgroup/cpu/cpu.cfs_quota_us", `${effectiveCpuQuota}\n`);
+	write(vfs, "/sys/fs/cgroup/cpu/cpu.shares", "1024\n");
 
 	// /proc/cgroups — v1 hierarchy
 	write(vfs, "/proc/cgroups",
@@ -1210,7 +1232,7 @@ export function refreshProc(
 
 // ─── /sys ─────────────────────────────────────────────────────────────────────
 
-function bootstrapSys(vfs: VirtualFileSystem, hostname: string, props: ShellProperties): void {
+function bootstrapSys(vfs: VirtualFileSystem, hostname: string, props: ShellProperties, resourceCaps?: VirtualShellResourceCaps): void {
 	ensureDir(vfs, "/sys");
 
 	// No real DMI in Firecracker — /sys/devices/virtual/dmi/id does not exist.
@@ -1269,11 +1291,12 @@ function bootstrapSys(vfs: VirtualFileSystem, hostname: string, props: ShellProp
 			ensureFile(vfs, `/sys/fs/cgroup/${subsys}/release_agent`, "");
 		}
 	}
-	ensureFile(vfs, "/sys/fs/cgroup/memory/memory.limit_in_bytes",     `${os.totalmem()}\n`);
-	ensureFile(vfs, "/sys/fs/cgroup/memory/memory.usage_in_bytes",      `${os.totalmem() - os.freemem()}\n`);
-	ensureFile(vfs, "/sys/fs/cgroup/memory/memory.memsw.limit_in_bytes",`${os.totalmem()}\n`);
+	const ramCapBytes = resourceCaps?.ramCapBytes ?? os.totalmem();
+	ensureFile(vfs, "/sys/fs/cgroup/memory/memory.limit_in_bytes",     `${ramCapBytes}\n`);
+	ensureFile(vfs, "/sys/fs/cgroup/memory/memory.usage_in_bytes",      `${ramCapBytes - os.freemem()}\n`);
+	ensureFile(vfs, "/sys/fs/cgroup/memory/memory.memsw.limit_in_bytes",`${ramCapBytes}\n`);
 	ensureFile(vfs, "/sys/fs/cgroup/cpu/cpu.cfs_period_us",             "100000\n");
-	ensureFile(vfs, "/sys/fs/cgroup/cpu/cpu.cfs_quota_us",              "-1\n");
+	ensureFile(vfs, "/sys/fs/cgroup/cpu/cpu.cfs_quota_us",              resourceCaps?.cpuCapCores != null ? `${resourceCaps.cpuCapCores * 100000}\n` : "-1\n");
 	ensureFile(vfs, "/sys/fs/cgroup/cpu/cpu.shares",                    "1024\n");
 
 	ensureDir(vfs, "/sys/kernel");
@@ -2096,6 +2119,8 @@ export function getStaticRootfsSnapshot(
  * @param props          Shell properties (kernel, os, arch).
  * @param shellStartTime Unix ms of shell creation (for uptime).
  * @param sessions       Active sessions (for /proc/<pid> population).
+ * @param network        Optional network manager for /proc/net entries.
+ * @param resourceCaps   Optional RAM and CPU caps for the VM.
  */
 export function bootstrapLinuxRootfs(
 	vfs: VirtualFileSystem,
@@ -2105,6 +2130,7 @@ export function bootstrapLinuxRootfs(
 	shellStartTime: number,
 	sessions: VirtualActiveSession[] = [],
 	network?: VirtualNetworkManager,
+	resourceCaps?: VirtualShellResourceCaps,
 ): void {
 	const snapshot = getStaticRootfsSnapshot(hostname, props);
 	const hasRestoredData = vfs.getMode() === "fs" && vfs.exists("/home");
@@ -2116,7 +2142,7 @@ export function bootstrapLinuxRootfs(
 	}
 
 	bootstrapRoot(vfs);
-	refreshProc(vfs, props, hostname, shellStartTime, sessions, network);
+	refreshProc(vfs, props, hostname, shellStartTime, sessions, network, resourceCaps);
 	syncEtcPasswd(vfs, users);
 }
 

@@ -54,14 +54,18 @@ export const htopCommand: ShellModule = {
 	params: ["[-d delay]", "[-p pid]"],
 	run: ({ shell, authUser }) => {
 		// Render ANSI snapshot in all modes — real htop child_process unavailable in-process
-		const totalMem  = os.totalmem();
-		const freeMem   = os.freemem();
+		const hostTotalMem  = os.totalmem();
+		const hostFreeMem   = os.freemem();
+		const ramCap = shell.resourceCaps?.ramCapBytes;
+		const totalMem  = ramCap != null ? Math.min(hostTotalMem, ramCap) : hostTotalMem;
+		const freeMem   = ramCap != null ? Math.floor(totalMem * (hostFreeMem / hostTotalMem)) : hostFreeMem;
 		const usedMem   = totalMem - freeMem;
 		const swapTotal = Math.floor(totalMem * 0.5);
 		const swapUsed  = Math.floor(swapTotal * 0.02);
 
-		const cpus       = os.cpus();
-		const cpuCount   = cpus.length || 4;
+		const hostCpus       = os.cpus();
+		const cpuCapCount    = shell.resourceCaps?.cpuCapCores != null ? Math.min(shell.resourceCaps.cpuCapCores, hostCpus.length) : hostCpus.length;
+		const cpuCount   = cpuCapCount || 4;
 		const uptimeMs   = Date.now() - shell.startTime;
 		const sessions   = shell.users.listActiveSessions();
 		const taskCount  = sessions.length + shell.users.listProcesses().length + 3; // bash sessions + running cmds + kernel threads
