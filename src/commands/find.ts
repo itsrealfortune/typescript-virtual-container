@@ -17,8 +17,8 @@ export const findCommand: ShellModule = {
 		// Collect root paths (positional args before first - option)
 		const roots: string[] = [];
 		let i = 0;
-		while (i < args.length && !args[i]!.startsWith("-") && args[i] !== "!" && args[i] !== "(") {
-			roots.push(args[i]!);
+		while (i < args.length && !(args[i] as string).startsWith("-") && args[i] !== "!" && args[i] !== "(") {
+			roots.push(args[i] as string);
 			i++;
 		}
 		if (roots.length === 0) roots.push(".");
@@ -108,7 +108,7 @@ export const findCommand: ShellModule = {
 				const cmd: string[] = [];
 				let j = pos + 1;
 				while (j < tokens.length && tokens[j] !== ";") {
-					cmd.push(tokens[j]!);
+					cmd.push(tokens[j] as string);
 					j++;
 				}
 				execCmds.push({ cmd, useDir });

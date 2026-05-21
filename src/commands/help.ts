@@ -56,7 +56,7 @@ function renderFull(modules: ShellModule[]): string {
 	for (const mod of modules) {
 		const cat = mod.category ?? "misc";
 		if (!grouped[cat]) grouped[cat] = [];
-		grouped[cat]!.push(mod);
+		grouped[cat]?.push(mod);
 	}
 
 	const lines: string[] = [

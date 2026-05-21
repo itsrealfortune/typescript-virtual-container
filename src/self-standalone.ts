@@ -116,7 +116,7 @@ function askHiddenQuestion(rl: Interface, promptText: string): Promise<string> {
 		const onData = (chunk: Buffer): void => {
 			const input = chunk.toString("utf8");
 			for (let i = 0; i < input.length; i += 1) {
-				const ch = input[i]!;
+				const ch = input.charAt(i);
 				if (ch === "\r" || ch === "\n") { finish(buffer); return; }
 				if (ch === "" || ch === "\b") { buffer = buffer.slice(0, -1); continue; }
 				if (ch >= " ") buffer += ch;
@@ -218,7 +218,8 @@ async function runReadlineShell(): Promise<void> {
 		rlI._ttyWrite = (s, key) => {
 			if (key?.ctrl && key?.name === "d" && rlI.line === "" && sessionStack.length > 0) {
 				stdout.write("^D\n");
-				const prev = sessionStack.pop()!;
+				const prev = sessionStack.pop();
+				if (prev === undefined) return;
 				authUser = prev.authUser;
 				cwd = prev.cwd;
 				shellEnv.vars.USER = authUser;
@@ -516,8 +517,8 @@ async function runReadlineShell(): Promise<void> {
 
 		if (result.closeSession) {
 			await flushVfs();
-			if (sessionStack.length > 0) {
-				const prev = sessionStack.pop()!;
+			const prev = sessionStack.pop();
+			if (prev !== undefined) {
 				authUser = prev.authUser;
 				cwd = prev.cwd;
 				shellEnv.vars.USER = authUser;
@@ -630,11 +631,11 @@ async function runReadlineShell(): Promise<void> {
 	});
 
 	rl.on("close", () => {
-		if (sessionStack.length > 0) {
+		const prev = sessionStack.pop();
+		if (prev !== undefined) {
 			// Ctrl+D inside a su session: pop back to outer user then exit cleanly.
 			// Readline is already closed at this point so we can't re-prompt;
 			// just flush and exit with 0 (same UX as real ssh when inner shell dies).
-			const prev = sessionStack.pop()!;
 			authUser = prev.authUser;
 			void flushVfs().then(() => {
 				stdout.write(`logout\n`);

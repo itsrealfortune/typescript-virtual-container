@@ -21,10 +21,10 @@ export const sedCommand: ShellModule = {
 		let fileArg: string | undefined;
 		let i = 0;
 		while (i < args.length) {
-			const a = args[i]!;
+			const a = args[i] as string;
 			if (a === "-e" || a === "--expression") {
 				i++;
-				if (args[i]) exprs.push(args[i]!);
+				if (args[i]) exprs.push(args[i] as string);
 				i++;
 			} else if (a === "-n" || a === "-i") {
 				i++;
@@ -48,7 +48,7 @@ export const sedCommand: ShellModule = {
 			let foundExprFromFlag = false;
 			let j = 0;
 			while (j < args.length) {
-				const a = args[j]!;
+				const a = args[j] as string;
 				if (a === "-e" || a === "--expression") { foundExprFromFlag = true; j += 2; }
 				else if (a.startsWith("-e")) { foundExprFromFlag = true; j++; }
 				else j++;
@@ -80,7 +80,7 @@ export const sedCommand: ShellModule = {
 			if (s[0] === "$") return [{ type: "last" }, s.slice(1)];
 			if (/^\d/.test(s)) {
 				const m = s.match(/^(\d+)(.*)/s);
-				if (m) return [{ type: "line", n: parseInt(m[1]!, 10) }, m[2]!];
+				if (m) return [{ type: "line", n: parseInt(m[1] as string, 10) }, m[2] as string];
 			}
 			if (s[0] === "/") {
 				const end = s.indexOf("/", 1);
@@ -126,9 +126,9 @@ export const sedCommand: ShellModule = {
 					if (!m) { instrs.push({ op: "d", addr1, addr2 }); continue; } // bad expr, skip
 					const flags = m[3] ?? "";
 					let from: RegExp;
-					try { from = new RegExp(m[1]!, flags.includes("i") || flags.includes("I") ? "i" : ""); }
+					try { from = new RegExp(m[1] as string, flags.includes("i") || flags.includes("I") ? "i" : ""); }
 					catch { continue; }
-					instrs.push({ op: "s", addr1, addr2, from, to: m[2]!, global: flags.includes("g") || flags.includes("G"), print: flags.includes("p") });
+					instrs.push({ op: "s", addr1, addr2, from, to: m[2] as string, global: flags.includes("g") || flags.includes("G"), print: flags.includes("p") });
 				} else if (op === "d") {
 					instrs.push({ op: "d", addr1, addr2 });
 				} else if (op === "p") {
@@ -182,7 +182,7 @@ export const sedCommand: ShellModule = {
 		let quit = false;
 
 		for (let li = 0; li < lines.length && !quit; li++) {
-			let line = lines[li]!;
+			let line = lines[li] as string;
 			const lineNo = li + 1;
 			let deleted = false;
 

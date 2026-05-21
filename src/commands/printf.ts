@@ -39,14 +39,14 @@ function renderPrintf(fmt: string, args: string[]): string {
 					out += "\x0C";
 					i += 2;
 					continue;
-				case "v":
-					out += "\x0B";
-					i += 2;
-					continue;
-				default:
-					out += fmt[i]!;
-					i++;
-					continue;
+			case "v":
+				out += "\x0B";
+				i += 2;
+				continue;
+			default:
+				out += fmt[i] as string;
+				i++;
+				continue;
 			}
 		}
 		if (fmt[i] === "%" && i + 1 < fmt.length) {
@@ -54,11 +54,11 @@ function renderPrintf(fmt: string, args: string[]): string {
 			let leftAlign = false; if (fmt[j] === "-") { leftAlign = true; j++; }
 			let zeroPad = false; if (fmt[j] === "0") { zeroPad = true; j++; }
 			let width = 0;
-			while (j < fmt.length && /\d/.test(fmt[j]!)) { width = width * 10 + parseInt(fmt[j]!, 10); j++; }
+			while (j < fmt.length && /\d/.test(fmt[j] as string)) { width = width * 10 + parseInt(fmt[j] as string, 10); j++; }
 			let precision = -1;
 			if (fmt[j] === ".") {
 				j++; precision = 0;
-				while (j < fmt.length && /\d/.test(fmt[j]!)) { precision = precision * 10 + parseInt(fmt[j]!, 10); j++; }
+				while (j < fmt.length && /\d/.test(fmt[j] as string)) { precision = precision * 10 + parseInt(fmt[j] as string, 10); j++; }
 			}
 			const spec = fmt[j];
 			const arg = args[argIdx++] ?? "";
@@ -92,19 +92,19 @@ function renderPrintf(fmt: string, args: string[]): string {
 				case "X":
 					out += pad((parseInt(arg, 10) || 0).toString(16).toUpperCase(), zeroPad ? "0" : " ");
 					break;
-				case "%":
-					out += "%";
-					argIdx--;
-					break;
-				default:
-					out += fmt[i]!;
-					i++;
-					continue;
+			case "%":
+				out += "%";
+				argIdx--;
+				break;
+			default:
+				out += fmt[i] as string;
+				i++;
+				continue;
 			}
 			i = j + 1;
 			continue;
 		}
-		out += fmt[i]!;
+		out += fmt[i] as string;
 		i++;
 	}
 	return out;

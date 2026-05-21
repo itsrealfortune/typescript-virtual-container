@@ -41,16 +41,16 @@ export class VirtualVpn {
 	}
 
 	private _registerRoutes(): void {
-		const aSubnet = this._baieA.switch.subnet.split("/")[0]!;
-		const bSubnet = this._baieB.switch.subnet.split("/")[0]!;
+		const aSubnet = this._baieA.switch.subnet.split("/")[0] as string;
+		const bSubnet = this._baieB.switch.subnet.split("/")[0] as string;
 		this._routes.set(aSubnet, this);
 		this._routes.set(bSubnet, this);
 	}
 
 	private async _routeTo(packet: Packet): Promise<PacketResult> {
-		const aSubnet = this._baieA.switch.subnet.split("/")[0]!;
+		const aSubnet = this._baieA.switch.subnet.split("/")[0] as string;
 		const aPrefix = aSubnet.slice(0, aSubnet.lastIndexOf("."));
-		const bSubnet = this._baieB.switch.subnet.split("/")[0]!;
+		const bSubnet = this._baieB.switch.subnet.split("/")[0] as string;
 		const bPrefix = bSubnet.slice(0, bSubnet.lastIndexOf("."));
 
 		if (packet.dstIp.startsWith(aPrefix)) {

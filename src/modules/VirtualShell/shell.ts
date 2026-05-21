@@ -113,7 +113,7 @@ export function startShell(
 				if (!l || l.startsWith("#")) continue;
 				if (isEnvFile) {
 					const m = l.match(/^([A-Za-z_][A-Za-z0-9_]*)=["']?(.+?)["']?\s*$/);
-					if (m) shellEnv.vars[m[1]!] = m[2]!;
+					if (m) shellEnv.vars[m[1] as string] = m[2] as string;
 				} else {
 					const r = await runCommand(l, authUser, hostname, "shell", cwd, shell, undefined, shellEnv);
 					if (r.stdout) stream.write(r.stdout.replace(/\n/g, "\r\n"));
@@ -349,12 +349,12 @@ export function startShell(
 		cursor: number,
 	): { start: number; end: number } {
 		let start = cursor;
-		while (start > 0 && !/\s/.test(line[start - 1]!)) {
+		while (start > 0 && !/\s/.test(line.charAt(start - 1))) {
 			start -= 1;
 		}
 
 		let end = cursor;
-		while (end < line.length && !/\s/.test(line[end]!)) {
+		while (end < line.length && !/\s/.test(line.charAt(end))) {
 			end += 1;
 		}
 
@@ -384,7 +384,7 @@ export function startShell(
 		}
 
 		if (candidates.length === 1) {
-			const completed = candidates[0]!;
+			const completed = candidates[0] as string;
 			const suffix = completed.endsWith("/") ? "" : " ";
 			lineBuffer = `${lineBuffer.slice(0, start)}${completed}${suffix}${lineBuffer.slice(end)}`;
 			cursorPos = start + completed.length + suffix.length;
@@ -430,7 +430,7 @@ export function startShell(
 			const hd = pendingHeredoc;
 			const input = chunk.toString("utf8");
 			for (let i = 0; i < input.length; i++) {
-				const ch = input[i]!;
+				const ch = input.charAt(i);
 				if (ch === "") {
 					pendingHeredoc = null;
 					stream.write("^C\r\n");
@@ -477,7 +477,7 @@ export function startShell(
 			const input = chunk.toString("utf8");
 
 			for (let i = 0; i < input.length; i += 1) {
-				const ch = input[i]!;
+				const ch = input.charAt(i);
 
 				if (ch === "\u0003") {
 					pendingSudo = null;
@@ -531,8 +531,7 @@ export function startShell(
 		const input = chunk.toString("utf8");
 
 		for (let i = 0; i < input.length; i += 1) {
-			const ch = input[i]!;
-
+			const ch = input.charAt(i);
 		if (ch === "\u0004") {
 			lineBuffer = "";
 			cursorPos = 0;
@@ -540,7 +539,7 @@ export function startShell(
 			historyDraft = "";
 			stream.write("logout\r\n");
 			if (sessionStack.length > 0) {
-				const prev = sessionStack.pop()!;
+				const prev = sessionStack.pop() as { authUser: string; cwd: string };
 				authUser = prev.authUser;
 				cwd = prev.cwd;
 				shell.users.updateSession(sessionId, authUser, remoteAddress);
@@ -667,17 +666,17 @@ export function startShell(
 
 				// !! history expansion
 				if (line === "!!" || line.startsWith("!! ") || /\s!!$/.test(line) || / !! /.test(line)) {
-					const lastCmd = history.length > 0 ? history[history.length - 1]! : "";
+					const lastCmd = history.length > 0 ? history[history.length - 1] as string : "";
 					line = line === "!!" ? lastCmd : line.replace(/!!/g, lastCmd);
 				} else if (/(?:^|\s)!!/.test(line)) {
-					const lastCmd = history.length > 0 ? history[history.length - 1]! : "";
+					const lastCmd = history.length > 0 ? history[history.length - 1] as string : "";
 					line = line.replace(/!!/g, lastCmd);
 				}
 
 				// Heredoc detection: cmd << DELIM
 				const heredocMatch = line.match(/^(.*?)\s*<<-?\s*['"`]?([A-Za-z_][A-Za-z0-9_]*)['"`]?\s*$/);
 				if (heredocMatch && line.length > 0) {
-					pendingHeredoc = { delimiter: heredocMatch[2]!, lines: [], cmdBefore: heredocMatch[1]!.trim() || "cat" };
+					pendingHeredoc = { delimiter: heredocMatch[2] as string, lines: [], cmdBefore: (heredocMatch[1] as string).trim() || "cat" };
 					stream.write("> ");
 					continue;
 				}
@@ -736,7 +735,7 @@ export function startShell(
 			if (result.closeSession) {
 					stream.write("logout\r\n");
 					if (sessionStack.length > 0) {
-						const prev = sessionStack.pop()!;
+						const prev = sessionStack.pop() as { authUser: string; cwd: string };
 						authUser = prev.authUser;
 						cwd = prev.cwd;
 						shell.users.updateSession(sessionId, authUser, remoteAddress);

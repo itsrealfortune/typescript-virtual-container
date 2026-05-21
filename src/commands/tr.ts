@@ -24,7 +24,7 @@ function expandTrSet(s: string): string[] {
 				continue;
 			}
 		}
-		chars.push(unescaped[i]!);
+		chars.push(unescaped[i] as string);
 		i++;
 	}
 	return chars;
@@ -57,7 +57,7 @@ export const trCommand: ShellModule = {
 			const map = new Map<string, string>();
 			for (let i = 0; i < set1chars.length; i++) {
 				map.set(
-					set1chars[i]!,
+					set1chars[i] as string,
 					set2chars[i] ?? set2chars[set2chars.length - 1] ?? "",
 				);
 			}

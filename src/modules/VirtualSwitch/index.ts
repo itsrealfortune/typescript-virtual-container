@@ -87,7 +87,7 @@ export class VirtualSwitch {
 	public async route(packet: Packet): Promise<PacketResult> {
 		// DNS resolution
 		if (this._dnsRecords.has(packet.dstIp)) {
-			const resolvedIp = this._dnsRecords.get(packet.dstIp)!;
+			const resolvedIp = this._dnsRecords.get(packet.dstIp) as string;
 			packet = { ...packet, dstIp: resolvedIp };
 		}
 
@@ -211,7 +211,8 @@ export class VirtualSwitch {
 		if (lb.algorithm === "round-robin") {
 			const idx = (this._lbCounters.get(lb.name) ?? 0) % targets.length;
 			this._lbCounters.set(lb.name, idx + 1);
-			return this.resolveDns(targets[idx]!.hostname) ?? targets[idx]!.hostname;
+			const target = targets[idx] as (typeof targets)[number];
+			return this.resolveDns(target.hostname) ?? target.hostname;
 		}
 		const totalWeight = targets.reduce((sum, t) => sum + t.weight, 0);
 		let roll = Math.random() * totalWeight;
@@ -241,7 +242,7 @@ export class VirtualSwitch {
 	}
 
 	public get gateway(): string {
-		return intToIp(ipToInt(this.subnet.split("/")[0]!) | 1);
+		return intToIp(ipToInt(this.subnet.split("/")[0] as string) | 1);
 	}
 
 	public resolveHostname(name: string): string | null {

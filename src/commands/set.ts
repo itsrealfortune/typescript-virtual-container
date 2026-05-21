@@ -23,7 +23,7 @@ export const setCommand: ShellModule = {
 			const flagMatch = arg.match(/^([+-])([a-zA-Z]+)$/);
 			if (flagMatch) {
 				const on = flagMatch[1] === "-";
-				for (const flag of flagMatch[2]!) {
+				for (const flag of flagMatch[2] as string) {
 					if (flag === "e") { if (on) env.vars.__errexit = "1"; else delete env.vars.__errexit; }
 					if (flag === "x") { if (on) env.vars.__xtrace = "1"; else delete env.vars.__xtrace; }
 				}

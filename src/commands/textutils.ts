@@ -117,9 +117,9 @@ export const commCommand: ShellModule = {
 		const maxLen = Math.max(only1.length, only2.length, both.length);
 		const results: string[] = [];
 		for (let i = 0; i < maxLen; i++) {
-			const col1 = i < only1.length ? only1[i]! : "";
-			const col2 = i < only2.length ? only2[i]! : "";
-			const col3 = i < both.length ? both[i]! : "";
+			const col1 = i < only1.length ? only1[i] as string : "";
+			const col2 = i < only2.length ? only2[i] as string : "";
+			const col3 = i < both.length ? both[i] as string : "";
 			results.push(`${col1}\t${col2}\t${col3}`);
 		}
 
@@ -142,7 +142,7 @@ export const splitCommand: ShellModule = {
 			flagsWithValue: ["-l", "-b"],
 		});
 		const linesPerFile = parseInt(flagsWithValues.get("-l") || "1000", 10);
-		const bytesPerFile = flagsWithValues.has("-b") ? parseInt(flagsWithValues.get("-b")!, 10) : undefined;
+		const bytesPerFile = flagsWithValues.has("-b") ? parseInt(flagsWithValues.get("-b") as string, 10) : undefined;
 		const fileArg = positionals[0];
 		const prefix = positionals[1] || "x";
 

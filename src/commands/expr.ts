@@ -13,8 +13,8 @@ export const exprCommand: ShellModule = {
 	run: ({ args }) => {
 		const colonIdx = args.indexOf(":");
 		if (colonIdx > 0 && colonIdx <= args.length - 2) {
-			const str = args[colonIdx - 1]!;
-			const pattern = args[colonIdx + 1]!;
+			const str = args[colonIdx - 1] as string;
+			const pattern = args[colonIdx + 1] as string;
 			try {
 				const re = new RegExp(pattern);
 				const match = str.match(re);
@@ -28,9 +28,9 @@ export const exprCommand: ShellModule = {
 		}
 
 		if (args.length >= 3) {
-			const left = parseInt(args[0]!, 10);
-			const op = args[1]!;
-			const right = parseInt(args[2]!, 10);
+			const left = parseInt(args[0] as string, 10);
+			const op = args[1] as string;
+			const right = parseInt(args[2] as string, 10);
 			if (Number.isNaN(left) || Number.isNaN(right)) {
 				return { stderr: "expr: non-integer argument\n", exitCode: 1 };
 			}

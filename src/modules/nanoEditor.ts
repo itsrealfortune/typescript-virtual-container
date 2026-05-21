@@ -32,7 +32,7 @@ function stripAnsi(s: string): string {
 	while (i < s.length) {
 		if (s[i] === ESC && s[i + 1] === "[") {
 			i += 2;
-			while (i < s.length && (s[i]! < "@" || s[i]! > "~")) i++;
+			while (i < s.length && (s.charAt(i) < "@" || s.charAt(i) > "~")) i++;
 			i++;
 		} else {
 			out += s[i];
@@ -207,14 +207,14 @@ export class NanoEditor {
 	// ── Input dispatch ────────────────────────────────────────────────────────
 
 	private _consumeSequence(data: string, i: number): number {
-		const ch = data[i]!;
+		const ch = data.charAt(i);
 
 		// ESC sequences
 		if (ch === ESC) {
 			if (data[i + 1] === "[") {
 				// CSI sequence
 				let j = i + 2;
-				while (j < data.length && (data[j]! < "@" || data[j]! > "~")) j++;
+				while (j < data.length && (data.charAt(j) < "@" || data.charAt(j) > "~")) j++;
 				const seq = data.slice(i, j + 1);
 				this._handleEscape(seq);
 				return j - i + 1;
@@ -227,7 +227,7 @@ export class NanoEditor {
 			}
 			// Alt+key
 			if (i + 1 < data.length) {
-				this._handleAlt(data[i + 1]!);
+				this._handleAlt(data.charAt(i + 1));
 				return 2;
 			}
 			return 1;
@@ -525,10 +525,8 @@ export class NanoEditor {
 	private _moveWordRight(): void {
 		const line = this._currentLine();
 		let col = this._cursorCol;
-		// Skip current word chars
-		while (col < line.length && /\w/.test(line[col]!)) col++;
-		// Skip spaces
-		while (col < line.length && !/\w/.test(line[col]!)) col++;
+		while (col < line.length && /\w/.test(line.charAt(col))) col++;
+		while (col < line.length && !/\w/.test(line.charAt(col))) col++;
 		this._cursorCol = col;
 		this._renderCursor();
 	}
@@ -537,8 +535,8 @@ export class NanoEditor {
 		const line = this._currentLine();
 		let col = this._cursorCol;
 		if (col > 0) col--;
-		while (col > 0 && !/\w/.test(line[col]!)) col--;
-		while (col > 0 && /\w/.test(line[col - 1]!)) col--;
+		while (col > 0 && !/\w/.test(line.charAt(col))) col--;
+		while (col > 0 && /\w/.test(line.charAt(col - 1))) col--;
 		this._cursorCol = col;
 		this._renderCursor();
 	}
@@ -586,7 +584,7 @@ export class NanoEditor {
 			this._lines[this._cursorRow] = line.slice(0, this._cursorCol - 1) + line.slice(this._cursorCol);
 			this._cursorCol--;
 		} else {
-			const prevLine = this._lines[this._cursorRow - 1]!;
+			const prevLine = this._lines[this._cursorRow - 1] as string;
 			const curLine = this._currentLine();
 			this._cursorCol = prevLine.length;
 			this._lines[this._cursorRow - 1] = prevLine + curLine;
@@ -655,7 +653,7 @@ export class NanoEditor {
 		}
 		const current = { lines: [...this._lines], cursorRow: this._cursorRow, cursorCol: this._cursorCol };
 		this._redoStack.push(current);
-		const prev = this._undoStack.pop()!;
+		const prev = this._undoStack.pop() as UndoEntry;
 		this._lines = prev.lines;
 		this._cursorRow = prev.cursorRow;
 		this._cursorCol = prev.cursorCol;
@@ -671,7 +669,7 @@ export class NanoEditor {
 		}
 		const current = { lines: [...this._lines], cursorRow: this._cursorRow, cursorCol: this._cursorCol };
 		this._undoStack.push(current);
-		const next = this._redoStack.pop()!;
+		const next = this._redoStack.pop() as UndoEntry;
 		this._lines = next.lines;
 		this._cursorRow = next.cursorRow;
 		this._cursorCol = next.cursorCol;
@@ -706,7 +704,7 @@ export class NanoEditor {
 
 		for (let pass = 0; pass < 2; pass++) {
 			for (let r = startRow; r < this._lines.length; r++) {
-				const line = caseSensitive ? this._lines[r]! : this._lines[r]!.toLowerCase();
+				const line = caseSensitive ? (this._lines[r] as string) : (this._lines[r] as string).toLowerCase();
 				const col = line.indexOf(q, r === startRow ? startCol : 0);
 				if (col !== -1) {
 					this._cursorRow = r;
@@ -918,7 +916,7 @@ export class NanoEditor {
 			buf.push(ansi.cup(screenRow, 1));
 			buf.push(ansi.el());
 			if (lineIdx < this._lines.length) {
-				buf.push(this._renderLineText(this._lines[lineIdx]!));
+				buf.push(this._renderLineText(this._lines[lineIdx] as string));
 			}
 		}
 	}
@@ -965,8 +963,8 @@ export class NanoEditor {
 		const colWidth = Math.floor(this.cols / (shortcuts.length / 2));
 		let result = "";
 		for (let i = 0; i < shortcuts.length; i += 2) {
-			const key = (shortcuts[i]![0] ?? "").padEnd(3);
-			const label = shortcuts[i]![1] ?? "";
+			const key = (shortcuts[i] as string[])[0]?.padEnd(3) ?? "";
+			const label = (shortcuts[i] as string[])[1] ?? "";
 			const key2 = (shortcuts[i + 1]?.[0] ?? "").padEnd(3);
 			const label2 = shortcuts[i + 1]?.[1] ?? "";
 			const cell = `${ansi.reverse(key)} ${label.padEnd(colWidth - 5)}${ansi.reverse(key2)} ${label2.padEnd(colWidth - 5)}`;
@@ -1019,7 +1017,7 @@ export class NanoEditor {
 
 		for (let i = 0; i < help.length && i + 2 <= this.rows - 2; i++) {
 			buf.push(ansi.cup(i + 2, 1));
-			buf.push(help[i]!.slice(0, this.cols));
+			buf.push((help[i] as string).slice(0, this.cols));
 		}
 
 		buf.push(ansi.cursorShow());

@@ -148,7 +148,7 @@ export class VirtualProxy {
 						const octets: number[] = [];
 						for (let i = 0; i < 4; i++) octets.push(request[4 + i] ?? 0);
 						dstHost = octets.join(".");
-						dstPort = (request[8]! << 8) + request[9]!;
+						dstPort = ((request[8] as number) << 8) + (request[9] as number);
 					} else if (atyp === 3) {
 						// Domain name
 						const len = request[4] ?? 0;

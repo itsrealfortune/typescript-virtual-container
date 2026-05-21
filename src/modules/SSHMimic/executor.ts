@@ -39,7 +39,7 @@ export async function executeStatements(
 	let i = 0;
 
 	while (i < statements.length) {
-		const stmt = statements[i]!;
+		const stmt = statements[i] as Statement;
 
 		// Subshell: execute in isolated context
 		if (stmt.subshell) {

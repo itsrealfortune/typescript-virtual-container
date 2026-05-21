@@ -1464,8 +1464,8 @@ class VirtualFileSystem extends EventEmitter {
 		if (!dir._sortedKeys) dir._sortedKeys = Object.keys(dir.children).sort();
 		const entries = dir._sortedKeys;
 		for (let i = 0; i < entries.length; i++) {
-			const name = entries[i]!;
-			const child = dir.children[name]!;
+			const name = entries[i] as string;
+			const child = dir.children[name] as InternalNode;
 			const isLast = i === entries.length - 1;
 			const connector = isLast ? "└── " : "├── ";
 			const nextPrefix = isLast ? "    " : "│   ";

@@ -88,7 +88,7 @@ function parseMaze(tpl: string[]): Cell[][] {
 	const grid: Cell[][] = [];
 	for (let r = 0; r < tpl.length; r++) {
 		const row: Cell[] = [];
-		const line = tpl[r]!;
+		const line = tpl[r] as string;
 		for (let c = 0; c < COLS; c++) {
 			const ch = line[c] ?? " ";
 			if (WALL_SET.has(ch)) row.push("wall");
@@ -100,8 +100,10 @@ function parseMaze(tpl: string[]): Cell[][] {
 	}
 	// Mark ghost house interior (walls at c14,c21 already "wall"; interior = ghost-house)
 	for (let r = 15; r <= 17; r++) {
+		const row = grid[r];
+		if (!row) continue;
 		for (let c = 15; c <= 20; c++) {
-			if (grid[r]?.[c] === "empty") grid[r]![c] = "ghost-house";
+			if (row[c] === "empty") row[c] = "ghost-house";
 		}
 	}
 	return grid;
@@ -301,7 +303,7 @@ export class PacmanGame {
 		this._escBuf = "";
 		let i = 0;
 		while (i < data.length) {
-			const ch = data[i]!;
+			const ch = data[i] as string;
 			if (ch === "q" || ch === "Q" || ch === "\x03") { this.stop(); this._onExit(); return; }
 			if (ch === "\x1b") {
 				// Need at least 2 more chars for CSI arrow sequence
@@ -363,7 +365,7 @@ export class PacmanGame {
 		// Global scatter/chase schedule
 		if (this._globalMode !== "fright") {
 			this._globalModeTick++;
-			if (this._globalModeTick >= this._modeSchedule[this._modeIdx]!) {
+			if (this._globalModeTick >= (this._modeSchedule[this._modeIdx] as number)) {
 				this._globalModeTick = 0;
 				this._modeIdx = Math.min(this._modeIdx + 1, this._modeSchedule.length - 1);
 				this._globalMode = this._modeIdx % 2 === 0 ? "scatter" : "chase";
@@ -416,10 +418,10 @@ export class PacmanGame {
 
 		const cell = this._grid[this._pacR]?.[this._pacC];
 		if (cell === "dot") {
-			this._grid[this._pacR]![this._pacC] = "empty";
+			(this._grid[this._pacR] as Cell[])[this._pacC] = "empty";
 			this._score += 10; this._dotsEaten++;
 		} else if (cell === "pellet") {
-			this._grid[this._pacR]![this._pacC] = "empty";
+			(this._grid[this._pacR] as Cell[])[this._pacC] = "empty";
 			this._score += 50; this._dotsEaten++;
 			this._activateFright();
 		}
@@ -464,7 +466,7 @@ export class PacmanGame {
 
 			case "Inky": {
 				// Pivot: 2 tiles ahead of pacman, then double-vector from Blinky
-				const blinky = this._ghosts[0]!;
+				const blinky = this._ghosts[0] as Ghost;
 				const pr = this._pacR + DR[this._pacDir] * 2;
 				let pc = this._pacC + DC[this._pacDir] * 2;
 				if (this._pacDir === 3) pc = this._pacC - 2; // NES bug mirror
@@ -550,7 +552,7 @@ export class PacmanGame {
 
 		if (g.mode === "fright") {
 			// Random walkable direction
-			if (walkable.length > 0) chosen = walkable[Math.floor(Math.random() * walkable.length)]!;
+			if (walkable.length > 0) chosen = walkable[Math.floor(Math.random() * walkable.length)] ?? chosen;
 		} else {
 			const [tR, tC] = this._ghostTarget(g);
 			let best = Number.MAX_SAFE_INTEGER;
@@ -579,13 +581,13 @@ export class PacmanGame {
 		prevPacC: number,
 	): void {
 		for (let i = 0; i < this._ghosts.length; i++) {
-			const g = this._ghosts[i]!;
+			const g = this._ghosts[i] as Ghost;
 			if (g.inHouse || g.mode === "eaten") continue;
 
 			// Same-cell collision
 			const sameTile = g.r === this._pacR && g.c === this._pacC;
 			// Cross-collision: pacman and ghost swapped positions this tick
-			const prev = prevGhostPos[i]!;
+			const prev = prevGhostPos[i] as { r: number; c: number };
 			const crossed = prev.r === this._pacR && prev.c === this._pacC
 				&& g.r === prevPacR && g.c === prevPacC;
 
@@ -638,13 +640,14 @@ export class PacmanGame {
 
 		// Overlay game cells
 		for (let r = 0; r < ROWS; r++) {
+			const rgRow = rg[r] as string[];
 			for (let c = 0; c < COLS; c++) {
 				const cell = this._grid[r]?.[c];
-				const vch = rg[r]?.[c] ?? " ";
+				const vch = rgRow[c] ?? " ";
 				if (WALL_SET.has(vch)) continue;
-				if (cell === "dot") rg[r]![c] = "·";
-				else if (cell === "pellet") rg[r]![c] = "■";
-				else rg[r]![c] = " ";
+				if (cell === "dot") rgRow[c] = "·";
+				else if (cell === "pellet") rgRow[c] = "■";
+				else rgRow[c] = " ";
 			}
 		}
 
@@ -661,7 +664,7 @@ export class PacmanGame {
 				const frame = this._tick % 2 === 0 ? "ᗣ" : "ᗡ";
 				sprite = `${g.color}${frame}${C.r}`;
 			}
-			rg[g.r]![g.c] = sprite;
+			(rg[g.r] as string[])[g.c] = sprite;
 		}
 
 		// Pacman
@@ -675,14 +678,14 @@ export class PacmanGame {
 				sprite = `${C.yellow}${this._pacMouthOpen ? open : "◯"}${C.r}`;
 			}
 			if (this._pacR >= 0 && this._pacR < ROWS && this._pacC >= 0 && this._pacC < COLS)
-				rg[this._pacR]![this._pacC] = sprite;
+				(rg[this._pacR] as string[])[this._pacC] = sprite;
 		}
 
 		// Colorize maze rows
 		for (let r = 0; r < ROWS; r++) {
 			let row = "";
 			for (let c = 0; c < COLS; c++) {
-				const ch = rg[r]![c]!;
+				const ch = (rg[r] as string[])[c] as string;
 				if (ch.includes("\x1b")) row += ch;
 				else if (WALL_SET.has(ch)) row += `${C.blue}${ch}${C.r}`;
 				else if (ch === "·") row += `${C.dim}·${C.r}`;

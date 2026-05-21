@@ -25,7 +25,7 @@ export function tokenizeCommand(input: string): string[] {
 	let i = 0;
 
 	while (i < input.length) {
-		const ch = input[i]!;
+		const ch = input.charAt(i);
 		const next = input[i + 1];
 
 		if ((ch === '"' || ch === "'") && !inQ) {

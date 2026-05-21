@@ -80,29 +80,36 @@ export function stripUrlFilename(url: string): string {
 }
 
 function levenshtein(a: string, b: string): number {
-	const dp: number[][] = Array.from({ length: a.length + 1 }, () =>
-		Array<number>(b.length + 1).fill(0),
+	const alen = a.length;
+	const blen = b.length;
+	const dp: number[][] = Array.from({ length: alen + 1 }, () =>
+		Array<number>(blen + 1).fill(0),
 	);
 
-	for (let i = 0; i <= a.length; i += 1) {
-		dp[i]![0] = i;
+	for (let i = 0; i <= alen; i++) {
+		const row = dp[i] as number[];
+		row[0] = i;
 	}
-	for (let j = 0; j <= b.length; j += 1) {
-		dp[0]![j] = j;
+	for (let j = 0; j <= blen; j++) {
+		const row0 = dp[0] as number[];
+		row0[j] = j;
 	}
 
-	for (let i = 1; i <= a.length; i += 1) {
-		for (let j = 1; j <= b.length; j += 1) {
+	for (let i = 1; i <= alen; i++) {
+		const row = dp[i] as number[];
+		const prevRow = dp[i - 1] as number[];
+		for (let j = 1; j <= blen; j++) {
 			const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-			dp[i]![j] = Math.min(
-				dp[i - 1]![j]! + 1,
-				dp[i]![j - 1]! + 1,
-				dp[i - 1]![j - 1]! + cost,
+			row[j] = Math.min(
+				(prevRow[j] as number) + 1,
+				(row[j - 1] as number) + 1,
+				(prevRow[j - 1] as number) + cost,
 			);
 		}
 	}
 
-	return dp[a.length]![b.length]!;
+	const lastRow = dp[alen] as number[];
+	return lastRow[blen] as number;
 }
 
 /**
@@ -133,14 +140,14 @@ export function resolveReadablePath(
 		(name) => name.toLowerCase() === fileName.toLowerCase(),
 	);
 	if (caseInsensitive.length === 1) {
-		return path.posix.join(parent, caseInsensitive[0]!);
+		return path.posix.join(parent, caseInsensitive[0] as string);
 	}
 
 	const near = siblings.filter(
 		(name) => levenshtein(name.toLowerCase(), fileName.toLowerCase()) <= 1,
 	);
 	if (near.length === 1) {
-		return path.posix.join(parent, near[0]!);
+		return path.posix.join(parent, near[0] as string);
 	}
 
 	return exactPath;

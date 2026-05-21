@@ -288,7 +288,7 @@ export function runScpSource(
 			return;
 		}
 
-		const entry = entries[idx]!;
+		const entry = entries[idx] as Entry;
 		idx++;
 
 		if (entry.kind === "dir-open") {
@@ -310,7 +310,7 @@ export function runScpSource(
 
 	function processAcks(): void {
 		while (buf.length > 0) {
-			const byte = buf[0]!;
+			const byte = buf[0] ?? 0;
 			buf = buf.subarray(1);
 
 			if (byte === 0x01 || byte === 0x02) {

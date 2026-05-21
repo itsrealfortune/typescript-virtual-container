@@ -82,7 +82,7 @@ export class WebTermRenderer {
 		const newScreen = this._makeScreen(rows, cols);
 		for (let r = 0; r < Math.min(rows, this._rows); r++) {
 			for (let c = 0; c < Math.min(cols, this._cols); c++) {
-				newScreen[r]![c] = this._screen[r]?.[c] ?? makeCell();
+				(newScreen[r] as Cell[])[c] = this._screen[r]?.[c] ?? makeCell();
 			}
 		}
 		this._rows = rows;
@@ -105,17 +105,17 @@ export class WebTermRenderer {
 	private _flush(): void {
 		let i = 0;
 		while (i < this._buf.length) {
-			const ch = this._buf[i]!;
+			const ch = this._buf.charAt(i);
 			if (ch === "\x1b") {
 				if (i + 1 >= this._buf.length) break; // wait for more data
-				const next = this._buf[i + 1]!;
+				const next = this._buf.charAt(i + 1);
 				if (next === "[") {
 					// CSI — find terminator
 					let j = i + 2;
-					while (j < this._buf.length && (this._buf[j]! < "@" || this._buf[j]! > "~")) j++;
+					while (j < this._buf.length && (this._buf.charAt(j) < "@" || this._buf.charAt(j) > "~")) j++;
 					if (j >= this._buf.length) break; // incomplete
 					const seq = this._buf.slice(i + 2, j);
-					const cmd = this._buf[j]!;
+					const cmd = this._buf.charAt(j);
 					this._handleCsi(seq, cmd);
 					i = j + 1;
 				} else if (next === "]") {
@@ -170,15 +170,15 @@ export class WebTermRenderer {
 			const mode = seq === "" ? 0 : Number.parseInt(seq, 10);
 			if (mode === 0) {
 				for (let c = this._curCol; c < this._cols; c++) {
-					this._screen[this._curRow]![c] = makeCell();
+					(this._screen[this._curRow] as Cell[])[c] = makeCell();
 				}
 			} else if (mode === 1) {
 				for (let c = 0; c <= this._curCol; c++) {
-					this._screen[this._curRow]![c] = makeCell();
+					(this._screen[this._curRow] as Cell[])[c] = makeCell();
 				}
 			} else if (mode === 2) {
 				for (let c = 0; c < this._cols; c++) {
-					this._screen[this._curRow]![c] = makeCell();
+					(this._screen[this._curRow] as Cell[])[c] = makeCell();
 				}
 			}
 			return;
@@ -206,11 +206,11 @@ export class WebTermRenderer {
 		if (cmd === "J") {
 			const mode = seq === "" ? 0 : Number.parseInt(seq, 10);
 			if (mode === 0) {
-				for (let c = this._curCol; c < this._cols; c++) this._screen[this._curRow]![c] = makeCell();
+				for (let c = this._curCol; c < this._cols; c++) (this._screen[this._curRow] as Cell[])[c] = makeCell();
 				for (let r = this._curRow + 1; r < this._rows; r++) this._screen[r] = Array.from({ length: this._cols }, () => makeCell());
 			} else if (mode === 1) {
 				for (let r = 0; r < this._curRow; r++) this._screen[r] = Array.from({ length: this._cols }, () => makeCell());
-				for (let c = 0; c <= this._curCol; c++) this._screen[this._curRow]![c] = makeCell();
+				for (let c = 0; c <= this._curCol; c++) (this._screen[this._curRow] as Cell[])[c] = makeCell();
 			} else if (mode === 2) {
 				this._screen = this._makeScreen();
 				this._scrollback = [];
@@ -226,7 +226,7 @@ export class WebTermRenderer {
 		const codes = seq === "" ? [0] : seq.split(";").map((n) => Number.parseInt(n || "0", 10));
 		let i = 0;
 		while (i < codes.length) {
-			const code = codes[i]!;
+			const code = codes[i] as number;
 			if (code === 0) {
 				this._bold = false; this._reverse = false; this._fg = null; this._bg = null;
 			} else if (code === 1) {
@@ -238,10 +238,10 @@ export class WebTermRenderer {
 			} else if (code === 27) {
 				this._reverse = false;
 			} else if (code >= 30 && code <= 37) {
-				this._fg = ANSI_COLORS[code - 30]!;
+				this._fg = ANSI_COLORS[code - 30] as string;
 			} else if (code === 38) {
 				if (codes[i + 1] === 5 && codes[i + 2] !== undefined) {
-					this._fg = xterm256(codes[i + 2]!);
+					this._fg = xterm256(codes[i + 2] as number);
 					i += 2;
 				} else if (codes[i + 1] === 2 && codes[i + 4] !== undefined) {
 					this._fg = `rgb(${codes[i + 2]},${codes[i + 3]},${codes[i + 4]})`;
@@ -250,10 +250,10 @@ export class WebTermRenderer {
 			} else if (code === 39) {
 				this._fg = null;
 			} else if (code >= 40 && code <= 47) {
-				this._bg = ANSI_COLORS[code - 40]!;
+				this._bg = ANSI_COLORS[code - 40] as string;
 			} else if (code === 48) {
 				if (codes[i + 1] === 5 && codes[i + 2] !== undefined) {
-					this._bg = xterm256(codes[i + 2]!);
+					this._bg = xterm256(codes[i + 2] as number);
 					i += 2;
 				} else if (codes[i + 1] === 2 && codes[i + 4] !== undefined) {
 					this._bg = `rgb(${codes[i + 2]},${codes[i + 3]},${codes[i + 4]})`;
@@ -262,16 +262,17 @@ export class WebTermRenderer {
 			} else if (code === 49) {
 				this._bg = null;
 			} else if (code >= 90 && code <= 97) {
-				this._fg = ANSI_COLORS_BRIGHT[code - 90]!;
+				this._fg = ANSI_COLORS_BRIGHT[code - 90] as string;
 			} else if (code >= 100 && code <= 107) {
-				this._bg = ANSI_COLORS_BRIGHT[code - 100]!;
+				this._bg = ANSI_COLORS_BRIGHT[code - 100] as string;
 			}
 			i++;
 		}
 	}
 
 	private _scrollUp(): void {
-		const line = this._screen.shift()!;
+		const line = this._screen.shift();
+		if (line === undefined) return;
 		this._scrollback.push(line);
 		if (this._scrollback.length > 1000) this._scrollback.shift();
 		this._screen.push(Array.from({ length: this._cols }, () => makeCell()));
@@ -283,7 +284,7 @@ export class WebTermRenderer {
 			this._curCol = 0;
 			if (this._curRow < this._rows - 1) { this._curRow++; } else { this._scrollUp(); }
 		}
-		this._screen[this._curRow]![this._curCol] = makeCell({
+		(this._screen[this._curRow] as Cell[])[this._curCol] = makeCell({
 			ch,
 			bold: this._bold,
 			reverse: this._reverse,
@@ -303,11 +304,11 @@ export class WebTermRenderer {
 	renderHtml(): string {
 		const parts: string[] = [];
 		for (let r = 0; r < this._rows; r++) {
-			const row = this._screen[r]!;
+			const row = this._screen[r] as Cell[];
 			let spanOpen = false;
 			let lastStyle = "";
 			for (let c = 0; c < this._cols; c++) {
-				const cell = row[c]!;
+				const cell = row[c] as Cell;
 				const isCursor = this._cursorVisible && r === this._curRow && c === this._curCol;
 
 				let fg = cell.fg ?? "#ccc";
@@ -397,7 +398,7 @@ const ANSI_COLORS = ["#000", "#c00", "#0c0", "#cc0", "#00c", "#c0c", "#0cc", "#c
 const ANSI_COLORS_BRIGHT = ["#555", "#f55", "#5f5", "#ff5", "#55f", "#f5f", "#5ff", "#fff"];
 
 function xterm256(n: number): string {
-	if (n < 16) return (n < 8 ? ANSI_COLORS : ANSI_COLORS_BRIGHT)[n < 8 ? n : n - 8]!;
+	if (n < 16) return (n < 8 ? ANSI_COLORS : ANSI_COLORS_BRIGHT)[n < 8 ? n : n - 8] as string;
 	if (n < 232) {
 		const i = n - 16;
 		const r = Math.floor(i / 36) * 51;

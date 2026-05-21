@@ -56,7 +56,7 @@ export const fortuneCommand: ShellModule = {
 	params: [],
 	run: () => {
 		const idx = Math.floor(Math.random() * FORTUNES.length);
-		return { stdout: FORTUNES[idx]!, exitCode: 0 };
+		return { stdout: FORTUNES[idx] as string, exitCode: 0 };
 	},
 };
 
@@ -141,7 +141,7 @@ export const cmatrixCommand: ShellModule = {
 		for (let r = 0; r < rows; r++) {
 			let line = "";
 			for (let c = 0; c < cols; c++) {
-				const ch = chars[Math.floor(Math.random() * chars.length)]!;
+				const ch = chars[Math.floor(Math.random() * chars.length)] as string;
 				if (Math.random() < 0.05) line += bright + ch + reset;
 				else if (Math.random() < 0.7) line += green + ch + reset;
 				else line += " ";

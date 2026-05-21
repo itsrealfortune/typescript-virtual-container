@@ -701,7 +701,7 @@ export class SftpMimic extends EventEmitter {
 				return;
 			}
 
-			const filename = entry.entries[entry.index++]!;
+			const filename = entry.entries[entry.index++] as string;
 			const filePath = path.posix.join(entry.path, filename);
 			const stats = getVfs().stat(filePath);
 			const attrs = this._createAttrs(stats);

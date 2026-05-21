@@ -16,7 +16,7 @@ export const lscpuCommand: ShellModule = {
 		const arch = os.arch();
 		const endian = os.endianness();
 		const cores = cpus.length;
-		const model = cpus.length > 0 ? cpus[0]!.model : "Unknown";
+		const model = cpus.length > 0 ? (cpus[0] as os.CpuInfo).model : "Unknown";
 		const lines = [
 			`Architecture:        ${arch}`,
 			`CPU op-mode(s):      32-bit, 64-bit`,

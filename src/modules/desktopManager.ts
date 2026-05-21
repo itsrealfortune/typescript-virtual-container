@@ -243,9 +243,9 @@ export class DesktopManager {
     for (const w of this._windows) {
       if (w.content.type === "terminal" && w.focused && !w.minimized) {
         return {
-          stream: w.content.stream!,
+          stream: w.content.stream as ShellStream,
           dataListeners: w.content.dataListeners,
-          preEl: w.content.preEl!,
+          preEl: w.content.preEl as HTMLPreElement,
         };
       }
     }
@@ -421,13 +421,13 @@ export class DesktopManager {
   closeWindow(id: string): void {
     const idx = this._windows.findIndex((w) => w.id === id);
     if (idx === -1) return;
-    const w = this._windows[idx]!;
+    const w = this._windows[idx] as DesktopWindow;
     if (w.content.type === "taskmanager" && w.content.refreshInterval) {
       clearInterval(w.content.refreshInterval);
     }
     this._windows.splice(idx, 1);
     if (this._windows.length > 0) {
-      this.focusWindow(this._windows[this._windows.length - 1]!.id);
+      this.focusWindow((this._windows[this._windows.length - 1] as DesktopWindow).id);
     }
     this._renderAll();
   }
@@ -671,7 +671,7 @@ export class DesktopManager {
           const sessions = this._shell.users.listActiveSessions();
           const sessionIdx = pid - 1000;
           if (sessionIdx >= 0 && sessionIdx < sessions.length) {
-            this._shell.users.unregisterSession(sessions[sessionIdx]!.id);
+            this._shell.users.unregisterSession((sessions[sessionIdx] as (typeof sessions)[number]).id);
           } else {
             this._shell.users.killProcess(pid);
           }
@@ -1098,7 +1098,7 @@ export class DesktopManager {
     }
 
     for (let i = 0; i < sessions.length; i++) {
-      const s = sessions[i]!;
+      const s = sessions[i] as (typeof sessions)[number];
       const pid = 1000 + i;
       rows += `<tr>
         <td>${pid}</td>
@@ -1154,7 +1154,7 @@ export class DesktopManager {
     menu.style.left = `${x}px`;
     menu.style.top = `${y}px`;
     for (let i = 0; i < items.length; i++) {
-      const item = items[i]!;
+      const item = items[i] as (typeof items)[number];
       const el = document.createElement("div");
       el.className = `ctx-item${item.danger ? " ctx-danger" : ""}`;
       el.innerHTML = `<i class="${item.icon}"></i><span>${this._escapeHtml(item.label)}</span>`;

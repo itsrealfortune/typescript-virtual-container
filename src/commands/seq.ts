@@ -13,9 +13,9 @@ export const seqCommand: ShellModule = {
 		const width = args.includes("-w");
 
 		let first = 1, inc = 1, last: number;
-		if (nums.length === 1)      { last = nums[0]!; }
-		else if (nums.length === 2) { first = nums[0]!; last = nums[1]!; }
-		else                        { first = nums[0]!; inc = nums[1]!; last = nums[2]!; }
+		if (nums.length === 1)      { last = nums[0] as number; }
+		else if (nums.length === 2) { first = nums[0] as number; last = nums[1] as number; }
+		else                        { first = nums[0] as number; inc = nums[1] as number; last = nums[2] as number; }
 
 		if (inc === 0) return { stderr: "seq: zero increment\n", exitCode: 1 };
 		if ((inc > 0 && first > last) || (inc < 0 && first < last)) return { stdout: "", exitCode: 0 };

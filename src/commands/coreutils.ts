@@ -96,13 +96,13 @@ export const shufCommand: ShellModule = {
 			const range = args[iIdx + 1] ?? "";
 			const m = range.match(/^(-?\d+)-(-?\d+)$/);
 			if (!m) return { stderr: "shuf: invalid range", exitCode: 1 };
-			const lo = parseInt(m[1]!, 10);
-			const hi = parseInt(m[2]!, 10);
+			const lo = parseInt(m[1] as string, 10);
+			const hi = parseInt(m[2] as string, 10);
 			const nums: number[] = [];
 			for (let n = lo; n <= hi; n++) nums.push(n);
 			for (let i = nums.length - 1; i > 0; i--) {
 				const j = Math.floor(Math.random() * (i + 1));
-				[nums[i], nums[j]] = [nums[j]!, nums[i]!];
+				[nums[i], nums[j]] = [nums[j] as number, nums[i] as number];
 			}
 			const nIdx = args.indexOf("-n");
 			const count = nIdx !== -1 ? parseInt(args[nIdx + 1] ?? "0", 10) : nums.length;
@@ -120,7 +120,7 @@ export const shufCommand: ShellModule = {
 		const lines = input.split("\n").filter((l) => l !== "");
 		for (let i = lines.length - 1; i > 0; i--) {
 			const j = Math.floor(Math.random() * (i + 1));
-			[lines[i], lines[j]] = [lines[j]!, lines[i]!];
+			[lines[i], lines[j]] = [lines[j] as string, lines[i] as string];
 		}
 		const nIdx = args.indexOf("-n");
 		const count = nIdx !== -1 ? parseInt(args[nIdx + 1] ?? "0", 10) : lines.length;
@@ -144,8 +144,8 @@ export const pasteCommand: ShellModule = {
 		const files: string[] = [];
 		let i = 0;
 		while (i < args.length) {
-			if (args[i] === "-d" && args[i + 1]) { delim = args[i + 1]!; i += 2; }
-			else { files.push(args[i]!); i++; }
+			if (args[i] === "-d" && args[i + 1]) { delim = args[i + 1] as string; i += 2; }
+			else { files.push(args[i] as string); i++; }
 		}
 
 		// serial mode (-s not implemented; basic merge)

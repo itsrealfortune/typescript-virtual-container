@@ -27,7 +27,7 @@ export const perlCommand: ShellModule = {
 
 		if (hasLoop) {
 			for (let li = 0; li < lines.length; li++) {
-				let line = lines[li]!;
+				let line = lines[li] as string;
 				// $_ = line, $. = line number
 				const processed = code
 					.replace(/\$_/g, JSON.stringify(line))
@@ -35,11 +35,11 @@ export const perlCommand: ShellModule = {
 
 				// s/pat/rep/[g] substitution on $_
 				const sMatch = processed.match(/^s([^a-zA-Z0-9])(.*?)\1(.*?)\1([gi]*)$/);
-				if (sMatch) {
+					if (sMatch) {
 					const flags = sMatch[4] ?? "";
 					try {
-						const re = new RegExp(sMatch[2]!, flags.includes("i") ? (flags.includes("g") ? "gi" : "i") : flags.includes("g") ? "g" : "");
-						line = line.replace(re, sMatch[3]!);
+						const re = new RegExp(sMatch[2] as string, flags.includes("i") ? (flags.includes("g") ? "gi" : "i") : flags.includes("g") ? "g" : "");
+						line = line.replace(re, sMatch[3] as string);
 					} catch { /* ignore */ }
 					if (printLoop) out.push(line);
 					continue;

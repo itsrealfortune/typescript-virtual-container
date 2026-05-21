@@ -18,7 +18,8 @@ export const pgrepCommand: ShellModule = {
 			const re = new RegExp(pattern);
 			const results: string[] = [];
 			for (let i = 0; i < activeSessions.length; i++) {
-				const s = activeSessions[i]!;
+				const s = activeSessions[i];
+				if (s === undefined) continue;
 				const target = useFull
 					? `${s.username} ${s.tty} ${s.remoteAddress} ${s.id}`
 					: s.username;

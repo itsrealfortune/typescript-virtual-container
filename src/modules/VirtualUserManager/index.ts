@@ -335,7 +335,7 @@ export class VirtualUserManager extends EventEmitter {
 		if (this._autoSudoForNewUsers) {
 			this._sudoers.add(username);
 		}
-		const record = this._users.get(username)!;
+		const record = this._users.get(username) as VirtualUserRecord;
 		const uid = record.uid;
 		const gid = record.gid;
 		const homePath = username === "root" ? "/root" : `/home/${username}`;

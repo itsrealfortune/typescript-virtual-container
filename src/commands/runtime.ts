@@ -143,7 +143,7 @@ async function runVfsStub(
 	const stubContent = shell.vfs.readFile(vfsBinary);
 	const builtinMatch = stubContent.match(/exec\s+builtin\s+(\S+)/);
 	if (builtinMatch) {
-		const builtinMod = resolveModule(builtinMatch[1]!);
+		const builtinMod = resolveModule(builtinMatch[1] as string);
 		if (builtinMod) {
 			const uid = shell.users.getUid(authUser);
 			const gid = shell.users.getGid(authUser);
@@ -257,23 +257,23 @@ async function _runCommandDirectInner(
 	const assignRe = ASSIGN_RE;
 	const invocation = [name, ...args];
 	let assignCount = 0;
-	while (assignCount < invocation.length && assignRe.test(invocation[assignCount]!)) {
+	while (assignCount < invocation.length && assignRe.test(invocation[assignCount] as string)) {
 		assignCount += 1;
 	}
 	if (assignCount > 0) {
-		const assignments = invocation.slice(0, assignCount).map((token) => token.match(assignRe)!);
+		const assignments = invocation.slice(0, assignCount).map((token) => token.match(assignRe) as RegExpMatchArray);
 		const remaining = invocation.slice(assignCount);
 		const restored: Array<[string, string | undefined]> = [];
 		for (const [, key, value] of assignments) {
-			restored.push([key!, env.vars[key!]]);
-			env.vars[key!] = value!;
+			restored.push([key as string, env.vars[key as string]]);
+			env.vars[key as string] = value as string;
 		}
 		if (remaining.length === 0) {
 			return { exitCode: 0 };
 		}
 		try {
 			const result = await runCommandDirect(
-				remaining[0]!,
+				remaining[0] as string,
 				remaining.slice(1),
 				authUser,
 				hostname,
@@ -516,9 +516,9 @@ export async function runCommand(
 	const parts = tokenizeCommand(expanded.trim());
 	if (parts.length === 0) return { exitCode: 0 };
 	const assignRe = ASSIGN_RE;
-	if (assignRe.test(parts[0]!)) {
+	if (assignRe.test(parts[0] as string)) {
 		return runCommandDirect(
-			parts[0]!,
+			parts[0] as string,
 			parts.slice(1),
 			authUser,
 			hostname,

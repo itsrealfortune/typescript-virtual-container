@@ -17,7 +17,7 @@ export function globToRegex(pattern: string, flags = ""): RegExp {
 	if (cached) return cached;
 	let re = "^";
 	for (let i = 0; i < pattern.length; i++) {
-		const c = pattern[i]!;
+		const c = pattern.charAt(i);
 		if (c === "*") re += ".*";
 		else if (c === "?") re += ".";
 		else if (c === "[") {

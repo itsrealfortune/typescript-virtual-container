@@ -18,7 +18,7 @@ export const ncCommand: ShellModule = {
 
 		const isListen = args.includes("-l");
 		const pIdx = args.indexOf("-p");
-		const port = pIdx !== -1 && args[pIdx + 1] ? parseInt(args[pIdx + 1]!, 10) : undefined;
+		const port = pIdx !== -1 && args[pIdx + 1] ? parseInt(args[pIdx + 1] as string, 10) : undefined;
 		const verbose = args.includes("-v");
 
 		if (isListen && port) {

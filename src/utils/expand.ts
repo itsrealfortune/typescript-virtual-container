@@ -47,7 +47,7 @@ function tokenizeArith(expr: string, env: Record<string, string>): ArithToken[] 
 	const tokens: ArithToken[] = [];
 	let i = 0;
 	while (i < expr.length) {
-		const ch = expr[i]!;
+		const ch = expr.charAt(i);
 		if (/\s/.test(ch)) {
 			i++;
 			continue;
@@ -66,14 +66,14 @@ function tokenizeArith(expr: string, env: Record<string, string>): ArithToken[] 
 		if (ch === ")") { tokens.push({ type: "rparen" }); i++; continue; }
 		if (/\d/.test(ch)) {
 			let j = i + 1;
-			while (j < expr.length && /\d/.test(expr[j]!)) j++;
+			while (j < expr.length && /\d/.test(expr.charAt(j))) j++;
 			tokens.push({ type: "number", value: Number(expr.slice(i, j)) });
 			i = j;
 			continue;
 		}
 		if (/[A-Za-z_]/.test(ch)) {
 			let j = i + 1;
-			while (j < expr.length && /[A-Za-z0-9_]/.test(expr[j]!)) j++;
+			while (j < expr.length && /[A-Za-z0-9_]/.test(expr.charAt(j))) j++;
 			const name = expr.slice(i, j);
 			const raw = env[name];
 			const value = raw === undefined || raw === "" ? 0 : Number(raw);
@@ -249,7 +249,7 @@ export function expandBraces(token: string): string[] {
 		let braceDepth = 0;
 		let start = -1;
 		for (let i = 0; i < value.length; i++) {
-			const ch = value[i]!;
+			const ch = value.charAt(i);
 			if (ch === "{" && value[i - 1] !== "$") {
 				if (braceDepth === 0) start = i;
 				braceDepth++;
@@ -265,17 +265,17 @@ export function expandBraces(token: string): string[] {
 					                   inner.match(/^([a-z])\.\.([a-z])$/);
 					if (rangeMatch) {
 						const items: string[] = [];
-						if (/\d/.test(rangeMatch[1]!)) {
-							const from = parseInt(rangeMatch[1]!, 10);
-							const to = parseInt(rangeMatch[2]!, 10);
+						if (/\d/.test(rangeMatch[1] as string)) {
+							const from = parseInt(rangeMatch[1] as string, 10);
+							const to = parseInt(rangeMatch[2] as string, 10);
 							const step = rangeMatch[3] ? parseInt(rangeMatch[3], 10) : 1;
 							const inc = from <= to ? step : -step;
 							for (let n = from; from <= to ? n <= to : n >= to; n += inc) {
 								items.push(String(n));
 							}
 						} else {
-							const from = rangeMatch[1]!.charCodeAt(0);
-							const to = rangeMatch[2]!.charCodeAt(0);
+							const from = (rangeMatch[1] as string).charCodeAt(0);
+							const to = (rangeMatch[2] as string).charCodeAt(0);
 							const inc = from <= to ? 1 : -1;
 							for (let c = from; from <= to ? c <= to : c >= to; c += inc) {
 								items.push(String.fromCharCode(c));
@@ -332,7 +332,7 @@ function expandArithmeticChunks(input: string, env: Record<string, string>): str
 			let scan = index + 3;
 			let depth = 0;
 			while (scan < input.length) {
-				const ch = input[scan]!;
+				const ch = input.charAt(scan);
 				if (ch === "(") {
 					depth++;
 				} else if (ch === ")") {
@@ -531,7 +531,7 @@ export async function expandAsync(
 		let i = 0;
 
 		while (i < input.length) {
-			const ch = input[i]!;
+			const ch = input.charAt(i);
 
 			if (ch === "'" && !inSingle) {
 				inSingle = true;

@@ -95,7 +95,7 @@ export const stringsCommand: ShellModule = {
 		let current = "";
 		const results: string[] = [];
 		for (let i = 0; i < buf.length; i++) {
-			const ch = buf[i]!;
+			const ch = buf[i] as number;
 			if (ch >= 32 && ch <= 126) {
 				current += String.fromCharCode(ch);
 			} else {

@@ -102,7 +102,7 @@ function splitByLogicalOps(input: string): Segment[] {
 	};
 
 	while (i < input.length) {
-		const ch = input[i]!;
+		const ch = input.charAt(i);
 		const ch2 = input.slice(i, i + 2);
 
 		if ((ch === '"' || ch === "'") && !inQ) {
@@ -196,7 +196,7 @@ function splitByPipe(input: string): string[] {
 	let qChar = "";
 
 	for (let i = 0; i < input.length; i++) {
-		const ch = input[i]!;
+		const ch = input.charAt(i);
 		if ((ch === '"' || ch === "'") && !inQ) {
 			inQ = true;
 			qChar = ch;
@@ -246,7 +246,7 @@ function parseCommandWithRedirections(token: string): PipelineCommand {
 	let stderrToStdout = false;
 
 	while (i < parts.length) {
-		const part = parts[i]!;
+		const part = parts[i] as string;
 		if (part === "<") {
 			i++;
 			if (i >= parts.length)

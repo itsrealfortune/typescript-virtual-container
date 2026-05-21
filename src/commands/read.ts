@@ -21,7 +21,7 @@ export const readCommand: ShellModule = {
 		const line = ifFlag(args, ["-r"])
 			? input
 			: input.replace(/\\(?:\r?\n|.)/g, (m) =>
-					m[1] === "\n" || m[1] === "\r" ? "" : m[1]!,
+					m[1] === "\n" || m[1] === "\r" ? "" : m[1] as string,
 				);
 
 		if (!env) return { exitCode: 0 };
@@ -30,12 +30,12 @@ export const readCommand: ShellModule = {
 			// No var names: store into REPLY
 			env.vars.REPLY = line;
 		} else if (varNames.length === 1) {
-			env.vars[varNames[0]!] = line;
+			env.vars[varNames[0] as string] = line;
 		} else {
 			// Split on whitespace, last var gets remainder
 			const parts = line.split(/\s+/);
 			for (let i = 0; i < varNames.length; i++) {
-				env.vars[varNames[i]!] =
+				env.vars[varNames[i] as string] =
 					i < varNames.length - 1 ? (parts[i] ?? "") : parts.slice(i).join(" ");
 			}
 		}

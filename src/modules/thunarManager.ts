@@ -187,8 +187,10 @@ export class ThunarManager {
       if (!entry) return;
       const path = entry.getAttribute("data-path");
       if (!path) return;
-      e.dataTransfer!.setData("text/plain", path);
-      e.dataTransfer!.effectAllowed = "move";
+      const dt = e.dataTransfer;
+      if (!dt) return;
+      dt.setData("text/plain", path);
+      dt.effectAllowed = "move";
     });
 
     container.addEventListener("dragover", (e) => {

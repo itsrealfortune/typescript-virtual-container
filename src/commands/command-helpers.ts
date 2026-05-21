@@ -54,7 +54,7 @@ function collectPositionals(
 	let passthrough = false;
 
 	for (let index = 0; index < args.length; index += 1) {
-		const arg = args[index]!;
+		const arg = args[index] as string;
 
 		if (passthrough) {
 			positionals.push(arg);
@@ -158,7 +158,7 @@ export function getFlag(
 	const allFlags = toFlagList(flags);
 
 	for (let index = 0; index < args.length; index += 1) {
-		const arg = args[index]!;
+		const arg = args[index] as string;
 
 		for (const flag of allFlags) {
 			const match = matchFlagToken(arg, flag);
@@ -251,7 +251,7 @@ export function parseArgs(
 	let passthrough = false;
 
 	for (let index = 0; index < args.length; index += 1) {
-		const arg = args[index]!;
+		const arg = args[index] as string;
 
 		if (passthrough) {
 			positionals.push(arg);

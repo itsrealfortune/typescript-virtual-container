@@ -22,7 +22,7 @@ export const uniqCommand: ShellModule = {
 			let j = i;
 			while (j < lines.length && lines[j] === lines[i]) j++;
 			const n = j - i;
-			const line = lines[i]!;
+			const line = lines[i] as string;
 			if (dupOnly && n === 1) {
 				i = j;
 				continue;

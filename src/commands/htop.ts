@@ -82,7 +82,7 @@ export const htopCommand: ShellModule = {
 		// CPU bars (up to 4 shown)
 		const shownCpus = Math.min(cpuCount, 4);
 		for (let i = 0; i < shownCpus; i++) {
-			const load  = cpuLoads[i]!;
+			const load  = cpuLoads[i] as number;
 			const pct   = (load * 100).toFixed(1).padStart(5);
 			lines.push(`${C.bold}${C.cyan}${String(i + 1).padStart(3)}${C.reset}[${bar(load, barWidth)}${C.reset}] ${pct}%`);
 		}

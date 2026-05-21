@@ -26,7 +26,7 @@ function makeTarHeader(name: string, size: number, isDir: boolean): Buffer {
 	// Checksum: fill field with spaces, compute, write
 	for (let i = 148; i < 156; i++) hdr[i] = 0x20;
 	let sum = 0;
-	for (let i = 0; i < 512; i++) sum += hdr[i]!;
+	for (let i = 0; i < 512; i++) sum += hdr[i] as number;
 	Buffer.from(`${sum.toString(8).padStart(6, "0")}\0 `).copy(hdr, 148);
 
 	return hdr;
@@ -114,7 +114,7 @@ export const tarCommand: ShellModule = {
 
 		if (create) {
 			const skipSet = new Set<string>();
-			if (fIdx !== -1 && expanded[fIdx + 1]) skipSet.add(expanded[fIdx + 1]!);
+			if (fIdx !== -1 && expanded[fIdx + 1]) skipSet.add(expanded[fIdx + 1] as string);
 			const fileArgs = expanded.filter((a) => !a.startsWith("-") && !skipSet.has(a));
 
 			const entries: Array<{ name: string; content: Buffer; isDir: boolean }> = [];

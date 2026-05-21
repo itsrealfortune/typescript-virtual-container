@@ -64,7 +64,7 @@ function parseBlocks(lines: string[]): Block[] {
 	const blocks: Block[] = [];
 	let i = 0;
 	while (i < lines.length) {
-		const line = lines[i]!.trim();
+		const line = (lines[i] as string).trim();
 		if (!line || line.startsWith("#")) {
 			i++;
 			continue;
@@ -78,18 +78,18 @@ function parseBlocks(lines: string[]): Block[] {
 			line.match(RE_FUNC_KW_ONLY)
 		);
 		if (funcMatch) {
-			const funcName = funcMatch[1]!;
+			const funcName = funcMatch[1] as string;
 			const body: string[] = [];
 			// Inline: name() { cmd; } — single-line form
 			if (funcMatchInline) {
-				body.push(...funcMatchInline[2]!.split(";").map((s: string) => s.trim()).filter(Boolean));
+				body.push(...(funcMatchInline[2] as string).split(";").map((s: string) => s.trim()).filter(Boolean));
 				blocks.push({ type: "func", name: funcName, body });
 				i++;
 				continue;
 			}
 			i++;
 			while (i < lines.length && lines[i]?.trim() !== "}" && i < lines.length + 1) {
-				const l = lines[i]!.trim().replace(/^do\s+/, "");
+				const l = (lines[i] as string).trim().replace(/^do\s+/, "");
 				if (l && l !== "{") body.push(l);
 				i++;
 			}
@@ -101,7 +101,7 @@ function parseBlocks(lines: string[]): Block[] {
 		// (( expr )) arithmetic statement
 		const arithMatch = line.match(/^\(\(\s*(.+?)\s*\)\)$/);
 		if (arithMatch) {
-			blocks.push({ type: "arith", expr: arithMatch[1]! });
+			blocks.push({ type: "arith", expr: arithMatch[1] as string });
 			i++;
 			continue;
 		}
@@ -118,7 +118,7 @@ function parseBlocks(lines: string[]): Block[] {
 			let elifCond = "";
 			i++;
 			while (i < lines.length && lines[i]?.trim() !== "fi") {
-				const l = lines[i]!.trim();
+				const l = (lines[i] as string).trim();
 				if (l.startsWith("elif ")) {
 					section = "elif";
 					elifCond = l
@@ -131,7 +131,7 @@ function parseBlocks(lines: string[]): Block[] {
 				} else if (l !== "then") {
 					if (section === "then") thenLines.push(l);
 					else if (section === "elif" && elifBlocks.length > 0)
-						elifBlocks[elifBlocks.length - 1]!.body.push(l);
+						elifBlocks[elifBlocks.length - 1]?.body.push(l);
 					else elseLines.push(l);
 				}
 				i++;
@@ -149,11 +149,11 @@ function parseBlocks(lines: string[]): Block[] {
 				const body: string[] = [];
 				i++;
 				while (i < lines.length && lines[i]?.trim() !== "done") {
-					const l = lines[i]!.trim().replace(/^do\s+/, "");
+					const l = (lines[i] as string).trim().replace(/^do\s+/, "");
 					if (l && l !== "do") body.push(l);
 					i++;
 				}
-				blocks.push({ type: "for", var: m[1]!, list: m[2]!, body });
+				blocks.push({ type: "for", var: m[1] as string, list: m[2] as string, body });
 			} else {
 				blocks.push({ type: "cmd", line });
 			}
@@ -165,7 +165,7 @@ function parseBlocks(lines: string[]): Block[] {
 			const body: string[] = [];
 			i++;
 			while (i < lines.length && lines[i]?.trim() !== "done") {
-				const l = lines[i]!.trim().replace(/^do\s+/, "");
+				const l = (lines[i] as string).trim().replace(/^do\s+/, "");
 				if (l && l !== "do") body.push(l);
 				i++;
 			}
@@ -178,7 +178,7 @@ function parseBlocks(lines: string[]): Block[] {
 			const body: string[] = [];
 			i++;
 			while (i < lines.length && lines[i]?.trim() !== "done") {
-				const l = lines[i]!.trim().replace(/^do\s+/, "");
+				const l = (lines[i] as string).trim().replace(/^do\s+/, "");
 				if (l && l !== "do") body.push(l);
 				i++;
 			}
@@ -187,8 +187,8 @@ function parseBlocks(lines: string[]): Block[] {
 			// Array assignment: arr=(elem1 elem2 ...)
 			const arrMatch = line.match(/^([A-Za-z_][A-Za-z0-9_]*)=\s*\(([^)]*)\)$/);
 			if (arrMatch) {
-				const elems = arrMatch[2]!.trim().split(/\s+/).filter(Boolean);
-				blocks.push({ type: "array", name: arrMatch[1]!, elements: elems });
+				const elems = (arrMatch[2] as string).trim().split(/\s+/).filter(Boolean);
+				blocks.push({ type: "array", name: arrMatch[1] as string, elements: elems });
 			} else {
 				blocks.push({ type: "cmd", line });
 			}
@@ -197,19 +197,19 @@ function parseBlocks(lines: string[]): Block[] {
 			const patterns: Array<{ pattern: string; body: string[] }> = [];
 			i++;
 			while (i < lines.length && lines[i]?.trim() !== "esac") {
-				const pl = lines[i]!.trim();
+				const pl = (lines[i] as string).trim();
 				if (!pl || pl === "esac") { i++; continue; }
 				// pattern) or pattern1|pattern2)
 				const patMatch = pl.match(/^(.+?)\)\s*(.*)$/);
 				if (patMatch) {
-					const pat = patMatch[1]!.trim();
+					const pat = (patMatch[1] as string).trim();
 					const body: string[] = [];
 					if (patMatch[2]?.trim() && patMatch[2].trim() !== ";;") {
 						body.push(patMatch[2].trim());
 					}
 					i++;
 					while (i < lines.length) {
-						const bl = lines[i]!.trim();
+						const bl = (lines[i] as string).trim();
 						if (bl === ";;" || bl === "esac") break;
 						if (bl) body.push(bl);
 						i++;
@@ -242,12 +242,12 @@ async function evalCondition(
 	// test -f / test -d / [ ... ]
 	const testMatch = expanded.match(/^\[?\s*(.+?)\s*\]?$/);
 	if (testMatch) {
-		const expr = testMatch[1]!;
+		const expr = testMatch[1] as string;
 		// -f file
 		const fTest = expr.match(/^-([fdeznr])\s+(.+)$/);
 		if (fTest) {
 			const [, flag, arg] = fTest;
-			const p = resolvePath(ctx.cwd, arg!);
+			const p = resolvePath(ctx.cwd, arg as string);
 			if (flag === "f")
 				return ctx.shell.vfs.exists(p) && ctx.shell.vfs.stat(p).type === "file";
 			if (flag === "d")
@@ -314,12 +314,12 @@ async function runBlocks(
 			// Bare VAR=val assignment(s) — handle before dispatching to runCommand
 			const assignRe = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)/;
 			const tokens = expanded.trim().split(/\s+/);
-			if (tokens.length > 0 && assignRe.test(tokens[0]!)) {
+			if (tokens.length > 0 && assignRe.test(tokens[0] as string)) {
 				const allAssign = tokens.every((t) => assignRe.test(t));
 				if (allAssign) {
 					for (const tok of tokens) {
-						const m = tok.match(assignRe)!;
-						ctx.env.vars[m[1]!] = m[2]!;
+						const m = tok.match(assignRe) as RegExpMatchArray;
+						ctx.env.vars[m[1] as string] = m[2] as string;
 					}
 					ctx.env.lastExitCode = 0;
 					continue;
@@ -388,15 +388,15 @@ async function runBlocks(
 			// Handle i++ / i-- / i+=N / i-=N
 			const incMatch = expr.match(/^(\w+)\s*(\+\+|--)$/);
 			if (incMatch) {
-				const val = parseInt(ctx.env.vars[incMatch[1]!] ?? "0", 10);
-				ctx.env.vars[incMatch[1]!] = String(incMatch[2] === "++" ? val + 1 : val - 1);
+				const val = parseInt(ctx.env.vars[incMatch[1] as string] ?? "0", 10);
+				ctx.env.vars[incMatch[1] as string] = String(incMatch[2] === "++" ? val + 1 : val - 1);
 			} else {
 				const assignMatch = expr.match(/^(\w+)\s*([+\-*/])=\s*(.+)$/);
 				if (assignMatch) {
-					const lhs = parseInt(ctx.env.vars[assignMatch[1]!] ?? "0", 10);
-					const rhs = parseInt(assignMatch[3]!, 10);
+					const lhs = parseInt(ctx.env.vars[assignMatch[1] as string] ?? "0", 10);
+					const rhs = parseInt(assignMatch[3] as string, 10);
 					const ops: Record<string, number> = { "+": lhs + rhs, "-": lhs - rhs, "*": lhs * rhs, "/": Math.floor(lhs / rhs) };
-					ctx.env.vars[assignMatch[1]!] = String(ops[assignMatch[2]!] ?? lhs);
+					ctx.env.vars[assignMatch[1] as string] = String(ops[assignMatch[2] as string] ?? lhs);
 				} else {
 					const value = evalArith(expr, ctx.env.vars);
 					if (!Number.isNaN(value)) {
@@ -487,7 +487,7 @@ function splitShScript(script: string): string[] {
 	let inDoubleQ = false;
 	let i = 0;
 	while (i < script.length) {
-		const ch = script[i]!;
+		const ch = script[i] as string;
 		if (!inSingleQ && !inDoubleQ) {
 			if (ch === "'") { inSingleQ = true; current += ch; i++; continue; }
 			if (ch === '"') { inDoubleQ = true; current += ch; i++; continue; }

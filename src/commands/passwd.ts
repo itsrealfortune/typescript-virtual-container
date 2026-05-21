@@ -28,7 +28,7 @@ export const passwdCommand: ShellModule = {
 
 		// Non-interactive: read new password from stdin
 		if (stdin !== undefined && stdin.trim().length > 0) {
-			const password = stdin.trim().split("\n")[0]!;
+			const password = stdin.trim().split("\n")[0] as string;
 			await shell.users.setPassword(targetUser, password);
 			return {
 				stdout: `passwd: password updated successfully\n`,
