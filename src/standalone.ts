@@ -8,6 +8,10 @@ const argv = process.argv.slice(2);
 const noSsh   = getFlag(argv, "--no-ssh");
 const sshPort = getOptionInt(argv, "--ssh-port", 2222);
 
+// ── Baseline memory (before any shell is created) ─────────────────────────────
+
+const baselineRss = process.memoryUsage().rss;
+
 // ── Shell ─────────────────────────────────────────────────────────────────────
 
 const hostname = process.env.SSH_MIMIC_HOSTNAME ?? "typescript-vm";
@@ -73,6 +77,12 @@ process.on("unhandledRejection", (error, promise) => {
 });
 
 setInterval(() => {
-	const rss = process.memoryUsage().rss;
-	console.debug(`Current memory usage: ${Math.round(rss / 1024 / 1024)} MB`);
+	const total = process.memoryUsage().rss;
+	const shells = total - baselineRss;
+	const runtime = baselineRss;
+	console.debug(
+		`Memory: total=${Math.round(total / 1024 / 1024)} MB | ` +
+		`shells=${Math.round(shells / 1024 / 1024)} MB | ` +
+		`runtime=${Math.round(runtime / 1024 / 1024)} MB`,
+	);
 }, 1000);
