@@ -1,8 +1,8 @@
 import { VirtualShell } from '../src/index.js';
-import { WebTermRenderer } from '../src/modules/webTermRenderer.js';
 import { DesktopManager } from '../src/modules/desktopManager.js';
-import { keyToBytes } from '../src/utils/keyToBytes.js';
+import { WebTermRenderer } from '../src/modules/webTermRenderer.js';
 import type { ShellStream } from '../src/types/streams.js';
+import { keyToBytes } from '../src/utils/keyToBytes.js';
 
 // ── Wait for IndexedDB fs shim ────────────────────────────────────────────────
 // biome-ignore lint/suspicious/noExplicitAny: globalThis shim
@@ -98,7 +98,6 @@ const stream: ShellStream = {
 
 interface BufferShim { from(data: Uint8Array): Buffer }
 function toChunk(bytes: Uint8Array): Buffer {
-  // biome-ignore lint/style/useNamingConvention: Buffer is the shim's exported name
   const g = globalThis as unknown as { Buffer?: BufferShim };
   return g.Buffer ? g.Buffer.from(bytes) : (bytes as unknown as Buffer);
 }
