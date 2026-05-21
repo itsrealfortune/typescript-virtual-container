@@ -369,16 +369,16 @@ class VirtualShell extends EventEmitter {
 	}
 
 	/**
-	 * Remove a previously mounted host directory.
-	 * @param vPath - The virtual file system path.
+	 * Remove a previously mounted host directory from the VFS.
+	 * @param vPath - Absolute VFS path of the mount point to unmount.
 	 */
 	public unmount(vPath: string): void {
 		this.vfs.unmount(vPath);
 	}
 
 	/**
-	 * List all active mounts.
-	 * @returns The operation result.
+	 * List all active mounts with their VFS paths, host paths, and read-only flags.
+	 * @returns Array of mount descriptors.
 	 */
 	public getMounts(): Array<{ vPath: string; hostPath: string; readOnly: boolean }> {
 		return this.vfs.getMounts();
@@ -467,7 +467,7 @@ class VirtualShell extends EventEmitter {
 	 * await shell.ensureInitialized();
 	 * shell.enableIdleManagement({ idleThresholdMs: 60_000 });
 	 * ```
-	 * @param options - The options parameter.
+	 * @param options - Idle configuration (threshold, check interval).
 	 */
 	public enableIdleManagement(options?: IdleManagerOptions): void {
 		if (this._idle) return; // already enabled
@@ -490,7 +490,7 @@ class VirtualShell extends EventEmitter {
 	/**
 	 * Current idle state — `"active"` or `"frozen"`.
 	 * Returns `"active"` when idle management is disabled.
-	 * @returns The operation result.
+	 * @returns Current state string.
 	 */
 	public get idleState(): "active" | "frozen" {
 		return this._idle?.state ?? "active";
@@ -498,7 +498,7 @@ class VirtualShell extends EventEmitter {
 
 	/**
 	 * Milliseconds since last shell activity. 0 when idle management is disabled.
-	 * @returns The numeric result.
+	 * @returns Milliseconds of idle time.
 	 */
 	public get idleMs(): number {
 		return this._idle?.idleMs ?? 0;

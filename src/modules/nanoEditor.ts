@@ -1,3 +1,23 @@
+/**
+ * nanoEditor.ts — terminal-based text editor inspired by GNU nano.
+ *
+ * Renders a full-featured editor over a ShellStream with support for:
+ * cursor navigation, text insertion/deletion, cut/copy/paste, search,
+ * go-to-line, save, undo/redo, mark selection, and resize handling.
+ *
+ * @example
+ * ```ts
+ * const nano = new NanoEditor({
+ *   stream, terminalSize: { cols: 80, rows: 24 },
+ *   content: "Hello, world!\n", filename: "/home/user/hello.txt",
+ *   onExit: (reason, content) => {
+ *     if (reason === "saved") vfs.writeFile("/home/user/hello.txt", content);
+ *   },
+ * });
+ * nano.start();
+ * nano.handleInput(Buffer.from("a")); // type 'a'
+ * ```
+ */
 import type { ShellStream } from "../types/streams";
 import type { TerminalSize } from "./shellRuntime";
 
@@ -132,6 +152,10 @@ export class NanoEditor {
 	private readonly onExit: NanoEditorOptions["onExit"];
 	private readonly onSave: NanoEditorOptions["onSave"];
 
+	/**
+	 * Create a new NanoEditor instance.
+	 * @param opts - Editor configuration (stream, terminal size, content, filename, callbacks).
+	 */
 	constructor(opts: NanoEditorOptions) {
 		this.stream = opts.stream;
 		this.terminalSize = opts.terminalSize;

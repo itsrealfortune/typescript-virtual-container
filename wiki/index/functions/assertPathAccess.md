@@ -8,7 +8,10 @@
 
 > **assertPathAccess**(`authUser`, `targetPath`, `operation`): `void`
 
-Defined in: [src/commands/helpers.ts:41](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/commands/helpers.ts#L41)
+Defined in: [src/commands/helpers.ts:54](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/commands/helpers.ts#L54)
+
+Throw an error if a non-root user attempts to access a protected path.
+Protected paths include auth directories and password files.
 
 ## Parameters
 
@@ -16,13 +19,19 @@ Defined in: [src/commands/helpers.ts:41](https://github.com/itsrealfortune/types
 
 `string`
 
+Authenticated username.
+
 ### targetPath
 
 `string`
 
+Path being accessed.
+
 ### operation
 
 `string`
+
+Description of the operation (e.g. "read", "write").
 
 ## Returns
 

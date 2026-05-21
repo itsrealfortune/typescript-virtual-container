@@ -8,7 +8,7 @@
 
 > **getStaticRootfsSnapshot**(`hostname`, `props`): `Buffer`
 
-Defined in: [src/modules/linuxRootfs.ts:2055](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/linuxRootfs.ts#L2055)
+Defined in: [src/modules/linuxRootfs.ts:2064](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/linuxRootfs.ts#L2064)
 
 Build or retrieve the static rootfs VFSB snapshot for the given
 hostname + ShellProperties combination.

@@ -6,7 +6,7 @@
 
 # Interface: LoginBannerState
 
-Defined in: [src/modules/SSHMimic/loginBanner.ts:7](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/loginBanner.ts#L7)
+Defined in: [src/modules/SSHMimic/loginBanner.ts:13](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/loginBanner.ts#L13)
 
 Tracks the timestamp and origin of the user's last login for the login banner.
 
@@ -16,7 +16,7 @@ Tracks the timestamp and origin of the user's last login for the login banner.
 
 > **at**: `string`
 
-Defined in: [src/modules/SSHMimic/loginBanner.ts:8](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/loginBanner.ts#L8)
+Defined in: [src/modules/SSHMimic/loginBanner.ts:14](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/loginBanner.ts#L14)
 
 ***
 
@@ -24,4 +24,4 @@ Defined in: [src/modules/SSHMimic/loginBanner.ts:8](https://github.com/itsrealfo
 
 > **from**: `string`
 
-Defined in: [src/modules/SSHMimic/loginBanner.ts:9](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/loginBanner.ts#L9)
+Defined in: [src/modules/SSHMimic/loginBanner.ts:15](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/loginBanner.ts#L15)

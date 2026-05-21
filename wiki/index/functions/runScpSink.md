@@ -20,31 +20,31 @@ filesystem.
 
 `ScpStream`
 
-The stream parameter.
+SSH channel stream for SCP protocol communication.
 
 ### destArg
 
 `string`
 
-The destination path argument.
+Destination path on the server (e.g. "/home/user/file.txt").
 
 ### authUser
 
 `string`
 
-The authenticated username.
+Authenticated username owning the destination.
 
 ### shell
 
 [`VirtualShell`](../classes/VirtualShell.md)
 
-The shell parameter.
+VirtualShell providing VFS for file writes.
 
 ### recursive
 
 `boolean`
 
-The recursive parameter.
+Whether to accept directory uploads (-r flag).
 
 ## Returns
 

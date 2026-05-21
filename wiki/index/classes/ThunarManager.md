@@ -6,7 +6,13 @@
 
 # Class: ThunarManager
 
-Defined in: [src/modules/thunarManager.ts:45](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/thunarManager.ts#L45)
+Defined in: [src/modules/thunarManager.ts:52](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/thunarManager.ts#L52)
+
+Thunar-like file manager for the browser desktop environment.
+
+Renders a graphical file browser with directory navigation, file operations
+(create, delete, rename, copy path), context menus, and trash support.
+Integrates with DesktopManager for window management.
 
 ## Constructors
 
@@ -14,7 +20,9 @@ Defined in: [src/modules/thunarManager.ts:45](https://github.com/itsrealfortune/
 
 > **new ThunarManager**(`host`, `container`): `ThunarManager`
 
-Defined in: [src/modules/thunarManager.ts:48](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/thunarManager.ts#L48)
+Defined in: [src/modules/thunarManager.ts:60](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/thunarManager.ts#L60)
+
+Create a Thunar file manager instance.
 
 #### Parameters
 
@@ -22,9 +30,13 @@ Defined in: [src/modules/thunarManager.ts:48](https://github.com/itsrealfortune/
 
 `ThunarHost`
 
+Desktop host providing shell, windows, and rendering helpers.
+
 ##### container
 
 `HTMLElement`
+
+DOM element to render the file browser into.
 
 #### Returns
 
@@ -36,7 +48,9 @@ Defined in: [src/modules/thunarManager.ts:48](https://github.com/itsrealfortune/
 
 > **renderContent**(`el`, `content`): `void`
 
-Defined in: [src/modules/thunarManager.ts:241](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/thunarManager.ts#L241)
+Defined in: [src/modules/thunarManager.ts:258](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/thunarManager.ts#L258)
+
+Render the file browser content for a Thunar window.
 
 #### Parameters
 
@@ -44,9 +58,13 @@ Defined in: [src/modules/thunarManager.ts:241](https://github.com/itsrealfortune
 
 `HTMLElement`
 
+Window DOM element.
+
 ##### content
 
 [`ThunarContent`](../interfaces/ThunarContent.md)
+
+Thunar content descriptor with the target path.
 
 #### Returns
 

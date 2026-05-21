@@ -1,3 +1,9 @@
+/**
+ * loginBanner.ts — SSH login banner generation.
+ *
+ * Builds the Fortune GNU/Linux login banner with OS info, warranty notice,
+ * and last login timestamp displayed on SSH connection.
+ */
 import type { ShellProperties } from "../VirtualShell";
 import { formatLoginDate } from "./loginFormat";
 
@@ -12,10 +18,10 @@ export interface LoginBannerState {
 /**
  * Builds the SSH login banner displaying OS info, warranty notice, and the
  * last login timestamp and origin.
- * @param hostname - The hostname parameter.
- * @param properties - The properties parameter.
- * @param lastLogin - The lastLogin parameter.
- * @returns The result string.
+ * @param hostname - VM hostname to display in the banner.
+ * @param properties - Shell properties (kernel version, architecture).
+ * @param lastLogin - Last login info (timestamp, remote address), or null.
+ * @returns Formatted banner string with CRLF line endings.
  */
 export function buildLoginBanner(
 	hostname: string,

@@ -8,7 +8,7 @@
 
 > **saveHistory**(`vfs`, `authUser`, `history`): `void`
 
-Defined in: [src/utils/shellSession.ts:34](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/shellSession.ts#L34)
+Defined in: [src/utils/shellSession.ts:40](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/shellSession.ts#L40)
 
 Saves shell command history for a user to the VFS.
 Each entry is written on its own line to `.bash_history`.

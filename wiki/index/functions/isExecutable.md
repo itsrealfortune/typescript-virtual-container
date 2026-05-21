@@ -18,28 +18,28 @@ Check if a file is executable by `uid`/`gid`.
 
 `InternalDirectoryNode`
 
-The root parameter.
+Root directory node of the VFS tree.
 
 ### targetPath
 
 `string`
 
-The target file path.
+Absolute VFS path of the file.
 
 ### uid
 
 `number`
 
-The uid parameter.
+User ID attempting execution.
 
 ### gid
 
 `number`
 
-The gid parameter.
+Group ID of the user.
 
 ## Returns
 
 `boolean`
 
-The success indicator.
+True if the file has execute permission for the user.

@@ -8,7 +8,7 @@
 
 > **resolvePath**(`cwd`, `inputPath`, `homeDir?`): `string`
 
-Defined in: [src/commands/helpers.ts:18](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/commands/helpers.ts#L18)
+Defined in: [src/commands/helpers.ts:24](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/commands/helpers.ts#L24)
 
 Resolves a path string against the virtual file system.
 Supports `~` as shorthand for the home directory. If `inputPath` is

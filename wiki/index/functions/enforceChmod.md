@@ -19,19 +19,19 @@ Must be owner or root.
 
 `InternalDirectoryNode`
 
-The root parameter.
+Root directory node of the VFS tree.
 
 ### targetPath
 
 `string`
 
-The target file path.
+Absolute VFS path of the node.
 
 ### uid
 
 `number`
 
-The uid parameter.
+User ID attempting the chmod operation.
 
 ## Returns
 

@@ -8,7 +8,7 @@
 
 > **ArgParseOptions** = `object`
 
-Defined in: [src/commands/command-helpers.ts:5](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/commands/command-helpers.ts#L5)
+Defined in: [src/commands/command-helpers.ts:13](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/commands/command-helpers.ts#L13)
 
 Options for argument parsing helpers.
 
@@ -18,7 +18,7 @@ Options for argument parsing helpers.
 
 > `optional` **flags?**: `string`[]
 
-Defined in: [src/commands/command-helpers.ts:6](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/commands/command-helpers.ts#L6)
+Defined in: [src/commands/command-helpers.ts:14](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/commands/command-helpers.ts#L14)
 
 ***
 
@@ -26,4 +26,4 @@ Defined in: [src/commands/command-helpers.ts:6](https://github.com/itsrealfortun
 
 > `optional` **flagsWithValue?**: `string`[]
 
-Defined in: [src/commands/command-helpers.ts:7](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/commands/command-helpers.ts#L7)
+Defined in: [src/commands/command-helpers.ts:15](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/commands/command-helpers.ts#L15)

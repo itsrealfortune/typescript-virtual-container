@@ -8,7 +8,7 @@
 
 > **resolveReadablePath**(`vfs`, `cwd`, `inputPath`): `string`
 
-Defined in: [src/commands/helpers.ts:105](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/commands/helpers.ts#L105)
+Defined in: [src/commands/helpers.ts:118](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/commands/helpers.ts#L118)
 
 Resolves a path with readable error messages by attempting an exact match
 first, then falling back to case-insensitive matching, and finally to a

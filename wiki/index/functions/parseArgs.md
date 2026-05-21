@@ -8,7 +8,7 @@
 
 > **parseArgs**(`args`, `options?`): `object`
 
-Defined in: [src/commands/command-helpers.ts:230](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/commands/command-helpers.ts#L230)
+Defined in: [src/commands/command-helpers.ts:238](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/commands/command-helpers.ts#L238)
 
 Parses an argument array into structured flags, flag values, and positionals.
 

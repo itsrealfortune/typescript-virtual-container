@@ -19,10 +19,10 @@ InternalDirectoryNode tree. Throws on magic/version mismatch or truncation.
 
 `Buffer`
 
-The buf parameter.
+Binary Buffer in VFS! format.
 
 ## Returns
 
 `InternalDirectoryNode`
 
-The root directory node.
+Reconstructed root directory node.

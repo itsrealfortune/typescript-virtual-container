@@ -19,10 +19,10 @@ No base64, no JSON. ~27% smaller than the JSON+base64 format for typical VFS tre
 
 `InternalDirectoryNode`
 
-The root parameter.
+Root directory node to serialise.
 
 ## Returns
 
 `Buffer`
 
-The buffer content.
+Binary Buffer in VFS! format.

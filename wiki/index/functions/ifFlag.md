@@ -8,7 +8,7 @@
 
 > **ifFlag**(`args`, `flags`): `boolean`
 
-Defined in: [src/commands/command-helpers.ts:113](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/commands/command-helpers.ts#L113)
+Defined in: [src/commands/command-helpers.ts:121](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/commands/command-helpers.ts#L121)
 
 Returns `true` when any of the given flags appear in `args`.
 

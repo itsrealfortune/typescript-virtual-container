@@ -6,7 +6,7 @@
 
 # Class: VirtualPackageManager
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:613](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L613)
+Defined in: [src/modules/VirtualPackageManager/index.ts:629](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L629)
 
 Pure-TypeScript APT/dpkg package manager backed by a built-in registry.
 
@@ -31,7 +31,7 @@ console.log(pm.installedCount());   // 2
 
 > **new VirtualPackageManager**(`vfs`, `users`): `VirtualPackageManager`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:624](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L624)
+Defined in: [src/modules/VirtualPackageManager/index.ts:640](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L640)
 
 #### Parameters
 
@@ -57,7 +57,7 @@ User manager reference passed to `onInstall` hooks.
 
 > **findInRegistry**(`name`): [`PackageDefinition`](../interfaces/PackageDefinition.md) \| `undefined`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:733](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L733)
+Defined in: [src/modules/VirtualPackageManager/index.ts:749](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L749)
 
 Looks up a package definition in the built-in registry by name.
 
@@ -81,7 +81,7 @@ The matching `PackageDefinition`, or `undefined` if not found.
 
 > **install**(`names`, `opts?`): `object`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:794](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L794)
+Defined in: [src/modules/VirtualPackageManager/index.ts:810](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L810)
 
 Installs one or more packages from the registry.
 
@@ -129,7 +129,7 @@ Terminal-style `output` string and an APT-compatible `exitCode`
 
 > **installedCount**(): `number`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:775](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L775)
+Defined in: [src/modules/VirtualPackageManager/index.ts:791](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L791)
 
 Returns the total number of installed packages.
 
@@ -147,7 +147,7 @@ The numeric result.
 
 > **isInstalled**(`name`): `boolean`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:764](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L764)
+Defined in: [src/modules/VirtualPackageManager/index.ts:780](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L780)
 
 Returns `true` when the given package is currently installed.
 
@@ -171,7 +171,7 @@ The success indicator.
 
 > **listAvailable**(): [`PackageDefinition`](../interfaces/PackageDefinition.md)[]
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:742](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L742)
+Defined in: [src/modules/VirtualPackageManager/index.ts:758](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L758)
 
 Returns all packages in the built-in registry, sorted alphabetically.
 
@@ -187,7 +187,7 @@ Array of `PackageDefinition` entries.
 
 > **listInstalled**(): [`InstalledPackage`](../interfaces/InstalledPackage.md)[]
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:751](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L751)
+Defined in: [src/modules/VirtualPackageManager/index.ts:767](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L767)
 
 Returns all currently installed packages, sorted alphabetically.
 
@@ -203,7 +203,7 @@ Array of `InstalledPackage` records.
 
 > **load**(): `void`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:640](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L640)
+Defined in: [src/modules/VirtualPackageManager/index.ts:656](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L656)
 
 Loads installed package state from `/var/lib/dpkg/status` in the VFS.
 Safe to call again to reload state after a snapshot restore.
@@ -218,7 +218,7 @@ Safe to call again to reload state after a snapshot restore.
 
 > **remove**(`names`, `opts?`): `object`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:924](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L924)
+Defined in: [src/modules/VirtualPackageManager/index.ts:940](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L940)
 
 Removes one or more installed packages.
 
@@ -270,7 +270,7 @@ Terminal-style `output` string and exit code (`0` on success).
 
 > **search**(`term`): [`PackageDefinition`](../interfaces/PackageDefinition.md)[]
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:995](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L995)
+Defined in: [src/modules/VirtualPackageManager/index.ts:1011](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L1011)
 
 Searches the registry for packages whose name or description contains
 the given term (case-insensitive). Equivalent to `apt-cache search`.
@@ -295,7 +295,7 @@ Matching `PackageDefinition` entries sorted alphabetically.
 
 > **show**(`name`): `string` \| `null`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:1012](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L1012)
+Defined in: [src/modules/VirtualPackageManager/index.ts:1028](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L1028)
 
 Returns a dpkg-style metadata block for a package, including its
 install status. Equivalent to `apt-cache show` / `dpkg -s`.

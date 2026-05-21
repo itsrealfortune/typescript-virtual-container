@@ -1,4 +1,11 @@
 /**
+ * perfLogger.ts — conditional performance timing utility.
+ *
+ * Creates lightweight performance loggers that are no-ops when the
+ * `DEV_MODE` environment variable is not set, avoiding overhead in production.
+ */
+
+/**
  * Interface for a performance logger instance.
  * When `enabled` is false, `mark` and `done` are no-ops.
  */

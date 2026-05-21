@@ -6,7 +6,20 @@
 
 # Class: WebTermRenderer
 
-Defined in: [src/modules/webTermRenderer.ts:25](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/webTermRenderer.ts#L25)
+Defined in: [src/modules/webTermRenderer.ts:38](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/webTermRenderer.ts#L38)
+
+Minimal VT100 screen buffer for browser-side rendering.
+Handles the subset of escape sequences emitted by NanoEditor and other
+terminal applications: cursor positioning, erase, SGR styling, and scrollback.
+
+## Example
+
+```ts
+const renderer = new WebTermRenderer(24, 80);
+renderer.write("\x1b[1mHello\x1b[0m World\r\n");
+const html = renderer.renderScrollbackHtml();
+document.getElementById("term").innerHTML = html;
+```
 
 ## Constructors
 
@@ -14,7 +27,9 @@ Defined in: [src/modules/webTermRenderer.ts:25](https://github.com/itsrealfortun
 
 > **new WebTermRenderer**(`rows`, `cols`): `WebTermRenderer`
 
-Defined in: [src/modules/webTermRenderer.ts:43](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/webTermRenderer.ts#L43)
+Defined in: [src/modules/webTermRenderer.ts:70](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/webTermRenderer.ts#L70)
+
+Create a new terminal screen buffer.
 
 #### Parameters
 
@@ -22,9 +37,13 @@ Defined in: [src/modules/webTermRenderer.ts:43](https://github.com/itsrealfortun
 
 `number`
 
+Number of visible rows (default: 24).
+
 ##### cols
 
 `number`
+
+Number of columns (default: 80).
 
 #### Returns
 
@@ -38,7 +57,9 @@ Defined in: [src/modules/webTermRenderer.ts:43](https://github.com/itsrealfortun
 
 > **get** **cursorCol**(): `number`
 
-Defined in: [src/modules/webTermRenderer.ts:303](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/webTermRenderer.ts#L303)
+Defined in: [src/modules/webTermRenderer.ts:342](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/webTermRenderer.ts#L342)
+
+Current cursor column position (0-indexed).
 
 ##### Returns
 
@@ -52,7 +73,9 @@ Defined in: [src/modules/webTermRenderer.ts:303](https://github.com/itsrealfortu
 
 > **get** **cursorRow**(): `number`
 
-Defined in: [src/modules/webTermRenderer.ts:302](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/webTermRenderer.ts#L302)
+Defined in: [src/modules/webTermRenderer.ts:340](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/webTermRenderer.ts#L340)
+
+Current cursor row position (0-indexed).
 
 ##### Returns
 
@@ -66,7 +89,9 @@ Defined in: [src/modules/webTermRenderer.ts:302](https://github.com/itsrealfortu
 
 > **get** **isCursorVisible**(): `boolean`
 
-Defined in: [src/modules/webTermRenderer.ts:304](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/webTermRenderer.ts#L304)
+Defined in: [src/modules/webTermRenderer.ts:344](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/webTermRenderer.ts#L344)
+
+Whether the cursor is currently visible (controlled by CSI ?25l/?25h).
 
 ##### Returns
 
@@ -80,7 +105,9 @@ Defined in: [src/modules/webTermRenderer.ts:304](https://github.com/itsrealfortu
 
 > **get** **scrollbackLength**(): `number`
 
-Defined in: [src/modules/webTermRenderer.ts:313](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/webTermRenderer.ts#L313)
+Defined in: [src/modules/webTermRenderer.ts:354](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/webTermRenderer.ts#L354)
+
+Number of rows currently in the scrollback buffer.
 
 ##### Returns
 
@@ -92,7 +119,9 @@ Defined in: [src/modules/webTermRenderer.ts:313](https://github.com/itsrealfortu
 
 > **clearScrollback**(): `void`
 
-Defined in: [src/modules/webTermRenderer.ts:315](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/webTermRenderer.ts#L315)
+Defined in: [src/modules/webTermRenderer.ts:357](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/webTermRenderer.ts#L357)
+
+Clear the scrollback buffer.
 
 #### Returns
 
@@ -104,7 +133,7 @@ Defined in: [src/modules/webTermRenderer.ts:315](https://github.com/itsrealfortu
 
 > **consumeCleared**(): `boolean`
 
-Defined in: [src/modules/webTermRenderer.ts:307](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/webTermRenderer.ts#L307)
+Defined in: [src/modules/webTermRenderer.ts:347](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/webTermRenderer.ts#L347)
 
 Returns true (once) if CSI 2J was received since last call.
 
@@ -118,7 +147,7 @@ Returns true (once) if CSI 2J was received since last call.
 
 > **renderHtml**(): `string`
 
-Defined in: [src/modules/webTermRenderer.ts:266](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/webTermRenderer.ts#L266)
+Defined in: [src/modules/webTermRenderer.ts:303](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/webTermRenderer.ts#L303)
 
 Render current screen state to an HTML string for a <pre> element.
 
@@ -132,11 +161,16 @@ Render current screen state to an HTML string for a <pre> element.
 
 > **renderScrollbackHtml**(): `string`
 
-Defined in: [src/modules/webTermRenderer.ts:317](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/webTermRenderer.ts#L317)
+Defined in: [src/modules/webTermRenderer.ts:364](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/webTermRenderer.ts#L364)
+
+Render the scrollback buffer as HTML with inline styles for colors and bold.
+Each row becomes a div, each styled cell becomes a span.
 
 #### Returns
 
 `string`
+
+HTML string suitable for innerHTML insertion.
 
 ***
 
@@ -144,7 +178,9 @@ Defined in: [src/modules/webTermRenderer.ts:317](https://github.com/itsrealfortu
 
 > **resize**(`rows`, `cols`): `void`
 
-Defined in: [src/modules/webTermRenderer.ts:49](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/webTermRenderer.ts#L49)
+Defined in: [src/modules/webTermRenderer.ts:81](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/webTermRenderer.ts#L81)
+
+Resize the terminal screen and preserve existing content.
 
 #### Parameters
 
@@ -152,9 +188,13 @@ Defined in: [src/modules/webTermRenderer.ts:49](https://github.com/itsrealfortun
 
 `number`
 
+New number of rows.
+
 ##### cols
 
 `number`
+
+New number of columns.
 
 #### Returns
 
@@ -166,13 +206,18 @@ Defined in: [src/modules/webTermRenderer.ts:49](https://github.com/itsrealfortun
 
 > **write**(`data`): `void`
 
-Defined in: [src/modules/webTermRenderer.ts:63](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/webTermRenderer.ts#L63)
+Defined in: [src/modules/webTermRenderer.ts:100](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/webTermRenderer.ts#L100)
+
+Write ANSI escape sequence data to the screen buffer.
+Handles cursor movement, erasing, SGR styling, and scrollback.
 
 #### Parameters
 
 ##### data
 
 `string`
+
+Raw terminal output string (may contain escape sequences).
 
 #### Returns
 

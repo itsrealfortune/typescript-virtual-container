@@ -292,7 +292,11 @@ function resolveDefaults(info: NeofetchInfo): Required<NeofetchInfo> {
 	};
 }
 
-/** Builds the full neofetch ASCII art system-info string. */
+/**
+ * Builds the full neofetch ASCII art system-info string.
+ * @param info - System information overrides (hostname, kernel, uptime, etc.).
+ * @returns Multi-line string with ASCII logo and system info.
+ */
 export function buildNeofetchOutput(info: NeofetchInfo): string {
 	const fields = resolveDefaults(info);
 	const uptime = formatUptime(fields.uptimeSeconds);

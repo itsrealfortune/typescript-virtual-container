@@ -1,3 +1,9 @@
+/**
+ * helpers.ts — command utility functions.
+ *
+ * Provides path resolution, permission checking, protected-path enforcement,
+ * and package manager accessors used by shell commands.
+ */
 import * as path from "node:path";
 import type VirtualFileSystem from "../modules/VirtualFileSystem";
 import type { VirtualPackageManager } from "../modules/VirtualPackageManager";
@@ -38,6 +44,13 @@ function isProtectedPath(targetPath: string): boolean {
 	);
 }
 
+/**
+ * Throw an error if a non-root user attempts to access a protected path.
+ * Protected paths include auth directories and password files.
+ * @param authUser - Authenticated username.
+ * @param targetPath - Path being accessed.
+ * @param operation - Description of the operation (e.g. "read", "write").
+ */
 export function assertPathAccess(
 	authUser: string,
 	targetPath: string,
@@ -149,6 +162,12 @@ export function getPackageManager(
  * POSIX-style permission check: does `authUser` have `want` access to `filePath`?
  * `want` is a bitmask: 4=R_OK, 2=W_OK, 1=X_OK, 0=F_OK (check existence).
  * Root bypasses all checks. Throws on EACCES.
+ *
+ * @param vfs - VirtualFileSystem for permission checking.
+ * @param users - User manager for UID/GID resolution.
+ * @param authUser - Authenticated username.
+ * @param filePath - Path to check permissions on.
+ * @param want - Permission bitmask (R_OK=4, W_OK=2, X_OK=1, F_OK=0).
  */
 export function checkFilePermission(
 	vfs: VirtualFileSystem,

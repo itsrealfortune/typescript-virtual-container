@@ -8,7 +8,7 @@
 
 > **readLastLogin**(`vfs`, `authUser`): [`LastLogin`](../interfaces/LastLogin.md) \| `null`
 
-Defined in: [src/utils/shellSession.ts:52](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/shellSession.ts#L52)
+Defined in: [src/utils/shellSession.ts:58](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/shellSession.ts#L58)
 
 Reads the last-login timestamp for a user from the VFS.
 

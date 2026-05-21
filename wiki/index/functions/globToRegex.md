@@ -8,7 +8,7 @@
 
 > **globToRegex**(`pattern`, `flags?`): `RegExp`
 
-Defined in: [src/utils/glob.ts:8](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/glob.ts#L8)
+Defined in: [src/utils/glob.ts:14](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/glob.ts#L14)
 
 Convert a shell glob pattern to a RegExp.
 Supports: * (any chars), ? (one char), [...] (char class), flags (e.g. "i").

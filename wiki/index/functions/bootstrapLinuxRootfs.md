@@ -8,7 +8,7 @@
 
 > **bootstrapLinuxRootfs**(`vfs`, `users`, `hostname`, `props`, `shellStartTime`, `sessions?`, `network?`): `void`
 
-Defined in: [src/modules/linuxRootfs.ts:2092](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/linuxRootfs.ts#L2092)
+Defined in: [src/modules/linuxRootfs.ts:2101](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/linuxRootfs.ts#L2101)
 
 Bootstraps the full Linux rootfs hierarchy in the VFS.
 Safe to call multiple times — idempotent.

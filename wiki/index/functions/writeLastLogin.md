@@ -8,7 +8,7 @@
 
 > **writeLastLogin**(`vfs`, `authUser`, `from`): `void`
 
-Defined in: [src/utils/shellSession.ts:68](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/shellSession.ts#L68)
+Defined in: [src/utils/shellSession.ts:74](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/shellSession.ts#L74)
 
 Writes the current timestamp as the last login for a user to the VFS.
 

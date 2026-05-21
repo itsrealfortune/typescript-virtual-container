@@ -19,25 +19,25 @@ Required for path traversal. Throws EACCES on failure.
 
 `InternalDirectoryNode`
 
-The root parameter.
+Root directory node of the VFS tree.
 
 ### targetPath
 
 `string`
 
-The target file path.
+Absolute VFS path to traverse.
 
 ### uid
 
 `number`
 
-The uid parameter.
+User ID requesting access.
 
 ### gid
 
 `number`
 
-The gid parameter.
+Group ID of the requesting user.
 
 ## Returns
 

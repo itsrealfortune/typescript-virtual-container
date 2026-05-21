@@ -19,31 +19,31 @@ Sticky bit: only root, directory owner, or file owner can delete.
 
 `InternalDirectoryNode`
 
-The root parameter.
+Root directory node of the VFS tree.
 
 ### dirPath
 
 `string`
 
-The directory path.
+Absolute VFS path of the parent directory.
 
 ### name
 
 `string`
 
-The name parameter.
+Name of the file/directory to delete.
 
 ### uid
 
 `number`
 
-The uid parameter.
+User ID requesting deletion.
 
 ### gid
 
 `number`
 
-The gid parameter.
+Group ID of the requesting user.
 
 ## Returns
 

@@ -24,11 +24,11 @@ export const X_OK = 1;
 /**
  * Check if `uid`/`gid` can access `targetPath` with the given permission bits.
  * Throws EACCES on failure.
- * @param root - The root parameter.
- * @param targetPath - The target file path.
- * @param uid - The uid parameter.
- * @param gid - The gid parameter.
- * @param want - The want parameter.
+ * @param root - Root directory node of the VFS tree.
+ * @param targetPath - Absolute VFS path to check.
+ * @param uid - User ID requesting access.
+ * @param gid - Group ID of the requesting user.
+ * @param want - Permission bitmask (R_OK=4, W_OK=2, X_OK=1).
  */
 export function enforceAccess(
 	root: InternalDirectoryNode,
@@ -67,10 +67,10 @@ export function enforceAccess(
 /**
  * Check X_OK on every parent directory component of `targetPath`.
  * Required for path traversal. Throws EACCES on failure.
- * @param root - The root parameter.
- * @param targetPath - The target file path.
- * @param uid - The uid parameter.
- * @param gid - The gid parameter.
+ * @param root - Root directory node of the VFS tree.
+ * @param targetPath - Absolute VFS path to traverse.
+ * @param uid - User ID requesting access.
+ * @param gid - Group ID of the requesting user.
  */
 export function enforcePathTraversal(
 	root: InternalDirectoryNode,
@@ -97,11 +97,11 @@ export function enforcePathTraversal(
 /**
  * Check if `uid`/`gid` can delete `name` inside `dirPath`.
  * Sticky bit: only root, directory owner, or file owner can delete.
- * @param root - The root parameter.
- * @param dirPath - The directory path.
- * @param name - The name parameter.
- * @param uid - The uid parameter.
- * @param gid - The gid parameter.
+ * @param root - Root directory node of the VFS tree.
+ * @param dirPath - Absolute VFS path of the parent directory.
+ * @param name - Name of the file/directory to delete.
+ * @param uid - User ID requesting deletion.
+ * @param gid - Group ID of the requesting user.
  */
 export function enforceDelete(
 	root: InternalDirectoryNode,
@@ -131,7 +131,7 @@ export function enforceDelete(
 /**
  * Check if `uid` can change ownership of `targetPath`.
  * Only root can chown.
- * @param uid - The uid parameter.
+ * @param uid - User ID attempting the chown operation.
  */
 export function enforceChown(
 	_targetPath: string,
@@ -145,9 +145,9 @@ export function enforceChown(
 /**
  * Check if `uid` can change mode of `targetPath`.
  * Must be owner or root.
- * @param root - The root parameter.
- * @param targetPath - The target file path.
- * @param uid - The uid parameter.
+ * @param root - Root directory node of the VFS tree.
+ * @param targetPath - Absolute VFS path of the node.
+ * @param uid - User ID attempting the chmod operation.
  */
 export function enforceChmod(
 	root: InternalDirectoryNode,
@@ -163,10 +163,10 @@ export function enforceChmod(
 
 /**
  * Resolve the effective uid for executing a file, respecting setuid.
- * @param root - The root parameter.
- * @param targetPath - The target file path.
- * @param originalUid - The original user ID.
- * @returns The numeric result.
+ * @param root - Root directory node of the VFS tree.
+ * @param targetPath - Absolute VFS path of the executable.
+ * @param originalUid - Original user ID before setuid resolution.
+ * @returns Effective UID (file owner's uid if setuid, otherwise originalUid).
  */
 export function resolveEffectiveUid(
 	root: InternalDirectoryNode,
@@ -182,10 +182,10 @@ export function resolveEffectiveUid(
 
 /**
  * Resolve the effective gid for executing a file, respecting setgid.
- * @param root - The root parameter.
- * @param targetPath - The target file path.
- * @param originalGid - The original group ID.
- * @returns The numeric result.
+ * @param root - Root directory node of the VFS tree.
+ * @param targetPath - Absolute VFS path of the executable.
+ * @param originalGid - Original group ID before setgid resolution.
+ * @returns Effective GID (file owner's gid if setgid, otherwise originalGid).
  */
 export function resolveEffectiveGid(
 	root: InternalDirectoryNode,
@@ -201,11 +201,11 @@ export function resolveEffectiveGid(
 
 /**
  * Check if a file is executable by `uid`/`gid`.
- * @param root - The root parameter.
- * @param targetPath - The target file path.
- * @param uid - The uid parameter.
- * @param gid - The gid parameter.
- * @returns The success indicator.
+ * @param root - Root directory node of the VFS tree.
+ * @param targetPath - Absolute VFS path of the file.
+ * @param uid - User ID attempting execution.
+ * @param gid - Group ID of the user.
+ * @returns True if the file has execute permission for the user.
  */
 export function isExecutable(
 	root: InternalDirectoryNode,

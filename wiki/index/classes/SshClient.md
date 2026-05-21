@@ -6,7 +6,7 @@
 
 # Class: SshClient
 
-Defined in: [src/modules/SSHClient/index.ts:29](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L29)
+Defined in: [src/modules/SSHClient/index.ts:44](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L44)
 
 Programmatic SSH client wrapping a VirtualShell instance.
 Provides typed methods (exec, ls, cat, mkdir, etc.) without real SSH.
@@ -22,7 +22,7 @@ Provides typed methods (exec, ls, cat, mkdir, etc.) without real SSH.
 
 > **new SshClient**(`shell`, `username`): `SshClient`
 
-Defined in: [src/modules/SSHClient/index.ts:38](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L38)
+Defined in: [src/modules/SSHClient/index.ts:53](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L53)
 
 Creates a programmatic client bound to a virtual shell and user.
 
@@ -50,7 +50,7 @@ Login user for all commands.
 
 > **cat**(`path`): `Promise`\<[`CommandResult`](../interfaces/CommandResult.md)\>
 
-Defined in: [src/modules/SSHClient/index.ts:124](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L124)
+Defined in: [src/modules/SSHClient/index.ts:139](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L139)
 
 Reads file content.
 
@@ -74,7 +74,7 @@ Result with file content in stdout.
 
 > **cd**(`path`): `Promise`\<[`CommandResult`](../interfaces/CommandResult.md)\>
 
-Defined in: [src/modules/SSHClient/index.ts:109](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L109)
+Defined in: [src/modules/SSHClient/index.ts:124](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L124)
 
 Changes working directory.
 
@@ -98,7 +98,7 @@ Result; updates internal cwd on success.
 
 > **exec**(`command`): `Promise`\<[`CommandResult`](../interfaces/CommandResult.md)\>
 
-Defined in: [src/modules/SSHClient/index.ts:51](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L51)
+Defined in: [src/modules/SSHClient/index.ts:66](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L66)
 
 Executes raw shell command.
 
@@ -122,7 +122,7 @@ Command result with stdout/stderr/exitCode.
 
 > **getCwd**(): `string`
 
-Defined in: [src/modules/SSHClient/index.ts:224](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L224)
+Defined in: [src/modules/SSHClient/index.ts:239](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L239)
 
 Gets current working directory.
 
@@ -138,7 +138,7 @@ Normalized cwd path.
 
 > **getUsername**(): `string`
 
-Defined in: [src/modules/SSHClient/index.ts:234](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L234)
+Defined in: [src/modules/SSHClient/index.ts:249](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L249)
 
 Gets logged-in username.
 
@@ -154,7 +154,7 @@ Associated username.
 
 > **hostname**(): `Promise`\<[`CommandResult`](../interfaces/CommandResult.md)\>
 
-Defined in: [src/modules/SSHClient/index.ts:266](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L266)
+Defined in: [src/modules/SSHClient/index.ts:281](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L281)
 
 Shows hostname.
 
@@ -170,7 +170,7 @@ Result from hostname command.
 
 > **ls**(`path?`): `Promise`\<[`CommandResult`](../interfaces/CommandResult.md)\>
 
-Defined in: [src/modules/SSHClient/index.ts:87](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L87)
+Defined in: [src/modules/SSHClient/index.ts:102](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L102)
 
 Lists directory contents.
 
@@ -194,7 +194,7 @@ Result with directory listing in stdout.
 
 > **mkdir**(`path`, `recursive?`): `Promise`\<[`CommandResult`](../interfaces/CommandResult.md)\>
 
-Defined in: [src/modules/SSHClient/index.ts:136](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L136)
+Defined in: [src/modules/SSHClient/index.ts:151](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L151)
 
 Creates directory.
 
@@ -224,7 +224,7 @@ Result from mkdir command.
 
 > **pwd**(): `Promise`\<[`CommandResult`](../interfaces/CommandResult.md)\>
 
-Defined in: [src/modules/SSHClient/index.ts:98](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L98)
+Defined in: [src/modules/SSHClient/index.ts:113](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L113)
 
 Prints current working directory.
 
@@ -240,7 +240,7 @@ Result with cwd path in stdout.
 
 > **readFile**(`path`): `Promise`\<[`CommandResult`](../interfaces/CommandResult.md)\>
 
-Defined in: [src/modules/SSHClient/index.ts:201](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L201)
+Defined in: [src/modules/SSHClient/index.ts:216](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L216)
 
 Reads file content programmatically.
 
@@ -264,7 +264,7 @@ File content as string or error in result.
 
 > **rm**(`path`, `recursive?`): `Promise`\<[`CommandResult`](../interfaces/CommandResult.md)\>
 
-Defined in: [src/modules/SSHClient/index.ts:160](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L160)
+Defined in: [src/modules/SSHClient/index.ts:175](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L175)
 
 Removes file or directory.
 
@@ -294,7 +294,7 @@ Result from rm command.
 
 > **touch**(`path`): `Promise`\<[`CommandResult`](../interfaces/CommandResult.md)\>
 
-Defined in: [src/modules/SSHClient/index.ts:148](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L148)
+Defined in: [src/modules/SSHClient/index.ts:163](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L163)
 
 Creates file (empty).
 
@@ -318,7 +318,7 @@ Result from touch command.
 
 > **tree**(`path?`): `Promise`\<[`CommandResult`](../interfaces/CommandResult.md)\>
 
-Defined in: [src/modules/SSHClient/index.ts:245](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L245)
+Defined in: [src/modules/SSHClient/index.ts:260](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L260)
 
 Renders tree view of directory.
 
@@ -342,7 +342,7 @@ Result with ASCII tree in stdout.
 
 > **who**(): `Promise`\<[`CommandResult`](../interfaces/CommandResult.md)\>
 
-Defined in: [src/modules/SSHClient/index.ts:276](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L276)
+Defined in: [src/modules/SSHClient/index.ts:291](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L291)
 
 Lists active users/sessions.
 
@@ -358,7 +358,7 @@ Result from who command.
 
 > **whoami**(): `Promise`\<[`CommandResult`](../interfaces/CommandResult.md)\>
 
-Defined in: [src/modules/SSHClient/index.ts:256](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L256)
+Defined in: [src/modules/SSHClient/index.ts:271](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L271)
 
 Shows current user.
 
@@ -374,7 +374,7 @@ Result from whoami command.
 
 > **writeFile**(`path`, `content`): `Promise`\<[`CommandResult`](../interfaces/CommandResult.md)\>
 
-Defined in: [src/modules/SSHClient/index.ts:173](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L173)
+Defined in: [src/modules/SSHClient/index.ts:188](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHClient/index.ts#L188)
 
 Writes file content.
 

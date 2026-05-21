@@ -6,7 +6,7 @@
 
 # Interface: LastLogin
 
-Defined in: [src/utils/shellSession.ts:41](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/shellSession.ts#L41)
+Defined in: [src/utils/shellSession.ts:47](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/shellSession.ts#L47)
 
 ## Properties
 
@@ -14,7 +14,7 @@ Defined in: [src/utils/shellSession.ts:41](https://github.com/itsrealfortune/typ
 
 > **at**: `string`
 
-Defined in: [src/utils/shellSession.ts:42](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/shellSession.ts#L42)
+Defined in: [src/utils/shellSession.ts:48](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/shellSession.ts#L48)
 
 ***
 
@@ -22,4 +22,4 @@ Defined in: [src/utils/shellSession.ts:42](https://github.com/itsrealfortune/typ
 
 > **from**: `string`
 
-Defined in: [src/utils/shellSession.ts:43](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/shellSession.ts#L43)
+Defined in: [src/utils/shellSession.ts:49](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/shellSession.ts#L49)

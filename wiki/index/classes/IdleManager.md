@@ -6,7 +6,13 @@
 
 # Class: IdleManager
 
-Defined in: [src/modules/VirtualShell/idleManager.ts:42](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualShell/idleManager.ts#L42)
+Defined in: [src/modules/VirtualShell/idleManager.ts:49](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualShell/idleManager.ts#L49)
+
+Manages freeze/thaw lifecycle for idle VirtualShell instances.
+
+Serialises the VFS tree to a compact binary buffer after a period of
+inactivity, freeing memory and suspending the auto-flush timer.
+The tree is reconstructed on next activity in ~0.1 ms.
 
 ## Extends
 
@@ -18,7 +24,9 @@ Defined in: [src/modules/VirtualShell/idleManager.ts:42](https://github.com/itsr
 
 > **new IdleManager**(`vfs`, `options?`): `IdleManager`
 
-Defined in: [src/modules/VirtualShell/idleManager.ts:57](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualShell/idleManager.ts#L57)
+Defined in: [src/modules/VirtualShell/idleManager.ts:69](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualShell/idleManager.ts#L69)
+
+Create an IdleManager for a VirtualShell's VFS.
 
 #### Parameters
 
@@ -26,9 +34,13 @@ Defined in: [src/modules/VirtualShell/idleManager.ts:57](https://github.com/itsr
 
 [`VirtualFileSystem`](VirtualFileSystem.md)
 
+The VirtualFileSystem to manage.
+
 ##### options?
 
 [`IdleManagerOptions`](../interfaces/IdleManagerOptions.md) = `{}`
+
+Idle configuration (threshold, check interval).
 
 #### Returns
 
@@ -44,7 +56,7 @@ Defined in: [src/modules/VirtualShell/idleManager.ts:57](https://github.com/itsr
 
 > **on**: (`event`, `listener`) => `this` & (`event`, `listener`) => `this` & (`event`, `listener`) => `this`
 
-Defined in: [src/modules/VirtualShell/idleManager.ts:53](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualShell/idleManager.ts#L53)
+Defined in: [src/modules/VirtualShell/idleManager.ts:60](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualShell/idleManager.ts#L60)
 
 Emitted when the shell is frozen (VFS tree released).
 
@@ -60,7 +72,7 @@ Emitted when the shell is frozen (VFS tree released).
 
 > **get** **idleMs**(): `number`
 
-Defined in: [src/modules/VirtualShell/idleManager.ts:103](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualShell/idleManager.ts#L103)
+Defined in: [src/modules/VirtualShell/idleManager.ts:115](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualShell/idleManager.ts#L115)
 
 Ms since last activity.
 
@@ -76,7 +88,7 @@ Ms since last activity.
 
 > **get** **state**(): [`IdleState`](../type-aliases/IdleState.md)
 
-Defined in: [src/modules/VirtualShell/idleManager.ts:98](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualShell/idleManager.ts#L98)
+Defined in: [src/modules/VirtualShell/idleManager.ts:110](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualShell/idleManager.ts#L110)
 
 Current idle state.
 
@@ -513,7 +525,7 @@ v0.3.0
 
 > **ping**(): `void`
 
-Defined in: [src/modules/VirtualShell/idleManager.ts:92](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualShell/idleManager.ts#L92)
+Defined in: [src/modules/VirtualShell/idleManager.ts:104](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualShell/idleManager.ts#L104)
 
 Signal activity — resets the idle clock and thaws synchronously if frozen.
 Call this before every exec / keypress / session event.
@@ -892,7 +904,7 @@ v0.3.5
 
 > **start**(): `void`
 
-Defined in: [src/modules/VirtualShell/idleManager.ts:65](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualShell/idleManager.ts#L65)
+Defined in: [src/modules/VirtualShell/idleManager.ts:77](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualShell/idleManager.ts#L77)
 
 Start monitoring for idle. Call once after shell initialisation.
 
@@ -906,7 +918,7 @@ Start monitoring for idle. Call once after shell initialisation.
 
 > **stop**(): `Promise`\<`void`\>
 
-Defined in: [src/modules/VirtualShell/idleManager.ts:76](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualShell/idleManager.ts#L76)
+Defined in: [src/modules/VirtualShell/idleManager.ts:88](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualShell/idleManager.ts#L88)
 
 Stop monitoring and thaw if frozen. Call on shell destroy.
 

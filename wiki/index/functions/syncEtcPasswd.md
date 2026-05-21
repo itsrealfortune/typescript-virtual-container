@@ -8,7 +8,7 @@
 
 > **syncEtcPasswd**(`vfs`, `users`): `void`
 
-Defined in: [src/modules/linuxRootfs.ts:411](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/linuxRootfs.ts#L411)
+Defined in: [src/modules/linuxRootfs.ts:413](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/linuxRootfs.ts#L413)
 
 Sync `/etc/passwd`, `/etc/group`, and `/etc/shadow` from the
 VirtualUserManager's current user list into the VFS.
@@ -19,9 +19,13 @@ VirtualUserManager's current user list into the VFS.
 
 [`VirtualFileSystem`](../classes/VirtualFileSystem.md)
 
+VirtualFileSystem to write the system files into.
+
 ### users
 
 [`VirtualUserManager`](../classes/VirtualUserManager.md)
+
+VirtualUserManager providing the current user/group list.
 
 ## Returns
 

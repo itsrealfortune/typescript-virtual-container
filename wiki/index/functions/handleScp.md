@@ -19,25 +19,25 @@ sink (upload) or source (download) mode and delegating accordingly.
 
 `ScpStream`
 
-The stream parameter.
+SSH channel stream for SCP protocol communication.
 
 ### rawArgs
 
 `string`[]
 
-The raw arguments array.
+Raw command-line arguments from the SSH exec request.
 
 ### authUser
 
 `string`
 
-The authenticated username.
+Authenticated username for permission checks.
 
 ### shell
 
 [`VirtualShell`](../classes/VirtualShell.md)
 
-The shell parameter.
+VirtualShell providing VFS for file operations.
 
 ## Returns
 

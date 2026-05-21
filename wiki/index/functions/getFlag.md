@@ -8,7 +8,7 @@
 
 > **getFlag**(`args`, `flags`): `string` \| `true` \| `undefined`
 
-Defined in: [src/commands/command-helpers.ts:146](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/commands/command-helpers.ts#L146)
+Defined in: [src/commands/command-helpers.ts:154](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/commands/command-helpers.ts#L154)
 
 Returns the value associated with a flag, or `true` if the flag is present
 but has no associated value, or `undefined` if the flag is absent.

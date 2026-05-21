@@ -8,7 +8,7 @@
 
 > **buildLoginBanner**(`hostname`, `properties`, `lastLogin`): `string`
 
-Defined in: [src/modules/SSHMimic/loginBanner.ts:20](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/loginBanner.ts#L20)
+Defined in: [src/modules/SSHMimic/loginBanner.ts:26](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/loginBanner.ts#L26)
 
 Builds the SSH login banner displaying OS info, warranty notice, and the
 last login timestamp and origin.
@@ -19,22 +19,22 @@ last login timestamp and origin.
 
 `string`
 
-The hostname parameter.
+VM hostname to display in the banner.
 
 ### properties
 
 [`ShellProperties`](../interfaces/ShellProperties.md)
 
-The properties parameter.
+Shell properties (kernel version, architecture).
 
 ### lastLogin
 
 [`LoginBannerState`](../interfaces/LoginBannerState.md) \| `null`
 
-The lastLogin parameter.
+Last login info (timestamp, remote address), or null.
 
 ## Returns
 
 `string`
 
-The result string.
+Formatted banner string with CRLF line endings.

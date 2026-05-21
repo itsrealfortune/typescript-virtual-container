@@ -1,3 +1,9 @@
+/**
+ * exec.ts — SSH exec channel handler.
+ *
+ * Routes non-interactive SSH exec requests to the VirtualShell command runner.
+ * Used by `ssh user@host "command"` and SCP protocol.
+ */
 import { makeDefaultEnv, runCommand, userHome } from "../../commands";
 import type { ExecStream } from "../../types/streams";
 import type { VirtualShell } from "../VirtualShell";
@@ -12,11 +18,11 @@ function toTtyLines(text: string): string {
 /**
  * Handles SSH exec channel requests. Runs the given command in a non-interactive
  * shell session and writes stdout/stderr to the stream, then signals exit.
- * @param stream - The stream parameter.
- * @param cmd - The cmd parameter.
- * @param authUser - The authenticated username.
- * @param hostname - The hostname parameter.
- * @param shell - The shell parameter.
+ * @param stream - SSH exec channel stream for stdout/stderr writing.
+ * @param cmd - Command string to execute (e.g. "ls -la /tmp").
+ * @param authUser - Authenticated username running the command.
+ * @param hostname - VM hostname for the command context.
+ * @param shell - VirtualShell providing VFS and command registry.
  */
 export function runExec(
 	stream: ExecStream,

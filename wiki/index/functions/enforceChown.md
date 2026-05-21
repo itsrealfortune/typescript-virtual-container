@@ -23,7 +23,7 @@ Only root can chown.
 
 `number`
 
-The uid parameter.
+User ID attempting the chown operation.
 
 ## Returns
 

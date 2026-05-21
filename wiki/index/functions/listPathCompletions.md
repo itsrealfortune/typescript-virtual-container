@@ -8,7 +8,7 @@
 
 > **listPathCompletions**(`vfs`, `cwd`, `prefix`): `string`[]
 
-Defined in: [src/utils/shellSession.ts:84](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/shellSession.ts#L84)
+Defined in: [src/utils/shellSession.ts:90](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/shellSession.ts#L90)
 
 Lists path completions for tab-completion in the shell.
 Filters directory entries that match the given prefix, hides dot-files

@@ -20,13 +20,13 @@ messages (C, D, E) in response to client acknowledgements.
 
 `ScpStream`
 
-The stream parameter.
+SSH channel stream for SCP protocol communication.
 
 ### srcArg
 
 `string`
 
-The source path argument.
+Source path on the server (e.g. "/home/user/file.txt").
 
 ### \_authUser
 
@@ -36,13 +36,13 @@ The source path argument.
 
 [`VirtualShell`](../classes/VirtualShell.md)
 
-The shell parameter.
+VirtualShell providing VFS for file reads.
 
 ### recursive
 
 `boolean`
 
-The recursive parameter.
+Whether to send directory trees (-r flag).
 
 ## Returns
 

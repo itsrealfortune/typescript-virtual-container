@@ -22,14 +22,35 @@ function makeCell(partial?: Partial<Cell>): Cell {
 	return { ...DEFAULT_CELL, ...partial };
 }
 
+/**
+ * Minimal VT100 screen buffer for browser-side rendering.
+ * Handles the subset of escape sequences emitted by NanoEditor and other
+ * terminal applications: cursor positioning, erase, SGR styling, and scrollback.
+ *
+ * @example
+ * ```ts
+ * const renderer = new WebTermRenderer(24, 80);
+ * renderer.write("\x1b[1mHello\x1b[0m World\r\n");
+ * const html = renderer.renderScrollbackHtml();
+ * document.getElementById("term").innerHTML = html;
+ * ```
+ */
 export class WebTermRenderer {
+	/** Number of visible rows. */
 	private rows: number;
+	/** Number of columns. */
 	private cols: number;
+	/** 2D grid of screen cells. */
 	private screen: Cell[][];
+	/** Scrollback buffer (rows that scrolled off screen). */
 	private scrollback: Cell[][] = [];
+	/** Current cursor row position. */
 	private curRow = 0;
+	/** Current cursor column position. */
 	private curCol = 0;
+	/** Whether the cursor is currently visible. */
 	private cursorVisible = true;
+	/** Flag set when the screen is cleared. */
 	private _cleared = false;
 
 	// Current SGR state
@@ -38,14 +59,25 @@ export class WebTermRenderer {
 	private fg: string | null = null;
 	private bg: string | null = null;
 
+	/** Input buffer for incomplete escape sequences. */
 	private buf = "";
 
+	/**
+	 * Create a new terminal screen buffer.
+	 * @param rows - Number of visible rows (default: 24).
+	 * @param cols - Number of columns (default: 80).
+	 */
 	constructor(rows: number, cols: number) {
 		this.rows = rows;
 		this.cols = cols;
 		this.screen = this.makeScreen();
 	}
 
+	/**
+	 * Resize the terminal screen and preserve existing content.
+	 * @param rows - New number of rows.
+	 * @param cols - New number of columns.
+	 */
 	resize(rows: number, cols: number): void {
 		const newScreen = this.makeScreen(rows, cols);
 		for (let r = 0; r < Math.min(rows, this.rows); r++) {
@@ -60,6 +92,11 @@ export class WebTermRenderer {
 		this.curCol = Math.min(this.curCol, cols - 1);
 	}
 
+	/**
+	 * Write ANSI escape sequence data to the screen buffer.
+	 * Handles cursor movement, erasing, SGR styling, and scrollback.
+	 * @param data - Raw terminal output string (may contain escape sequences).
+	 */
 	write(data: string): void {
 		this.buf += data;
 		this.flush();
@@ -299,8 +336,11 @@ export class WebTermRenderer {
 		return parts.join("");
 	}
 
+	/** Current cursor row position (0-indexed). */
 	get cursorRow(): number { return this.curRow; }
+	/** Current cursor column position (0-indexed). */
 	get cursorCol(): number { return this.curCol; }
+	/** Whether the cursor is currently visible (controlled by CSI ?25l/?25h). */
 	get isCursorVisible(): boolean { return this.cursorVisible; }
 
 	/** Returns true (once) if CSI 2J was received since last call. */
@@ -310,10 +350,17 @@ export class WebTermRenderer {
 		return v;
 	}
 
+	/** Number of rows currently in the scrollback buffer. */
 	get scrollbackLength(): number { return this.scrollback.length; }
 
+	/** Clear the scrollback buffer. */
 	clearScrollback(): void { this.scrollback = []; }
 
+	/**
+	 * Render the scrollback buffer as HTML with inline styles for colors and bold.
+	 * Each row becomes a div, each styled cell becomes a span.
+	 * @returns HTML string suitable for innerHTML insertion.
+	 */
 	renderScrollbackHtml(): string {
 		const parts: string[] = [];
 		for (const row of this.scrollback) {

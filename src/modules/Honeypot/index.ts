@@ -61,7 +61,21 @@ const perf: PerfLogger = createPerfLogger("HoneyPot");
  * HoneyPot audit and event tracking utility.
  *
  * Singleton-like helper that attaches listeners to virtual shell components
- * and maintains an audit log of all activity.
+ * and maintains an audit log of all activity. Tracks authentication attempts,
+ * file operations, commands, sessions, and system events for security analysis.
+ *
+ * @example
+ * ```ts
+ * const honeypot = new HoneyPot(10000); // retain 10k log entries
+ * honeypot.attach(shell, vfs, users, sshMimic, sftpMimic);
+ *
+ * // After activity, inspect the audit log
+ * console.log(honeypot.getAuditLog()); // Array of AuditLogEntry
+ * console.log(honeypot.getStats());    // HoneyPotStats with counters
+ *
+ * // Detect anomalies (brute force, privilege escalation, etc.)
+ * const anomalies = honeypot.detectAnomalies();
+ * ```
  */
 export class HoneyPot {
 	private auditLog: AuditLogEntry[] = [];
@@ -134,10 +148,7 @@ export class HoneyPot {
 		}
 	}
 
-	/**
-	 * Attaches to VirtualShell events.
-	 * @param shell - The shell parameter.
-	 */
+	/** Attaches to VirtualShell events (commands, sessions, freeze/thaw). */
 	private attachVirtualShell(shell: VirtualShell): void {
 		(shell as EventEmitter).on("initialized", () => {
 			this.log("VirtualShell", "initialized", {});
@@ -167,12 +178,7 @@ export class HoneyPot {
 		});
 	}
 
-	/**
-	 * Attaches to VirtualFileSystem events.
-	 * Also pings the shell's idle manager so SFTP/direct VFS activity
-	 * counts as activity and prevents spurious freezes.
-	 * @param vfs - The vfs parameter.
-	 */
+	/** Attaches to VirtualFileSystem events (reads, writes, mounts, snapshots). */
 	private attachVirtualFileSystem(vfs: VirtualFileSystem): void {
 		(vfs as EventEmitter).on("file:read", (data: Record<string, unknown>) => {
 			this.stats.fileReads++;
@@ -229,10 +235,7 @@ export class HoneyPot {
 		});
 	}
 
-	/**
-	 * Attaches to VirtualUserManager events.
-	 * @param users - The users parameter.
-	 */
+	/** Attaches to VirtualUserManager events (users, sessions, keys). */
 	private attachVirtualUserManager(users: VirtualUserManager): void {
 		(users as EventEmitter).on("initialized", () => {
 			this.log("VirtualUserManager", "initialized", {});
@@ -283,10 +286,7 @@ export class HoneyPot {
 		);
 	}
 
-	/**
-	 * Attaches to SshMimic events.
-	 * @param ssh - The ssh parameter.
-	 */
+	/** Attaches to SshMimic events (auth attempts, connections). */
 	private attachSshMimic(ssh: SshMimic): void {
 		(ssh as EventEmitter).on("start", (data: Record<string, unknown>) => {
 			this.log("SshMimic", "start", data);
@@ -336,10 +336,7 @@ export class HoneyPot {
 		);
 	}
 
-	/**
-	 * Attaches to SftpMimic events.
-	 * @param sftp - The sftp parameter.
-	 */
+	/** Attaches to SftpMimic events (auth, connections). */
 	private attachSftpMimic(sftp: SftpMimic): void {
 		(sftp as EventEmitter).on("start", (data: Record<string, unknown>) => {
 			this.log("SftpMimic", "start", data);
@@ -382,12 +379,12 @@ export class HoneyPot {
 	}
 
 	/**
-	 * Records an audit log entry.
+	 * Records an audit log entry and prints to console for real-time monitoring.
+	 * Trims the log if it exceeds maxLogSize.
 	 *
 	 * @param source Event source (e.g., "SshMimic", "VirtualFileSystem").
-	 * @param type Event type.
-	 * @param details Event-specific data.
-	 * @param unknown> - The unknown> parameter.
+	 * @param type Event type identifier.
+	 * @param details Event-specific data to record.
 	 */
 	private log(
 		source: string,

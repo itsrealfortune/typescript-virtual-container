@@ -6,9 +6,23 @@
 
 # Class: PacmanGame
 
-Defined in: [src/modules/pacmanGame.ts:151](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L151)
+Defined in: [src/modules/pacmanGame.ts:166](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L166)
 
 Classic Pacman game that runs in the terminal with ANSI rendering.
+Uses the MyMan maze layout (36×33) with 4 ghosts, power pellets, and scoring.
+
+## Example
+
+```ts
+const game = new PacmanGame({
+  stream,
+  terminalSize: { cols: 36, rows: 33 },
+  onExit: () => console.log("Game over, score:", game.score),
+});
+game.start();
+// Feed arrow keys: game.handleInput(Buffer.from("\x1b[A")); // up
+// game.stop();
+```
 
 ## Constructors
 
@@ -16,13 +30,17 @@ Classic Pacman game that runs in the terminal with ANSI rendering.
 
 > **new PacmanGame**(`opts`): `PacmanGame`
 
-Defined in: [src/modules/pacmanGame.ts:199](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L199)
+Defined in: [src/modules/pacmanGame.ts:218](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L218)
+
+Create a new Pacman game instance.
 
 #### Parameters
 
 ##### opts
 
 [`PacmanGameOptions`](../interfaces/PacmanGameOptions.md)
+
+Game configuration (stream, terminal size, exit callback).
 
 #### Returns
 
@@ -34,13 +52,18 @@ Defined in: [src/modules/pacmanGame.ts:199](https://github.com/itsrealfortune/ty
 
 > **handleInput**(`chunk`): `void`
 
-Defined in: [src/modules/pacmanGame.ts:268](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L268)
+Defined in: [src/modules/pacmanGame.ts:298](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L298)
+
+Process raw terminal input bytes. Handles arrow keys (CSI sequences),
+WASD, and Q/Ctrl+C to quit. Buffers partial ESC sequences from SSH.
 
 #### Parameters
 
 ##### chunk
 
 `Buffer`
+
+Raw bytes from the terminal stream.
 
 #### Returns
 
@@ -52,7 +75,9 @@ Defined in: [src/modules/pacmanGame.ts:268](https://github.com/itsrealfortune/ty
 
 > **start**(): `void`
 
-Defined in: [src/modules/pacmanGame.ts:256](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L256)
+Defined in: [src/modules/pacmanGame.ts:278](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L278)
+
+Start the game loop. Renders the initial maze and begins the 8fps tick.
 
 #### Returns
 
@@ -64,7 +89,9 @@ Defined in: [src/modules/pacmanGame.ts:256](https://github.com/itsrealfortune/ty
 
 > **stop**(): `void`
 
-Defined in: [src/modules/pacmanGame.ts:263](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L263)
+Defined in: [src/modules/pacmanGame.ts:288](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/pacmanGame.ts#L288)
+
+Stop the game loop and restore the terminal cursor.
 
 #### Returns
 

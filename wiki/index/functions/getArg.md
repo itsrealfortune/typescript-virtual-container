@@ -8,7 +8,7 @@
 
 > **getArg**(`args`, `index`, `options?`): `string` \| `undefined`
 
-Defined in: [src/commands/command-helpers.ts:197](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/commands/command-helpers.ts#L197)
+Defined in: [src/commands/command-helpers.ts:205](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/commands/command-helpers.ts#L205)
 
 Returns the positional argument at the given zero-based index, skipping
 known flags and their values.

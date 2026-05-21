@@ -8,7 +8,7 @@
 
 > **runExec**(`stream`, `cmd`, `authUser`, `hostname`, `shell`): `void`
 
-Defined in: [src/modules/SSHMimic/exec.ts:21](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/exec.ts#L21)
+Defined in: [src/modules/SSHMimic/exec.ts:27](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/exec.ts#L27)
 
 Handles SSH exec channel requests. Runs the given command in a non-interactive
 shell session and writes stdout/stderr to the stream, then signals exit.
@@ -19,31 +19,31 @@ shell session and writes stdout/stderr to the stream, then signals exit.
 
 [`ExecStream`](../interfaces/ExecStream.md)
 
-The stream parameter.
+SSH exec channel stream for stdout/stderr writing.
 
 ### cmd
 
 `string`
 
-The cmd parameter.
+Command string to execute (e.g. "ls -la /tmp").
 
 ### authUser
 
 `string`
 
-The authenticated username.
+Authenticated username running the command.
 
 ### hostname
 
 `string`
 
-The hostname parameter.
+VM hostname for the command context.
 
 ### shell
 
 [`VirtualShell`](../classes/VirtualShell.md)
 
-The shell parameter.
+VirtualShell providing VFS and command registry.
 
 ## Returns
 

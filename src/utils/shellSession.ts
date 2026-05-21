@@ -1,3 +1,9 @@
+/**
+ * shellSession.ts — shell session utilities.
+ *
+ * Provides command history persistence, last-login tracking, and tab-completion
+ * helpers for interactive shell sessions.
+ */
 import * as path from "node:path";
 import { resolvePath } from "../commands/helpers";
 import { userHome } from "../commands/runtime";

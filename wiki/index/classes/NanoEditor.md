@@ -6,7 +6,7 @@
 
 # Class: NanoEditor
 
-Defined in: [src/modules/nanoEditor.ts:114](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L114)
+Defined in: [src/modules/nanoEditor.ts:134](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L134)
 
 A terminal-based text editor inspired by GNU nano, rendered over a ShellStream.
 
@@ -43,13 +43,17 @@ nano.start();
 
 > **new NanoEditor**(`opts`): `NanoEditor`
 
-Defined in: [src/modules/nanoEditor.ts:135](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L135)
+Defined in: [src/modules/nanoEditor.ts:159](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L159)
+
+Create a new NanoEditor instance.
 
 #### Parameters
 
 ##### opts
 
 [`NanoEditorOptions`](../interfaces/NanoEditorOptions.md)
+
+Editor configuration (stream, terminal size, content, filename, callbacks).
 
 #### Returns
 
@@ -61,7 +65,7 @@ Defined in: [src/modules/nanoEditor.ts:135](https://github.com/itsrealfortune/ty
 
 > **fullRedraw**(): `void`
 
-Defined in: [src/modules/nanoEditor.ts:801](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L801)
+Defined in: [src/modules/nanoEditor.ts:825](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L825)
 
 #### Returns
 
@@ -73,7 +77,7 @@ Defined in: [src/modules/nanoEditor.ts:801](https://github.com/itsrealfortune/ty
 
 > **handleInput**(`chunk`): `void`
 
-Defined in: [src/modules/nanoEditor.ts:175](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L175)
+Defined in: [src/modules/nanoEditor.ts:199](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L199)
 
 Process raw terminal input bytes. Dispatches keystrokes to the
 appropriate handler based on current mode (normal, search, write, etc.).
@@ -97,7 +101,7 @@ Raw bytes from the terminal stream.
 
 > **resize**(`size`): `void`
 
-Defined in: [src/modules/nanoEditor.ts:164](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L164)
+Defined in: [src/modules/nanoEditor.ts:188](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L188)
 
 Update the terminal dimensions and redraw the screen.
 Call this when the terminal is resized (e.g., from a SIGWINCH handler).
@@ -120,7 +124,7 @@ New terminal dimensions (cols × rows).
 
 > **start**(): `void`
 
-Defined in: [src/modules/nanoEditor.ts:155](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L155)
+Defined in: [src/modules/nanoEditor.ts:179](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/nanoEditor.ts#L179)
 
 Render the initial editor UI and draw the buffer on screen.
 Call this after construction to display the editor.

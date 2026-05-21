@@ -39,6 +39,20 @@ interface RateLimitEntry {
  * SSH server simulator accepting ssh2 client connections.
  * Routes authentication, shell, exec, and SFTP sessions to a VirtualShell.
  *
+ * @example
+ * ```ts
+ * const shell = new VirtualShell("my-server");
+ * await shell.ensureInitialized();
+ *
+ * const ssh = new SshMimic(shell, { port: 2222 });
+ * const actualPort = await ssh.start();
+ * console.log(`SSH listening on port ${actualPort}`);
+ *
+ * // Connect with: ssh -p 2222 user@localhost
+ * // Stop when done:
+ * // ssh.stop();
+ * ```
+ *
  * @see VirtualShell
  * @see SftpMimic
  * @see VirtualSshServer

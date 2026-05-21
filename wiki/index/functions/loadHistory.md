@@ -8,7 +8,7 @@
 
 > **loadHistory**(`vfs`, `authUser`): `string`[]
 
-Defined in: [src/utils/shellSession.ts:15](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/shellSession.ts#L15)
+Defined in: [src/utils/shellSession.ts:21](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/shellSession.ts#L21)
 
 Loads the shell command history for a user from the VFS.
 Creates an empty history file if none exists.

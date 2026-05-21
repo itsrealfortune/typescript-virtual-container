@@ -1,3 +1,16 @@
+/**
+ * keyToBytes.ts — keyboard event to terminal byte sequence conversion.
+ *
+ * Translates browser KeyboardEvent objects into the raw byte sequences
+ * expected by a terminal (Ctrl+letter, Alt+letter, arrow keys, function keys, etc.).
+ */
+
+/**
+ * Convert a browser KeyboardEvent to the corresponding terminal byte sequence.
+ * Handles Ctrl+key, Alt+key, arrow keys, function keys, Home/End, PageUp/Down, etc.
+ * @param e - Browser keyboard event.
+ * @returns Uint8Array of terminal bytes, or null if the key has no terminal mapping.
+ */
 export function keyToBytes(e: KeyboardEvent): Uint8Array | null {
   const enc = new TextEncoder();
 

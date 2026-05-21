@@ -6,7 +6,7 @@
 
 # Interface: PackageFile
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:9](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L9)
+Defined in: [src/modules/VirtualPackageManager/index.ts:25](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L25)
 
 A single file entry written into the VFS when a package is installed.
 
@@ -16,7 +16,7 @@ A single file entry written into the VFS when a package is installed.
 
 > **content**: `string`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:13](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L13)
+Defined in: [src/modules/VirtualPackageManager/index.ts:29](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L29)
 
 Text content to write.
 
@@ -26,7 +26,7 @@ Text content to write.
 
 > `optional` **mode?**: `number`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:15](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L15)
+Defined in: [src/modules/VirtualPackageManager/index.ts:31](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L31)
 
 POSIX mode bits (default `0o644`; use `0o755` for executables).
 
@@ -36,6 +36,6 @@ POSIX mode bits (default `0o644`; use `0o755` for executables).
 
 > **path**: `string`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:11](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L11)
+Defined in: [src/modules/VirtualPackageManager/index.ts:27](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L27)
 
 Absolute VFS destination path (e.g. `"/usr/bin/vim"`).

@@ -39,6 +39,13 @@ export interface IdleManagerOptions {
 
 export type IdleState = "active" | "frozen";
 
+/**
+ * Manages freeze/thaw lifecycle for idle VirtualShell instances.
+ *
+ * Serialises the VFS tree to a compact binary buffer after a period of
+ * inactivity, freeing memory and suspending the auto-flush timer.
+ * The tree is reconstructed on next activity in ~0.1 ms.
+ */
 export class IdleManager extends EventEmitter {
 	private readonly vfs: VirtualFileSystem;
 	private readonly idleThresholdMs: number;
@@ -54,6 +61,11 @@ export class IdleManager extends EventEmitter {
 		((event: "thaw", listener: () => void) => this) &
 		((event: string, listener: (...args: unknown[]) => void) => this);
 
+	/**
+	 * Create an IdleManager for a VirtualShell's VFS.
+	 * @param vfs - The VirtualFileSystem to manage.
+	 * @param options - Idle configuration (threshold, check interval).
+	 */
 	constructor(vfs: VirtualFileSystem, options: IdleManagerOptions = {}) {
 		super();
 		this.vfs = vfs;
