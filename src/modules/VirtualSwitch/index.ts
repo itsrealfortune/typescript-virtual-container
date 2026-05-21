@@ -1,6 +1,6 @@
 import { VirtualNetworkManager } from "../VirtualNetworkManager";
 import { cidrRange, intToIp, ipToInt, nextMac } from "./helpers";
-import type { LoadBalancerRule, MacAddress, Packet, PacketResult, TrafficRule, VmPort } from "./types";
+import type { DnsRecord, LoadBalancerRule, MacAddress, Packet, PacketResult, TrafficRule, VmPort } from "./types";
 export { cidrRange, intToIp, ipToInt, nextMac } from "./helpers";
 export type { DnsRecord, LoadBalancerRule, LoadBalancerTarget, MacAddress, Packet, PacketResult, TrafficRule, VmPort } from "./types";
 
@@ -13,6 +13,7 @@ export class VirtualSwitch {
 	private readonly _dnsRecords: Map<string, string> = new Map();
 	private readonly _trafficRules: Map<string, TrafficRule> = new Map();
 	private readonly _loadBalancers: Map<string, LoadBalancerRule> = new Map();
+	private readonly _lbCounters: Map<string, number> = new Map();
 	private _partitions: Set<MacAddress>[] = [];
 	private _bandwidthSent: Map<MacAddress, number> = new Map();
 	private _bandwidthReceived: Map<MacAddress, number> = new Map();
@@ -21,6 +22,9 @@ export class VirtualSwitch {
 	constructor(subnet = "10.0.1.0/24") {
 		this.subnet = subnet;
 		this._network = new VirtualNetworkManager();
+		const gw = this.gateway;
+		const gwMac = nextMac();
+		this._ipToMac.set(gw, gwMac);
 	}
 
 	public attach(shell: import("../VirtualShell").VirtualShell, preferredIp?: string): VmPort {
@@ -202,17 +206,22 @@ export class VirtualSwitch {
 	}
 
 	private _pickTarget(lb: LoadBalancerRule): string | undefined {
-		const totalWeight = lb.targets.reduce((sum, t) => sum + t.weight, 0);
+		const targets = lb.targets;
+		if (targets.length === 0) return undefined;
+		if (lb.algorithm === "round-robin") {
+			const idx = (this._lbCounters.get(lb.name) ?? 0) % targets.length;
+			this._lbCounters.set(lb.name, idx + 1);
+			return this.resolveDns(targets[idx]!.hostname) ?? targets[idx]!.hostname;
+		}
+		const totalWeight = targets.reduce((sum, t) => sum + t.weight, 0);
 		let roll = Math.random() * totalWeight;
-		for (const target of lb.targets) {
+		for (const target of targets) {
 			roll -= target.weight;
 			if (roll <= 0) {
-				const resolved = this.resolveDns(target.hostname);
-				if (resolved && this._ipToMac.has(resolved)) return resolved;
-				return target.hostname;
+				return this.resolveDns(target.hostname) ?? target.hostname;
 			}
 		}
-		return lb.targets[0]?.hostname;
+		return targets[0]?.hostname;
 	}
 
 	private _resolveDstMac(ip: string): MacAddress | undefined {
@@ -229,6 +238,39 @@ export class VirtualSwitch {
 
 	public arpResolve(ip: string): MacAddress | null {
 		return this._ipToMac.get(ip) ?? null;
+	}
+
+	public get gateway(): string {
+		return intToIp(ipToInt(this.subnet.split("/")[0]!) | 1);
+	}
+
+	public resolveHostname(name: string): string | null {
+		return this._dnsRecords.get(name) ?? null;
+	}
+
+	public listDnsRecords(): DnsRecord[] {
+		return Array.from(this._dnsRecords.entries()).map(([hostname, ip]) => ({ hostname, ip }));
+	}
+
+	public resolveLoadBalancer(port: number): { ip: string; hostname: string; port: number } | null {
+		const lb = this._matchLoadBalancer(port);
+		if (!lb) return null;
+		const target = this._pickTarget(lb);
+		if (!target) return null;
+		const ip = this.resolveDns(target) ?? target;
+		return { ip, hostname: target, port: lb.port };
+	}
+
+	public getBytesSent(mac: MacAddress): number {
+		return this._bandwidthSent.get(mac) ?? 0;
+	}
+
+	public getBytesReceived(mac: MacAddress): number {
+		return this._bandwidthReceived.get(mac) ?? 0;
+	}
+
+	public clearPartitions(): void {
+		this._partitions = [];
 	}
 
 	private _simulateLatency(port: VmPort): void {
