@@ -1,8 +1,13 @@
 name: Auto Create Pull Request
 
 on:
-  push:
-    branches:
+  workflow_dispatch:
+    inputs:
+      # Optional input to specify a custom branch name, defaults to the current branch
+      branch:
+        description: 'Branch to create pull request from (defaults to current branch)'
+        required: false
+        default: ''
 
 jobs:
   create-pull-request:
