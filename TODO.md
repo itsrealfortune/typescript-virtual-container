@@ -75,6 +75,7 @@
 
 ## Urgent
 - [ ] Fix parameters name convention in multiple filesand remove unused parameters (noUnusedLocals, noUnusedParameters)
+- [ ] Fix all names conventions (camelCase for variables/functions, PascalCase for classes/types, UPPER_SNAKE_CASE for constants)
 
 ## Prioty
 
