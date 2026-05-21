@@ -8,7 +8,7 @@ export type { FirewallRule, VirtualArpEntry, VirtualInterface, VirtualRoute } fr
 export { VirtualPackageManager } from "./modules/VirtualPackageManager/index";
 export { VirtualProxy } from "./modules/VirtualProxy";
 export { IdleManager } from "./modules/VirtualShell/idleManager";
-export type { IdleManagerOptions, IdleState } from "./modules/VirtualShell/idleManager";
+export type { IdleManagerOptions, IdleState, GcStats } from "./modules/VirtualShell/idleManager";
 export { VirtualShell } from "./modules/VirtualShell/index";
 export { Baie, VirtualSwitch } from "./modules/VirtualSwitch";
 export type { DnsRecord, LoadBalancerRule, LoadBalancerTarget, MacAddress, Packet, PacketResult, TrafficRule, VmPort } from "./modules/VirtualSwitch";

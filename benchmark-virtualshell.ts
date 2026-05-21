@@ -199,14 +199,17 @@ interface MemRow {
 	external:    number;
 	arrayBufs:   number;
 	rss:         number;
+	shells:      number;
+	runtime:     number;
 }
 
-async function benchMemory(): Promise<MemRow[]> {
+async function benchMemory(baselineRss: number): Promise<MemRow[]> {
 	const rows: MemRow[] = [];
 	for (const count of CONCURRENCY_COUNTS) {
 		process.stderr.write(`  [4] memory profile: ${count} shells\n`);
 		await Promise.all(Array.from({ length: count }, (_, i) => makeShell(`s4-${count}`, i)));
 		const m = memNow();
+		const shells = m.rss - baselineRss;
 		rows.push({
 			count,
 			heapUsed:  m.heapUsed,
@@ -214,6 +217,8 @@ async function benchMemory(): Promise<MemRow[]> {
 			external:  m.external,
 			arrayBufs: m.arrayBuffers,
 			rss:       m.rss,
+			shells:    shells > 0 ? shells : 0,
+			runtime:   baselineRss,
 		});
 	}
 	return rows;
@@ -224,6 +229,7 @@ async function benchMemory(): Promise<MemRow[]> {
 async function main(): Promise<void> {
 	const cpu0    = process.cpuUsage();
 	const wallT0  = performance.now();
+	const baselineRss = process.memoryUsage().rss;
 
 	process.stderr.write("Running benchmark...\n");
 
@@ -231,7 +237,7 @@ async function main(): Promise<void> {
 		benchInit(),
 		benchLatency(),
 		benchVfs(),
-		benchMemory(),
+		benchMemory(baselineRss),
 	]);
 
 	const cpuDelta = process.cpuUsage(cpu0);
@@ -311,7 +317,8 @@ async function main(): Promise<void> {
 	console.log(
 		rpad("Shells", 8) +
 		lpad("Heap used", 11) + lpad("Heap total", 12) +
-		lpad("External", 10)  + lpad("ArrayBufs", 11) + lpad("RSS", 10),
+		lpad("External", 10)  + lpad("ArrayBufs", 11) +
+		lpad("RSS", 10)       + lpad("Shells", 9) + lpad("Runtime", 10),
 	);
 	console.log(hr());
 	for (const r of memRows) {
@@ -321,7 +328,9 @@ async function main(): Promise<void> {
 			lpad(mb(r.heapTotal), 11)      + " " +
 			lpad(mb(r.external), 9)        + " " +
 			lpad(mb(r.arrayBufs), 10)      + " " +
-			lpad(mbRound(r.rss), 9),
+			lpad(mbRound(r.rss), 9)        + " " +
+			lpad(mb(r.shells), 8)          + " " +
+			lpad(mb(r.runtime), 9),
 		);
 	}
 	console.log("");

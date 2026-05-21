@@ -11,7 +11,7 @@ import VirtualFileSystem, { type VfsOptions } from "../VirtualFileSystem";
 import { VirtualNetworkManager } from "../VirtualNetworkManager";
 import { VirtualPackageManager } from "../VirtualPackageManager";
 import { VirtualUserManager } from "../VirtualUserManager";
-import { IdleManager, type IdleManagerOptions } from "./idleManager";
+import { type GcStats, IdleManager, type IdleManagerOptions } from "./idleManager";
 import { startShell } from "./shell";
 
 /**
@@ -605,10 +605,11 @@ class VirtualShell extends EventEmitter {
 	 * @param options - Idle configuration (threshold, check interval).
 	 */
 	public enableIdleManagement(options?: IdleManagerOptions): void {
-		if (this._idle) return; // already enabled
-		this._idle = new IdleManager(this.vfs, options);
+		if (this._idle) return;
+		this._idle = new IdleManager(this, options);
 		this._idle.on("freeze", () => this.emit("shell:freeze"));
 		this._idle.on("thaw",   () => this.emit("shell:thaw"));
+		this._idle.on("gc:run", (stats) => this.emit("gc:run", stats));
 		this._idle.start();
 	}
 
@@ -645,6 +646,15 @@ class VirtualShell extends EventEmitter {
 	 */
 	public pingIdle(): void {
 		this._idle?.ping();
+	}
+
+	/**
+	 * Trigger garbage collection immediately. Returns stats about what was cleaned up.
+	 * No-op when idle management is disabled.
+	 * @returns GC stats, or null if idle management is not enabled.
+	 */
+	public runGc(): GcStats | null {
+		return this._idle?.runGc() ?? null;
 	}
 }
 

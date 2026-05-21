@@ -818,6 +818,63 @@ Reports shell initialization time, command execution time, and RSS memory by con
 ---
 
 <details>
+<summary><strong>Memory Management &amp; Garbage Collection</strong></summary>
+
+Each `VirtualShell` holds its VFS tree, process table, sessions, and file descriptors entirely in the JS heap. For long-running servers or multi-shell deployments, two mechanisms keep memory in check:
+
+### Idle freeze/thaw
+
+After a configurable period of inactivity, the VFS tree is serialised to a compact binary buffer and the live object graph is released. On the next command the tree is reconstructed in ~0.1 ms.
+
+```ts
+await shell.ensureInitialized();
+shell.enableIdleManagement({
+  idleThresholdMs: 60_000,   // freeze after 60s of inactivity
+  checkIntervalMs: 15_000,   // check every 15s
+});
+// Events: shell.on("shell:freeze", ...) / shell.on("shell:thaw", ...)
+```
+
+### Garbage collector
+
+The GC is built into `IdleManager` and runs automatically when idle management is enabled. Each cycle (default every 30s) performs four steps in order:
+
+1. **Scan process table** — find all processes with `status === "done"` and remove them.
+2. **Clean stale CPU entries** — remove CPU time tracking for PIDs that no longer exist.
+3. **Evict closed large files** — walk the VFS tree and zero out file contents that exceed the eviction threshold **and** have no open file descriptors. Evicted files are reloaded on demand from the snapshot.
+4. **Trigger Node.js GC** — if the runtime was started with `--expose-gc`, call `globalThis.gc()` to force V8 to reclaim memory immediately.
+
+```ts
+shell.enableIdleManagement({
+  idleThresholdMs: 60_000,
+  gcIntervalMs: 30_000,  // GC runs every 30s (0 = disabled)
+});
+```
+
+The GC timer is `unref()`'d so it never blocks `process.exit()`.
+
+**Manual trigger and stats:**
+
+```ts
+const idle = new IdleManager(shell);
+const stats = idle.runGc();
+// stats: {
+//   terminatedProcesses: 3,   // process records removed this cycle
+//   staleCpuEntries: 1,       // orphaned CPU time entries cleared
+//   evictedFiles: 2,          // large files zeroed out (no open FDs)
+//   forcedGc: false,          // true only when --expose-gc is passed to Node/Bun
+// }
+
+idle.on("gc:run", (stats) => console.log(stats));
+```
+
+> **Note:** In `"fs"` mode the existing `evictionThresholdBytes` option (default 64 KB) already evicts large files after each `flushMirror()`. The GC extends this by also checking **open file descriptor state** — a large file that is currently open by a running command will NOT be evicted, even if it exceeds the threshold.
+
+</details>
+
+---
+
+<details>
 <summary><strong>Types &amp; TypeScript</strong></summary>
 
 ```typescript

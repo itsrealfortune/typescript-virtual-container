@@ -44,8 +44,11 @@ export function saveHistory(vfs: VirtualFileSystem, authUser: string, history: s
 
 // ── Last login ────────────────────────────────────────────────────────────────
 
+/** Last login record for a user — timestamp and origin. */
 export interface LastLogin {
+	/** ISO-8601 timestamp of the last login. */
 	at: string;
+	/** Origin identifier (e.g. "web", "ssh", IP address). */
 	from: string;
 }
 
