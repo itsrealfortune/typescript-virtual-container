@@ -1,7 +1,44 @@
+
 # TODO — typescript-virtual-container
 
-## Done
+## Roadmap
 
+<details>
+<summary>## Done</summary>
+
+- [x] Custom command plugin API · per-user quotas · SSH public-key auth · per-IP rate limiting
+- [x] Pure in-memory VFS · symlinks · binary snapshot format (VFSB, ~27% smaller than JSON+base64)
+- [x] Linux rootfs on boot — `/etc`, `/proc`, `/sys`, `/dev`, `/usr`, `/var`
+- [x] Virtual package manager — `apt`/`dpkg`, 25 packages, VFS file writes
+- [x] 127 built-in commands across 11 categories (added `zip`, `unzip`, `bzip2`, `bunzip2`, `lsof`, `strace`, `perl`, `w`, `ip`, `dmesg`, `last`, `basename`, `dirname`, `file`, `tput`, `stty`, `yes`, `fortune`, `cowsay`, `cowthink`, `cmatrix`, `sl`, `bc`, `jobs`, `bg`, `fg`, `tac`, `nl`, `paste`, `shuf`, `column`, `timeout`, `mktemp`, `nproc`, `wait`)
+- [x] Real shell interpreter — `if`/`for`/`while`/`until`/`case`/functions, arrays `arr=(...)`, `$(cmd)`, `$((expr))`, `${#VAR}`, `${var#pfx}` `${var##pfx}` `${var%sfx}` `${var%%sfx}` `${var/p/r}` `${var//p/r}` `${var:off:len}` `${arr[@]}`, `{a,b,c}` brace expansion, `{1..N}` ranges, `*.glob` expansion, `!!` history expansion, `\` line continuation, `2>/dev/null` stderr redirect, `2>&1`, `(( x++ ))`, heredoc `<< EOF`, `set -e`/`set -x`, `$RANDOM`/`$LINENO`
+- [x] `curl`/`wget` as pure `fetch()` · VFS PATH resolution · `/sbin` root-only
+- [x] `/proc/self` and `/proc/<pid>` per-session entries
+- [x] Snapshot diff tooling — `diffSnapshots`, `formatDiff`, `assertDiff`
+- [x] `node`/`python3`/`npm`/`npx` — package-gated virtual REPL stubs
+<!-- BUILD:changelog -->
+- [x] Web shell bundles (`fortune-nyx-v1.7.1-web.min.js`) — fully browser-native with IndexedDB VFS
+- [x] Self-standalone CLI (`fortune-nyx-v1.7.1-directbash-k6.1.0.mjs`) — single-file interactive shell, per-user history, tab completion
+<!-- /BUILD:changelog -->
+- [x] XFCE desktop simulation — `startxfce4` launches a full in-browser desktop with draggable windows, XFCE panel (Applications menu, clock, tray), Thunar file manager (navigate, right-click, trash, rename), Mousepad text editor (Ctrl+S, dirty indicator), terminal windows with live shell sessions, Font Awesome icons
+- [x] 127+ `man` pages — all built-in commands documented via `man <cmd>`
+- [x] Background job support — trailing `&` fires commands async; `:(){ :|:& };:` fork-bomb safely blocked by `MAX_CALL_DEPTH` guard; shell function names now accept any non-whitespace identifier (POSIX-compliant)
+- [x] Shared `tokenize.ts` — unified tokenizer for shell parser and runtime (eliminates duplication)
+- [x] Full readline line editing — `Ctrl+A/E/K/U/W`, `Home`/`End`, `!!` history expansion, `/etc/environment` + `~/.profile` login sourcing
+- [x] Interoperable archive formats — `tar` writes real POSIX ustar binary; `zip`/`unzip` use PKZIP+DEFLATE (fflate); files extracted by real system tools via SFTP
+- [x] Overhauled `sed` — `d`/`p`/`=`/`q`, `-n` suppress, line/regex/range/`$` addresses; overhauled `awk` — `-v`, field assignment, `gsub`/`sub`/`substr`/`split`/`length`/`printf`/`next`; overhauled `find` — `-exec`, `-maxdepth`, `-iname`, `-not`/`!`, `-o`/`-a`, `-empty`, `-size`
+- [x] `PasswordChallenge` type — generic interactive password flow for `adduser`, `passwd`, `deluser`
+- [x] `VirtualFileSystem.mount(vPath, hostPath, { readOnly })` — bind-mount host directories into the VM; read-only by default; browser-safe (silent no-op)
+- [x] POSIX permission enforcement — `enforceAccess`/`enforcePathTraversal`/`enforceDelete`/`enforceChown`/`enforceChmod`; all file commands pass uid/gid; path traversal checked on every read/write/remove; sticky bit semantics
+- [x] User auto-provisioning — `ensureUser()` creates unknown SSH users with non-root UID; `addUser`/`ensureUser` create homes with `0o700`; `getUsername()`/`getGroup()` resolve uid/gid to names
+- [x] Device nodes — `/dev/null`, `/dev/zero`, `/dev/urandom`, `/dev/full`, etc. with correct read/write semantics; `mknod` command
+- [x] File descriptor table — `fdOpen()`/`fdClose()`/`fdDup()` in VFS; `/proc/self/fd` population
+- [x] Subshell/command group isolation — `(cmd)` runs in copied environment; `{ cmd; }` runs in current context
+- [x] Writable `/proc/sys` — 40+ kernel tunables via sysctl content resolver + write hooks; `sysctl` command
+- [x] POSIX signal handling — `SIGKILL`/`SIGSTOP`/`SIGCONT`/`SIGCHLD`; `kill -9` terminates with exit code 137
+- [x] Firewall engine — `iptables` with INPUT/OUTPUT/FORWARD chains, first-match evaluation, policy config
+- [x] `autoSudoForNewUsers` defaults to `false` — new users are not sudoers by default
+- [x] `ls -l` shows usernames (not uid numbers) — `getUsername`/`getGroup` resolution
 - [x] Remove `wiki` from `.gitignore` — wiki content now tracked
 - [x] Add wiki reference to README.md
 - [x] JSDoc audit across 179 TypeScript files
@@ -32,6 +69,9 @@
 - [x] Regenerate wiki (enriched with examples and file docs)
 - [x] Run `bun publish-doc` — TypeDoc HTML + wiki pushed to remote
 - [x] All 777 tests pass
+- [x] XFCE desktop: resize windows, multi-monitor layout
+- [x] Thunar: drag-and-drop between folders
+</details>
 
 ## Prioty
 
@@ -44,6 +84,7 @@
 - [ ] Add a more realistic file caching mechanism that simulates disk read/write speeds and cache eviction policies
 - [ ] Add a more realistic network stack that simulates latency, bandwidth limits, and packet loss, and allows for more complex network configurations (e.g. multiple interfaces, routing tables, firewall rules)
 - [ ] Add a more realistic user management system that supports user groups, permissions, and authentication mechanisms (e.g. password hashing, PAM)
+- [ ] WebSocket-based remote shell client (experimental)
 
 ## Remaining / Future
 
