@@ -27,6 +27,22 @@ virtualShell.addCommand("demo", [], () => {
 	};
 });
 
+// ── Idle management & GC ──────────────────────────────────────────────────────
+// Enable periodic garbage collection to free memory from terminated processes,
+// stale CPU entries, and closed large files. Also trigger GC on SSH disconnect
+// for immediate cleanup.
+
+virtualShell.enableIdleManagement({
+	idleThresholdMs: 120_000,   // freeze VFS after 2 min of inactivity
+	checkIntervalMs: 30_000,    // check every 30s
+	gcIntervalMs: 30_000,       // GC runs every 30s
+});
+
+// Trigger GC immediately when an SSH session disconnects
+virtualShell.users.on("session:unregister", () => {
+	virtualShell.runGc();
+});
+
 // ── Servers ───────────────────────────────────────────────────────────────────
 
 // SFTP subsystem handler — no standalone server, reused by the SSH server
