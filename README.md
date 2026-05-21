@@ -837,27 +837,38 @@ shell.enableIdleManagement({
 
 ### Garbage collector
 
-A background GC runs periodically (default every 30s) to free memory from:
+The GC is built into `IdleManager` and runs automatically when idle management is enabled. Each cycle (default every 30s) performs four steps in order:
 
-- **Terminated processes** — records with `status === "done"` are removed from the process table.
-- **Stale CPU entries** — CPU time tracking for processes that no longer exist is cleared.
-- **Closed large files** — file contents with no open file descriptors are evicted from RAM (reloaded on demand from snapshot).
-- **Node.js GC** — if `--expose-gc` is passed to the runtime, a full GC is triggered.
+1. **Scan process table** — find all processes with `status === "done"` and remove them.
+2. **Clean stale CPU entries** — remove CPU time tracking for PIDs that no longer exist.
+3. **Evict closed large files** — walk the VFS tree and zero out file contents that exceed the eviction threshold **and** have no open file descriptors. Evicted files are reloaded on demand from the snapshot.
+4. **Trigger Node.js GC** — if the runtime was started with `--expose-gc`, call `globalThis.gc()` to force V8 to reclaim memory immediately.
 
 ```ts
 shell.enableIdleManagement({
+  idleThresholdMs: 60_000,
   gcIntervalMs: 30_000,  // GC runs every 30s (0 = disabled)
 });
+```
 
-// Manual trigger
+The GC timer is `unref()`'d so it never blocks `process.exit()`.
+
+**Manual trigger and stats:**
+
+```ts
 const idle = new IdleManager(shell);
 const stats = idle.runGc();
-// stats: { terminatedProcesses, staleCpuEntries, evictedFiles, forcedGc }
+// stats: {
+//   terminatedProcesses: 3,   // process records removed this cycle
+//   staleCpuEntries: 1,       // orphaned CPU time entries cleared
+//   evictedFiles: 2,          // large files zeroed out (no open FDs)
+//   forcedGc: false,          // true only when --expose-gc is passed to Node/Bun
+// }
 
 idle.on("gc:run", (stats) => console.log(stats));
 ```
 
-> **Note:** In `"fs"` mode the existing `evictionThresholdBytes` option (default 64 KB) already evicts large files after each `flushMirror()`. The GC extends this to also evict files based on open FD state, regardless of flush timing.
+> **Note:** In `"fs"` mode the existing `evictionThresholdBytes` option (default 64 KB) already evicts large files after each `flushMirror()`. The GC extends this by also checking **open file descriptor state** — a large file that is currently open by a running command will NOT be evicted, even if it exceeds the threshold.
 
 </details>
 
