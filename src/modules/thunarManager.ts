@@ -54,7 +54,7 @@ export class ThunarManager {
 
   /**
    * Create a Thunar file manager instance.
-   * @param host - Desktop host providing shell, windows, and rendering helpers.
+   * @param _host - Desktop host providing shell, windows, and rendering helpers.
    * @param container - DOM element to render the file browser into.
    */
   constructor(

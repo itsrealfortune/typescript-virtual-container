@@ -634,8 +634,8 @@ export class VirtualPackageManager {
 	private _loaded = false;
 
 	/**
-	 * @param vfs   Backing virtual filesystem for file I/O and dpkg status persistence.
-	 * @param users User manager reference passed to `onInstall` hooks.
+	 * @param _vfs   Backing virtual filesystem for file I/O and dpkg status persistence.
+	 * @param _users User manager reference passed to `onInstall` hooks.
 	 */
 	constructor(
 		private readonly _vfs: VirtualFileSystem,

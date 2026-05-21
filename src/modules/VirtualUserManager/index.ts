@@ -142,8 +142,8 @@ export class VirtualUserManager extends EventEmitter {
 	/**
 	 * Creates a user manager instance backed by a virtual filesystem.
 	 *
-	 * @param vfs Backing virtual filesystem used for persistence.
-	 * @param autoSudoForNewUsers Whether newly created users are added to sudoers.
+	 * @param _vfs Backing virtual filesystem used for persistence.
+	 * @param _autoSudoForNewUsers Whether newly created users are added to sudoers.
 	 */
 	constructor(
 		private readonly _vfs: VirtualFileSystem,

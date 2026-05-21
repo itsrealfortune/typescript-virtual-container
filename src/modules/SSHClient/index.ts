@@ -47,8 +47,8 @@ export class SshClient {
 	/**
 	 * Creates a programmatic client bound to a virtual shell and user.
 	 *
-	 * @param shell Parent virtual shell instance.
-	 * @param username Login user for all commands.
+	 * @param _shell Parent virtual shell instance.
+	 * @param _username Login user for all commands.
 	 */
 	constructor(
 		private _shell: VirtualShell,
