@@ -156,7 +156,7 @@ class VirtualShell extends EventEmitter {
 	private _idle: IdleManager | null = null;
 	/** Writable /proc/sys state — sysctl tunables. */
 	sysctl: SysctlState;
-	private initialized: Promise<void>;
+	private _initialized: Promise<void>;
 
 	/**
 	 * Creates a new virtual shell instance.
@@ -198,7 +198,7 @@ class VirtualShell extends EventEmitter {
 		const sysctl = this.sysctl;
 
 		// Initialize both VFS mirror and users, ensuring all is ready before auth
-		this.initialized = (async () => {
+		this._initialized = (async () => {
 			await vfs.restoreMirror();
 			await users.initialize();
 			// Bootstrap Linux rootfs (idempotent)
@@ -237,7 +237,7 @@ class VirtualShell extends EventEmitter {
 	 */
 	public async ensureInitialized(): Promise<void> {
 		perf.mark("ensureInitialized");
-		await this.initialized;
+		await this._initialized;
 	}
 
 	/**

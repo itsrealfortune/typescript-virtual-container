@@ -37,30 +37,30 @@ function makeCell(partial?: Partial<Cell>): Cell {
  */
 export class WebTermRenderer {
 	/** Number of visible rows. */
-	private rows: number;
+	private _rows: number;
 	/** Number of columns. */
-	private cols: number;
+	private _cols: number;
 	/** 2D grid of screen cells. */
-	private screen: Cell[][];
+	private _screen: Cell[][];
 	/** Scrollback buffer (rows that scrolled off screen). */
-	private scrollback: Cell[][] = [];
+	private _scrollback: Cell[][] = [];
 	/** Current cursor row position. */
-	private curRow = 0;
+	private _curRow = 0;
 	/** Current cursor column position. */
-	private curCol = 0;
+	private _curCol = 0;
 	/** Whether the cursor is currently visible. */
-	private cursorVisible = true;
+	private _cursorVisible = true;
 	/** Flag set when the screen is cleared. */
 	private _cleared = false;
 
 	// Current SGR state
-	private bold = false;
-	private reverse = false;
-	private fg: string | null = null;
-	private bg: string | null = null;
+	private _bold = false;
+	private _reverse = false;
+	private _fg: string | null = null;
+	private _bg: string | null = null;
 
 	/** Input buffer for incomplete escape sequences. */
-	private buf = "";
+	private _buf = "";
 
 	/**
 	 * Create a new terminal screen buffer.
@@ -68,9 +68,9 @@ export class WebTermRenderer {
 	 * @param cols - Number of columns (default: 80).
 	 */
 	constructor(rows: number, cols: number) {
-		this.rows = rows;
-		this.cols = cols;
-		this.screen = this.makeScreen();
+		this._rows = rows;
+		this._cols = cols;
+		this._screen = this._makeScreen();
 	}
 
 	/**
@@ -79,17 +79,17 @@ export class WebTermRenderer {
 	 * @param cols - New number of columns.
 	 */
 	resize(rows: number, cols: number): void {
-		const newScreen = this.makeScreen(rows, cols);
-		for (let r = 0; r < Math.min(rows, this.rows); r++) {
-			for (let c = 0; c < Math.min(cols, this.cols); c++) {
-				newScreen[r]![c] = this.screen[r]?.[c] ?? makeCell();
+		const newScreen = this._makeScreen(rows, cols);
+		for (let r = 0; r < Math.min(rows, this._rows); r++) {
+			for (let c = 0; c < Math.min(cols, this._cols); c++) {
+				newScreen[r]![c] = this._screen[r]?.[c] ?? makeCell();
 			}
 		}
-		this.rows = rows;
-		this.cols = cols;
-		this.screen = newScreen;
-		this.curRow = Math.min(this.curRow, rows - 1);
-		this.curCol = Math.min(this.curCol, cols - 1);
+		this._rows = rows;
+		this._cols = cols;
+		this._screen = newScreen;
+		this._curRow = Math.min(this._curRow, rows - 1);
+		this._curCol = Math.min(this._curCol, cols - 1);
 	}
 
 	/**
@@ -98,202 +98,202 @@ export class WebTermRenderer {
 	 * @param data - Raw terminal output string (may contain escape sequences).
 	 */
 	write(data: string): void {
-		this.buf += data;
-		this.flush();
+		this._buf += data;
+		this._flush();
 	}
 
-	private flush(): void {
+	private _flush(): void {
 		let i = 0;
-		while (i < this.buf.length) {
-			const ch = this.buf[i]!;
+		while (i < this._buf.length) {
+			const ch = this._buf[i]!;
 			if (ch === "\x1b") {
-				if (i + 1 >= this.buf.length) break; // wait for more data
-				const next = this.buf[i + 1]!;
+				if (i + 1 >= this._buf.length) break; // wait for more data
+				const next = this._buf[i + 1]!;
 				if (next === "[") {
 					// CSI — find terminator
 					let j = i + 2;
-					while (j < this.buf.length && (this.buf[j]! < "@" || this.buf[j]! > "~")) j++;
-					if (j >= this.buf.length) break; // incomplete
-					const seq = this.buf.slice(i + 2, j);
-					const cmd = this.buf[j]!;
-					this.handleCsi(seq, cmd);
+					while (j < this._buf.length && (this._buf[j]! < "@" || this._buf[j]! > "~")) j++;
+					if (j >= this._buf.length) break; // incomplete
+					const seq = this._buf.slice(i + 2, j);
+					const cmd = this._buf[j]!;
+					this._handleCsi(seq, cmd);
 					i = j + 1;
 				} else if (next === "]") {
 					// OSC (Operating System Command) — terminator is BEL (\x07) or ST (ESC \)
 					// Must consume fully or the payload prints as raw text and corrupts SGR state.
 					let j = i + 2;
-					while (j < this.buf.length) {
-						if (this.buf[j] === "\x07") { j++; break; }
-						if (this.buf[j] === "\x1b" && this.buf[j + 1] === "\\") { j += 2; break; }
+					while (j < this._buf.length) {
+						if (this._buf[j] === "\x07") { j++; break; }
+						if (this._buf[j] === "\x1b" && this._buf[j + 1] === "\\") { j += 2; break; }
 						j++;
 					}
 					// If terminator not yet received, wait for more data
-					if (j >= this.buf.length && this.buf[j - 1] !== "\x07") break;
+					if (j >= this._buf.length && this._buf[j - 1] !== "\x07") break;
 					i = j;
 				} else if (next === "O") {
 					// SS3 — single extra byte (F1-F4, cursor keys in application mode)
-					if (i + 2 >= this.buf.length) break; // wait for more data
+					if (i + 2 >= this._buf.length) break; // wait for more data
 					i += 3; // ESC O <cmd>
 				} else {
 					i += 2; // skip unknown 2-char ESC sequence
 				}
 			} else if (ch === "\r") {
-				this.curCol = 0;
+				this._curCol = 0;
 				i++;
 			} else if (ch === "\n") {
-				if (this.curRow < this.rows - 1) {
-					this.curRow++;
+				if (this._curRow < this._rows - 1) {
+					this._curRow++;
 				} else {
-					this.scrollUp();
+					this._scrollUp();
 				}
 				i++;
 			} else if (ch.charCodeAt(0) >= 32) {
-				this.putChar(ch);
+				this._putChar(ch);
 				i++;
 			} else {
 				i++; // skip other control chars
 			}
 		}
-		this.buf = this.buf.slice(i);
+		this._buf = this._buf.slice(i);
 	}
 
-	private handleCsi(seq: string, cmd: string): void {
+	private _handleCsi(seq: string, cmd: string): void {
 		if (cmd === "H" || cmd === "f") {
 			// Cursor position: row;col (1-based)
 			const parts = seq.split(";").map((n) => Number.parseInt(n || "1", 10));
-			this.curRow = Math.max(0, Math.min((parts[0] ?? 1) - 1, this.rows - 1));
-			this.curCol = Math.max(0, Math.min((parts[1] ?? 1) - 1, this.cols - 1));
+			this._curRow = Math.max(0, Math.min((parts[0] ?? 1) - 1, this._rows - 1));
+			this._curCol = Math.max(0, Math.min((parts[1] ?? 1) - 1, this._cols - 1));
 			return;
 		}
 		if (cmd === "K") {
 			// Erase line from cursor to end
 			const mode = seq === "" ? 0 : Number.parseInt(seq, 10);
 			if (mode === 0) {
-				for (let c = this.curCol; c < this.cols; c++) {
-					this.screen[this.curRow]![c] = makeCell();
+				for (let c = this._curCol; c < this._cols; c++) {
+					this._screen[this._curRow]![c] = makeCell();
 				}
 			} else if (mode === 1) {
-				for (let c = 0; c <= this.curCol; c++) {
-					this.screen[this.curRow]![c] = makeCell();
+				for (let c = 0; c <= this._curCol; c++) {
+					this._screen[this._curRow]![c] = makeCell();
 				}
 			} else if (mode === 2) {
-				for (let c = 0; c < this.cols; c++) {
-					this.screen[this.curRow]![c] = makeCell();
+				for (let c = 0; c < this._cols; c++) {
+					this._screen[this._curRow]![c] = makeCell();
 				}
 			}
 			return;
 		}
 		if (cmd === "m") {
-			this.handleSgr(seq);
+			this._handleSgr(seq);
 			return;
 		}
 		if (cmd === "l" && seq === "?25") {
-			this.cursorVisible = false;
+			this._cursorVisible = false;
 			return;
 		}
 		if (cmd === "h" && seq === "?25") {
-			this.cursorVisible = true;
+			this._cursorVisible = true;
 			return;
 		}
 		// Cursor movement (relative)
-		if (cmd === "A") { const n = Number.parseInt(seq || "1", 10) || 1; this.curRow = Math.max(0, this.curRow - n); return; }
-		if (cmd === "B") { const n = Number.parseInt(seq || "1", 10) || 1; this.curRow = Math.min(this.rows - 1, this.curRow + n); return; }
-		if (cmd === "C") { const n = Number.parseInt(seq || "1", 10) || 1; this.curCol = Math.min(this.cols - 1, this.curCol + n); return; }
-		if (cmd === "D") { const n = Number.parseInt(seq || "1", 10) || 1; this.curCol = Math.max(0, this.curCol - n); return; }
+		if (cmd === "A") { const n = Number.parseInt(seq || "1", 10) || 1; this._curRow = Math.max(0, this._curRow - n); return; }
+		if (cmd === "B") { const n = Number.parseInt(seq || "1", 10) || 1; this._curRow = Math.min(this._rows - 1, this._curRow + n); return; }
+		if (cmd === "C") { const n = Number.parseInt(seq || "1", 10) || 1; this._curCol = Math.min(this._cols - 1, this._curCol + n); return; }
+		if (cmd === "D") { const n = Number.parseInt(seq || "1", 10) || 1; this._curCol = Math.max(0, this._curCol - n); return; }
 		// Cursor column absolute
-		if (cmd === "G") { const n = Number.parseInt(seq || "1", 10) || 1; this.curCol = Math.max(0, Math.min(n - 1, this.cols - 1)); return; }
+		if (cmd === "G") { const n = Number.parseInt(seq || "1", 10) || 1; this._curCol = Math.max(0, Math.min(n - 1, this._cols - 1)); return; }
 		// Erase display modes 0/1
 		if (cmd === "J") {
 			const mode = seq === "" ? 0 : Number.parseInt(seq, 10);
 			if (mode === 0) {
-				for (let c = this.curCol; c < this.cols; c++) this.screen[this.curRow]![c] = makeCell();
-				for (let r = this.curRow + 1; r < this.rows; r++) this.screen[r] = Array.from({ length: this.cols }, () => makeCell());
+				for (let c = this._curCol; c < this._cols; c++) this._screen[this._curRow]![c] = makeCell();
+				for (let r = this._curRow + 1; r < this._rows; r++) this._screen[r] = Array.from({ length: this._cols }, () => makeCell());
 			} else if (mode === 1) {
-				for (let r = 0; r < this.curRow; r++) this.screen[r] = Array.from({ length: this.cols }, () => makeCell());
-				for (let c = 0; c <= this.curCol; c++) this.screen[this.curRow]![c] = makeCell();
+				for (let r = 0; r < this._curRow; r++) this._screen[r] = Array.from({ length: this._cols }, () => makeCell());
+				for (let c = 0; c <= this._curCol; c++) this._screen[this._curRow]![c] = makeCell();
 			} else if (mode === 2) {
-				this.screen = this.makeScreen();
-				this.scrollback = [];
-				this.curRow = 0;
-				this.curCol = 0;
+				this._screen = this._makeScreen();
+				this._scrollback = [];
+				this._curRow = 0;
+				this._curCol = 0;
 				this._cleared = true;
 			}
 			return;
 		}
 	}
 
-	private handleSgr(seq: string): void {
+	private _handleSgr(seq: string): void {
 		const codes = seq === "" ? [0] : seq.split(";").map((n) => Number.parseInt(n || "0", 10));
 		let i = 0;
 		while (i < codes.length) {
 			const code = codes[i]!;
 			if (code === 0) {
-				this.bold = false; this.reverse = false; this.fg = null; this.bg = null;
+				this._bold = false; this._reverse = false; this._fg = null; this._bg = null;
 			} else if (code === 1) {
-				this.bold = true;
+				this._bold = true;
 			} else if (code === 7) {
-				this.reverse = true;
+				this._reverse = true;
 			} else if (code === 22) {
-				this.bold = false;
+				this._bold = false;
 			} else if (code === 27) {
-				this.reverse = false;
+				this._reverse = false;
 			} else if (code >= 30 && code <= 37) {
-				this.fg = ANSI_COLORS[code - 30]!;
+				this._fg = ANSI_COLORS[code - 30]!;
 			} else if (code === 38) {
 				if (codes[i + 1] === 5 && codes[i + 2] !== undefined) {
-					this.fg = xterm256(codes[i + 2]!);
+					this._fg = xterm256(codes[i + 2]!);
 					i += 2;
 				} else if (codes[i + 1] === 2 && codes[i + 4] !== undefined) {
-					this.fg = `rgb(${codes[i + 2]},${codes[i + 3]},${codes[i + 4]})`;
+					this._fg = `rgb(${codes[i + 2]},${codes[i + 3]},${codes[i + 4]})`;
 					i += 4;
 				}
 			} else if (code === 39) {
-				this.fg = null;
+				this._fg = null;
 			} else if (code >= 40 && code <= 47) {
-				this.bg = ANSI_COLORS[code - 40]!;
+				this._bg = ANSI_COLORS[code - 40]!;
 			} else if (code === 48) {
 				if (codes[i + 1] === 5 && codes[i + 2] !== undefined) {
-					this.bg = xterm256(codes[i + 2]!);
+					this._bg = xterm256(codes[i + 2]!);
 					i += 2;
 				} else if (codes[i + 1] === 2 && codes[i + 4] !== undefined) {
-					this.bg = `rgb(${codes[i + 2]},${codes[i + 3]},${codes[i + 4]})`;
+					this._bg = `rgb(${codes[i + 2]},${codes[i + 3]},${codes[i + 4]})`;
 					i += 4;
 				}
 			} else if (code === 49) {
-				this.bg = null;
+				this._bg = null;
 			} else if (code >= 90 && code <= 97) {
-				this.fg = ANSI_COLORS_BRIGHT[code - 90]!;
+				this._fg = ANSI_COLORS_BRIGHT[code - 90]!;
 			} else if (code >= 100 && code <= 107) {
-				this.bg = ANSI_COLORS_BRIGHT[code - 100]!;
+				this._bg = ANSI_COLORS_BRIGHT[code - 100]!;
 			}
 			i++;
 		}
 	}
 
-	private scrollUp(): void {
-		const line = this.screen.shift()!;
-		this.scrollback.push(line);
-		if (this.scrollback.length > 1000) this.scrollback.shift();
-		this.screen.push(Array.from({ length: this.cols }, () => makeCell()));
+	private _scrollUp(): void {
+		const line = this._screen.shift()!;
+		this._scrollback.push(line);
+		if (this._scrollback.length > 1000) this._scrollback.shift();
+		this._screen.push(Array.from({ length: this._cols }, () => makeCell()));
 		// curRow stays at rows-1 (bottom)
 	}
 
-	private putChar(ch: string): void {
-		if (this.curCol >= this.cols) {
-			this.curCol = 0;
-			if (this.curRow < this.rows - 1) { this.curRow++; } else { this.scrollUp(); }
+	private _putChar(ch: string): void {
+		if (this._curCol >= this._cols) {
+			this._curCol = 0;
+			if (this._curRow < this._rows - 1) { this._curRow++; } else { this._scrollUp(); }
 		}
-		this.screen[this.curRow]![this.curCol] = makeCell({
+		this._screen[this._curRow]![this._curCol] = makeCell({
 			ch,
-			bold: this.bold,
-			reverse: this.reverse,
-			fg: this.fg,
-			bg: this.bg,
+			bold: this._bold,
+			reverse: this._reverse,
+			fg: this._fg,
+			bg: this._bg,
 		});
-		this.curCol++;
+		this._curCol++;
 	}
 
-	private makeScreen(rows = this.rows, cols = this.cols): Cell[][] {
+	private _makeScreen(rows = this._rows, cols = this._cols): Cell[][] {
 		return Array.from({ length: rows }, () =>
 			Array.from({ length: cols }, () => makeCell()),
 		);
@@ -302,13 +302,13 @@ export class WebTermRenderer {
 	/** Render current screen state to an HTML string for a <pre> element. */
 	renderHtml(): string {
 		const parts: string[] = [];
-		for (let r = 0; r < this.rows; r++) {
-			const row = this.screen[r]!;
+		for (let r = 0; r < this._rows; r++) {
+			const row = this._screen[r]!;
 			let spanOpen = false;
 			let lastStyle = "";
-			for (let c = 0; c < this.cols; c++) {
+			for (let c = 0; c < this._cols; c++) {
 				const cell = row[c]!;
-				const isCursor = this.cursorVisible && r === this.curRow && c === this.curCol;
+				const isCursor = this._cursorVisible && r === this._curRow && c === this._curCol;
 
 				let fg = cell.fg ?? "#ccc";
 				let bg = cell.bg ?? "transparent";
@@ -331,17 +331,17 @@ export class WebTermRenderer {
 				}
 			}
 			if (spanOpen) parts.push("</span>");
-			if (r < this.rows - 1) parts.push("\n");
+			if (r < this._rows - 1) parts.push("\n");
 		}
 		return parts.join("");
 	}
 
 	/** Current cursor row position (0-indexed). */
-	get cursorRow(): number { return this.curRow; }
+	get cursorRow(): number { return this._curRow; }
 	/** Current cursor column position (0-indexed). */
-	get cursorCol(): number { return this.curCol; }
+	get cursorCol(): number { return this._curCol; }
 	/** Whether the cursor is currently visible (controlled by CSI ?25l/?25h). */
-	get isCursorVisible(): boolean { return this.cursorVisible; }
+	get isCursorVisible(): boolean { return this._cursorVisible; }
 
 	/** Returns true (once) if CSI 2J was received since last call. */
 	consumeCleared(): boolean {
@@ -351,10 +351,10 @@ export class WebTermRenderer {
 	}
 
 	/** Number of rows currently in the scrollback buffer. */
-	get scrollbackLength(): number { return this.scrollback.length; }
+	get scrollbackLength(): number { return this._scrollback.length; }
 
 	/** Clear the scrollback buffer. */
-	clearScrollback(): void { this.scrollback = []; }
+	clearScrollback(): void { this._scrollback = []; }
 
 	/**
 	 * Render the scrollback buffer as HTML with inline styles for colors and bold.
@@ -363,7 +363,7 @@ export class WebTermRenderer {
 	 */
 	renderScrollbackHtml(): string {
 		const parts: string[] = [];
-		for (const row of this.scrollback) {
+		for (const row of this._scrollback) {
 			let spanOpen = false;
 			let lastStyle = "";
 			for (const cell of row) {

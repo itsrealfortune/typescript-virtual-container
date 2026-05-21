@@ -132,42 +132,42 @@ type Mode =
  * ```
  */
 export class NanoEditor {
-	private lines: string[];
-	private cursorRow = 0;
-	private cursorCol = 0;
-	private scrollTop = 0;
-	private modified = false;
-	private filename: string;
+	private _lines: string[];
+	private _cursorRow = 0;
+	private _cursorCol = 0;
+	private _scrollTop = 0;
+	private _modified = false;
+	private _filename: string;
 
-	private mode: Mode = "normal";
-	private inputBuffer = "";        // for multi-char prompts
-	private searchState: SearchState | null = null;
-	private clipboard: string[] = []; // ^K cut lines
-	private undoStack: UndoEntry[] = [];
-	private redoStack: UndoEntry[] = [];
-	private markActive = false;
+	private _mode: Mode = "normal";
+	private _inputBuffer = "";        // for multi-char prompts
+	private _searchState: SearchState | null = null;
+	private _clipboard: string[] = []; // ^K cut lines
+	private _undoStack: UndoEntry[] = [];
+	private _redoStack: UndoEntry[] = [];
+	private _markActive = false;
 
-	private readonly stream: ShellStream;
-	private terminalSize: TerminalSize;
-	private readonly onExit: NanoEditorOptions["onExit"];
-	private readonly onSave: NanoEditorOptions["onSave"];
+	private readonly _stream: ShellStream;
+	private _terminalSize: TerminalSize;
+	private readonly _onExit: NanoEditorOptions["onExit"];
+	private readonly _onSave: NanoEditorOptions["onSave"];
 
 	/**
 	 * Create a new NanoEditor instance.
 	 * @param opts - Editor configuration (stream, terminal size, content, filename, callbacks).
 	 */
 	constructor(opts: NanoEditorOptions) {
-		this.stream = opts.stream;
-		this.terminalSize = opts.terminalSize;
-		this.filename = opts.filename;
-		this.onExit = opts.onExit;
-		this.onSave = opts.onSave;
-		this.lines = opts.content.split("\n");
+		this._stream = opts.stream;
+		this._terminalSize = opts.terminalSize;
+		this._filename = opts.filename;
+		this._onExit = opts.onExit;
+		this._onSave = opts.onSave;
+		this._lines = opts.content.split("\n");
 		// Remove trailing empty line that split adds for files ending in \n
-		if (this.lines.length > 1 && this.lines.at(-1) === "") {
-			this.lines.pop();
+		if (this._lines.length > 1 && this._lines.at(-1) === "") {
+			this._lines.pop();
 		}
-		if (this.lines.length === 0) this.lines = [""];
+		if (this._lines.length === 0) this._lines = [""];
 	}
 
 	// ── Public API ────────────────────────────────────────────────────────────
@@ -186,7 +186,7 @@ export class NanoEditor {
 	 * @param size - New terminal dimensions (cols × rows).
 	 */
 	resize(size: TerminalSize): void {
-		this.terminalSize = size;
+		this._terminalSize = size;
 		this.fullRedraw();
 	}
 
@@ -199,14 +199,14 @@ export class NanoEditor {
 	handleInput(chunk: Buffer): void {
 		const data = chunk.toString("utf8");
 		for (let i = 0; i < data.length; ) {
-			const consumed = this.consumeSequence(data, i);
+			const consumed = this._consumeSequence(data, i);
 			i += consumed;
 		}
 	}
 
 	// ── Input dispatch ────────────────────────────────────────────────────────
 
-	private consumeSequence(data: string, i: number): number {
+	private _consumeSequence(data: string, i: number): number {
 		const ch = data[i]!;
 
 		// ESC sequences
@@ -216,506 +216,506 @@ export class NanoEditor {
 				let j = i + 2;
 				while (j < data.length && (data[j]! < "@" || data[j]! > "~")) j++;
 				const seq = data.slice(i, j + 1);
-				this.handleEscape(seq);
+				this._handleEscape(seq);
 				return j - i + 1;
 			}
 			if (data[i + 1] === "O") {
 				// SS3 (xterm function keys)
 				const seq = data.slice(i, i + 3);
-				this.handleEscape(seq);
+				this._handleEscape(seq);
 				return 3;
 			}
 			// Alt+key
 			if (i + 1 < data.length) {
-				this.handleAlt(data[i + 1]!);
+				this._handleAlt(data[i + 1]!);
 				return 2;
 			}
 			return 1;
 		}
 
-		this.handleChar(ch);
+		this._handleChar(ch);
 		return 1;
 	}
 
-	private handleEscape(seq: string): void {
+	private _handleEscape(seq: string): void {
 		switch (seq) {
-			case `${ESC}[A`: case `${ESC}OA`: this.dispatch("up"); break;
-			case `${ESC}[B`: case `${ESC}OB`: this.dispatch("down"); break;
-			case `${ESC}[C`: case `${ESC}OC`: this.dispatch("right"); break;
-			case `${ESC}[D`: case `${ESC}OD`: this.dispatch("left"); break;
-			case `${ESC}[H`: case `${ESC}[1~`: this.dispatch("home"); break;
-			case `${ESC}[F`: case `${ESC}[4~`: this.dispatch("end"); break;
-			case `${ESC}[5~`: this.dispatch("pageup"); break;
-			case `${ESC}[6~`: this.dispatch("pagedown"); break;
-			case `${ESC}[3~`: this.dispatch("delete"); break;
-			case `${ESC}[1;5C`: this.dispatch("ctrl-right"); break;
-			case `${ESC}[1;5D`: this.dispatch("ctrl-left"); break;
-			case `${ESC}[1;5A`: this.dispatch("ctrl-up"); break;
-			case `${ESC}[1;5B`: this.dispatch("ctrl-down"); break;
+			case `${ESC}[A`: case `${ESC}OA`: this._dispatch("up"); break;
+			case `${ESC}[B`: case `${ESC}OB`: this._dispatch("down"); break;
+			case `${ESC}[C`: case `${ESC}OC`: this._dispatch("right"); break;
+			case `${ESC}[D`: case `${ESC}OD`: this._dispatch("left"); break;
+			case `${ESC}[H`: case `${ESC}[1~`: this._dispatch("home"); break;
+			case `${ESC}[F`: case `${ESC}[4~`: this._dispatch("end"); break;
+			case `${ESC}[5~`: this._dispatch("pageup"); break;
+			case `${ESC}[6~`: this._dispatch("pagedown"); break;
+			case `${ESC}[3~`: this._dispatch("delete"); break;
+			case `${ESC}[1;5C`: this._dispatch("ctrl-right"); break;
+			case `${ESC}[1;5D`: this._dispatch("ctrl-left"); break;
+			case `${ESC}[1;5A`: this._dispatch("ctrl-up"); break;
+			case `${ESC}[1;5B`: this._dispatch("ctrl-down"); break;
 		}
 	}
 
-	private handleAlt(key: string): void {
+	private _handleAlt(key: string): void {
 		const k = key.toLowerCase();
-		if (k === "u") { this.doUndo(); return; }
-		if (k === "e") { this.doRedo(); return; }
-		if (k === "g") { this.enterGotoLine(); return; }
-		if (k === "r") { this.doSearchReplace(); return; }
-		if (k === "a") { this.toggleMark(); return; }
-		if (k === "^") { this.doUndo(); return; } // Alt+6 = Alt+^
+		if (k === "u") { this._doUndo(); return; }
+		if (k === "e") { this._doRedo(); return; }
+		if (k === "g") { this._enterGotoLine(); return; }
+		if (k === "r") { this._doSearchReplace(); return; }
+		if (k === "a") { this._toggleMark(); return; }
+		if (k === "^") { this._doUndo(); return; } // Alt+6 = Alt+^
 	}
 
-	private handleChar(ch: string): void {
+	private _handleChar(ch: string): void {
 		const code = ch.charCodeAt(0);
 
 		// Route by mode first
-		if (this.mode !== "normal") {
-			this.handlePromptChar(ch);
+		if (this._mode !== "normal") {
+			this._handlePromptChar(ch);
 			return;
 		}
 
 		// Control characters
 		if (code < 32 || code === 127) {
-			this.handleControl(code);
+			this._handleControl(code);
 			return;
 		}
 
 		// Printable
-		this.doInsertChar(ch);
+		this._doInsertChar(ch);
 	}
 
-	private handleControl(code: number): void {
+	private _handleControl(code: number): void {
 		switch (code) {
 			// Navigation
-			case 1: this.dispatch("home"); break;          // ^A
-			case 5: this.dispatch("end"); break;           // ^E
-			case 16: this.dispatch("up"); break;           // ^P (emacs)
-			case 14: this.dispatch("down"); break;         // ^N (emacs)
-			case 2: this.dispatch("left"); break;          // ^B
-			case 6: this.dispatch("right"); break;         // ^F
+			case 1: this._dispatch("home"); break;          // ^A
+			case 5: this._dispatch("end"); break;           // ^E
+			case 16: this._dispatch("up"); break;           // ^P (emacs)
+			case 14: this._dispatch("down"); break;         // ^N (emacs)
+			case 2: this._dispatch("left"); break;          // ^B
+			case 6: this._dispatch("right"); break;         // ^F
 
 			// Editing
-			case 8: case 127: this.doBackspace(); break;   // ^H / DEL
-			case 13: this.doEnter(); break;                // ^M / Enter
-			case 11: this.doCutLine(); break;              // ^K
-			case 21: this.doUncut(); break;                // ^U
-			case 9: this.doInsertChar("\t"); break;        // ^I / Tab
+			case 8: case 127: this._doBackspace(); break;   // ^H / DEL
+			case 13: this._doEnter(); break;                // ^M / Enter
+			case 11: this._doCutLine(); break;              // ^K
+			case 21: this._doUncut(); break;                // ^U
+			case 9: this._doInsertChar("\t"); break;        // ^I / Tab
 
 			// File ops
-			case 15: this.enterWriteout(); break;          // ^O
-			case 19: this.doSave(); break;                 // ^S (save without prompt)
-			case 24: this.doExit(); break;                 // ^X
-			case 18: this.doSearch(); break;               // ^R (reused as search-next)
+			case 15: this._enterWriteout(); break;          // ^O
+			case 19: this._doSave(); break;                 // ^S (save without prompt)
+			case 24: this._doExit(); break;                 // ^X
+			case 18: this._doSearch(); break;               // ^R (reused as search-next)
 
 			// Search
-			case 23: this.enterSearch(); break;            // ^W
-			case 12: this.doSearchNext(); break;           // ^L (refresh / search next)
+			case 23: this._enterSearch(); break;            // ^W
+			case 12: this._doSearchNext(); break;           // ^L (refresh / search next)
 
 			// Info
-			case 3: this.showCursorPos(); break;           // ^C
-			case 7: this.enterHelp(); break;               // ^G
+			case 3: this._showCursorPos(); break;           // ^C
+			case 7: this._enterHelp(); break;               // ^G
 
 			// Undo/Redo (nano uses Alt+U / Alt+E, but also ^Z in some builds)
-			case 26: this.doUndo(); break;                 // ^Z (non-standard but common)
+			case 26: this._doUndo(); break;                 // ^Z (non-standard but common)
 
 			// Goto line
-			case 31: this.enterGotoLine(); break;          // ^_
+			case 31: this._enterGotoLine(); break;          // ^_
 		}
 	}
 
-	private dispatch(action: string): void {
-		if (this.mode !== "normal") return;
+	private _dispatch(action: string): void {
+		if (this._mode !== "normal") return;
 		switch (action) {
-			case "up": this.moveCursor(-1); break;
-			case "down": this.moveCursor(1); break;
-			case "left": this.moveCursorLeft(); break;
-			case "right": this.moveCursorRight(); break;
-			case "home": this.moveCursorHome(); break;
-			case "end": this.moveCursorEnd(); break;
-			case "pageup": this.movePage(-1); break;
-			case "pagedown": this.movePage(1); break;
-			case "delete": this.doDelete(); break;
-			case "ctrl-right": this.moveWordRight(); break;
-			case "ctrl-left": this.moveWordLeft(); break;
-			case "ctrl-up": this.moveCursor(-1); break;
-			case "ctrl-down": this.moveCursor(1); break;
+			case "up": this._moveCursor(-1); break;
+			case "down": this._moveCursor(1); break;
+			case "left": this._moveCursorLeft(); break;
+			case "right": this._moveCursorRight(); break;
+			case "home": this._moveCursorHome(); break;
+			case "end": this._moveCursorEnd(); break;
+			case "pageup": this._movePage(-1); break;
+			case "pagedown": this._movePage(1); break;
+			case "delete": this._doDelete(); break;
+			case "ctrl-right": this._moveWordRight(); break;
+			case "ctrl-left": this._moveWordLeft(); break;
+			case "ctrl-up": this._moveCursor(-1); break;
+			case "ctrl-down": this._moveCursor(1); break;
 		}
 	}
 
 	// ── Prompt mode handler ───────────────────────────────────────────────────
 
-	private handlePromptChar(ch: string): void {
+	private _handlePromptChar(ch: string): void {
 		const code = ch.charCodeAt(0);
 
-		if (this.mode === "help") {
-			this.mode = "normal";
+		if (this._mode === "help") {
+			this._mode = "normal";
 			this.fullRedraw();
 			return;
 		}
 
-		if (this.mode === "exit-confirm") {
+		if (this._mode === "exit-confirm") {
 			const k = ch.toLowerCase();
 			if (k === "y") {
 				// Save then exit
-				this.mode = "exit-filename";
-				this.inputBuffer = this.filename;
-				this.renderStatusBar(`File Name to Write: ${this.inputBuffer}`);
+				this._mode = "exit-filename";
+				this._inputBuffer = this._filename;
+				this._renderStatusBar(`File Name to Write: ${this._inputBuffer}`);
 				return;
 			}
 			if (k === "n") {
-				this.onExit("aborted", this.getCurrentContent());
+				this._onExit("aborted", this._getCurrentContent());
 				return;
 			}
 			if (code === 3 || code === 7 || k === "c") {
 				// ^C or ^G = cancel
-				this.mode = "normal";
+				this._mode = "normal";
 				this.fullRedraw();
 				return;
 			}
 			return;
 		}
 
-		if (this.mode === "exit-filename" || this.mode === "writeout") {
+		if (this._mode === "exit-filename" || this._mode === "writeout") {
 			if (code === 13) {
 				// Confirm filename
-				const name = this.inputBuffer.trim();
-				if (name) this.filename = name;
-				const content = this.getCurrentContent();
-				this.modified = false;
-				if (this.mode === "exit-filename") {
-					this.onExit("saved", content);
+				const name = this._inputBuffer.trim();
+				if (name) this._filename = name;
+				const content = this._getCurrentContent();
+				this._modified = false;
+				if (this._mode === "exit-filename") {
+					this._onExit("saved", content);
 				} else {
-					this.mode = "normal";
-					this.renderStatusLine(`Wrote ${this.lines.length} lines`);
-					this.onExit("saved", content);
+					this._mode = "normal";
+					this._renderStatusLine(`Wrote ${this._lines.length} lines`);
+					this._onExit("saved", content);
 				}
 				return;
 			}
 			if (code === 7 || code === 3) {
 				// ^G / ^C = cancel
-				this.mode = "normal";
+				this._mode = "normal";
 				this.fullRedraw();
 				return;
 			}
 			if (code === 127 || code === 8) {
-				this.inputBuffer = this.inputBuffer.slice(0, -1);
+				this._inputBuffer = this._inputBuffer.slice(0, -1);
 			} else if (code >= 32) {
-				this.inputBuffer += ch;
+				this._inputBuffer += ch;
 			}
-			const label = this.mode === "writeout" ? "File Name to Write" : "File Name to Write";
-			this.renderStatusBar(`${label}: ${this.inputBuffer}`);
+			const label = this._mode === "writeout" ? "File Name to Write" : "File Name to Write";
+			this._renderStatusBar(`${label}: ${this._inputBuffer}`);
 			return;
 		}
 
-		if (this.mode === "search") {
+		if (this._mode === "search") {
 			if (code === 13) {
 				// Execute search
-				const query = this.inputBuffer.trim();
+				const query = this._inputBuffer.trim();
 				if (query) {
-					this.searchState = { query, caseSensitive: false, row: this.cursorRow, col: this.cursorCol + 1 };
+					this._searchState = { query, caseSensitive: false, row: this._cursorRow, col: this._cursorCol + 1 };
 				}
-				this.mode = "normal";
-				if (this.searchState) this.doSearchNext();
+				this._mode = "normal";
+				if (this._searchState) this._doSearchNext();
 				else this.fullRedraw();
 				return;
 			}
 			if (code === 7 || code === 3) {
-				this.mode = "normal";
+				this._mode = "normal";
 				this.fullRedraw();
 				return;
 			}
 			if (code === 127 || code === 8) {
-				this.inputBuffer = this.inputBuffer.slice(0, -1);
+				this._inputBuffer = this._inputBuffer.slice(0, -1);
 			} else if (code >= 32) {
-				this.inputBuffer += ch;
+				this._inputBuffer += ch;
 			}
-			this.renderStatusBar(`Search: ${this.inputBuffer}`);
+			this._renderStatusBar(`Search: ${this._inputBuffer}`);
 			return;
 		}
 
-		if (this.mode === "goto-line") {
+		if (this._mode === "goto-line") {
 			if (code === 13) {
-				const n = Number.parseInt(this.inputBuffer.trim(), 10);
+				const n = Number.parseInt(this._inputBuffer.trim(), 10);
 				if (!Number.isNaN(n) && n > 0) {
-					this.cursorRow = Math.min(n - 1, this.lines.length - 1);
-					this.cursorCol = 0;
-					this.clampScroll();
+					this._cursorRow = Math.min(n - 1, this._lines.length - 1);
+					this._cursorCol = 0;
+					this._clampScroll();
 				}
-				this.mode = "normal";
+				this._mode = "normal";
 				this.fullRedraw();
 				return;
 			}
 			if (code === 7 || code === 3) {
-				this.mode = "normal";
+				this._mode = "normal";
 				this.fullRedraw();
 				return;
 			}
 			if (code === 127 || code === 8) {
-				this.inputBuffer = this.inputBuffer.slice(0, -1);
+				this._inputBuffer = this._inputBuffer.slice(0, -1);
 			} else if (ch >= "0" && ch <= "9") {
-				this.inputBuffer += ch;
+				this._inputBuffer += ch;
 			}
-			this.renderStatusBar(`Enter line number: ${this.inputBuffer}`);
+			this._renderStatusBar(`Enter line number: ${this._inputBuffer}`);
 			return;
 		}
 
-		if (this.mode === "search-confirm") {
-			this.mode = "normal";
+		if (this._mode === "search-confirm") {
+			this._mode = "normal";
 			this.fullRedraw();
 		}
 	}
 
 	// ── Cursor movement ───────────────────────────────────────────────────────
 
-	private moveCursor(dRow: number): void {
-		this.cursorRow = Math.max(0, Math.min(this.lines.length - 1, this.cursorRow + dRow));
-		this.cursorCol = Math.min(this.cursorCol, this.currentLine().length);
-		const prevScrollTop = this.scrollTop;
-		this.clampScroll();
-		if (this.scrollTop !== prevScrollTop) {
-			this.renderEditArea();
+	private _moveCursor(dRow: number): void {
+		this._cursorRow = Math.max(0, Math.min(this._lines.length - 1, this._cursorRow + dRow));
+		this._cursorCol = Math.min(this._cursorCol, this._currentLine().length);
+		const prevScrollTop = this._scrollTop;
+		this._clampScroll();
+		if (this._scrollTop !== prevScrollTop) {
+			this._renderEditArea();
 		} else {
-			this.renderCursor();
+			this._renderCursor();
 		}
 	}
 
-	private moveCursorLeft(): void {
-		if (this.cursorCol > 0) {
-			this.cursorCol--;
-		} else if (this.cursorRow > 0) {
-			this.cursorRow--;
-			this.cursorCol = this.currentLine().length;
+	private _moveCursorLeft(): void {
+		if (this._cursorCol > 0) {
+			this._cursorCol--;
+		} else if (this._cursorRow > 0) {
+			this._cursorRow--;
+			this._cursorCol = this._currentLine().length;
 		}
-		const prevScrollTop = this.scrollTop;
-		this.clampScroll();
-		if (this.scrollTop !== prevScrollTop) { this.renderEditArea(); } else { this.renderCursor(); }
+		const prevScrollTop = this._scrollTop;
+		this._clampScroll();
+		if (this._scrollTop !== prevScrollTop) { this._renderEditArea(); } else { this._renderCursor(); }
 	}
 
-	private moveCursorRight(): void {
-		const line = this.currentLine();
-		if (this.cursorCol < line.length) {
-			this.cursorCol++;
-		} else if (this.cursorRow < this.lines.length - 1) {
-			this.cursorRow++;
-			this.cursorCol = 0;
+	private _moveCursorRight(): void {
+		const line = this._currentLine();
+		if (this._cursorCol < line.length) {
+			this._cursorCol++;
+		} else if (this._cursorRow < this._lines.length - 1) {
+			this._cursorRow++;
+			this._cursorCol = 0;
 		}
-		const prevScrollTop = this.scrollTop;
-		this.clampScroll();
-		if (this.scrollTop !== prevScrollTop) { this.renderEditArea(); } else { this.renderCursor(); }
+		const prevScrollTop = this._scrollTop;
+		this._clampScroll();
+		if (this._scrollTop !== prevScrollTop) { this._renderEditArea(); } else { this._renderCursor(); }
 	}
 
-	private moveCursorHome(): void {
-		this.cursorCol = 0;
-		this.renderCursor();
+	private _moveCursorHome(): void {
+		this._cursorCol = 0;
+		this._renderCursor();
 	}
 
-	private moveCursorEnd(): void {
-		this.cursorCol = this.currentLine().length;
-		this.renderCursor();
+	private _moveCursorEnd(): void {
+		this._cursorCol = this._currentLine().length;
+		this._renderCursor();
 	}
 
-	private movePage(dir: number): void {
-		const editRows = this.editAreaRows();
-		this.cursorRow = Math.max(0, Math.min(this.lines.length - 1, this.cursorRow + dir * editRows));
-		this.cursorCol = Math.min(this.cursorCol, this.currentLine().length);
-		this.clampScroll();
-		this.renderEditArea();
+	private _movePage(dir: number): void {
+		const editRows = this._editAreaRows();
+		this._cursorRow = Math.max(0, Math.min(this._lines.length - 1, this._cursorRow + dir * editRows));
+		this._cursorCol = Math.min(this._cursorCol, this._currentLine().length);
+		this._clampScroll();
+		this._renderEditArea();
 	}
 
-	private moveWordRight(): void {
-		const line = this.currentLine();
-		let col = this.cursorCol;
+	private _moveWordRight(): void {
+		const line = this._currentLine();
+		let col = this._cursorCol;
 		// Skip current word chars
 		while (col < line.length && /\w/.test(line[col]!)) col++;
 		// Skip spaces
 		while (col < line.length && !/\w/.test(line[col]!)) col++;
-		this.cursorCol = col;
-		this.renderCursor();
+		this._cursorCol = col;
+		this._renderCursor();
 	}
 
-	private moveWordLeft(): void {
-		const line = this.currentLine();
-		let col = this.cursorCol;
+	private _moveWordLeft(): void {
+		const line = this._currentLine();
+		let col = this._cursorCol;
 		if (col > 0) col--;
 		while (col > 0 && !/\w/.test(line[col]!)) col--;
 		while (col > 0 && /\w/.test(line[col - 1]!)) col--;
-		this.cursorCol = col;
-		this.renderCursor();
+		this._cursorCol = col;
+		this._renderCursor();
 	}
 
 	// ── Edit operations ───────────────────────────────────────────────────────
 
-	private pushUndo(): void {
-		this.undoStack.push({ lines: [...this.lines], cursorRow: this.cursorRow, cursorCol: this.cursorCol });
-		if (this.undoStack.length > 200) this.undoStack.shift();
-		this.redoStack = [];
+	private _pushUndo(): void {
+		this._undoStack.push({ lines: [...this._lines], cursorRow: this._cursorRow, cursorCol: this._cursorCol });
+		if (this._undoStack.length > 200) this._undoStack.shift();
+		this._redoStack = [];
 	}
 
-	private doInsertChar(ch: string): void {
-		this.pushUndo();
-		const line = this.currentLine();
-		this.lines[this.cursorRow] = line.slice(0, this.cursorCol) + ch + line.slice(this.cursorCol);
-		this.cursorCol++;
-		this.modified = true;
-		this.renderLine(this.cursorRow);
-		this.renderCursor();
-		this.renderTitleBar();
+	private _doInsertChar(ch: string): void {
+		this._pushUndo();
+		const line = this._currentLine();
+		this._lines[this._cursorRow] = line.slice(0, this._cursorCol) + ch + line.slice(this._cursorCol);
+		this._cursorCol++;
+		this._modified = true;
+		this._renderLine(this._cursorRow);
+		this._renderCursor();
+		this._renderTitleBar();
 	}
 
-	private doEnter(): void {
-		this.pushUndo();
-		const line = this.currentLine();
-		const before = line.slice(0, this.cursorCol);
-		const after = line.slice(this.cursorCol);
-		this.lines[this.cursorRow] = before;
-		this.lines.splice(this.cursorRow + 1, 0, after);
-		this.cursorRow++;
-		this.cursorCol = 0;
-		this.modified = true;
-		this.clampScroll();
-		this.renderEditArea();
-		this.renderCursor();
-		this.renderTitleBar();
+	private _doEnter(): void {
+		this._pushUndo();
+		const line = this._currentLine();
+		const before = line.slice(0, this._cursorCol);
+		const after = line.slice(this._cursorCol);
+		this._lines[this._cursorRow] = before;
+		this._lines.splice(this._cursorRow + 1, 0, after);
+		this._cursorRow++;
+		this._cursorCol = 0;
+		this._modified = true;
+		this._clampScroll();
+		this._renderEditArea();
+		this._renderCursor();
+		this._renderTitleBar();
 	}
 
-	private doBackspace(): void {
-		if (this.cursorCol === 0 && this.cursorRow === 0) return;
-		this.pushUndo();
-		if (this.cursorCol > 0) {
-			const line = this.currentLine();
-			this.lines[this.cursorRow] = line.slice(0, this.cursorCol - 1) + line.slice(this.cursorCol);
-			this.cursorCol--;
+	private _doBackspace(): void {
+		if (this._cursorCol === 0 && this._cursorRow === 0) return;
+		this._pushUndo();
+		if (this._cursorCol > 0) {
+			const line = this._currentLine();
+			this._lines[this._cursorRow] = line.slice(0, this._cursorCol - 1) + line.slice(this._cursorCol);
+			this._cursorCol--;
 		} else {
-			const prevLine = this.lines[this.cursorRow - 1]!;
-			const curLine = this.currentLine();
-			this.cursorCol = prevLine.length;
-			this.lines[this.cursorRow - 1] = prevLine + curLine;
-			this.lines.splice(this.cursorRow, 1);
-			this.cursorRow--;
+			const prevLine = this._lines[this._cursorRow - 1]!;
+			const curLine = this._currentLine();
+			this._cursorCol = prevLine.length;
+			this._lines[this._cursorRow - 1] = prevLine + curLine;
+			this._lines.splice(this._cursorRow, 1);
+			this._cursorRow--;
 		}
-		this.modified = true;
-		this.clampScroll();
-		this.renderEditArea();
-		this.renderCursor();
-		this.renderTitleBar();
+		this._modified = true;
+		this._clampScroll();
+		this._renderEditArea();
+		this._renderCursor();
+		this._renderTitleBar();
 	}
 
-	private doDelete(): void {
-		const line = this.currentLine();
-		if (this.cursorCol === line.length && this.cursorRow === this.lines.length - 1) return;
-		this.pushUndo();
-		if (this.cursorCol < line.length) {
-			this.lines[this.cursorRow] = line.slice(0, this.cursorCol) + line.slice(this.cursorCol + 1);
+	private _doDelete(): void {
+		const line = this._currentLine();
+		if (this._cursorCol === line.length && this._cursorRow === this._lines.length - 1) return;
+		this._pushUndo();
+		if (this._cursorCol < line.length) {
+			this._lines[this._cursorRow] = line.slice(0, this._cursorCol) + line.slice(this._cursorCol + 1);
 		} else {
-			const nextLine = this.lines[this.cursorRow + 1] ?? "";
-			this.lines[this.cursorRow] = line + nextLine;
-			this.lines.splice(this.cursorRow + 1, 1);
+			const nextLine = this._lines[this._cursorRow + 1] ?? "";
+			this._lines[this._cursorRow] = line + nextLine;
+			this._lines.splice(this._cursorRow + 1, 1);
 		}
-		this.modified = true;
-		this.renderEditArea();
-		this.renderCursor();
-		this.renderTitleBar();
+		this._modified = true;
+		this._renderEditArea();
+		this._renderCursor();
+		this._renderTitleBar();
 	}
 
-	private doCutLine(): void {
-		this.pushUndo();
-		if (this.lines.length === 1 && this.lines[0] === "") return;
-		const cut = this.lines.splice(this.cursorRow, 1)[0] ?? "";
-		this.clipboard.push(cut);
-		if (this.lines.length === 0) this.lines = [""];
-		this.cursorRow = Math.min(this.cursorRow, this.lines.length - 1);
-		this.cursorCol = Math.min(this.cursorCol, this.currentLine().length);
-		this.modified = true;
-		this.clampScroll();
-		this.renderEditArea();
-		this.renderCursor();
-		this.renderTitleBar();
-		this.renderStatusLine("Cut 1 line");
+	private _doCutLine(): void {
+		this._pushUndo();
+		if (this._lines.length === 1 && this._lines[0] === "") return;
+		const cut = this._lines.splice(this._cursorRow, 1)[0] ?? "";
+		this._clipboard.push(cut);
+		if (this._lines.length === 0) this._lines = [""];
+		this._cursorRow = Math.min(this._cursorRow, this._lines.length - 1);
+		this._cursorCol = Math.min(this._cursorCol, this._currentLine().length);
+		this._modified = true;
+		this._clampScroll();
+		this._renderEditArea();
+		this._renderCursor();
+		this._renderTitleBar();
+		this._renderStatusLine("Cut 1 line");
 	}
 
-	private doUncut(): void {
-		if (this.clipboard.length === 0) return;
-		this.pushUndo();
-		const lines = [...this.clipboard];
-		this.clipboard = [];
-		this.lines.splice(this.cursorRow, 0, ...lines);
-		this.cursorRow = Math.min(this.cursorRow + lines.length - 1, this.lines.length - 1);
-		this.modified = true;
-		this.clampScroll();
-		this.renderEditArea();
-		this.renderCursor();
-		this.renderTitleBar();
-		this.renderStatusLine("Uncut 1 line");
+	private _doUncut(): void {
+		if (this._clipboard.length === 0) return;
+		this._pushUndo();
+		const lines = [...this._clipboard];
+		this._clipboard = [];
+		this._lines.splice(this._cursorRow, 0, ...lines);
+		this._cursorRow = Math.min(this._cursorRow + lines.length - 1, this._lines.length - 1);
+		this._modified = true;
+		this._clampScroll();
+		this._renderEditArea();
+		this._renderCursor();
+		this._renderTitleBar();
+		this._renderStatusLine("Uncut 1 line");
 	}
 
-	private doUndo(): void {
-		if (this.undoStack.length === 0) {
-			this.renderStatusLine("Nothing to undo");
+	private _doUndo(): void {
+		if (this._undoStack.length === 0) {
+			this._renderStatusLine("Nothing to undo");
 			return;
 		}
-		const current = { lines: [...this.lines], cursorRow: this.cursorRow, cursorCol: this.cursorCol };
-		this.redoStack.push(current);
-		const prev = this.undoStack.pop()!;
-		this.lines = prev.lines;
-		this.cursorRow = prev.cursorRow;
-		this.cursorCol = prev.cursorCol;
-		this.modified = true;
-		this.clampScroll();
+		const current = { lines: [...this._lines], cursorRow: this._cursorRow, cursorCol: this._cursorCol };
+		this._redoStack.push(current);
+		const prev = this._undoStack.pop()!;
+		this._lines = prev.lines;
+		this._cursorRow = prev.cursorRow;
+		this._cursorCol = prev.cursorCol;
+		this._modified = true;
+		this._clampScroll();
 		this.fullRedraw();
 	}
 
-	private doRedo(): void {
-		if (this.redoStack.length === 0) {
-			this.renderStatusLine("Nothing to redo");
+	private _doRedo(): void {
+		if (this._redoStack.length === 0) {
+			this._renderStatusLine("Nothing to redo");
 			return;
 		}
-		const current = { lines: [...this.lines], cursorRow: this.cursorRow, cursorCol: this.cursorCol };
-		this.undoStack.push(current);
-		const next = this.redoStack.pop()!;
-		this.lines = next.lines;
-		this.cursorRow = next.cursorRow;
-		this.cursorCol = next.cursorCol;
-		this.modified = true;
-		this.clampScroll();
+		const current = { lines: [...this._lines], cursorRow: this._cursorRow, cursorCol: this._cursorCol };
+		this._undoStack.push(current);
+		const next = this._redoStack.pop()!;
+		this._lines = next.lines;
+		this._cursorRow = next.cursorRow;
+		this._cursorCol = next.cursorCol;
+		this._modified = true;
+		this._clampScroll();
 		this.fullRedraw();
 	}
 
 	// ── Search ────────────────────────────────────────────────────────────────
 
-	private enterSearch(): void {
-		this.mode = "search";
-		this.inputBuffer = this.searchState?.query ?? "";
-		this.renderStatusBar(`Search: ${this.inputBuffer}`);
+	private _enterSearch(): void {
+		this._mode = "search";
+		this._inputBuffer = this._searchState?.query ?? "";
+		this._renderStatusBar(`Search: ${this._inputBuffer}`);
 	}
 
-	private doSearch(): void {
+	private _doSearch(): void {
 		// ^R = read file in real nano; reuse as search-next alias here
-		this.doSearchNext();
+		this._doSearchNext();
 	}
 
-	private doSearchNext(): void {
-		if (!this.searchState) {
-			this.enterSearch();
+	private _doSearchNext(): void {
+		if (!this._searchState) {
+			this._enterSearch();
 			return;
 		}
-		const { query, caseSensitive } = this.searchState;
+		const { query, caseSensitive } = this._searchState;
 		const q = caseSensitive ? query : query.toLowerCase();
 
-		let startRow = this.searchState.row;
-		let startCol = this.searchState.col;
+		let startRow = this._searchState.row;
+		let startCol = this._searchState.col;
 
 		for (let pass = 0; pass < 2; pass++) {
-			for (let r = startRow; r < this.lines.length; r++) {
-				const line = caseSensitive ? this.lines[r]! : this.lines[r]!.toLowerCase();
+			for (let r = startRow; r < this._lines.length; r++) {
+				const line = caseSensitive ? this._lines[r]! : this._lines[r]!.toLowerCase();
 				const col = line.indexOf(q, r === startRow ? startCol : 0);
 				if (col !== -1) {
-					this.cursorRow = r;
-					this.cursorCol = col;
-					this.searchState.row = r;
-					this.searchState.col = col + 1;
-					this.clampScroll();
+					this._cursorRow = r;
+					this._cursorCol = col;
+					this._searchState.row = r;
+					this._searchState.col = col + 1;
+					this._clampScroll();
 					this.fullRedraw();
-					this.renderStatusLine(`Searching for: ${query}`);
+					this._renderStatusLine(`Searching for: ${query}`);
 					return;
 				}
 			}
@@ -724,100 +724,100 @@ export class NanoEditor {
 			startCol = 0;
 		}
 
-		this.mode = "search-confirm";
-		this.renderStatusLine(`"${query}" not found`);
+		this._mode = "search-confirm";
+		this._renderStatusLine(`"${query}" not found`);
 	}
 
-	private doSearchReplace(): void {
+	private _doSearchReplace(): void {
 		// Minimal: just enter search for now
-		this.enterSearch();
+		this._enterSearch();
 	}
 
 	// ── Mark ─────────────────────────────────────────────────────────────────
 
-	private toggleMark(): void {
-		this.markActive = !this.markActive;
-		if (this.markActive) {
-			this.renderStatusLine("Mark Set");
+	private _toggleMark(): void {
+		this._markActive = !this._markActive;
+		if (this._markActive) {
+			this._renderStatusLine("Mark Set");
 		} else {
-			this.renderStatusLine("Mark Unset");
+			this._renderStatusLine("Mark Unset");
 		}
 	}
 
 	// ── Exit / Save ───────────────────────────────────────────────────────────
 
-	private doExit(): void {
-		if (this.modified) {
-			this.mode = "exit-confirm";
-			this.renderStatusBar("Save modified buffer? (Answering \"No\" will DISCARD changes.) Y N");
+	private _doExit(): void {
+		if (this._modified) {
+			this._mode = "exit-confirm";
+			this._renderStatusBar("Save modified buffer? (Answering \"No\" will DISCARD changes.) Y N");
 			return;
 		}
-		this.onExit("aborted", this.getCurrentContent());
+		this._onExit("aborted", this._getCurrentContent());
 	}
 
-	private doSave(): void {
+	private _doSave(): void {
 		// ^S: save without closing (if onSave provided), else fall back to ^O flow
-		const content = this.getCurrentContent();
-		if (this.onSave) {
-			this.modified = false;
-			this.onSave(content);
-			this.renderStatusLine(`Saved: ${this.filename}`);
-			this.renderTitleBar();
+		const content = this._getCurrentContent();
+		if (this._onSave) {
+			this._modified = false;
+			this._onSave(content);
+			this._renderStatusLine(`Saved: ${this._filename}`);
+			this._renderTitleBar();
 		} else {
 			// No silent-save callback: behave like ^O (prompt filename)
-			this.enterWriteout();
+			this._enterWriteout();
 		}
 	}
 
-	private enterWriteout(): void {
-		this.mode = "writeout";
-		this.inputBuffer = this.filename;
-		this.renderStatusBar(`File Name to Write: ${this.inputBuffer}`);
+	private _enterWriteout(): void {
+		this._mode = "writeout";
+		this._inputBuffer = this._filename;
+		this._renderStatusBar(`File Name to Write: ${this._inputBuffer}`);
 	}
 
-	private showCursorPos(): void {
-		const row = this.cursorRow + 1;
-		const col = this.cursorCol + 1;
-		const total = this.lines.length;
+	private _showCursorPos(): void {
+		const row = this._cursorRow + 1;
+		const col = this._cursorCol + 1;
+		const total = this._lines.length;
 		const pct = Math.round((row / total) * 100);
-		this.renderStatusLine(`line ${row}/${total} (${pct}%), col ${col}`);
+		this._renderStatusLine(`line ${row}/${total} (${pct}%), col ${col}`);
 	}
 
-	private enterGotoLine(): void {
-		this.mode = "goto-line";
-		this.inputBuffer = "";
-		this.renderStatusBar("Enter line number: ");
+	private _enterGotoLine(): void {
+		this._mode = "goto-line";
+		this._inputBuffer = "";
+		this._renderStatusBar("Enter line number: ");
 	}
 
-	private enterHelp(): void {
-		this.mode = "help";
-		this.renderHelp();
+	private _enterHelp(): void {
+		this._mode = "help";
+		this._renderHelp();
 	}
 
 	// ── Render ────────────────────────────────────────────────────────────────
 
-	private get cols(): number { return Math.max(1, this.terminalSize.cols); }
-	private get rows(): number { return Math.max(4, this.terminalSize.rows); }
-	private editAreaRows(): number { return this.rows - 3; } // title + 2 help rows
-	private editAreaStart(): number { return 2; } // row 1 = title, rows 2..N-2 = edit
+	private get cols(): number { return Math.max(1, this._terminalSize.cols); }
+	private get rows(): number { return Math.max(4, this._terminalSize.rows); }
+	private _editAreaRows(): number { return this.rows - 3; } // title + 2 help rows
+	private _editAreaStart(): number { return 2; } // row 1 = title, rows 2..N-2 = edit
 
-	private currentLine(): string { return this.lines[this.cursorRow] ?? ""; }
+	private _currentLine(): string { return this._lines[this._cursorRow] ?? ""; }
 
-	private clampScroll(): void {
-		const editRows = this.editAreaRows();
-		if (this.cursorRow < this.scrollTop) {
-			this.scrollTop = this.cursorRow;
-		} else if (this.cursorRow >= this.scrollTop + editRows) {
-			this.scrollTop = this.cursorRow - editRows + 1;
+	private _clampScroll(): void {
+		const editRows = this._editAreaRows();
+		if (this._cursorRow < this._scrollTop) {
+			this._scrollTop = this._cursorRow;
+		} else if (this._cursorRow >= this._scrollTop + editRows) {
+			this._scrollTop = this._cursorRow - editRows + 1;
 		}
-		this.scrollTop = Math.max(0, this.scrollTop);
+		this._scrollTop = Math.max(0, this._scrollTop);
 	}
 
-	private getCurrentContent(): string {
-		return `${this.lines.join("\n")}\n`;
+	private _getCurrentContent(): string {
+		return `${this._lines.join("\n")}\n`;
 	}
 
-	private pad(s: string, width: number): string {
+	private _pad(s: string, width: number): string {
 		if (s.length >= width) return s.slice(0, width);
 		return s + " ".repeat(width - s.length);
 	}
@@ -827,64 +827,64 @@ export class NanoEditor {
 		buf.push(ansi.cursorHide());
 		buf.push(ansi.ed());
 		buf.push(ansi.home());
-		this.buildTitleBar(buf);
-		this.buildEditArea(buf);
-		this.buildHelpBar(buf);
+		this._buildTitleBar(buf);
+		this._buildEditArea(buf);
+		this._buildHelpBar(buf);
 		buf.push(ansi.cursorShow());
-		buf.push(this.buildCursorPosition());
-		this.stream.write(buf.join(""));
+		buf.push(this._buildCursorPosition());
+		this._stream.write(buf.join(""));
 	}
 
-	private renderTitleBar(): void {
+	private _renderTitleBar(): void {
 		const buf: string[] = [];
 		buf.push(ansi.cursorHide());
 		buf.push(ansi.cup(1, 1));
-		this.buildTitleBar(buf);
+		this._buildTitleBar(buf);
 		buf.push(ansi.cursorShow());
-		buf.push(this.buildCursorPosition());
-		this.stream.write(buf.join(""));
+		buf.push(this._buildCursorPosition());
+		this._stream.write(buf.join(""));
 	}
 
-	private renderEditArea(): void {
+	private _renderEditArea(): void {
 		const buf: string[] = [];
 		buf.push(ansi.cursorHide());
-		this.buildEditArea(buf);
+		this._buildEditArea(buf);
 		buf.push(ansi.cursorShow());
-		buf.push(this.buildCursorPosition());
-		this.stream.write(buf.join(""));
+		buf.push(this._buildCursorPosition());
+		this._stream.write(buf.join(""));
 	}
 
-	private renderLine(row: number): void {
-		const screenRow = row - this.scrollTop + this.editAreaStart();
-		if (screenRow < this.editAreaStart() || screenRow >= this.editAreaStart() + this.editAreaRows()) return;
+	private _renderLine(row: number): void {
+		const screenRow = row - this._scrollTop + this._editAreaStart();
+		if (screenRow < this._editAreaStart() || screenRow >= this._editAreaStart() + this._editAreaRows()) return;
 		const buf: string[] = [];
 		buf.push(ansi.cursorHide());
 		buf.push(ansi.cup(screenRow, 1));
 		buf.push(ansi.el());
-		const line = this.lines[row] ?? "";
-		buf.push(this.renderLineText(line));
+		const line = this._lines[row] ?? "";
+		buf.push(this._renderLineText(line));
 		buf.push(ansi.cursorShow());
-		buf.push(this.buildCursorPosition());
-		this.stream.write(buf.join(""));
+		buf.push(this._buildCursorPosition());
+		this._stream.write(buf.join(""));
 	}
 
-	private renderCursor(): void {
-		this.stream.write(this.buildCursorPosition());
+	private _renderCursor(): void {
+		this._stream.write(this._buildCursorPosition());
 	}
 
-	private renderStatusLine(msg: string): void {
+	private _renderStatusLine(msg: string): void {
 		const buf: string[] = [];
 		buf.push(ansi.cursorHide());
 		// Status line is 1 row above the bottom help bar (row = rows - 1)
 		buf.push(ansi.cup(this.rows - 1, 1));
 		buf.push(ansi.el());
-		buf.push(ansi.reverse(this.pad(msg, this.cols)));
+		buf.push(ansi.reverse(this._pad(msg, this.cols)));
 		buf.push(ansi.cursorShow());
-		buf.push(this.buildCursorPosition());
-		this.stream.write(buf.join(""));
+		buf.push(this._buildCursorPosition());
+		this._stream.write(buf.join(""));
 	}
 
-	private renderStatusBar(msg: string): void {
+	private _renderStatusBar(msg: string): void {
 		// Overwrite the bottom help bar area with the prompt
 		const buf: string[] = [];
 		buf.push(ansi.cursorHide());
@@ -894,36 +894,36 @@ export class NanoEditor {
 		buf.push(ansi.cursorShow());
 		// Keep cursor in status bar
 		buf.push(ansi.cup(this.rows, Math.min(msg.length + 1, this.cols)));
-		this.stream.write(buf.join(""));
+		this._stream.write(buf.join(""));
 	}
 
-	private buildTitleBar(buf: string[]): void {
-		const modMark = this.modified ? "Modified" : "";
-		const title = ` GNU nano  ${this.filename || "New Buffer"}`;
+	private _buildTitleBar(buf: string[]): void {
+		const modMark = this._modified ? "Modified" : "";
+		const title = ` GNU nano  ${this._filename || "New Buffer"}`;
 		const right = modMark;
-		const mid = this.pad(
+		const mid = this._pad(
 			title + " ".repeat(Math.max(0, Math.floor((this.cols - title.length - right.length) / 2))),
 			this.cols - right.length,
 		);
-		const full = this.pad(mid + right, this.cols);
+		const full = this._pad(mid + right, this.cols);
 		buf.push(ansi.cup(1, 1));
 		buf.push(ansi.reverse(full));
 	}
 
-	private buildEditArea(buf: string[]): void {
-		const editRows = this.editAreaRows();
+	private _buildEditArea(buf: string[]): void {
+		const editRows = this._editAreaRows();
 		for (let r = 0; r < editRows; r++) {
-			const lineIdx = this.scrollTop + r;
-			const screenRow = this.editAreaStart() + r;
+			const lineIdx = this._scrollTop + r;
+			const screenRow = this._editAreaStart() + r;
 			buf.push(ansi.cup(screenRow, 1));
 			buf.push(ansi.el());
-			if (lineIdx < this.lines.length) {
-				buf.push(this.renderLineText(this.lines[lineIdx]!));
+			if (lineIdx < this._lines.length) {
+				buf.push(this._renderLineText(this._lines[lineIdx]!));
 			}
 		}
 	}
 
-	private renderLineText(line: string): string {
+	private _renderLineText(line: string): string {
 		// Expand tabs, truncate to cols
 		let result = "";
 		let visLen = 0;
@@ -941,7 +941,7 @@ export class NanoEditor {
 		return result;
 	}
 
-	private buildHelpBar(buf: string[]): void {
+	private _buildHelpBar(buf: string[]): void {
 		// Two rows at bottom like real nano
 		const shortcuts1 = [
 			["^G", "Help"], ["^X", "Exit"], ["^O", "WriteOut"], ["^R", "ReadFile"],
@@ -954,14 +954,14 @@ export class NanoEditor {
 
 		buf.push(ansi.cup(this.rows - 1, 1));
 		buf.push(ansi.el());
-		buf.push(this.buildShortcutRow(shortcuts1));
+		buf.push(this._buildShortcutRow(shortcuts1));
 
 		buf.push(ansi.cup(this.rows, 1));
 		buf.push(ansi.el());
-		buf.push(this.buildShortcutRow(shortcuts2));
+		buf.push(this._buildShortcutRow(shortcuts2));
 	}
 
-	private buildShortcutRow(shortcuts: string[][]): string {
+	private _buildShortcutRow(shortcuts: string[][]): string {
 		const colWidth = Math.floor(this.cols / (shortcuts.length / 2));
 		let result = "";
 		for (let i = 0; i < shortcuts.length; i += 2) {
@@ -976,27 +976,27 @@ export class NanoEditor {
 		return result;
 	}
 
-	private buildCursorPosition(): string {
+	private _buildCursorPosition(): string {
 		// Map cursorCol to screen col (account for tab expansion)
-		const line = this.currentLine();
+		const line = this._currentLine();
 		let screenCol = 0;
-		for (let i = 0; i < this.cursorCol && i < line.length; i++) {
+		for (let i = 0; i < this._cursorCol && i < line.length; i++) {
 			if (line[i] === "\t") {
 				screenCol += 8 - (screenCol % 8);
 			} else {
 				screenCol++;
 			}
 		}
-		const screenRow = this.cursorRow - this.scrollTop + this.editAreaStart();
+		const screenRow = this._cursorRow - this._scrollTop + this._editAreaStart();
 		return ansi.cup(screenRow, screenCol + 1);
 	}
 
-	private renderHelp(): void {
+	private _renderHelp(): void {
 		const buf: string[] = [];
 		buf.push(ansi.cursorHide());
 		buf.push(ansi.ed());
 		buf.push(ansi.cup(1, 1));
-		buf.push(ansi.reverse(this.pad(" GNU nano — Help", this.cols)));
+		buf.push(ansi.reverse(this._pad(" GNU nano — Help", this.cols)));
 
 		const help = [
 			"",
@@ -1023,6 +1023,6 @@ export class NanoEditor {
 		}
 
 		buf.push(ansi.cursorShow());
-		this.stream.write(buf.join(""));
+		this._stream.write(buf.join(""));
 	}
 }

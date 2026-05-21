@@ -47,9 +47,9 @@ export type IdleState = "active" | "frozen";
  * The tree is reconstructed on next activity in ~0.1 ms.
  */
 export class IdleManager extends EventEmitter {
-	private readonly vfs: VirtualFileSystem;
-	private readonly idleThresholdMs: number;
-	private readonly checkIntervalMs: number;
+	private readonly _vfs: VirtualFileSystem;
+	private readonly _idleThresholdMs: number;
+	private readonly _checkIntervalMs: number;
 
 	private _state: IdleState = "active";
 	private _lastActivity = Date.now();
@@ -68,16 +68,16 @@ export class IdleManager extends EventEmitter {
 	 */
 	constructor(vfs: VirtualFileSystem, options: IdleManagerOptions = {}) {
 		super();
-		this.vfs = vfs;
-		this.idleThresholdMs = options.idleThresholdMs ?? 60_000;
-		this.checkIntervalMs = options.checkIntervalMs ?? 15_000;
+		this._vfs = vfs;
+		this._idleThresholdMs = options.idleThresholdMs ?? 60_000;
+		this._checkIntervalMs = options.checkIntervalMs ?? 15_000;
 	}
 
 	/** Start monitoring for idle. Call once after shell initialisation. */
 	public start(): void {
 		if (this._checkTimer) return;
 		this._lastActivity = Date.now();
-		this._checkTimer = setInterval(() => this._check(), this.checkIntervalMs);
+		this._checkTimer = setInterval(() => this._check(), this._checkIntervalMs);
 		// Don't block process exit
 		if (typeof this._checkTimer === "object" && this._checkTimer !== null && "unref" in this._checkTimer) {
 			(this._checkTimer as NodeJS.Timeout).unref();
@@ -120,7 +120,7 @@ export class IdleManager extends EventEmitter {
 
 	private _check(): void {
 		if (this._state === "frozen") return; // already frozen
-		if (Date.now() - this._lastActivity >= this.idleThresholdMs) {
+		if (Date.now() - this._lastActivity >= this._idleThresholdMs) {
 			void this._freeze();
 		}
 	}
@@ -128,11 +128,11 @@ export class IdleManager extends EventEmitter {
 	private async _freeze(): Promise<void> {
 		if (this._state === "frozen") return;
 		// Flush any pending writes before freezing
-		await this.vfs.stopAutoFlush();
+		await this._vfs.stopAutoFlush();
 		// Serialise the live tree to a compact binary buffer
-		this._frozenBuffer = this.vfs.encodeBinary();
+		this._frozenBuffer = this._vfs.encodeBinary();
 		// Release the live tree — GC can now collect all InternalNode objects
-		this.vfs.releaseTree();
+		this._vfs.releaseTree();
 		this._state = "frozen";
 		this.emit("freeze");
 	}
@@ -141,7 +141,7 @@ export class IdleManager extends EventEmitter {
 		if (this._state !== "frozen" || !this._frozenBuffer) return;
 		// Reconstruct the tree from the frozen buffer (~0.07 ms — pure CPU, no I/O)
 		const root = decodeVfs(this._frozenBuffer);
-		this.vfs.importRootTree(root);
+		this._vfs.importRootTree(root);
 		this._frozenBuffer = null;
 		this._state = "active";
 		this.emit("thaw");

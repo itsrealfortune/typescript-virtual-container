@@ -627,10 +627,10 @@ const _REGISTRY_SORTED = PACKAGE_REGISTRY.slice().sort((a, b) => a.name.localeCo
  * ```
  */
 export class VirtualPackageManager {
-	private readonly installed = new Map<string, InstalledPackage>();
-	private readonly registryPath = "/var/lib/dpkg/status";
-	private readonly logPath = "/var/log/dpkg.log";
-	private readonly aptLogPath = "/var/log/apt/history.log";
+	private readonly _installed = new Map<string, InstalledPackage>();
+	private readonly _registryPath = "/var/lib/dpkg/status";
+	private readonly _logPath = "/var/log/dpkg.log";
+	private readonly _aptLogPath = "/var/log/apt/history.log";
 	private _loaded = false;
 
 	/**
@@ -638,8 +638,8 @@ export class VirtualPackageManager {
 	 * @param users User manager reference passed to `onInstall` hooks.
 	 */
 	constructor(
-		private readonly vfs: VirtualFileSystem,
-		private readonly users: VirtualUserManager,
+		private readonly _vfs: VirtualFileSystem,
+		private readonly _users: VirtualUserManager,
 	) {}
 
 	/** Ensure dpkg/status is parsed. Called lazily on first package operation. */
@@ -659,17 +659,17 @@ export class VirtualPackageManager {
 	}
 
 	private _parseStatus(): void {
-		if (!this.vfs.exists(this.registryPath)) return;
-		const status = this.vfs.readFile(this.registryPath);
+		if (!this._vfs.exists(this._registryPath)) return;
+		const status = this._vfs.readFile(this._registryPath);
 		if (!status.trim()) return;
 
 		const blocks = status.split(/\n\n+/);
 		for (const block of blocks) {
 			if (!block.trim()) continue;
-			const fields = this.parseFields(block);
+			const fields = this._parseFields(block);
 			const name = fields.Package;
 			if (!name) continue;
-			this.installed.set(name, {
+			this._installed.set(name, {
 				name,
 				version: fields.Version ?? "unknown",
 				architecture: fields.Architecture ?? "amd64",
@@ -684,9 +684,9 @@ export class VirtualPackageManager {
 	}
 
 	/** Persist installed state to /var/lib/dpkg/status. */
-	private persist(): void {
+	private _persist(): void {
 		const blocks: string[] = [];
-		for (const pkg of this.installed.values()) {
+		for (const pkg of this._installed.values()) {
 			blocks.push(
 				[
 					`Package: ${pkg.name}`,
@@ -703,10 +703,10 @@ export class VirtualPackageManager {
 				].join("\n"),
 			);
 		}
-		this.vfs.writeFile(this.registryPath, `${blocks.join("\n\n")}\n`);
+		this._vfs.writeFile(this._registryPath, `${blocks.join("\n\n")}\n`);
 	}
 
-	private parseFields(block: string): Record<string, string> {
+	private _parseFields(block: string): Record<string, string> {
 		const result: Record<string, string> = {};
 		for (const line of block.split("\n")) {
 			const idx = line.indexOf(": ");
@@ -716,19 +716,19 @@ export class VirtualPackageManager {
 		return result;
 	}
 
-	private log(msg: string): void {
+	private _log(msg: string): void {
 		const ts = new Date().toISOString().replace("T", " ").slice(0, 19);
 		const line = `${ts} ${msg}\n`;
-		const existing = this.vfs.exists(this.logPath)
-			? this.vfs.readFile(this.logPath)
+		const existing = this._vfs.exists(this._logPath)
+			? this._vfs.readFile(this._logPath)
 			: "";
-		this.vfs.writeFile(this.logPath, existing + line);
+		this._vfs.writeFile(this._logPath, existing + line);
 	}
 
-	private aptLog(action: string, pkgs: string[]): void {
+	private _aptLog(action: string, pkgs: string[]): void {
 		const ts = new Date().toISOString();
-		const existing = this.vfs.exists(this.aptLogPath)
-			? this.vfs.readFile(this.aptLogPath)
+		const existing = this._vfs.exists(this._aptLogPath)
+			? this._vfs.readFile(this._aptLogPath)
 			: "";
 		const entry = [
 			`Start-Date: ${ts}`,
@@ -737,7 +737,7 @@ export class VirtualPackageManager {
 			`End-Date: ${ts}`,
 			"",
 		].join("\n");
-		this.vfs.writeFile(this.aptLogPath, existing + entry);
+		this._vfs.writeFile(this._aptLogPath, existing + entry);
 	}
 
 	/**
@@ -766,7 +766,7 @@ export class VirtualPackageManager {
 	 */
 	public listInstalled(): InstalledPackage[] {
 		this._ensureLoaded();
-		return [...this.installed.values()].sort((a, b) =>
+		return [...this._installed.values()].sort((a, b) =>
 			a.name.localeCompare(b.name),
 		);
 	}
@@ -779,7 +779,7 @@ export class VirtualPackageManager {
 	 */
 	public isInstalled(name: string): boolean {
 		this._ensureLoaded();
-		return this.installed.has(name.toLowerCase());
+		return this._installed.has(name.toLowerCase());
 	}
 
 	/**
@@ -790,7 +790,7 @@ export class VirtualPackageManager {
 	 */
 	public installedCount(): number {
 		this._ensureLoaded();
-		return this.installed.size;
+		return this._installed.size;
 	}
 
 	/**
@@ -884,19 +884,19 @@ export class VirtualPackageManager {
 			// Write files
 			for (const f of def.files ?? []) {
 				const dir = f.path.slice(0, f.path.lastIndexOf("/"));
-				if (dir && !this.vfs.exists(dir)) this.vfs.mkdir(dir, 0o755);
-				this.vfs.writeFile(f.path, f.content, { mode: f.mode ?? 0o644 });
+				if (dir && !this._vfs.exists(dir)) this._vfs.mkdir(dir, 0o755);
+				this._vfs.writeFile(f.path, f.content, { mode: f.mode ?? 0o644 });
 			}
 
 			// Run install hook
-			def.onInstall?.(this.vfs, this.users);
+			def.onInstall?.(this._vfs, this._users);
 
 			if (!opts.quiet) {
 				lines.push(`Setting up ${def.name} (${def.version}) ...`);
 			}
 
 			const now = new Date().toISOString();
-			this.installed.set(def.name, {
+			this._installed.set(def.name, {
 				name: def.name,
 				version: def.version,
 				architecture: def.architecture ?? "amd64",
@@ -908,14 +908,14 @@ export class VirtualPackageManager {
 				files: (def.files ?? []).map((f) => f.path),
 			});
 
-			this.log(`install ${def.name} ${def.version}`);
+			this._log(`install ${def.name} ${def.version}`);
 		}
 
-		this.aptLog(
+		this._aptLog(
 			"install",
 			toInstall.map((p) => p.name),
 		);
-		this.persist();
+		this._persist();
 
 		if (!opts.quiet) {
 			lines.push(`Processing triggers for man-db (2.11.2-2) ...`);
@@ -946,7 +946,7 @@ export class VirtualPackageManager {
 		const toRemove: InstalledPackage[] = [];
 
 		for (const name of names) {
-			const pkg = this.installed.get(name.toLowerCase());
+			const pkg = this._installed.get(name.toLowerCase());
 			if (!pkg) {
 				lines.push(`Package '${name}' is not installed, so not removed`);
 			} else {
@@ -980,23 +980,23 @@ export class VirtualPackageManager {
 					continue; // keep config unless --purge
 				}
 				try {
-					if (this.vfs.exists(filePath)) this.vfs.remove(filePath);
+					if (this._vfs.exists(filePath)) this._vfs.remove(filePath);
 				} catch { /* best-effort cleanup */ }
 			}
 
 			// Run remove hook
 			const def = this.findInRegistry(pkg.name);
-			def?.onRemove?.(this.vfs);
+			def?.onRemove?.(this._vfs);
 
-			this.installed.delete(pkg.name);
-			this.log(`remove ${pkg.name} ${pkg.version}`);
+			this._installed.delete(pkg.name);
+			this._log(`remove ${pkg.name} ${pkg.version}`);
 		}
 
-		this.aptLog(
+		this._aptLog(
 			"remove",
 			toRemove.map((p) => p.name),
 		);
-		this.persist();
+		this._persist();
 
 		return { output: lines.join("\n"), exitCode: 0 };
 	}
@@ -1029,7 +1029,7 @@ export class VirtualPackageManager {
 		this._ensureLoaded();
 		const def = this.findInRegistry(name);
 		if (!def) return null;
-		const inst = this.installed.get(name);
+		const inst = this._installed.get(name);
 		return [
 			`Package: ${def.name}`,
 			`Version: ${def.version}`,

@@ -4,7 +4,7 @@ export { randomMac } from "./types";
 export type { FirewallRule, VirtualArpEntry, VirtualInterface, VirtualRoute } from "./types";
 
 export class VirtualNetworkManager {
-	private interfaces: VirtualInterface[] = [
+	private _interfaces: VirtualInterface[] = [
 		{
 			name: "lo",
 			type: "loopback",
@@ -27,7 +27,7 @@ export class VirtualNetworkManager {
 		},
 	];
 
-	private routes: VirtualRoute[] = [
+	private _routes: VirtualRoute[] = [
 		{ destination: "default", gateway: "10.0.0.1", netmask: "0.0.0.0", device: "eth0", flags: "UG" },
 		{ destination: "10.0.0.0", gateway: "0.0.0.0", netmask: "255.255.255.0", device: "eth0", flags: "U" },
 		{ destination: "127.0.0.0", gateway: "0.0.0.0", netmask: "255.0.0.0", device: "lo", flags: "U" },
@@ -37,20 +37,20 @@ export class VirtualNetworkManager {
 		{ ip: "10.0.0.1", mac: "02:42:0a:00:00:01", device: "eth0", state: "REACHABLE" },
 	];
 
-	private firewallRules: FirewallRule[] = [];
+	private _firewallRules: FirewallRule[] = [];
 
-	private policies: Record<string, "ACCEPT" | "DROP"> = {
+	private _policies: Record<string, "ACCEPT" | "DROP"> = {
 		INPUT: "ACCEPT",
 		OUTPUT: "ACCEPT",
 		FORWARD: "ACCEPT",
 	};
 
 	public getInterfaces(): VirtualInterface[] {
-		return [...this.interfaces];
+		return [...this._interfaces];
 	}
 
 	public getRoutes(): VirtualRoute[] {
-		return [...this.routes];
+		return [...this._routes];
 	}
 
 	public getArpCache(): VirtualArpEntry[] {
@@ -58,25 +58,25 @@ export class VirtualNetworkManager {
 	}
 
 	public addRoute(dest: string, gateway: string, netmask: string, device: string): void {
-		this.routes.push({ destination: dest, gateway, netmask, device, flags: "UG" });
+		this._routes.push({ destination: dest, gateway, netmask, device, flags: "UG" });
 	}
 
 	public delRoute(dest: string): boolean {
-		const idx = this.routes.findIndex((r) => r.destination === dest);
+		const idx = this._routes.findIndex((r) => r.destination === dest);
 		if (idx === -1) return false;
-		this.routes.splice(idx, 1);
+		this._routes.splice(idx, 1);
 		return true;
 	}
 
 	public setInterfaceState(name: string, state: "UP" | "DOWN"): boolean {
-		const iface = this.interfaces.find((i) => i.name === name);
+		const iface = this._interfaces.find((i) => i.name === name);
 		if (!iface) return false;
 		iface.state = state;
 		return true;
 	}
 
 	public setInterfaceIp(name: string, ipv4: string, mask: number): boolean {
-		const iface = this.interfaces.find((i) => i.name === name);
+		const iface = this._interfaces.find((i) => i.name === name);
 		if (!iface) return false;
 		iface.ipv4 = ipv4;
 		iface.ipv4Mask = mask;
@@ -98,7 +98,7 @@ export class VirtualNetworkManager {
 	public formatIpAddr(): string {
 		const lines: string[] = [];
 		let idx = 1;
-		for (const iface of this.interfaces) {
+		for (const iface of this._interfaces) {
 			const flags = iface.state === "UP"
 				? (iface.type === "loopback" ? "LOOPBACK,UP,LOWER_UP" : "BROADCAST,MULTICAST,UP,LOWER_UP")
 				: "DOWN";
@@ -114,7 +114,7 @@ export class VirtualNetworkManager {
 	}
 
 	public formatIpRoute(): string {
-		return this.routes.map((r) => {
+		return this._routes.map((r) => {
 			if (r.destination === "default") {
 				return `default via ${r.gateway} dev ${r.device}`;
 			}
@@ -125,7 +125,7 @@ export class VirtualNetworkManager {
 	public formatIpLink(): string {
 		const lines: string[] = [];
 		let idx = 1;
-		for (const iface of this.interfaces) {
+		for (const iface of this._interfaces) {
 			const flags = iface.state === "UP"
 				? (iface.type === "loopback" ? "LOOPBACK,UP,LOWER_UP" : "BROADCAST,MULTICAST,UP,LOWER_UP")
 				: "DOWN";
@@ -147,32 +147,32 @@ export class VirtualNetworkManager {
 	}
 
 	private _ipForDevice(device: string): string {
-		return this.interfaces.find((i) => i.name === device)?.ipv4 ?? "0.0.0.0";
+		return this._interfaces.find((i) => i.name === device)?.ipv4 ?? "0.0.0.0";
 	}
 
 	public addFirewallRule(rule: FirewallRule): number {
-		this.firewallRules.push(rule);
-		return this.firewallRules.length - 1;
+		this._firewallRules.push(rule);
+		return this._firewallRules.length - 1;
 	}
 
 	public removeFirewallRule(index: number): boolean {
-		if (index < 0 || index >= this.firewallRules.length) return false;
-		this.firewallRules.splice(index, 1);
+		if (index < 0 || index >= this._firewallRules.length) return false;
+		this._firewallRules.splice(index, 1);
 		return true;
 	}
 
 	public getFirewallRules(): FirewallRule[] {
-		return [...this.firewallRules];
+		return [...this._firewallRules];
 	}
 
 	public setPolicy(chain: string, policy: "ACCEPT" | "DROP"): boolean {
-		if (!(chain in this.policies)) return false;
-		this.policies[chain] = policy;
+		if (!(chain in this._policies)) return false;
+		this._policies[chain] = policy;
 		return true;
 	}
 
 	public getPolicy(chain: string): "ACCEPT" | "DROP" {
-		return this.policies[chain] ?? "ACCEPT";
+		return this._policies[chain] ?? "ACCEPT";
 	}
 
 	public checkFirewall(
@@ -182,7 +182,7 @@ export class VirtualNetworkManager {
 		destination?: string,
 		destPort?: number,
 	): "ACCEPT" | "DROP" | "REJECT" {
-		for (const rule of this.firewallRules) {
+		for (const rule of this._firewallRules) {
 			if (rule.chain !== chain) continue;
 			if (rule.protocol !== "all" && rule.protocol !== protocol) continue;
 			if (rule.source && source && rule.source !== source) continue;
@@ -190,19 +190,19 @@ export class VirtualNetworkManager {
 			if (rule.destPort && destPort && rule.destPort !== destPort) continue;
 			return rule.action;
 		}
-		return this.policies[chain] ?? "ACCEPT";
+		return this._policies[chain] ?? "ACCEPT";
 	}
 
 	public flushFirewall(): void {
-		this.firewallRules = [];
+		this._firewallRules = [];
 	}
 
 	public formatFirewall(): string {
 		const lines: string[] = [];
 		for (const chain of ["INPUT", "FORWARD", "OUTPUT"] as const) {
-			lines.push(`Chain ${chain} (policy ${this.policies[chain]})`);
+			lines.push(`Chain ${chain} (policy ${this._policies[chain]})`);
 			lines.push("target     prot opt source               destination");
-			for (const rule of this.firewallRules) {
+			for (const rule of this._firewallRules) {
 				if (rule.chain !== chain) continue;
 				const target = rule.action.padEnd(10);
 				const prot = rule.protocol.padEnd(6);

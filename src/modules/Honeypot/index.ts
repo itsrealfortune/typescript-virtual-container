@@ -78,8 +78,8 @@ const perf: PerfLogger = createPerfLogger("HoneyPot");
  * ```
  */
 export class HoneyPot {
-	private auditLog: AuditLogEntry[] = [];
-	private stats: HoneyPotStats = {
+	private _auditLog: AuditLogEntry[] = [];
+	private _stats: HoneyPotStats = {
 		authAttempts: 0,
 		authSuccesses: 0,
 		authFailures: 0,
@@ -105,7 +105,7 @@ export class HoneyPot {
 		authLockouts: 0,
 	};
 
-	private maxLogSize: number;
+	private _maxLogSize: number;
 	/** Reference kept so VFS events can ping the shell's idle manager. */
 	private _shell: VirtualShell | null = null;
 
@@ -116,7 +116,7 @@ export class HoneyPot {
 	 */
 	constructor(maxLogSize: number = 10000) {
 		perf.mark("constructor");
-		this.maxLogSize = maxLogSize;
+		this._maxLogSize = maxLogSize;
 	}
 
 	/**
@@ -137,243 +137,243 @@ export class HoneyPot {
 	): void {
 		perf.mark("attach");
 		this._shell = shell;
-		this.attachVirtualShell(shell);
-		this.attachVirtualFileSystem(vfs);
-		this.attachVirtualUserManager(users);
+		this._attachVirtualShell(shell);
+		this._attachVirtualFileSystem(vfs);
+		this._attachVirtualUserManager(users);
 		if (ssh) {
-			this.attachSshMimic(ssh);
+			this._attachSshMimic(ssh);
 		}
 		if (sftp) {
-			this.attachSftpMimic(sftp);
+			this._attachSftpMimic(sftp);
 		}
 	}
 
 	/** Attaches to VirtualShell events (commands, sessions, freeze/thaw). */
-	private attachVirtualShell(shell: VirtualShell): void {
+	private _attachVirtualShell(shell: VirtualShell): void {
 		(shell as EventEmitter).on("initialized", () => {
-			this.log("VirtualShell", "initialized", {});
+			this._log("VirtualShell", "initialized", {});
 		});
 
 		(shell as EventEmitter).on("command", (data: Record<string, unknown>) => {
-			this.stats.commands++;
-			this.log("VirtualShell", "command", data);
+			this._stats.commands++;
+			this._log("VirtualShell", "command", data);
 		});
 
 		(shell as EventEmitter).on(
 			"session:start",
 			(data: Record<string, unknown>) => {
-				this.stats.sessionStarts++;
-				this.log("VirtualShell", "session:start", data);
+				this._stats.sessionStarts++;
+				this._log("VirtualShell", "session:start", data);
 			},
 		);
 
 		(shell as EventEmitter).on("shell:freeze", () => {
-			this.stats.shellFreezes++;
-			this.log("VirtualShell", "shell:freeze", {});
+			this._stats.shellFreezes++;
+			this._log("VirtualShell", "shell:freeze", {});
 		});
 
 		(shell as EventEmitter).on("shell:thaw", () => {
-			this.stats.shellThaws++;
-			this.log("VirtualShell", "shell:thaw", {});
+			this._stats.shellThaws++;
+			this._log("VirtualShell", "shell:thaw", {});
 		});
 	}
 
 	/** Attaches to VirtualFileSystem events (reads, writes, mounts, snapshots). */
-	private attachVirtualFileSystem(vfs: VirtualFileSystem): void {
+	private _attachVirtualFileSystem(vfs: VirtualFileSystem): void {
 		(vfs as EventEmitter).on("file:read", (data: Record<string, unknown>) => {
-			this.stats.fileReads++;
+			this._stats.fileReads++;
 			this._shell?.pingIdle();
-			this.log("VirtualFileSystem", "file:read", data);
+			this._log("VirtualFileSystem", "file:read", data);
 		});
 
 		(vfs as EventEmitter).on("file:write", (data: Record<string, unknown>) => {
-			this.stats.fileWrites++;
+			this._stats.fileWrites++;
 			this._shell?.pingIdle();
-			this.log("VirtualFileSystem", "file:write", data);
+			this._log("VirtualFileSystem", "file:write", data);
 		});
 
 		(vfs as EventEmitter).on("dir:create", (data: Record<string, unknown>) => {
 			this._shell?.pingIdle();
-			this.log("VirtualFileSystem", "dir:create", data);
+			this._log("VirtualFileSystem", "dir:create", data);
 		});
 
 		(vfs as EventEmitter).on("mirror:flush", () => {
-			this.log("VirtualFileSystem", "mirror:flush", {});
+			this._log("VirtualFileSystem", "mirror:flush", {});
 		});
 
 		(vfs as EventEmitter).on("snapshot:restore", (data: Record<string, unknown>) => {
-			this.stats.snapshotsRestored++;
-			this.log("VirtualFileSystem", "snapshot:restore", data);
+			this._stats.snapshotsRestored++;
+			this._log("VirtualFileSystem", "snapshot:restore", data);
 		});
 
 		(vfs as EventEmitter).on("snapshot:import", (data: Record<string, unknown>) => {
-			this.stats.snapshotsImported++;
-			this.log("VirtualFileSystem", "snapshot:import", data);
+			this._stats.snapshotsImported++;
+			this._log("VirtualFileSystem", "snapshot:import", data);
 		});
 
 		(vfs as EventEmitter).on("mount", (data: Record<string, unknown>) => {
-			this.stats.mounts++;
+			this._stats.mounts++;
 			this._shell?.pingIdle();
-			this.log("VirtualFileSystem", "mount", data);
+			this._log("VirtualFileSystem", "mount", data);
 		});
 
 		(vfs as EventEmitter).on("unmount", (data: Record<string, unknown>) => {
-			this.stats.unmounts++;
-			this.log("VirtualFileSystem", "unmount", data);
+			this._stats.unmounts++;
+			this._log("VirtualFileSystem", "unmount", data);
 		});
 
 		(vfs as EventEmitter).on("symlink:create", (data: Record<string, unknown>) => {
-			this.stats.symlinksCreated++;
+			this._stats.symlinksCreated++;
 			this._shell?.pingIdle();
-			this.log("VirtualFileSystem", "symlink:create", data);
+			this._log("VirtualFileSystem", "symlink:create", data);
 		});
 
 		(vfs as EventEmitter).on("node:remove", (data: Record<string, unknown>) => {
-			this.stats.nodesRemoved++;
+			this._stats.nodesRemoved++;
 			this._shell?.pingIdle();
-			this.log("VirtualFileSystem", "node:remove", data);
+			this._log("VirtualFileSystem", "node:remove", data);
 		});
 	}
 
 	/** Attaches to VirtualUserManager events (users, sessions, keys). */
-	private attachVirtualUserManager(users: VirtualUserManager): void {
+	private _attachVirtualUserManager(users: VirtualUserManager): void {
 		(users as EventEmitter).on("initialized", () => {
-			this.log("VirtualUserManager", "initialized", {});
+			this._log("VirtualUserManager", "initialized", {});
 		});
 
 		(users as EventEmitter).on("user:add", (data: Record<string, unknown>) => {
-			this.stats.userCreated++;
-			this.log("VirtualUserManager", "user:add", data);
+			this._stats.userCreated++;
+			this._log("VirtualUserManager", "user:add", data);
 		});
 
 		(users as EventEmitter).on(
 			"user:delete",
 			(data: Record<string, unknown>) => {
-				this.stats.userDeleted++;
-				this.log("VirtualUserManager", "user:delete", data);
+				this._stats.userDeleted++;
+				this._log("VirtualUserManager", "user:delete", data);
 			},
 		);
 
 		(users as EventEmitter).on(
 			"session:register",
 			(data: Record<string, unknown>) => {
-				this.log("VirtualUserManager", "session:register", data);
+				this._log("VirtualUserManager", "session:register", data);
 			},
 		);
 
 		(users as EventEmitter).on(
 			"session:unregister",
 			(data: Record<string, unknown>) => {
-				this.stats.sessionEnds++;
-				this.log("VirtualUserManager", "session:unregister", data);
+				this._stats.sessionEnds++;
+				this._log("VirtualUserManager", "session:unregister", data);
 			},
 		);
 
 		(users as EventEmitter).on(
 			"key:add",
 			(data: Record<string, unknown>) => {
-				this.stats.keysAdded++;
-				this.log("VirtualUserManager", "key:add", data);
+				this._stats.keysAdded++;
+				this._log("VirtualUserManager", "key:add", data);
 			},
 		);
 
 		(users as EventEmitter).on(
 			"key:remove",
 			(data: Record<string, unknown>) => {
-				this.stats.keysRemoved++;
-				this.log("VirtualUserManager", "key:remove", data);
+				this._stats.keysRemoved++;
+				this._log("VirtualUserManager", "key:remove", data);
 			},
 		);
 	}
 
 	/** Attaches to SshMimic events (auth attempts, connections). */
-	private attachSshMimic(ssh: SshMimic): void {
+	private _attachSshMimic(ssh: SshMimic): void {
 		(ssh as EventEmitter).on("start", (data: Record<string, unknown>) => {
-			this.log("SshMimic", "start", data);
+			this._log("SshMimic", "start", data);
 		});
 
 		(ssh as EventEmitter).on("stop", () => {
-			this.log("SshMimic", "stop", {});
+			this._log("SshMimic", "stop", {});
 		});
 
 		(ssh as EventEmitter).on(
 			"auth:success",
 			(data: Record<string, unknown>) => {
-				this.stats.authAttempts++;
-				this.stats.authSuccesses++;
-				this.log("SshMimic", "auth:success", data);
+				this._stats.authAttempts++;
+				this._stats.authSuccesses++;
+				this._log("SshMimic", "auth:success", data);
 			},
 		);
 
 		(ssh as EventEmitter).on(
 			"auth:failure",
 			(data: Record<string, unknown>) => {
-				this.stats.authAttempts++;
-				this.stats.authFailures++;
-				this.log("SshMimic", "auth:failure", data);
+				this._stats.authAttempts++;
+				this._stats.authFailures++;
+				this._log("SshMimic", "auth:failure", data);
 			},
 		);
 
 		(ssh as EventEmitter).on(
 			"auth:lockout",
 			(data: Record<string, unknown>) => {
-				this.stats.authLockouts++;
-				this.log("SshMimic", "auth:lockout", data);
+				this._stats.authLockouts++;
+				this._log("SshMimic", "auth:lockout", data);
 			},
 		);
 
 		(ssh as EventEmitter).on("client:connect", () => {
-			this.stats.clientConnects++;
-			this.log("SshMimic", "client:connect", {});
+			this._stats.clientConnects++;
+			this._log("SshMimic", "client:connect", {});
 		});
 
 		(ssh as EventEmitter).on(
 			"client:disconnect",
 			(data: Record<string, unknown>) => {
-				this.stats.clientDisconnects++;
-				this.log("SshMimic", "client:disconnect", data);
+				this._stats.clientDisconnects++;
+				this._log("SshMimic", "client:disconnect", data);
 			},
 		);
 	}
 
 	/** Attaches to SftpMimic events (auth, connections). */
-	private attachSftpMimic(sftp: SftpMimic): void {
+	private _attachSftpMimic(sftp: SftpMimic): void {
 		(sftp as EventEmitter).on("start", (data: Record<string, unknown>) => {
-			this.log("SftpMimic", "start", data);
+			this._log("SftpMimic", "start", data);
 		});
 
 		(sftp as EventEmitter).on("stop", () => {
-			this.log("SftpMimic", "stop", {});
+			this._log("SftpMimic", "stop", {});
 		});
 
 		(sftp as EventEmitter).on(
 			"auth:success",
 			(data: Record<string, unknown>) => {
-				this.stats.authAttempts++;
-				this.stats.authSuccesses++;
-				this.log("SftpMimic", "auth:success", data);
+				this._stats.authAttempts++;
+				this._stats.authSuccesses++;
+				this._log("SftpMimic", "auth:success", data);
 			},
 		);
 
 		(sftp as EventEmitter).on(
 			"auth:failure",
 			(data: Record<string, unknown>) => {
-				this.stats.authAttempts++;
-				this.stats.authFailures++;
-				this.log("SftpMimic", "auth:failure", data);
+				this._stats.authAttempts++;
+				this._stats.authFailures++;
+				this._log("SftpMimic", "auth:failure", data);
 			},
 		);
 
 		(sftp as EventEmitter).on("client:connect", () => {
-			this.stats.clientConnects++;
-			this.log("SftpMimic", "client:connect", {});
+			this._stats.clientConnects++;
+			this._log("SftpMimic", "client:connect", {});
 		});
 
 		(sftp as EventEmitter).on(
 			"client:disconnect",
 			(data: Record<string, unknown>) => {
-				this.stats.clientDisconnects++;
-				this.log("SftpMimic", "client:disconnect", data);
+				this._stats.clientDisconnects++;
+				this._log("SftpMimic", "client:disconnect", data);
 			},
 		);
 	}
@@ -386,7 +386,7 @@ export class HoneyPot {
 	 * @param type Event type identifier.
 	 * @param details Event-specific data to record.
 	 */
-	private log(
+	private _log(
 		source: string,
 		type: string,
 		details: Record<string, unknown>,
@@ -398,11 +398,11 @@ export class HoneyPot {
 			details,
 		};
 
-		this.auditLog.push(entry);
+		this._auditLog.push(entry);
 
 		// Trim log if exceeds max size
-		if (this.auditLog.length > this.maxLogSize) {
-			this.auditLog = this.auditLog.slice(-this.maxLogSize);
+		if (this._auditLog.length > this._maxLogSize) {
+			this._auditLog = this._auditLog.slice(-this._maxLogSize);
 		}
 
 		// Console output for real-time monitoring
@@ -418,7 +418,7 @@ export class HoneyPot {
 	 */
 	public getAuditLog(type?: string, source?: string): AuditLogEntry[] {
 		perf.mark("getAuditLog");
-		return this.auditLog.filter(
+		return this._auditLog.filter(
 			(entry) =>
 				(!type || entry.type === type) && (!source || entry.source === source),
 		);
@@ -431,7 +431,7 @@ export class HoneyPot {
 	 */
 	public getStats(): Readonly<HoneyPotStats> {
 		perf.mark("getStats");
-		return Object.freeze({ ...this.stats });
+		return Object.freeze({ ...this._stats });
 	}
 
 	/**
@@ -439,8 +439,8 @@ export class HoneyPot {
 	 */
 	public reset(): void {
 		perf.mark("reset");
-		this.auditLog = [];
-		this.stats = {
+		this._auditLog = [];
+		this._stats = {
 			authAttempts: 0,
 			authSuccesses: 0,
 			authFailures: 0,
@@ -475,7 +475,7 @@ export class HoneyPot {
 	 */
 	public getRecent(limit: number = 100): AuditLogEntry[] {
 		perf.mark("getRecent");
-		return this.auditLog.slice(Math.max(0, this.auditLog.length - limit));
+		return this._auditLog.slice(Math.max(0, this._auditLog.length - limit));
 	}
 
 	/**
@@ -497,42 +497,42 @@ export class HoneyPot {
 
 		// High auth failure rate
 		if (
-			this.stats.authAttempts > 0 &&
-			this.stats.authFailures / this.stats.authAttempts > 0.5
+			this._stats.authAttempts > 0 &&
+			this._stats.authFailures / this._stats.authAttempts > 0.5
 		) {
 			anomalies.push({
 				type: "high_auth_failure_rate",
 				severity: "medium",
 				message: `Auth failure rate: ${(
-					(this.stats.authFailures / this.stats.authAttempts) * 100
+					(this._stats.authFailures / this._stats.authAttempts) * 100
 				).toFixed(1)}%`,
 			});
 		}
 
 		// Excessive auth failures in short time
-		if (this.stats.authFailures > 10) {
+		if (this._stats.authFailures > 10) {
 			anomalies.push({
 				type: "excessive_auth_failures",
 				severity: "high",
-				message: `${this.stats.authFailures} authentication failures detected`,
+				message: `${this._stats.authFailures} authentication failures detected`,
 			});
 		}
 
 		// Unusual command execution volume
-		if (this.stats.commands > 1000) {
+		if (this._stats.commands > 1000) {
 			anomalies.push({
 				type: "high_command_volume",
 				severity: "low",
-				message: `${this.stats.commands} commands executed`,
+				message: `${this._stats.commands} commands executed`,
 			});
 		}
 
 		// Unusual file write volume
-		if (this.stats.fileWrites > 500) {
+		if (this._stats.fileWrites > 500) {
 			anomalies.push({
 				type: "high_write_volume",
 				severity: "medium",
-				message: `${this.stats.fileWrites} file write operations`,
+				message: `${this._stats.fileWrites} file write operations`,
 			});
 		}
 

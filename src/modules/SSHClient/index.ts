@@ -42,7 +42,7 @@ const perf: PerfLogger = createPerfLogger("SshClient");
  * @see {@link VirtualSshServer}
  */
 export class SshClient {
-	private currentCwd = "/";
+	private _currentCwd = "/";
 
 	/**
 	 * Creates a programmatic client bound to a virtual shell and user.
@@ -51,8 +51,8 @@ export class SshClient {
 	 * @param username Login user for all commands.
 	 */
 	constructor(
-		private shell: VirtualShell,
-		private username: string,
+		private _shell: VirtualShell,
+		private _username: string,
 	) {
 		perf.mark("constructor");
 	}
@@ -65,9 +65,9 @@ export class SshClient {
 	 */
 	async exec(command: string): Promise<CommandResult> {
 		perf.mark("exec");
-		const vfs = this.shell.getVfs();
-		const users = this.shell.getUsers();
-		const hostname = this.shell.getHostname();
+		const vfs = this._shell.getVfs();
+		const users = this._shell.getUsers();
+		const hostname = this._shell.getHostname();
 
 		if (!vfs || !users) {
 			throw new Error("SSH client not started");
@@ -75,11 +75,11 @@ export class SshClient {
 
 		const result = runCommand(
 			command,
-			this.username,
+			this._username,
 			hostname,
 			"exec",
-			this.currentCwd,
-			this.shell,
+			this._currentCwd,
+			this._shell,
 		);
 
 		// Handle async results
@@ -87,7 +87,7 @@ export class SshClient {
 
 		// Propagate cwd changes (cd, su, etc.)
 		if (resolved.nextCwd && (resolved.exitCode ?? 0) === 0) {
-			this.currentCwd = resolved.nextCwd;
+			this._currentCwd = resolved.nextCwd;
 		}
 
 		return resolved;
@@ -125,7 +125,7 @@ export class SshClient {
 		perf.mark("cd");
 		const result = await this.exec(`cd ${path}`);
 		if (result.nextCwd && result.exitCode !== 1) {
-			this.currentCwd = result.nextCwd;
+			this._currentCwd = result.nextCwd;
 		}
 		return result;
 	}
@@ -187,15 +187,15 @@ export class SshClient {
 	 */
 	async writeFile(path: string, content: string): Promise<CommandResult> {
 		perf.mark("writeFile");
-		const vfs = this.shell.getVfs();
-		const users = this.shell.getUsers();
+		const vfs = this._shell.getVfs();
+		const users = this._shell.getUsers();
 
 		if (!vfs || !users) {
 			throw new Error("SSH client not started");
 		}
 
-		const uid = users.getUid(this.username);
-		const gid = users.getGid(this.username);
+		const uid = users.getUid(this._username);
+		const gid = users.getGid(this._username);
 		try {
 			vfs.writeFile(path, content, {}, uid, gid);
 			return { stdout: `File '${path}' written`, exitCode: 0 };
@@ -215,7 +215,7 @@ export class SshClient {
 	 */
 	async readFile(path: string): Promise<CommandResult> {
 		perf.mark("readFile");
-		const vfs = this.shell.getVfs();
+		const vfs = this._shell.getVfs();
 		if (!vfs) {
 			throw new Error("SSH client not started");
 		}
@@ -238,7 +238,7 @@ export class SshClient {
 	 */
 	getCwd(): string {
 		perf.mark("getCwd");
-		return this.currentCwd;
+		return this._currentCwd;
 	}
 
 	/**
@@ -248,7 +248,7 @@ export class SshClient {
 	 */
 	getUsername(): string {
 		perf.mark("getUsername");
-		return this.username;
+		return this._username;
 	}
 
 	/**
