@@ -78,7 +78,7 @@
 
 ## Prioty
 
-- [ ] Remove all non null assertions (`!`) from the codebase — ensure proper null checks and type guards instead
+- [x] Remove all non null assertions (`!`) from the codebase — ensure proper null checks and type guards instead
 - [ ] Remove all biome and ts-ignore comments — fix underlying issues instead of silencing them
 - [ ] Add a RAM and CPU capping
 - [ ] Add a garbage collector to free up memory from deleted files, closed windows, and terminated processes, but also from closed files that are not required to be kept in memory (e.g. large files that have been closed) [refers to IdleManager]
