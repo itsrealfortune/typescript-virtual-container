@@ -90,6 +90,7 @@
 - [ ] Add a more realistic network stack that simulates latency, bandwidth limits, and packet loss, and allows for more complex network configurations (e.g. multiple interfaces, routing tables, firewall rules)
 - [ ] Add a more realistic user management system that supports user groups, permissions, and authentication mechanisms (e.g. password hashing, PAM)
 - [ ] WebSocket-based remote shell client (experimental)
+- [ ] Resolve dependabots alerts and update dependencies to address security vulnerabilities (e.g. serialize-javascript, fflate)
 
 ## Remaining / Future
 
