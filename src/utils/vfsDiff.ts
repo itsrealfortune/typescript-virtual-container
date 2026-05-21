@@ -26,9 +26,9 @@
 
 import type {
 	VfsSnapshot,
-	VfsSnapshotNode,
-	VfsSnapshotFileNode,
 	VfsSnapshotDirectoryNode,
+	VfsSnapshotFileNode,
+	VfsSnapshotNode,
 } from "../types/vfs";
 
 // ─── types ────────────────────────────────────────────────────────────────────

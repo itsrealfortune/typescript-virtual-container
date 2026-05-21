@@ -6,7 +6,7 @@
 
 # Interface: InstalledPackage
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:58](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L58)
+Defined in: [src/modules/VirtualPackageManager/index.ts:74](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L74)
 
 Runtime record of an installed package, persisted to `/var/lib/dpkg/status`.
 
@@ -16,7 +16,7 @@ Runtime record of an installed package, persisted to `/var/lib/dpkg/status`.
 
 > **architecture**: `string`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:64](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L64)
+Defined in: [src/modules/VirtualPackageManager/index.ts:80](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L80)
 
 CPU architecture.
 
@@ -26,7 +26,7 @@ CPU architecture.
 
 > **description**: `string`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:68](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L68)
+Defined in: [src/modules/VirtualPackageManager/index.ts:84](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L84)
 
 Full description.
 
@@ -36,7 +36,7 @@ Full description.
 
 > **files**: `string`[]
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:76](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L76)
+Defined in: [src/modules/VirtualPackageManager/index.ts:92](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L92)
 
 Absolute VFS paths written by this package (used by `dpkg -L`).
 
@@ -46,7 +46,7 @@ Absolute VFS paths written by this package (used by `dpkg -L`).
 
 > **installedAt**: `string`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:74](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L74)
+Defined in: [src/modules/VirtualPackageManager/index.ts:90](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L90)
 
 ISO-8601 timestamp of when the package was installed.
 
@@ -56,7 +56,7 @@ ISO-8601 timestamp of when the package was installed.
 
 > **installedSizeKb**: `number`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:72](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L72)
+Defined in: [src/modules/VirtualPackageManager/index.ts:88](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L88)
 
 Installed disk usage in kilobytes.
 
@@ -66,7 +66,7 @@ Installed disk usage in kilobytes.
 
 > **maintainer**: `string`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:66](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L66)
+Defined in: [src/modules/VirtualPackageManager/index.ts:82](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L82)
 
 Maintainer display string.
 
@@ -76,7 +76,7 @@ Maintainer display string.
 
 > **name**: `string`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:60](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L60)
+Defined in: [src/modules/VirtualPackageManager/index.ts:76](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L76)
 
 Package name.
 
@@ -86,7 +86,7 @@ Package name.
 
 > **section**: `string`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:70](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L70)
+Defined in: [src/modules/VirtualPackageManager/index.ts:86](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L86)
 
 Repository section.
 
@@ -96,6 +96,6 @@ Repository section.
 
 > **version**: `string`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:62](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L62)
+Defined in: [src/modules/VirtualPackageManager/index.ts:78](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L78)
 
 Installed version string.

@@ -1,3 +1,14 @@
+/**
+ * shellInteractive.ts — spawn and manage interactive subprocesses
+ * (nano, htop, pacman) within a VirtualShell session.
+ *
+ * Each subprocess is connected to the ShellStream for bidirectional I/O,
+ * with terminal size propagation and graceful cleanup on exit.
+ *
+ * Public API:
+ *  - spawnNanoEditorProcess() — start a nano subprocess
+ *  - spawnHtopProcess()       — start an htop subprocess
+ */
 import { type ChildProcessWithoutNullStreams, spawn } from "node:child_process";
 import type { ShellStream } from "../types/streams";
 import {

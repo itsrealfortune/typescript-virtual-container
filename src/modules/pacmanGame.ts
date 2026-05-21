@@ -1,3 +1,14 @@
+/**
+ * pacmanGame.ts — terminal-based Pacman game for the virtual shell.
+ *
+ * A fully playable Pacman clone rendered over a ShellStream using ANSI
+ * escape sequences. Uses the classic MyMan maze layout (36×33).
+ * Supports arrow key movement, ghost AI, power pellets, and scoring.
+ *
+ * Public API:
+ *  - PacmanGame        — main game class
+ *  - PacmanGameOptions — constructor options interface
+ */
 import type { ShellStream } from "../types/streams";
 import type { TerminalSize } from "./shellRuntime";
 
@@ -136,7 +147,22 @@ export interface PacmanGameOptions {
 
 // ── PacmanGame ────────────────────────────────────────────────────────────────
 
-/** Classic Pacman game that runs in the terminal with ANSI rendering. */
+/**
+ * Classic Pacman game that runs in the terminal with ANSI rendering.
+ * Uses the MyMan maze layout (36×33) with 4 ghosts, power pellets, and scoring.
+ *
+ * @example
+ * ```ts
+ * const game = new PacmanGame({
+ *   stream,
+ *   terminalSize: { cols: 36, rows: 33 },
+ *   onExit: () => console.log("Game over, score:", game.score),
+ * });
+ * game.start();
+ * // Feed arrow keys: game.handleInput(Buffer.from("\x1b[A")); // up
+ * // game.stop();
+ * ```
+ */
 export class PacmanGame {
 	private stream: ShellStream;
 	private onExit: () => void;
@@ -185,6 +211,10 @@ export class PacmanGame {
 	// Differential render — previous rendered lines
 	private prevLines: string[] = [];
 
+	/**
+	 * Create a new Pacman game instance.
+	 * @param opts - Game configuration (stream, terminal size, exit callback).
+	 */
 	constructor(opts: PacmanGameOptions) {
 		this.stream = opts.stream;
 		this.onExit = opts.onExit;
@@ -242,6 +272,9 @@ export class PacmanGame {
 		];
 	}
 
+	/**
+	 * Start the game loop. Renders the initial maze and begins the 8fps tick.
+	 */
 	start(): void {
 		this.stream.write(hide + clearScreen);
 		this.prevLines = [];
@@ -249,11 +282,19 @@ export class PacmanGame {
 		this.intervalId = setInterval(() => this.gameTick(), 125);
 	}
 
+	/**
+	 * Stop the game loop and restore the terminal cursor.
+	 */
 	stop(): void {
 		if (this.intervalId) { clearInterval(this.intervalId); this.intervalId = null; }
 		this.stream.write(show + clearScreen + C.r);
 	}
 
+	/**
+	 * Process raw terminal input bytes. Handles arrow keys (CSI sequences),
+	 * WASD, and Q/Ctrl+C to quit. Buffers partial ESC sequences from SSH.
+	 * @param chunk - Raw bytes from the terminal stream.
+	 */
 	handleInput(chunk: Buffer): void {
 		// Prepend any buffered partial ESC sequence from previous chunk (SSH splits \x1b and [A)
 		const data = this.escBuf + chunk.toString("utf8");

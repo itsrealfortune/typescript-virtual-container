@@ -1,3 +1,23 @@
+/**
+ * nanoEditor.ts — terminal-based text editor inspired by GNU nano.
+ *
+ * Renders a full-featured editor over a ShellStream with support for:
+ * cursor navigation, text insertion/deletion, cut/copy/paste, search,
+ * go-to-line, save, undo/redo, mark selection, and resize handling.
+ *
+ * @example
+ * ```ts
+ * const nano = new NanoEditor({
+ *   stream, terminalSize: { cols: 80, rows: 24 },
+ *   content: "Hello, world!\n", filename: "/home/user/hello.txt",
+ *   onExit: (reason, content) => {
+ *     if (reason === "saved") vfs.writeFile("/home/user/hello.txt", content);
+ *   },
+ * });
+ * nano.start();
+ * nano.handleInput(Buffer.from("a")); // type 'a'
+ * ```
+ */
 import type { ShellStream } from "../types/streams";
 import type { TerminalSize } from "./shellRuntime";
 
@@ -36,13 +56,19 @@ const ansi = {
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
+/** Reason the NanoEditor session ended: "saved" (^O/^X with save) or "aborted" (^X without save). */
 export type NanoExitReason = "saved" | "aborted";
 
 export interface NanoEditorOptions {
+	/** Terminal output stream for rendering the editor UI. */
 	stream: ShellStream;
+	/** Current terminal dimensions for layout calculations. */
 	terminalSize: TerminalSize;
+	/** Initial file content to display in the editor. */
 	content: string;
+	/** File path shown in the title bar and used for save operations. */
 	filename: string;
+	/** Called when nano exits (saved or aborted). Receives the exit reason and final content. */
 	onExit: (reason: NanoExitReason, content: string) => void;
 	/** Called on ^S / silent save — save without closing nano. Optional. */
 	onSave?: (content: string) => void;
@@ -76,6 +102,35 @@ type Mode =
 
 // ── NanoEditor ───────────────────────────────────────────────────────────────
 
+/**
+ * A terminal-based text editor inspired by GNU nano, rendered over a ShellStream.
+ *
+ * Supports:
+ * - Full cursor navigation (arrows, home, end, page up/down)
+ * - Text insertion and deletion (backspace, delete)
+ * - Cut/copy/paste (^K, ^U, ^6)
+ * - Search with case sensitivity toggle (^W)
+ * - Go-to line (^_ / Alt+G)
+ * - Save to file (^O / ^S for silent save)
+ * - Undo/redo (Alt+U / Alt+E)
+ * - Mark selection (^6)
+ * - Resize handling for terminal changes
+ *
+ * @example
+ * ```ts
+ * const nano = new NanoEditor({
+ *   stream,
+ *   terminalSize: { cols: 80, rows: 24 },
+ *   content: "Hello, world!\n",
+ *   filename: "/home/user/hello.txt",
+ *   onExit: (reason, content) => {
+ *     if (reason === "saved") vfs.writeFile("/home/user/hello.txt", content);
+ *   },
+ * });
+ * nano.start();
+ * // Then feed keystrokes: nano.handleInput(Buffer.from("a"));
+ * ```
+ */
 export class NanoEditor {
 	private lines: string[];
 	private cursorRow = 0;
@@ -97,6 +152,10 @@ export class NanoEditor {
 	private readonly onExit: NanoEditorOptions["onExit"];
 	private readonly onSave: NanoEditorOptions["onSave"];
 
+	/**
+	 * Create a new NanoEditor instance.
+	 * @param opts - Editor configuration (stream, terminal size, content, filename, callbacks).
+	 */
 	constructor(opts: NanoEditorOptions) {
 		this.stream = opts.stream;
 		this.terminalSize = opts.terminalSize;
@@ -113,15 +172,30 @@ export class NanoEditor {
 
 	// ── Public API ────────────────────────────────────────────────────────────
 
+	/**
+	 * Render the initial editor UI and draw the buffer on screen.
+	 * Call this after construction to display the editor.
+	 */
 	start(): void {
 		this.fullRedraw();
 	}
 
+	/**
+	 * Update the terminal dimensions and redraw the screen.
+	 * Call this when the terminal is resized (e.g., from a SIGWINCH handler).
+	 * @param size - New terminal dimensions (cols × rows).
+	 */
 	resize(size: TerminalSize): void {
 		this.terminalSize = size;
 		this.fullRedraw();
 	}
 
+	/**
+	 * Process raw terminal input bytes. Dispatches keystrokes to the
+	 * appropriate handler based on current mode (normal, search, write, etc.).
+	 * Supports ANSI escape sequences, Ctrl+key combos, and Alt+key.
+	 * @param chunk - Raw bytes from the terminal stream.
+	 */
 	handleInput(chunk: Buffer): void {
 		const data = chunk.toString("utf8");
 		for (let i = 0; i < data.length; ) {

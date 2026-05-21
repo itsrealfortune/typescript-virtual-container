@@ -1,3 +1,13 @@
+/**
+ * thunarManager.ts — Thunar-like file manager for the browser desktop.
+ *
+ * Provides a graphical file browser with directory navigation, file operations
+ * (create, delete, rename, copy path), context menus, and trash support.
+ * Renders as HTML within a DesktopWindow.
+ *
+ * Public API:
+ *  - ThunarManager — class managing file browser state and DOM rendering
+ */
 import type { VirtualShell } from "../modules/VirtualShell";
 import type { DesktopWindow, ThunarContent } from "./desktopManager";
 
@@ -32,9 +42,21 @@ interface ThunarHost {
   escapeHtml(s: string): string;
 }
 
+/**
+ * Thunar-like file manager for the browser desktop environment.
+ *
+ * Renders a graphical file browser with directory navigation, file operations
+ * (create, delete, rename, copy path), context menus, and trash support.
+ * Integrates with DesktopManager for window management.
+ */
 export class ThunarManager {
   private container: HTMLElement;
 
+  /**
+   * Create a Thunar file manager instance.
+   * @param host - Desktop host providing shell, windows, and rendering helpers.
+   * @param container - DOM element to render the file browser into.
+   */
   constructor(
     private host: ThunarHost,
     container: HTMLElement,
@@ -228,6 +250,11 @@ export class ThunarManager {
 
   // ── Public API for DesktopManager ─────────────────────────────────────
 
+  /**
+   * Render the file browser content for a Thunar window.
+   * @param el - Window DOM element.
+   * @param content - Thunar content descriptor with the target path.
+   */
   renderContent(el: HTMLElement, content: ThunarContent): void {
     const contentArea = el.querySelector(".win-content") as HTMLElement;
     if (!contentArea) return;

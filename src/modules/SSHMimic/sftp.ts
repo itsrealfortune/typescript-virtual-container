@@ -155,6 +155,25 @@ export interface SftpMimicOptions {
 	users?: VirtualUserManager;
 }
 
+/**
+ * SFTP server implementation that delegates filesystem operations to a VirtualFileSystem.
+ *
+ * Can run as a standalone SSH server on a TCP port, or as a subsystem handler
+ * within an existing SSH server. Supports the full SFTP protocol: open/read/write/close,
+ * directory listing, stat/lstat, realpath, mkdir/rmdir, remove, rename, symlink,
+ * and file attribute manipulation.
+ *
+ * @example
+ * ```ts
+ * // Standalone mode
+ * const sftp = new SftpMimic({ port: 2222, shell });
+ * await sftp.start(); // binds to port 2222
+ *
+ * // Subsystem mode (integrated with SSH server)
+ * const sftp = new SftpMimic({ shell });
+ * // sftp.attachSftpHandlers(clientStream, authUser);
+ * ```
+ */
 export class SftpMimic extends EventEmitter {
 	port: number | undefined;
 	server: SshServer | null;
@@ -195,14 +214,27 @@ export class SftpMimic extends EventEmitter {
 		}
 	}
 
-	private getVfs(): VirtualFileSystem {
+	/**
+	 * Get the VirtualFileSystem used by this SFTP server.
+	 * @returns The VFS instance (from shell or constructor).
+	 */
+	public getVfs(): VirtualFileSystem {
 		return this.shell?.vfs ?? this.vfs;
 	}
 
-	private getUsers(): VirtualUserManager {
+	/**
+	 * Get the VirtualUserManager used for authentication and session management.
+	 * @returns The user manager instance (from shell or constructor).
+	 */
+	public getUsers(): VirtualUserManager {
 		return this.shell?.users ?? this.users;
 	}
 
+	/**
+	 * Start the standalone SFTP SSH server on the configured TCP port.
+	 * Throws if no port was provided (use subsystem mode instead).
+	 * @returns The bound port number.
+	 */
 	public async start(): Promise<number> {
 		if (this.port === undefined) {
 			throw new Error("SftpMimic: cannot start — no port configured (this instance is a subsystem handler only)");
@@ -380,6 +412,10 @@ export class SftpMimic extends EventEmitter {
 		});
 	}
 
+	/**
+	 * Stop the standalone SFTP server and close all client connections.
+	 * No-op if the server is not running (subsystem mode).
+	 */
 	public stop(): void {
 		perf.mark("stop");
 		if (this.server) {

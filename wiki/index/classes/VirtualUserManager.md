@@ -6,11 +6,40 @@
 
 # Class: VirtualUserManager
 
-Defined in: [src/modules/VirtualUserManager/index.ts:83](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L83)
+Defined in: [src/modules/VirtualUserManager/index.ts:111](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L111)
 
 Persistent user, sudoers, and active-session manager for the shell runtime.
 
 Passwords are hashed with scrypt by default and stored in the backing virtual filesystem.
+Manages user accounts, process tracking, session management, and sudo access.
+
+## Example
+
+```ts
+const users = new VirtualUserManager(vfs);
+await users.initialize();
+
+// Create a user with password
+users.createUser("alice", "s3cret");
+users.setPassword("alice", "new-password");
+
+// Check authentication
+const ok = users.verifyPassword("alice", "new-password"); // true
+
+// Process management
+const pid = users.registerProcess("alice", "sleep", ["sleep", "60"], "pts/0");
+console.log(users.getProcess(pid)); // { pid, ppid, username, command, ... }
+users.killProcess(pid, 15); // SIGTERM
+
+// Session management
+const session = users.registerSession("alice", "192.168.1.100");
+console.log(users.listActiveSessions());
+users.closeSession(session.id);
+
+// Sudo access
+users.addToSudoers("alice");
+console.log(users.canSudo("alice")); // true
+```
 
 ## Extends
 
@@ -22,7 +51,7 @@ Passwords are hashed with scrypt by default and stored in the backing virtual fi
 
 > **new VirtualUserManager**(`vfs`, `autoSudoForNewUsers?`): `VirtualUserManager`
 
-Defined in: [src/modules/VirtualUserManager/index.ts:106](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L106)
+Defined in: [src/modules/VirtualUserManager/index.ts:134](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L134)
 
 Creates a user manager instance backed by a virtual filesystem.
 
@@ -113,7 +142,7 @@ v13.4.0, v12.16.0
 
 > **addAuthorizedKey**(`username`, `algo`, `data`): `void`
 
-Defined in: [src/modules/VirtualUserManager/index.ts:992](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L992)
+Defined in: [src/modules/VirtualUserManager/index.ts:1024](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L1024)
 
 Adds an SSH public key for a user, enabling public-key authentication.
 
@@ -185,7 +214,7 @@ v0.1.26
 
 > **addSudoer**(`username`): `Promise`\<`void`\>
 
-Defined in: [src/modules/VirtualUserManager/index.ts:438](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L438)
+Defined in: [src/modules/VirtualUserManager/index.ts:467](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L467)
 
 Grants sudo privileges to an existing user.
 
@@ -211,7 +240,7 @@ When the user does not exist.
 
 > **addUser**(`username`, `password`): `Promise`\<`void`\>
 
-Defined in: [src/modules/VirtualUserManager/index.ts:296](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L296)
+Defined in: [src/modules/VirtualUserManager/index.ts:324](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L324)
 
 Creates user, home directory, and sudo access entry.
 
@@ -239,7 +268,7 @@ Initial plaintext password.
 
 > **assertWriteWithinQuota**(`username`, `targetPath`, `nextContent`): `void`
 
-Defined in: [src/modules/VirtualUserManager/index.ts:221](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L221)
+Defined in: [src/modules/VirtualUserManager/index.ts:249](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L249)
 
 Validates that writing file content would not exceed user quota.
 
@@ -275,7 +304,7 @@ New file content.
 
 > **clearQuota**(`username`): `Promise`\<`void`\>
 
-Defined in: [src/modules/VirtualUserManager/index.ts:178](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L178)
+Defined in: [src/modules/VirtualUserManager/index.ts:206](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L206)
 
 Removes quota for a user.
 
@@ -297,7 +326,7 @@ Target username.
 
 > **deleteUser**(`username`): `Promise`\<`void`\>
 
-Defined in: [src/modules/VirtualUserManager/index.ts:403](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L403)
+Defined in: [src/modules/VirtualUserManager/index.ts:432](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L432)
 
 Deletes an existing non-root user account and revokes sudo access.
 
@@ -398,10 +427,11 @@ v0.1.26
 
 > **ensureUser**(`username`): `void`
 
-Defined in: [src/modules/VirtualUserManager/index.ts:333](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L333)
+Defined in: [src/modules/VirtualUserManager/index.ts:362](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L362)
 
 Ensure a user exists in the database. Creates them with a non-root UID
 if they are missing. Used during SSH login for unknown users.
+Also creates the home directory and README.txt if they don't exist.
 
 #### Parameters
 
@@ -409,7 +439,7 @@ if they are missing. Used during SSH login for unknown users.
 
 `string`
 
-The username.
+Username to ensure exists.
 
 #### Returns
 
@@ -458,7 +488,7 @@ v6.0.0
 
 > **getAuthorizedKeys**(`username`): `object`[]
 
-Defined in: [src/modules/VirtualUserManager/index.ts:1017](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L1017)
+Defined in: [src/modules/VirtualUserManager/index.ts:1049](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L1049)
 
 Returns the list of authorized keys for a user.
 Returns an empty array when no keys are registered.
@@ -483,7 +513,7 @@ The operation result.
 
 > **getGid**(`username`): `number`
 
-Defined in: [src/modules/VirtualUserManager/index.ts:590](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L590)
+Defined in: [src/modules/VirtualUserManager/index.ts:619](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L619)
 
 Returns the primary GID for a username, or 0 if unknown.
 
@@ -493,13 +523,13 @@ Returns the primary GID for a username, or 0 if unknown.
 
 `string`
 
-The username.
+Username to look up.
 
 #### Returns
 
 `number`
 
-The numeric result.
+GID number (0 if user not found).
 
 ***
 
@@ -507,7 +537,7 @@ The numeric result.
 
 > **getGroup**(`gid`): `string` \| `null`
 
-Defined in: [src/modules/VirtualUserManager/index.ts:611](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L611)
+Defined in: [src/modules/VirtualUserManager/index.ts:640](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L640)
 
 Returns the group name for a numeric GID, or null if unknown.
 
@@ -517,13 +547,13 @@ Returns the group name for a numeric GID, or null if unknown.
 
 `number`
 
-The gid parameter.
+Group ID number to resolve.
 
 #### Returns
 
 `string` \| `null`
 
-The operation result.
+Group/username string, or null if GID not found.
 
 ***
 
@@ -555,7 +585,7 @@ v1.0.0
 
 > **getPasswordHash**(`username`): `string` \| `null`
 
-Defined in: [src/modules/VirtualUserManager/index.ts:371](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L371)
+Defined in: [src/modules/VirtualUserManager/index.ts:400](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L400)
 
 Retrieves stored password hash for a user, or null if user does not exist.
 
@@ -579,9 +609,9 @@ Password hash in hex encoding, or null when user is not found.
 
 > **getProcess**(`pid`): [`VirtualProcess`](../interfaces/VirtualProcess.md) \| `undefined`
 
-Defined in: [src/modules/VirtualUserManager/index.ts:754](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L754)
+Defined in: [src/modules/VirtualUserManager/index.ts:786](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L786)
 
-Get process by PID.
+Get process record by PID.
 
 #### Parameters
 
@@ -589,13 +619,13 @@ Get process by PID.
 
 `number`
 
-The pid parameter.
+PID to look up.
 
 #### Returns
 
 [`VirtualProcess`](../interfaces/VirtualProcess.md) \| `undefined`
 
-The process list.
+VirtualProcess object if found, or undefined.
 
 ***
 
@@ -603,7 +633,7 @@ The process list.
 
 > **getQuotaBytes**(`username`): `number` \| `null`
 
-Defined in: [src/modules/VirtualUserManager/index.ts:191](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L191)
+Defined in: [src/modules/VirtualUserManager/index.ts:219](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L219)
 
 Gets configured quota in bytes for a user.
 
@@ -627,7 +657,7 @@ Quota in bytes, or null when unlimited.
 
 > **getUid**(`username`): `number`
 
-Defined in: [src/modules/VirtualUserManager/index.ts:581](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L581)
+Defined in: [src/modules/VirtualUserManager/index.ts:610](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L610)
 
 Returns the numeric UID for a username, or 0 if unknown.
 
@@ -637,13 +667,13 @@ Returns the numeric UID for a username, or 0 if unknown.
 
 `string`
 
-The username.
+Username to look up.
 
 #### Returns
 
 `number`
 
-The numeric result.
+UID number (0 if user not found).
 
 ***
 
@@ -651,7 +681,7 @@ The numeric result.
 
 > **getUsageBytes**(`username`): `number`
 
-Defined in: [src/modules/VirtualUserManager/index.ts:202](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L202)
+Defined in: [src/modules/VirtualUserManager/index.ts:230](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L230)
 
 Computes current usage under /home/<username>.
 
@@ -675,7 +705,7 @@ Current usage in bytes.
 
 > **getUsername**(`uid`): `string` \| `null`
 
-Defined in: [src/modules/VirtualUserManager/index.ts:599](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L599)
+Defined in: [src/modules/VirtualUserManager/index.ts:628](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L628)
 
 Returns the username for a numeric UID, or null if unknown.
 
@@ -685,13 +715,13 @@ Returns the username for a numeric UID, or null if unknown.
 
 `number`
 
-The uid parameter.
+User ID number to resolve.
 
 #### Returns
 
 `string` \| `null`
 
-The operation result.
+Username string, or null if UID not found.
 
 ***
 
@@ -699,7 +729,7 @@ The operation result.
 
 > **hashPassword**(`password`, `salt?`): `string`
 
-Defined in: [src/modules/VirtualUserManager/index.ts:954](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L954)
+Defined in: [src/modules/VirtualUserManager/index.ts:986](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L986)
 
 Hash a password with an optional salt.
 When salt is provided (verify path), the same salt is used for a
@@ -732,7 +762,7 @@ The result string.
 
 > **hasPassword**(`username`): `boolean`
 
-Defined in: [src/modules/VirtualUserManager/index.ts:926](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L926)
+Defined in: [src/modules/VirtualUserManager/index.ts:958](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L958)
 
 Returns `true` when the user has a non-empty password set.
 
@@ -751,7 +781,7 @@ Target username.
 
 `boolean`
 
-The success indicator.
+True if the user has a password set, false otherwise.
 
 ***
 
@@ -759,7 +789,7 @@ The success indicator.
 
 > **initialize**(): `Promise`\<`void`\>
 
-Defined in: [src/modules/VirtualUserManager/index.ts:120](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L120)
+Defined in: [src/modules/VirtualUserManager/index.ts:148](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L148)
 
 Loads users/sudoers from disk and ensures root account exists.
 Also creates the current system user if not already present.
@@ -774,7 +804,7 @@ Also creates the current system user if not already present.
 
 > **isSudoer**(`username`): `boolean`
 
-Defined in: [src/modules/VirtualUserManager/index.ts:427](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L427)
+Defined in: [src/modules/VirtualUserManager/index.ts:456](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L456)
 
 Checks whether user is member of sudoers set.
 
@@ -798,7 +828,7 @@ True when user can run sudo.
 
 > **killAllUserProcesses**(`username`, `signal?`): `number`
 
-Defined in: [src/modules/VirtualUserManager/index.ts:739](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L739)
+Defined in: [src/modules/VirtualUserManager/index.ts:771](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L771)
 
 Send a signal to all processes owned by a user.
 
@@ -808,19 +838,19 @@ Send a signal to all processes owned by a user.
 
 `string`
 
-The username.
+Username whose processes to signal.
 
 ##### signal?
 
 `number` = `15`
 
-The signal parameter.
+Signal number to send (default: 15 / SIGTERM).
 
 #### Returns
 
 `number`
 
-The numeric result.
+Number of processes that were signalled.
 
 ***
 
@@ -828,9 +858,10 @@ The numeric result.
 
 > **killProcess**(`pid`, `signal?`): `boolean`
 
-Defined in: [src/modules/VirtualUserManager/index.ts:693](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L693)
+Defined in: [src/modules/VirtualUserManager/index.ts:725](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L725)
 
 Terminate a process by PID. Returns true if the process was found and signalled.
+Handles SIGKILL (9), SIGSTOP (19), SIGCONT (18), and custom signal handlers.
 
 #### Parameters
 
@@ -838,19 +869,19 @@ Terminate a process by PID. Returns true if the process was found and signalled.
 
 `number`
 
-The pid parameter.
+PID of the process to kill.
 
 ##### signal?
 
 `number` = `15`
 
-The signal parameter.
+Signal number to send (default: 15 / SIGTERM).
 
 #### Returns
 
 `boolean`
 
-The success indicator.
+True if the process was found and signalled, false if PID not found.
 
 ***
 
@@ -858,7 +889,7 @@ The success indicator.
 
 > **listActiveSessions**(): [`VirtualActiveSession`](../interfaces/VirtualActiveSession.md)[]
 
-Defined in: [src/modules/VirtualUserManager/index.ts:560](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L560)
+Defined in: [src/modules/VirtualUserManager/index.ts:589](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L589)
 
 Returns a snapshot of all currently active sessions, sorted by start time.
 
@@ -962,7 +993,7 @@ v0.1.26
 
 > **listProcesses**(): [`VirtualProcess`](../interfaces/VirtualProcess.md)[]
 
-Defined in: [src/modules/VirtualUserManager/index.ts:683](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L683)
+Defined in: [src/modules/VirtualUserManager/index.ts:714](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L714)
 
 Returns all currently running processes sorted by PID.
 
@@ -978,7 +1009,7 @@ The process list.
 
 > **listUsers**(): `string`[]
 
-Defined in: [src/modules/VirtualUserManager/index.ts:572](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L572)
+Defined in: [src/modules/VirtualUserManager/index.ts:601](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L601)
 
 Returns a sorted list of all registered usernames.
 
@@ -994,9 +1025,10 @@ Array of username strings sorted alphabetically.
 
 > **markProcessDone**(`pid`): `void`
 
-Defined in: [src/modules/VirtualUserManager/index.ts:671](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L671)
+Defined in: [src/modules/VirtualUserManager/index.ts:702](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L702)
 
 Marks a process as done (keeps it in the table briefly for jobs/ps).
+Sets status to "done" without removing the record immediately.
 
 #### Parameters
 
@@ -1004,7 +1036,7 @@ Marks a process as done (keeps it in the table briefly for jobs/ps).
 
 `number`
 
-The pid parameter.
+PID of the process to mark as done.
 
 #### Returns
 
@@ -1355,7 +1387,7 @@ v9.4.0
 
 > **registerProcess**(`username`, `command`, `argv`, `tty`, `abortController?`, `ppid?`): `number`
 
-Defined in: [src/modules/VirtualUserManager/index.ts:629](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L629)
+Defined in: [src/modules/VirtualUserManager/index.ts:658](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L658)
 
 Registers a running command as a virtual process.
 Returns the assigned PID so the caller can deregister on completion.
@@ -1366,43 +1398,43 @@ Returns the assigned PID so the caller can deregister on completion.
 
 `string`
 
-The username.
+User who owns the process.
 
 ##### command
 
 `string`
 
-The command parameter.
+Command name (first token of the command line).
 
 ##### argv
 
 `string`[]
 
-The argv parameter.
+Full argument array including the command name.
 
 ##### tty
 
 `string`
 
-The tty parameter.
+TTY device identifier (e.g. "pts/0").
 
 ##### abortController?
 
 `AbortController`
 
-The abortController parameter.
+Optional AbortController for process cancellation.
 
 ##### ppid?
 
 `number` = `1`
 
-The ppid parameter.
+Parent process ID (default: 1 / init).
 
 #### Returns
 
 `number`
 
-The numeric result.
+The newly assigned PID.
 
 ***
 
@@ -1410,7 +1442,7 @@ The numeric result.
 
 > **registerSession**(`username`, `remoteAddress`): [`VirtualActiveSession`](../interfaces/VirtualActiveSession.md)
 
-Defined in: [src/modules/VirtualUserManager/index.ts:476](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L476)
+Defined in: [src/modules/VirtualUserManager/index.ts:505](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L505)
 
 Registers a new active session and allocates a virtual TTY identifier.
 
@@ -1483,7 +1515,7 @@ v0.1.26
 
 > **removeAuthorizedKeys**(`username`): `void`
 
-Defined in: [src/modules/VirtualUserManager/index.ts:1005](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L1005)
+Defined in: [src/modules/VirtualUserManager/index.ts:1037](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L1037)
 
 Removes all authorized keys for a user.
 
@@ -1625,7 +1657,7 @@ v0.1.26
 
 > **removeSudoer**(`username`): `Promise`\<`void`\>
 
-Defined in: [src/modules/VirtualUserManager/index.ts:455](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L455)
+Defined in: [src/modules/VirtualUserManager/index.ts:484](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L484)
 
 Revokes sudo privileges from a user. Root cannot be demoted.
 
@@ -1685,7 +1717,7 @@ v0.3.5
 
 > **setPassword**(`username`, `password`): `Promise`\<`void`\>
 
-Defined in: [src/modules/VirtualUserManager/index.ts:384](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L384)
+Defined in: [src/modules/VirtualUserManager/index.ts:413](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L413)
 
 Updates the password for an existing user account.
 
@@ -1717,7 +1749,7 @@ When the user does not exist or the password is empty.
 
 > **setQuotaBytes**(`username`, `maxBytes`): `Promise`\<`void`\>
 
-Defined in: [src/modules/VirtualUserManager/index.ts:155](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L155)
+Defined in: [src/modules/VirtualUserManager/index.ts:183](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L183)
 
 Sets max allowed bytes under /home/<username>.
 
@@ -1745,9 +1777,10 @@ Quota ceiling in bytes.
 
 > **unregisterProcess**(`pid`): `void`
 
-Defined in: [src/modules/VirtualUserManager/index.ts:657](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L657)
+Defined in: [src/modules/VirtualUserManager/index.ts:687](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L687)
 
 Removes a process record when the command exits.
+Emits SIGCHLD to the parent process.
 
 #### Parameters
 
@@ -1755,7 +1788,7 @@ Removes a process record when the command exits.
 
 `number`
 
-The pid parameter.
+PID of the process to unregister.
 
 #### Returns
 
@@ -1767,7 +1800,7 @@ The pid parameter.
 
 > **unregisterSession**(`sessionId`): `void`
 
-Defined in: [src/modules/VirtualUserManager/index.ts:504](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L504)
+Defined in: [src/modules/VirtualUserManager/index.ts:533](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L533)
 
 Removes an active session record when the connection closes.
 
@@ -1791,7 +1824,7 @@ Session UUID returned by `registerSession()`, or nullish.
 
 > **updateSession**(`sessionId`, `username`, `remoteAddress`): `void`
 
-Defined in: [src/modules/VirtualUserManager/index.ts:531](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L531)
+Defined in: [src/modules/VirtualUserManager/index.ts:560](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L560)
 
 Updates the username and remote address metadata for an active session.
 
@@ -1829,7 +1862,7 @@ New remote address (usually unchanged).
 
 > **verifyPassword**(`username`, `password`): `boolean`
 
-Defined in: [src/modules/VirtualUserManager/index.ts:268](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L268)
+Defined in: [src/modules/VirtualUserManager/index.ts:296](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualUserManager/index.ts#L296)
 
 Verifies plaintext password against stored record.
 

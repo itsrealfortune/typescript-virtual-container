@@ -6,7 +6,26 @@
 
 # Class: VirtualSftpServer
 
-Defined in: [src/modules/SSHMimic/sftp.ts:158](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/sftp.ts#L158)
+Defined in: [src/modules/SSHMimic/sftp.ts:177](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/sftp.ts#L177)
+
+SFTP server implementation that delegates filesystem operations to a VirtualFileSystem.
+
+Can run as a standalone SSH server on a TCP port, or as a subsystem handler
+within an existing SSH server. Supports the full SFTP protocol: open/read/write/close,
+directory listing, stat/lstat, realpath, mkdir/rmdir, remove, rename, symlink,
+and file attribute manipulation.
+
+## Example
+
+```ts
+// Standalone mode
+const sftp = new SftpMimic({ port: 2222, shell });
+await sftp.start(); // binds to port 2222
+
+// Subsystem mode (integrated with SSH server)
+const sftp = new SftpMimic({ shell });
+// sftp.attachSftpHandlers(clientStream, authUser);
+```
 
 ## Extends
 
@@ -18,7 +37,7 @@ Defined in: [src/modules/SSHMimic/sftp.ts:158](https://github.com/itsrealfortune
 
 > **new VirtualSftpServer**(`__namedParameters`): `SftpMimic`
 
-Defined in: [src/modules/SSHMimic/sftp.ts:168](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/sftp.ts#L168)
+Defined in: [src/modules/SSHMimic/sftp.ts:187](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/sftp.ts#L187)
 
 #### Parameters
 
@@ -40,7 +59,7 @@ Defined in: [src/modules/SSHMimic/sftp.ts:168](https://github.com/itsrealfortune
 
 > **port**: `number` \| `undefined`
 
-Defined in: [src/modules/SSHMimic/sftp.ts:159](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/sftp.ts#L159)
+Defined in: [src/modules/SSHMimic/sftp.ts:178](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/sftp.ts#L178)
 
 ***
 
@@ -48,7 +67,7 @@ Defined in: [src/modules/SSHMimic/sftp.ts:159](https://github.com/itsrealfortune
 
 > **server**: `Server` \| `null`
 
-Defined in: [src/modules/SSHMimic/sftp.ts:160](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/sftp.ts#L160)
+Defined in: [src/modules/SSHMimic/sftp.ts:179](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/sftp.ts#L179)
 
 ## Methods
 
@@ -282,6 +301,38 @@ v1.0.0
 #### Inherited from
 
 `EventEmitter.getMaxListeners`
+
+***
+
+### getUsers()
+
+> **getUsers**(): [`VirtualUserManager`](VirtualUserManager.md)
+
+Defined in: [src/modules/SSHMimic/sftp.ts:229](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/sftp.ts#L229)
+
+Get the VirtualUserManager used for authentication and session management.
+
+#### Returns
+
+[`VirtualUserManager`](VirtualUserManager.md)
+
+The user manager instance (from shell or constructor).
+
+***
+
+### getVfs()
+
+> **getVfs**(): [`VirtualFileSystem`](VirtualFileSystem.md)
+
+Defined in: [src/modules/SSHMimic/sftp.ts:221](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/sftp.ts#L221)
+
+Get the VirtualFileSystem used by this SFTP server.
+
+#### Returns
+
+[`VirtualFileSystem`](VirtualFileSystem.md)
+
+The VFS instance (from shell or constructor).
 
 ***
 
@@ -908,11 +959,16 @@ v0.3.5
 
 > **start**(): `Promise`\<`number`\>
 
-Defined in: [src/modules/SSHMimic/sftp.ts:206](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/sftp.ts#L206)
+Defined in: [src/modules/SSHMimic/sftp.ts:238](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/sftp.ts#L238)
+
+Start the standalone SFTP SSH server on the configured TCP port.
+Throws if no port was provided (use subsystem mode instead).
 
 #### Returns
 
 `Promise`\<`number`\>
+
+The bound port number.
 
 ***
 
@@ -920,7 +976,10 @@ Defined in: [src/modules/SSHMimic/sftp.ts:206](https://github.com/itsrealfortune
 
 > **stop**(): `void`
 
-Defined in: [src/modules/SSHMimic/sftp.ts:383](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/sftp.ts#L383)
+Defined in: [src/modules/SSHMimic/sftp.ts:419](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/sftp.ts#L419)
+
+Stop the standalone SFTP server and close all client connections.
+No-op if the server is not running (subsystem mode).
 
 #### Returns
 

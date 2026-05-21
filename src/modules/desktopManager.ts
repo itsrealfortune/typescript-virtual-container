@@ -1,3 +1,23 @@
+/**
+ * desktopManager.ts — XFCE-like desktop environment manager for browser rendering.
+ *
+ * Manages a virtual desktop with draggable, resizable, minimizable windows
+ * containing terminals, file managers (Thunar), text editors, about dialogs,
+ * and task managers. Supports session persistence via localStorage.
+ *
+ * Key features:
+ *  - Window management (create, close, minimize, maximize, focus, drag, resize)
+ *  - Terminal windows backed by WebTermRenderer and VirtualShell
+ *  - Thunar file manager with context menus and file operations
+ *  - Nano editor integration for in-browser text editing
+ *  - Task manager with live process list
+ *  - Session save/restore via localStorage
+ *
+ * Public API:
+ *  - DesktopManager     — main class managing the desktop and all windows
+ *  - DesktopWindow      — interface representing a single window
+ *  - WindowContent      — union type for window content variants
+ */
 import type { VirtualShell } from "../modules/VirtualShell";
 import type { ShellStream } from "../types/streams";
 import { keyToBytes } from "../utils/keyToBytes";
@@ -67,6 +87,30 @@ export interface DesktopState {
 
 // ── Desktop Manager ───────────────────────────────────────────────────
 
+/**
+ * XFCE-like desktop environment manager for browser rendering.
+ *
+ * Manages a virtual desktop with draggable, resizable, minimizable windows
+ * containing terminals, file managers, text editors, about dialogs, and task
+ * managers. Supports session persistence via localStorage.
+ *
+ * @example
+ * ```ts
+ * const shell = new VirtualShell("desktop-vm");
+ * await shell.ensureInitialized();
+ *
+ * const desktop = new DesktopManager(shell, document.getElementById("desktop")!);
+ * desktop.setOnExit(() => console.log("Desktop closed"));
+ *
+ * // Start the desktop (returns a promise that resolves on stop)
+ * desktop.start();
+ *
+ * // Create windows programmatically
+ * desktop.createTerminalWindow();
+ * desktop.createThunarWindow("/home/user");
+ * desktop.createEditorWindow("/home/user/notes.txt");
+ * ```
+ */
 export class DesktopManager {
   private shell: VirtualShell;
   private container: HTMLElement;
@@ -86,6 +130,11 @@ export class DesktopManager {
   private pendingTimeouts: Set<ReturnType<typeof setTimeout>> = new Set();
   private thunar: ThunarManager;
 
+  /**
+   * Creates a desktop manager bound to a VirtualShell and DOM container.
+   * @param shell - VirtualShell providing filesystem and command execution.
+   * @param container - DOM element to render the desktop into.
+   */
   constructor(shell: VirtualShell, container: HTMLElement) {
     this.shell = shell;
     this.container = container;
@@ -102,10 +151,17 @@ export class DesktopManager {
     this.setupEventDelegation();
   }
 
+  /** Returns true if the desktop is currently active and rendered. */
   isActive(): boolean { return this.active; }
 
+  /** Set a callback invoked when the desktop is stopped. */
   setOnExit(cb: () => void): void { this.onExit = cb; }
 
+  /**
+   * Start the desktop environment. Renders the desktop UI and restores
+   * any previously saved session. Returns a promise that resolves when
+   * `stop()` is called.
+   */
   start(): Promise<void> {
     if (this.active) return Promise.resolve();
     this.active = true;
@@ -119,6 +175,10 @@ export class DesktopManager {
     });
   }
 
+  /**
+   * Stop the desktop environment. Clears all windows, stops the clock,
+   * removes event listeners, and resolves the start() promise.
+   */
   stop(): void {
     if (!this.active) return;
     this.active = false;
@@ -174,6 +234,11 @@ export class DesktopManager {
     this.renderAll();
   }
 
+  /**
+   * Get the focused terminal window's stream and DOM element.
+   * Returns null if no terminal is focused or all are minimized.
+   * @returns Terminal stream, data listeners, and pre element for rendering.
+   */
   getFocusedTerminal(): { stream: ShellStream; dataListeners: Array<(chunk: Buffer) => void>; preEl: HTMLPreElement } | null {
     for (const w of this.windows) {
       if (w.content.type === "terminal" && w.focused && !w.minimized) {
@@ -187,6 +252,11 @@ export class DesktopManager {
     return null;
   }
 
+  /**
+   * Handle a keyboard event and forward keystrokes to the focused terminal.
+   * Handles Ctrl+C/V passthrough and Escape to close the panel menu.
+   * @param e - Keyboard event from the browser.
+   */
   handleKeyDown(e: KeyboardEvent): void {
     if (!this.active) return;
 
@@ -211,6 +281,10 @@ export class DesktopManager {
     for (const l of focusedTerm.dataListeners) l(toChunk(bytes));
   }
 
+  /**
+   * Handle a paste event and forward the clipboard text to the focused terminal.
+   * @param e - Clipboard event from the browser.
+   */
   handlePaste(e: ClipboardEvent): void {
     const focusedTerm = this.getFocusedTerminal();
     if (!focusedTerm) return;
@@ -222,6 +296,10 @@ export class DesktopManager {
     for (const l of focusedTerm.dataListeners) l(toChunk(bytes));
   }
 
+  /**
+   * Create a new terminal window with an interactive shell session.
+   * @returns The unique window ID.
+   */
   createTerminalWindow(): string {
     const cols = 80;
     const rows = 24;
@@ -272,6 +350,11 @@ export class DesktopManager {
     return id;
   }
 
+  /**
+   * Create a new Thunar file manager window.
+   * @param path - Initial directory to browse (default: "/root").
+   * @returns The unique window ID.
+   */
   createThunarWindow(path = "/root"): string {
     return this.createWindow({
       title: `Thunar: ${path}`,
@@ -281,6 +364,11 @@ export class DesktopManager {
     });
   }
 
+  /**
+   * Create a new text editor window (Nano-based).
+   * @param path - File path to open (default: "/root/untitled.txt").
+   * @returns The unique window ID.
+   */
   createEditorWindow(path = "/root/untitled.txt"): string {
     const id = this.createWindow({
       title: `Mousepad — ${path.split("/").pop()}`,
@@ -292,6 +380,10 @@ export class DesktopManager {
     return id;
   }
 
+  /**
+   * Create an "About" window showing system information.
+   * @returns The unique window ID.
+   */
   createAboutWindow(): string {
     return this.createWindow({
       title: "About Fortune GNU/Linux",
@@ -301,6 +393,10 @@ export class DesktopManager {
     });
   }
 
+  /**
+   * Create a task manager window showing running processes.
+   * @returns The unique window ID.
+   */
   createTaskManagerWindow(): string {
     const id = this.createWindow({
       title: "Task Manager",
@@ -318,6 +414,10 @@ export class DesktopManager {
     return id;
   }
 
+  /**
+   * Close a window by ID. Removes it from the desktop and cleans up resources.
+   * @param id - Window ID to close.
+   */
   closeWindow(id: string): void {
     const idx = this.windows.findIndex((w) => w.id === id);
     if (idx === -1) return;
@@ -332,6 +432,10 @@ export class DesktopManager {
     this.renderAll();
   }
 
+  /**
+   * Toggle the minimized state of a window.
+   * @param id - Window ID to toggle.
+   */
   toggleMinimize(id: string): void {
     const w = this.windows.find((ww) => ww.id === id);
     if (!w) return;
@@ -340,6 +444,11 @@ export class DesktopManager {
     else this.renderAll();
   }
 
+  /**
+   * Toggle the maximized state of a window.
+   * When maximizing, saves the current rect for restoration.
+   * @param id - Window ID to toggle.
+   */
   toggleMaximize(id: string): void {
     const w = this.windows.find((ww) => ww.id === id);
     if (!w) return;
@@ -368,6 +477,10 @@ export class DesktopManager {
     w.maximized = false;
   }
 
+  /**
+   * Bring a window to the front and mark it as focused.
+   * @param id - Window ID to focus.
+   */
   focusWindow(id: string): void {
     for (const w of this.windows) w.focused = false;
     const w = this.windows.find((ww) => ww.id === id);

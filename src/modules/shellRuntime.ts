@@ -1,3 +1,18 @@
+/**
+ * shellRuntime.ts — terminal utility functions for shell session management.
+ *
+ * Provides terminal size handling, shell-safe quoting, line-ending conversion,
+ * and process lifecycle helpers used by the interactive shell engine.
+ *
+ * Public API:
+ *  - TerminalSize       — interface for terminal dimensions
+ *  - shellQuote()       — escape a string for safe use in shell commands
+ *  - toTtyLines()       — convert line endings to CRLF for TTY output
+ *  - withTerminalSize() — wrap a command to run with specific terminal size
+ *  - resolvePath()      — resolve a path relative to a base directory
+ *  - collectChildPids() — recursively collect all child PIDs of a process
+ *  - getVisibleHtopPidList() — build a formatted PID list for htop display
+ */
 import { readFile } from "node:fs/promises";
 import * as path from "node:path";
 

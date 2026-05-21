@@ -24,7 +24,7 @@ Run in background (trailing &).
 
 ### group?
 
-> `optional` **group?**: `CommandGroup`
+> `optional` **group?**: [`CommandGroup`](CommandGroup.md)
 
 Defined in: [src/types/pipeline.ts:53](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/types/pipeline.ts#L53)
 
@@ -64,7 +64,7 @@ Pipeline to execute for this statement.
 
 ### subshell?
 
-> `optional` **subshell?**: `Subshell`
+> `optional` **subshell?**: [`Subshell`](Subshell.md)
 
 Defined in: [src/types/pipeline.ts:51](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/types/pipeline.ts#L51)
 

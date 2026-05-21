@@ -407,6 +407,8 @@ function bootstrapEtc(
 /**
  * Sync `/etc/passwd`, `/etc/group`, and `/etc/shadow` from the
  * VirtualUserManager's current user list into the VFS.
+ * @param vfs - VirtualFileSystem to write the system files into.
+ * @param users - VirtualUserManager providing the current user/group list.
  */
 export function syncEtcPasswd(
 	vfs: VirtualFileSystem,
@@ -696,6 +698,13 @@ function bootProcLog(vfs: VirtualFileSystem, props: ShellProperties): void {
  * per-pid entries, and /proc/self.
  *
  * Safe to call repeatedly — acts as a live kernel state snapshot.
+ *
+ * @param vfs - VirtualFileSystem to write /proc entries into.
+ * @param props - Shell properties (kernel, arch, etc.).
+ * @param hostname - VM hostname for /proc/sys/kernel/hostname.
+ * @param shellStartTime - Timestamp when the shell started (for uptime calc).
+ * @param sessions - Active SSH sessions to populate /proc/<pid> for.
+ * @param network - Optional network manager for /proc/net entries.
  */
 export function refreshProc(
 	vfs: VirtualFileSystem,

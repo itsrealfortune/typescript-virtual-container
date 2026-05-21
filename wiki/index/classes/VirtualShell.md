@@ -75,7 +75,7 @@ Optional VFS persistence options (mode, snapshotPath) or an existing VFS instanc
 
 ### desktopManager
 
-> **desktopManager**: `DesktopManager` \| `null` = `null`
+> **desktopManager**: [`DesktopManager`](DesktopManager.md) \| `null` = `null`
 
 Defined in: [src/modules/VirtualShell/index.ts:154](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualShell/index.ts#L154)
 
@@ -135,7 +135,7 @@ Unix ms timestamp of shell creation — used by `uptime` and `/proc/uptime`.
 
 ### sysctl
 
-> **sysctl**: `SysctlState`
+> **sysctl**: [`SysctlState`](../interfaces/SysctlState.md)
 
 Defined in: [src/modules/VirtualShell/index.ts:158](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualShell/index.ts#L158)
 
@@ -177,7 +177,7 @@ Milliseconds since last shell activity. 0 when idle management is disabled.
 
 `number`
 
-The numeric result.
+Milliseconds of idle time.
 
 ***
 
@@ -196,7 +196,7 @@ Returns `"active"` when idle management is disabled.
 
 `"active"` \| `"frozen"`
 
-The operation result.
+Current state string.
 
 ## Methods
 
@@ -438,7 +438,7 @@ released from RAM. The next command transparently restores it in ~0.1 ms.
 
 [`IdleManagerOptions`](../interfaces/IdleManagerOptions.md)
 
-The options parameter.
+Idle configuration (threshold, check interval).
 
 #### Returns
 
@@ -592,13 +592,13 @@ v1.0.0
 
 Defined in: [src/modules/VirtualShell/index.ts:383](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualShell/index.ts#L383)
 
-List all active mounts.
+List all active mounts with their VFS paths, host paths, and read-only flags.
 
 #### Returns
 
 `object`[]
 
-The operation result.
+Array of mount descriptors.
 
 ***
 
@@ -1435,7 +1435,7 @@ the classic Unix credential files in sync with the user manager.
 
 Defined in: [src/modules/VirtualShell/index.ts:375](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualShell/index.ts#L375)
 
-Remove a previously mounted host directory.
+Remove a previously mounted host directory from the VFS.
 
 #### Parameters
 
@@ -1443,7 +1443,7 @@ Remove a previously mounted host directory.
 
 `string`
 
-The virtual file system path.
+Absolute VFS path of the mount point to unmount.
 
 #### Returns
 

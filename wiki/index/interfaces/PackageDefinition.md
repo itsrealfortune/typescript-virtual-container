@@ -6,7 +6,7 @@
 
 # Interface: PackageDefinition
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:25](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L25)
+Defined in: [src/modules/VirtualPackageManager/index.ts:41](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L41)
 
 Metadata and behaviour definition for a single package in the registry.
 
@@ -20,7 +20,7 @@ packages. `files` are written to the VFS on `install()`, and `onInstall` /
 
 > `optional` **architecture?**: `string`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:31](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L31)
+Defined in: [src/modules/VirtualPackageManager/index.ts:47](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L47)
 
 CPU architecture label (default `"amd64"`).
 
@@ -30,7 +30,7 @@ CPU architecture label (default `"amd64"`).
 
 > `optional` **depends?**: `string`[]
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:41](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L41)
+Defined in: [src/modules/VirtualPackageManager/index.ts:57](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L57)
 
 Other package names that must be installed first (resolved recursively).
 
@@ -40,7 +40,7 @@ Other package names that must be installed first (resolved recursively).
 
 > **description**: `string`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:35](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L35)
+Defined in: [src/modules/VirtualPackageManager/index.ts:51](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L51)
 
 Full package description.
 
@@ -50,7 +50,7 @@ Full package description.
 
 > `optional` **files?**: [`PackageFile`](PackageFile.md)[]
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:45](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L45)
+Defined in: [src/modules/VirtualPackageManager/index.ts:61](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L61)
 
 Files to write into the VFS during installation.
 
@@ -60,7 +60,7 @@ Files to write into the VFS during installation.
 
 > `optional` **installedSizeKb?**: `number`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:39](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L39)
+Defined in: [src/modules/VirtualPackageManager/index.ts:55](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L55)
 
 Installed disk usage in kilobytes (informational).
 
@@ -70,7 +70,7 @@ Installed disk usage in kilobytes (informational).
 
 > `optional` **maintainer?**: `string`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:33](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L33)
+Defined in: [src/modules/VirtualPackageManager/index.ts:49](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L49)
 
 Maintainer name and email shown in `apt show` output.
 
@@ -80,7 +80,7 @@ Maintainer name and email shown in `apt show` output.
 
 > **name**: `string`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:27](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L27)
+Defined in: [src/modules/VirtualPackageManager/index.ts:43](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L43)
 
 Package name — lowercase, no spaces (e.g. `"vim"`, `"build-essential"`).
 
@@ -90,7 +90,7 @@ Package name — lowercase, no spaces (e.g. `"vim"`, `"build-essential"`).
 
 > `optional` **onInstall?**: (`vfs`, `users`) => `void`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:50](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L50)
+Defined in: [src/modules/VirtualPackageManager/index.ts:66](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L66)
 
 Hook called after all files are written.
 Use to create directories, write config, or register shell commands.
@@ -115,7 +115,7 @@ Use to create directories, write config, or register shell commands.
 
 > `optional` **onRemove?**: (`vfs`) => `void`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:52](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L52)
+Defined in: [src/modules/VirtualPackageManager/index.ts:68](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L68)
 
 Hook called before VFS files are removed during uninstall.
 
@@ -135,7 +135,7 @@ Hook called before VFS files are removed during uninstall.
 
 > `optional` **section?**: `string`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:43](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L43)
+Defined in: [src/modules/VirtualPackageManager/index.ts:59](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L59)
 
 Repository section (e.g. `"utils"`, `"net"`, `"editors"`, `"devel"`).
 
@@ -145,7 +145,7 @@ Repository section (e.g. `"utils"`, `"net"`, `"editors"`, `"devel"`).
 
 > `optional` **shortDesc?**: `string`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:37](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L37)
+Defined in: [src/modules/VirtualPackageManager/index.ts:53](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L53)
 
 Short one-line summary shown in `apt search` results.
 
@@ -155,6 +155,6 @@ Short one-line summary shown in `apt search` results.
 
 > **version**: `string`
 
-Defined in: [src/modules/VirtualPackageManager/index.ts:29](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L29)
+Defined in: [src/modules/VirtualPackageManager/index.ts:45](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualPackageManager/index.ts#L45)
 
 Debian-style version string (e.g. `"2:9.0.1378-2"`).

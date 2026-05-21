@@ -6,12 +6,27 @@
 
 # Class: HoneyPot
 
-Defined in: [src/modules/Honeypot/index.ts:66](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/Honeypot/index.ts#L66)
+Defined in: [src/modules/Honeypot/index.ts:80](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/Honeypot/index.ts#L80)
 
 HoneyPot audit and event tracking utility.
 
 Singleton-like helper that attaches listeners to virtual shell components
-and maintains an audit log of all activity.
+and maintains an audit log of all activity. Tracks authentication attempts,
+file operations, commands, sessions, and system events for security analysis.
+
+## Example
+
+```ts
+const honeypot = new HoneyPot(10000); // retain 10k log entries
+honeypot.attach(shell, vfs, users, sshMimic, sftpMimic);
+
+// After activity, inspect the audit log
+console.log(honeypot.getAuditLog()); // Array of AuditLogEntry
+console.log(honeypot.getStats());    // HoneyPotStats with counters
+
+// Detect anomalies (brute force, privilege escalation, etc.)
+const anomalies = honeypot.detectAnomalies();
+```
 
 ## Constructors
 
@@ -19,7 +34,7 @@ and maintains an audit log of all activity.
 
 > **new HoneyPot**(`maxLogSize?`): `HoneyPot`
 
-Defined in: [src/modules/Honeypot/index.ts:103](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/Honeypot/index.ts#L103)
+Defined in: [src/modules/Honeypot/index.ts:117](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/Honeypot/index.ts#L117)
 
 Creates a new HoneyPot instance.
 
@@ -41,7 +56,7 @@ Maximum audit log entries to retain (default: 10000).
 
 > **attach**(`shell`, `vfs`, `users`, `ssh?`, `sftp?`): `void`
 
-Defined in: [src/modules/Honeypot/index.ts:117](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/Honeypot/index.ts#L117)
+Defined in: [src/modules/Honeypot/index.ts:131](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/Honeypot/index.ts#L131)
 
 Attaches honeypot listeners to all provided event emitters.
 
@@ -87,7 +102,7 @@ SftpMimic instance (optional).
 
 > **detectAnomalies**(): `object`[]
 
-Defined in: [src/modules/Honeypot/index.ts:489](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/Honeypot/index.ts#L489)
+Defined in: [src/modules/Honeypot/index.ts:486](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/Honeypot/index.ts#L486)
 
 Detects potential security issues based on activity patterns.
 
@@ -103,7 +118,7 @@ Array of anomalies detected.
 
 > **getAuditLog**(`type?`, `source?`): [`AuditLogEntry`](../interfaces/AuditLogEntry.md)[]
 
-Defined in: [src/modules/Honeypot/index.ts:422](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/Honeypot/index.ts#L422)
+Defined in: [src/modules/Honeypot/index.ts:419](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/Honeypot/index.ts#L419)
 
 Returns audit log entries matching optional filters.
 
@@ -133,7 +148,7 @@ Filtered audit log entries.
 
 > **getRecent**(`limit?`): [`AuditLogEntry`](../interfaces/AuditLogEntry.md)[]
 
-Defined in: [src/modules/Honeypot/index.ts:479](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/Honeypot/index.ts#L479)
+Defined in: [src/modules/Honeypot/index.ts:476](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/Honeypot/index.ts#L476)
 
 Returns recent log entries in reverse chronological order.
 
@@ -157,7 +172,7 @@ Recent audit log entries.
 
 > **getStats**(): `Readonly`\<[`HoneyPotStats`](../interfaces/HoneyPotStats.md)\>
 
-Defined in: [src/modules/Honeypot/index.ts:435](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/Honeypot/index.ts#L435)
+Defined in: [src/modules/Honeypot/index.ts:432](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/Honeypot/index.ts#L432)
 
 Returns current activity statistics.
 
@@ -173,7 +188,7 @@ Snapshot of honeypot stats.
 
 > **reset**(): `void`
 
-Defined in: [src/modules/Honeypot/index.ts:443](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/Honeypot/index.ts#L443)
+Defined in: [src/modules/Honeypot/index.ts:440](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/Honeypot/index.ts#L440)
 
 Clears audit log and resets statistics.
 

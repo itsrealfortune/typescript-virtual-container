@@ -6,10 +6,25 @@
 
 # Class: VirtualSshServer
 
-Defined in: [src/modules/SSHMimic/index.ts:46](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/index.ts#L46)
+Defined in: [src/modules/SSHMimic/index.ts:60](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/index.ts#L60)
 
 SSH server simulator accepting ssh2 client connections.
 Routes authentication, shell, exec, and SFTP sessions to a VirtualShell.
+
+## Example
+
+```ts
+const shell = new VirtualShell("my-server");
+await shell.ensureInitialized();
+
+const ssh = new SshMimic(shell, { port: 2222 });
+const actualPort = await ssh.start();
+console.log(`SSH listening on port ${actualPort}`);
+
+// Connect with: ssh -p 2222 user@localhost
+// Stop when done:
+// ssh.stop();
+```
 
 ## See
 
@@ -27,7 +42,7 @@ Routes authentication, shell, exec, and SFTP sessions to a VirtualShell.
 
 > **new VirtualSshServer**(`options`): `SshMimic`
 
-Defined in: [src/modules/SSHMimic/index.ts:69](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/index.ts#L69)
+Defined in: [src/modules/SSHMimic/index.ts:83](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/index.ts#L83)
 
 Creates a new SSH mimic server instance.
 
@@ -87,7 +102,7 @@ Optional preconfigured virtual shell instance to reuse.
 
 > **port**: `number`
 
-Defined in: [src/modules/SSHMimic/index.ts:47](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/index.ts#L47)
+Defined in: [src/modules/SSHMimic/index.ts:61](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/index.ts#L61)
 
 ***
 
@@ -95,7 +110,7 @@ Defined in: [src/modules/SSHMimic/index.ts:47](https://github.com/itsrealfortune
 
 > **server**: `Server` \| `null`
 
-Defined in: [src/modules/SSHMimic/index.ts:48](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/index.ts#L48)
+Defined in: [src/modules/SSHMimic/index.ts:62](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/index.ts#L62)
 
 ## Methods
 
@@ -200,7 +215,7 @@ v0.1.26
 
 > **clearLockout**(`ip`): `void`
 
-Defined in: [src/modules/SSHMimic/index.ts:364](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/index.ts#L364)
+Defined in: [src/modules/SSHMimic/index.ts:378](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/index.ts#L378)
 
 Manually clears the rate-limit record for an IP address.
 Useful in tests or admin tooling.
@@ -976,7 +991,7 @@ v0.3.5
 
 > **start**(): `Promise`\<`number`\>
 
-Defined in: [src/modules/SSHMimic/index.ts:146](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/index.ts#L146)
+Defined in: [src/modules/SSHMimic/index.ts:160](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/index.ts#L160)
 
 Starts server and initializes virtual filesystem, users, and handlers.
 
@@ -992,7 +1007,7 @@ Promise resolved with bound listening port.
 
 > **stop**(): `void`
 
-Defined in: [src/modules/SSHMimic/index.ts:348](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/index.ts#L348)
+Defined in: [src/modules/SSHMimic/index.ts:362](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/SSHMimic/index.ts#L362)
 
 Stops server if running.
 

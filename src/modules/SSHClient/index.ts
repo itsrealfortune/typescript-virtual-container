@@ -1,3 +1,18 @@
+/**
+ * SSHClient — programmatic client for executing commands against a VirtualShell.
+ *
+ * Provides a convenient API for running shell commands (exec, ls, cat, mkdir, etc.)
+ * without real SSH transport overhead. Maintains working-directory state across
+ * invocations and runs commands as a single authenticated user.
+ *
+ * @example
+ * ```ts
+ * const shell = new VirtualShell("typescript-vm");
+ * const client = new SshClient(shell, "alice");
+ * await client.cd("/tmp");
+ * const list = await client.ls();
+ * ```
+ */
 import { runCommand } from "../../commands";
 import type { CommandResult } from "../../types/commands";
 import { type PerfLogger, createPerfLogger } from "../../utils/perfLogger";
@@ -23,8 +38,8 @@ const perf: PerfLogger = createPerfLogger("SshClient");
  * Programmatic SSH client wrapping a VirtualShell instance.
  * Provides typed methods (exec, ls, cat, mkdir, etc.) without real SSH.
  *
- * @see VirtualShell
- * @see VirtualSshServer
+ * @see {@link VirtualShell}
+ * @see {@link VirtualSshServer}
  */
 export class SshClient {
 	private currentCwd = "/";

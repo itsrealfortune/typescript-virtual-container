@@ -1,3 +1,19 @@
+/**
+ * VirtualPackageManager — Debian-style package manager for the virtual filesystem.
+ *
+ * Provides `apt`, `dpkg`, and `apt-get` commands with a registry of packages
+ * that install files, binaries, and libraries into the VFS. Supports custom
+ * packages, dependency resolution, and install/remove hooks.
+ *
+ * @example
+ * ```ts
+ * const pkg = new VirtualPackageManager(vfs, users);
+ * await pkg.initialize();
+ * pkg.install("vim");
+ * pkg.install("build-essential");
+ * console.log(pkg.listInstalled());
+ * ```
+ */
 import type VirtualFileSystem from "../VirtualFileSystem";
 import type { VirtualUserManager } from "../VirtualUserManager";
 

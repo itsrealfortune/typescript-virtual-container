@@ -64,6 +64,12 @@ export interface SysctlState {
 	};
 }
 
+/**
+ * Create a default sysctl state populated with the given hostname and kernel.
+ * @param hostname - VM hostname for kernel.hostname.
+ * @param kernel - Kernel version string for kernel.osrelease.
+ * @returns SysctlState object with default values for all sysctl keys.
+ */
 export function defaultSysctlState(hostname: string, kernel: string): SysctlState {
 	return {
 		kernel: {
@@ -127,8 +133,9 @@ export function defaultSysctlState(hostname: string, kernel: string): SysctlStat
 /**
  * Resolve a /proc/sys/* path to the corresponding state value.
  * Returns { value, setter } where setter can update the value.
- * @param state - The state parameter.
- * @param sysPath - The sysPath parameter.
+ * @param state - Current sysctl state object.
+ * @param sysPath - Path under /proc/sys (e.g. "kernel/hostname").
+ * @returns Object with current value and setter function, or null if path not found.
  */
 export function resolveSysctlPath(
 	state: SysctlState,

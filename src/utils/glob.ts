@@ -1,3 +1,9 @@
+/**
+ * glob.ts — shell glob pattern to RegExp conversion.
+ *
+ * Converts glob patterns (*, ?, [...]) to JavaScript RegExp objects with
+ * memoization for repeated patterns.
+ */
 const _globCache = new Map<string, RegExp>();
 
 /**

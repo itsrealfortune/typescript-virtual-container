@@ -160,12 +160,11 @@ v0.1.26
 
 > **checkAccess**(`targetPath`, `uid`, `gid`, `want`): `boolean`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:1247](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1247)
+Defined in: [src/modules/VirtualFileSystem/index.ts:1229](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1229)
 
 POSIX-style access check: does `uid`/`gid` have `want` permission on `targetPath`?
 `want` is a bitmask of R_OK (4), W_OK (2), X_OK (1).
 Root (uid === 0) is granted everything except X_OK without at least one x bit set.
-Returns true when access is granted.
 
 #### Parameters
 
@@ -173,31 +172,31 @@ Returns true when access is granted.
 
 `string`
 
-The target file path.
+Absolute VFS path to check.
 
 ##### uid
 
 `number`
 
-The uid parameter.
+User ID requesting access.
 
 ##### gid
 
 `number`
 
-The gid parameter.
+Group ID of the requesting user.
 
 ##### want
 
 `number`
 
-The want parameter.
+Permission bitmask (R_OK=4, W_OK=2, X_OK=1).
 
 #### Returns
 
 `boolean`
 
-The success indicator.
+True if access is granted, false otherwise.
 
 ***
 
@@ -205,9 +204,10 @@ The success indicator.
 
 > **chmod**(`targetPath`, `mode`, `uid?`): `void`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:1204](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1204)
+Defined in: [src/modules/VirtualFileSystem/index.ts:1186](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1186)
 
-Updates mode bits on a node. If `uid` is provided, enforces ownership check.
+Updates mode bits on a node. If `uid` is provided, enforces ownership check
+(only the file owner or root can change permissions).
 
 #### Parameters
 
@@ -215,19 +215,19 @@ Updates mode bits on a node. If `uid` is provided, enforces ownership check.
 
 `string`
 
-The target file path.
+Absolute VFS path of the node.
 
 ##### mode
 
 `number`
 
-The mode parameter.
+New permission bits (e.g. 0o755, 0o644).
 
 ##### uid?
 
 `number`
 
-The uid parameter.
+Optional actor UID (enforces ownership check).
 
 #### Returns
 
@@ -239,9 +239,10 @@ The uid parameter.
 
 > **chown**(`targetPath`, `uid`, `gid`, `actorUid?`): `void`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:1218](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1218)
+Defined in: [src/modules/VirtualFileSystem/index.ts:1201](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1201)
 
-Changes ownership (uid/gid) of a file or directory. If `actorUid` is provided, enforces root-only check.
+Changes ownership (uid/gid) of a file or directory. If `actorUid` is provided,
+enforces root-only check (only uid 0 can change ownership).
 
 #### Parameters
 
@@ -249,25 +250,25 @@ Changes ownership (uid/gid) of a file or directory. If `actorUid` is provided, e
 
 `string`
 
-The target file path.
+Absolute VFS path of the node.
 
 ##### uid
 
 `number`
 
-The uid parameter.
+New owner UID.
 
 ##### gid
 
 `number`
 
-The gid parameter.
+New group GID.
 
 ##### actorUid?
 
 `number`
 
-The acting user ID.
+Optional actor UID (enforces root-only check).
 
 #### Returns
 
@@ -293,7 +294,7 @@ Clears all open file descriptors. Called when a shell session ends.
 
 > **compressFile**(`targetPath`): `void`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:1523](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1523)
+Defined in: [src/modules/VirtualFileSystem/index.ts:1509](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1509)
 
 Compresses a file's content with gzip in place.
 
@@ -315,7 +316,7 @@ The target file path.
 
 > **decompressFile**(`targetPath`): `void`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:1539](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1539)
+Defined in: [src/modules/VirtualFileSystem/index.ts:1525](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1525)
 
 Decompresses a gzip-compressed file in place.
 
@@ -420,7 +421,7 @@ Serialise current tree to VFSB binary. Used for the static rootfs cache.
 
 `Buffer`
 
-The buffer content.
+Binary buffer containing the encoded VFS tree.
 
 ***
 
@@ -465,7 +466,7 @@ v6.0.0
 
 > **evictLargeFiles**(): `void`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:734](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L734)
+Defined in: [src/modules/VirtualFileSystem/index.ts:726](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L726)
 
 Walk the in-memory tree and evict file contents that exceed
 `evictionThreshold`. Called automatically after `flushMirror()`.
@@ -481,9 +482,9 @@ Safe to call at any time — evicted files are reloaded on demand.
 
 > **exists**(`targetPath`): `boolean`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:1186](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1186)
+Defined in: [src/modules/VirtualFileSystem/index.ts:1167](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1167)
 
-Returns true when a file or directory exists at path.
+Returns true when a file or directory exists at the given path.
 
 #### Parameters
 
@@ -491,13 +492,13 @@ Returns true when a file or directory exists at path.
 
 `string`
 
-The target file path.
+Absolute VFS path to check.
 
 #### Returns
 
 `boolean`
 
-The success indicator.
+True if a node exists at the path, false otherwise.
 
 ***
 
@@ -515,7 +516,7 @@ Closes a file descriptor. If refCount reaches 0, the entry is removed.
 
 `number`
 
-The fd parameter.
+File descriptor number to close.
 
 #### Returns
 
@@ -538,13 +539,13 @@ The new FD shares the same flags and position conceptually.
 
 `number`
 
-The old file descriptor.
+Existing file descriptor to duplicate.
 
 #### Returns
 
 `number`
 
-The numeric result.
+A new file descriptor number referencing the same file.
 
 ***
 
@@ -563,19 +564,19 @@ Returns newFd.
 
 `number`
 
-The old file descriptor.
+Source file descriptor to duplicate.
 
 ##### newFd
 
 `number`
 
-The new file descriptor.
+Target file descriptor number to assign.
 
 #### Returns
 
 `number`
 
-The numeric result.
+The newFd value.
 
 ***
 
@@ -593,13 +594,13 @@ Returns the flags associated with an open file descriptor.
 
 `number`
 
-The fd parameter.
+File descriptor number to look up.
 
 #### Returns
 
 `number`
 
-The numeric result.
+The POSIX flags bitmask for the given FD.
 
 ***
 
@@ -619,19 +620,19 @@ FDs 0, 1, 2 are reserved for stdin, stdout, stderr.
 
 `string`
 
-The target file path.
+Absolute path to the file to open.
 
 ##### flags?
 
 `number` = `0`
 
-The flags parameter.
+POSIX open flags bitmask (default: 0 = O_RDONLY).
 
 #### Returns
 
 `number`
 
-The numeric result.
+A new file descriptor number (≥ 3).
 
 ***
 
@@ -649,13 +650,13 @@ Returns the path associated with an open file descriptor.
 
 `number`
 
-The fd parameter.
+File descriptor number to look up.
 
 #### Returns
 
 `string`
 
-The result string.
+The absolute VFS path for the given FD.
 
 ***
 
@@ -721,15 +722,15 @@ The persistence mode.
 
 > **getMounts**(): `object`[]
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:919](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L919)
+Defined in: [src/modules/VirtualFileSystem/index.ts:896](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L896)
 
-List all active mounts.
+List all active mounts with their VFS paths, host paths, and read-only flags.
 
 #### Returns
 
 `object`[]
 
-The operation result.
+Array of mount descriptors.
 
 ***
 
@@ -746,7 +747,7 @@ Used for /proc/self/fd/* population.
 
 `Map`\<`number`, `string`\>
 
-The map of entries.
+A new Map of open FD numbers to their VFS paths.
 
 ***
 
@@ -754,7 +755,7 @@ The map of entries.
 
 > **getOwner**(`targetPath`): `object`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:1231](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1231)
+Defined in: [src/modules/VirtualFileSystem/index.ts:1214](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1214)
 
 Returns the uid and gid of a node.
 
@@ -786,13 +787,13 @@ The target file path.
 
 Defined in: [src/modules/VirtualFileSystem/index.ts:561](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L561)
 
-Returns the snapshot file path used in `"fs"` mode, or `null`.
+Returns the snapshot file path used in `"fs"` mode, or `null` if not in fs mode.
 
 #### Returns
 
 `string` \| `null`
 
-The operation result.
+The absolute path to the snapshot file, or null.
 
 ***
 
@@ -800,9 +801,10 @@ The operation result.
 
 > **getUsageBytes**(`targetPath?`): `number`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:1504](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1504)
+Defined in: [src/modules/VirtualFileSystem/index.ts:1490](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1490)
 
-Computes total stored bytes under a path.
+Computes total stored bytes under a path (sum of all file content lengths).
+Compressed files count their compressed size, not uncompressed.
 
 #### Parameters
 
@@ -810,13 +812,13 @@ Computes total stored bytes under a path.
 
 `string` = `"/"`
 
-The target file path.
+Absolute VFS path to compute usage for (default: "/").
 
 #### Returns
 
 `number`
 
-The numeric result.
+Total bytes stored under the path.
 
 ***
 
@@ -824,7 +826,7 @@ The numeric result.
 
 > **importSnapshot**(`snapshot`): `void`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:1823](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1823)
+Defined in: [src/modules/VirtualFileSystem/index.ts:1810](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1810)
 
 Replaces the current filesystem state with the content of a snapshot.
 The persistence mode is preserved.
@@ -835,7 +837,7 @@ The persistence mode is preserved.
 
 [`VfsSnapshot`](../interfaces/VfsSnapshot.md)
 
-The snapshot parameter.
+VFS snapshot object containing the serialized tree.
 
 #### Returns
 
@@ -853,9 +855,9 @@ vfs.importSnapshot(savedSnapshot);
 
 > **isSymlink**(`targetPath`): `boolean`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:1597](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1597)
+Defined in: [src/modules/VirtualFileSystem/index.ts:1583](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1583)
 
-Returns true when the path is a symbolic link node.
+Returns true when the path is a symbolic link node (mode 0o120777).
 
 #### Parameters
 
@@ -863,13 +865,13 @@ Returns true when the path is a symbolic link node.
 
 `string`
 
-The target file path.
+Absolute VFS path to check.
 
 #### Returns
 
 `boolean`
 
-The success indicator.
+True if the path is a symlink, false otherwise.
 
 ***
 
@@ -877,9 +879,10 @@ The success indicator.
 
 > **list**(`dirPath?`): `string`[]
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:1443](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1443)
+Defined in: [src/modules/VirtualFileSystem/index.ts:1427](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1427)
 
-Lists direct children names of a directory (sorted).
+Lists direct children names of a directory, sorted alphabetically.
+For mount points, delegates to the host filesystem readdir.
 
 #### Parameters
 
@@ -887,13 +890,13 @@ Lists direct children names of a directory (sorted).
 
 `string` = `"/"`
 
-The directory path.
+Absolute VFS path of the directory (default: "/").
 
 #### Returns
 
 `string`[]
 
-The array of strings.
+Sorted array of child entry names.
 
 ***
 
@@ -987,7 +990,10 @@ v0.1.26
 
 > **mkdir**(`targetPath`, `mode?`, `uid?`, `gid?`): `void`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:993](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L993)
+Defined in: [src/modules/VirtualFileSystem/index.ts:974](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L974)
+
+Create a directory at the given path. Parent directories are created
+recursively if they don't exist (like `mkdir -p`).
 
 #### Parameters
 
@@ -995,17 +1001,25 @@ Defined in: [src/modules/VirtualFileSystem/index.ts:993](https://github.com/itsr
 
 `string`
 
+Absolute VFS path for the new directory.
+
 ##### mode?
 
 `number` = `0o755`
+
+Permission bits for the new directory (default: 0o755).
 
 ##### uid?
 
 `number`
 
+Optional owner UID for the new directory.
+
 ##### gid?
 
 `number`
+
+Optional owner GID for the new directory.
 
 #### Returns
 
@@ -1029,31 +1043,31 @@ Parent directories are created when missing.
 
 `string`
 
-The target file path.
+Absolute path for the device node (e.g. "/dev/null").
 
 ##### deviceKind
 
 `DeviceKind`
 
-The device kind.
+Device type (null, zero, full, random, urandom, tty, console, etc.).
 
 ##### mode?
 
 `number` = `0o666`
 
-The mode parameter.
+File permission bits (default: 0o666).
 
 ##### major?
 
 `number` = `1`
 
-The major device number.
+Major device number (default: 1).
 
 ##### minor?
 
 `number` = `0`
 
-The minor device number.
+Minor device number (default: 0).
 
 #### Returns
 
@@ -1065,7 +1079,7 @@ The minor device number.
 
 > **mount**(`vPath`, `hostPath`, `readOnly?`): `void`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:880](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L880)
+Defined in: [src/modules/VirtualFileSystem/index.ts:857](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L857)
 
 Mount a host directory into the VFS at `vPath`.
 
@@ -1117,7 +1131,7 @@ shell.vfs.mount("/app", "./src", { readOnly: true });
 
 > **move**(`fromPath`, `toPath`): `void`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:1690](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1690)
+Defined in: [src/modules/VirtualFileSystem/index.ts:1677](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1677)
 
 Moves or renames a node.
 
@@ -1183,7 +1197,7 @@ v10.0.0
 
 > **offBeforeRead**(`prefix`): `void`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:941](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L941)
+Defined in: [src/modules/VirtualFileSystem/index.ts:918](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L918)
 
 Remove a previously registered read hook.
 
@@ -1193,7 +1207,7 @@ Remove a previously registered read hook.
 
 `string`
 
-The prefix parameter.
+VFS path prefix of the hook to remove.
 
 #### Returns
 
@@ -1205,7 +1219,7 @@ The prefix parameter.
 
 > **offBeforeWrite**(`prefix`): `void`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:773](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L773)
+Defined in: [src/modules/VirtualFileSystem/index.ts:765](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L765)
 
 Remove a previously registered write hook.
 
@@ -1215,7 +1229,7 @@ Remove a previously registered write hook.
 
 `string`
 
-The prefix parameter.
+VFS path prefix of the hook to remove.
 
 #### Returns
 
@@ -1296,7 +1310,7 @@ v0.1.101
 
 > **onBeforeRead**(`prefix`, `cb`): `void`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:931](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L931)
+Defined in: [src/modules/VirtualFileSystem/index.ts:908](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L908)
 
 Register a callback that is invoked before any read under `prefix`.
 Used by /proc to refresh dynamic content on every access.
@@ -1307,13 +1321,13 @@ Used by /proc to refresh dynamic content on every access.
 
 `string`
 
-The prefix parameter.
+VFS path prefix to watch (e.g. "/proc").
 
 ##### cb
 
 () => `void`
 
-The cb parameter.
+No-argument callback invoked before each read under the prefix.
 
 #### Returns
 
@@ -1325,7 +1339,7 @@ The cb parameter.
 
 > **onBeforeWrite**(`prefix`, `cb`): `void`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:763](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L763)
+Defined in: [src/modules/VirtualFileSystem/index.ts:755](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L755)
 
 Register a callback that is invoked before any write under `prefix`.
 Callback receives (normalizedPath, content). Used for /proc/sys sysctl.
@@ -1336,13 +1350,13 @@ Callback receives (normalizedPath, content). Used for /proc/sys sysctl.
 
 `string`
 
-The prefix parameter.
+VFS path prefix to watch (e.g. "/proc/sys").
 
 ##### cb
 
 (`path`, `content`) => `void`
 
-The cb parameter.
+Callback invoked with the path and content before each write.
 
 #### Returns
 
@@ -1586,7 +1600,7 @@ v9.4.0
 
 > **readFile**(`targetPath`, `uid?`, `gid?`): `string`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:1104](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1104)
+Defined in: [src/modules/VirtualFileSystem/index.ts:1085](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1085)
 
 Reads file content as a UTF-8 string.
 Gzip-compressed files are transparently decompressed.
@@ -1598,25 +1612,25 @@ If `uid`/`gid` provided, enforces read permission.
 
 `string`
 
-The target file path.
+Absolute VFS path of the file to read.
 
 ##### uid?
 
 `number`
 
-The uid parameter.
+Optional reader UID (enforces read permission check).
 
 ##### gid?
 
 `number`
 
-The gid parameter.
+Optional reader GID (enforces read permission check).
 
 #### Returns
 
 `string`
 
-The result string.
+File content as a UTF-8 decoded string.
 
 ***
 
@@ -1624,9 +1638,9 @@ The result string.
 
 > **readFileRaw**(`targetPath`): `Buffer`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:1151](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1151)
+Defined in: [src/modules/VirtualFileSystem/index.ts:1132](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1132)
 
-Reads file content as a Buffer (decompresses if needed).
+Reads file content as a raw Buffer (decompresses if needed).
 
 #### Parameters
 
@@ -1634,13 +1648,13 @@ Reads file content as a Buffer (decompresses if needed).
 
 `string`
 
-The target file path.
+Absolute VFS path of the file to read.
 
 #### Returns
 
 `Buffer`
 
-The buffer content.
+File content as a Buffer (binary data).
 
 ***
 
@@ -1648,10 +1662,11 @@ The buffer content.
 
 > **registerContentResolver**(`prefix`, `resolver`): `void`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:803](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L803)
+Defined in: [src/modules/VirtualFileSystem/index.ts:791](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L791)
 
 Register a content resolver for a path prefix.
 Resolver returns string content or null to fall through to normal read.
+Used for dynamic /proc/sys values and other computed content.
 
 #### Parameters
 
@@ -1659,13 +1674,13 @@ Resolver returns string content or null to fall through to normal read.
 
 `string`
 
-The prefix parameter.
+VFS path prefix to handle (e.g. "/proc/sys").
 
 ##### resolver
 
 (`path`) => `string` \| `null`
 
-The resolver parameter.
+Function that returns content string or null for passthrough.
 
 #### Returns
 
@@ -1677,9 +1692,10 @@ The resolver parameter.
 
 > **remove**(`targetPath`, `options?`, `uid?`, `gid?`): `void`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:1642](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1642)
+Defined in: [src/modules/VirtualFileSystem/index.ts:1629](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1629)
 
-Removes a file or directory node. If `uid`/`gid` provided, enforces delete permission (including sticky bit).
+Removes a file or directory node. If `uid`/`gid` provided, enforces
+delete permission (including sticky bit on parent directory).
 
 #### Parameters
 
@@ -1687,25 +1703,25 @@ Removes a file or directory node. If `uid`/`gid` provided, enforces delete permi
 
 `string`
 
-The target file path.
+Absolute VFS path of the node to remove.
 
 ##### options?
 
 [`RemoveOptions`](../interfaces/RemoveOptions.md) = `{}`
 
-The options parameter.
+Remove options (recursive: delete non-empty directories).
 
 ##### uid?
 
 `number`
 
-The uid parameter.
+Optional actor UID (enforces delete permission check).
 
 ##### gid?
 
 `number`
 
-The gid parameter.
+Optional actor GID (enforces delete permission check).
 
 #### Returns
 
@@ -1877,7 +1893,7 @@ v0.1.26
 
 > **resolveSymlink**(`linkPath`, `maxDepth?`): `string`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:1613](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1613)
+Defined in: [src/modules/VirtualFileSystem/index.ts:1599](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1599)
 
 Resolves a symlink chain up to `maxDepth` hops.
 Throws when the chain is too long (circular links).
@@ -1888,19 +1904,19 @@ Throws when the chain is too long (circular links).
 
 `string`
 
-The symlink path.
+Absolute VFS path of the symlink to resolve.
 
 ##### maxDepth?
 
 `number` = `8`
 
-The maxDepth parameter.
+Maximum number of symlink hops before throwing (default: 8).
 
 #### Returns
 
 `string`
 
-The result string.
+The final resolved path after following all symlinks.
 
 ***
 
@@ -1960,9 +1976,10 @@ v0.3.5
 
 > **stat**(`targetPath`): [`VfsNodeStats`](../type-aliases/VfsNodeStats.md)
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:1275](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1275)
+Defined in: [src/modules/VirtualFileSystem/index.ts:1258](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1258)
 
-Returns metadata for a file or directory.
+Returns metadata for a file or directory (type, mode, uid, gid, size, timestamps).
+For mount points, delegates to the host filesystem stat.
 
 #### Parameters
 
@@ -1970,13 +1987,13 @@ Returns metadata for a file or directory.
 
 `string`
 
-The target file path.
+Absolute VFS path of the node.
 
 #### Returns
 
 [`VfsNodeStats`](../type-aliases/VfsNodeStats.md)
 
-The node statistics.
+VfsNodeStats object with type, permissions, ownership, and size.
 
 ***
 
@@ -1984,7 +2001,7 @@ The node statistics.
 
 > **statType**(`targetPath`): `"file"` \| `"directory"` \| `"device"` \| `null`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:1423](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1423)
+Defined in: [src/modules/VirtualFileSystem/index.ts:1406](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1406)
 
 Fast type-only check — no Date/string allocation.
 Use instead of `stat().type` when that's all you need.
@@ -1995,13 +2012,13 @@ Use instead of `stat().type` when that's all you need.
 
 `string`
 
-The target file path.
+Absolute VFS path to check.
 
 #### Returns
 
 `"file"` \| `"directory"` \| `"device"` \| `null`
 
-The operation result.
+Node type string ("file", "directory", "device") or null if not found.
 
 ***
 
@@ -2033,7 +2050,7 @@ process.on("SIGINT", async () => {
 
 > **symlink**(`targetPath`, `linkPath`, `uid?`, `gid?`): `void`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:1559](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1559)
+Defined in: [src/modules/VirtualFileSystem/index.ts:1545](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1545)
 
 Creates a symbolic link.
 The link node is stored with mode `0o120777` (POSIX symlink convention).
@@ -2044,25 +2061,25 @@ The link node is stored with mode `0o120777` (POSIX symlink convention).
 
 `string`
 
-The target file path.
+Target path the symlink should point to.
 
 ##### linkPath
 
 `string`
 
-The symlink path.
+Path where the symlink will be created.
 
 ##### uid?
 
 `number`
 
-The uid parameter.
+Optional owner UID (default: 0).
 
 ##### gid?
 
 `number`
 
-The gid parameter.
+Optional owner GID (default: 0).
 
 #### Returns
 
@@ -2074,7 +2091,7 @@ The gid parameter.
 
 > **toSnapshot**(): [`VfsSnapshot`](../interfaces/VfsSnapshot.md)
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:1732](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1732)
+Defined in: [src/modules/VirtualFileSystem/index.ts:1719](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1719)
 
 Exports the entire filesystem as a JSON-serialisable snapshot.
 
@@ -2093,9 +2110,10 @@ The filesystem snapshot.
 
 > **tree**(`dirPath?`): `string`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:1467](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1467)
+Defined in: [src/modules/VirtualFileSystem/index.ts:1452](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1452)
 
-Renders ASCII tree view of a directory hierarchy.
+Renders an ASCII tree view of a directory hierarchy.
+Similar to the `tree` command output.
 
 #### Parameters
 
@@ -2103,13 +2121,13 @@ Renders ASCII tree view of a directory hierarchy.
 
 `string` = `"/"`
 
-The directory path.
+Absolute VFS path of the root directory (default: "/").
 
 #### Returns
 
 `string`
 
-The result string.
+Multi-line string with the tree visualization.
 
 ***
 
@@ -2117,7 +2135,7 @@ The result string.
 
 > **unmount**(`vPath`): `void`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:907](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L907)
+Defined in: [src/modules/VirtualFileSystem/index.ts:884](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L884)
 
 Unmount a previously mounted host directory.
 The in-memory VFS directory at `vPath` is preserved but the host
@@ -2129,7 +2147,7 @@ delegation is removed.
 
 `string`
 
-The virtual file system path.
+Absolute VFS path of the mount point to unmount.
 
 #### Returns
 
@@ -2141,7 +2159,7 @@ The virtual file system path.
 
 > **writeFile**(`targetPath`, `content`, `options?`, `uid?`, `gid?`): `void`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:1020](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1020)
+Defined in: [src/modules/VirtualFileSystem/index.ts:1001](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1001)
 
 Writes UTF-8 text or binary content into a file.
 Parent directories are created when missing.
@@ -2153,31 +2171,31 @@ If `uid`/`gid` provided, enforces write permission on existing files.
 
 `string`
 
-The target file path.
+Absolute VFS path for the file.
 
 ##### content
 
 `string` \| `Buffer`\<`ArrayBufferLike`\>
 
-The content parameter.
+Text string or Buffer to write.
 
 ##### options?
 
 [`WriteFileOptions`](../interfaces/WriteFileOptions.md) = `{}`
 
-The options parameter.
+Optional write settings (mode, compress).
 
 ##### uid?
 
 `number`
 
-The uid parameter.
+Optional owner UID (enforces write permission check).
 
 ##### gid?
 
 `number`
 
-The gid parameter.
+Optional owner GID (enforces write permission check).
 
 #### Returns
 
@@ -2202,19 +2220,19 @@ Parent directories are created when missing.
 
 `string`
 
-The target file path.
+Absolute path inside the VFS (e.g. "/etc/hostname").
 
 ##### content
 
 `string`
 
-The content parameter.
+Text content to store as a lazy stub string.
 
 ##### mode?
 
 `number` = `0o644`
 
-The mode parameter.
+File permission bits (default: 0o644).
 
 #### Returns
 
@@ -2226,7 +2244,7 @@ The mode parameter.
 
 > `static` **fromSnapshot**(`snapshot`): `VirtualFileSystem`
 
-Defined in: [src/modules/VirtualFileSystem/index.ts:1807](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1807)
+Defined in: [src/modules/VirtualFileSystem/index.ts:1794](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualFileSystem/index.ts#L1794)
 
 Creates a new `VirtualFileSystem` instance (memory mode) from a snapshot.
 
@@ -2236,13 +2254,13 @@ Creates a new `VirtualFileSystem` instance (memory mode) from a snapshot.
 
 [`VfsSnapshot`](../interfaces/VfsSnapshot.md)
 
-The snapshot parameter.
+VFS snapshot object containing the serialized tree.
 
 #### Returns
 
 `VirtualFileSystem`
 
-The operation result.
+A new VirtualFileSystem instance with the snapshot content.
 
 #### Example
 

@@ -1,4 +1,12 @@
 /**
+ * command-helpers.ts — shell command argument parsing utilities.
+ *
+ * Provides `parseArgs`, `getFlag`, `getArg`, and `ifFlag` helpers for
+ * parsing command-line arguments in shell command implementations.
+ * Supports short flags (-f), long flags (--flag), and inline values (--key=value).
+ */
+
+/**
  * Options for argument parsing helpers.
  * @public
  */

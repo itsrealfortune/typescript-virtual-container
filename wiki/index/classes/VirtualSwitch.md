@@ -6,11 +6,39 @@
 
 # Class: VirtualSwitch
 
-Defined in: [src/modules/VirtualSwitch.ts:92](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L92)
+Defined in: [src/modules/VirtualSwitch.ts:138](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L138)
 
 Virtual network switch connecting multiple VMs on a shared subnet.
 Handles ARP resolution, inter-VM routing, NAT gateway, traffic shaping,
 DNS, load balancing, network partitioning, and bandwidth accounting.
+
+## Example
+
+```ts
+const sw = new VirtualSwitch("10.0.1.0/24");
+const web = new VirtualShell("web-server");
+const db  = new VirtualShell("db-server");
+await web.ensureInitialized();
+await db.ensureInitialized();
+
+const webPort = sw.attach(web, "10.0.1.10");
+const dbPort  = sw.attach(db, "10.0.1.20");
+
+sw.addDnsRecord("web", "10.0.1.10");
+sw.addDnsRecord("db", "10.0.1.20");
+
+// Route a packet between VMs
+const result = await sw.route({
+  srcIp: "10.0.1.10", srcMac: webPort.mac,
+  dstIp: "10.0.1.20", protocol: "tcp", dstPort: 3306,
+});
+
+// Traffic shaping: add 100ms latency to web server
+sw.setTrafficRule(webPort.mac, { vms: ["web-server"], latencyMs: 100 });
+
+// Network partition: isolate web from db
+sw.setPartitions([[webPort.mac], [dbPort.mac]]);
+```
 
 ## See
 
@@ -25,7 +53,7 @@ DNS, load balancing, network partitioning, and bandwidth accounting.
 
 > **new VirtualSwitch**(`subnet?`): `VirtualSwitch`
 
-Defined in: [src/modules/VirtualSwitch.ts:121](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L121)
+Defined in: [src/modules/VirtualSwitch.ts:167](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L167)
 
 #### Parameters
 
@@ -43,7 +71,7 @@ Defined in: [src/modules/VirtualSwitch.ts:121](https://github.com/itsrealfortune
 
 > `readonly` **gateway**: `string`
 
-Defined in: [src/modules/VirtualSwitch.ts:96](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L96)
+Defined in: [src/modules/VirtualSwitch.ts:142](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L142)
 
 Gateway IP address (.1 of the subnet).
 
@@ -53,7 +81,7 @@ Gateway IP address (.1 of the subnet).
 
 > `readonly` **gatewayMac**: `string`
 
-Defined in: [src/modules/VirtualSwitch.ts:98](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L98)
+Defined in: [src/modules/VirtualSwitch.ts:144](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L144)
 
 Gateway MAC address.
 
@@ -63,7 +91,7 @@ Gateway MAC address.
 
 > `readonly` **subnet**: `string`
 
-Defined in: [src/modules/VirtualSwitch.ts:94](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L94)
+Defined in: [src/modules/VirtualSwitch.ts:140](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L140)
 
 Subnet CIDR (e.g. "10.0.1.0/24").
 
@@ -73,9 +101,9 @@ Subnet CIDR (e.g. "10.0.1.0/24").
 
 > **addDnsRecord**(`hostname`, `ip`): `void`
 
-Defined in: [src/modules/VirtualSwitch.ts:197](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L197)
+Defined in: [src/modules/VirtualSwitch.ts:245](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L245)
 
-Register a DNS record.
+Register or update a DNS record mapping a hostname to an IP.
 
 #### Parameters
 
@@ -83,13 +111,13 @@ Register a DNS record.
 
 `string`
 
-The hostname parameter.
+Hostname to register (e.g. "web-server").
 
 ##### ip
 
 `string`
 
-The ip parameter.
+IPv4 address to map the hostname to.
 
 #### Returns
 
@@ -101,9 +129,10 @@ The ip parameter.
 
 > **addLoadBalancer**(`rule`): `void`
 
-Defined in: [src/modules/VirtualSwitch.ts:255](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L255)
+Defined in: [src/modules/VirtualSwitch.ts:300](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L300)
 
-Add a load balancer rule.
+Add a load balancer rule that distributes traffic on a port
+across multiple target hosts using round-robin or least-connections.
 
 #### Parameters
 
@@ -111,7 +140,7 @@ Add a load balancer rule.
 
 [`LoadBalancerRule`](../interfaces/LoadBalancerRule.md)
 
-The rule parameter.
+Load balancer configuration (name, port, targets, algorithm).
 
 #### Returns
 
@@ -123,7 +152,7 @@ The rule parameter.
 
 > **arpResolve**(`ip`): `string` \| `null`
 
-Defined in: [src/modules/VirtualSwitch.ts:359](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L359)
+Defined in: [src/modules/VirtualSwitch.ts:400](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L400)
 
 #### Parameters
 
@@ -141,7 +170,7 @@ Defined in: [src/modules/VirtualSwitch.ts:359](https://github.com/itsrealfortune
 
 > **attach**(`shell`, `preferredIp?`): [`VmPort`](../interfaces/VmPort.md)
 
-Defined in: [src/modules/VirtualSwitch.ts:136](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L136)
+Defined in: [src/modules/VirtualSwitch.ts:182](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L182)
 
 Attach a VM to the switch. Assigns an IP from the subnet.
 
@@ -171,7 +200,7 @@ The port descriptor with assigned MAC and IP.
 
 > **clearPartitions**(): `void`
 
-Defined in: [src/modules/VirtualSwitch.ts:313](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L313)
+Defined in: [src/modules/VirtualSwitch.ts:360](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L360)
 
 Remove all partitions.
 
@@ -185,9 +214,10 @@ Remove all partitions.
 
 > **detach**(`mac`): `void`
 
-Defined in: [src/modules/VirtualSwitch.ts:150](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L150)
+Defined in: [src/modules/VirtualSwitch.ts:197](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L197)
 
-Remove a VM from the switch by MAC.
+Remove a VM from the switch by MAC address.
+Cleans up the port mapping and IP-to-MAC resolution.
 
 #### Parameters
 
@@ -195,7 +225,7 @@ Remove a VM from the switch by MAC.
 
 `string`
 
-The mac parameter.
+MAC address of the VM to detach.
 
 #### Returns
 
@@ -207,9 +237,9 @@ The mac parameter.
 
 > **getBytesReceived**(`mac`): `number`
 
-Defined in: [src/modules/VirtualSwitch.ts:347](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L347)
+Defined in: [src/modules/VirtualSwitch.ts:388](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L388)
 
-Get total bytes received by a MAC.
+Get total bytes received by a VM (identified by MAC address).
 
 #### Parameters
 
@@ -217,13 +247,13 @@ Get total bytes received by a MAC.
 
 `string`
 
-The mac parameter.
+MAC address of the VM.
 
 #### Returns
 
 `number`
 
-The numeric result.
+Total bytes received since counters were last reset.
 
 ***
 
@@ -231,9 +261,9 @@ The numeric result.
 
 > **getBytesSent**(`mac`): `number`
 
-Defined in: [src/modules/VirtualSwitch.ts:338](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L338)
+Defined in: [src/modules/VirtualSwitch.ts:379](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L379)
 
-Get total bytes sent by a MAC.
+Get total bytes sent by a VM (identified by MAC address).
 
 #### Parameters
 
@@ -241,13 +271,13 @@ Get total bytes sent by a MAC.
 
 `string`
 
-The mac parameter.
+MAC address of the VM.
 
 #### Returns
 
 `number`
 
-The numeric result.
+Total bytes sent since counters were last reset.
 
 ***
 
@@ -255,11 +285,15 @@ The numeric result.
 
 > **getNetworkManager**(): [`VirtualNetworkManager`](VirtualNetworkManager.md)
 
-Defined in: [src/modules/VirtualSwitch.ts:443](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L443)
+Defined in: [src/modules/VirtualSwitch.ts:488](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L488)
+
+Get the underlying VirtualNetworkManager for firewall and routing configuration.
 
 #### Returns
 
 [`VirtualNetworkManager`](VirtualNetworkManager.md)
+
+The network manager instance.
 
 ***
 
@@ -267,9 +301,9 @@ Defined in: [src/modules/VirtualSwitch.ts:443](https://github.com/itsrealfortune
 
 > **getPort**(`mac`): [`VmPort`](../interfaces/VmPort.md) \| `undefined`
 
-Defined in: [src/modules/VirtualSwitch.ts:171](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L171)
+Defined in: [src/modules/VirtualSwitch.ts:218](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L218)
 
-Get a port by MAC address.
+Look up a port by its MAC address.
 
 #### Parameters
 
@@ -277,13 +311,13 @@ Get a port by MAC address.
 
 `string`
 
-The mac parameter.
+MAC address to look up.
 
 #### Returns
 
 [`VmPort`](../interfaces/VmPort.md) \| `undefined`
 
-The VM port descriptor.
+The VmPort if found, or undefined.
 
 ***
 
@@ -291,15 +325,15 @@ The VM port descriptor.
 
 > **getPorts**(): `Map`\<`string`, [`VmPort`](../interfaces/VmPort.md)\>
 
-Defined in: [src/modules/VirtualSwitch.ts:162](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L162)
+Defined in: [src/modules/VirtualSwitch.ts:209](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L209)
 
-Get all attached ports (MAC → VmPort).
+Get a copy of all attached ports (MAC → VmPort).
 
 #### Returns
 
 `Map`\<`string`, [`VmPort`](../interfaces/VmPort.md)\>
 
-The map of entries.
+A new Map of all attached ports keyed by MAC address.
 
 ***
 
@@ -307,7 +341,7 @@ The map of entries.
 
 > **listDnsRecords**(): [`DnsRecord`](../interfaces/DnsRecord.md)[]
 
-Defined in: [src/modules/VirtualSwitch.ts:210](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L210)
+Defined in: [src/modules/VirtualSwitch.ts:258](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L258)
 
 #### Returns
 
@@ -319,9 +353,9 @@ Defined in: [src/modules/VirtualSwitch.ts:210](https://github.com/itsrealfortune
 
 > **removeDnsRecord**(`hostname`): `void`
 
-Defined in: [src/modules/VirtualSwitch.ts:206](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L206)
+Defined in: [src/modules/VirtualSwitch.ts:254](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L254)
 
-Remove a DNS record.
+Remove a DNS record by hostname.
 
 #### Parameters
 
@@ -329,7 +363,7 @@ Remove a DNS record.
 
 `string`
 
-The hostname parameter.
+Hostname to remove from DNS.
 
 #### Returns
 
@@ -341,9 +375,9 @@ The hostname parameter.
 
 > **removeLoadBalancer**(`name`): `void`
 
-Defined in: [src/modules/VirtualSwitch.ts:266](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L266)
+Defined in: [src/modules/VirtualSwitch.ts:311](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L311)
 
-Remove a load balancer.
+Remove a load balancer rule by name.
 
 #### Parameters
 
@@ -351,7 +385,7 @@ Remove a load balancer.
 
 `string`
 
-The name parameter.
+Name of the load balancer rule to remove.
 
 #### Returns
 
@@ -363,9 +397,9 @@ The name parameter.
 
 > **removeTrafficRule**(`target`): `void`
 
-Defined in: [src/modules/VirtualSwitch.ts:229](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L229)
+Defined in: [src/modules/VirtualSwitch.ts:278](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L278)
 
-Remove a traffic rule.
+Remove traffic shaping rules for a VM.
 
 #### Parameters
 
@@ -373,7 +407,7 @@ Remove a traffic rule.
 
 `string`
 
-The target parameter.
+MAC address or hostname of the VM to unshaped.
 
 #### Returns
 
@@ -385,7 +419,7 @@ The target parameter.
 
 > **resetBandwidth**(): `void`
 
-Defined in: [src/modules/VirtualSwitch.ts:352](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L352)
+Defined in: [src/modules/VirtualSwitch.ts:393](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L393)
 
 Reset bandwidth counters.
 
@@ -399,9 +433,10 @@ Reset bandwidth counters.
 
 > **resolveHostname**(`hostname`): `string` \| `null`
 
-Defined in: [src/modules/VirtualSwitch.ts:180](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L180)
+Defined in: [src/modules/VirtualSwitch.ts:228](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L228)
 
-Resolve a hostname to an IP address via DNS records or VM hostnames.
+Resolve a hostname to an IP address. Checks DNS records first,
+then falls back to matching VM hostnames.
 
 #### Parameters
 
@@ -409,13 +444,13 @@ Resolve a hostname to an IP address via DNS records or VM hostnames.
 
 `string`
 
-The hostname parameter.
+Hostname to resolve.
 
 #### Returns
 
 `string` \| `null`
 
-The operation result.
+The resolved IP address, or null if not found.
 
 ***
 
@@ -423,9 +458,10 @@ The operation result.
 
 > **resolveLoadBalancer**(`port`): \{ `ip`: `string`; `port`: `number`; \} \| `null`
 
-Defined in: [src/modules/VirtualSwitch.ts:276](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L276)
+Defined in: [src/modules/VirtualSwitch.ts:323](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L323)
 
-Route through a load balancer. Returns the target IP and port or null.
+Resolve a load balancer target for a given destination port.
+Selects the next target using the configured algorithm.
 
 #### Parameters
 
@@ -433,11 +469,13 @@ Route through a load balancer. Returns the target IP and port or null.
 
 `number`
 
-The port parameter.
+Destination port to check for load balancing.
 
 #### Returns
 
 \{ `ip`: `string`; `port`: `number`; \} \| `null`
+
+The target IP and port, or null if no load balancer matches.
 
 ***
 
@@ -445,7 +483,7 @@ The port parameter.
 
 > **route**(`packet`): `Promise`\<[`PacketResult`](../interfaces/PacketResult.md)\>
 
-Defined in: [src/modules/VirtualSwitch.ts:369](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L369)
+Defined in: [src/modules/VirtualSwitch.ts:410](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L410)
 
 #### Parameters
 
@@ -463,10 +501,10 @@ Defined in: [src/modules/VirtualSwitch.ts:369](https://github.com/itsrealfortune
 
 > **setPartitions**(`groups`): `void`
 
-Defined in: [src/modules/VirtualSwitch.ts:308](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L308)
+Defined in: [src/modules/VirtualSwitch.ts:355](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L355)
 
 Split the network into isolated groups. VMs in different groups
- cannot communicate.
+ cannot communicate with each other.
 
 #### Parameters
 
@@ -474,8 +512,8 @@ Split the network into isolated groups. VMs in different groups
 
 `string`[][]
 
-The groups parameter.
- Each group is an array of MAC addresses or hostnames.
+Array of groups, each containing MAC addresses or hostnames.
+ VMs in different groups are isolated from each other.
 
 #### Returns
 
@@ -487,9 +525,10 @@ The groups parameter.
 
 > **setTrafficRule**(`target`, `rule`): `void`
 
-Defined in: [src/modules/VirtualSwitch.ts:221](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L221)
+Defined in: [src/modules/VirtualSwitch.ts:270](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L270)
 
-Set traffic shaping for a VM (by MAC or hostname).
+Set traffic shaping rules for a VM identified by MAC or hostname.
+Controls bandwidth, latency, and packet loss for traffic to/from this VM.
 
 #### Parameters
 
@@ -497,13 +536,13 @@ Set traffic shaping for a VM (by MAC or hostname).
 
 `string`
 
-The target parameter.
+MAC address or hostname of the target VM.
 
 ##### rule
 
 [`TrafficRule`](../interfaces/TrafficRule.md)
 
-The rule parameter.
+Traffic shaping parameters (bandwidth, latency, packet loss).
 
 #### Returns
 

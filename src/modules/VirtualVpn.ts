@@ -12,19 +12,38 @@
  * ```
  */
 
-import { createCipheriv, createDecipheriv, randomBytes, createHash } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import type { Packet, PacketResult } from "./VirtualSwitch";
 
-function deriveKey(secret: string): Buffer {
+/**
+ * Derive a 256-bit AES key from a shared secret using SHA-256.
+ * @param secret - The shared passphrase between VPN peers.
+ * @returns 32-byte key buffer for AES-256-CBC.
+ */
+export function deriveKey(secret: string): Buffer {
 	return createHash("sha256").update(secret).digest();
 }
 
-function encrypt(plaintext: string, key: Buffer, iv: Buffer): Buffer {
+/**
+ * Encrypt a plaintext string using AES-256-CBC.
+ * @param plaintext - Text to encrypt.
+ * @param key - 32-byte AES key.
+ * @param iv - 16-byte initialization vector.
+ * @returns Encrypted ciphertext buffer.
+ */
+export function encrypt(plaintext: string, key: Buffer, iv: Buffer): Buffer {
 	const cipher = createCipheriv("aes-256-cbc", key, iv);
 	return Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
 }
 
-function decrypt(ciphertext: Buffer, key: Buffer, iv: Buffer): string {
+/**
+ * Decrypt a ciphertext buffer using AES-256-CBC.
+ * @param ciphertext - Encrypted data to decrypt.
+ * @param key - 32-byte AES key.
+ * @param iv - 16-byte initialization vector.
+ * @returns Decrypted plaintext string.
+ */
+export function decrypt(ciphertext: Buffer, key: Buffer, iv: Buffer): string {
 	const decipher = createDecipheriv("aes-256-cbc", key, iv);
 	return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString("utf8");
 }
@@ -55,18 +74,20 @@ export class VirtualVpn {
 		this._registerRoutes();
 	}
 
-		/**
-	 * Add a peer to this VPN (hub mode).
-	 * @param peer - The peer parameter.
+	/**
+	 * Add a peer VPN instance for hub-and-spoke topology.
+	 * The peer will forward traffic through this VPN to reach other subnets.
+	 * @param peer - Another VirtualVpn instance to peer with.
 	 */
 	public addPeer(peer: VirtualVpn): void {
 		this.peers.push(peer);
 	}
 
-		/**
-	 * Encrypt and forward a packet to the other side.
-	 * @param packet - The packet parameter.
-	 * @returns A promise that resolves with the result.
+	/**
+	 * Encrypt a packet, simulate transit latency, decrypt on the remote side,
+	 * and route it to the destination VM.
+	 * @param packet - Network packet to tunnel across the VPN link.
+	 * @returns The routing result from the remote switch (ACCEPT/DROP/REJECT).
 	 */
 	public async tunnel(packet: Packet): Promise<PacketResult> {
 		const iv = randomBytes(16);

@@ -59,20 +59,39 @@ export interface LoadBalancerRule {
 }
 
 let _macCounter = 1;
-function nextMac(): MacAddress {
+/**
+ * Generate the next unique MAC address in the 02:42:0a:00:01:xx range.
+ * @returns A MAC address string.
+ */
+export function nextMac(): MacAddress {
 	const n = _macCounter++;
 	return `02:42:0a:00:01:${n.toString(16).padStart(2, "0")}`;
 }
 
-function ipToInt(ip: string): number {
+/**
+ * Convert an IPv4 dotted-decimal string to a 32-bit unsigned integer.
+ * @param ip - IPv4 address in dotted-decimal notation (e.g. "10.0.1.1").
+ * @returns The IP as a 32-bit unsigned integer.
+ */
+export function ipToInt(ip: string): number {
 	return ip.split(".").reduce((acc, oct) => (acc << 8) + parseInt(oct, 10), 0) >>> 0;
 }
 
-function intToIp(n: number): string {
+/**
+ * Convert a 32-bit unsigned integer back to dotted-decimal IPv4 notation.
+ * @param n - 32-bit unsigned integer representing an IP address.
+ * @returns IPv4 address string (e.g. "10.0.1.1").
+ */
+export function intToIp(n: number): string {
 	return [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join(".");
 }
 
-function cidrRange(cidr: string): { network: number; mask: number } {
+/**
+ * Parse a CIDR string into its network address and subnet mask.
+ * @param cidr - CIDR notation (e.g. "10.0.1.0/24").
+ * @returns Object containing the network address (int) and mask (int).
+ */
+export function cidrRange(cidr: string): { network: number; mask: number } {
 	const [ip = "10.0.1.0", bits = "24"] = cidr.split("/");
 	const mask = ~(2 ** (32 - parseInt(bits, 10)) - 1);
 	const network = ipToInt(ip) & mask;
@@ -84,10 +103,37 @@ function cidrRange(cidr: string): { network: number; mask: number } {
  * Handles ARP resolution, inter-VM routing, NAT gateway, traffic shaping,
  * DNS, load balancing, network partitioning, and bandwidth accounting.
  *
- * @see Baie
- * @see VirtualProxy
- * @see VirtualVpn
- * @see VirtualNetworkManager
+ * @example
+ * ```ts
+ * const sw = new VirtualSwitch("10.0.1.0/24");
+ * const web = new VirtualShell("web-server");
+ * const db  = new VirtualShell("db-server");
+ * await web.ensureInitialized();
+ * await db.ensureInitialized();
+ *
+ * const webPort = sw.attach(web, "10.0.1.10");
+ * const dbPort  = sw.attach(db, "10.0.1.20");
+ *
+ * sw.addDnsRecord("web", "10.0.1.10");
+ * sw.addDnsRecord("db", "10.0.1.20");
+ *
+ * // Route a packet between VMs
+ * const result = await sw.route({
+ *   srcIp: "10.0.1.10", srcMac: webPort.mac,
+ *   dstIp: "10.0.1.20", protocol: "tcp", dstPort: 3306,
+ * });
+ *
+ * // Traffic shaping: add 100ms latency to web server
+ * sw.setTrafficRule(webPort.mac, { vms: ["web-server"], latencyMs: 100 });
+ *
+ * // Network partition: isolate web from db
+ * sw.setPartitions([[webPort.mac], [dbPort.mac]]);
+ * ```
+ *
+ * @see {@link Baie}
+ * @see {@link VirtualProxy}
+ * @see {@link VirtualVpn}
+ * @see {@link VirtualNetworkManager}
  */
 export class VirtualSwitch {
 	/** Subnet CIDR (e.g. "10.0.1.0/24"). */
@@ -143,10 +189,11 @@ export class VirtualSwitch {
 		return port;
 	}
 
-		/**
-	 * Remove a VM from the switch by MAC.
-	 * @param mac - The mac parameter.
-	 */
+	/**
+ * Remove a VM from the switch by MAC address.
+ * Cleans up the port mapping and IP-to-MAC resolution.
+ * @param mac - MAC address of the VM to detach.
+ */
 	public detach(mac: MacAddress): void {
 		const port = this.ports.get(mac);
 		if (port) {
@@ -155,28 +202,29 @@ export class VirtualSwitch {
 		}
 	}
 
-		/**
-	 * Get all attached ports (MAC → VmPort).
-	 * @returns The map of entries.
-	 */
+	/**
+ * Get a copy of all attached ports (MAC → VmPort).
+ * @returns A new Map of all attached ports keyed by MAC address.
+ */
 	public getPorts(): Map<MacAddress, VmPort> {
 		return new Map(this.ports);
 	}
 
-		/**
-	 * Get a port by MAC address.
-	 * @param mac - The mac parameter.
-	 * @returns The VM port descriptor.
-	 */
+	/**
+ * Look up a port by its MAC address.
+ * @param mac - MAC address to look up.
+ * @returns The VmPort if found, or undefined.
+ */
 	public getPort(mac: MacAddress): VmPort | undefined {
 		return this.ports.get(mac);
 	}
 
-		/**
-	 * Resolve a hostname to an IP address via DNS records or VM hostnames.
-	 * @param hostname - The hostname parameter.
-	 * @returns The operation result.
-	 */
+	/**
+ * Resolve a hostname to an IP address. Checks DNS records first,
+ * then falls back to matching VM hostnames.
+ * @param hostname - Hostname to resolve.
+ * @returns The resolved IP address, or null if not found.
+ */
 	public resolveHostname(hostname: string): string | null {
 		const record = this.dnsRecords.find((r) => r.hostname === hostname);
 		if (record) return record.ip;
@@ -189,20 +237,20 @@ export class VirtualSwitch {
 
 	// ── DNS ──────────────────────────────────────────────────────────────
 
-		/**
-	 * Register a DNS record.
-	 * @param hostname - The hostname parameter.
-	 * @param ip - The ip parameter.
-	 */
+	/**
+ * Register or update a DNS record mapping a hostname to an IP.
+ * @param hostname - Hostname to register (e.g. "web-server").
+ * @param ip - IPv4 address to map the hostname to.
+ */
 	public addDnsRecord(hostname: string, ip: string): void {
 		this.dnsRecords = this.dnsRecords.filter((r) => r.hostname !== hostname);
 		this.dnsRecords.push({ hostname, ip });
 	}
 
-		/**
-	 * Remove a DNS record.
-	 * @param hostname - The hostname parameter.
-	 */
+	/**
+ * Remove a DNS record by hostname.
+ * @param hostname - Hostname to remove from DNS.
+ */
 	public removeDnsRecord(hostname: string): void {
 		this.dnsRecords = this.dnsRecords.filter((r) => r.hostname !== hostname);
 	}
@@ -213,28 +261,24 @@ export class VirtualSwitch {
 
 	// ── Traffic shaping ──────────────────────────────────────────────────
 
-		/**
-	 * Set traffic shaping for a VM (by MAC or hostname).
-	 * @param target - The target parameter.
-	 * @param rule - The rule parameter.
+	/**
+	 * Set traffic shaping rules for a VM identified by MAC or hostname.
+	 * Controls bandwidth, latency, and packet loss for traffic to/from this VM.
+	 * @param target - MAC address or hostname of the target VM.
+	 * @param rule - Traffic shaping parameters (bandwidth, latency, packet loss).
 	 */
 	public setTrafficRule(target: string, rule: TrafficRule): void {
 		this.trafficRules.set(target, rule);
 	}
 
-		/**
-	 * Remove a traffic rule.
-	 * @param target - The target parameter.
-	 */
+	/**
+ * Remove traffic shaping rules for a VM.
+ * @param target - MAC address or hostname of the VM to unshaped.
+ */
 	public removeTrafficRule(target: string): void {
 		this.trafficRules.delete(target);
 	}
 
-		/**
-	 * Apply traffic shaping to a packet. Returns modified latency.
-	 * @param baseLatency - The baseLatency parameter.
-	 * @returns The numeric result.
-	 */
 	private _applyTrafficShape(_mac: MacAddress, baseLatency: number): number {
 		let latency = baseLatency;
 		for (const rule of this.trafficRules.values()) {
@@ -248,10 +292,11 @@ export class VirtualSwitch {
 
 	// ── Load balancer ────────────────────────────────────────────────────
 
-		/**
-	 * Add a load balancer rule.
-	 * @param rule - The rule parameter.
-	 */
+	/**
+ * Add a load balancer rule that distributes traffic on a port
+ * across multiple target hosts using round-robin or least-connections.
+ * @param rule - Load balancer configuration (name, port, targets, algorithm).
+ */
 	public addLoadBalancer(rule: LoadBalancerRule): void {
 		this.loadBalancers = this.loadBalancers.filter((r) => r.name !== rule.name);
 		this.loadBalancers.push(rule);
@@ -259,20 +304,22 @@ export class VirtualSwitch {
 		this.lbConnections.set(rule.name, new Map());
 	}
 
-		/**
-	 * Remove a load balancer.
-	 * @param name - The name parameter.
-	 */
+	/**
+ * Remove a load balancer rule by name.
+ * @param name - Name of the load balancer rule to remove.
+ */
 	public removeLoadBalancer(name: string): void {
 		this.loadBalancers = this.loadBalancers.filter((r) => r.name !== name);
 		this.lbCounters.delete(name);
 		this.lbConnections.delete(name);
 	}
 
-		/**
-	 * Route through a load balancer. Returns the target IP and port or null.
-	 * @param port - The port parameter.
-	 */
+	/**
+ * Resolve a load balancer target for a given destination port.
+ * Selects the next target using the configured algorithm.
+ * @param port - Destination port to check for load balancing.
+ * @returns The target IP and port, or null if no load balancer matches.
+ */
 	public resolveLoadBalancer(port: number): { ip: string; port: number } | null {
 		for (const lb of this.loadBalancers) {
 			if (lb.port !== port || lb.targets.length === 0) continue;
@@ -302,9 +349,9 @@ export class VirtualSwitch {
 	// ── Network partition ────────────────────────────────────────────────
 
 	/** Split the network into isolated groups. VMs in different groups
-	 *  cannot communicate.
-	 * @param groups - The groups parameter.
-	 *  Each group is an array of MAC addresses or hostnames. */
+	 *  cannot communicate with each other.
+	 * @param groups - Array of groups, each containing MAC addresses or hostnames.
+	 *  VMs in different groups are isolated from each other. */
 	public setPartitions(groups: string[][]): void {
 		this.partitions = groups.map((g) => new Set(g));
 	}
@@ -314,12 +361,6 @@ export class VirtualSwitch {
 		this.partitions = [];
 	}
 
-		/**
-	 * Check if two MACs are in the same partition.
-	 * @param mac1 - The mac1 parameter.
-	 * @param mac2 - The mac2 parameter.
-	 * @returns The success indicator.
-	 */
 	private _samePartition(mac1: MacAddress, mac2: MacAddress): boolean {
 		if (this.partitions.length === 0) return true;
 		for (const group of this.partitions) {
@@ -330,20 +371,20 @@ export class VirtualSwitch {
 
 	// ── Bandwidth accounting ─────────────────────────────────────────────
 
-		/**
-	 * Get total bytes sent by a MAC.
-	 * @param mac - The mac parameter.
-	 * @returns The numeric result.
-	 */
+	/**
+ * Get total bytes sent by a VM (identified by MAC address).
+ * @param mac - MAC address of the VM.
+ * @returns Total bytes sent since counters were last reset.
+ */
 	public getBytesSent(mac: string): number {
 		return this.bandwidthSent.get(mac) ?? 0;
 	}
 
-		/**
-	 * Get total bytes received by a MAC.
-	 * @param mac - The mac parameter.
-	 * @returns The numeric result.
-	 */
+	/**
+ * Get total bytes received by a VM (identified by MAC address).
+ * @param mac - MAC address of the VM.
+ * @returns Total bytes received since counters were last reset.
+ */
 	public getBytesReceived(mac: string): number {
 		return this.bandwidthReceived.get(mac) ?? 0;
 	}
@@ -440,6 +481,10 @@ export class VirtualSwitch {
 		throw new Error(`VirtualSwitch: subnet ${this.subnet} is full`);
 	}
 
+	/**
+	 * Get the underlying VirtualNetworkManager for firewall and routing configuration.
+	 * @returns The network manager instance.
+	 */
 	public getNetworkManager(): VirtualNetworkManager {
 		return this.network;
 	}
@@ -447,8 +492,34 @@ export class VirtualSwitch {
 
 // ── Baie ─────────────────────────────────────────────────────────────────────
 
+/**
+ * High-level multi-VM orchestrator built on top of VirtualSwitch.
+ *
+ * Baie manages a collection of VMs (VirtualShell instances) on a shared
+ * subnet, handling VM creation/destruction, IP assignment, and DNS
+ * auto-registration. Use this for scenarios like simulating a data center,
+ * testing distributed systems, or building network labs.
+ *
+ * @example
+ * ```ts
+ * const baie = new Baie("datacenter", "10.0.1.0/24");
+ * const web = await baie.createVM("web-server", undefined, "10.0.1.10");
+ * const db  = await baie.createVM("db-server", undefined, "10.0.1.20");
+ *
+ * // VMs can communicate through the switch
+ * baie.switch.addDnsRecord("web", "10.0.1.10");
+ * console.log(baie.listVMs()); // [{ hostname: "web-server", ip: "10.0.1.10", ... }]
+ *
+ * await baie.destroyVM("db-server");
+ * ```
+ *
+ * @see {@link VirtualSwitch}
+ * @see {@link VirtualVpn}
+ */
 export class Baie {
+	/** Human-readable name for this Baie instance. */
 	readonly name: string;
+	/** The underlying network switch managing routing, DNS, and traffic shaping. */
 	readonly switch: VirtualSwitch;
 	private vms: Map<string, VirtualShell> = new Map();
 
@@ -457,6 +528,14 @@ export class Baie {
 		this.switch = new VirtualSwitch(subnet);
 	}
 
+	/**
+	 * Create a new VM with the given hostname and optional VFS options.
+	 * The VM is attached to the switch and auto-registered in DNS.
+	 * @param hostname - Unique name for the VM (also used as DNS hostname).
+	 * @param vfsOptions - Optional VFS configuration (defaults to memory mode).
+	 * @param preferredIp - Optional specific IP address (must be free in the subnet).
+	 * @returns The initialized VirtualShell for the new VM.
+	 */
 	public async createVM(hostname: string, vfsOptions?: never, preferredIp?: string): Promise<VirtualShell> {
 		const shell = new VirtualShell(hostname, undefined, (vfsOptions ?? { mode: "memory" }) as never);
 		await shell.ensureInitialized();
@@ -470,6 +549,10 @@ export class Baie {
 		return shell;
 	}
 
+	/**
+	 * Destroy a VM by hostname. Detaches it from the switch and removes its DNS record.
+	 * @param hostname - Hostname of the VM to destroy.
+	 */
 	public async destroyVM(hostname: string): Promise<void> {
 		const shell = this.vms.get(hostname);
 		if (!shell) return;
@@ -479,10 +562,19 @@ export class Baie {
 		this.vms.delete(hostname);
 	}
 
+	/**
+	 * Get a VM by hostname.
+	 * @param hostname - Hostname to look up.
+	 * @returns The VirtualShell if found, or undefined.
+	 */
 	public getVM(hostname: string): VirtualShell | undefined {
 		return this.vms.get(hostname);
 	}
 
+	/**
+	 * List all VMs in this Baie with their hostnames and assigned IPs.
+	 * @returns Array of VM descriptors containing hostname, IP, and shell.
+	 */
 	public listVMs(): Array<{ hostname: string; ip: string; shell: VirtualShell }> {
 		return Array.from(this.vms.entries()).map(([name, shell]) => ({
 			hostname: name,
@@ -512,3 +604,5 @@ export class Baie {
 		return null;
 	}
 }
+
+export { Baie as VirtualNetworkBaie, VirtualSwitch as VirtualNetworkSwitch };

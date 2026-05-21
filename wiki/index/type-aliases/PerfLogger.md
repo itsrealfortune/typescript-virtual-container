@@ -8,7 +8,7 @@
 
 > **PerfLogger** = `object`
 
-Defined in: [src/utils/perfLogger.ts:5](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/perfLogger.ts#L5)
+Defined in: [src/utils/perfLogger.ts:12](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/perfLogger.ts#L12)
 
 Interface for a performance logger instance.
 When `enabled` is false, `mark` and `done` are no-ops.
@@ -19,7 +19,7 @@ When `enabled` is false, `mark` and `done` are no-ops.
 
 > **done**: (`label?`) => `void`
 
-Defined in: [src/utils/perfLogger.ts:8](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/perfLogger.ts#L8)
+Defined in: [src/utils/perfLogger.ts:15](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/perfLogger.ts#L15)
 
 #### Parameters
 
@@ -37,7 +37,7 @@ Defined in: [src/utils/perfLogger.ts:8](https://github.com/itsrealfortune/typesc
 
 > **enabled**: `boolean`
 
-Defined in: [src/utils/perfLogger.ts:6](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/perfLogger.ts#L6)
+Defined in: [src/utils/perfLogger.ts:13](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/perfLogger.ts#L13)
 
 ***
 
@@ -45,7 +45,7 @@ Defined in: [src/utils/perfLogger.ts:6](https://github.com/itsrealfortune/typesc
 
 > **mark**: (`label`) => `void`
 
-Defined in: [src/utils/perfLogger.ts:7](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/perfLogger.ts#L7)
+Defined in: [src/utils/perfLogger.ts:14](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/utils/perfLogger.ts#L14)
 
 #### Parameters
 

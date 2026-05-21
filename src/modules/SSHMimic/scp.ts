@@ -73,11 +73,11 @@ function parseArgs(args: string[]): {
  * Handles SCP sink mode (receiving files from the client). Parses the SCP wire
  * protocol control messages (C, D, E, T) and writes file data into the virtual
  * filesystem.
- * @param stream - The stream parameter.
- * @param destArg - The destination path argument.
- * @param authUser - The authenticated username.
- * @param shell - The shell parameter.
- * @param recursive - The recursive parameter.
+ * @param stream - SSH channel stream for SCP protocol communication.
+ * @param destArg - Destination path on the server (e.g. "/home/user/file.txt").
+ * @param authUser - Authenticated username owning the destination.
+ * @param shell - VirtualShell providing VFS for file writes.
+ * @param recursive - Whether to accept directory uploads (-r flag).
  */
 export function runScpSink(
 	stream: ScpStream,
@@ -225,10 +225,10 @@ export function runScpSink(
  * Handles SCP source mode (sending files to the client). Traverses the virtual
  * filesystem and streams file contents using the SCP wire protocol control
  * messages (C, D, E) in response to client acknowledgements.
- * @param stream - The stream parameter.
- * @param srcArg - The source path argument.
- * @param shell - The shell parameter.
- * @param recursive - The recursive parameter.
+ * @param stream - SSH channel stream for SCP protocol communication.
+ * @param srcArg - Source path on the server (e.g. "/home/user/file.txt").
+ * @param shell - VirtualShell providing VFS for file reads.
+ * @param recursive - Whether to send directory trees (-r flag).
  */
 export function runScpSource(
 	stream: ScpStream,
@@ -360,10 +360,10 @@ export function runScpSource(
 /**
  * Handles SCP protocol transfer by parsing the exec arguments to determine
  * sink (upload) or source (download) mode and delegating accordingly.
- * @param stream - The stream parameter.
- * @param rawArgs - The raw arguments array.
- * @param authUser - The authenticated username.
- * @param shell - The shell parameter.
+ * @param stream - SSH channel stream for SCP protocol communication.
+ * @param rawArgs - Raw command-line arguments from the SSH exec request.
+ * @param authUser - Authenticated username for permission checks.
+ * @param shell - VirtualShell providing VFS for file operations.
  */
 export function handleScp(
 	stream: ScpStream,

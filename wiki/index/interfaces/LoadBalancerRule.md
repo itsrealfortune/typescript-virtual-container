@@ -36,6 +36,6 @@ Defined in: [src/modules/VirtualSwitch.ts:56](https://github.com/itsrealfortune/
 
 ### targets
 
-> **targets**: `LoadBalancerTarget`[]
+> **targets**: [`LoadBalancerTarget`](LoadBalancerTarget.md)[]
 
 Defined in: [src/modules/VirtualSwitch.ts:57](https://github.com/itsrealfortune/typescript-virtual-container/blob/main/src/modules/VirtualSwitch.ts#L57)
