@@ -74,9 +74,9 @@
 </details>
 
 ## Urgent
-- [ ] Fix parameters name convention in multiple filesand remove unused parameters (noUnusedLocals, noUnusedParameters)
-- [ ] Fix all names conventions (camelCase for variables/functions, PascalCase for classes/types, UPPER_SNAKE_CASE for constants)
-- [ ] Split src/modules/*.ts if they are needed to to uniformise the codebase and improve maintainability, and separate function modules from class modules
+- [x] Fix parameters name convention in multiple filesand remove unused parameters (noUnusedLocals, noUnusedParameters)
+- [x] Fix all names conventions (camelCase for variables/functions, PascalCase for classes/types, UPPER_SNAKE_CASE for constants)
+- [x] Split src/modules/*.ts if they are needed to to uniformise the codebase and improve maintainability, and separate function modules from class modules
 
 ## Prioty
 
