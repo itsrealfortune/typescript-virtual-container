@@ -498,7 +498,7 @@ export class SftpMimic extends EventEmitter {
 	}
 
 	private _getHandle(handle: Buffer): SftpHandle | undefined {
-		return this._handles.get(handle.toString("hex")) as SftpHandle | undefined;
+		return this._handles.get(handle.toString("hex"));
 	}
 
 	private _closeHandle(handle: Buffer): void {
