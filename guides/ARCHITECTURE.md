@@ -55,7 +55,7 @@ Storage (VFS) → Auth (UserManager) → Software (PackageManager)
 ```
 src/
 ├── index.ts                          — Main barrel export
-├── stand alone.ts                    — CLI standalone entry point
+├── standalone.ts                     — CLI standalone entry point
 ├── self-standalone.ts                — Self-contained build entry
 ├── bun.d.ts                          — Bun type declarations
 │
@@ -85,7 +85,7 @@ src/
 │   └── vfsDiff.ts                    — VFS diff utility
 │
 └── modules/                          (all core subsystems)
-    ├── VirtualFileSystem/
+    ├── VirtualFileSystem/            (8 .ts files)
     │   ├── index.ts                  — Main VFS class
     │   ├── internalTypes.ts          — Internal node types
     │   ├── path.ts                   — Path normalization
@@ -95,21 +95,21 @@ src/
     │   ├── fileCache.ts              — Disk I/O simulation cache
     │   └── swapStore.ts              — Swap file store for eviction
     │
-    ├── VirtualShell/
+    ├── VirtualShell/                 (4 .ts files)
     │   ├── index.ts                  — VirtualShell class
     │   ├── shell.ts                  — Interactive shell loop
     │   ├── shellParser.ts            — Shell syntax parser
     │   └── idleManager.ts            — Idle session management
     │
-    ├── VirtualUserManager/
+    ├── VirtualUserManager/           (3 .ts files)
     │   ├── index.ts                  — User management
     │   ├── signals.ts                — POSIX signal definitions
     │   └── processScheduler.ts       — CPU scheduler (CFS-inspired)
     │
-    ├── VirtualPackageManager/
+    ├── VirtualPackageManager/        (1 .ts file)
     │   └── index.ts                  — Package management
     │
-    ├── SSHMimic/
+    ├── SSHMimic/                     (9 .ts files)
     │   ├── index.ts                  — SSH server facade
     │   ├── executor.ts               — Statement executor
     │   ├── exec.ts                   — Non-interactive exec handler
@@ -120,42 +120,28 @@ src/
     │   ├── loginBanner.ts            — SSH login banner
     │   └── loginFormat.ts            — Login format strings
     │
-    ├── SSHClient/
+    ├── SSHClient/                    (1 .ts file)
     │   └── index.ts                  — Programmatic command client
     │
-    ├── Honeypot/
+    ├── Honeypot/                     (1 .ts file)
     │   └── index.ts                  — Security auditing/telemetry
+    │
+    ├── VirtualNetworkManager/        (subdirectory)
+    ├── VirtualSwitch/                (subdirectory)
+    ├── VirtualVpn/                   (subdirectory)
     │
     ├── linuxRootfs.ts                — Linux root FS bootstrap
     ├── nanoEditor.ts                 — Built-in nano editor
     ├── desktopManager.ts             — XFCE desktop simulation
     ├── neofetch.ts                   — Neofetch display
     ├── pacmanGame.ts                 — Built-in Pac-Man game
-    ├── VirtualNetworkManager.ts      — Virtual networking stack
-    ├── VirtualSwitch.ts              — Multi-VM switch with NAT
     ├── VirtualProxy.ts               — Port forwarding + SOCKS5
-    ├── VirtualVpn.ts                 — Encrypted tunnel between Baies
     ├── sysctl.ts                     — Writable /proc/sys state
-    └── sessionManager.ts             — Shell session management
-```
-│   ├── pacmanGame.ts                  (689 lines) — Built-in Pac-Man game
-│   ├── shellInteractive.ts            — Shell interaction module
-│   ├── shellRuntime.ts                — Shell runtime module
-│   ├── VirtualNetworkManager.ts       (358 lines) — Virtual networking stack
-│   ├── VirtualSwitch.ts               (437 lines) — Multi-VM switch with NAT
-│   ├── VirtualProxy.ts                (198 lines) — Port forwarding + SOCKS5
-│   ├── sysctl.ts                      (193 lines) — Writable /proc/sys state
-│   └── VirtualVpn.ts                  (96 lines)  — Encrypted tunnel between Baies
-│
-└── utils/                             (8 .ts files)
-    ├── expand.ts                      (664 lines) — Shell variable expansion
-    ├── tokenize.ts                    — Command tokenizer
-    ├── argv.ts                        — CLI argument helpers
-    ├── glob.ts                        — Glob pattern matching
-    ├── keyToBytes.ts                  — Key conversion utility
-    ├── perfLogger.ts                  — Performance logging
-    ├── shellSession.ts                — Session state helpers
-    └── vfsDiff.ts                     (275 lines) — VFS diff utility
+    ├── sessionManager.ts             — Shell session management
+    ├── shellInteractive.ts           — Shell interaction module
+    ├── shellRuntime.ts               — Shell runtime helpers
+    ├── thunarManager.ts              — Thunar file manager simulation
+    └── webTermRenderer.ts            — Web terminal renderer
 ```
 
 </details>
@@ -535,18 +521,18 @@ docs/
 
 5. **Comprehensive Linux emulation**: The project simulates a Fortune GNU/Linux (Nyx) distribution with Firecracker MicroVM kernel 6.x, realistic /proc, /sys, /dev hierarchy, package manager, user management, and desktop environment.
 
-5. **Dual deployment model**: Can be used programmatically (TypeScript library, `dist/index.js`) or as a standalone SSH server (`standalone.ts`, builds for Node.js and web).
+6. **Dual deployment model**: Can be used programmatically (TypeScript library, `dist/index.js`) or as a standalone SSH server (`standalone.ts`, builds for Node.js and web).
 
-6. **Security features**: Password hashing with scrypt + per-user salt, constant-time comparison, rate limiting, IP lockout, audit logging (Honeypot), SSH public-key auth.
+7. **Security features**: Password hashing with scrypt + per-user salt, constant-time comparison, rate limiting, IP lockout, audit logging (Honeypot), SSH public-key auth.
 
-7. **Web compatibility**: Polyfills for Node.js built-ins (`node:fs`, `node:crypto`, `node:child_process`, etc.) enable browser-side execution via esbuild bundling.
+8. **Web compatibility**: Polyfills for Node.js built-ins (`node:fs`, `node:crypto`, `node:child_process`, etc.) enable browser-side execution via esbuild bundling.
 
-8. **Documentation quality**: Full TypeDoc-generated API docs with 192 HTML pages covering all public classes, interfaces, types, and functions.
+9. **Documentation quality**: Full TypeDoc-generated API docs with 192 HTML pages covering all public classes, interfaces, types, and functions.
 
-9. **Testing maturity**: 26 test files, ~8,200 lines, organized by domain. Uses Bun's test runner with sequential execution pattern. 921+ tests across 26 files cover permission enforcement, user provisioning, VFS operations, command-level integration, file caching, process scheduling, swap store, virtual networking, and more.
+10. **Testing maturity**: 26 test files, ~8,200 lines, organized by domain. Uses Bun's test runner with sequential execution pattern. 921+ tests across 26 files cover permission enforcement, user provisioning, VFS operations, command-level integration, file caching, process scheduling, swap store, virtual networking, and more.
 
-10. **Permission enforcement**: POSIX permission model implemented in `src/VirtualFileSystem/permissions.ts`. VFS methods (`readFile`, `writeFile`, `remove`, `chmod`, `chown`, `mkdir`, `symlink`) accept optional `uid`/`gid` parameters. When provided, `enforceAccess` checks the permission bits (owner/group/other) with root bypass. `enforcePathTraversal` checks `x` on every parent directory component. `enforceDelete` handles sticky bit semantics. All file commands pass `uid`/`gid` from `CommandContext`.
+11. **Permission enforcement**: POSIX permission model implemented in `src/VirtualFileSystem/permissions.ts`. VFS methods (`readFile`, `writeFile`, `remove`, `chmod`, `chown`, `mkdir`, `symlink`) accept optional `uid`/`gid` parameters. When provided, `enforceAccess` checks the permission bits (owner/group/other) with root bypass. `enforcePathTraversal` checks `x` on every parent directory component. `enforceDelete` handles sticky bit semantics. All file commands pass `uid`/`gid` from `CommandContext`.
 
-11. **Modern toolchain**: TypeScript 6.x, esbuild (for bundling), Biome (for formatting/linting), Bun (for testing/running), GH Actions CI (3 workflows).
+12. **Modern toolchain**: TypeScript 6.x, esbuild (for bundling), Biome (for formatting/linting), Bun (for testing/running), GH Actions CI (3 workflows).
 
 </details>

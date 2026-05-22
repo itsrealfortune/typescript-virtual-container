@@ -62,6 +62,9 @@ bun test tests/permissions.test.ts
 | `command-helpers.test.ts` | ~40ms | 17 |
 | `helpers.test.ts` | ~37ms | 15 |
 | `users.test.ts` | ~397ms | 14 |
+| `executor.test.ts` | ~30ms | ~5 |
+| `user-upgrades.test.ts` | ~30ms | ~5 |
+| `virtual-shell-api.test.ts` | ~30ms | ~5 |
 | **Total** | **~3.0s** | **921** |
 
 ## File-by-file Coverage
