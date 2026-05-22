@@ -191,13 +191,7 @@ See [`guides/EXAMPLES.md`](guides/EXAMPLES.md) for:
 - **Advanced routing** — multiple routing tables, policy-based routing, route metrics
 - **DNS, load balancer, partition**
 
-A generated wiki with the full reference documentation is available in
-the [`wiki/`](wiki/) directory — run `npm run generate-wiki` to update it
-from the JSDoc.
-
 ---
-
-## How It Works
 
 ## How It Works
 
