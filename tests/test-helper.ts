@@ -5,7 +5,7 @@ import { SshClient } from "../src/modules/SSHClient";
  * Test helper: creates a fresh shell & client for each test
  */
 export async function createTestEnv(vmName = "test-shell") {
-	const shell = new VirtualShell(vmName, undefined, { mode: "memory" } as any);
+	const shell = new VirtualShell(vmName, undefined, { mode: "memory" });
 	await shell.ensureInitialized();
 	const client = new SshClient(shell, "root");
 	return { shell, client };
@@ -68,12 +68,4 @@ export function readTestFile(shell: VirtualShell, path: string): string {
  */
 export function pathExists(shell: VirtualShell, path: string): boolean {
 	return shell.vfs.exists(path);
-}
-
-/**
- * Helper: cleanup test environment
- * @param shell VirtualShell instance
- */
-export function cleanupTestEnv(shell: VirtualShell) {
-	// No cleanup needed for now, VirtualShell is ephemeral
 }

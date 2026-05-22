@@ -1,15 +1,47 @@
 import { beforeAll, describe, expect, test } from "bun:test";
-import type { SshClient, VirtualShell } from "../src";
+import { VirtualShell } from "../src";
 import { runExec } from "../src/modules/SSHMimic/exec";
-import { createTestEnv, runCmd } from "./test-helper";
+import type { ExecStream } from "../src/types/streams";
 
 let shell: VirtualShell;
-let client: InstanceType<typeof SshClient>;
 
 beforeAll(async () => {
-	const env = await createTestEnv("executor");
-	shell = env.shell;
-	client = env.client;
+	shell = new VirtualShell("exec-test");
+	await shell.ensureInitialized();
+});
+
+describe("runExec", () => {
+	test("runExec writes stdout", async () => {
+		let exitCode = 0;
+		let ended = false;
+		const written: string[] = [];
+
+		const stream: ExecStream = {
+			write: (s: string) => { written.push(s); },
+			stderr: { write: (_s: string) => {} },
+			exit: (code: number) => { exitCode = code; },
+			end: () => { ended = true; },
+		};
+
+		runExec(stream, "echo hello", "root", "test-vm", shell);
+		await Bun.sleep(50);
+		expect(written.join("")).toContain("hello");
+	});
+
+	test("runExec writes stderr", async () => {
+		const stderrWritten: string[] = [];
+
+		const stream: ExecStream = {
+			write: (_s: string) => {},
+			stderr: { write: (s: string) => { stderrWritten.push(s); } },
+			exit: (_code: number) => {},
+			end: () => {},
+		};
+
+		runExec(stream, "ls /nonexistent_path_xyz", "root", "test-vm", shell);
+		await Bun.sleep(50);
+		expect(stderrWritten.length).toBeGreaterThan(0);
+	});
 });
 
 describe("Pipeline executor", () => {
