@@ -32,7 +32,7 @@ export const gpasswdCommand: ShellModule = {
 			}
 		}
 
-		if (!action || !groupName || !username) {
+		if (!((action && groupName ) && username)) {
 			return { stderr: "Usage: gpasswd -a|-d -G group user\n", exitCode: 1 };
 		}
 
@@ -49,10 +49,9 @@ export const gpasswdCommand: ShellModule = {
 			if (action === "add") {
 				shell.users.addGroupMember(groupName, username);
 				return { stdout: `gpasswd: added '${username}' to group '${groupName}'\n`, exitCode: 0 };
-			} else {
+			}
 				shell.users.removeGroupMember(groupName, username);
 				return { stdout: `gpasswd: removed '${username}' from group '${groupName}'\n`, exitCode: 0 };
-			}
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
 			return { stderr: `${msg}\n`, exitCode: 1 };

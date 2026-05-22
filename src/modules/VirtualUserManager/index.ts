@@ -88,8 +88,8 @@ export interface VirtualActiveSession {
 function resolveFastPasswordHash(): boolean {
 	const configured = process.env.SSH_MIMIC_FAST_PASSWORD_HASH;
 	return (
-		!!configured &&
-		!["0", "false", "no", "off"].includes(configured.toLowerCase())
+		Boolean(configured) &&
+		!["0", "false", "no", "off"].includes(configured!.toLowerCase())
 	);
 }
 
@@ -216,7 +216,7 @@ export class VirtualUserManager extends EventEmitter {
 			this._vfs.mkdir(homePath, 0o755);
 			this._vfs.writeFile(
 				`${homePath}/README.txt`,
-				`Welcome to the virtual environment, root`,
+				"Welcome to the virtual environment, root",
 			);
 		}
 
@@ -360,7 +360,7 @@ export class VirtualUserManager extends EventEmitter {
 		try {
 			const a = Buffer.from(computed, "hex");
 			const b = Buffer.from(expected, "hex");
-			if (a.length !== b.length) return false;
+			if (a.length !== b.length) { return false; }
 			return timingSafeEqual(a, b);
 		} catch {
 			return computed === expected;
@@ -429,7 +429,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param username - Username to ensure exists.
 	 */
 	public ensureUser(username: string): void {
-		if (this._users.has(username)) return;
+		if (this._users.has(username)) { return; }
 		if (username === "root") {
 			this._users.set("root", this._createRecord("root", ""));
 			return;
@@ -456,11 +456,11 @@ export class VirtualUserManager extends EventEmitter {
 		const uid = record.uid;
 		const gid = record.gid;
 		const homePath = `/home/${username}`;
-		if (!this._vfs.exists(homePath)) {
-			this._vfs.mkdir(homePath, 0o700, uid, gid);
-		} else {
+		if (this._vfs.exists(homePath)) {
 			// Ensure existing home dir is owned by the user
 			try { this._vfs.chown(homePath, uid, gid, 0); } catch { /* best-effort */ }
+		} else {
+			this._vfs.mkdir(homePath, 0o700, uid, gid);
 		}
 		if (!this._vfs.exists(`${homePath}/README.txt`)) {
 			this._vfs.writeFile(
@@ -725,7 +725,7 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public getUsername(uid: number): string | null {
 		for (const [name, record] of this._users) {
-			if (record.uid === uid) return name;
+			if (record.uid === uid) { return name; }
 		}
 		return null;
 	}
@@ -737,7 +737,7 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public getGroupName(gid: number): string | null {
 		for (const [name, record] of this._users) {
-			if (record.gid === gid) return name;
+			if (record.gid === gid) { return name; }
 		}
 		return null;
 	}
@@ -764,7 +764,7 @@ export class VirtualUserManager extends EventEmitter {
 		nice = 0,
 	): number {
 		const pid = this._nextPid++;
-		const priority = this._scheduler.niceToPriority(nice);
+		const priority = ProcessScheduler.niceToPriority(nice);
 		this._activeProcesses.set(pid, {
 			pid,
 			ppid,
@@ -837,11 +837,11 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public killProcess(pid: number, signal = 15): boolean {
 		const proc = this._activeProcesses.get(pid);
-		if (!proc) return false;
+		if (!proc) { return false; }
 
 		// SIGKILL (9) and SIGSTOP (19) cannot be caught
 		if (signal === 9) {
-			if (proc.abortController) proc.abortController.abort();
+			if (proc.abortController) { proc.abortController.abort(); }
 			proc.status = "done";
 			proc.terminatedBySignal = 9;
 			proc.exitCode = 137; // 128 + 9
@@ -855,7 +855,7 @@ export class VirtualUserManager extends EventEmitter {
 		}
 
 		if (signal === 18) { // SIGCONT
-			if (proc.status === "stopped") proc.status = "running";
+			if (proc.status === "stopped") { proc.status = "running"; }
 			return true;
 		}
 
@@ -867,7 +867,7 @@ export class VirtualUserManager extends EventEmitter {
 		}
 
 		// Default action: terminate
-		if (proc.abortController) proc.abortController.abort();
+		if (proc.abortController) { proc.abortController.abort(); }
 		proc.status = "done";
 		proc.terminatedBySignal = signal;
 		proc.exitCode = 128 + signal;
@@ -884,9 +884,7 @@ export class VirtualUserManager extends EventEmitter {
 	public killAllUserProcesses(username: string, signal = 15): number {
 		let count = 0;
 		for (const [pid, proc] of this._activeProcesses) {
-			if (proc.username === username) {
-				if (this.killProcess(pid, signal)) count++;
-			}
+			if (proc.username === username && this.killProcess(pid, signal)) { count++; }
 		}
 		return count;
 	}
@@ -901,9 +899,7 @@ export class VirtualUserManager extends EventEmitter {
 	public killProcessesByTty(tty: string, signal = 9): number {
 		let count = 0;
 		for (const [pid, proc] of this._activeProcesses) {
-			if (proc.tty === tty) {
-				if (this.killProcess(pid, signal)) count++;
-			}
+			if (proc.tty === tty && this.killProcess(pid, signal)) { count++; }
 		}
 		return count;
 	}
@@ -965,7 +961,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * processes that have exceeded their per-window budget.
 	 */
 	private _startCpuWatcher(): void {
-		if (this._cpuWatcher) return;
+		if (this._cpuWatcher) { return; }
 		this._cpuWatcher = setInterval(() => this._enforceCpuCaps(), 500);
 		if (typeof this._cpuWatcher.unref === "function") {
 			this._cpuWatcher.unref();
@@ -986,7 +982,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * Enforces CPU cap: kills processes that exceeded their budget.
 	 */
 	private _enforceCpuCaps(): void {
-		if (this._cpuBudgetMs <= 0) return;
+		if (this._cpuBudgetMs <= 0) { return; }
 
 		const now = Date.now();
 		const windowElapsed = now - this._cpuWindowStart;
@@ -1000,7 +996,7 @@ export class VirtualUserManager extends EventEmitter {
 
 		// Check each running process
 		for (const [pid, proc] of this._activeProcesses) {
-			if (proc.status !== "running") continue;
+			if (proc.status !== "running") { continue; }
 			const cpuTime = this._processCpuTime.get(pid) ?? 0;
 			// Update wall-clock time for running processes
 			const procStart = new Date(proc.startedAt).getTime();
@@ -1064,13 +1060,13 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns True if the process was found and updated.
 	 */
 	public setProcessNice(pid: number, nice: number): boolean {
-		if (!this._scheduler.isValidNice(nice)) return false;
+		if (!ProcessScheduler.isValidNice(nice)) { return false; }
 
 		const proc = this._activeProcesses.get(pid);
-		if (!proc) return false;
+		if (!proc) { return false; }
 
 		proc.nice = nice;
-		proc.priority = this._scheduler.niceToPriority(nice);
+		proc.priority = ProcessScheduler.niceToPriority(nice);
 		this.emit("process:nice", { pid, nice, priority: proc.priority });
 		return true;
 	}
@@ -1111,12 +1107,12 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns True if the process should yield (throttled).
 	 */
 	public recordAndCheckThrottle(pid: number, elapsedMs: number): boolean {
-		if (!this._schedulerEnabled) return false;
+		if (!this._schedulerEnabled) { return false; }
 
 		this._scheduler.recordCpuTime(pid, elapsedMs);
 
 		const proc = this._activeProcesses.get(pid);
-		if (!proc || proc.status !== "running") return false;
+		if (!proc || proc.status !== "running") { return false; }
 
 		const runningCount = this.listProcesses().filter((p) => p.status === "running").length;
 		return this._scheduler.shouldThrottle(pid, proc.nice, runningCount);
@@ -1164,23 +1160,23 @@ export class VirtualUserManager extends EventEmitter {
 			// Format: username:salt:passwordHash (legacy older)
 			if (parts.length >= 11) {
 				const [username, uidStr, gidStr, salt, passwordHash, lastChange, minAge, maxAge, warnDays, inactiveDays, expiry] = parts;
-				if (!username || !salt || !passwordHash) continue;
-				const uid = parseInt(uidStr ?? "1001", 10);
-				const gid = parseInt(gidStr ?? "1001", 10);
+				if (!((username && salt ) && passwordHash)) { continue; }
+				const uid = Number.parseInt(uidStr ?? "1001", 10);
+				const gid = Number.parseInt(gidStr ?? "1001", 10);
 				this._users.set(username, {
 					username, uid, gid, salt, passwordHash,
-					lastPasswordChange: parseInt(lastChange ?? "0", 10),
-					minPasswordAge: parseInt(minAge ?? "0", 10),
-					maxPasswordAge: parseInt(maxAge ?? "99999", 10),
-					passwordWarnDays: parseInt(warnDays ?? "7", 10),
-					passwordInactiveDays: parseInt(inactiveDays ?? "0", 10),
-					accountExpiryDate: parseInt(expiry ?? "0", 10),
+					lastPasswordChange: Number.parseInt(lastChange ?? "0", 10),
+					minPasswordAge: Number.parseInt(minAge ?? "0", 10),
+					maxPasswordAge: Number.parseInt(maxAge ?? "99999", 10),
+					passwordWarnDays: Number.parseInt(warnDays ?? "7", 10),
+					passwordInactiveDays: Number.parseInt(inactiveDays ?? "0", 10),
+					accountExpiryDate: Number.parseInt(expiry ?? "0", 10),
 				});
 			} else if (parts.length >= 5) {
 				const [username, uidStr, gidStr, salt, passwordHash] = parts;
-				if (!username || !salt || !passwordHash) continue;
-				const uid = parseInt(uidStr ?? "1001", 10);
-				const gid = parseInt(gidStr ?? "1001", 10);
+				if (!((username && salt ) && passwordHash)) { continue; }
+				const uid = Number.parseInt(uidStr ?? "1001", 10);
+				const gid = Number.parseInt(gidStr ?? "1001", 10);
 				this._users.set(username, {
 					username, uid, gid, salt, passwordHash,
 					lastPasswordChange: Math.floor(Date.now() / 86400000),
@@ -1192,7 +1188,7 @@ export class VirtualUserManager extends EventEmitter {
 				});
 			} else {
 				const [username, salt, passwordHash] = parts;
-				if (!username || !salt || !passwordHash) continue;
+				if (!((username && salt ) && passwordHash)) { continue; }
 				const uid = username === "root" ? 0 : this._nextUid++;
 				const gid = username === "root" ? 0 : this._nextGid++;
 				this._users.set(username, {
@@ -1240,7 +1236,7 @@ export class VirtualUserManager extends EventEmitter {
 
 			const [username, value] = trimmed.split(":");
 			const bytes = Number.parseInt(value ?? "", 10);
-			if (!username || !Number.isFinite(bytes) || bytes < 0) {
+			if (!(username && Number.isFinite(bytes) ) || bytes < 0) {
 				continue;
 			}
 
@@ -1355,7 +1351,7 @@ export class VirtualUserManager extends EventEmitter {
 		VirtualUserManager._recordCache.set(cacheKey, record);
 		if (VirtualUserManager._recordCache.size > VirtualUserManager._maxRecordCacheSize) {
 			const firstKey = VirtualUserManager._recordCache.keys().next().value;
-			if (firstKey) VirtualUserManager._recordCache.delete(firstKey);
+			if (firstKey) { VirtualUserManager._recordCache.delete(firstKey); }
 		}
 		return record;
 	}
@@ -1372,11 +1368,11 @@ export class VirtualUserManager extends EventEmitter {
 	public hasPassword(username: string): boolean {
 		perf.mark("hasPassword");
 		const record = this._users.get(username);
-		if (!record) return false;
+		if (!record) { return false; }
 		// Empty password hash computed with the record's own salt
 		const emptyHash = VirtualUserManager.hashPassword("", record.salt);
-		if (record.passwordHash === emptyHash) return false;
-		return !!record.passwordHash;
+		if (record.passwordHash === emptyHash) { return false; }
+		return Boolean(record.passwordHash);
 	}
 
 	/**
@@ -1610,10 +1606,10 @@ export class VirtualUserManager extends EventEmitter {
 			throw new Error(`chage: user '${username}' does not exist`);
 		}
 
-		if (minDays !== undefined) record.minPasswordAge = minDays;
-		if (maxDays !== undefined) record.maxPasswordAge = maxDays;
-		if (warnDays !== undefined) record.passwordWarnDays = warnDays;
-		if (inactiveDays !== undefined) record.passwordInactiveDays = inactiveDays;
+		if (minDays !== undefined) { record.minPasswordAge = minDays; }
+		if (maxDays !== undefined) { record.maxPasswordAge = maxDays; }
+		if (warnDays !== undefined) { record.passwordWarnDays = warnDays; }
+		if (inactiveDays !== undefined) { record.passwordInactiveDays = inactiveDays; }
 
 		this.persist();
 	}
@@ -1633,7 +1629,7 @@ export class VirtualUserManager extends EventEmitter {
 		expiryDate: number;
 	} | null {
 		const record = this._users.get(username);
-		if (!record) return null;
+		if (!record) { return null; }
 		return {
 			lastChange: record.lastPasswordChange,
 			minAge: record.minPasswordAge,
@@ -1683,7 +1679,7 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public isPasswordExpired(username: string): boolean {
 		const record = this._users.get(username);
-		if (!record || record.maxPasswordAge === 99999) return false;
+		if (!record || record.maxPasswordAge === 99999) { return false; }
 		const today = Math.floor(Date.now() / 86400000);
 		return (today - record.lastPasswordChange) > record.maxPasswordAge;
 	}
@@ -1757,7 +1753,7 @@ export class VirtualUserManager extends EventEmitter {
 		);
 
 		for (const record of this._users.values()) {
-			if (record.username === "root") continue;
+			if (record.username === "root") { continue; }
 			const hash = record.passwordHash.startsWith("!") ? "!" : record.passwordHash;
 			lines.push(
 				`${record.username}:${hash}:${record.lastPasswordChange}:${record.minPasswordAge}:${record.maxPasswordAge}:${record.passwordWarnDays}:${record.passwordInactiveDays}:${record.accountExpiryDate}:`,
@@ -1786,9 +1782,9 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns True if user can sudo without re-authenticating.
 	 */
 	public hasValidSudoTimestamp(username: string): boolean {
-		if (username === "root") return true;
+		if (username === "root") { return true; }
 		const ts = this._sudoTimestamps.get(username);
-		if (!ts) return false;
+		if (!ts) { return false; }
 		if ((Date.now() - ts) >= this._sudoTimestampWindowMs) {
 			this._sudoTimestamps.delete(username);
 			return false;
@@ -1817,7 +1813,7 @@ export class VirtualUserManager extends EventEmitter {
 		const now = Date.now();
 		// Clean stale entries older than TTL
 		for (const [user, data] of this._loginFailures) {
-			if (now - data.lastTime > this._loginFailureTtlMs) this._loginFailures.delete(user);
+			if (now - data.lastTime > this._loginFailureTtlMs) { this._loginFailures.delete(user); }
 		}
 		const existing = this._loginFailures.get(username);
 		if (existing) {
@@ -1865,7 +1861,7 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public isAccountLockedByFailures(username: string): boolean {
 		const failures = this._loginFailures.get(username);
-		if (!failures) return false;
+		if (!failures) { return false; }
 		return failures.count >= this._maxLoginFailures;
 	}
 

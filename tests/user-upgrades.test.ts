@@ -353,7 +353,7 @@ describe("Password aging", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
 		users.initialize();
-		expect(users.setPasswordAging("nobody", 0, 90)).rejects.toThrow("does not exist");
+		expect(() => users.setPasswordAging("nobody", 0, 90)).toThrow("does not exist");
 	});
 });
 

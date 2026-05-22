@@ -24,7 +24,7 @@ import { tokenizeCommand } from "../../utils/tokenize";
  */
 export function parseScript(rawInput: string): Script {
 	const trimmed = rawInput.trim();
-	if (!trimmed) return { statements: [], isValid: true };
+	if (!trimmed) { return { statements: [], isValid: true }; }
 
 	try {
 		const statements = parseStatements(trimmed);
@@ -44,7 +44,7 @@ export function parseScript(rawInput: string): Script {
  */
 export function parseShellPipeline(rawInput: string): Pipeline {
 	const trimmed = rawInput.trim();
-	if (!trimmed) return { commands: [], isValid: true };
+	if (!trimmed) { return { commands: [], isValid: true }; }
 	try {
 		const commands = parsePipeline(trimmed);
 		return { commands, isValid: true };
@@ -62,8 +62,8 @@ function parseStatements(input: string): Statement[] {
 	for (const seg of segments) {
 		const text = seg.text.trim();
 		const stmt: Statement = {};
-		if (seg.op) stmt.op = seg.op;
-		if (seg.background) stmt.background = true;
+		if (seg.op) { stmt.op = seg.op; }
+		if (seg.background) { stmt.background = true; }
 
 		if (text.startsWith("(") && text.endsWith(")")) {
 			const inner = text.slice(1, -1).trim();
@@ -97,7 +97,7 @@ function splitByLogicalOps(input: string): Segment[] {
 	let i = 0;
 
 	const flush = (op?: LogicalOp, background?: boolean) => {
-		if (current.trim()) segments.push({ text: current, op, background });
+		if (current.trim()) { segments.push({ text: current, op, background }); }
 		current = "";
 	};
 
@@ -215,8 +215,9 @@ function splitByPipe(input: string): string[] {
 
 		// || was already consumed at statement level, bare | is pipe
 		if (ch === "|" && input[i + 1] !== "|") {
-			if (!current.trim())
+			if (!current.trim()) {
 				throw new Error("Syntax error near unexpected token '|'");
+			}
 			tokens.push(current.trim());
 			current = "";
 		} else {
@@ -225,15 +226,16 @@ function splitByPipe(input: string): string[] {
 	}
 
 	const tail = current.trim();
-	if (!tail && tokens.length > 0)
+	if (!tail && tokens.length > 0) {
 		throw new Error("Syntax error near unexpected token '|'");
-	if (tail) tokens.push(tail);
+	}
+	if (tail) { tokens.push(tail); }
 	return tokens;
 }
 
 function parseCommandWithRedirections(token: string): PipelineCommand {
 	const parts = tokenizeCommand(token);
-	if (parts.length === 0) return { name: "", args: [] };
+	if (parts.length === 0) { return { name: "", args: [] }; }
 
 	const cmdParts: string[] = [];
 	let inputFile: string | undefined;
@@ -249,21 +251,24 @@ function parseCommandWithRedirections(token: string): PipelineCommand {
 		const part = parts[i] as string;
 		if (part === "<") {
 			i++;
-			if (i >= parts.length)
+			if (i >= parts.length) {
 				throw new Error("Syntax error: expected filename after <");
+			}
 			inputFile = parts[i];
 			i++;
 		} else if (part === ">>") {
 			i++;
-			if (i >= parts.length)
+			if (i >= parts.length) {
 				throw new Error("Syntax error: expected filename after >>");
+			}
 			outputFile = parts[i];
 			appendOutput = true;
 			i++;
 		} else if (part === ">") {
 			i++;
-			if (i >= parts.length)
+			if (i >= parts.length) {
 				throw new Error("Syntax error: expected filename after >");
+			}
 			outputFile = parts[i];
 			appendOutput = false;
 			i++;
@@ -271,8 +276,9 @@ function parseCommandWithRedirections(token: string): PipelineCommand {
 			// &> file — redirect both stdout and stderr to file
 			const append = part === "&>>";
 			i++;
-			if (i >= parts.length)
+			if (i >= parts.length) {
 				throw new Error(`Syntax error: expected filename after ${part}`);
+			}
 			outputFile = parts[i];
 			appendOutput = append;
 			stderrToStdout = true;
@@ -282,15 +288,17 @@ function parseCommandWithRedirections(token: string): PipelineCommand {
 			i++;
 		} else if (part === "2>>") {
 			i++;
-			if (i >= parts.length)
+			if (i >= parts.length) {
 				throw new Error("Syntax error: expected filename after 2>>");
+			}
 			stderrFile = parts[i];
 			stderrAppend = true;
 			i++;
 		} else if (part === "2>") {
 			i++;
-			if (i >= parts.length)
+			if (i >= parts.length) {
 				throw new Error("Syntax error: expected filename after 2>");
+			}
 			stderrFile = parts[i];
 			stderrAppend = false;
 			i++;

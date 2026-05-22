@@ -21,7 +21,7 @@ export const historyCommand: ShellModule = {
 		const lines = raw.split("\n").filter(Boolean);
 
 		const nArg = args[0];
-		const n = nArg ? parseInt(nArg, 10) : null;
+		const n = nArg ? Number.parseInt(nArg, 10) : null;
 		const slice = n && !Number.isNaN(n) ? lines.slice(-n) : lines;
 
 		const offset = lines.length - slice.length + 1;

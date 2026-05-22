@@ -24,7 +24,7 @@ export const readCommand: ShellModule = {
 					m[1] === "\n" || m[1] === "\r" ? "" : m[1] as string,
 				);
 
-		if (!env) return { exitCode: 0 };
+		if (!env) { return { exitCode: 0 }; }
 
 		if (varNames.length === 0) {
 			// No var names: store into REPLY

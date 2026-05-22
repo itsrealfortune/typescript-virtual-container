@@ -25,22 +25,22 @@ export const tputCommand: ShellModule = {
 	params: ["<cap> [args...]"],
 	run: ({ args }) => {
 		const cap = args[0];
-		if (!cap) return { stderr: "tput: missing capability", exitCode: 1 };
+		if (!cap) { return { stderr: "tput: missing capability", exitCode: 1 }; }
 		if (cap === "setaf" && args[1] !== undefined) {
-			const n = parseInt(args[1], 10);
+			const n = Number.parseInt(args[1], 10);
 			const code = ANSI_COLORS[n] ?? "39";
 			return { stdout: `\x1b[${code}m`, exitCode: 0 };
 		}
 		if (cap === "setab" && args[1] !== undefined) {
-			const n = parseInt(args[1], 10);
+			const n = Number.parseInt(args[1], 10);
 			const code = ANSI_COLORS[n]?.replace(/3/, "4").replace(/9/, "10") ?? "49";
 			return { stdout: `\x1b[${code}m`, exitCode: 0 };
 		}
 		if (cap === "cup" && args[1] !== undefined && args[2] !== undefined) {
-			return { stdout: `\x1b[${parseInt(args[1],10)+1};${parseInt(args[2],10)+1}H`, exitCode: 0 };
+			return { stdout: `\x1b[${Number.parseInt(args[1],10)+1};${Number.parseInt(args[2],10)+1}H`, exitCode: 0 };
 		}
 		const val = CAPS[cap];
-		if (val === undefined) return { stderr: `tput: unknown terminal capability '${cap}'`, exitCode: 1 };
+		if (val === undefined) { return { stderr: `tput: unknown terminal capability '${cap}'`, exitCode: 1 }; }
 		return { stdout: String(val), exitCode: 0 };
 	},
 };

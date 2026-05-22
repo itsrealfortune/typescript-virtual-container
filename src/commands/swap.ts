@@ -28,14 +28,14 @@ export const swapCommand: ShellModule = {
 		}
 
 		const formatBytes = (bytes: number): string => {
-			if (bytes === 0) return "0 B";
+			if (bytes === 0) { return "0 B"; }
 			const units = ["B", "KB", "MB", "GB"];
 			const i = Math.floor(Math.log(bytes) / Math.log(1024));
 			return `${(bytes / 1024 ** i).toFixed(1)} ${units[i]}`;
 		};
 
 		const lines = [
-			`Swap usage:`,
+			"Swap usage:",
 			`  Files swapped out : ${stats.filesSwapped}`,
 			`  Swap disk usage   : ${formatBytes(stats.diskUsage)}`,
 			`  Original size     : ${formatBytes(stats.originalSize)}`,

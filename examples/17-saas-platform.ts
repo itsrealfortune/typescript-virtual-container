@@ -81,7 +81,7 @@ console.log("\n--- Cross-tenant isolation verification ---");
 
 for (let i = 0; i < tenants.length; i++) {
 	for (let j = 0; j < tenants.length; j++) {
-		if (i === j) continue;
+		if (i === j) { continue; }
 
 		const t1 = tenants[i]!;
 		const t2 = tenants[j]!;
@@ -110,8 +110,8 @@ for (const tenant of tenants) {
 	console.log(`    Users: ${tenant.users.join(", ")}`);
 	console.log(`    App VM: ${appProcs.length} processes`);
 	console.log(`    DB VM: ${dbProcs.length} processes`);
-	if (appSwap) console.log(`    Swap: ${appSwap.filesSwapped} files swapped`);
-	if (appCache) console.log(`    Cache: ${appCache.entries} entries, ${appCache.hitRate.toFixed(0)}% hit rate`);
+	if (appSwap) { console.log(`    Swap: ${appSwap.filesSwapped} files swapped`); }
+	if (appCache) { console.log(`    Cache: ${appCache.entries} entries, ${appCache.hitRate.toFixed(0)}% hit rate`); }
 }
 
 // ── Cleanup ───────────────────────────────────────────────────────

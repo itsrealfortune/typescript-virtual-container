@@ -18,7 +18,7 @@ export const killCommand: ShellModule = {
 
 		for (let i = 0; i < args.length; i++) {
 			const arg = args[i];
-			if (!arg) continue;
+			if (!arg) { continue; }
 			if (arg === "-l") {
 				// List signals
 				const lines = Object.entries(SIGNALS)
@@ -46,8 +46,8 @@ export const killCommand: ShellModule = {
 			}
 		}
 
-		if (!pidStr) return { stderr: "kill: no pid specified", exitCode: 1 };
-		const pid = parseInt(pidStr, 10);
+		if (!pidStr) { return { stderr: "kill: no pid specified", exitCode: 1 }; }
+		const pid = Number.parseInt(pidStr, 10);
 		if (Number.isNaN(pid)) {
 			return { stderr: `kill: invalid pid: ${pidStr}`, exitCode: 1 };
 		}

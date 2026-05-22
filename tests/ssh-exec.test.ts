@@ -7,7 +7,7 @@ describe("SSH exec inline commands", () => {
 		const shell = new VirtualShell("localhost");
 		const stdout: string[] = [];
 		const stderr: string[] = [];
-		let exitCode: number = -1;
+		let exitCode = -1;
 
 		const stream = {
 			write(data: string) {
@@ -22,7 +22,6 @@ describe("SSH exec inline commands", () => {
 				exitCode = code;
 			},
 			end() {
-				return undefined;
 			},
 		};
 
@@ -31,7 +30,6 @@ describe("SSH exec inline commands", () => {
 		const endPromise = new Promise<void>((resolve) => {
 			stream.end = () => {
 				resolve();
-				return;
 			};
 		});
 

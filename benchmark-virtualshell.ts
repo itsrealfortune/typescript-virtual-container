@@ -21,9 +21,9 @@ function mbRound(bytes: number): string {
 }
 
 function throughput(bytes: number, ms: number): string {
-	if (ms === 0) return ">10 GB/s";
+	if (ms === 0) { return ">10 GB/s"; }
 	const bps = (bytes / ms) * 1000;
-	if (bps >= 1024 * 1024 * 1024) return `${(bps / 1024 / 1024 / 1024).toFixed(1)} GB/s`;
+	if (bps >= 1024 * 1024 * 1024) { return `${(bps / 1024 / 1024 / 1024).toFixed(1)} GB/s`; }
 	return `${(bps / 1024 / 1024).toFixed(1)} MB/s`;
 }
 
@@ -132,11 +132,11 @@ async function benchLatency(): Promise<LatencyRow[]> {
 		samples.sort((a, b) => a - b);
 		rows.push({
 			cmd,
-			p50: parseFloat(percentile(samples, 50).toFixed(2)),
-			p95: parseFloat(percentile(samples, 95).toFixed(2)),
-			p99: parseFloat(percentile(samples, 99).toFixed(2)),
-			min: parseFloat(samples[0]!.toFixed(2)),
-			max: parseFloat(samples[samples.length - 1]!.toFixed(2)),
+			p50: Number.parseFloat(percentile(samples, 50).toFixed(2)),
+			p95: Number.parseFloat(percentile(samples, 95).toFixed(2)),
+			p99: Number.parseFloat(percentile(samples, 99).toFixed(2)),
+			min: Number.parseFloat(samples[0]!.toFixed(2)),
+			max: Number.parseFloat(samples[samples.length - 1]!.toFixed(2)),
 		});
 	}
 	return rows;

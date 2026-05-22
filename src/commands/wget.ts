@@ -61,11 +61,12 @@ export const wgetCommand: ShellModule = {
 			urlWithoutProtocol.startsWith("https://")
 			? urlWithoutProtocol
 			: `http://${urlWithoutProtocol}`;
-		if (!url)
+		if (!url) {
 			return {
 				stderr: "wget: missing URL\nUsage: wget [OPTION]... [URL]...",
 				exitCode: 1,
 			};
+		}
 
 		const outputArg =
 			flagsWithValues.get("-O") ??
@@ -84,7 +85,7 @@ export const wgetCommand: ShellModule = {
 			? resolvePath(cwd, dirPrefix ? `${dirPrefix}/${filename}` : filename)
 			: null;
 
-		if (targetPath) assertPathAccess(authUser, targetPath, "wget");
+		if (targetPath) { assertPathAccess(authUser, targetPath, "wget"); }
 
 		const stderrLines: string[] = [];
 		if (!quiet) {
@@ -96,7 +97,7 @@ export const wgetCommand: ShellModule = {
 		let response: Response;
 		try {
 			const parsedUrl = new URL(url);
-			const dstPort = parsedUrl.port ? parseInt(parsedUrl.port, 10) : (parsedUrl.protocol === "https:" ? 443 : 80);
+			const dstPort = parsedUrl.port ? Number.parseInt(parsedUrl.port, 10) : (parsedUrl.protocol === "https:" ? 443 : 80);
 			const fwAction = shell.network.checkFirewall("OUTPUT", "tcp", undefined, parsedUrl.hostname, dstPort);
 			if (fwAction === "DROP" || fwAction === "REJECT") {
 				return { stderr: `wget: unable to connect to ${parsedUrl.hostname}:${dstPort}: Connection refused\n`, exitCode: 4 };
@@ -142,10 +143,11 @@ export const wgetCommand: ShellModule = {
 
 		if (targetPath) {
 			shell.vfs.writeFile(targetPath, body, {}, uid, gid);
-			if (!quiet)
+			if (!quiet) {
 				stderrLines.push(
 					`Saving to: '${targetPath}'\n${targetPath}            100%[==================>]  ${body.length} B`,
 				);
+			}
 			return { stderr: stderrLines.join("\n") || undefined, exitCode: 0 };
 		}
 

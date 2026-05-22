@@ -16,8 +16,8 @@ export const tailCommand: ShellModule = {
 		const nArg = getFlag(args, ["-n"]);
 		const shortN = args.find((a) => /^-\d+$/.test(a));
 		const n = typeof nArg === "string"
-			? parseInt(nArg, 10)
-			: shortN ? parseInt(shortN.slice(1), 10) : 10;
+			? Number.parseInt(nArg, 10)
+			: shortN ? Number.parseInt(shortN.slice(1), 10) : 10;
 		const positionals = args.filter(
 			(a) => !a.startsWith("-") && a !== nArg && a !== String(n),
 		);

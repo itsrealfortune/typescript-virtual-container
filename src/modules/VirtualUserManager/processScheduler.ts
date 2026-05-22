@@ -149,7 +149,7 @@ export class ProcessScheduler {
 	 * @param nice - Nice value (-20 to 19).
 	 * @returns Weight value (higher = more CPU time).
 	 */
-	getNiceWeight(nice: number): number {
+	static getNiceWeight(nice: number): number {
 		return NICE_WEIGHTS[nice as keyof typeof NICE_WEIGHTS] ?? 1024;
 	}
 
@@ -158,7 +158,7 @@ export class ProcessScheduler {
 	 * @param priority - Priority name.
 	 * @returns Nice value (-20 to 19).
 	 */
-	priorityToNice(priority: ProcessPriority): number {
+	static priorityToNice(priority: ProcessPriority): number {
 		return PRIORITY_TO_NICE[priority];
 	}
 
@@ -167,9 +167,9 @@ export class ProcessScheduler {
 	 * @param nice - Nice value (-20 to 19).
 	 * @returns Priority name.
 	 */
-	niceToPriority(nice: number): ProcessPriority {
+	static niceToPriority(nice: number): ProcessPriority {
 		for (const [name, value] of Object.entries(PRIORITY_TO_NICE)) {
-			if (value === nice) return name as ProcessPriority;
+			if (value === nice) { return name as ProcessPriority; }
 		}
 		// Find closest
 		let closest: ProcessPriority = "normal";
@@ -189,7 +189,7 @@ export class ProcessScheduler {
 	 * @param nice - Nice value to validate.
 	 * @returns True if valid (-20 to 19).
 	 */
-	isValidNice(nice: number): boolean {
+	static isValidNice(nice: number): boolean {
 		return nice >= -20 && nice <= 19 && Number.isInteger(nice);
 	}
 
@@ -221,7 +221,7 @@ export class ProcessScheduler {
 	 * @returns True if the process should be throttled.
 	 */
 	shouldThrottle(pid: number, nice: number, totalRunningProcesses: number): boolean {
-		if (!this._enforceFairShare || totalRunningProcesses <= 1) return false;
+		if (!this._enforceFairShare || totalRunningProcesses <= 1) { return false; }
 
 		const now = Date.now();
 		const windowElapsed = now - this._windowStart;
@@ -234,7 +234,7 @@ export class ProcessScheduler {
 		}
 
 		const processCpu = this._processCpuTime.get(pid) ?? 0;
-		const weight = this.getNiceWeight(nice);
+		const weight = ProcessScheduler.getNiceWeight(nice);
 
 		// Calculate total weight of all running processes
 		// For simplicity, assume average weight if we don't have full data

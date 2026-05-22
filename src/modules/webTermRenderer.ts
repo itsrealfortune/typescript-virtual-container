@@ -68,7 +68,7 @@ export class WebTermRenderer {
 	 */
 	private _row(r: number): Cell[] {
 		const row = this._screen[r];
-		if (row === undefined) throw new Error(`WebTermRenderer: row ${r} out of range (0..${this._rows - 1})`);
+		if (row === undefined) { throw new Error(`WebTermRenderer: row ${r} out of range (0..${this._rows - 1})`); }
 		return row;
 	}
 
@@ -92,7 +92,7 @@ export class WebTermRenderer {
 		const newScreen = this._makeScreen(rows, cols);
 		for (let r = 0; r < Math.min(rows, this._rows); r++) {
 			const newRow = newScreen[r];
-			if (newRow === undefined) continue;
+			if (newRow === undefined) { continue; }
 			for (let c = 0; c < Math.min(cols, this._cols); c++) {
 				newRow[c] = this._screen[r]?.[c] ?? makeCell();
 			}
@@ -119,13 +119,15 @@ export class WebTermRenderer {
 		while (i < this._buf.length) {
 			const ch = this._buf.charAt(i);
 			if (ch === "\x1b") {
-				if (i + 1 >= this._buf.length) break; // wait for more data
+				if (i + 1 >= this._buf.length) { break; // wait for more data
+}
 				const next = this._buf.charAt(i + 1);
 				if (next === "[") {
 					// CSI — find terminator
 					let j = i + 2;
-					while (j < this._buf.length && (this._buf.charAt(j) < "@" || this._buf.charAt(j) > "~")) j++;
-					if (j >= this._buf.length) break; // incomplete
+					while (j < this._buf.length && (this._buf.charAt(j) < "@" || this._buf.charAt(j) > "~")) { j++; }
+					if (j >= this._buf.length) { break; // incomplete
+}
 					const seq = this._buf.slice(i + 2, j);
 					const cmd = this._buf.charAt(j);
 					this._handleCsi(seq, cmd);
@@ -140,11 +142,12 @@ export class WebTermRenderer {
 						j++;
 					}
 					// If terminator not yet received, wait for more data
-					if (j >= this._buf.length && this._buf[j - 1] !== "\x07") break;
+					if (j >= this._buf.length && this._buf[j - 1] !== "\x07") { break; }
 					i = j;
 				} else if (next === "O") {
 					// SS3 — single extra byte (F1-F4, cursor keys in application mode)
-					if (i + 2 >= this._buf.length) break; // wait for more data
+					if (i + 2 >= this._buf.length) { break; // wait for more data
+}
 					i += 3; // ESC O <cmd>
 				} else {
 					i += 2; // skip unknown 2-char ESC sequence
@@ -222,18 +225,18 @@ export class WebTermRenderer {
 			const mode = seq === "" ? 0 : Number.parseInt(seq, 10);
 			if (mode === 0) {
 				const curRow = this._row(this._curRow);
-				for (let c = this._curCol; c < this._cols; c++) curRow[c] = makeCell();
+				for (let c = this._curCol; c < this._cols; c++) { curRow[c] = makeCell(); }
 				for (let r = this._curRow + 1; r < this._rows; r++) {
 					const row = this._screen[r];
-					if (row !== undefined) this._screen[r] = Array.from({ length: this._cols }, () => makeCell());
+					if (row !== undefined) { this._screen[r] = Array.from({ length: this._cols }, () => makeCell()); }
 				}
 			} else if (mode === 1) {
 				for (let r = 0; r < this._curRow; r++) {
 					const row = this._screen[r];
-					if (row !== undefined) this._screen[r] = Array.from({ length: this._cols }, () => makeCell());
+					if (row !== undefined) { this._screen[r] = Array.from({ length: this._cols }, () => makeCell()); }
 				}
 				const curRow = this._row(this._curRow);
-				for (let c = 0; c <= this._curCol; c++) curRow[c] = makeCell();
+				for (let c = 0; c <= this._curCol; c++) { curRow[c] = makeCell(); }
 			} else if (mode === 2) {
 				this._screen = this._makeScreen();
 				this._scrollback = [];
@@ -241,7 +244,6 @@ export class WebTermRenderer {
 				this._curCol = 0;
 				this._cleared = true;
 			}
-			return;
 		}
 	}
 
@@ -296,9 +298,9 @@ export class WebTermRenderer {
 
 	private _scrollUp(): void {
 		const line = this._screen.shift();
-		if (line === undefined) return;
+		if (line === undefined) { return; }
 		this._scrollback.push(line);
-		if (this._scrollback.length > 1000) this._scrollback.shift();
+		if (this._scrollback.length > 1000) { this._scrollback.shift(); }
 		this._screen.push(Array.from({ length: this._cols }, () => makeCell()));
 		// curRow stays at rows-1 (bottom)
 	}
@@ -334,7 +336,7 @@ export class WebTermRenderer {
 			let lastStyle = "";
 			for (let c = 0; c < this._cols; c++) {
 				const cell = row[c];
-				if (cell === undefined) continue;
+				if (cell === undefined) { continue; }
 				const isCursor = this._cursorVisible && r === this._curRow && c === this._curCol;
 
 				let fg = cell.fg ?? "#ccc";
@@ -349,7 +351,7 @@ export class WebTermRenderer {
 				} else {
 					const style = `color:${fg};background:${bg};${cell.bold ? "font-weight:bold;" : ""}`;
 					if (style !== lastStyle) {
-						if (spanOpen) parts.push("</span>");
+						if (spanOpen) { parts.push("</span>"); }
 						parts.push(`<span style="${style}">`);
 						spanOpen = true;
 						lastStyle = style;
@@ -357,8 +359,8 @@ export class WebTermRenderer {
 					parts.push(escHtml(cell.ch));
 				}
 			}
-			if (spanOpen) parts.push("</span>");
-			if (r < this._rows - 1) parts.push("\n");
+			if (spanOpen) { parts.push("</span>"); }
+			if (r < this._rows - 1) { parts.push("\n"); }
 		}
 		return parts.join("");
 	}
@@ -399,14 +401,14 @@ export class WebTermRenderer {
 				if (cell.reverse) { [fg, bg] = [bg === "transparent" ? "#000" : bg, fg === "transparent" ? "#000" : fg]; }
 				const style = `color:${fg};background:${bg};${cell.bold ? "font-weight:bold;" : ""}`;
 				if (style !== lastStyle) {
-					if (spanOpen) parts.push("</span>");
+					if (spanOpen) { parts.push("</span>"); }
 					parts.push(`<span style="${style}">`);
 					spanOpen = true;
 					lastStyle = style;
 				}
 				parts.push(escHtml(cell.ch));
 			}
-			if (spanOpen) parts.push("</span>");
+			if (spanOpen) { parts.push("</span>"); }
 			parts.push("\n");
 		}
 		return parts.join("");
@@ -414,9 +416,9 @@ export class WebTermRenderer {
 }
 
 function escHtml(ch: string): string {
-	if (ch === "&") return "&amp;";
-	if (ch === "<") return "&lt;";
-	if (ch === ">") return "&gt;";
+	if (ch === "&") { return "&amp;"; }
+	if (ch === "<") { return "&lt;"; }
+	if (ch === ">") { return "&gt;"; }
 	return ch;
 }
 

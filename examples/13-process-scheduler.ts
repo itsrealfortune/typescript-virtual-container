@@ -33,7 +33,7 @@ for (const nice of niceValues) {
 	const pid = shell.users.registerProcess("root", "test", ["test"], "pts/0", undefined, 1, nice);
 	const priority = shell.users.getProcessPriority(pid);
 	shell.users.unregisterProcess(pid);
-	console.log(`  nice ${String(nice).padStart(3)} -> ${String(priority).padEnd(12)}`);
+	console.log(`  nice ${String(nice).padStart(3)} -> ${priority.padEnd(12)}`);
 }
 
 // ── Process registration ───────────────────────────────────────────

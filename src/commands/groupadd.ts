@@ -21,8 +21,8 @@ export const groupaddCommand: ShellModule = {
 		for (let i = 0; i < args.length; i++) {
 			if (args[i] === "-g") {
 				const val = args[i + 1];
-				if (!val) break;
-				gid = parseInt(val, 10);
+				if (!val) { break; }
+				gid = Number.parseInt(val, 10);
 				if (Number.isNaN(gid) || gid < 0) {
 					return { stderr: `groupadd: invalid GID '${val}'\n`, exitCode: 1 };
 				}

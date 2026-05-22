@@ -93,6 +93,6 @@ export function tokenizeCommand(input: string): string[] {
 		current += ch;
 		i++;
 	}
-	if (current) tokens.push(current);
+	if (current) { tokens.push(current); }
 	return tokens;
 }

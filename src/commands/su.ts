@@ -22,7 +22,7 @@ export const suCommand: ShellModule = {
 	run: ({ authUser, shell, args, hostname, mode, cwd }) => {
 		const loginShellFlag = args.includes("-") || args.includes("-l") || args.includes("--login");
 		const cIdx = args.indexOf("-c");
-		const cmdLine = cIdx !== -1 ? args[cIdx + 1] : undefined;
+		const cmdLine = cIdx === -1 ? undefined : args[cIdx + 1];
 		const filteredArgs = args.filter((_, i) =>
 			i !== cIdx && i !== cIdx + 1
 		).filter((a) => a !== "-" && a !== "-l" && a !== "--login");

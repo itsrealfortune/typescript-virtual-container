@@ -9,11 +9,11 @@
  * Interface for a performance logger instance.
  * When `enabled` is false, `mark` and `done` are no-ops.
  */
-export type PerfLogger = {
+export interface PerfLogger {
 	enabled: boolean;
 	mark: (label: string) => void;
 	done: (label?: string) => void;
-};
+}
 
 function isTruthyEnv(value: string | undefined): boolean {
 	return value === "1" || value === "true";

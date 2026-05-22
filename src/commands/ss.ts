@@ -37,7 +37,7 @@ export const ssCommand: ShellModule = {
 			lines.push("State      Recv-Q Send-Q Local Address:Port               Peer Address:Port");
 			const connections = _getSimulatedConnections("tcp", showNumeric);
 			for (const conn of connections) {
-				if (showListening && conn.state !== "LISTEN") continue;
+				if (showListening && conn.state !== "LISTEN") { continue; }
 				const state = showExtended ? conn.state.padEnd(12) : conn.state.padEnd(11);
 				const local = `${conn.localIp}:${conn.localPort}`.padEnd(35);
 				const peer = `${conn.peerIp}:${conn.peerPort}`;
@@ -50,7 +50,7 @@ export const ssCommand: ShellModule = {
 		}
 
 		if (showUdp || showAll) {
-			if (lines.length > 0) lines.push("");
+			if (lines.length > 0) { lines.push(""); }
 			lines.push("State      Recv-Q Send-Q Local Address:Port               Peer Address:Port");
 			const connections = _getSimulatedConnections("udp", showNumeric);
 			for (const conn of connections) {
@@ -108,7 +108,7 @@ function _showSummary(net: import("../modules/VirtualNetworkManager").VirtualNet
 		`Total: ${_getSimulatedConnectionCount()}`,
 		`TCP:   ${_getSimulatedConnectionCount("tcp")} (estab ${_getCountByState("ESTAB")}, closed ${_getCountByState("TIME-WAIT")}, orphaned 0, timewait 0)`,
 		`UDP:   ${_getSimulatedConnectionCount("udp")}`,
-		``,
+		"",
 		`Interfaces: ${ifaces.length}`,
 		`Routes: ${routes.length}`,
 		`Conntrack entries: ${conntrackCount}/${conntrackMax}`,
@@ -126,7 +126,7 @@ function _showConntrack(net: import("../modules/VirtualNetworkManager").VirtualN
 	const lines = [
 		`ipv4     conntrack v0.1.0 (${entries.length} entries)`,
 		net.formatConntrack(),
-		``,
+		"",
 		`entries: ${entries.length}  max: ${net.getConntrackMax()}`,
 	];
 
@@ -134,7 +134,7 @@ function _showConntrack(net: import("../modules/VirtualNetworkManager").VirtualN
 }
 
 function _getSimulatedConnectionCount(protocol?: string): number {
-	if (protocol === "udp") return 2;
+	if (protocol === "udp") { return 2; }
 	return protocol === "tcp" ? 5 : 7;
 }
 

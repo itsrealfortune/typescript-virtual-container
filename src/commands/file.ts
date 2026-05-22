@@ -2,7 +2,7 @@
 import type { ShellModule } from "../types/commands";
 import { resolvePath } from "./helpers";
 
-const MAGIC: Array<[RegExp | ((s: string) => boolean), string]> = [
+const MAGIC: [RegExp | ((s: string) => boolean), string][] = [
 	[s => s.startsWith('\x7fELF'), "ELF 64-bit LSB executable, x86-64"],
 	[/^#!\/bin\/sh/, "POSIX shell script, ASCII text executable"],
 	[/^#!\/bin\/bash/, "Bourne-Again shell script, ASCII text executable"],
@@ -30,7 +30,7 @@ export const fileCommand: ShellModule = {
 	category: "files",
 	params: ["<file>..."],
 	run: ({ args, cwd, shell }) => {
-		if (!args.length) return { stderr: "file: missing operand", exitCode: 1 };
+		if (!args.length) { return { stderr: "file: missing operand", exitCode: 1 }; }
 		const lines: string[] = [];
 		let exitCode = 0;
 		for (const arg of args) {

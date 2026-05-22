@@ -28,7 +28,7 @@ import type { VirtualActiveSession, VirtualUserManager } from "./VirtualUserMana
 // ─── helpers ────────────────────────────────────────────────────────────────
 
 function ensureDir(vfs: VirtualFileSystem, path: string, mode = 0o755): void {
-	if (!vfs.exists(path)) vfs.mkdir(path, mode);
+	if (!vfs.exists(path)) { vfs.mkdir(path, mode); }
 }
 
 function ensureFile(
@@ -70,12 +70,12 @@ function bootstrapEtc(
 		`${[
 			`NAME="Fortune GNU/Linux"`,
 			`PRETTY_NAME="${props.os}"`,
-			`ID=fortune`,
-			`ID_LIKE=fortune`,
+			"ID=fortune",
+			"ID_LIKE=fortune",
 			`HOME_URL="https://github.com/itsrealfortune/typescript-virtual-container"`,
-			`VERSION_CODENAME=nyx`,
+			"VERSION_CODENAME=nyx",
 			`VERSION_ID="1.0"`,
-			`FORTUNE_CODENAME=nyx`,
+			"FORTUNE_CODENAME=nyx",
 		].join("\n")}\n`,
 	);
 
@@ -130,7 +130,7 @@ function bootstrapEtc(
 			"deb [virtual] fortune://security.fortune.local nyx-security main",
 		].join("\n")}\n`,
 	);
-	ensureFile(vfs, "/etc/apt/apt.conf.d/70debconf", `// debconf config\n`);
+	ensureFile(vfs, "/etc/apt/apt.conf.d/70debconf", "// debconf config\n");
 
 	// network
 	ensureDir(vfs, "/etc/network");
@@ -442,13 +442,14 @@ export function syncEtcPasswd(
 
 	let uid = 1000;
 	for (const u of userList) {
-		if (u === "root") continue;
+		if (u === "root") { continue; }
 		const realUid = users.getUid(u);
 		const realGid = users.getGid(u);
 		const effectiveUid = realUid > 0 ? realUid : uid;
 		const effectiveGid = realGid > 0 ? realGid : uid;
 		passwdLines.push(`${u}:x:${effectiveUid}:${effectiveGid}::/home/${u}:/bin/bash`);
-		if (realUid === 0) uid++; // Only increment if UID was auto-assigned
+		if (realUid === 0) { uid++; // Only increment if UID was auto-assigned
+}
 	}
 
 	vfs.writeFile("/etc/passwd", `${passwdLines.join("\n")}\n`);
@@ -471,7 +472,7 @@ export function syncEtcPasswd(
 
 function ttyToPid(tty: string): number {
 	const match = tty.match(/(\d+)$/);
-	return 1000 + (match?.[1] ? parseInt(match[1], 10) : 0);
+	return 1000 + (match?.[1] ? Number.parseInt(match[1], 10) : 0);
 }
 
 function writeProcPid(
@@ -498,46 +499,46 @@ function writeProcPid(
 		`${dir}/status`,
 		`${[
 			`Name:   ${comm}`,
-			`Umask:  0022`,
-			`State:  S (sleeping)`,
+			"Umask:  0022",
+			"State:  S (sleeping)",
 			`Tgid:   ${pid}`,
 			`Pid:    ${pid}`,
-			`PPid:   1`,
-			`TracerPid:      0`,
-			`Uid:    0\t0\t0\t0`,
-			`Gid:    0\t0\t0\t0`,
-			`FDSize: 64`,
-			`Groups:`,
-			`VmPeak:    20480 kB`,
-			`VmSize:    16384 kB`,
-			`VmLck:         0 kB`,
-			`VmPin:         0 kB`,
-			`VmHWM:      4096 kB`,
-			`VmRSS:      4096 kB`,
-			`RssAnon:     512 kB`,
-			`RssFile:    3584 kB`,
-			`RssShmem:      0 kB`,
-			`VmData:     2048 kB`,
-			`VmStk:       132 kB`,
-			`VmExe:       924 kB`,
-			`VmLib:      2744 kB`,
-			`VmPTE:        52 kB`,
-			`VmSwap:        0 kB`,
-			`Threads: 1`,
-			`SigQ:   0/31968`,
-			`SigPnd: 0000000000000000`,
-			`SigBlk: 0000000000010000`,
-			`SigIgn: 0000000000380004`,
-			`SigCgt: 000000004b817efb`,
-			`CapInh: 0000000000000000`,
-			`CapPrm: 000001ffffffffff`,
-			`CapEff: 000001ffffffffff`,
-			`CapBnd: 000001ffffffffff`,
-			`CapAmb: 0000000000000000`,
-			`NoNewPrivs:     0`,
-			`Seccomp:        0`,
-			`voluntary_ctxt_switches:        100`,
-			`nonvoluntary_ctxt_switches:     10`,
+			"PPid:   1",
+			"TracerPid:      0",
+			"Uid:    0\t0\t0\t0",
+			"Gid:    0\t0\t0\t0",
+			"FDSize: 64",
+			"Groups:",
+			"VmPeak:    20480 kB",
+			"VmSize:    16384 kB",
+			"VmLck:         0 kB",
+			"VmPin:         0 kB",
+			"VmHWM:      4096 kB",
+			"VmRSS:      4096 kB",
+			"RssAnon:     512 kB",
+			"RssFile:    3584 kB",
+			"RssShmem:      0 kB",
+			"VmData:     2048 kB",
+			"VmStk:       132 kB",
+			"VmExe:       924 kB",
+			"VmLib:      2744 kB",
+			"VmPTE:        52 kB",
+			"VmSwap:        0 kB",
+			"Threads: 1",
+			"SigQ:   0/31968",
+			"SigPnd: 0000000000000000",
+			"SigBlk: 0000000000010000",
+			"SigIgn: 0000000000380004",
+			"SigCgt: 000000004b817efb",
+			"CapInh: 0000000000000000",
+			"CapPrm: 000001ffffffffff",
+			"CapEff: 000001ffffffffff",
+			"CapBnd: 000001ffffffffff",
+			"CapAmb: 0000000000000000",
+			"NoNewPrivs:     0",
+			"Seccomp:        0",
+			"voluntary_ctxt_switches:        100",
+			"nonvoluntary_ctxt_switches:     10",
 		].join("\n")}\n`,
 	);
 	write(
@@ -548,7 +549,7 @@ function writeProcPid(
 	write(
 		vfs,
 		`${dir}/statm`,
-		`4096 1024 768 231 0 512 0\n`,
+		"4096 1024 768 231 0 512 0\n",
 	);
 	write(
 		vfs,
@@ -674,9 +675,9 @@ export function refreshProc(
 	// meminfo — real host values, Linux-compatible format (or capped)
 	const hostTotalMemKb = Math.floor(os.totalmem() / 1024);
 	const hostFreeMemKb  = Math.floor(os.freemem() / 1024);
-	const ramCapKb       = resourceCaps?.ramCapBytes != null ? Math.floor(resourceCaps.ramCapBytes / 1024) : null;
-	const totalMemKb     = ramCapKb != null ? Math.min(hostTotalMemKb, ramCapKb) : hostTotalMemKb;
-	const freeMemKb      = ramCapKb != null ? Math.floor(totalMemKb * (hostFreeMemKb / hostTotalMemKb)) : hostFreeMemKb;
+	const ramCapKb       = resourceCaps?.ramCapBytes === undefined ? null : Math.floor(resourceCaps.ramCapBytes / 1024);
+	const totalMemKb     = ramCapKb === null ? hostTotalMemKb : Math.min(hostTotalMemKb, ramCapKb);
+	const freeMemKb      = ramCapKb === null ? hostFreeMemKb : Math.floor(totalMemKb * (hostFreeMemKb / hostTotalMemKb));
 	const availMemKb     = Math.floor(freeMemKb * 0.95);
 	const buffersKb      = Math.floor(totalMemKb * 0.03);
 	const cachedKb       = Math.floor(totalMemKb * 0.08);
@@ -744,39 +745,39 @@ export function refreshProc(
 
 	// cpuinfo — real host CPU passthrough + x86 feature flags matching Firecracker Xeon (or capped)
 	const hostCpus = os.cpus();
-	const cpuCapCount = resourceCaps?.cpuCapCores != null ? Math.min(resourceCaps.cpuCapCores, hostCpus.length) : hostCpus.length;
+	const cpuCapCount = resourceCaps?.cpuCapCores === undefined ? hostCpus.length : Math.min(resourceCaps.cpuCapCores, hostCpus.length);
 	const cpus = hostCpus.slice(0, cpuCapCount);
 	const cpuLines: string[] = [];
 	for (let i = 0; i < cpus.length; i++) {
 		const c = cpus[i];
-		if (!c) continue;
+		if (!c) { continue; }
 		cpuLines.push(
 			`processor\t: ${i}`,
-			`vendor_id\t: GenuineIntel`,
-			`cpu family\t: 6`,
-			`model\t\t: 85`,
+			"vendor_id\t: GenuineIntel",
+			"cpu family\t: 6",
+			"model\t\t: 85",
 			`model name\t: ${c.model}`,
-			`stepping\t: 7`,
-			`microcode\t: 0x1`,
+			"stepping\t: 7",
+			"microcode\t: 0x1",
 			`cpu MHz\t\t: ${c.speed.toFixed(3)}`,
-			`cache size\t: 33792 KB`,
-			`physical id\t: 0`,
+			"cache size\t: 33792 KB",
+			"physical id\t: 0",
 			`siblings\t: ${cpus.length}`,
 			`core id\t\t: ${i}`,
 			`cpu cores\t: ${cpus.length}`,
 			`apicid\t\t: ${i}`,
 			`initial apicid\t: ${i}`,
-			`fpu\t\t: yes`,
-			`fpu_exception\t: yes`,
-			`cpuid level\t: 13`,
-			`wp\t\t: yes`,
-			`flags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology nonstop_tsc cpuid tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat umip avx512_vnni md_clear arch_capabilities`,
-			`bugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs taa mmio_stale_data retbleed eibrs_pbrsb bhi ibpb_no_ret spectre_v2_user its`,
+			"fpu\t\t: yes",
+			"fpu_exception\t: yes",
+			"cpuid level\t: 13",
+			"wp\t\t: yes",
+			"flags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology nonstop_tsc cpuid tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat umip avx512_vnni md_clear arch_capabilities",
+			"bugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs taa mmio_stale_data retbleed eibrs_pbrsb bhi ibpb_no_ret spectre_v2_user its",
 			`bogomips\t: ${(c.speed * 2 / 1000).toFixed(2)}`,
-			`clflush size\t: 64`,
-			`cache_alignment\t: 64`,
-			`address sizes\t: 46 bits physical, 48 bits virtual`,
-			`power management:`,
+			"clflush size\t: 64",
+			"cache_alignment\t: 64",
+			"address sizes\t: 46 bits physical, 48 bits virtual",
+			"power management:",
 			"",
 		);
 	}
@@ -801,7 +802,7 @@ export function refreshProc(
 	const systemJiffies = Math.floor(uptimeSec * 30);
 	const idleJiffies = Math.floor(uptimeSec * 800);
 	const iowaitJiffies = Math.floor(uptimeSec * 5);
-	const irqJiffies = Math.floor(uptimeSec * 1);
+	const irqJiffies = Math.floor(Number(uptimeSec));
 	const softirqJiffies = Math.floor(uptimeSec * 2);
 	const stealJiffies = Math.floor(uptimeSec * 0);
 	const totalJiffies = userJiffies + niceJiffies + systemJiffies + idleJiffies + iowaitJiffies + irqJiffies + softirqJiffies + stealJiffies;
@@ -865,7 +866,7 @@ export function refreshProc(
 
 	// /proc/cmdline — boot args
 	write(vfs, "/proc/cmdline",
-		`console=ttyS0 reboot=k panic=1 nomodule random.trust_cpu=1 ipv6.disable=1 swiotlb=noforce rdinit=/process_api init_on_free=1\n`,
+		"console=ttyS0 reboot=k panic=1 nomodule random.trust_cpu=1 ipv6.disable=1 swiotlb=noforce rdinit=/process_api init_on_free=1\n",
 	);
 
 	// /proc/filesystems — matching real container
@@ -942,7 +943,7 @@ export function refreshProc(
 		const ipToHex = (ip: string) =>
 			ip.split(".")
 				.reverse()
-				.map((n) => parseInt(n, 10).toString(16).padStart(2, "0"))
+				.map((n) => Number.parseInt(n, 10).toString(16).padStart(2, "0"))
 				.join("")
 				.toUpperCase();
 
@@ -1108,7 +1109,7 @@ export function refreshProc(
 
 	// /sys/fs/cgroup — update resource caps dynamically
 	const effectiveRamCap = resourceCaps?.ramCapBytes ?? os.totalmem();
-	const effectiveCpuQuota = resourceCaps?.cpuCapCores != null ? resourceCaps.cpuCapCores * 100000 : -1;
+	const effectiveCpuQuota = resourceCaps?.cpuCapCores === undefined ? -1 : resourceCaps.cpuCapCores * 100000;
 	ensureDir(vfs, "/sys/fs/cgroup/memory");
 	write(vfs, "/sys/fs/cgroup/memory/memory.limit_in_bytes", `${effectiveRamCap}\n`);
 	write(vfs, "/sys/fs/cgroup/memory/memory.usage_in_bytes", `${effectiveRamCap - os.freemem()}\n`);
@@ -1152,7 +1153,7 @@ export function refreshProc(
 
 	// /proc/self — mirror of most recent session
 	const lastSession = sessions[sessions.length - 1];
-	const selfPid = lastSession !== undefined ? ttyToPid(lastSession.tty) : 1;
+	const selfPid = lastSession === undefined ? 1 : ttyToPid(lastSession.tty);
 	try { vfs.remove("/proc/self"); } catch { /* ignore */ }
 
 	const selfSrc = `/proc/${selfPid}`;
@@ -1167,7 +1168,7 @@ export function refreshProc(
 			const dstPath = `/proc/self/${entry}`;
 			try {
 				const st = vfs.stat(srcPath);
-				if (st.type === "file") write(vfs, dstPath, vfs.readFile(srcPath));
+				if (st.type === "file") { write(vfs, dstPath, vfs.readFile(srcPath)); }
 			} catch { /* skip */ }
 		}
 	} else {
@@ -1246,7 +1247,7 @@ function bootstrapSys(vfs: VirtualFileSystem, hostname: string, props: ShellProp
 	ensureFile(vfs, "/sys/fs/cgroup/memory/memory.usage_in_bytes",      `${ramCapBytes - os.freemem()}\n`);
 	ensureFile(vfs, "/sys/fs/cgroup/memory/memory.memsw.limit_in_bytes",`${ramCapBytes}\n`);
 	ensureFile(vfs, "/sys/fs/cgroup/cpu/cpu.cfs_period_us",             "100000\n");
-	ensureFile(vfs, "/sys/fs/cgroup/cpu/cpu.cfs_quota_us",              resourceCaps?.cpuCapCores != null ? `${resourceCaps.cpuCapCores * 100000}\n` : "-1\n");
+	ensureFile(vfs, "/sys/fs/cgroup/cpu/cpu.cfs_quota_us",              resourceCaps?.cpuCapCores === undefined ? "-1\n" : `${resourceCaps.cpuCapCores * 100000}\n`);
 	ensureFile(vfs, "/sys/fs/cgroup/cpu/cpu.shares",                    "1024\n");
 
 	ensureDir(vfs, "/sys/kernel");
@@ -1803,11 +1804,11 @@ function bootstrapVar(vfs: VirtualFileSystem): void {
 
 function bootstrapBin(vfs: VirtualFileSystem): void {
 	// Modern Fortune Nyx: /bin and /sbin are symlinks to /usr/bin and /usr/sbin
-	if (!vfs.exists("/bin"))  vfs.symlink("/usr/bin",  "/bin");
-	if (!vfs.exists("/sbin")) vfs.symlink("/usr/sbin", "/sbin");
+	if (!vfs.exists("/bin"))  { vfs.symlink("/usr/bin",  "/bin"); }
+	if (!vfs.exists("/sbin")) { vfs.symlink("/usr/sbin", "/sbin"); }
 
 	// /var/run → /run (systemd compat)
-	if (!vfs.exists("/var/run")) vfs.symlink("/run", "/var/run");
+	if (!vfs.exists("/var/run")) { vfs.symlink("/run", "/var/run"); }
 
 	ensureDir(vfs, "/lib");
 	ensureDir(vfs, "/lib64");
@@ -1882,7 +1883,7 @@ function bootstrapMisc(vfs: VirtualFileSystem, props: ShellProperties): void {
 			`menuentry "Fortune GNU/Linux 1.0 Nyx" {`,
 			`  linux   /vmlinuz-${props.kernel} root=/dev/vda rw console=ttyS0`,
 			`  initrd  /initrd.img-${props.kernel}`,
-			`}`,
+			"}",
 		].join("\n")}\n`,
 	);
 
@@ -2007,10 +2008,10 @@ function bootstrapMisc(vfs: VirtualFileSystem, props: ShellProperties): void {
 		0o644);
 
 	const prevKver = "1.0.0+itsrealfortune+0-amd64";
-	if (!vfs.exists("/vmlinuz"))        vfs.symlink(`/boot/vmlinuz-${kver}`,    "/vmlinuz");
-	if (!vfs.exists("/vmlinuz.old"))    vfs.symlink(`/boot/vmlinuz-${prevKver}`, "/vmlinuz.old");
-	if (!vfs.exists("/initrd.img"))     vfs.symlink(`/boot/initrd.img-${kver}`,"/initrd.img");
-	if (!vfs.exists("/initrd.img.old")) vfs.symlink(`/boot/initrd.img-${prevKver}`,"/initrd.img.old");
+	if (!vfs.exists("/vmlinuz"))        { vfs.symlink(`/boot/vmlinuz-${kver}`,    "/vmlinuz"); }
+	if (!vfs.exists("/vmlinuz.old"))    { vfs.symlink(`/boot/vmlinuz-${prevKver}`, "/vmlinuz.old"); }
+	if (!vfs.exists("/initrd.img"))     { vfs.symlink(`/boot/initrd.img-${kver}`,"/initrd.img"); }
+	if (!vfs.exists("/initrd.img.old")) { vfs.symlink(`/boot/initrd.img-${prevKver}`,"/initrd.img.old"); }
 
 	// /lost+found — ext4 recovery
 	ensureDir(vfs, "/lost+found", 0o700);
@@ -2039,7 +2040,7 @@ export function getStaticRootfsSnapshot(
 ): Buffer {
 	const key    = _staticCacheKey(hostname, props);
 	const cached = _staticRootfsCache.get(key);
-	if (cached) return cached;
+	if (cached) { return cached; }
 
 	const tmp = new VirtualFileSystem({ mode: "memory" });
 	bootstrapEtc(tmp, hostname, props);

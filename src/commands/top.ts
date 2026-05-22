@@ -18,8 +18,8 @@ export const topCommand: ShellModule = {
 		const hostTotalMem = os.totalmem();
 		const hostFreeMem = os.freemem();
 		const ramCap = shell.resourceCaps?.ramCapBytes;
-		const totalMem = ramCap != null ? Math.min(hostTotalMem, ramCap) : hostTotalMem;
-		const freeMem = ramCap != null ? Math.floor(totalMem * (hostFreeMem / hostTotalMem)) : hostFreeMem;
+		const totalMem = ramCap === undefined ? hostTotalMem : Math.min(hostTotalMem, ramCap);
+		const freeMem = ramCap === null ? hostFreeMem : Math.floor(totalMem * (hostFreeMem / hostTotalMem));
 		const usedMem = totalMem - freeMem;
 		const loadAverages = os.loadavg();
 

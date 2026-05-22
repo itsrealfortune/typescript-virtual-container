@@ -17,7 +17,7 @@ export const lnCommand: ShellModule = {
 		const positionals = args.filter((a) => !a.startsWith("-"));
 		const [targetArg, linkArg] = positionals;
 
-		if (!targetArg || !linkArg) {
+		if (!(targetArg && linkArg)) {
 			return { stderr: "ln: missing operand", exitCode: 1 };
 		}
 
@@ -29,7 +29,9 @@ export const lnCommand: ShellModule = {
 		try {
 			assertPathAccess(authUser, linkPath, "ln");
 
-			if (!symbolic) {
+			if (symbolic) {
+				shell.vfs.symlink(targetPath, linkPath, uid, gid);
+			} else {
 				// Hard link — copy file contents
 				const srcPath = resolvePath(cwd, targetArg);
 				assertPathAccess(authUser, srcPath, "ln");
@@ -41,8 +43,6 @@ export const lnCommand: ShellModule = {
 				}
 				const content = shell.vfs.readFile(srcPath, uid, gid);
 				shell.vfs.writeFile(linkPath, content, {}, uid, gid);
-			} else {
-				shell.vfs.symlink(targetPath, linkPath, uid, gid);
 			}
 
 			return { exitCode: 0 };
@@ -62,7 +62,7 @@ export const readlinkCommand: ShellModule = {
 	run: ({ shell, cwd, args }) => {
 		const follow = args.includes("-f") || args.includes("-e");
 		const target = args.find((a) => !a.startsWith("-"));
-		if (!target) return { stderr: "readlink: missing operand\n", exitCode: 1 };
+		if (!target) { return { stderr: "readlink: missing operand\n", exitCode: 1 }; }
 		const p = resolvePath(cwd, target);
 		if (!shell.vfs.exists(p)) {
 			return { stderr: `readlink: ${target}: No such file or directory\n`, exitCode: 1 };

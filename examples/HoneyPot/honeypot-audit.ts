@@ -118,7 +118,7 @@ async function demonstrateHoneypot() {
 	const fileWrites = honeypot.getAuditLog("file:write", "VirtualFileSystem");
 	const fileReads = honeypot.getAuditLog("file:read", "VirtualFileSystem");
 
-	console.log(`📁 File Operations:`);
+	console.log("📁 File Operations:");
 	console.log(`  • File writes: ${fileWrites.length}`);
 	fileWrites.forEach((entry) => {
 		console.log(`    - ${entry.details.path} (${entry.details.size} bytes)`);
@@ -153,7 +153,7 @@ async function demonstrateHoneypot() {
 
 	const allAuditEntries = honeypot.getAuditLog();
 	console.log(`📊 Total audit entries: ${allAuditEntries.length}`);
-	console.log(`💾 Audit log is ready for export/storage\n`);
+	console.log("💾 Audit log is ready for export/storage\n");
 
 	// Example export to JSON
 	const exportData = {

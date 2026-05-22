@@ -26,12 +26,12 @@ export const awkCommand: ShellModule = {
 			else if (a === "-v") {
 				const kv = args[++i] ?? "";
 				const eq = kv.indexOf("=");
-				if (eq !== -1) initVars[kv.slice(0, eq)] = kv.slice(eq + 1);
+				if (eq !== -1) { initVars[kv.slice(0, eq)] = kv.slice(eq + 1); }
 				i++;
 			} else if (a.startsWith("-v")) {
 				const kv = a.slice(2);
 				const eq = kv.indexOf("=");
-				if (eq !== -1) initVars[kv.slice(0, eq)] = kv.slice(eq + 1);
+				if (eq !== -1) { initVars[kv.slice(0, eq)] = kv.slice(eq + 1); }
 				i++;
 			} else {
 				positionals.push(a);
@@ -41,7 +41,7 @@ export const awkCommand: ShellModule = {
 
 		const prog = positionals[0];
 		const fileArg = positionals[1];
-		if (!prog) return { stderr: "awk: no program", exitCode: 1 };
+		if (!prog) { return { stderr: "awk: no program", exitCode: 1 }; }
 
 		let input = stdin ?? "";
 		if (fileArg) {
@@ -58,62 +58,62 @@ export const awkCommand: ShellModule = {
 		type AWKVars = Record<string, string | number>;
 
 		function numVal(v: string | number | undefined): number {
-			if (v === undefined || v === "") return 0;
+			if (v === undefined || v === "") { return 0; }
 			const n = Number(v);
 			return Number.isNaN(n) ? 0 : n;
 		}
 
 		function strVal(v: string | number | undefined): string {
-			if (v === undefined) return "";
+			if (v === undefined) { return ""; }
 			return String(v);
 		}
 
 		function splitFields(line: string, fs: string): string[] {
-			if (fs === " ") return line.trim().split(/\s+/).filter(Boolean);
-			if (fs.length === 1) return line.split(fs);
+			if (fs === " ") { return line.trim().split(/\s+/).filter(Boolean); }
+			if (fs.length === 1) { return line.split(fs); }
 			return line.split(new RegExp(fs));
 		}
 
 		// Evaluate an AWK expression string with given context
 		function evalExpr(expr: string, vars: AWKVars, fields: string[], nr: number, nf: number): string | number {
 			expr = expr.trim();
-			if (expr === "") return "";
+			if (expr === "") { return ""; }
 
 			// String literal
-			if (expr.startsWith('"') && expr.endsWith('"')) return expr.slice(1, -1).replace(/\\n/g, "\n").replace(/\\t/g, "\t");
+			if (expr.startsWith('"') && expr.endsWith('"')) { return expr.slice(1, -1).replace(/\\n/g, "\n").replace(/\\t/g, "\t"); }
 
 			// Numeric literal
-			if (/^-?\d+(\.\d+)?$/.test(expr)) return parseFloat(expr);
+			if (/^-?\d+(\.\d+)?$/.test(expr)) { return Number.parseFloat(expr); }
 
 			// $0, $N, $NF
-			if (expr === "$0") return fields.join(sep === " " ? " " : sep) || "";
-			if (expr === "$NF") return fields[nf - 1] ?? "";
-			if (/^\$\d+$/.test(expr)) return fields[parseInt(expr.slice(1), 10) - 1] ?? "";
+			if (expr === "$0") { return fields.join(sep === " " ? " " : sep) || ""; }
+			if (expr === "$NF") { return fields[nf - 1] ?? ""; }
+			if (/^\$\d+$/.test(expr)) { return fields[Number.parseInt(expr.slice(1), 10) - 1] ?? ""; }
 			if (/^\$/.test(expr)) {
 				const inner = expr.slice(1);
 				const idx = numVal(evalExpr(inner, vars, fields, nr, nf));
-				if (idx === 0) return fields.join(sep === " " ? " " : sep) || "";
+				if (idx === 0) { return fields.join(sep === " " ? " " : sep) || ""; }
 				return fields[idx - 1] ?? "";
 			}
 
 			// NR, NF
-			if (expr === "NR") return nr;
-			if (expr === "NF") return nf;
+			if (expr === "NR") { return nr; }
+			if (expr === "NF") { return nf; }
 
 			// Variable
-			if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(expr)) return vars[expr] ?? "";
+			if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(expr)) { return vars[expr] ?? ""; }
 
 			// String functions
 			const lenM = expr.match(/^length\s*\(([^)]*)\)$/);
-			if (lenM) return strVal(evalExpr((lenM[1] as string).trim(), vars, fields, nr, nf)).length;
+			if (lenM) { return strVal(evalExpr((lenM[1] as string).trim(), vars, fields, nr, nf)).length; }
 
 			const substrM = expr.match(/^substr\s*\((.+)\)$/);
 			if (substrM) {
 				const parts2 = splitCSV(substrM[1] as string);
 				const s = strVal(evalExpr(parts2[0]?.trim() ?? "", vars, fields, nr, nf));
 				const start = numVal(evalExpr(parts2[1]?.trim() ?? "1", vars, fields, nr, nf)) - 1;
-				const len2 = parts2[2] !== undefined ? numVal(evalExpr(parts2[2].trim(), vars, fields, nr, nf)) : undefined;
-				return len2 !== undefined ? s.slice(Math.max(0, start), start + len2) : s.slice(Math.max(0, start));
+				const len2 = parts2[2] === undefined ? undefined : numVal(evalExpr(parts2[2].trim(), vars, fields, nr, nf));
+				return len2 === undefined ? s.slice(Math.max(0, start)) : s.slice(Math.max(0, start), start + len2);
 			}
 
 			const indexM = expr.match(/^index\s*\((.+)\)$/);
@@ -125,10 +125,10 @@ export const awkCommand: ShellModule = {
 			}
 
 			const tolowerM = expr.match(/^tolower\s*\((.+)\)$/);
-			if (tolowerM) return strVal(evalExpr((tolowerM[1] as string).trim(), vars, fields, nr, nf)).toLowerCase();
+			if (tolowerM) { return strVal(evalExpr((tolowerM[1] as string).trim(), vars, fields, nr, nf)).toLowerCase(); }
 
 			const toupperM = expr.match(/^toupper\s*\((.+)\)$/);
-			if (toupperM) return strVal(evalExpr((toupperM[1] as string).trim(), vars, fields, nr, nf)).toUpperCase();
+			if (toupperM) { return strVal(evalExpr((toupperM[1] as string).trim(), vars, fields, nr, nf)).toUpperCase(); }
 
 			const matchM = expr.match(/^match\s*\((.+),\s*\/(.+)\/\)$/);
 			if (matchM) {
@@ -162,10 +162,11 @@ export const awkCommand: ShellModule = {
 					.replace(/\bNR\b/g, String(nr))
 					.replace(/\bNF\b/g, String(nf))
 					.replace(/\$NF\b/g, String(nf > 0 ? numVal(fields[nf - 1]) : 0))
-					.replace(/\$(\d+)/g, (_, n) => String(numVal(fields[parseInt(n, 10) - 1])))
+					.replace(/\$(\d+)/g, (_, n) => String(numVal(fields[Number.parseInt(n, 10) - 1])))
 					.replace(/\b([A-Za-z_][A-Za-z0-9_]*)\b/g, (_, v) => String(numVal(vars[v])));
+				// biome-ignore lint/nursery/noImpliedEval: awk expression evaluator needs dynamic code execution
 				const result = Function(`"use strict"; return (${subst});`)();
-				if (typeof result === "number" || typeof result === "boolean") return Number(result);
+				if (typeof result === "number" || typeof result === "boolean") { return Number(result); }
 			} catch { /* fall through */ }
 
 			return strVal(vars[expr] ?? expr);
@@ -177,8 +178,8 @@ export const awkCommand: ShellModule = {
 			let depth = 0;
 			for (let ci = 0; ci < s.length; ci++) {
 				const c = s.charAt(ci);
-				if (c === "(") depth++;
-				else if (c === ")") depth--;
+				if (c === "(") { depth++; }
+				else if (c === ")") { depth--; }
 				else if (c === "," && depth === 0) { parts.push(cur); cur = ""; continue; }
 				cur += c;
 			}
@@ -189,11 +190,11 @@ export const awkCommand: ShellModule = {
 		// Execute one statement, return false to stop (next/exit)
 		function execStmt(stmt: string, vars: AWKVars, fields: string[], nr: number, nf: number, out: string[]): "next" | "exit" | "ok" {
 			stmt = stmt.trim();
-			if (!stmt || stmt.startsWith("#")) return "ok";
+			if (!stmt || stmt.startsWith("#")) { return "ok"; }
 
 			// next / exit
-			if (stmt === "next") return "next";
-			if (stmt === "exit" || stmt.startsWith("exit ")) return "exit";
+			if (stmt === "next") { return "next"; }
+			if (stmt === "exit" || stmt.startsWith("exit ")) { return "exit"; }
 
 			// print / printf
 			if (stmt === "print" || stmt === "print $0") {
@@ -233,8 +234,8 @@ export const awkCommand: ShellModule = {
 				try {
 					const re2 = new RegExp(reStr, global2 ? "g" : "");
 					if (target && /^\$\d+$/.test(target)) {
-						const idx = parseInt(target.slice(1), 10) - 1;
-						if (idx >= 0 && idx < fields.length) fields[idx] = (fields[idx] ?? "").replace(re2, rep);
+						const idx = Number.parseInt(target.slice(1), 10) - 1;
+						if (idx >= 0 && idx < fields.length) { fields[idx] = (fields[idx] ?? "").replace(re2, rep); }
 					} else {
 						const replaced = wholeRec.replace(re2, rep);
 						const newFields = splitFields(replaced, sep);
@@ -252,7 +253,7 @@ export const awkCommand: ShellModule = {
 				const arrName = parts2[1]?.trim() ?? "arr";
 				const fs2 = parts2[2] ? strVal(evalExpr(parts2[2].trim(), vars, fields, nr, nf)) : sep;
 				const elems = splitFields(s, fs2);
-				for (let ei = 0; ei < elems.length; ei++) vars[`${arrName}[${ei + 1}]`] = elems[ei] ?? "";
+				for (let ei = 0; ei < elems.length; ei++) { vars[`${arrName}[${ei + 1}]`] = elems[ei] ?? ""; }
 				vars[arrName] = String(elems.length);
 				return "ok";
 			}
@@ -268,11 +269,11 @@ export const awkCommand: ShellModule = {
 				const rhs = numVal(evalExpr(assignOpM[3] as string, vars, fields, nr, nf));
 				const op2 = assignOpM[2] as string;
 				let res = cur;
-				if (op2 === "+=") res = cur + rhs;
-				else if (op2 === "-=") res = cur - rhs;
-				else if (op2 === "*=") res = cur * rhs;
-				else if (op2 === "/=") res = rhs !== 0 ? cur / rhs : 0;
-				else if (op2 === "%=") res = cur % rhs;
+				if (op2 === "+=") { res = cur + rhs; }
+				else if (op2 === "-=") { res = cur - rhs; }
+				else if (op2 === "*=") { res = cur * rhs; }
+				else if (op2 === "/=") { res = rhs === 0 ? 0 : cur / rhs; }
+				else if (op2 === "%=") { res = cur % rhs; }
 				vars[assignOpM[1] as string] = res;
 				return "ok";
 			}
@@ -295,25 +296,28 @@ export const awkCommand: ShellModule = {
 			const fmtArgs = parts2.slice(1).map((p) => evalExpr(p.trim(), vars, fields, nr, nf));
 			let ai = 0;
 			return fmt.replace(/%(-?\d*\.?\d*)?([diouxXeEfgGsq%])/g, (_, spec, type2) => {
-				if (type2 === "%") return "%";
+				if (type2 === "%") { return "%"; }
 				const val2 = fmtArgs[ai++];
-				const width = spec ? parseInt(spec, 10) : 0;
+				const width = spec ? Number.parseInt(spec, 10) : 0;
 				let result = "";
-				if (type2 === "d" || type2 === "i") result = String(Math.trunc(numVal(val2)));
-				else if (type2 === "f") result = numVal(val2).toFixed(spec?.includes(".") ? parseInt(spec.split(".")[1] ?? "6", 10) : 6);
-				else if (type2 === "s" || type2 === "q") result = strVal(val2);
-				else if (type2 === "x") result = Math.trunc(numVal(val2)).toString(16);
-				else if (type2 === "X") result = Math.trunc(numVal(val2)).toString(16).toUpperCase();
-				else if (type2 === "o") result = Math.trunc(numVal(val2)).toString(8);
-				else result = strVal(val2);
-				if (width > 0 && result.length < width) result = result.padStart(width);
-				else if (width < 0 && result.length < -width) result = result.padEnd(-width);
+				if (type2 === "d" || type2 === "i") { result = String(Math.trunc(numVal(val2))); }
+				else if (type2 === "f") { result = numVal(val2).toFixed(spec?.includes(".") ? Number.parseInt(spec.split(".")[1] ?? "6", 10) : 6); }
+				else if (type2 === "s" || type2 === "q") { result = strVal(val2); }
+				else if (type2 === "x") { result = Math.trunc(numVal(val2)).toString(16); }
+				else if (type2 === "X") { result = Math.trunc(numVal(val2)).toString(16).toUpperCase(); }
+				else if (type2 === "o") { result = Math.trunc(numVal(val2)).toString(8); }
+				else { result = strVal(val2); }
+				if (width > 0 && result.length < width) { result = result.padStart(width); }
+				else if (width < 0 && result.length < -width) { result = result.padEnd(-width); }
 				return result;
 			});
 		}
 
 		// ── Program parser ─────────────────────────────────────────────────────
-		type Clause = { pattern: string; action: string };
+		interface Clause {
+    pattern: string;
+    action: string 
+}
 		const clauses: Clause[] = [];
 		const progTrim = prog.trim();
 
@@ -322,8 +326,8 @@ export const awkCommand: ShellModule = {
 			let j = 0;
 			while (j < progTrim.length) {
 				// Skip whitespace
-				while (j < progTrim.length && /\s/.test(progTrim.charAt(j))) j++;
-				if (j >= progTrim.length) break;
+				while (j < progTrim.length && /\s/.test(progTrim.charAt(j))) { j++; }
+				if (j >= progTrim.length) { break; }
 
 				// Collect pattern (everything before `{`)
 				let pat = "";
@@ -333,7 +337,7 @@ export const awkCommand: ShellModule = {
 				pat = pat.trim();
 
 				if (progTrim[j] !== "{") {
-					if (pat) clauses.push({ pattern: pat, action: "print $0" });
+					if (pat) { clauses.push({ pattern: pat, action: "print $0" }); }
 					break;
 				}
 				j++; // skip {
@@ -343,7 +347,7 @@ export const awkCommand: ShellModule = {
 				let depth = 1;
 				while (j < progTrim.length && depth > 0) {
 					const c = progTrim.charAt(j);
-					if (c === "{") depth++;
+					if (c === "{") { depth++; }
 					else if (c === "}") { depth--; if (depth === 0) { j++; break; } }
 					action += c;
 					j++;
@@ -352,7 +356,7 @@ export const awkCommand: ShellModule = {
 			}
 		}
 
-		if (clauses.length === 0) clauses.push({ pattern: "", action: progTrim.replace(/[{}]/g, "").trim() });
+		if (clauses.length === 0) { clauses.push({ pattern: "", action: progTrim.replace(/[{}]/g, "").trim() }); }
 
 		// ── Execute ────────────────────────────────────────────────────────────
 		const out: string[] = [];
@@ -367,7 +371,7 @@ export const awkCommand: ShellModule = {
 			const stmts = splitStmts(action);
 			for (const stmt of stmts) {
 				const res = execStmt(stmt, vars, fields, nr, nf, out);
-				if (res !== "ok") return res;
+				if (res !== "ok") { return res; }
 			}
 			return "ok";
 		}
@@ -383,21 +387,21 @@ export const awkCommand: ShellModule = {
 				if (!inStr && (c === '"' || c === "'")) { inStr = true; strCh = c; cur += c; continue; }
 				if (inStr && c === strCh) { inStr = false; cur += c; continue; }
 				if (inStr) { cur += c; continue; }
-				if (c === "(" || c === "[") depth++;
-				else if (c === ")" || c === "]") depth--;
+				if (c === "(" || c === "[") { depth++; }
+				else if (c === ")" || c === "]") { depth--; }
 				if ((c === ";" || c === "\n") && depth === 0) {
-					if (cur.trim()) stmts.push(cur.trim());
+					if (cur.trim()) { stmts.push(cur.trim()); }
 					cur = "";
 				} else { cur += c; }
 			}
-			if (cur.trim()) stmts.push(cur.trim());
+			if (cur.trim()) { stmts.push(cur.trim()); }
 			return stmts;
 		}
 
 		function matchClause(pattern: string, line: string, fields: string[], nr: number, nf: number): boolean {
-			if (!pattern) return true;
-			if (pattern === "1") return true;
-			if (/^-?\d+$/.test(pattern)) return numVal(pattern) !== 0;
+			if (!pattern) { return true; }
+			if (pattern === "1") { return true; }
+			if (/^-?\d+$/.test(pattern)) { return numVal(pattern) !== 0; }
 
 			// /regex/
 			if (pattern.startsWith("/") && pattern.endsWith("/")) {
@@ -416,6 +420,7 @@ export const awkCommand: ShellModule = {
 					case ">=": return lhs >= rhs;
 					case "<":  return lhs < rhs;
 					case "<=": return lhs <= rhs;
+					default: return false;
 				}
 			}
 
@@ -432,10 +437,10 @@ export const awkCommand: ShellModule = {
 		}
 
 		// BEGIN
-		for (const c of beginClauses) runAction(c.action, [], 0, 0);
+		for (const c of beginClauses) { runAction(c.action, [], 0, 0); }
 
 		const lines = input.split("\n");
-		if (lines[lines.length - 1] === "") lines.pop();
+		if (lines[lines.length - 1] === "") { lines.pop(); }
 
 		let stopped = false;
 		for (let li = 0; li < lines.length && !stopped; li++) {
@@ -447,15 +452,15 @@ export const awkCommand: ShellModule = {
 			const nf = fields.length;
 
 			for (const clause of mainClauses) {
-				if (!matchClause(clause.pattern, line, fields, nr, nf)) continue;
+				if (!matchClause(clause.pattern, line, fields, nr, nf)) { continue; }
 				const res = runAction(clause.action, fields, nr, nf);
-				if (res === "next") break;
+				if (res === "next") { break; }
 				if (res === "exit") { stopped = true; break; }
 			}
 		}
 
 		// END
-		for (const c of endClauses) runAction(c.action, [], numVal(vars.NR), 0);
+		for (const c of endClauses) { runAction(c.action, [], numVal(vars.NR), 0); }
 
 		const output = out.join("\n");
 		return { stdout: output + (output && !output.endsWith("\n") ? "\n" : ""), exitCode: 0 };

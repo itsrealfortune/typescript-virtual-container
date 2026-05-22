@@ -16,7 +16,7 @@ export const realpathCommand: ShellModule = {
 	params: ["<path>"],
 	run: ({ shell, cwd, args }) => {
 		const target = args.find((a) => !a.startsWith("-"));
-		if (!target) return { stderr: "realpath: missing operand\n", exitCode: 1 };
+		if (!target) { return { stderr: "realpath: missing operand\n", exitCode: 1 }; }
 		const p = resolvePath(cwd, target);
 		if (!shell.vfs.exists(p)) {
 			return { stderr: `realpath: ${target}: No such file or directory\n`, exitCode: 1 };
@@ -40,7 +40,7 @@ export const md5sumCommand: ShellModule = {
 	params: ["<file>"],
 	run: ({ shell, cwd, args }) => {
 		const fileArg = args.find((a) => !a.startsWith("-"));
-		if (!fileArg) return { stderr: "md5sum: missing file operand\n", exitCode: 1 };
+		if (!fileArg) { return { stderr: "md5sum: missing file operand\n", exitCode: 1 }; }
 		const p = resolvePath(cwd, fileArg);
 		if (!shell.vfs.exists(p)) {
 			return { stderr: `md5sum: ${fileArg}: No such file or directory\n`, exitCode: 1 };
@@ -63,7 +63,7 @@ export const sha256sumCommand: ShellModule = {
 	params: ["<file>"],
 	run: ({ shell, cwd, args }) => {
 		const fileArg = args.find((a) => !a.startsWith("-"));
-		if (!fileArg) return { stderr: "sha256sum: missing file operand\n", exitCode: 1 };
+		if (!fileArg) { return { stderr: "sha256sum: missing file operand\n", exitCode: 1 }; }
 		const p = resolvePath(cwd, fileArg);
 		if (!shell.vfs.exists(p)) {
 			return { stderr: `sha256sum: ${fileArg}: No such file or directory\n`, exitCode: 1 };
@@ -86,7 +86,7 @@ export const stringsCommand: ShellModule = {
 	params: ["<file>"],
 	run: ({ shell, cwd, args }) => {
 		const fileArg = args.find((a) => !a.startsWith("-"));
-		if (!fileArg) return { stderr: "strings: missing file operand\n", exitCode: 1 };
+		if (!fileArg) { return { stderr: "strings: missing file operand\n", exitCode: 1 }; }
 		const p = resolvePath(cwd, fileArg);
 		if (!shell.vfs.exists(p)) {
 			return { stderr: `strings: ${fileArg}: No such file or directory\n`, exitCode: 1 };
@@ -99,11 +99,11 @@ export const stringsCommand: ShellModule = {
 			if (ch >= 32 && ch <= 126) {
 				current += String.fromCharCode(ch);
 			} else {
-				if (current.length >= 4) results.push(current);
+				if (current.length >= 4) { results.push(current); }
 				current = "";
 			}
 		}
-		if (current.length >= 4) results.push(current);
+		if (current.length >= 4) { results.push(current); }
 		return { stdout: `${results.join("\n")}\n`, exitCode: 0 };
 	},
 };
@@ -122,7 +122,7 @@ export const foldCommand: ShellModule = {
 		const { flagsWithValues, positionals } = parseArgs(args, {
 			flagsWithValue: ["-w"],
 		});
-		const width = parseInt(flagsWithValues.get("-w") || "80", 10);
+		const width = Number.parseInt(flagsWithValues.get("-w") || "80", 10);
 		const fileArg = positionals[0];
 
 		let input: string | undefined;
@@ -136,11 +136,11 @@ export const foldCommand: ShellModule = {
 			input = stdin;
 		}
 
-		if (!input) return { exitCode: 0 };
+		if (!input) { return { exitCode: 0 }; }
 
 		const lines = input.split("\n");
 		const folded = lines.map((line) => {
-			if (line.length <= width) return line;
+			if (line.length <= width) { return line; }
 			const parts: string[] = [];
 			for (let i = 0; i < line.length; i += width) {
 				parts.push(line.slice(i, i + width));
@@ -165,7 +165,7 @@ export const expandCommand: ShellModule = {
 		const { flagsWithValues, positionals } = parseArgs(args, {
 			flagsWithValue: ["-t", "--tabs"],
 		});
-		const tabstop = parseInt(flagsWithValues.get("-t") || flagsWithValues.get("--tabs") || "8", 10);
+		const tabstop = Number.parseInt(flagsWithValues.get("-t") || flagsWithValues.get("--tabs") || "8", 10);
 		const fileArg = positionals[0];
 
 		let input: string | undefined;
@@ -179,7 +179,7 @@ export const expandCommand: ShellModule = {
 			input = stdin;
 		}
 
-		if (!input) return { exitCode: 0 };
+		if (!input) { return { exitCode: 0 }; }
 
 		const expanded = input.replace(/\t/g, " ".repeat(tabstop));
 		return { stdout: expanded, exitCode: 0 };
@@ -200,7 +200,7 @@ export const fmtCommand: ShellModule = {
 		const { flagsWithValues, positionals } = parseArgs(args, {
 			flagsWithValue: ["-w"],
 		});
-		const width = parseInt(flagsWithValues.get("-w") || "75", 10);
+		const width = Number.parseInt(flagsWithValues.get("-w") || "75", 10);
 		const fileArg = positionals[0];
 
 		let input: string | undefined;
@@ -214,20 +214,20 @@ export const fmtCommand: ShellModule = {
 			input = stdin;
 		}
 
-		if (!input) return { exitCode: 0 };
+		if (!input) { return { exitCode: 0 }; }
 
 		const words = input.replace(/\n/g, " ").split(/\s+/).filter(Boolean);
 		const lines: string[] = [];
 		let current = "";
 		for (const word of words) {
 			if (current.length + word.length + (current ? 1 : 0) > width) {
-				if (current) lines.push(current);
+				if (current) { lines.push(current); }
 				current = word;
 			} else {
 				current = current ? `${current} ${word}` : word;
 			}
 		}
-		if (current) lines.push(current);
+		if (current) { lines.push(current); }
 		return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 	},
 };

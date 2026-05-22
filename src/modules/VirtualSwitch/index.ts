@@ -25,7 +25,7 @@ export class VirtualSwitch {
 	private _partitions: Set<MacAddress>[] = [];
 	private _bandwidthSent: Map<MacAddress, number> = new Map();
 	private _bandwidthReceived: Map<MacAddress, number> = new Map();
-	private _natPool: number = 2;
+	private _natPool = 2;
 	private _qdiscRules: Map<string, QdiscRule[]> = new Map();
 	private _bandwidthTokens: Map<MacAddress, number> = new Map();
 	private _bandwidthLastRefill: Map<MacAddress, number> = new Map();
@@ -82,7 +82,7 @@ export class VirtualSwitch {
 
 	public detach(mac: MacAddress): void {
 		const port = this._ports.get(mac);
-		if (!port) return;
+		if (!port) { return; }
 
 		// Clear latency simulation interval
 		const interval = this._latencyIntervals.get(mac);
@@ -94,7 +94,7 @@ export class VirtualSwitch {
 		this._ports.delete(mac);
 		this._ipToMac.delete(port.ip);
 		this._dnsRecords.forEach((value, key) => {
-			if (value === port.ip) this._dnsRecords.delete(key);
+			if (value === port.ip) { this._dnsRecords.delete(key); }
 		});
 		this._network.arpCache = this._network.arpCache.filter((e) => e.ip !== port.ip);
 		this._bandwidthTokens.delete(mac);
@@ -152,7 +152,7 @@ export class VirtualSwitch {
 			}
 
 			const shapeResult = this._applyTrafficShape(0.5 + Math.random() * 2, packet);
-			if (shapeResult.dropped) return { action: "DROP", latencyMs: 0 };
+			if (shapeResult.dropped) { return { action: "DROP", latencyMs: 0 }; }
 
 			const latency = shapeResult.latency;
 
@@ -161,7 +161,7 @@ export class VirtualSwitch {
 					this._reorderBuffer.push({ packet, deliverAt: Date.now() + latency + shapeResult.reorderDelay });
 					setTimeout(() => {
 						const idx = this._reorderBuffer.findIndex((e) => e.packet === packet);
-						if (idx !== -1) this._reorderBuffer.splice(idx, 1);
+						if (idx !== -1) { this._reorderBuffer.splice(idx, 1); }
 					}, latency + shapeResult.reorderDelay);
 				}
 				return { action: "ACCEPT", latencyMs: latency + shapeResult.reorderDelay, reordered: true };
@@ -194,15 +194,15 @@ export class VirtualSwitch {
 
 	private _checkMtu(packet: Packet, size: number): boolean {
 		const srcPort = packet.srcMac ? this._ports.get(packet.srcMac) : undefined;
-		if (!srcPort) return false;
+		if (!srcPort) { return false; }
 		const iface = this._network.getInterface("eth0");
-		if (!iface) return false;
+		if (!iface) { return false; }
 		return size > iface.mtu;
 	}
 
 	private _checkBandwidthLimit(mac: MacAddress, packetSize: number): boolean {
 		const rule = this._trafficRules.get(mac);
-		if (!rule?.maxBandwidthMbps) return true;
+		if (!rule?.maxBandwidthMbps) { return true; }
 
 		const now = Date.now();
 		const lastRefill = this._bandwidthLastRefill.get(mac) ?? now;
@@ -213,7 +213,7 @@ export class VirtualSwitch {
 			rule.maxBandwidthMbps * 1_000_000 / 8,
 		);
 
-		if (currentTokens < packetSize) return false;
+		if (currentTokens < packetSize) { return false; }
 
 		this._bandwidthTokens.set(mac, currentTokens - packetSize);
 		this._bandwidthLastRefill.set(mac, now);
@@ -277,7 +277,7 @@ export class VirtualSwitch {
 		}
 
 		for (const rule of this._trafficRules.values()) {
-			if (rule.latencyMs) latency += rule.latencyMs;
+			if (rule.latencyMs) { latency += rule.latencyMs; }
 
 			if (rule.jitterMs) {
 				const jitter = Math.abs(gaussianRandom(0, rule.jitterMs / 3));
@@ -339,9 +339,9 @@ export class VirtualSwitch {
 	}
 
 	private _canCommunicate(mac1: MacAddress, mac2: MacAddress): boolean {
-		if (this._partitions.length === 0) return true;
+		if (this._partitions.length === 0) { return true; }
 		for (const group of this._partitions) {
-			if (group.has(mac1) && group.has(mac2)) return true;
+			if (group.has(mac1) && group.has(mac2)) { return true; }
 		}
 		return false;
 	}
@@ -352,18 +352,18 @@ export class VirtualSwitch {
 	}
 
 	private _matchLoadBalancer(port?: number): LoadBalancerRule | undefined {
-		if (!port) return undefined;
+		if (!port) { return ; }
 		return Array.from(this._loadBalancers.values()).find((lb) => lb.port === port);
 	}
 
 	private _pickTarget(lb: LoadBalancerRule): string | undefined {
 		const targets = lb.targets;
-		if (targets.length === 0) return undefined;
+		if (targets.length === 0) { return ; }
 		if (lb.algorithm === "round-robin") {
 			const idx = (this._lbCounters.get(lb.name) ?? 0) % targets.length;
 			this._lbCounters.set(lb.name, idx + 1);
 			const target = targets[idx];
-			if (target === undefined) return undefined;
+			if (target === undefined) { return ; }
 			return this.resolveDns(target.hostname) ?? target.hostname;
 		}
 		const totalWeight = targets.reduce((sum, t) => sum + t.weight, 0);
@@ -379,12 +379,11 @@ export class VirtualSwitch {
 
 	private _resolveDstMac(ip: string): MacAddress | undefined {
 		const mac = this._ipToMac.get(ip);
-		if (mac !== undefined) return mac;
+		if (mac !== undefined) { return mac; }
 		for (const record of this._dnsRecords.values()) {
 			const mac2 = this._ipToMac.get(record);
-			if (mac2 !== undefined) return mac2;
+			if (mac2 !== undefined) { return mac2; }
 		}
-		return undefined;
 	}
 
 	private _findMacByIp(ip: string): MacAddress | undefined {
@@ -409,9 +408,9 @@ export class VirtualSwitch {
 
 	public resolveLoadBalancer(port: number): { ip: string; hostname: string; port: number } | null {
 		const lb = this._matchLoadBalancer(port);
-		if (!lb) return null;
+		if (!lb) { return null; }
 		const target = this._pickTarget(lb);
-		if (!target) return null;
+		if (!target) { return null; }
 		const ip = this.resolveDns(target) ?? target;
 		return { ip, hostname: target, port: lb.port };
 	}
@@ -450,7 +449,7 @@ export class VirtualSwitch {
 				void this.route(virtualPacket);
 			}
 		}, 1000);
-		if (typeof handle.unref === "function") handle.unref();
+		if (typeof handle.unref === "function") { handle.unref(); }
 		this._latencyIntervals.set(port.mac, handle);
 	}
 }
@@ -471,7 +470,7 @@ export class Baie {
 		this.switch.attach(shell, preferredIp);
 
 		const port = this._findPort(shell);
-		if (port) this.switch.addDnsRecord(hostname, port.ip);
+		if (port) { this.switch.addDnsRecord(hostname, port.ip); }
 
 		this._vms.set(hostname, shell);
 		return shell;
@@ -479,9 +478,9 @@ export class Baie {
 
 	public destroyVM(hostname: string): void {
 		const shell = this._vms.get(hostname);
-		if (!shell) return;
+		if (!shell) { return; }
 		const mac = this._findMac(shell);
-		if (mac) this.switch.detach(mac);
+		if (mac) { this.switch.detach(mac); }
 		this.switch.removeDnsRecord(hostname);
 		this._vms.delete(hostname);
 	}
@@ -500,21 +499,20 @@ export class Baie {
 
 	private _findPort(shell: import("../VirtualShell").VirtualShell): VmPort | undefined {
 		for (const port of this.switch.getPorts().values()) {
-			if (port.shell === shell) return port;
+			if (port.shell === shell) { return port; }
 		}
-		return undefined;
 	}
 
 	private _findMac(shell: import("../VirtualShell").VirtualShell): string | null {
 		for (const [mac, port] of this.switch.getPorts()) {
-			if (port.shell === shell) return mac;
+			if (port.shell === shell) { return mac; }
 		}
 		return null;
 	}
 
 	private _findIp(shell: import("../VirtualShell").VirtualShell): string | null {
 		for (const port of this.switch.getPorts().values()) {
-			if (port.shell === shell) return port.ip;
+			if (port.shell === shell) { return port.ip; }
 		}
 		return null;
 	}

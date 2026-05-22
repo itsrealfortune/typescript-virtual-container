@@ -16,12 +16,12 @@ export function keyToBytes(e: KeyboardEvent): Uint8Array | null {
 
   if (e.ctrlKey && !e.altKey) {
     const k = e.key.toLowerCase();
-    if (k.length === 1 && k >= "a" && k <= "z") return new Uint8Array([k.charCodeAt(0) - 96]);
-    if (e.key === "[")  return new Uint8Array([27]);
-    if (e.key === "\\") return new Uint8Array([28]);
-    if (e.key === "]")  return new Uint8Array([29]);
-    if (e.key === "_" || e.key === "/") return new Uint8Array([31]);
-    if (e.key === "Backspace") return new Uint8Array([8]);
+    if (k.length === 1 && k >= "a" && k <= "z") { return new Uint8Array([k.charCodeAt(0) - 96]); }
+    if (e.key === "[")  { return new Uint8Array([27]); }
+    if (e.key === "\\") { return new Uint8Array([28]); }
+    if (e.key === "]")  { return new Uint8Array([29]); }
+    if (e.key === "_" || e.key === "/") { return new Uint8Array([31]); }
+    if (e.key === "Backspace") { return new Uint8Array([8]); }
   }
 
   if (e.altKey && !e.ctrlKey && e.key.length === 1) {

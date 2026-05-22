@@ -47,7 +47,7 @@ export const tracerouteCommand: ShellModule = {
 				lines.push(` ${ttl}  ${hostname} (${hop.ip})  ${probes.join("  ")}`);
 			}
 
-			if (hop.reached) break;
+			if (hop.reached) { break; }
 		}
 
 		return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
@@ -100,8 +100,8 @@ function _generateHopPath(host: string, net: import("../modules/VirtualNetworkMa
 }
 
 function _resolveHost(host: string, _shell: import("../modules/VirtualShell").VirtualShell): string {
-	if (host === "localhost" || host === "127.0.0.1") return "127.0.0.1";
-	if (/^\d+\.\d+\.\d+\.\d+$/.test(host)) return host;
+	if (host === "localhost" || host === "127.0.0.1") { return "127.0.0.1"; }
+	if (/^\d+\.\d+\.\d+\.\d+$/.test(host)) { return host; }
 	return _resolveHostSimple(host);
 }
 
@@ -127,8 +127,8 @@ function _hashString(str: string): number {
 
 function _parseIntArg(args: string[], flag: string, defaultVal: number): number {
 	const idx = args.indexOf(flag);
-	if (idx === -1) return defaultVal;
+	if (idx === -1) { return defaultVal; }
 	const val = args[idx + 1];
-	const parsed = parseInt(val ?? "0", 10);
+	const parsed = Number.parseInt(val ?? "0", 10);
 	return Number.isNaN(parsed) ? defaultVal : parsed;
 }

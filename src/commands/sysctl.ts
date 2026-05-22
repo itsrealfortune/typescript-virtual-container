@@ -20,7 +20,7 @@ export const sysctlCommand: ShellModule = {
 			for (const pair of pairs) {
 				const [name, ...rest] = pair.split("=");
 				const value = rest.join("=");
-				if (!name) continue;
+				if (!name) { continue; }
 				const path = `/proc/sys/${name.replace(/\./g, "/")}`;
 				const resolved = resolveSysctlPath(shell.sysctl, path);
 				if (!resolved) {

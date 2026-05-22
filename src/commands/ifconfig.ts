@@ -13,7 +13,7 @@ export const ifconfigCommand: ShellModule = {
 	params: ["[interface] [up|down] [inet <address>] [netmask <mask>] [mtu <size>]"],
 	run: ({ args, shell }) => {
 		const net = shell.network;
-		const ifaceName = args.find((a) => !a.startsWith("-") && !["up", "down", "inet", "netmask", "mtu", "add", "del"].includes(a));
+		const ifaceName = args.find((a) => !(a.startsWith("-") || ["up", "down", "inet", "netmask", "mtu", "add", "del"].includes(a)));
 
 		if (args.includes("-a") || (!ifaceName && args.length === 0)) {
 			return _showAllInterfaces(net);
@@ -39,7 +39,7 @@ export const ifconfigCommand: ShellModule = {
 			if (inetIdx !== -1) {
 				const addr = args[inetIdx + 1];
 				const maskIdx = args.indexOf("netmask");
-				const mask = maskIdx !== -1 ? _maskToCidr(args[maskIdx + 1] ?? "255.255.255.0") : 24;
+				const mask = maskIdx === -1 ? 24 : _maskToCidr(args[maskIdx + 1] ?? "255.255.255.0");
 				if (addr) {
 					net.setInterfaceIp(ifaceName, addr, mask);
 				}
@@ -48,7 +48,7 @@ export const ifconfigCommand: ShellModule = {
 
 			const mtuIdx = args.indexOf("mtu");
 			if (mtuIdx !== -1) {
-				const mtu = parseInt(args[mtuIdx + 1] ?? "1500", 10);
+				const mtu = Number.parseInt(args[mtuIdx + 1] ?? "1500", 10);
 				if (!Number.isNaN(mtu)) {
 					net.setInterfaceMtu(ifaceName, mtu);
 				}
@@ -84,7 +84,7 @@ function _formatInterface(iface: import("../modules/VirtualNetworkManager/types"
 	lines.push(`${iface.name}: flags=${flags}  mtu ${iface.mtu}`);
 
 	if (iface.type === "loopback") {
-		lines.push(`        loop  txqueuelen 1000  (Local Loopback)`);
+		lines.push("        loop  txqueuelen 1000  (Local Loopback)");
 	} else {
 		lines.push(`        ether ${iface.mac}  txqueuelen 1000  (Ethernet)`);
 	}
@@ -98,9 +98,9 @@ function _formatInterface(iface: import("../modules/VirtualNetworkManager/types"
 	const txPackets = Math.floor(txBytes / 64);
 
 	lines.push(`        RX packets ${rxPackets}  bytes ${rxBytes} (${_formatBytes(rxBytes)})`);
-	lines.push(`        RX errors 0  dropped 0  overruns 0  frame 0`);
+	lines.push("        RX errors 0  dropped 0  overruns 0  frame 0");
 	lines.push(`        TX packets ${txPackets}  bytes ${txBytes} (${_formatBytes(txBytes)})`);
-	lines.push(`        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0`);
+	lines.push("        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0");
 
 	if (iface.speed) {
 		lines.push(`        Speed: ${iface.speed}Mb/s  Duplex: ${iface.duplex ?? "full"}`);
@@ -111,9 +111,9 @@ function _formatInterface(iface: import("../modules/VirtualNetworkManager/types"
 
 function _getFlags(iface: import("../modules/VirtualNetworkManager/types").VirtualInterface): number {
 	let flags = 0x1000;
-	if (iface.state === "UP") flags |= 0x1;
-	if (iface.type !== "loopback") flags |= 0x2 | 0x1000;
-	if (iface.type === "loopback") flags |= 0x8;
+	if (iface.state === "UP") { flags |= 0x1; }
+	if (iface.type !== "loopback") { flags |= 0x2 | 0x1000; }
+	if (iface.type === "loopback") { flags |= 0x8; }
 	return flags;
 }
 
@@ -128,11 +128,11 @@ function _cidrToMask(cidr: number): string {
 }
 
 function _maskToCidr(mask: string): number {
-	return mask.split(".").reduce((acc, oct) => acc + (parseInt(oct, 10) ? parseInt(oct, 10).toString(2).split("1").length - 1 : 0), 0);
+	return mask.split(".").reduce((acc, oct) => acc + (Number.parseInt(oct, 10) ? Number.parseInt(oct, 10).toString(2).split("1").length - 1 : 0), 0);
 }
 
 function _getBroadcast(ip: string, cidr: number): string {
-	const ipInt = ip.split(".").reduce((acc, oct) => (acc << 8) + parseInt(oct, 10), 0) >>> 0;
+	const ipInt = ip.split(".").reduce((acc, oct) => (acc << 8) + Number.parseInt(oct, 10), 0) >>> 0;
 	const mask = cidr === 0 ? 0 : (~0 << (32 - cidr)) >>> 0;
 	const broadcast = (ipInt & mask) | (~mask >>> 0);
 	return [
@@ -144,8 +144,8 @@ function _getBroadcast(ip: string, cidr: number): string {
 }
 
 function _formatBytes(bytes: number): string {
-	if (bytes < 1024) return `${bytes} B`;
-	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KiB`;
-	if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MiB`;
+	if (bytes < 1024) { return `${bytes} B`; }
+	if (bytes < 1024 * 1024) { return `${(bytes / 1024).toFixed(1)} KiB`; }
+	if (bytes < 1024 * 1024 * 1024) { return `${(bytes / (1024 * 1024)).toFixed(1)} MiB`; }
 	return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GiB`;
 }

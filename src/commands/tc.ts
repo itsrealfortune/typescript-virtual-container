@@ -22,11 +22,11 @@ export const tcCommand: ShellModule = {
 		if (obj === "qdisc") {
 			if (cmd === "show" || cmd === "list" || cmd === "ls") {
 				const devIdx = args.indexOf("dev");
-				const dev = devIdx !== -1 ? args[devIdx + 1] : undefined;
+				const dev = devIdx === -1 ? undefined : args[devIdx + 1];
 				const ifaces = net.getInterfaces();
 				const lines: string[] = [];
 				for (const iface of ifaces) {
-					if (dev && iface.name !== dev) continue;
+					if (dev && iface.name !== dev) { continue; }
 					lines.push(`qdisc noqueue 0: dev ${iface.name} root refcnt 2`);
 					lines.push(` qdisc netem 1: dev ${iface.name} parent 1:1 limit 1000`);
 				}
@@ -35,7 +35,7 @@ export const tcCommand: ShellModule = {
 
 			if (cmd === "add") {
 				const devIdx = args.indexOf("dev");
-				const dev = (devIdx !== -1 ? args[devIdx + 1] : "eth0") as string;
+				const dev = (devIdx === -1 ? "eth0" : args[devIdx + 1]) as string;
 
 				const netemIdx = args.indexOf("netem");
 				const tbfIdx = args.indexOf("tbf");
@@ -79,13 +79,13 @@ export const tcCommand: ShellModule = {
 
 			if (cmd === "del" || cmd === "delete") {
 				const devIdx = args.indexOf("dev");
-				const dev = devIdx !== -1 ? args[devIdx + 1] : "eth0";
+				const dev = devIdx === -1 ? "eth0" : args[devIdx + 1];
 				return { stdout: `Deleted qdisc from ${dev}\n`, exitCode: 0 };
 			}
 
 			if (cmd === "change" || cmd === "replace") {
 				const devIdx = args.indexOf("dev");
-				const dev = devIdx !== -1 ? args[devIdx + 1] : "eth0";
+				const dev = devIdx === -1 ? "eth0" : args[devIdx + 1];
 				return { stdout: `Changed qdisc on ${dev}\n`, exitCode: 0 };
 			}
 		}
@@ -114,18 +114,18 @@ function _parseDuration(args: string[], _startIdx: number): number {
 
 function _parseDurationAfter(args: string[], _startIdx: number): number {
 	const jitterIdx = args.indexOf("jitter");
-	if (jitterIdx === -1) return 0;
+	if (jitterIdx === -1) { return 0; }
 	const val = args[jitterIdx + 1];
 	return _parseMs(val ?? "0");
 }
 
 function _parseLoss(args: string[], _startIdx: number): number {
 	const lossIdx = args.indexOf("loss");
-	if (lossIdx === -1) return 0;
+	if (lossIdx === -1) { return 0; }
 	for (let i = lossIdx + 1; i < args.length; i++) {
 		const arg = args[i] as string;
 		if (/^\d+(\.\d+)?%$/.test(arg)) {
-			return parseFloat(arg);
+			return Number.parseFloat(arg);
 		}
 	}
 	return 0;
@@ -133,46 +133,46 @@ function _parseLoss(args: string[], _startIdx: number): number {
 
 function _parseReorder(args: string[], _startIdx: number): number {
 	const reorderIdx = args.indexOf("reorder");
-	if (reorderIdx === -1) return 0;
+	if (reorderIdx === -1) { return 0; }
 	const val = args[reorderIdx + 1];
-	return val ? parseFloat(val) : 0;
+	return val ? Number.parseFloat(val) : 0;
 }
 
 function _parseDuplicate(args: string[], _startIdx: number): number {
 	const dupIdx = args.indexOf("duplicate");
-	if (dupIdx === -1) return 0;
+	if (dupIdx === -1) { return 0; }
 	const val = args[dupIdx + 1];
-	return val ? parseFloat(val) : 0;
+	return val ? Number.parseFloat(val) : 0;
 }
 
 function _parseCorrupt(args: string[], _startIdx: number): number {
 	const corruptIdx = args.indexOf("corrupt");
-	if (corruptIdx === -1) return 0;
+	if (corruptIdx === -1) { return 0; }
 	const val = args[corruptIdx + 1];
-	return val ? parseFloat(val) : 0;
+	return val ? Number.parseFloat(val) : 0;
 }
 
 function _parseRate(args: string[], _startIdx: number): string {
 	const rateIdx = args.indexOf("rate");
-	if (rateIdx === -1) return "0";
+	if (rateIdx === -1) { return "0"; }
 	return args[rateIdx + 1] ?? "0";
 }
 
 function _parseBurst(args: string[], _startIdx: number): string {
 	const burstIdx = args.indexOf("burst");
-	if (burstIdx === -1) return "0";
+	if (burstIdx === -1) { return "0"; }
 	return args[burstIdx + 1] ?? "0";
 }
 
 function _parseLimit(args: string[], _startIdx: number): string {
 	const limitIdx = args.indexOf("limit");
-	if (limitIdx === -1) return "0";
+	if (limitIdx === -1) { return "0"; }
 	return args[limitIdx + 1] ?? "0";
 }
 
 function _parseMs(val: string): number {
-	if (val.endsWith("ms")) return parseFloat(val);
-	if (val.endsWith("us")) return parseFloat(val) / 1000;
-	if (val.endsWith("s")) return parseFloat(val) * 1000;
-	return parseFloat(val);
+	if (val.endsWith("ms")) { return Number.parseFloat(val); }
+	if (val.endsWith("us")) { return Number.parseFloat(val) / 1000; }
+	if (val.endsWith("s")) { return Number.parseFloat(val) * 1000; }
+	return Number.parseFloat(val);
 }

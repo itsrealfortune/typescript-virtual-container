@@ -24,10 +24,10 @@ function evalTest(
 		tokens = tokens.slice(1);
 	}
 
-	if (tokens.length === 0) return false;
+	if (tokens.length === 0) { return false; }
 
 	// Negation
-	if (tokens[0] === "!") return !evalTest(tokens.slice(1), shell, cwd);
+	if (tokens[0] === "!") { return !evalTest(tokens.slice(1), shell, cwd); }
 
 	// Boolean -a / -o (simple left-right, no precedence)
 	const andIdx = tokens.indexOf("-a");
@@ -64,7 +64,7 @@ function evalTest(
 			case "-w":
 				return shell.vfs.exists(path);
 			case "-x":
-				return shell.vfs.exists(path) && !!(shell.vfs.stat(path).mode & 0o111);
+				return shell.vfs.exists(path) && Boolean((shell.vfs.stat(path).mode & 0o111));
 			case "-s":
 				return (
 					shell.vfs.exists(path) &&
@@ -77,6 +77,8 @@ function evalTest(
 				return operand.length > 0;
 			case "-L":
 				return shell.vfs.isSymlink(path);
+			default:
+				break;
 		}
 	}
 
@@ -110,11 +112,13 @@ function evalTest(
 				return leftN > rightN;
 			case "-ge":
 				return leftN >= rightN;
+			default:
+				break;
 		}
 	}
 
 	// Single string (truthy if non-empty)
-	if (tokens.length === 1) return (tokens[0] ?? "").length > 0;
+	if (tokens.length === 1) { return (tokens[0] ?? "").length > 0; }
 
 	return false;
 }

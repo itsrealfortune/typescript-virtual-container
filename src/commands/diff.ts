@@ -13,10 +13,11 @@ export const diffCommand: ShellModule = {
 	params: ["<file1> <file2>"],
 	run: ({ shell, cwd, args }) => {
 		const [f1, f2] = args;
-		if (!f1 || !f2) return { stderr: "diff: missing operand", exitCode: 1 };
+		if (!(f1 && f2)) { return { stderr: "diff: missing operand", exitCode: 1 }; }
 		const p1 = resolvePath(cwd, f1);
 		const p2 = resolvePath(cwd, f2);
-		let a: string[], b: string[];
+		let a: string[];
+		let b: string[];
 		try {
 			a = shell.vfs.readFile(p1).split("\n");
 		} catch {
@@ -34,8 +35,8 @@ export const diffCommand: ShellModule = {
 			const la = a[i];
 			const lb = b[i];
 			if (la !== lb) {
-				if (la !== undefined) out.push(`< ${la}`);
-				if (lb !== undefined) out.push(`> ${lb}`);
+				if (la !== undefined) { out.push(`< ${la}`); }
+				if (lb !== undefined) { out.push(`> ${lb}`); }
 			}
 		}
 		return { stdout: out.join("\n"), exitCode: out.length > 0 ? 1 : 0 };

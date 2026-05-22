@@ -35,7 +35,7 @@ export function buildPrompt(
 	fullCwd?: string,
 	_readlineMode = false,
 ): string {
-	if (ps1) return expandPs1(ps1, user, host, fullCwd ?? cwdName);
+	if (ps1) { return expandPs1(ps1, user, host, fullCwd ?? cwdName); }
 	const isRoot = user === "root";
 	const colorUser = isRoot ? "\x1b[31;1m" : "\x1b[35;1m";
 	const colorBlue = "\x1b[34;1m";

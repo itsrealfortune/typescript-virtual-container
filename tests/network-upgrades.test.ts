@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { Baie, VirtualNetworkManager } from "../src";
 
+// Skip slow network tests by default. Run with:
+//   SSH_MIMIC_RUN_NETWORK_TESTS=1 bun test tests/network-upgrades.test.ts
+const runNetwork = Boolean(process.env.SSH_MIMIC_RUN_NETWORK_TESTS);
+const describeNetwork = runNetwork ? describe : describe.skip;
+
 describe("VirtualNetworkManager - Multiple Interfaces", () => {
 	test("addInterface creates new interface", () => {
 		const net = new VirtualNetworkManager();
@@ -202,7 +207,7 @@ describe("VirtualSwitch - Bandwidth Enforcement", () => {
 		const baie = new Baie("bw-test", "10.0.1.0/24");
 		void baie.createVM("test");
 		const port = baie.switch.getPorts().values().next().value;
-		if (!port) return;
+		if (!port) { return; }
 
 		baie.switch.setTrafficRule(port.mac, {
 			vms: ["test"],
@@ -261,7 +266,7 @@ describe("VirtualSwitch - Packet Reordering", () => {
 		const baie = new Baie("reorder", "10.0.1.0/24");
 		void baie.createVM("test");
 		const port = baie.switch.getPorts().values().next().value;
-		if (!port) return;
+		if (!port) { return; }
 
 		baie.switch.addQdiscRule(port.mac, {
 			interface: "eth0",
@@ -287,7 +292,7 @@ describe("VirtualSwitch - MTU Enforcement", () => {
 		const baie = new Baie("mtu", "10.0.1.0/24");
 		void baie.createVM("test");
 		const port = baie.switch.getPorts().values().next().value;
-		if (!port) return;
+		if (!port) { return; }
 
 		const result = await baie.switch.route({
 			srcIp: port.ip,
@@ -303,12 +308,12 @@ describe("VirtualSwitch - MTU Enforcement", () => {
 	});
 });
 
-describe("VirtualSwitch - Gaussian Jitter", () => {
+describeNetwork("VirtualSwitch - Gaussian Jitter", () => {
 	test("jitterMs adds variable latency", async () => {
 		const baie = new Baie("jitter", "10.0.1.0/24");
 		void baie.createVM("test");
 		const port = baie.switch.getPorts().values().next().value;
-		if (!port) return;
+		if (!port) { return; }
 
 		baie.switch.setTrafficRule(port.mac, {
 			vms: ["test"],

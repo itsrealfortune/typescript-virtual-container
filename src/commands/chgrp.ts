@@ -13,7 +13,7 @@ export const chgrpCommand: ShellModule = {
 	params: ["<group> <file>"],
 	run: ({ authUser, shell, cwd, args }) => {
 		const [groupArg, fileArg] = args;
-		if (!groupArg || !fileArg) {
+		if (!(groupArg && fileArg)) {
 			return { stderr: "chgrp: missing operand", exitCode: 1 };
 		}
 
@@ -48,8 +48,8 @@ export const chgrpCommand: ShellModule = {
 
 function resolveGroup(shell: { users: { getGidByName: (n: string) => number | null } }, name: string): number | null {
 	const gid = shell.users.getGidByName(name);
-	if (gid !== null) return gid;
-	const num = parseInt(name, 10);
-	if (!Number.isNaN(num)) return num;
+	if (gid !== null) { return gid; }
+	const num = Number.parseInt(name, 10);
+	if (!Number.isNaN(num)) { return num; }
 	return null;
 }

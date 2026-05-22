@@ -152,21 +152,17 @@ function readOsPrettyName(): string | undefined {
 			return value.replace(/^"|"$/g, "");
 		}
 	} catch {
-		return undefined;
 	}
-
-	return undefined;
 }
 
 function readFirstLine(filePath: string): string | undefined {
 	try {
 		const data = readFileSync(filePath, "utf8").split("\n")[0]?.trim();
 		if (!data || data.length === 0) {
-			return undefined;
+			return ;
 		}
 		return data;
 	} catch {
-		return undefined;
 	}
 }
 
@@ -198,8 +194,6 @@ function countDpkgPackages(): number | undefined {
 			return matches?.length ?? 0;
 		} catch { /* dpkg status file may not exist */ }
 	}
-
-	return undefined;
 }
 
 function countSnapPackages(): number | undefined {
@@ -216,8 +210,6 @@ function countSnapPackages(): number | undefined {
 			return count;
 		} catch { /* snap directory may not be readable */ }
 	}
-
-	return undefined;
 }
 
 function resolvePackagesLabel(): string {
@@ -240,7 +232,7 @@ function resolvePackagesLabel(): string {
 function resolveCpuLabel(info: NeofetchInfo): string {
 	const hostCpus = os.cpus();
 	const cap = info.cpuCapCores;
-	const cpus = cap != null && cap > 0 ? hostCpus.slice(0, cap) : hostCpus;
+	const cpus = cap !== undefined && cap > 0 ? hostCpus.slice(0, cap) : hostCpus;
 	if (cpus.length === 0) {
 		return "unknown";
 	}
@@ -266,8 +258,8 @@ function resolveDefaults(info: NeofetchInfo): Required<NeofetchInfo> {
 	const hostTotalMem = os.totalmem();
 	const hostFreeMem = os.freemem();
 	const ramCap = info.ramCapBytes;
-	const totalMem = ramCap != null && ramCap > 0 ? Math.min(hostTotalMem, ramCap) : hostTotalMem;
-	const freeMem = ramCap != null && ramCap > 0 ? Math.floor(totalMem * (hostFreeMem / hostTotalMem)) : hostFreeMem;
+	const totalMem = ramCap !== undefined && ramCap > 0 ? Math.min(hostTotalMem, ramCap) : hostTotalMem;
+	const freeMem = ramCap !== undefined && ramCap > 0 ? Math.floor(totalMem * (hostFreeMem / hostTotalMem)) : hostFreeMem;
 	const usedMem = Math.max(0, totalMem - freeMem);
 	const shellProps = info.shellProps;
 

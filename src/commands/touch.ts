@@ -19,11 +19,11 @@ export const touchCommand: ShellModule = {
 
 		for (const file of args) {
 			const target = resolvePath(cwd, file);
-			if (!shell.vfs.exists(target)) {
+			if (shell.vfs.exists(target)) {
+				checkFilePermission(shell.vfs, shell.users, authUser, target, 2);
+			} else {
 				checkFilePermission(shell.vfs, shell.users, authUser, path.posix.dirname(target), 2);
 				shell.vfs.writeFile(target, "", {}, uid, gid);
-			} else {
-				checkFilePermission(shell.vfs, shell.users, authUser, target, 2);
 			}
 		}
 		return { exitCode: 0 };

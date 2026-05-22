@@ -83,7 +83,7 @@ function levenshtein(a: string, b: string): number {
 	const alen = a.length;
 	const blen = b.length;
 	const dp: number[][] = Array.from({ length: alen + 1 }, () =>
-		Array<number>(blen + 1).fill(0),
+		new Array(blen + 1).fill(0),
 	);
 
 	for (let i = 0; i <= alen; i++) {
@@ -183,8 +183,9 @@ export function checkFilePermission(
 	filePath: string,
 	want: number,
 ): void {
-	if (authUser === "root") return;
-	if (want === 0) return; // F_OK — just existence
+	if (authUser === "root") { return; }
+	if (want === 0) { return; // F_OK — just existence
+}
 	assertPathAccess(authUser, filePath, "access");
 	const uid = users.getUid(authUser);
 	const gid = users.getGid(authUser);

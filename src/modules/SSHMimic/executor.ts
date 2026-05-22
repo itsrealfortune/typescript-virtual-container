@@ -55,7 +55,7 @@ export async function executeStatements(
 			);
 			// Subshell cwd changes do NOT propagate to parent
 			env.lastExitCode = last.exitCode ?? 0;
-			if (last.stdout) accumulatedStdout.push(last.stdout);
+			if (last.stdout) { accumulatedStdout.push(last.stdout); }
 			if (last.closeSession || last.switchUser) {
 				return { ...last, stdout: accumulatedStdout.join("") || last.stdout };
 			}
@@ -78,7 +78,7 @@ export async function executeStatements(
 				currentCwd = last.nextCwd;
 			}
 			env.lastExitCode = last.exitCode ?? 0;
-			if (last.stdout) accumulatedStdout.push(last.stdout);
+			if (last.stdout) { accumulatedStdout.push(last.stdout); }
 			if (last.closeSession || last.switchUser) {
 				return { ...last, stdout: accumulatedStdout.join("") || last.stdout };
 			}
@@ -118,7 +118,7 @@ export async function executeStatements(
 			currentCwd = last.nextCwd;
 		}
 
-		if (last.stdout) accumulatedStdout.push(last.stdout);
+		if (last.stdout) { accumulatedStdout.push(last.stdout); }
 
 		if (last.closeSession || last.switchUser) {
 			return {
@@ -132,17 +132,15 @@ export async function executeStatements(
 			// always run next
 		} else if (op === "&&") {
 			if ((last.exitCode ?? 0) !== 0) {
-				while (i < statements.length && statements[i]?.op === "&&") i++;
+				while (i < statements.length && statements[i]?.op === "&&") { i++; }
 			}
-		} else if (op === "||") {
-			if ((last.exitCode ?? 0) === 0) {
-				while (i < statements.length && statements[i]?.op === "||") i++;
+		} else if (op === "||" && (last.exitCode ?? 0) === 0) {
+				while (i < statements.length && statements[i]?.op === "||") { i++; }
 			}
-		}
 		i++;
 	}
 	const merged = accumulatedStdout.join("");
-	return { ...last, stdout: merged || last.stdout, nextCwd: currentCwd !== cwd ? currentCwd : undefined };
+	return { ...last, stdout: merged || last.stdout, nextCwd: currentCwd === cwd ? undefined : currentCwd };
 }
 
 // ── Pipeline executor ─────────────────────────────────────────────────────────
@@ -171,9 +169,10 @@ export function executePipeline(
 	env?: ShellEnv,
 	abortController?: AbortController,
 ): CommandResult | Promise<CommandResult> {
-	if (!pipeline.isValid)
+	if (!pipeline.isValid) {
 		return { stderr: pipeline.error || "Syntax error", exitCode: 1 };
-	if (pipeline.commands.length === 0) return { exitCode: 0 };
+	}
+	if (pipeline.commands.length === 0) { return { exitCode: 0 }; }
 
 	const shellEnv: ShellEnv = env ?? { vars: {}, lastExitCode: 0 };
 
@@ -352,9 +351,10 @@ async function executePipelineChain(
 			currentOutput = effectiveResult.stdout || "";
 		}
 
-		if (effectiveResult.stderr && exitCode !== 0)
+		if (effectiveResult.stderr && exitCode !== 0) {
 			return { stderr: effectiveResult.stderr, exitCode };
-		if (effectiveResult.closeSession || effectiveResult.switchUser) return effectiveResult;
+		}
+		if (effectiveResult.closeSession || effectiveResult.switchUser) { return effectiveResult; }
 	}
 
 	return { stdout: currentOutput, exitCode };

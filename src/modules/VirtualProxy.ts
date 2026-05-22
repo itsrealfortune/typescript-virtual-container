@@ -117,7 +117,7 @@ export class VirtualProxy {
 	 * @param port - Local port for the SOCKS5 proxy.
 	 */
 	public startSocksProxy(port: number): void {
-		if (this._socksServer) this._socksServer.close();
+		if (this._socksServer) { this._socksServer.close(); }
 
 		this._socksServer = net.createServer((clientSocket) => {
 			clientSocket.once("data", (handshake: Buffer) => {
@@ -146,7 +146,7 @@ export class VirtualProxy {
 					if (atyp === 1) {
 						// IPv4
 						const octets: number[] = [];
-						for (let i = 0; i < 4; i++) octets.push(request[4 + i] ?? 0);
+						for (let i = 0; i < 4; i++) { octets.push(request[4 + i] ?? 0); }
 						dstHost = octets.join(".");
 						dstPort = ((request[8] as number) << 8) + (request[9] as number);
 					} else if (atyp === 3) {
@@ -192,7 +192,7 @@ export class VirtualProxy {
 	 * Stop the SOCKS5 proxy and all port forwards.
 	 */
 	public stop(): void {
-		for (const f of this._forwards) f.server.close();
+		for (const f of this._forwards) { f.server.close(); }
 		this._forwards = [];
 		if (this._socksServer) {
 			this._socksServer.close();

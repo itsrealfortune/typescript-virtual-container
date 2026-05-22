@@ -42,11 +42,9 @@ export function enforceAccess(
 
 	// Root bypass (except execute)
 	if (uid === 0) {
-		if (want & X_OK) {
-			if ((node.mode & 0o111) === 0) {
+		if (want & X_OK && (node.mode & 0o111) === 0) {
 				throw new Error(`EACCES: permission denied: '${normalized}'`);
 			}
-		}
 		return;
 	}
 
@@ -79,7 +77,7 @@ export function enforcePathTraversal(
 	gid: number,
 ): void {
 	const normalized = normalizePath(targetPath);
-	if (normalized === "/") return;
+	if (normalized === "/") { return; }
 
 	const parts = normalized.split("/").filter(Boolean);
 	let currentPath = "";
@@ -117,15 +115,13 @@ export function enforceDelete(
 	enforceAccess(root, normalized, uid, gid, W_OK | X_OK);
 
 	// Sticky bit check
-	if (dir.mode & 0o1000) {
-		if (uid !== 0 && uid !== dir.uid) {
+	if (dir.mode & 0o1000 && uid !== 0 && uid !== dir.uid) {
 			// Not root or directory owner — check if user owns the target file
 			const target = dir.children[name];
 			if (target && target.uid !== uid) {
 				throw new Error(`EACCES: permission denied: cannot delete '${name}' (sticky bit)`);
 			}
 		}
-	}
 }
 
 /**
@@ -137,7 +133,7 @@ export function enforceChown(
 	uid: number,
 ): void {
 	if (uid !== 0) {
-		throw new Error(`EPERM: operation not permitted: chown`);
+		throw new Error("EPERM: operation not permitted: chown");
 	}
 }
 
@@ -174,8 +170,9 @@ export function resolveEffectiveUid(
 ): number {
 	const normalized = normalizePath(targetPath);
 	const node = getNodeNormalized(root, normalized);
-	if (node.type !== "file") return originalUid;
-	if (node.mode & 0o4000) return node.uid; // setuid
+	if (node.type !== "file") { return originalUid; }
+	if (node.mode & 0o4000) { return node.uid; // setuid
+}
 	return originalUid;
 }
 
@@ -193,8 +190,9 @@ export function resolveEffectiveGid(
 ): number {
 	const normalized = normalizePath(targetPath);
 	const node = getNodeNormalized(root, normalized);
-	if (node.type !== "file") return originalGid;
-	if (node.mode & 0o2000) return node.gid; // setgid
+	if (node.type !== "file") { return originalGid; }
+	if (node.mode & 0o2000) { return node.gid; // setgid
+}
 	return originalGid;
 }
 
@@ -215,14 +213,14 @@ export function isExecutable(
 	const normalized = normalizePath(targetPath);
 	try {
 		const node = getNodeNormalized(root, normalized);
-		if (node.type !== "file") return false;
+		if (node.type !== "file") { return false; }
 
-		if (uid === 0) return (node.mode & 0o111) !== 0;
+		if (uid === 0) { return (node.mode & 0o111) !== 0; }
 
 		let perm = 0;
-		if (uid === node.uid) perm = (node.mode >> 6) & 7;
-		else if (gid === node.gid) perm = (node.mode >> 3) & 7;
-		else perm = node.mode & 7;
+		if (uid === node.uid) { perm = (node.mode >> 6) & 7; }
+		else if (gid === node.gid) { perm = (node.mode >> 3) & 7; }
+		else { perm = node.mode & 7; }
 
 		return (perm & 1) === 1;
 	} catch {

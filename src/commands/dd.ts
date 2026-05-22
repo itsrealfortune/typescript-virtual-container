@@ -23,7 +23,7 @@ export const ddCommand: ShellModule = {
 		const ifPath = kv.if ? resolvePath(cwd, kv.if) : undefined;
 		const ofPath = kv.of ? resolvePath(cwd, kv.of) : undefined;
 
-		if (!ifPath || !ofPath) {
+		if (!(ifPath && ofPath)) {
 			return { stderr: "dd: missing 'if' or 'of' operand\n", exitCode: 1 };
 		}
 
@@ -31,17 +31,17 @@ export const ddCommand: ShellModule = {
 			return { stderr: `dd: ${kv.if}: No such file or directory\n`, exitCode: 1 };
 		}
 
-		const bs = parseInt(kv.bs || "512", 10);
+		const bs = Number.parseInt(kv.bs || "512", 10);
 		const content = shell.vfs.readFile(ifPath, uid, gid);
-		const skipBlocks = parseInt(kv.skip || "0", 10);
-		const seekBlocks = parseInt(kv.seek || "0", 10);
-		const countBlocks = kv.count !== undefined ? parseInt(kv.count, 10) : undefined;
+		const skipBlocks = Number.parseInt(kv.skip || "0", 10);
+		const seekBlocks = Number.parseInt(kv.seek || "0", 10);
+		const countBlocks = kv.count === undefined ? undefined : Number.parseInt(kv.count, 10);
 
 		const startByte = skipBlocks * bs;
 		const available = content.slice(startByte);
-		const totalBytes = countBlocks !== undefined
-			? Math.min(available.length, countBlocks * bs)
-			: available.length;
+		const totalBytes = countBlocks === undefined
+			? available.length
+			: Math.min(available.length, countBlocks * bs);
 		const data = available.slice(0, totalBytes);
 
 		let output: string;

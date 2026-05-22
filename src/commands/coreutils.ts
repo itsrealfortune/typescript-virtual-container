@@ -13,7 +13,7 @@ export const timeoutCommand: ShellModule = {
 	params: ["<duration>", "<command>", "[args...]"],
 	run:  async ({ args, authUser, hostname, mode, cwd, shell, env, stdin }) => {
 		// First arg is duration (ignored in simulation), rest is the command
-		if (args.length < 2) return { stderr: "timeout: missing operand", exitCode: 1 };
+		if (args.length < 2) { return { stderr: "timeout: missing operand", exitCode: 1 }; }
 		const { runCommand } = await import("./runtime");
 		const cmd = args.slice(1).join(" ");
 		return runCommand(cmd, authUser, hostname, mode, cwd, shell, stdin, env);
@@ -39,7 +39,7 @@ export const mktempCommand: ShellModule = {
 		const path = name.startsWith("/") ? name : `/tmp/${name}`;
 
 		try {
-			if (!shell.vfs.exists("/tmp")) shell.vfs.mkdir("/tmp");
+			if (!shell.vfs.exists("/tmp")) { shell.vfs.mkdir("/tmp"); }
 			if (isDir) {
 				shell.vfs.mkdir(path);
 			} else {
@@ -64,7 +64,7 @@ export const nprocCommand: ShellModule = {
 	params: ["[--all]"],
 	run: ({ shell }) => {
 		const cap = shell.resourceCaps?.cpuCapCores;
-		const count = cap != null && cap > 0 ? cap : 4;
+		const count = cap !== undefined && cap > 0 ? cap : 4;
 		return { stdout: `${count}`, exitCode: 0 };
 	},
 };
@@ -99,17 +99,17 @@ export const shufCommand: ShellModule = {
 		if (iIdx !== -1) {
 			const range = args[iIdx + 1] ?? "";
 			const m = range.match(/^(-?\d+)-(-?\d+)$/);
-			if (!m) return { stderr: "shuf: invalid range", exitCode: 1 };
-			const lo = parseInt(m[1] as string, 10);
-			const hi = parseInt(m[2] as string, 10);
+			if (!m) { return { stderr: "shuf: invalid range", exitCode: 1 }; }
+			const lo = Number.parseInt(m[1] as string, 10);
+			const hi = Number.parseInt(m[2] as string, 10);
 			const nums: number[] = [];
-			for (let n = lo; n <= hi; n++) nums.push(n);
+			for (let n = lo; n <= hi; n++) { nums.push(n); }
 			for (let i = nums.length - 1; i > 0; i--) {
 				const j = Math.floor(Math.random() * (i + 1));
 				[nums[i], nums[j]] = [nums[j] as number, nums[i] as number];
 			}
 			const nIdx = args.indexOf("-n");
-			const count = nIdx !== -1 ? parseInt(args[nIdx + 1] ?? "0", 10) : nums.length;
+			const count = nIdx === -1 ? nums.length : Number.parseInt(args[nIdx + 1] ?? "0", 10);
 			return { stdout: nums.slice(0, count).join("\n"), exitCode: 0 };
 		}
 
@@ -118,7 +118,7 @@ export const shufCommand: ShellModule = {
 		const fileArg = args.find((a) => !a.startsWith("-"));
 		if (fileArg) {
 			const p = resolvePath(cwd ?? "/", fileArg);
-			if (!shell.vfs.exists(p)) return { stderr: `shuf: ${fileArg}: No such file or directory`, exitCode: 1 };
+			if (!shell.vfs.exists(p)) { return { stderr: `shuf: ${fileArg}: No such file or directory`, exitCode: 1 }; }
 			input = shell.vfs.readFile(p);
 		}
 		const lines = input.split("\n").filter((l) => l !== "");
@@ -127,7 +127,7 @@ export const shufCommand: ShellModule = {
 			[lines[i], lines[j]] = [lines[j] as string, lines[i] as string];
 		}
 		const nIdx = args.indexOf("-n");
-		const count = nIdx !== -1 ? parseInt(args[nIdx + 1] ?? "0", 10) : lines.length;
+		const count = nIdx === -1 ? lines.length : Number.parseInt(args[nIdx + 1] ?? "0", 10);
 		return { stdout: lines.slice(0, count).join("\n"), exitCode: 0 };
 	},
 };
@@ -159,7 +159,7 @@ export const pasteCommand: ShellModule = {
 		} else {
 			sources = files.map((f) => {
 				const p = resolvePath(cwd ?? "/", f);
-				if (!shell.vfs.exists(p)) return [];
+				if (!shell.vfs.exists(p)) { return []; }
 				return shell.vfs.readFile(p).split("\n");
 			});
 		}
@@ -190,13 +190,13 @@ export const tacCommand: ShellModule = {
 		} else {
 			for (const f of args) {
 				const p = resolvePath(cwd ?? "/", f);
-				if (!shell.vfs.exists(p)) return { stderr: `tac: ${f}: No such file or directory`, exitCode: 1 };
+				if (!shell.vfs.exists(p)) { return { stderr: `tac: ${f}: No such file or directory`, exitCode: 1 }; }
 				input += shell.vfs.readFile(p);
 			}
 		}
 		const lines = input.split("\n");
 		// preserve trailing newline behaviour
-		if (lines[lines.length - 1] === "") lines.pop();
+		if (lines[lines.length - 1] === "") { lines.pop(); }
 		return { stdout: lines.reverse().join("\n"), exitCode: 0 };
 	},
 };
@@ -217,14 +217,14 @@ export const nlCommand: ShellModule = {
 		let input = stdin ?? "";
 		if (fileArg) {
 			const p = resolvePath(cwd ?? "/", fileArg);
-			if (!shell.vfs.exists(p)) return { stderr: `nl: ${fileArg}: No such file or directory`, exitCode: 1 };
+			if (!shell.vfs.exists(p)) { return { stderr: `nl: ${fileArg}: No such file or directory`, exitCode: 1 }; }
 			input = shell.vfs.readFile(p);
 		}
 		const lines = input.split("\n");
-		if (lines[lines.length - 1] === "") lines.pop();
+		if (lines[lines.length - 1] === "") { lines.pop(); }
 		let n = 1;
 		const out = lines.map((l) => {
-			if (l.trim() === "") return `\t${l}`;
+			if (l.trim() === "") { return `\t${l}`; }
 			return `${String(n++).padStart(6)}\t${l}`;
 		});
 		return { stdout: out.join("\n"), exitCode: 0 };
@@ -245,12 +245,12 @@ export const columnCommand: ShellModule = {
 
 		const tableMode = args.includes("-t");
 		const sIdx = args.indexOf("-s");
-		const sep = sIdx !== -1 ? (args[sIdx + 1] ?? "\t") : /\s+/;
+		const sep = sIdx === -1 ? /\s+/ : (args[sIdx + 1] ?? "\t");
 		const fileArg = args.find((a) => !a.startsWith("-") && a !== args[sIdx + 1]);
 		let input = stdin ?? "";
 		if (fileArg) {
 			const p = resolvePath(cwd ?? "/", fileArg);
-			if (!shell.vfs.exists(p)) return { stderr: `column: ${fileArg}: No such file or directory`, exitCode: 1 };
+			if (!shell.vfs.exists(p)) { return { stderr: `column: ${fileArg}: No such file or directory`, exitCode: 1 }; }
 			input = shell.vfs.readFile(p);
 		}
 		const lines = input.split("\n").filter((l) => l !== "");

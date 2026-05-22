@@ -12,9 +12,9 @@ export const statCommand: ShellModule = {
 	params: ["[-c <format>] <file>"],
 	run: ({ shell, cwd, args }) => {
 		const fmtIdx = args.findIndex((a) => a === "-c" || a === "--format");
-		const fmt = fmtIdx !== -1 ? args[fmtIdx + 1] : undefined;
+		const fmt = fmtIdx === -1 ? undefined : args[fmtIdx + 1];
 		const file = args.find((a) => !a.startsWith("-") && a !== fmt);
-		if (!file) return { stderr: "stat: missing operand\n", exitCode: 1 };
+		if (!file) { return { stderr: "stat: missing operand\n", exitCode: 1 }; }
 
 		const p = resolvePath(cwd, file);
 		if (!shell.vfs.exists(p)) {

@@ -46,7 +46,7 @@ export const curlCommand: ShellModule = {
 		}
 
 		const url = positionals.find((a) => !a.startsWith("-"));
-		if (!url) return { stderr: "curl: no URL specified", exitCode: 1 };
+		if (!url) { return { stderr: "curl: no URL specified", exitCode: 1 }; }
 
 		const outputPath =
 			flagsWithValues.get("-o") ?? flagsWithValues.get("--output") ?? null;
@@ -69,10 +69,11 @@ export const curlCommand: ShellModule = {
 		};
 		if (headerRaw) {
 			const idx = headerRaw.indexOf(":");
-			if (idx !== -1)
+			if (idx !== -1) {
 				extraHeaders[headerRaw.slice(0, idx).trim()] = headerRaw
 					.slice(idx + 1)
 					.trim();
+			}
 		}
 
 		const finalMethod = postData && method === "GET" ? "POST" : method;
@@ -88,7 +89,7 @@ export const curlCommand: ShellModule = {
 
 		const stderrLines: string[] = [];
 		if (verbose) {
-			stderrLines.push(`* Trying ${url}...`, `* Connected`);
+			stderrLines.push(`* Trying ${url}...`, "* Connected");
 			stderrLines.push(
 				`> ${finalMethod} / HTTP/1.1`,
 				`> Host: ${new URL(url).host}`,
@@ -99,7 +100,7 @@ export const curlCommand: ShellModule = {
 		try {
 			const urlWithHttp = url.startsWith("http://") || url.startsWith("https://") ? url : `http://${url}`;
 			const parsedUrl = new URL(urlWithHttp);
-			const dstPort = parsedUrl.port ? parseInt(parsedUrl.port, 10) : (parsedUrl.protocol === "https:" ? 443 : 80);
+			const dstPort = parsedUrl.port ? Number.parseInt(parsedUrl.port, 10) : (parsedUrl.protocol === "https:" ? 443 : 80);
 			const fwAction = shell.network.checkFirewall("OUTPUT", "tcp", undefined, parsedUrl.hostname, dstPort);
 			if (fwAction === "DROP" || fwAction === "REJECT") {
 				return { stderr: `curl: (7) Failed to connect to ${parsedUrl.hostname} port ${dstPort}: Connection refused`, exitCode: 7 };
@@ -119,7 +120,7 @@ export const curlCommand: ShellModule = {
 
 		if (headOnly) {
 			const lines = [`HTTP/1.1 ${response.status} ${response.statusText}`];
-			for (const [k, v] of response.headers.entries()) lines.push(`${k}: ${v}`);
+			for (const [k, v] of response.headers.entries()) { lines.push(`${k}: ${v}`); }
 			return { stdout: `${lines.join("\r\n")}\r\n`, exitCode: 0 };
 		}
 
@@ -134,10 +135,11 @@ export const curlCommand: ShellModule = {
 			const target = resolvePath(cwd, outputPath);
 			assertPathAccess(authUser, target, "curl");
 			shell.vfs.writeFile(target, body, {}, uid, gid);
-			if (!silent)
+			if (!silent) {
 				stderrLines.push(
 					`  % Total    % Received\n100 ${body.length}  100 ${body.length}`,
 				);
+			}
 			return {
 				stderr: stderrLines.join("\n") || undefined,
 				exitCode: response.ok ? 0 : 22,

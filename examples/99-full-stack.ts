@@ -6,7 +6,7 @@
  * VirtualSwitch, VirtualProxy, and IdleManager.
  */
 
-import { VirtualProxy, VirtualShell, VirtualSwitch } from "../src";
+import { VirtualPackageManager, VirtualProxy, VirtualShell, VirtualSwitch } from "../src";
 
 // ── Infrastructure — create virtual switch and two VMs ─────────────
 console.log("--- Infrastructure ---");
@@ -131,13 +131,13 @@ console.log(`  developer usage: ${web.users.getUsageBytes("developer")} bytes`);
 // ── Package management ─────────────────────────────────────────────
 console.log("\n--- Package management ---");
 web.packageManager.load();
-console.log(`  available packages: ${web.packageManager.listAvailable().length}`);
+console.log(`  available packages: ${VirtualPackageManager.listAvailable().length}`);
 
-const nginxPkg = web.packageManager.findInRegistry("nginx");
-if (nginxPkg) console.log(`  nginx: ${nginxPkg.version} — ${nginxPkg.description}`);
+const nginxPkg = VirtualPackageManager.findInRegistry("nginx");
+if (nginxPkg) { console.log(`  nginx: ${nginxPkg.version} — ${nginxPkg.description}`); }
 
-const nodePkg = web.packageManager.findInRegistry("node");
-if (nodePkg) console.log(`  node:  ${nodePkg.version} — ${nodePkg.description}`);
+const nodePkg = VirtualPackageManager.findInRegistry("node");
+if (nodePkg) { console.log(`  node:  ${nodePkg.version} — ${nodePkg.description}`); }
 
 // ── VFS: files, directories, mounts ───────────────────────────────
 console.log("\n--- VFS operations ---");
@@ -185,14 +185,14 @@ const pid3 = web.users.registerProcess("developer", "tail", ["-f", "/var/log/acc
 console.log(`  processes: ${web.users.listProcesses().length}`);
 
 const proc2 = web.users.getProcess(pid2);
-if (proc2) console.log(`  pid ${pid2}: ${proc2.command} (${proc2.username})`);
+if (proc2) { console.log(`  pid ${pid2}: ${proc2.command} (${proc2.username})`); }
 
 web.users.killProcess(pid3, 9);
 web.users.unregisterProcess(pid1);
 web.users.unregisterProcess(pid2);
 
 const stats = web.users.getSchedulerStats();
-if (stats) console.log(`  scheduler: ${stats.runQueueLength} queued, ${stats.scheduleCount} context switches`);
+if (stats) { console.log(`  scheduler: ${stats.runQueueLength} queued, ${stats.scheduleCount} context switches`); }
 
 // ── Traffic shaping ───────────────────────────────────────────────
 console.log("\n--- Traffic shaping ---");
@@ -234,9 +234,9 @@ for (let i = 0; i < 3; i++) {
 // ── Network partitions ────────────────────────────────────────────
 console.log("\n--- Network partitions ---");
 net.setPartitions([[webPort.mac], [dbPort.mac]]);
-console.log(`  partitions: web and db isolated`);
+console.log("  partitions: web and db isolated");
 net.clearPartitions();
-console.log(`  partitions cleared`);
+console.log("  partitions cleared");
 
 // ── Port forwarding ───────────────────────────────────────────────
 console.log("\n--- Port forwarding ---");
@@ -257,7 +257,7 @@ for (const f of proxy.listPorts()) {
 }
 
 proxy.stop();
-console.log(`  forwards stopped`);
+console.log("  forwards stopped");
 
 // ── Idle management and GC ────────────────────────────────────────
 console.log("\n--- Idle management ---");
@@ -267,10 +267,10 @@ console.log(`  idle ms: ${web.idleMs}`);
 
 web.pingIdle();
 const gc = web.runGc();
-if (gc) console.log(`  GC: ${gc.terminatedProcesses} terminated, ${gc.evictedFiles} evicted, forced=${gc.forcedGc}`);
+if (gc) { console.log(`  GC: ${gc.terminatedProcesses} terminated, ${gc.evictedFiles} evicted, forced=${gc.forcedGc}`); }
 
 web.disableIdleManagement();
-console.log(`  idle manager stopped`);
+console.log("  idle manager stopped");
 
 // ── System files generation ───────────────────────────────────────
 console.log("\n--- System files ---");

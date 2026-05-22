@@ -31,7 +31,7 @@ export const passwdCommand: ShellModule = {
 			const password = stdin.trim().split("\n")[0] as string;
 			await shell.users.setPassword(targetUser, password);
 			return {
-				stdout: `passwd: password updated successfully\n`,
+				stdout: "passwd: password updated successfully\n",
 				exitCode: 0,
 			};
 		}

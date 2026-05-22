@@ -11,8 +11,9 @@ export const whichCommand: ShellModule = {
 	category: "shell",
 	params: ["<command...>"],
 	run: ({ args, shell, env }) => {
-		if (args.length === 0)
+		if (args.length === 0) {
 			return { stderr: "which: missing argument", exitCode: 1 };
+		}
 
 		const pathDirs = (env?.vars?.PATH ?? "/usr/local/bin:/usr/bin:/bin").split(
 			":",
@@ -33,10 +34,10 @@ export const whichCommand: ShellModule = {
 					}
 				}
 			}
-			if (!found) anyMissing = true;
+			if (!found) { anyMissing = true; }
 		}
 
-		if (lines.length === 0) return { exitCode: 1 };
+		if (lines.length === 0) { return { exitCode: 1 }; }
 		return { stdout: lines.join("\n"), exitCode: anyMissing ? 1 : 0 };
 	},
 };

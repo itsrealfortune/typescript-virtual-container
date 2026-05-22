@@ -17,7 +17,7 @@ function expandEscapes(text: string): string {
 		.replace(/\\f/g, "\x0C")
 		.replace(/\\v/g, "\x0B")
 		.replace(/\\0(\d{1,3})/g, (_, oct) =>
-			String.fromCharCode(parseInt(oct, 8)),
+			String.fromCharCode(Number.parseInt(oct, 8)),
 		);
 }
 

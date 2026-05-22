@@ -22,12 +22,12 @@ export const niceCommand: ShellModule = {
 
 		// Change priority of existing process
 		if (pidStr) {
-			const pid = parseInt(pidStr, 10);
+			const pid = Number.parseInt(pidStr, 10);
 			if (Number.isNaN(pid)) {
 				return { stderr: `nice: invalid PID: ${pidStr}\n`, exitCode: 1 };
 			}
 
-			const nice = niceStr !== undefined ? parseInt(niceStr, 10) : 0;
+			const nice = niceStr === undefined ? 0 : Number.parseInt(niceStr, 10);
 			if (Number.isNaN(nice) || nice < -20 || nice > 19) {
 				return { stderr: `nice: invalid priority: ${niceStr} (must be -20 to 19)\n`, exitCode: 1 };
 			}
@@ -38,20 +38,20 @@ export const niceCommand: ShellModule = {
 			}
 
 			if (proc.username !== authUser && authUser !== "root") {
-				return { stderr: `nice: permission denied\n`, exitCode: 1 };
+				return { stderr: "nice: permission denied\n", exitCode: 1 };
 			}
 
 			const oldNice = proc.nice;
 			const ok = shell.users.setProcessNice(pid, nice);
 			if (!ok) {
-				return { stderr: `nice: failed to set priority\n`, exitCode: 1 };
+				return { stderr: "nice: failed to set priority\n", exitCode: 1 };
 			}
 
 			return { stdout: `pid ${pid}: nice ${oldNice} → ${nice} (${proc.priority})\n`, exitCode: 0 };
 		}
 
 		// Run command with specified nice value
-		const nice = niceStr !== undefined ? parseInt(niceStr, 10) : 10;
+		const nice = niceStr === undefined ? 10 : Number.parseInt(niceStr, 10);
 		if (Number.isNaN(nice) || nice < -20 || nice > 19) {
 			return { stderr: `nice: invalid priority: ${niceStr} (must be -20 to 19)\n`, exitCode: 1 };
 		}

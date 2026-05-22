@@ -102,7 +102,7 @@ export class IdleManager extends EventEmitter {
 
 	/** Start monitoring for idle and GC. Call once after shell initialisation. */
 	public start(): void {
-		if (this._checkTimer) return;
+		if (this._checkTimer) { return; }
 		this._lastActivity = Date.now();
 		this._checkTimer = setInterval(() => this._check(), this._checkIntervalMs);
 		if (typeof this._checkTimer === "object" && this._checkTimer !== null && "unref" in this._checkTimer) {
@@ -126,7 +126,7 @@ export class IdleManager extends EventEmitter {
 			clearInterval(this._gcTimer);
 			this._gcTimer = null;
 		}
-		if (this._state === "frozen") this._thaw();
+		if (this._state === "frozen") { this._thaw(); }
 	}
 
 	/**
@@ -139,7 +139,7 @@ export class IdleManager extends EventEmitter {
 	 */
 	public ping(): void {
 		this._lastActivity = Date.now();
-		if (this._state === "frozen") this._thaw();
+		if (this._state === "frozen") { this._thaw(); }
 	}
 
 	/** Current idle state. */
@@ -160,14 +160,14 @@ export class IdleManager extends EventEmitter {
 	// ── Internal ──────────────────────────────────────────────────────────────
 
 	private _check(): void {
-		if (this._state === "frozen") return;
+		if (this._state === "frozen") { return; }
 		if (Date.now() - this._lastActivity >= this._idleThresholdMs) {
 			void this._freeze();
 		}
 	}
 
 	private _freeze(): void {
-		if (this._state === "frozen") return;
+		if (this._state === "frozen") { return; }
 		// Flush any pending writes before freezing
 		this._vfs.stopAutoFlush();
 		// Serialise the live tree to a compact binary buffer
@@ -179,7 +179,7 @@ export class IdleManager extends EventEmitter {
 	}
 
 	private _thaw(): void {
-		if (this._state !== "frozen" || !this._frozenBuffer) return;
+		if (this._state !== "frozen" || !this._frozenBuffer) { return; }
 		const root = decodeVfs(this._frozenBuffer);
 		this._vfs.importRootTree(root);
 		this._frozenBuffer = null;
@@ -200,7 +200,7 @@ export class IdleManager extends EventEmitter {
 		stats.terminatedProcesses = this._cleanupTerminatedProcesses();
 		stats.staleCpuEntries = this._cleanupStaleCpuEntries();
 		stats.evictedFiles = this._evictClosedFiles();
-		stats.forcedGc = this._forceNodeGc();
+		stats.forcedGc = IdleManager._forceNodeGc();
 
 		this.emit("gc:run", stats);
 		return stats;
@@ -208,7 +208,7 @@ export class IdleManager extends EventEmitter {
 
 	private _cleanupTerminatedProcesses(): number {
 		const users = this._shell.users;
-		if (!users) return 0;
+		if (!users) { return 0; }
 
 		const procs = users.listProcesses();
 		let cleaned = 0;
@@ -223,13 +223,13 @@ export class IdleManager extends EventEmitter {
 
 	private _cleanupStaleCpuEntries(): number {
 		const users = this._shell.users;
-		if (!users) return 0;
+		if (!users) { return 0; }
 
 		const procs = users.listProcesses();
 		const activePids = new Set(procs.map((p) => p.pid));
 		let cleaned = 0;
 
-		const allPids = this._getAllTrackedPids(users);
+		const allPids = IdleManager._getAllTrackedPids(users);
 		for (const pid of allPids) {
 			if (!activePids.has(pid) && users.getProcessCpuTime(pid) > 0) {
 				cleaned++;
@@ -238,19 +238,19 @@ export class IdleManager extends EventEmitter {
 		return cleaned;
 	}
 
-	private _getAllTrackedPids(users: GcUserManager): number[] {
+	private static _getAllTrackedPids(users: GcUserManager): number[] {
 		const procs = users.listProcesses();
 		return procs.map((p) => p.pid);
 	}
 
 	private _evictClosedFiles(): number {
-		if (this._state === "frozen") return 0;
+		if (this._state === "frozen") { return 0; }
 		const openPaths = this._vfs.getOpenPaths();
 		const evicted = this._vfs.evictUnusedLargeFiles(openPaths);
 		return evicted;
 	}
 
-	private _forceNodeGc(): boolean {
+	private static _forceNodeGc(): boolean {
 		const gc = (globalThis as Record<string, unknown>).gc as (() => void) | undefined;
 		if (typeof gc === "function") {
 			gc();

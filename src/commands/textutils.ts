@@ -29,14 +29,14 @@ export const joinCommand: ShellModule = {
 		const separator = flagsWithValues.get("-t") || " \t";
 		const [file1, file2] = positionals;
 
-		if (!file1 || !file2) {
+		if (!(file1 && file2)) {
 			return { stderr: "join: missing operand\n", exitCode: 1 };
 		}
 
 		const p1 = resolvePath(cwd, file1);
 		const p2 = resolvePath(cwd, file2);
 
-		if (!shell.vfs.exists(p1) || !shell.vfs.exists(p2)) {
+		if (!(shell.vfs.exists(p1) && shell.vfs.exists(p2))) {
 			return { stderr: "join: No such file\n", exitCode: 1 };
 		}
 
@@ -77,21 +77,21 @@ export const commCommand: ShellModule = {
 		const positionals = args.filter((a) => !a.startsWith("-"));
 		const [file1, file2] = positionals;
 
-		if (!file1 || !file2) {
+		if (!(file1 && file2)) {
 			return { stderr: "comm: missing operand\n", exitCode: 1 };
 		}
 
 		const p1 = resolvePath(cwd, file1);
 		const p2 = resolvePath(cwd, file2);
 
-		if (!shell.vfs.exists(p1) || !shell.vfs.exists(p2)) {
+		if (!(shell.vfs.exists(p1) && shell.vfs.exists(p2))) {
 			return { stderr: "comm: No such file\n", exitCode: 1 };
 		}
 
 		const lines1 = shell.vfs.readFile(p1).split("\n");
 		const lines2 = shell.vfs.readFile(p2).split("\n");
-		if (lines1[lines1.length - 1] === "") lines1.pop();
-		if (lines2[lines2.length - 1] === "") lines2.pop();
+		if (lines1[lines1.length - 1] === "") { lines1.pop(); }
+		if (lines2[lines2.length - 1] === "") { lines2.pop(); }
 
 		const set1 = new Set(lines1);
 		const set2 = new Set(lines2);
@@ -141,8 +141,8 @@ export const splitCommand: ShellModule = {
 		const { flagsWithValues, positionals } = parseArgs(args, {
 			flagsWithValue: ["-l", "-b"],
 		});
-		const linesPerFile = parseInt(flagsWithValues.get("-l") || "1000", 10);
-		const bytesPerFile = flagsWithValues.has("-b") ? parseInt(flagsWithValues.get("-b") as string, 10) : undefined;
+		const linesPerFile = Number.parseInt(flagsWithValues.get("-l") || "1000", 10);
+		const bytesPerFile = flagsWithValues.has("-b") ? Number.parseInt(flagsWithValues.get("-b") as string, 10) : undefined;
 		const fileArg = positionals[0];
 		const prefix = positionals[1] || "x";
 

@@ -13,7 +13,7 @@ export const chownCommand: ShellModule = {
 	params: ["<owner>[:<group>] <file>"],
 	run: ({ authUser, shell, cwd, args, uid }) => {
 		const [ownerArg, fileArg] = args;
-		if (!ownerArg || !fileArg) {
+		if (!(ownerArg && fileArg)) {
 			return { stderr: "chown: missing operand", exitCode: 1 };
 		}
 
@@ -70,16 +70,16 @@ export const chownCommand: ShellModule = {
 
 function resolveUser(shell: { users: { getUid: (u: string) => number; listUsers: () => string[] } }, name: string): number | null {
 	const users = shell.users.listUsers();
-	if (users.includes(name)) return shell.users.getUid(name);
-	const num = parseInt(name, 10);
-	if (!Number.isNaN(num)) return num;
+	if (users.includes(name)) { return shell.users.getUid(name); }
+	const num = Number.parseInt(name, 10);
+	if (!Number.isNaN(num)) { return num; }
 	return null;
 }
 
 function resolveGroup(shell: { users: { getGidByName: (n: string) => number | null } }, name: string): number | null {
 	const gid = shell.users.getGidByName(name);
-	if (gid !== null) return gid;
-	const num = parseInt(name, 10);
-	if (!Number.isNaN(num)) return num;
+	if (gid !== null) { return gid; }
+	const num = Number.parseInt(name, 10);
+	if (!Number.isNaN(num)) { return num; }
 	return null;
 }

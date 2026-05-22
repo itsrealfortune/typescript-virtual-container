@@ -28,7 +28,7 @@ export const ipCommand: ShellModule = {
 				const dev = devIdx !== -1 && devIdx + 1 < args.length ? args[devIdx + 1] : undefined;
 				if (ipArg && dev) {
 					const [ip, maskStr] = ipArg.split("/");
-					const mask = parseInt(maskStr ?? "24", 10);
+					const mask = Number.parseInt(maskStr ?? "24", 10);
 					net.setInterfaceIp(dev, ip ?? "0.0.0.0", mask);
 				}
 				return { exitCode: 0 };
@@ -36,23 +36,23 @@ export const ipCommand: ShellModule = {
 			if (cmd === "del") {
 				const devIdx = args.indexOf("dev");
 				const dev = devIdx !== -1 && devIdx + 1 < args.length ? args[devIdx + 1] : undefined;
-				if (dev) net.setInterfaceIp(dev, "0.0.0.0", 0);
+				if (dev) { net.setInterfaceIp(dev, "0.0.0.0", 0); }
 				return { exitCode: 0 };
 			}
 			return { stdout: `${net.formatIpAddr()}\n`, exitCode: 0 };
 		}
 		if (obj === "route" || obj === "r" || obj === "ro") {
 			const tableIdx = args.indexOf("table");
-			const tableId = tableIdx !== -1 ? parseInt(args[tableIdx + 1] ?? "254", 10) : undefined;
+			const tableId = tableIdx === -1 ? undefined : Number.parseInt(args[tableIdx + 1] ?? "254", 10);
 
 			if (cmd === "add") {
 				const viaIdx = args.indexOf("via");
 				const devIdx = args.indexOf("dev");
 				const metricIdx = args.indexOf("metric");
-				const dest = args[1] !== "add" ? args[1] : args[2];
-				const gateway = viaIdx !== -1 ? args[viaIdx + 1] : "0.0.0.0";
-				const device = devIdx !== -1 ? args[devIdx + 1] : "eth0";
-				const metric = metricIdx !== -1 ? parseInt(args[metricIdx + 1] ?? "0", 10) : undefined;
+				const dest = args[1] === "add" ? args[2] : args[1];
+				const gateway = viaIdx === -1 ? "0.0.0.0" : args[viaIdx + 1];
+				const device = devIdx === -1 ? "eth0" : args[devIdx + 1];
+				const metric = metricIdx === -1 ? undefined : Number.parseInt(args[metricIdx + 1] ?? "0", 10);
 				if (dest && dest !== "add") {
 					if (tableId) {
 						net.addRouteToTable(dest, gateway ?? "0.0.0.0", "255.255.255.0", device ?? "eth0", tableId);
@@ -63,8 +63,8 @@ export const ipCommand: ShellModule = {
 				return { exitCode: 0 };
 			}
 			if (cmd === "del") {
-				const dest = args[1] !== "del" ? args[1] : args[2];
-				if (dest && dest !== "del") net.delRoute(dest);
+				const dest = args[1] === "del" ? args[2] : args[1];
+				if (dest && dest !== "del") { net.delRoute(dest); }
 				return { exitCode: 0 };
 			}
 			if (cmd === "show" || cmd === "list") {
@@ -78,12 +78,12 @@ export const ipCommand: ShellModule = {
 		if (obj === "link" || obj === "l") {
 			if (cmd === "set") {
 				const dev = args[2];
-				if (args.includes("up") && dev) net.setInterfaceState(dev, "UP");
-				if (args.includes("down") && dev) net.setInterfaceState(dev, "DOWN");
+				if (args.includes("up") && dev) { net.setInterfaceState(dev, "UP"); }
+				if (args.includes("down") && dev) { net.setInterfaceState(dev, "DOWN"); }
 				const mtuIdx = args.indexOf("mtu");
 				if (mtuIdx !== -1 && dev) {
-					const mtu = parseInt(args[mtuIdx + 1] ?? "1500", 10);
-					if (!Number.isNaN(mtu)) net.setInterfaceMtu(dev, mtu);
+					const mtu = Number.parseInt(args[mtuIdx + 1] ?? "1500", 10);
+					if (!Number.isNaN(mtu)) { net.setInterfaceMtu(dev, mtu); }
 				}
 				return { exitCode: 0 };
 			}
@@ -97,7 +97,7 @@ export const ipCommand: ShellModule = {
 						break;
 					}
 				}
-				const type = typeIdx !== -1 ? (args[typeIdx + 1] ?? "ether") : "ether";
+				const type = typeIdx === -1 ? "ether" : (args[typeIdx + 1] ?? "ether");
 				net.addInterface({
 					name,
 					type: type as never,
@@ -111,7 +111,7 @@ export const ipCommand: ShellModule = {
 			}
 			if (cmd === "del") {
 				const dev = args[2];
-				if (dev) net.removeInterface(dev);
+				if (dev) { net.removeInterface(dev); }
 				return { exitCode: 0 };
 			}
 			return { stdout: `${net.formatIpLink()}\n`, exitCode: 0 };
@@ -130,25 +130,25 @@ export const ipCommand: ShellModule = {
 				const iifIdx = args.indexOf("iif");
 				const oifIdx = args.indexOf("oif");
 				net.addPolicyRule({
-					from: fromIdx !== -1 ? args[fromIdx + 1] : undefined,
-					to: toIdx !== -1 ? args[toIdx + 1] : undefined,
-					table: parseInt(args[tableIdx + 1] ?? "254", 10),
-					iif: iifIdx !== -1 ? args[iifIdx + 1] : undefined,
-					oif: oifIdx !== -1 ? args[oifIdx + 1] : undefined,
+					from: fromIdx === -1 ? undefined : args[fromIdx + 1],
+					to: toIdx === -1 ? undefined : args[toIdx + 1],
+					table: Number.parseInt(args[tableIdx + 1] ?? "254", 10),
+					iif: iifIdx === -1 ? undefined : args[iifIdx + 1],
+					oif: oifIdx === -1 ? undefined : args[oifIdx + 1],
 					action: "lookup",
 				});
 				return { exitCode: 0 };
 			}
 			if (cmd === "del") {
-				const priority = parseInt(args[2] ?? "0", 10);
-				if (priority) net.delPolicyRule(priority);
+				const priority = Number.parseInt(args[2] ?? "0", 10);
+				if (priority) { net.delPolicyRule(priority); }
 				return { exitCode: 0 };
 			}
 			return { stdout: `${net.formatIpRule()}\n`, exitCode: 0 };
 		}
 		if (obj === "route" && args.includes("table")) {
 			const tableIdx = args.indexOf("table");
-			const tableId = parseInt(args[tableIdx + 1] ?? "254", 10);
+			const tableId = Number.parseInt(args[tableIdx + 1] ?? "254", 10);
 			return { stdout: `${net.formatIpRouteTable(tableId)}\n`, exitCode: 0 };
 		}
 		if (["set", "add", "del", "flush", "change", "replace"].includes(cmd)) {

@@ -21,7 +21,7 @@ export const gzipCommand: ShellModule = {
 		const keepOrig = args.includes("-k") || args.includes("--keep");
 		const decompress = args.includes("-d");
 		const file = args.find((a) => !a.startsWith("-"));
-		if (!file) return { stderr: "gzip: no file specified\n", exitCode: 1 };
+		if (!file) { return { stderr: "gzip: no file specified\n", exitCode: 1 }; }
 
 		const p = resolvePath(cwd, file);
 
@@ -36,7 +36,7 @@ export const gzipCommand: ShellModule = {
 			const content = shell.vfs.readFile(p);
 			const dest = p.slice(0, -3);
 			shell.vfs.writeFile(dest, content);
-			if (!keepOrig) shell.vfs.remove(p);
+			if (!keepOrig) { shell.vfs.remove(p); }
 			return { exitCode: 0 };
 		}
 
@@ -50,7 +50,7 @@ export const gzipCommand: ShellModule = {
 		const rawContent = shell.vfs.readFileRaw(p);
 		const gzPath = `${p}.gz`;
 		shell.vfs.writeFile(gzPath, rawContent, { compress: true });
-		if (!keepOrig) shell.vfs.remove(p);
+		if (!keepOrig) { shell.vfs.remove(p); }
 		return { exitCode: 0 };
 	},
 };
@@ -68,7 +68,7 @@ export const gunzipCommand: ShellModule = {
 	run: ({ shell, cwd, args }) => {
 		const keepOrig = args.includes("-k") || args.includes("--keep");
 		const file = args.find((a) => !a.startsWith("-"));
-		if (!file) return { stderr: "gunzip: no file specified\n", exitCode: 1 };
+		if (!file) { return { stderr: "gunzip: no file specified\n", exitCode: 1 }; }
 
 		const p = resolvePath(cwd, file);
 
@@ -82,7 +82,7 @@ export const gunzipCommand: ShellModule = {
 		const content = shell.vfs.readFile(p);
 		const dest = p.slice(0, -3);
 		shell.vfs.writeFile(dest, content);
-		if (!keepOrig) shell.vfs.remove(p);
+		if (!keepOrig) { shell.vfs.remove(p); }
 		return { exitCode: 0 };
 	},
 };

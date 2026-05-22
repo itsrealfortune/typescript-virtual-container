@@ -38,42 +38,34 @@ describe("ProcessScheduler", () => {
 	});
 
 	test("getNiceWeight returns correct weights", () => {
-		const scheduler = new ProcessScheduler();
-
-		expect(scheduler.getNiceWeight(0)).toBe(1024);
-		expect(scheduler.getNiceWeight(-20)).toBeGreaterThan(scheduler.getNiceWeight(0));
-		expect(scheduler.getNiceWeight(19)).toBeLessThan(scheduler.getNiceWeight(0));
+		expect(ProcessScheduler.getNiceWeight(0)).toBe(1024);
+		expect(ProcessScheduler.getNiceWeight(-20)).toBeGreaterThan(ProcessScheduler.getNiceWeight(0));
+		expect(ProcessScheduler.getNiceWeight(19)).toBeLessThan(ProcessScheduler.getNiceWeight(0));
 	});
 
 	test("priorityToNice converts priority names correctly", () => {
-		const scheduler = new ProcessScheduler();
-
-		expect(scheduler.priorityToNice("normal")).toBe(0);
-		expect(scheduler.priorityToNice("high")).toBe(-10);
-		expect(scheduler.priorityToNice("low")).toBe(10);
-		expect(scheduler.priorityToNice("realtime")).toBe(-20);
-		expect(scheduler.priorityToNice("idle")).toBe(19);
+		expect(ProcessScheduler.priorityToNice("normal")).toBe(0);
+		expect(ProcessScheduler.priorityToNice("high")).toBe(-10);
+		expect(ProcessScheduler.priorityToNice("low")).toBe(10);
+		expect(ProcessScheduler.priorityToNice("realtime")).toBe(-20);
+		expect(ProcessScheduler.priorityToNice("idle")).toBe(19);
 	});
 
 	test("niceToPriority converts nice values correctly", () => {
-		const scheduler = new ProcessScheduler();
-
-		expect(scheduler.niceToPriority(0)).toBe("normal");
-		expect(scheduler.niceToPriority(-20)).toBe("realtime");
-		expect(scheduler.niceToPriority(19)).toBe("idle");
-		expect(scheduler.niceToPriority(-10)).toBe("high");
-		expect(scheduler.niceToPriority(10)).toBe("low");
+		expect(ProcessScheduler.niceToPriority(0)).toBe("normal");
+		expect(ProcessScheduler.niceToPriority(-20)).toBe("realtime");
+		expect(ProcessScheduler.niceToPriority(19)).toBe("idle");
+		expect(ProcessScheduler.niceToPriority(-10)).toBe("high");
+		expect(ProcessScheduler.niceToPriority(10)).toBe("low");
 	});
 
 	test("isValidNice validates nice values", () => {
-		const scheduler = new ProcessScheduler();
-
-		expect(scheduler.isValidNice(0)).toBe(true);
-		expect(scheduler.isValidNice(-20)).toBe(true);
-		expect(scheduler.isValidNice(19)).toBe(true);
-		expect(scheduler.isValidNice(-21)).toBe(false);
-		expect(scheduler.isValidNice(20)).toBe(false);
-		expect(scheduler.isValidNice(1.5)).toBe(false);
+		expect(ProcessScheduler.isValidNice(0)).toBe(true);
+		expect(ProcessScheduler.isValidNice(-20)).toBe(true);
+		expect(ProcessScheduler.isValidNice(19)).toBe(true);
+		expect(ProcessScheduler.isValidNice(-21)).toBe(false);
+		expect(ProcessScheduler.isValidNice(20)).toBe(false);
+		expect(ProcessScheduler.isValidNice(1.5)).toBe(false);
 	});
 
 	test("recordCpuTime tracks CPU usage", () => {
@@ -155,11 +147,9 @@ describe("ProcessScheduler throttling", () => {
 	});
 
 	test("shouldThrottle respects priority weights", () => {
-		const scheduler = new ProcessScheduler({ enforceFairShare: true });
-
 		// High priority process gets more fair share
-		const highWeight = scheduler.getNiceWeight(-20);
-		const lowWeight = scheduler.getNiceWeight(19);
+		const highWeight = ProcessScheduler.getNiceWeight(-20);
+		const lowWeight = ProcessScheduler.getNiceWeight(19);
 		expect(highWeight).toBeGreaterThan(lowWeight);
 	});
 });

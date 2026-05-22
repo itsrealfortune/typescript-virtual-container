@@ -6,7 +6,7 @@ function parseJobspec(arg: string | undefined, procs: VirtualProcess[]): Virtual
 		// Default to most recent background job
 		return procs.filter((p) => p.status !== "stopped").pop();
 	}
-	const pid = parseInt(arg.replace(/^%/, ""), 10);
+	const pid = Number.parseInt(arg.replace(/^%/, ""), 10);
 	return procs.find((p) => p.pid === pid);
 }
 
@@ -17,7 +17,7 @@ export const jobsCommand: ShellModule = {
 	params: [],
 	run: ({ shell }) => {
 		const procs = shell.users.listProcesses();
-		if (procs.length === 0) return { stdout: "", exitCode: 0 };
+		if (procs.length === 0) { return { stdout: "", exitCode: 0 }; }
 
 		const lines = procs.map((p, i) => {
 			const label = `[${i + 1}]`;

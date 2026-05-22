@@ -41,11 +41,11 @@ export type SignalHandler = (signal: number, pid: number) => void
  */
 export function resolveSignal(spec: string): number | null {
 	const num = Number(spec);
-	if (!Number.isNaN(num) && num > 0 && num in SIGNALS) return num;
+	if (!Number.isNaN(num) && num > 0 && num in SIGNALS) { return num; }
 
 	const upper = spec.toUpperCase().replace(/^SIG/, "");
 	for (const [numStr, sig] of Object.entries(SIGNALS)) {
-		if (sig.name === `SIG${upper}` || sig.name === upper) return Number(numStr);
+		if (sig.name === `SIG${upper}` || sig.name === upper) { return Number(numStr); }
 	}
 	return null;
 }

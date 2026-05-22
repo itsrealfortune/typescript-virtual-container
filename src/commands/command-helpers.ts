@@ -10,10 +10,10 @@
  * Options for argument parsing helpers.
  * @public
  */
-export type ArgParseOptions = {
+export interface ArgParseOptions {
 	flags?: string[];
 	flagsWithValue?: string[];
-};
+}
 
 function toFlagList(flags: string | string[]): string[] {
 	return Array.isArray(flags) ? flags : [flags];
@@ -35,11 +35,9 @@ function matchFlagToken(
 
 	// Short flag inline value: -f2, -d: (single char flag like -f, -d, -n)
 	// Only applies to single-char flags (-X), not long flags (--flag)
-	if (flag.length === 2 && flag.startsWith("-") && !flag.startsWith("--")) {
-		if (token.startsWith(flag) && token.length > flag.length) {
+	if (flag.length === 2 && flag.startsWith("-") && !flag.startsWith("--") && token.startsWith(flag) && token.length > flag.length) {
 			return { matched: true, inlineValue: token.slice(flag.length) };
 		}
-	}
 
 	return { matched: false, inlineValue: null };
 }
@@ -178,8 +176,6 @@ export function getFlag(
 			return true;
 		}
 	}
-
-	return undefined;
 }
 
 /**

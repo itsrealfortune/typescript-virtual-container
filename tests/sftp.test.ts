@@ -8,7 +8,7 @@ import { VirtualUserManager } from "../src/modules/VirtualUserManager";
 
 // Skip by default (slow — requires SSH server). Run with:
 //   SSH_MIMIC_RUN_SFTP_TESTS=1 bun test tests/sftp.test.ts
-const runSftpTests = !!process.env.SSH_MIMIC_RUN_SFTP_TESTS;
+const runSftpTests = Boolean(process.env.SSH_MIMIC_RUN_SFTP_TESTS);
 const it = runSftpTests ? test : test.skip;
 const describeSftp = runSftpTests ? describe : describe.skip;
 

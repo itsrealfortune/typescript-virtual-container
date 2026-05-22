@@ -513,8 +513,8 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 			{ path: "/usr/share/ca-certificates/.keep", content: "" },
 		],
 		onInstall: (vfs) => {
-			if (!vfs.exists("/etc/ssl")) vfs.mkdir("/etc/ssl", 0o755);
-			if (!vfs.exists("/etc/ssl/certs")) vfs.mkdir("/etc/ssl/certs", 0o755);
+			if (!vfs.exists("/etc/ssl")) { vfs.mkdir("/etc/ssl", 0o755); }
+			if (!vfs.exists("/etc/ssl/certs")) { vfs.mkdir("/etc/ssl/certs", 0o755); }
 		},
 	},
 	{
@@ -644,7 +644,7 @@ export class VirtualPackageManager {
 
 	/** Ensure dpkg/status is parsed. Called lazily on first package operation. */
 	private _ensureLoaded(): void {
-		if (this._loaded) return;
+		if (this._loaded) { return; }
 		this._loaded = true;
 		this._parseStatus();
 	}
@@ -659,16 +659,16 @@ export class VirtualPackageManager {
 	}
 
 	private _parseStatus(): void {
-		if (!this._vfs.exists(this._registryPath)) return;
+		if (!this._vfs.exists(this._registryPath)) { return; }
 		const status = this._vfs.readFile(this._registryPath);
-		if (!status.trim()) return;
+		if (!status.trim()) { return; }
 
 		const blocks = status.split(/\n\n+/);
 		for (const block of blocks) {
-			if (!block.trim()) continue;
+			if (!block.trim()) { continue; }
 			const fields = VirtualPackageManager._parseFields(block);
 			const name = fields.Package;
-			if (!name) continue;
+			if (!name) { continue; }
 			this._installed.set(name, {
 				name,
 				version: fields.Version ?? "unknown",
@@ -690,8 +690,8 @@ export class VirtualPackageManager {
 			blocks.push(
 				[
 					`Package: ${pkg.name}`,
-					`Status: install ok installed`,
-					`Priority: optional`,
+					"Status: install ok installed",
+					"Priority: optional",
 					`Section: ${pkg.section}`,
 					`Installed-Size: ${pkg.installedSizeKb}`,
 					`Maintainer: ${pkg.maintainer}`,
@@ -710,7 +710,7 @@ export class VirtualPackageManager {
 		const result: Record<string, string> = {};
 		for (const line of block.split("\n")) {
 			const idx = line.indexOf(": ");
-			if (idx === -1) continue;
+			if (idx === -1) { continue; }
 			result[line.slice(0, idx)] = line.slice(idx + 2);
 		}
 		return result;
@@ -746,7 +746,7 @@ export class VirtualPackageManager {
 	 * @param name Package name (case-insensitive).
 	 * @returns The matching `PackageDefinition`, or `undefined` if not found.
 	 */
-	public findInRegistry(name: string): PackageDefinition | undefined {
+	public static findInRegistry(name: string): PackageDefinition | undefined {
 		return _REGISTRY_MAP.get(name.toLowerCase());
 	}
 
@@ -755,7 +755,7 @@ export class VirtualPackageManager {
 	 *
 	 * @returns Array of `PackageDefinition` entries.
 	 */
-	public listAvailable(): PackageDefinition[] {
+	public static listAvailable(): PackageDefinition[] {
 		return _REGISTRY_SORTED;
 	}
 
@@ -818,21 +818,21 @@ export class VirtualPackageManager {
 
 		// Resolve + deduplicate including deps
 		const resolve = (name: string, seen = new Set<string>()): void => {
-			if (seen.has(name)) return;
+			if (seen.has(name)) { return; }
 			seen.add(name);
-			if (this.isInstalled(name)) return;
-			const def = this.findInRegistry(name);
+			if (this.isInstalled(name)) { return; }
+			const def = VirtualPackageManager.findInRegistry(name);
 			if (!def) {
 				notFound.push(name);
 				return;
 			}
-			for (const dep of def.depends ?? []) resolve(dep, seen);
+			for (const dep of def.depends ?? []) { resolve(dep, seen); }
 			if (!toInstall.find((p) => p.name === def.name)) {
 				toInstall.push(def);
 			}
 		};
 
-		for (const n of names) resolve(n);
+		for (const n of names) { resolve(n); }
 
 		if (notFound.length > 0) {
 			return {
@@ -857,15 +857,15 @@ export class VirtualPackageManager {
 
 		if (!opts.quiet) {
 			lines.push(
-				`Reading package lists... Done`,
-				`Building dependency tree... Done`,
-				`Reading state information... Done`,
-				`The following NEW packages will be installed:`,
+				"Reading package lists... Done",
+				"Building dependency tree... Done",
+				"Reading state information... Done",
+				"The following NEW packages will be installed:",
 				`  ${toInstall.map((p) => p.name).join(" ")}`,
 				`0 upgraded, ${toInstall.length} newly installed, 0 to remove and 0 not upgraded.`,
 				`Need to get 0 B/${totalKb} kB of archives.`,
 				`After this operation, ${totalKb} kB of additional disk space will be used.`,
-				``,
+				"",
 			);
 		}
 
@@ -873,7 +873,7 @@ export class VirtualPackageManager {
 			if (!opts.quiet) {
 				lines.push(`Selecting previously unselected package ${def.name}.`);
 				lines.push(
-					`(Reading database ... 12345 files and directories currently installed.)`,
+					"(Reading database ... 12345 files and directories currently installed.)",
 				);
 				lines.push(
 					`Preparing to unpack .../archives/${def.name}_${def.version}_amd64.deb ...`,
@@ -884,7 +884,7 @@ export class VirtualPackageManager {
 			// Write files
 			for (const f of def.files ?? []) {
 				const dir = f.path.slice(0, f.path.lastIndexOf("/"));
-				if (dir && !this._vfs.exists(dir)) this._vfs.mkdir(dir, 0o755);
+				if (dir && !this._vfs.exists(dir)) { this._vfs.mkdir(dir, 0o755); }
 				this._vfs.writeFile(f.path, f.content, { mode: f.mode ?? 0o644 });
 			}
 
@@ -918,7 +918,7 @@ export class VirtualPackageManager {
 		this._persist();
 
 		if (!opts.quiet) {
-			lines.push(`Processing triggers for man-db (2.11.2-2) ...`);
+			lines.push("Processing triggers for man-db (2.11.2-2) ...");
 		}
 
 		return { output: lines.join("\n"), exitCode: 0 };
@@ -947,10 +947,10 @@ export class VirtualPackageManager {
 
 		for (const name of names) {
 			const pkg = this._installed.get(name.toLowerCase());
-			if (!pkg) {
-				lines.push(`Package '${name}' is not installed, so not removed`);
-			} else {
+			if (pkg) {
 				toRemove.push(pkg);
+			} else {
+				lines.push(`Package '${name}' is not installed, so not removed`);
 			}
 		}
 
@@ -960,16 +960,16 @@ export class VirtualPackageManager {
 
 		if (!opts.quiet) {
 			lines.push(
-				`Reading package lists... Done`,
-				`Building dependency tree... Done`,
-				`The following packages will be REMOVED:`,
+				"Reading package lists... Done",
+				"Building dependency tree... Done",
+				"The following packages will be REMOVED:",
 				`  ${toRemove.map((p) => p.name).join(" ")}`,
 				`0 upgraded, 0 newly installed, ${toRemove.length} to remove and 0 not upgraded.`,
 			);
 		}
 
 		for (const pkg of toRemove) {
-			if (!opts.quiet) lines.push(`Removing ${pkg.name} (${pkg.version}) ...`);
+			if (!opts.quiet) { lines.push(`Removing ${pkg.name} (${pkg.version}) ...`); }
 
 			// Remove files (if purge, include config files)
 			for (const filePath of pkg.files) {
@@ -980,12 +980,12 @@ export class VirtualPackageManager {
 					continue; // keep config unless --purge
 				}
 				try {
-					if (this._vfs.exists(filePath)) this._vfs.remove(filePath);
+					if (this._vfs.exists(filePath)) { this._vfs.remove(filePath); }
 				} catch { /* best-effort cleanup */ }
 			}
 
 			// Run remove hook
-			const def = this.findInRegistry(pkg.name);
+			const def = VirtualPackageManager.findInRegistry(pkg.name);
 			def?.onRemove?.(this._vfs);
 
 			this._installed.delete(pkg.name);
@@ -1008,7 +1008,7 @@ export class VirtualPackageManager {
 	 * @param term Search string.
 	 * @returns Matching `PackageDefinition` entries sorted alphabetically.
 	 */
-	public search(term: string): PackageDefinition[] {
+	public static search(term: string): PackageDefinition[] {
 		const t = term.toLowerCase();
 		return PACKAGE_REGISTRY.filter(
 			(p) =>
@@ -1027,8 +1027,8 @@ export class VirtualPackageManager {
 	 */
 	public show(name: string): string | null {
 		this._ensureLoaded();
-		const def = this.findInRegistry(name);
-		if (!def) return null;
+		const def = VirtualPackageManager.findInRegistry(name);
+		if (!def) { return null; }
 		const inst = this._installed.get(name);
 		return [
 			`Package: ${def.name}`,
@@ -1038,7 +1038,7 @@ export class VirtualPackageManager {
 			`Installed-Size: ${def.installedSizeKb ?? 0}`,
 			`Depends: ${(def.depends ?? []).join(", ") || "(none)"}`,
 			`Section: ${def.section ?? "misc"}`,
-			`Priority: optional`,
+			"Priority: optional",
 			`Description: ${def.description}`,
 			`Status: ${inst ? "install ok installed" : "install ok not-installed"}`,
 		].join("\n");

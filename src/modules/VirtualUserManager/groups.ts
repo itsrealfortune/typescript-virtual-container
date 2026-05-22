@@ -141,9 +141,8 @@ export class VirtualGroupManager {
 	 */
 	public getGroupByGid(gid: number): VirtualGroupRecord | undefined {
 		for (const group of this._groups.values()) {
-			if (group.gid === gid) return group;
+			if (group.gid === gid) { return group; }
 		}
-		return undefined;
 	}
 
 	/**
@@ -164,7 +163,7 @@ export class VirtualGroupManager {
 	 */
 	public getNameByGid(gid: number): string | null {
 		for (const group of this._groups.values()) {
-			if (group.gid === gid) return group.name;
+			if (group.gid === gid) { return group.name; }
 		}
 		return null;
 	}
@@ -229,9 +228,9 @@ export class VirtualGroupManager {
 	 */
 	public isMemberOf(username: string, groupName: string, primaryGid: number): boolean {
 		const group = this._groups.get(groupName);
-		if (!group) return false;
+		if (!group) { return false; }
 		// Check primary group match
-		if (group.gid === primaryGid) return true;
+		if (group.gid === primaryGid) { return true; }
 		// Check supplementary membership
 		return group.members.includes(username);
 	}
@@ -290,10 +289,10 @@ export class VirtualGroupManager {
 			}
 
 			const [name, _password, gidStr, membersStr] = parts;
-			if (!name || !gidStr) continue;
+			if (!(name && gidStr)) { continue; }
 
-			const gid = parseInt(gidStr, 10);
-			if (!Number.isFinite(gid) || gid < 0) continue;
+			const gid = Number.parseInt(gidStr, 10);
+			if (!Number.isFinite(gid) || gid < 0) { continue; }
 
 			const members = membersStr ? membersStr.split(",").filter((m) => m.length > 0) : [];
 			this._groups.set(name, { name, gid, members });

@@ -13,19 +13,18 @@ export const bcCommand: ShellModule = {
 	params: ["[expression]"],
 	run: ({ args, stdin }) => {
 		const input = (stdin ?? args.join(" ")).trim();
-		if (!input) return { stdout: "", exitCode: 0 };
+		if (!input) { return { stdout: "", exitCode: 0 }; }
 		const results: string[] = [];
 		for (const line of input.split("\n")) {
 			const expr = line.trim();
-			if (!expr || expr.startsWith("#")) continue;
+			if (!expr || expr.startsWith("#")) { continue; }
 			// Strip trailing semicolons
 			const cleaned = expr.replace(/;+$/, "").trim();
 			const val = evalArith(cleaned, {});
-			if (!Number.isNaN(val)) {
-				results.push(String(val));
-			} else {
+			if (Number.isNaN(val)) {
 				return { stderr: `bc: syntax error on line: ${expr}`, exitCode: 1 };
-			}
+			} 
+				results.push(String(val));
 		}
 		return { stdout: results.join("\n"), exitCode: 0 };
 	},
