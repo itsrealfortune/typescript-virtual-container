@@ -1,20 +1,35 @@
-import { beforeAll, describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import * as os from "node:os";
-import { VirtualShell } from "../src";
+import { VirtualShell, VirtualSshServer } from "../src";
 import { SshClient } from "../src/modules/SSHClient";
+
+async function setupClient(vmName: string, options?: { ramCapBytes?: number; cpuCapCores?: number }) {
+	const shell = new VirtualShell(vmName, undefined, { mode: "memory" }, options);
+	await shell.ensureInitialized();
+	const ssh = new VirtualSshServer({ port: 0, shell });
+	const port = await ssh.start();
+	const client = new SshClient();
+	await client.connect({ host: "localhost", port, username: "root", password: "" });
+	return { shell, client, ssh };
+}
 
 // ─── RAM capping — reporting ─────────────────────────────────────────────────
 
 describe("RAM capping — reporting", () => {
 	let shell: VirtualShell;
 	let client: InstanceType<typeof SshClient>;
+	let ssh: InstanceType<typeof VirtualSshServer>;
 
 	beforeAll(async () => {
-		shell = new VirtualShell("ram-report", undefined, undefined, {
-			ramCapBytes: 256 * 1024 * 1024, // 256 MiB
-		});
-		await shell.ensureInitialized();
-		client = new SshClient(shell, "root");
+		const env = await setupClient("ram-report", { ramCapBytes: 256 * 1024 * 1024 });
+		shell = env.shell;
+		client = env.client;
+		ssh = env.ssh;
+	});
+
+	afterAll(() => {
+		client.disconnect();
+		ssh.stop();
 	});
 
 	test("/proc/meminfo shows capped MemTotal", async () => {
@@ -23,7 +38,7 @@ describe("RAM capping — reporting", () => {
 		const memTotalLine = r.stdout!.split("\n").find((l) => l.startsWith("MemTotal:"));
 		expect(memTotalLine).toBeDefined();
 		const memTotalKb = parseInt(memTotalLine!.split(/\s+/)[1] ?? "0", 10);
-		expect(memTotalKb).toBeLessThanOrEqual(262144); // 256 MiB in KiB
+		expect(memTotalKb).toBeLessThanOrEqual(262144);
 	});
 
 	test("free -h shows capped total", async () => {
@@ -35,7 +50,7 @@ describe("RAM capping — reporting", () => {
 	test("sysctl vm.ram_cap_bytes returns the cap", async () => {
 		const r = await client.exec("sysctl vm.ram_cap_bytes");
 		expect(r.exitCode).toBe(0);
-		expect(r.stdout).toContain("268435456"); // 256 * 1024 * 1024
+		expect(r.stdout).toContain("268435456");
 	});
 
 	test("cgroup memory.limit_in_bytes shows cap", async () => {
@@ -51,7 +66,7 @@ describe("RAM capping — reporting", () => {
 describe("RAM capping — enforcement", () => {
 	test("setRamCap / getRamCap work", () => {
 		const shell = new VirtualShell("vfs-api-test");
-		shell.vfs.setRamCap(1024 * 1024); // 1 MiB
+		shell.vfs.setRamCap(1024 * 1024);
 		expect(shell.vfs.getRamCap()).toBe(1024 * 1024);
 	});
 
@@ -63,30 +78,24 @@ describe("RAM capping — enforcement", () => {
 	});
 
 	test("writeFile throws ENOMEM when cap is below current usage", async () => {
-		// Rootfs is ~54 KB, so a 56 KB cap leaves ~2 KB of room
 		const shell = new VirtualShell("vfs-api-enforce", undefined, undefined, {
-			ramCapBytes: 56 * 1024, // 56 KiB — rootfs fills most of it
+			ramCapBytes: 56 * 1024,
 		});
 		await shell.ensureInitialized();
-		// Now an 8 KiB write should fail (only ~2 KB room)
 		expect(() => {
-			shell.vfs.writeFile("/tmp/big", "A".repeat(8192)); // 8 KiB
+			shell.vfs.writeFile("/tmp/big", "A".repeat(8192));
 		}).toThrow(/ENOMEM/);
 	});
 
 	test("dd command fails with ENOMEM when VFS is near cap", async () => {
-		const shell = new VirtualShell("ram-enforce-dd", undefined, undefined, {
-			ramCapBytes: 64 * 1024, // 64 KiB — tight for rootfs
-		});
-		await shell.ensureInitialized();
-		const client = new SshClient(shell, "root");
-
-		// Try to write 16 KiB — should fail since rootfs already uses most of 64 KiB
+		const { shell, client, ssh } = await setupClient("ram-enforce-dd", { ramCapBytes: 64 * 1024 });
 		const r = await client.exec("dd if=/dev/zero of=/tmp/big bs=1024 count=16 2>&1");
 		const output = (r.stdout || "") + (r.stderr || "");
 		if (r.exitCode !== 0) {
 			expect(output).toContain("ENOMEM");
 		}
+		client.disconnect();
+		ssh.stop();
 	});
 });
 
@@ -95,29 +104,32 @@ describe("RAM capping — enforcement", () => {
 describe("RAM capping — runtime sysctl changes", () => {
 	let shell: VirtualShell;
 	let client: InstanceType<typeof SshClient>;
+	let ssh: InstanceType<typeof VirtualSshServer>;
 
 	beforeAll(async () => {
-		shell = new VirtualShell("ram-runtime");
-		await shell.ensureInitialized();
-		client = new SshClient(shell, "root");
+		const env = await setupClient("ram-runtime");
+		shell = env.shell;
+		client = env.client;
+		ssh = env.ssh;
+	});
+
+	afterAll(() => {
+		client.disconnect();
+		ssh.stop();
 	});
 
 	test("setting vm.ram_cap_bytes via sysctl enables enforcement", async () => {
-		// Get current VFS usage to set a cap just above it
 		const currentUsage = shell.vfs.getUsageBytes();
-		const cap = currentUsage + 50; // 50 bytes of headroom
+		const cap = currentUsage + 50;
 		const r = await client.exec(`sysctl vm.ram_cap_bytes=${cap}`);
 		expect(r.exitCode).toBe(0);
 
-		// Verify the value was set
 		const r2 = await client.exec("sysctl vm.ram_cap_bytes");
 		expect(r2.exitCode).toBe(0);
 		expect(r2.stdout).toContain(`${cap}`);
 
-		// Verify resourceCaps was updated
 		expect(shell.resourceCaps.ramCapBytes).toBe(cap);
 
-		// Now a large write should fail
 		const r3 = await client.exec("dd if=/dev/zero of=/tmp/overflow bs=1024 count=16 2>&1");
 		const output = (r3.stdout || "") + (r3.stderr || "");
 		expect(r3.exitCode).toBe(1);
@@ -128,7 +140,6 @@ describe("RAM capping — runtime sysctl changes", () => {
 		const r = await client.exec("sysctl vm.ram_cap_bytes=0");
 		expect(r.exitCode).toBe(0);
 
-		// Now the same write should succeed
 		const r2 = await client.exec("dd if=/dev/zero of=/tmp/ok bs=1024 count=16 2>&1");
 		expect(r2.exitCode).toBe(0);
 	});
@@ -139,13 +150,18 @@ describe("RAM capping — runtime sysctl changes", () => {
 describe("CPU capping — reporting", () => {
 	let shell: VirtualShell;
 	let client: InstanceType<typeof SshClient>;
+	let ssh: InstanceType<typeof VirtualSshServer>;
 
 	beforeAll(async () => {
-		shell = new VirtualShell("cpu-report", undefined, undefined, {
-			cpuCapCores: 2,
-		});
-		await shell.ensureInitialized();
-		client = new SshClient(shell, "root");
+		const env = await setupClient("cpu-report", { cpuCapCores: 2 });
+		shell = env.shell;
+		client = env.client;
+		ssh = env.ssh;
+	});
+
+	afterAll(() => {
+		client.disconnect();
+		ssh.stop();
 	});
 
 	test("/proc/cpuinfo shows only capped number of processors", async () => {
@@ -165,7 +181,7 @@ describe("CPU capping — reporting", () => {
 		const r = await client.cat("/sys/fs/cgroup/cpu/cpu.cfs_quota_us");
 		expect(r.exitCode).toBe(0);
 		const quota = parseInt(r.stdout!.trim(), 10);
-		expect(quota).toBe(200000); // 2 cores × 100000
+		expect(quota).toBe(200000);
 	});
 
 	test("sysctl kernel.cpu_cap_cores returns the cap", async () => {
@@ -228,11 +244,18 @@ describe("CPU capping — enforcement API", () => {
 describe("CPU capping — runtime sysctl changes", () => {
 	let shell: VirtualShell;
 	let client: InstanceType<typeof SshClient>;
+	let ssh: InstanceType<typeof VirtualSshServer>;
 
 	beforeAll(async () => {
-		shell = new VirtualShell("cpu-runtime");
-		await shell.ensureInitialized();
-		client = new SshClient(shell, "root");
+		const env = await setupClient("cpu-runtime");
+		shell = env.shell;
+		client = env.client;
+		ssh = env.ssh;
+	});
+
+	afterAll(() => {
+		client.disconnect();
+		ssh.stop();
 	});
 
 	test("setting kernel.cpu_cap_cores via sysctl enables enforcement", async () => {
@@ -243,10 +266,8 @@ describe("CPU capping — runtime sysctl changes", () => {
 		expect(r2.exitCode).toBe(0);
 		expect(r2.stdout).toContain("1");
 
-		// Verify resourceCaps was updated
 		expect(shell.resourceCaps.cpuCapCores).toBe(1);
 
-		// Verify nproc reflects the new cap
 		const r3 = await client.exec("nproc");
 		expect(r3.exitCode).toBe(0);
 		expect(parseInt(r3.stdout!.trim(), 10)).toBe(1);
@@ -256,7 +277,6 @@ describe("CPU capping — runtime sysctl changes", () => {
 		const r = await client.exec("sysctl kernel.cpu_cap_cores=0");
 		expect(r.exitCode).toBe(0);
 
-		// Verify nproc returns default
 		const r2 = await client.exec("nproc");
 		expect(r2.exitCode).toBe(0);
 		expect(parseInt(r2.stdout!.trim(), 10)).toBe(4);
@@ -268,14 +288,18 @@ describe("CPU capping — runtime sysctl changes", () => {
 describe("Combined RAM + CPU caps", () => {
 	let shell: VirtualShell;
 	let client: InstanceType<typeof SshClient>;
+	let ssh: InstanceType<typeof VirtualSshServer>;
 
 	beforeAll(async () => {
-		shell = new VirtualShell("combined", undefined, undefined, {
-			ramCapBytes: 128 * 1024 * 1024, // 128 MiB
-			cpuCapCores: 1,
-		});
-		await shell.ensureInitialized();
-		client = new SshClient(shell, "root");
+		const env = await setupClient("combined", { ramCapBytes: 128 * 1024 * 1024, cpuCapCores: 1 });
+		shell = env.shell;
+		client = env.client;
+		ssh = env.ssh;
+	});
+
+	afterAll(() => {
+		client.disconnect();
+		ssh.stop();
 	});
 
 	test("resourceCaps object has both values set", () => {
@@ -312,9 +336,7 @@ describe("Combined RAM + CPU caps", () => {
 		await client.exec("apt install neofetch");
 		const r = await client.exec("neofetch");
 		expect(r.exitCode).toBe(0);
-		// Should show 1 CPU in the CPU line
 		expect(r.stdout).toMatch(/\(1\)/);
-		// Should show capped memory (128 MiB)
 		expect(r.stdout).toContain("128MiB");
 	});
 });
@@ -324,11 +346,18 @@ describe("Combined RAM + CPU caps", () => {
 describe("No caps — host passthrough", () => {
 	let shell: VirtualShell;
 	let client: InstanceType<typeof SshClient>;
+	let ssh: InstanceType<typeof VirtualSshServer>;
 
 	beforeAll(async () => {
-		shell = new VirtualShell("no-caps");
-		await shell.ensureInitialized();
-		client = new SshClient(shell, "root");
+		const env = await setupClient("no-caps");
+		shell = env.shell;
+		client = env.client;
+		ssh = env.ssh;
+	});
+
+	afterAll(() => {
+		client.disconnect();
+		ssh.stop();
 	});
 
 	test("resourceCaps is empty object", () => {

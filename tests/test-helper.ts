@@ -1,14 +1,39 @@
-import { VirtualShell } from "../src";
+import { VirtualShell, VirtualSshServer } from "../src";
 import { SshClient } from "../src/modules/SSHClient";
 
 /**
- * Test helper: creates a fresh shell & client for each test
+ * Test helper: creates a fresh shell, starts SSH server, and connects via real SSH.
  */
 export async function createTestEnv(vmName = "test-shell") {
 	const shell = new VirtualShell(vmName, undefined, { mode: "memory" });
 	await shell.ensureInitialized();
-	const client = new SshClient(shell, "root");
-	return { shell, client };
+
+	await shell.users.addUser("root", "root");
+
+	const ssh = new VirtualSshServer({ port: 0, shell });
+	const port = await ssh.start();
+
+	const client = new SshClient();
+	await client.connect({ host: "localhost", port, username: "root", password: "root" });
+
+	return { shell, client, ssh, port };
+}
+
+/**
+ * Helper: create a shell and SSH client bound to it (for tests that need direct shell access).
+ * Starts an SSH server and connects via real SSH protocol.
+ */
+export async function createTestEnvWithSsh(vmName = "test-shell") {
+	const shell = new VirtualShell(vmName, undefined, { mode: "memory" });
+	await shell.ensureInitialized();
+
+	const ssh = new VirtualSshServer({ port: 0, shell });
+	const port = await ssh.start();
+
+	const client = new SshClient();
+	await client.connect({ host: "localhost", port, username: "root", password: "" });
+
+	return { shell, client, ssh, port };
 }
 
 /**

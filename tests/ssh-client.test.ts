@@ -1,12 +1,19 @@
-import { beforeAll, describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import type { SshClient } from "../src/modules/SSHClient";
 import { createTestEnv } from "./test-helper";
 
 let client: InstanceType<typeof SshClient>;
+let ssh: InstanceType<typeof VirtualSshServer>;
 
 beforeAll(async () => {
 	const env = await createTestEnv("ssh-client");
 	client = env.client;
+	ssh = env.ssh;
+});
+
+afterAll(() => {
+	client.disconnect();
+	ssh.stop();
 });
 
 describe("SSHClient API", () => {
@@ -60,7 +67,7 @@ describe("SSHClient API", () => {
 	});
 
 	test("rm removes file", async () => {
-		client.touch("/tmp/torm.txt");
+		await client.touch("/tmp/torm.txt");
 		const r = await client.rm("/tmp/torm.txt");
 		expect(r.exitCode).toBe(0);
 	});
@@ -109,10 +116,10 @@ describe("SSHClient API", () => {
 	});
 });
 
-import { loadOrCreateHostKey } from "../src/modules/SSHMimic/hostKey";
-import { mkdirSync, mkdtempSync, writeFileSync, rmSync, existsSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { loadOrCreateHostKey } from "../src/modules/SSHMimic/hostKey";
 
 describe("hostKey", () => {
 	test("loadOrCreateHostKey generates new key in temp dir", () => {
@@ -121,7 +128,6 @@ describe("hostKey", () => {
 			const key = loadOrCreateHostKey(tmpDir);
 			expect(key).toBeTruthy();
 			expect(key).toContain("BEGIN RSA PRIVATE KEY");
-			// Verify the key file was created
 			const keyPath = join(tmpDir, ".ssh-mimic", "host_rsa");
 			expect(existsSync(keyPath)).toBe(true);
 		} finally {
@@ -132,7 +138,6 @@ describe("hostKey", () => {
 	test("loadOrCreateHostKey reads existing key", () => {
 		const tmpDir = mkdtempSync(join(tmpdir(), "hostkey-existing-"));
 		try {
-			// Pre-create the key file
 			const keyDir = join(tmpDir, ".ssh-mimic");
 			mkdirSync(keyDir, { recursive: true });
 			const keyPath = join(keyDir, "host_rsa");
@@ -145,6 +150,7 @@ describe("hostKey", () => {
 	});
 });
 
+import type { VirtualSshServer } from "../src";
 import { buildLoginBanner } from "../src/modules/SSHMimic/loginBanner";
 
 describe("loginBanner", () => {
