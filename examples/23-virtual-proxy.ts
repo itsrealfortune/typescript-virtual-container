@@ -9,8 +9,8 @@ import { Baie, VirtualProxy } from "../src";
 
 const baie = new Baie("proxy-demo", "10.0.0.0/24");
 
-const web = await baie.createVM("web-server");
-const client = await baie.createVM("client");
+await baie.createVM("web-server");
+await baie.createVM("client");
 
 const proxy = new VirtualProxy(baie);
 

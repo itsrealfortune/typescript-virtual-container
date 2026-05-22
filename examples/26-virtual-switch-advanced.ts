@@ -78,7 +78,7 @@ net.addLoadBalancer({
 });
 
 for (let i = 0; i < 3; i++) {
-	const resolved = net.resolveLoadBalancer({ ip: "10.0.0.1", port: 80 });
+	const resolved = net.resolveLoadBalancer(80);
 	if (resolved) {
 		console.log(`  Request ${i + 1}: routed to ${resolved.hostname} (${resolved.ip})`);
 	}
