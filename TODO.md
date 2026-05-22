@@ -80,12 +80,13 @@
 - [x] Add a RAM and CPU capping
 - [x] Add a garbage collector to free up memory from deleted files, closed windows, and terminated processes, but also from closed files that are not required to be kept in memory (e.g. large files that have been closed) [refers to IdleManager]
 - [x] Add a more realistic network stack that simulates latency, bandwidth limits, and packet loss, and allows for more complex network configurations (e.g. multiple interfaces, routing tables, firewall rules)
+- [x] Add a more realistic user management system that supports user groups, permissions, and authentication mechanisms (e.g. password hashing, PAM)
+- [x] Add a swap file mechanism to handle memory overflow when RAM is full (e.g. move least recently used data to disk)
 </details>
 
 ## Priority
 
 - [ ] Add a process scheduler to manage CPU time between running processes, ensuring fair resource allocation and preventing any single process from monopolizing the CPU
 - [ ] Add a more realistic file caching mechanism that simulates disk read/write speeds and cache eviction policies
-- [ ] Add a more realistic user management system that supports user groups, permissions, and authentication mechanisms (e.g. password hashing, PAM)
-- [x] Add `Buffer.alloc(0)` usage and memory cleanup across modules (VFS, process table, network connections, user manager, desktop manager)
+- [ ] Think about adding `delete` keyword and using more `Buffer.alloc(0)` on some modules and commands variables and functions to free up memory when they are no longer needed, especially for large data structures like the VFS, process table, and network connections (after reading a file, writing it, if its VFS snapshot file, we can delete it from memory, and only keep it on disk; after a process terminates, we can delete its entry from the process table; after a network connection is closed, we can delete its entry from the connection table, etc...)
 - [ ] WebSocket-based remote shell client (experimental)
