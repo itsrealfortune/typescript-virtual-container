@@ -22,6 +22,8 @@ export const mvCommand: ShellModule = {
 
 		const srcPath = resolvePath(cwd, srcArg);
 		const destPath = resolvePath(cwd, destArg);
+		const uid = shell.users.getUid(authUser);
+		const gid = shell.users.getGid(authUser);
 
 		try {
 			checkFilePermission(shell.vfs, shell.users, authUser, srcPath, 2);
@@ -41,7 +43,7 @@ export const mvCommand: ShellModule = {
 					? `${destPath}/${srcArg.split("/").pop()}`
 					: destPath;
 
-			shell.vfs.move(srcPath, finalDest);
+			shell.vfs.move(srcPath, finalDest, uid, gid);
 			return { exitCode: 0 };
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);

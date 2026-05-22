@@ -490,10 +490,13 @@ describe("zip command", () => {
 
 	test("unzip extracts archive", async () => {
 		createTestFile(shell, "/tmp/unzip_test.txt", "hello unzip");
-		await runCmd(client, "zip /tmp/unzip.zip /tmp/unzip_test.txt");
+		const z = await runCmd(client, "zip /tmp/unzip.zip /tmp/unzip_test.txt");
+		expect(z.exitCode).toBe(0);
 		shell.vfs.remove("/tmp/unzip_test.txt");
-		const r = await runCmd(client, "unzip /tmp/unzip.zip");
+		const r = await runCmd(client, "unzip /tmp/unzip.zip -d /");
 		expect(r.exitCode).toBe(0);
+		expect(shell.vfs.exists("/tmp/unzip_test.txt")).toBe(true);
+		expect(shell.vfs.readFile("/tmp/unzip_test.txt")).toBe("hello unzip");
 	});
 
 	test("zip list contents", async () => {

@@ -30,7 +30,7 @@ import type {
 } from "./internalTypes";
 import { appendJournalEntry, JournalOp, readJournal, truncateJournal } from "./journal";
 import { getNodeNormalized, getParentDirectory, normalizePath } from "./path";
-import { enforceAccess, enforceChmod, enforceChown, enforceDelete, enforcePathTraversal, R_OK, W_OK } from "./permissions";
+import { enforceAccess, enforceChmod, enforceChown, enforceDelete, enforcePathTraversal, R_OK, W_OK, X_OK } from "./permissions";
 import { SwapStore, type SwapStats } from "./swapStore";
 
 // ── Persistence options ───────────────────────────────────────────────────────
@@ -1294,6 +1294,20 @@ class VirtualFileSystem extends EventEmitter {
 				`Cannot create directory '${normalized}': path is a file.`,
 			);
 		}
+		if (uid !== undefined && gid !== undefined && !existing) {
+			const parentPath = path.posix.dirname(normalized);
+			if (parentPath !== normalized) {
+				try {
+					enforceAccess(this._root, parentPath, uid, gid, W_OK | X_OK);
+				} catch (err: unknown) {
+					// If parent doesn't exist, _mkdirRecursive will create it with
+					// correct ownership — skip the check. Otherwise re-throw.
+					if (!((err instanceof Error) && err.message.includes("does not exist"))) {
+						throw err;
+					}
+				}
+			}
+		}
 		this._mkdirRecursive(normalized, mode, uid, gid);
 	}
 
@@ -1332,6 +1346,19 @@ class VirtualFileSystem extends EventEmitter {
 
 		if (uid !== undefined && gid !== undefined) {
 			enforcePathTraversal(this._root, normalized, uid, gid);
+			// Enforce write permission on parent directory when creating new files
+			const parentPath = path.posix.dirname(normalized);
+			if (parentPath !== normalized) {
+				try {
+					enforceAccess(this._root, parentPath, uid, gid, W_OK | X_OK);
+				} catch (err: unknown) {
+					// If parent doesn't exist, getParentDirectory will create it.
+					// Otherwise re-throw the access denied error.
+					if (!((err instanceof Error) && err.message.includes("does not exist"))) {
+						throw err;
+					}
+				}
+			}
 		}
 
 		const { parent, name } = getParentDirectory(
@@ -1950,6 +1977,20 @@ class VirtualFileSystem extends EventEmitter {
 		const normalizedTarget = targetPath.startsWith("/")
 			? normalizePath(targetPath)
 			: targetPath;
+
+		if (uid !== undefined && gid !== undefined) {
+			const parentPath = path.posix.dirname(normalizedLink);
+			if (parentPath !== normalizedLink) {
+				try {
+					enforceAccess(this._root, parentPath, uid, gid, W_OK | X_OK);
+				} catch (err: unknown) {
+					if (!((err instanceof Error) && err.message.includes("does not exist"))) {
+						throw err;
+					}
+				}
+			}
+		}
+
 		const { parent, name } = getParentDirectory(
 			this._root,
 			normalizedLink,
@@ -2073,12 +2114,33 @@ class VirtualFileSystem extends EventEmitter {
 	 * Moves or renames a node.
 	 * @param fromPath - The source path.
 	 * @param toPath - The destination path.
+	 * @param uid - Optional owner UID (enforces permissions).
+	 * @param gid - Optional owner GID (enforces permissions).
 	 */
-	public move(fromPath: string, toPath: string): void {
+	public move(fromPath: string, toPath: string, uid?: number, gid?: number): void {
 		const fromNormalized = normalizePath(fromPath);
 		const toNormalized = normalizePath(toPath);
 		if (fromNormalized === "/" || toNormalized === "/") {
 			throw new Error("Cannot move root directory.");
+		}
+		if (uid !== undefined && gid !== undefined) {
+			enforcePathTraversal(this._root, fromNormalized, uid, gid);
+			enforcePathTraversal(this._root, toNormalized, uid, gid);
+			// Need W_OK on source parent (to unlink) and dest parent (to create)
+			const srcParentPath = path.posix.dirname(fromNormalized);
+			const destParentPath = path.posix.dirname(toNormalized);
+			if (srcParentPath !== fromNormalized) {
+				enforceAccess(this._root, srcParentPath, uid, gid, W_OK | X_OK);
+			}
+			if (destParentPath !== toNormalized) {
+				try {
+					enforceAccess(this._root, destParentPath, uid, gid, W_OK | X_OK);
+				} catch (err: unknown) {
+					if (!((err instanceof Error) && err.message.includes("does not exist"))) {
+						throw err;
+					}
+				}
+			}
 		}
 		const node = getNodeNormalized(this._root, fromNormalized);
 		if (this.exists(toNormalized)) {

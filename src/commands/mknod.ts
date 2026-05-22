@@ -62,7 +62,7 @@ export const mkfifoCommand: ShellModule = {
 	description: "Create a named pipe (FIFO)",
 	category: "system",
 	params: ["<path>"],
-	run: ({ shell, args }) => {
+	run: ({ shell, args, authUser }) => {
 		const targetPath = args.find((a) => !a.startsWith("-"));
 		if (!targetPath) {
 			return {
@@ -70,9 +70,11 @@ export const mkfifoCommand: ShellModule = {
 				exitCode: 1,
 			};
 		}
+		const uid = shell.users.getUid(authUser);
+		const gid = shell.users.getGid(authUser);
 
 		try {
-			shell.vfs.writeFile(targetPath, "", { mode: 0o644 });
+			shell.vfs.writeFile(targetPath, "", { mode: 0o644 }, uid, gid);
 			return { exitCode: 0 };
 		} catch (e) {
 			return { stderr: `mkfifo: ${e instanceof Error ? e.message : String(e)}`, exitCode: 1 };

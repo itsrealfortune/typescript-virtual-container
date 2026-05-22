@@ -86,7 +86,12 @@ export function enforcePathTraversal(
 		currentPath += `/${parts[i]}`;
 		try {
 			enforceAccess(root, currentPath, uid, gid, X_OK);
-		} catch {
+		} catch (err: unknown) {
+			// If parent doesn't exist yet, it will be created — skip the check.
+			// Otherwise re-throw as EACCES.
+			if (err instanceof Error && err.message.includes("does not exist")) {
+				return;
+			}
 			throw new Error(`EACCES: permission denied: '${currentPath}'`);
 		}
 	}

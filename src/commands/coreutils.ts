@@ -30,20 +30,22 @@ export const mktempCommand: ShellModule = {
 	description: "Create a temporary file or directory",
 	category: "shell",
 	params: ["[-d]", "[TEMPLATE]"],
-	run: ({ args, shell }) => {
+	run: ({ args, shell, authUser }) => {
 		const isDir = args.includes("-d");
 		const templateArg = args.find((a) => !a.startsWith("-")) ?? "tmp.XXXXXXXXXX";
 		const suffix = templateArg.replace(/X+$/, "") || "tmp.";
 		const rand = Math.random().toString(36).slice(2, 10);
 		const name = `${suffix}${rand}`;
 		const path = name.startsWith("/") ? name : `/tmp/${name}`;
+		const uid = shell.users.getUid(authUser);
+		const gid = shell.users.getGid(authUser);
 
 		try {
-			if (!shell.vfs.exists("/tmp")) { shell.vfs.mkdir("/tmp"); }
+			if (!shell.vfs.exists("/tmp")) { shell.vfs.mkdir("/tmp", 0o1777, 0, 0); }
 			if (isDir) {
-				shell.vfs.mkdir(path);
+				shell.vfs.mkdir(path, 0o700, uid, gid);
 			} else {
-				shell.vfs.writeFile(path, "");
+				shell.vfs.writeFile(path, "", {}, uid, gid);
 			}
 		} catch {
 			return { stderr: `mktemp: failed to create ${isDir ? "directory" : "file"} via template '${templateArg}'`, exitCode: 1 };
