@@ -1151,7 +1151,8 @@ export function refreshProc(
 	}
 
 	// /proc/self — mirror of most recent session
-	const selfPid = sessions.length > 0 ? ttyToPid((sessions[sessions.length - 1] as VirtualActiveSession).tty) : 1;
+	const lastSession = sessions[sessions.length - 1];
+	const selfPid = lastSession !== undefined ? ttyToPid(lastSession.tty) : 1;
 	try { vfs.remove("/proc/self"); } catch { /* ignore */ }
 
 	const selfSrc = `/proc/${selfPid}`;
