@@ -81,6 +81,7 @@
 - [x] Add a garbage collector to free up memory from deleted files, closed windows, and terminated processes, but also from closed files that are not required to be kept in memory (e.g. large files that have been closed) [refers to IdleManager]
 - [x] Add a more realistic network stack that simulates latency, bandwidth limits, and packet loss, and allows for more complex network configurations (e.g. multiple interfaces, routing tables, firewall rules)
 - [x] Add a more realistic user management system that supports user groups, permissions, and authentication mechanisms (e.g. password hashing, PAM)
+- [x] Add a swap file mechanism to handle memory overflow when RAM is full (e.g. move least recently used data to disk)
 </details>
 
 ## Priority

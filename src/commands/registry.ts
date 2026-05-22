@@ -129,6 +129,7 @@ import { getentCommand } from "./getent";
 import { usermodCommand } from "./usermod";
 import { chageCommand } from "./chage";
 import { newgrpCommand } from "./newgrp";
+import { swapCommand } from "./swap";
 
 const BASE_COMMANDS: ShellModule[] = [
 	// Navigation
@@ -305,6 +306,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	lsbReleaseCommand,
 	lsofCommand,
 	straceCommand,
+	swapCommand,
 	// Scripting
 	perlCommand,
 	// Coreutils (extended)
