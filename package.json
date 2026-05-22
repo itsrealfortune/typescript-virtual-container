@@ -34,7 +34,7 @@
     "test": "bun run test-salve",
     "test-battery": "bun test tests/",
     "test-salve": "for f in tests/*.test.ts; do echo \"\\n🧪 Testing $f...\"; bun test \"$f\" --timeout 10000; sleep 0.25; done",
-    "build": "tsc --project tsconfig.json && rm -f dist/*standalone*",
+    "build": "tsc --project tsconfig-build.json && rm -f dist/*standalone*",
     "deploy:npm": "bun publish --access public",
     "bench": "rm -rf .benchmark-shells/ && bun benchmark-virtualshell.ts",
     "benchmark": "bun benchmark-virtualshell.ts > benchmark-results.txt",
