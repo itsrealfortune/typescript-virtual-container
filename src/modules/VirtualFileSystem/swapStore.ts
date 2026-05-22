@@ -138,7 +138,6 @@ export class SwapStore {
 			}
 
 			const size = raw.readUInt32LE(0);
-			const compressed = raw.readUInt8(4) === 1;
 			const content = raw.subarray(5);
 
 			// Verify size matches
