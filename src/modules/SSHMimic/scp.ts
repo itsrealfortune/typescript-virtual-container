@@ -288,7 +288,8 @@ export function runScpSource(
 			return;
 		}
 
-		const entry = entries[idx] as Entry;
+		const entry = entries[idx];
+		if (entry === undefined) return;
 		idx++;
 
 		if (entry.kind === "dir-open") {

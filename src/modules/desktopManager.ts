@@ -423,7 +423,8 @@ export class DesktopManager {
   closeWindow(id: string): void {
     const idx = this._windows.findIndex((w) => w.id === id);
     if (idx === -1) return;
-    const w = this._windows[idx] as DesktopWindow;
+    const w = this._windows[idx];
+    if (w === undefined) return;
     if (w.content.type === "taskmanager" && w.content.refreshInterval) {
       clearInterval(w.content.refreshInterval);
     }
