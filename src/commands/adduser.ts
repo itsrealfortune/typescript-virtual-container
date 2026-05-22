@@ -43,37 +43,37 @@ export const adduserCommand: ShellModule = {
 		type Step = "new" | "retype";
 		let step: Step = "new";
 
-		const onPassword = async (
+		const onPassword = (
 			input: string,
 			sh: VirtualShell,
 		): Promise<{ result: CommandResult | null; nextPrompt?: string }> => {
 			if (step === "new") {
 				if (input.length < 1) {
-					return {
+					return Promise.resolve({
 						result: {
 							stderr: "adduser: password cannot be empty\n",
 							exitCode: 1,
 						},
-					};
+					});
 				}
 				newPassword = input;
 				step = "retype";
-				return { result: null, nextPrompt: "Retype new password: " };
+				return Promise.resolve({ result: null, nextPrompt: "Retype new password: " });
 			}
 
 			// step === "retype"
 			if (input !== newPassword) {
-				return {
+				return Promise.resolve({
 					result: {
 						stderr: "adduser: passwords do not match — user not created\n",
 						exitCode: 1,
 					},
-				};
+				});
 			}
 
 			sh.users.addUser(username, newPassword);
 			const gid = sh.users.getGid(username);
-			return {
+			return Promise.resolve({
 				result: {
 					stdout: `${[
 						`Adding user '${username}' ...`,
@@ -85,7 +85,7 @@ export const adduserCommand: ShellModule = {
 					].join("\n")}\n`,
 					exitCode: 0,
 				},
-			};
+			});
 		};
 
 		return {

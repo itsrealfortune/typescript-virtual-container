@@ -47,7 +47,7 @@ export class VirtualVpn {
 		this._routes.set(bSubnet, this);
 	}
 
-	private async _routeTo(packet: Packet): Promise<PacketResult> {
+	private _routeTo(packet: Packet): Promise<PacketResult> {
 		const aSubnet = this._baieA.switch.subnet.split("/")[0] as string;
 		const aPrefix = aSubnet.slice(0, aSubnet.lastIndexOf("."));
 		const bSubnet = this._baieB.switch.subnet.split("/")[0] as string;
@@ -59,6 +59,6 @@ export class VirtualVpn {
 		if (packet.dstIp.startsWith(bPrefix)) {
 			return this._baieB.switch.route(packet);
 		}
-		return { action: "DROP" };
+		return Promise.resolve({ action: "DROP" });
 	}
 }

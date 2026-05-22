@@ -60,26 +60,26 @@ export const deluserCommand: ShellModule = {
 		}
 
 		// Interactive confirmation
-		const onPassword = async (
+		const onPassword = (
 			input: string,
 			sh: VirtualShell,
 		): Promise<{ result: CommandResult | null; nextPrompt?: string }> => {
 			if (input.trim() !== username) {
-				return {
+				return Promise.resolve({
 					result: {
 						stderr: "deluser: confirmation did not match — user not deleted\n",
 						exitCode: 1,
 					},
-				};
+				});
 			}
 
 			sh.users.deleteUser(username);
-			return {
+			return Promise.resolve({
 				result: {
 					stdout: `Removing user '${username}' ...\ndeluser: done.\n`,
 					exitCode: 0,
 				},
-			};
+			});
 		};
 
 		return {

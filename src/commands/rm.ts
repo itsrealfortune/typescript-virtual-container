@@ -67,13 +67,13 @@ export const rmCommand: ShellModule = {
 				loginShell: false,
 				prompt,
 				mode: "confirm",
-				onPassword: async (input, sh) => {
-					const answer = input.trim().toLowerCase();
-					if (answer !== "y" && answer !== "yes") {
-						return { result: { stdout: "rm: cancelled\n", exitCode: 1 } };
-					}
-					return { result: doRemove(sh) };
-				},
+			onPassword: (input, sh) => {
+				const answer = input.trim().toLowerCase();
+				if (answer !== "y" && answer !== "yes") {
+					return Promise.resolve({ result: { stdout: "rm: cancelled\n", exitCode: 1 } });
+				}
+				return Promise.resolve({ result: doRemove(sh) });
+			},
 			},
 			exitCode: 0,
 		};
