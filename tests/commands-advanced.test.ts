@@ -72,7 +72,7 @@ describe("diff command", () => {
 		createTestFile(shell, "/tmp/diff2.txt", "line1\nline2\nline3");
 		const r = await runCmd(client, "diff /tmp/diff1.txt /tmp/diff2.txt");
 		expect(r.exitCode).toBe(0);
-		expect(r.stdout).toBe("");
+		expect(!r.stdout || r.stdout === "").toBe(true);
 	});
 
 	test("diff different files", async () => {

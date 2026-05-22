@@ -45,11 +45,11 @@ export function runExec(
 	)
 		.then((result) => {
 			if (result.stdout) {
-				stream.write(`${toTtyLines(result.stdout)}\r\n`);
+				stream.write(toTtyLines(result.stdout));
 			}
 
 			if (result.stderr) {
-				stream.stderr.write(`${toTtyLines(result.stderr)}\r\n`);
+				stream.stderr.write(toTtyLines(result.stderr));
 			}
 
 			stream.exit(result.exitCode ?? 0);
