@@ -5,10 +5,11 @@
  * track statistics, and detect anomalies.
  */
 
-import { HoneyPot, SshClient, VirtualShell } from "../src";
+import { HoneyPot, SshClient, VirtualShell, VirtualSshServer } from "../src";
 
 const shell = new VirtualShell("typescript-vm");
-await shell.ensureInitialized();
+shell.ensureInitialized();
+shell.users.setPassword("root", "root");
 
 // ── Attach HoneyPot ────────────────────────────────────────────────
 console.log("--- Attach HoneyPot ---");
@@ -16,10 +17,15 @@ console.log("--- Attach HoneyPot ---");
 const hp = new HoneyPot(5000);
 hp.attach(shell, shell.vfs, shell.users);
 
+// ── Start SSH server ──────────────────────────────────────────────
+const ssh = new VirtualSshServer({ port: 0, shell });
+const port = await ssh.start();
+
 // ── Simulate activity ──────────────────────────────────────────────
 console.log("\n--- Simulate activity ---");
 
-const client = new SshClient(shell, "root");
+const client = new SshClient();
+await client.connect({ host: "localhost", port, username: "root", password: "root" });
 await client.exec("echo 'secret data' > /etc/secrets.txt");
 await client.exec("cat /etc/secrets.txt");
 await client.exec("ls -la /tmp");
@@ -54,3 +60,6 @@ const recent = hp.getRecent(3);
 for (const entry of recent) {
 	console.log(`[${entry.type}] ${entry.source}`);
 }
+
+client.disconnect();
+ssh.stop();

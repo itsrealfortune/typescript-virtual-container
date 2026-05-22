@@ -6,18 +6,28 @@
  * race conditions, and concurrent file operations.
  */
 
-import { SshClient, VirtualShell } from "../src";
+import { SshClient, VirtualShell, VirtualSshServer } from "../src";
 
 const shell = new VirtualShell("typescript-vm");
-await shell.ensureInitialized();
+shell.ensureInitialized();
+shell.users.setPassword("root", "root");
 
-await shell.users.addUser("alice", "alice123");
-await shell.users.addUser("bob", "bob456");
-await shell.users.addUser("charlie", "charlie789");
+shell.users.addUser("alice", "alice123");
+shell.users.addUser("bob", "bob456");
+shell.users.addUser("charlie", "charlie789");
 
-const client1 = new SshClient(shell, "alice");
-const client2 = new SshClient(shell, "bob");
-const client3 = new SshClient(shell, "charlie");
+const ssh = new VirtualSshServer({ port: 0, shell });
+const port = await ssh.start();
+
+const client1 = new SshClient();
+const client2 = new SshClient();
+const client3 = new SshClient();
+
+await Promise.all([
+	client1.connect({ host: "localhost", port, username: "alice", password: "alice123" }),
+	client2.connect({ host: "localhost", port, username: "bob", password: "bob456" }),
+	client3.connect({ host: "localhost", port, username: "charlie", password: "charlie789" }),
+]);
 
 // ── Concurrent file writes ─────────────────────────────────────────
 console.log("--- Concurrent file writes ---");
@@ -79,3 +89,8 @@ const results = await Promise.all(commands);
 for (const r of results) {
 	console.log(`  -> "${r.stdout!.trim()}" (exit ${r.exitCode})`);
 }
+
+client1.disconnect();
+client2.disconnect();
+client3.disconnect();
+ssh.stop();

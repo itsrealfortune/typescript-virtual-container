@@ -12,7 +12,7 @@ import { mkdirSync, existsSync, rmSync } from "node:fs";
 // ── FS mode — automatic .vfsb persistence ─────────────────────────
 console.log("--- FS mode — automatic .vfsb persistence ---");
 const dataDir = "./container-data";
-if (!existsSync(dataDir)) mkdirSync(dataDir);
+if (!existsSync(dataDir)) { mkdirSync(dataDir); }
 const vfsFs = new VirtualFileSystem({
 	mode: "fs",
 	snapshotPath: dataDir,
@@ -21,7 +21,7 @@ const vfsFs = new VirtualFileSystem({
 vfsFs.writeFile("/data/persistent.txt", "This survives restarts");
 console.log("FS mode: wrote /data/persistent.txt");
 
-await vfsFs.flushMirror();
+vfsFs.flushMirror();
 console.log("FS mode: flushed to disk");
 
 // ── Memory mode — manual JSON snapshot ────────────────────────────
