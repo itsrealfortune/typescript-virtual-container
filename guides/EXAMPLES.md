@@ -172,3 +172,31 @@ console.log(sw.getBytesSent("02:42:0a:00:01:02"));
 console.log(sw.getBytesReceived("02:42:0a:00:01:02"));
 sw.resetBandwidth();
 ```
+
+---
+
+# Complete Examples
+
+Run any example with: `npx tsx examples/<number>-<name>.ts`
+
+| # | File | Description |
+|---|------|-------------|
+| 01 | `01-ssh-server-events.ts` | SSH server event handling |
+| 02 | `02-ssh-sftp-shared-state.ts` | SFTP with shared state |
+| 03 | `03-multi-user-quotas.ts` | Multi-user disk quotas |
+| 04 | `04-persistent-state.ts` | Persistent filesystem state |
+| 05 | `05-public-key-auth.ts` | SSH public key authentication |
+| 06 | `06-rate-limiting.ts` | Connection rate limiting |
+| 07 | `07-snapshot-test-fixtures.ts` | Snapshot-based test fixtures |
+| 08 | `08-snapshot-diff.ts` | Filesystem snapshot diffing |
+| 09 | `09-symlinks.ts` | Symbolic link operations |
+| 10 | `10-honeypot-auditing.ts` | Security auditing with HoneyPot |
+| 11 | `11-concurrent-clients.ts` | Multiple concurrent SSH clients |
+| 12 | `12-file-cache.ts` | VFS file cache (LRU/LFU/FIFO, disk I/O presets) |
+| 13 | `13-process-scheduler.ts` | Process scheduler with nice values and fair-share CPU |
+| 14 | `14-swap-store.ts` | Swap file store for memory-constrained environments |
+| 15 | `15-fd-and-mounts.ts` | POSIX file descriptors and host directory mounting |
+| 16 | `16-cicd-pipeline.ts` | CI/CD pipeline simulation with isolated build stages |
+| 17 | `17-saas-platform.ts` | Multi-tenant SaaS platform with isolated environments |
+| 18 | `18-honeypot-threat-detection.ts` | Security honeypot with anomaly detection |
+| 19 | `19-container-orchestrator.ts` | Kubernetes-like container orchestration simulator |
