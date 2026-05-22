@@ -12,8 +12,10 @@ export const groupsCommand: ShellModule = {
 	params: ["[user]"],
 	run: ({ authUser, shell, args }) => {
 		const target = args[0] ?? authUser;
-		const isSudo = shell.users.isSudoer(target);
-		const grps = isSudo ? `${target} sudo root` : target;
-		return { stdout: grps, exitCode: 0 };
+		const groups = shell.users.getUserAllGroups(target);
+		if (groups.length === 0) {
+			return { stdout: `${target}:`, exitCode: 0 };
+		}
+		return { stdout: `${target} : ${groups.join(" ")}`, exitCode: 0 };
 	},
 };

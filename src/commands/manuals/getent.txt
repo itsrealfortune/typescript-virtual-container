@@ -1,0 +1,19 @@
+GETENT(1)               User Commands               GETENT(1)
+
+NAME
+       getent - get entries from administrative database
+
+SYNOPSIS
+       getent passwd [key]
+       getent group [key]
+
+DESCRIPTION
+       getent retrieves entries from the Name Service Switch
+       libraries. In this environment, it supports passwd
+       and group databases.
+
+EXAMPLES
+       getent passwd              # list all users
+       getent passwd root         # show root user entry
+       getent group               # list all groups
+       getent group sudo          # show sudo group entry

@@ -445,77 +445,28 @@ export function syncEtcPasswd(
 	let uid = 1000;
 	for (const u of userList) {
 		if (u === "root") continue;
-		passwdLines.push(`${u}:x:${uid}:${uid}::/home/${u}:/bin/bash`);
-		uid++;
+		const realUid = users.getUid(u);
+		const realGid = users.getGid(u);
+		const effectiveUid = realUid > 0 ? realUid : uid;
+		const effectiveGid = realGid > 0 ? realGid : uid;
+		passwdLines.push(`${u}:x:${effectiveUid}:${effectiveGid}::/home/${u}:/bin/bash`);
+		if (realUid === 0) uid++; // Only increment if UID was auto-assigned
 	}
 
 	vfs.writeFile("/etc/passwd", `${passwdLines.join("\n")}\n`);
 
-	const sudoers = userList.filter((u) => users.isSudoer(u)).join(",");
-	const nonRootUsers = userList.filter((u) => u !== "root").join(",");
-
-	const groupLines = [
-		"root:x:0:",
-		"daemon:x:1:",
-		"bin:x:2:",
-		"sys:x:3:",
-		"adm:x:4:syslog",
-		"tty:x:5:",
-		"disk:x:6:",
-		"lp:x:7:",
-		"mail:x:8:",
-		"news:x:9:",
-		"uucp:x:10:",
-		"man:x:12:",
-		"proxy:x:13:",
-		"kmem:x:15:",
-		"dialout:x:20:",
-		"fax:x:21:",
-		"voice:x:22:",
-		"cdrom:x:24:",
-		"floppy:x:25:",
-		"tape:x:26:",
-		`sudo:x:27:${sudoers}`,
-		"audio:x:29:",
-		"dip:x:30:",
-		"www-data:x:33:",
-		"backup:x:34:",
-		"operator:x:37:",
-		"list:x:38:",
-		"irc:x:39:",
-		"src:x:40:",
-		"_apt:x:42:",
-		"shadow:x:42:",
-		"utmp:x:43:",
-		"video:x:44:",
-		"sasl:x:45:",
-		"plugdev:x:46:",
-		"staff:x:50:",
-		"games:x:60:",
-		`users:x:100:${nonRootUsers}`,
-		"nogroup:x:65534:",
-		"messagebus:x:106:",
-		"systemd-network:x:998:",
-		"systemd-resolve:x:999:",
-		"polkitd:x:997:",
-	];
-	vfs.writeFile("/etc/group", `${groupLines.join("\n")}\n`);
-
-	const shadowLines = [
-		"root:*:19000:0:99999:7:::",
-		"daemon:*:19000:0:99999:7:::",
-		"nobody:*:19000:0:99999:7:::",
-		"messagebus:*:19000:0:99999:7:::",
-		"_apt:*:19000:0:99999:7:::",
-		"systemd-network:!:19000:::::::",
-		"systemd-resolve:!:19000:::::::",
-		"polkitd:!:19000:::::::",
-	];
-	for (const u of userList) {
-		if (u === "root") continue;
-		shadowLines.push(`${u}:!:19000:0:99999:7:::`);
+	// Generate /etc/group from the VirtualGroupManager
+	const groupContent = users.generateGroupFile();
+	if (groupContent.length > 0) {
+		vfs.writeFile("/etc/group", `${groupContent}\n`);
+	} else {
+		// Fallback to minimal if group manager hasn't been initialized yet
+		vfs.writeFile("/etc/group", "root:x:0:\nnobody:x:65534:\n");
 	}
-	vfs.writeFile("/etc/shadow", `${shadowLines.join("\n")}\n`, { mode: 0o640 });
+
+	// Generate /etc/shadow from VirtualUserManager password aging data
+	const shadowContent = users.generateShadowFile();
+	vfs.writeFile("/etc/shadow", `${shadowContent}\n`, { mode: 0o640 });
 }
 
 // ─── /proc helpers ───────────────────────────────────────────────────────────

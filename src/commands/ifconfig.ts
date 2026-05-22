@@ -49,7 +49,7 @@ export const ifconfigCommand: ShellModule = {
 			const mtuIdx = args.indexOf("mtu");
 			if (mtuIdx !== -1) {
 				const mtu = parseInt(args[mtuIdx + 1] ?? "1500", 10);
-				if (!isNaN(mtu)) {
+				if (!Number.isNaN(mtu)) {
 					net.setInterfaceMtu(ifaceName, mtu);
 				}
 				return { exitCode: 0 };
@@ -75,7 +75,7 @@ function _showAllInterfaces(net: import("../modules/VirtualNetworkManager").Virt
 }
 
 function _showInterface(iface: import("../modules/VirtualNetworkManager/types").VirtualInterface): { stdout: string; exitCode: number } {
-	return { stdout: _formatInterface(iface) + "\n", exitCode: 0 };
+	return { stdout: `${_formatInterface(iface)}\n`, exitCode: 0 };
 }
 
 function _formatInterface(iface: import("../modules/VirtualNetworkManager/types").VirtualInterface): string {

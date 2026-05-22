@@ -461,11 +461,26 @@ Type `help` in the shell for a grouped, colorized listing. Type `help <command>`
 | `su [user]` | Switch user |
 | `sudo <cmd>` | Run as root |
 | `passwd [user]` | Change password |
-| `adduser <name> <pass>` | Create user (root only) |
+| `adduser <name>` | Create user interactively (root only) |
 | `deluser <name>` | Delete user (root only) |
 | `last [user]` | Show login history |
 | `w` | Who is logged on and what they are doing |
 | `who` | Active sessions |
+| `help` | Full list: type `help` in the shell |
+
+### User & Group Management
+
+| Command | Description |
+|---------|-------------|
+| `id [-u|-g|-G|-n] [user]` | User identity — real uid/gid/supplementary groups |
+| `groups [user]` | All group memberships |
+| `getent passwd\|group [key]` | Query user/group database |
+| `groupadd [-g GID] <group>` | Create a new group |
+| `groupdel <group>` | Delete a group |
+| `gpasswd -a\|-d -G group user` | Add/remove users from groups |
+| `usermod [-g\|-G\|-aG\|-L\|-U] <user>` | Modify user account |
+| `newgrp [group]` | Switch primary group for session |
+| `chage [-m\|-M\|-W\|-I\|-E\|-l] <user>` | Password aging & account expiry |
 | `help` | Full list: type `help` in the shell |
 
 ### Package
@@ -974,6 +989,32 @@ A single-user XFCE session: a panel with Applications menu and clock, draggable 
 
 ---
 
+## Roadmap
+
+### Completed
+- [x] Full Linux rootfs with 157+ built-in commands
+- [x] Real shell interpreter (if/for/while/case/functions, arrays, brace/glob expansion, heredocs)
+- [x] Virtual package manager (apt/dpkg, 25+ packages)
+- [x] SSH/SFTP server with password + public-key auth
+- [x] Web shell with XFCE desktop simulation
+- [x] POSIX permission enforcement (owner/group/other, setuid, setgid, sticky bit)
+- [x] Firewall engine (iptables with INPUT/OUTPUT/FORWARD chains)
+- [x] Realistic network stack (latency, bandwidth, packet loss simulation)
+- [x] Resource capping (RAM/CPU limits with enforcement)
+- [x] Garbage collector for memory management
+- [x] **User & group management** — full `/etc/group` support, supplementary groups, `groupadd`/`groupdel`/`gpasswd`/`usermod`/`getent`/`newgrp`
+- [x] **Password aging** — min/max age, warning period, account expiry (`chage`)
+- [x] **Account lockout** — auto-lock after 5 failed login attempts
+- [x] **Sudo timestamp caching** — 5-minute credential cache
+- [x] **Account lock/unlock** — password hash prefix mechanism
+
+### In Progress
+- [ ] Swap file mechanism for memory overflow
+- [ ] Process scheduler for fair CPU allocation
+- [ ] Realistic file caching with disk speed simulation
+
+---
+
 ## Contributing
 
 1. Fork and create a feature branch: `git checkout -b feat/my-feature`
@@ -990,6 +1031,11 @@ A single-user XFCE session: a panel with Applications menu and clock, draggable 
 - Passwords hashed with scrypt (N=32768, r=8, p=1) with random per-user salt.
 - Root account always exists and cannot be deleted.
 - Per-IP rate limiting prevents automated brute-force on the SSH server.
+- **Account lockout** — accounts are locked after 5 consecutive failed login attempts.
+- **Password aging** — configurable min/max age, warning period, and account expiry via `chage`.
+- **Account lock/unlock** — password hash prefixed with `!` to disable authentication.
+- **Sudo timestamp caching** — 5-minute credential cache matching real `sudo` behavior.
+- **Group-based permissions** — supplementary groups tracked in `/etc/group` with full membership management.
 - This project does **not** provide kernel-level or process-level isolation. All `VirtualShell` instances share the same JS heap as the host application.
 - `curl` and `wget` issue real network requests via `fetch()` — they are not sandboxed.
 - Do **not** expose to untrusted input without additional infrastructure-level isolation.

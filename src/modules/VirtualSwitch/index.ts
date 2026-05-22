@@ -141,7 +141,7 @@ export class VirtualSwitch {
 			const shapeResult = this._applyTrafficShape(0.5 + Math.random() * 2, packet);
 			if (shapeResult.dropped) return { action: "DROP", latencyMs: 0 };
 
-			let latency = shapeResult.latency;
+			const latency = shapeResult.latency;
 
 			if (shapeResult.reordered) {
 				this._reorderBuffer.push({ packet, deliverAt: Date.now() + latency + shapeResult.reorderDelay });
@@ -227,7 +227,7 @@ export class VirtualSwitch {
 
 	private _applyTrafficShape(baseLatency: number, packet: Packet): { latency: number; dropped: boolean; reordered: boolean; reorderDelay: number; duplicated: boolean } {
 		let latency = baseLatency;
-		let dropped = false;
+		const dropped = false;
 		let reordered = false;
 		let reorderDelay = 0;
 		let duplicated = false;

@@ -1,0 +1,18 @@
+NEWGRP(1)               User Commands               NEWGRP(1)
+
+NAME
+       newgrp - log in to a new group
+
+SYNOPSIS
+       newgrp [group]
+
+DESCRIPTION
+       newgrp changes the user's primary group to the specified
+       group for the current session. If no group is specified,
+       the user's default primary group is restored.
+
+       The user must be a member of the target group.
+
+EXAMPLES
+       newgrp developers    # switch to developers group
+       newgrp              # return to default group

@@ -1,0 +1,20 @@
+GPASSWD(8)       System Administration       GPASSWD(8)
+
+NAME
+       gpasswd - administer /etc/group
+
+SYNOPSIS
+       gpasswd [-a|-d] -G group user
+
+OPTIONS
+       -a    add user to group
+       -d    delete user from group
+       -G    specify target group
+
+DESCRIPTION
+       gpasswd is used to administer the /etc/group file,
+       allowing users to be added or removed from groups.
+
+EXAMPLES
+       gpasswd -a -G developers alice   # add alice to developers
+       gpasswd -d -G developers bob     # remove bob from developers

@@ -30,7 +30,7 @@ export const tcCommand: ShellModule = {
 					lines.push(`qdisc noqueue 0: dev ${iface.name} root refcnt 2`);
 					lines.push(` qdisc netem 1: dev ${iface.name} parent 1:1 limit 1000`);
 				}
-				return { stdout: lines.join("\n") + "\n", exitCode: 0 };
+				return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 			}
 
 			if (cmd === "add") {

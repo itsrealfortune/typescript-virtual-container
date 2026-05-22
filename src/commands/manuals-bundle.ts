@@ -181,6 +181,31 @@ EXAMPLES
        cd /etc
        cd ..
        cd ~`,
+	"chage": `CHAGE(1)               User Commands               CHAGE(1)
+
+NAME
+       chage - change user password expiry information
+
+SYNOPSIS
+       chage [options] user
+
+OPTIONS
+       -m days   minimum days between password changes
+       -M days   maximum days password is valid
+       -W days   days of warning before password expires
+       -I days   days of inactivity before account lock
+       -E date   account expiration date (YYYY-MM-DD or -1)
+       -l        show aging information
+
+DESCRIPTION
+       chage changes the number of days between password
+       changes and the date of the last password change.
+
+EXAMPLES
+       chage -M 90 alice           # password expires in 90 days
+       chage -W 7 alice            # warn 7 days before expiry
+       chage -E 2025-12-31 alice   # account expires end of 2025
+       chage -l alice              # show alice's aging info`,
 	"chgrp": `CHGRP(1)               User Commands               CHGRP(1)
 
 NAME
@@ -756,6 +781,45 @@ EXAMPLES
        fun cmatrix    # matrix rain effect
        fun fortune    # random fortune quote
        fun cowsay     # ASCII cow says your message`,
+	"getent": `GETENT(1)               User Commands               GETENT(1)
+
+NAME
+       getent - get entries from administrative database
+
+SYNOPSIS
+       getent passwd [key]
+       getent group [key]
+
+DESCRIPTION
+       getent retrieves entries from the Name Service Switch
+       libraries. In this environment, it supports passwd
+       and group databases.
+
+EXAMPLES
+       getent passwd              # list all users
+       getent passwd root         # show root user entry
+       getent group               # list all groups
+       getent group sudo          # show sudo group entry`,
+	"gpasswd": `GPASSWD(8)       System Administration       GPASSWD(8)
+
+NAME
+       gpasswd - administer /etc/group
+
+SYNOPSIS
+       gpasswd [-a|-d] -G group user
+
+OPTIONS
+       -a    add user to group
+       -d    delete user from group
+       -G    specify target group
+
+DESCRIPTION
+       gpasswd is used to administer the /etc/group file,
+       allowing users to be added or removed from groups.
+
+EXAMPLES
+       gpasswd -a -G developers alice   # add alice to developers
+       gpasswd -d -G developers bob     # remove bob from developers`,
 	"grep": `GREP(1)                  User Commands                    GREP(1)
 
 NAME
@@ -769,6 +833,39 @@ OPTIONS
        -v, --invert-match    select non-matching lines
        -n, --line-number     print line number with output lines
        -r, --recursive       read all files under each directory, recursively`,
+	"groupadd": `GROUPADD(8)       System Administration       GROUPADD(8)
+
+NAME
+       groupadd - create a new group
+
+SYNOPSIS
+       groupadd [options] group
+
+OPTIONS
+       -g GID   specify group ID
+
+DESCRIPTION
+       groupadd creates a new group account using the values
+       specified on the command line plus the default values
+       from the system.
+
+EXAMPLES
+       groupadd developers        # create group with auto GID
+       groupadd -g 2000 staff     # create group with GID 2000`,
+	"groupdel": `GROUPDEL(8)       System Administration       GROUPDEL(8)
+
+NAME
+       groupdel - delete a group
+
+SYNOPSIS
+       groupdel group
+
+DESCRIPTION
+       groupdel deletes a group account. It does not remove
+       any files owned by the group.
+
+EXAMPLES
+       groupadd developers       # delete the developers group`,
 	"groups": `GROUPS(1)                User Commands                  GROUPS(1)
 
 NAME
@@ -1313,6 +1410,24 @@ EXAMPLES
        nc -l 8080           # listen on port 8080
        nc -zv host 1-1000   # scan ports 1-1000
        nc -u host 53        # UDP connection`,
+	"newgrp": `NEWGRP(1)               User Commands               NEWGRP(1)
+
+NAME
+       newgrp - log in to a new group
+
+SYNOPSIS
+       newgrp [group]
+
+DESCRIPTION
+       newgrp changes the user's primary group to the specified
+       group for the current session. If no group is specified,
+       the user's default primary group is restored.
+
+       The user must be a member of the target group.
+
+EXAMPLES
+       newgrp developers    # switch to developers group
+       newgrp              # return to default group`,
 	"nice": `NICE(1)                  User Commands                  NICE(1)
 
 NAME
@@ -2323,6 +2438,29 @@ SYNOPSIS
 OPTIONS
        -p     show uptime in a pretty format
        -s     show system up since time`,
+	"usermod": `USERMOD(8)       System Administration       USERMOD(8)
+
+NAME
+       usermod - modify a user account
+
+SYNOPSIS
+       usermod [options] user
+
+OPTIONS
+       -g group    change primary group
+       -G groups   set supplementary groups
+       -aG group   append user to group
+       -L          lock account
+       -U          unlock account
+
+DESCRIPTION
+       usermod modifies the system account files to reflect
+       the changes specified on the command line.
+
+EXAMPLES
+       usermod -aG developers alice   # add alice to developers
+       usermod -g staff bob           # change bob's primary group
+       usermod -L charlie             # lock charlie's account`,
 	"w": `W(1)                     User Commands                       W(1)
 
 NAME

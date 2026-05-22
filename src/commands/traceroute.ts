@@ -50,7 +50,7 @@ export const tracerouteCommand: ShellModule = {
 			if (hop.reached) break;
 		}
 
-		return { stdout: lines.join("\n") + "\n", exitCode: 0 };
+		return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 	},
 };
 
@@ -130,5 +130,5 @@ function _parseIntArg(args: string[], flag: string, defaultVal: number): number 
 	if (idx === -1) return defaultVal;
 	const val = args[idx + 1];
 	const parsed = parseInt(val ?? "0", 10);
-	return isNaN(parsed) ? defaultVal : parsed;
+	return Number.isNaN(parsed) ? defaultVal : parsed;
 }

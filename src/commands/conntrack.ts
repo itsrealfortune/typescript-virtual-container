@@ -18,7 +18,7 @@ export const conntrackCommand: ShellModule = {
 			if (entries.length === 0) {
 				return { stdout: "conntrack v1.4.6 (conntrack-tools): 0 flow entries have been shown.\n", exitCode: 0 };
 			}
-			return { stdout: net.formatConntrack() + `\n\nconntrack v1.4.6 (conntrack-tools): ${entries.length} flow entries have been shown.\n`, exitCode: 0 };
+			return { stdout: `${net.formatConntrack()}\n\nconntrack v1.4.6 (conntrack-tools): ${entries.length} flow entries have been shown.\n`, exitCode: 0 };
 		}
 
 		if (args.includes("-F") || args.includes("--flush")) {
