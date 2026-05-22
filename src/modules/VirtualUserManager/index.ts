@@ -4,7 +4,7 @@ import * as path from "node:path";
 import { type PerfLogger, createPerfLogger } from "../../utils/perfLogger";
 import type VirtualFileSystem from "../VirtualFileSystem";
 import { VirtualGroupManager, type VirtualGroupRecord } from "./groups";
-import { ProcessScheduler, type SchedulerConfig, type SchedulerStats, type ProcessPriority } from "./processScheduler";
+import { type ProcessPriority, ProcessScheduler, type SchedulerConfig, type SchedulerStats } from "./processScheduler";
 
 /** 
  * Persisted virtual user credential record.
@@ -1160,7 +1160,7 @@ export class VirtualUserManager extends EventEmitter {
 			}
 
 			// Format: username:uid:gid:salt:passwordHash:lastChange:minAge:maxAge:warnDays:inactiveDays:expiry (new)
-			// Format: username:uid:gid:salt:passwordHash (legacy v1.7.1)
+			// Format: username:uid:gid:salt:passwordHash (legacy v1.7.2)
 			// Format: username:salt:passwordHash (legacy older)
 			if (parts.length >= 11) {
 				const [username, uidStr, gidStr, salt, passwordHash, lastChange, minAge, maxAge, warnDays, inactiveDays, expiry] = parts;
@@ -1887,5 +1887,5 @@ function normalizeVfsPath(targetPath: string): string {
 
 // Re-export scheduler types for external consumers
 export { ProcessScheduler } from "./processScheduler";
-export type { SchedulerConfig, SchedulerStats, ProcessPriority, SchedulerAction } from "./processScheduler";
+export type { ProcessPriority, SchedulerAction, SchedulerConfig, SchedulerStats } from "./processScheduler";
 

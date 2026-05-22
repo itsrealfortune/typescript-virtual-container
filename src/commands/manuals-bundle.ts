@@ -1141,30 +1141,6 @@ OPTIONS
 
 AUTHOR
        Written by Richard M. Stallman and David MacKenzie.`,
-	"lsb-release": `LSB-RELEASE(1)           User Commands           LSB-RELEASE(1)
-
-NAME
-       lsb_release - print distribution-specific information
-
-SYNOPSIS
-       lsb_release [options]
-
-OPTIONS
-       -a    show all information
-       -s    short format (no labels)
-       -d    show description
-       -r    show release number
-       -c    show codename
-       -i    show distributor ID
-
-DESCRIPTION
-       lsb_release displays certain LSB (Linux Standard Base)
-       and distribution-specific information.
-
-EXAMPLES
-       lsb_release -a    # show all info
-       lsb_release -d    # show distribution description
-       lsb_release -cs   # show codename in short format`,
 	"lsb_release": `LSB_RELEASE(1)           User Commands              LSB_RELEASE(1)
 
 NAME

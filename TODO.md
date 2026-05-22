@@ -17,8 +17,8 @@
 - [x] Snapshot diff tooling — `diffSnapshots`, `formatDiff`, `assertDiff`
 - [x] `node`/`python3`/`npm`/`npx` — package-gated virtual REPL stubs
 <!-- BUILD:changelog -->
-- [x] Web shell bundles (`fortune-nyx-v1.7.1-web.min.js`) — fully browser-native with IndexedDB VFS
-- [x] Self-standalone CLI (`fortune-nyx-v1.7.1-directbash-k6.1.0.mjs`) — single-file interactive shell, per-user history, tab completion
+- [x] Web shell bundles (`fortune-nyx-v1.7.2-web.min.js`) — fully browser-native with IndexedDB VFS
+- [x] Self-standalone CLI (`fortune-nyx-v1.7.2-directbash-k6.1.0.mjs`) — single-file interactive shell, per-user history, tab completion
 <!-- /BUILD:changelog -->
 - [x] XFCE desktop simulation — `startxfce4` launches a full in-browser desktop with draggable windows, XFCE panel (Applications menu, clock, tray), Thunar file manager (navigate, right-click, trash, rename), Mousepad text editor (Ctrl+S, dirty indicator), terminal windows with live shell sessions, Font Awesome icons
 - [x] 127+ `man` pages — all built-in commands documented via `man <cmd>`
