@@ -127,6 +127,8 @@ export class DesktopManager {
   private _renderGuard = false;
   private readonly _trashPath = "/root/.local/share/Trash/files";
   private _docListeners: Array<{ target: EventTarget; type: string; fn: EventListener }> = [];
+  /** Global document listeners that must be cleaned up on stop(). */
+  private _globalDocListeners: Array<{ type: string; fn: EventListener }> = [];
   private _pendingTimeouts: Set<ReturnType<typeof setTimeout>> = new Set();
   private _thunar: ThunarManager;
 
@@ -425,6 +427,14 @@ export class DesktopManager {
     if (w.content.type === "taskmanager" && w.content.refreshInterval) {
       clearInterval(w.content.refreshInterval);
     }
+    if (w.content.type === "terminal") {
+      const term = w.content as TerminalContent;
+      // End the shell stream if it exists
+      if (term.stream && typeof term.stream.end === "function") term.stream.end();
+      // Clear data listeners array (stream will be GC'd when window closes)
+      term.dataListeners = [];
+      term.stream = undefined;
+    }
     this._windows.splice(idx, 1);
     if (this._windows.length > 0) {
       this.focusWindow((this._windows[this._windows.length - 1] as DesktopWindow).id);
@@ -578,6 +588,10 @@ export class DesktopManager {
       target.removeEventListener(type, fn);
     }
     this._docListeners = [];
+    for (const { type, fn } of this._globalDocListeners) {
+      document.removeEventListener(type, fn);
+    }
+    this._globalDocListeners = [];
   }
 
   private _setupEventDelegation(): void {
@@ -764,29 +778,32 @@ export class DesktopManager {
       e.preventDefault();
     });
 
-    // Mouse move for dragging/resizing — not tracked in docListeners so it survives stop()/start() cycles
-    document.addEventListener("mousemove", (e) => {
+    const mouseMoveFn = (e: Event) => {
+      const me = e as MouseEvent;
       if (this._resizeState) {
-        const dx = e.clientX - this._resizeState.startX;
-        const dy = e.clientY - this._resizeState.startY;
+        const dx = me.clientX - this._resizeState.startX;
+        const dy = me.clientY - this._resizeState.startY;
         this._resizeState.win.width = Math.max(240, this._resizeState.origW + dx);
         this._resizeState.win.height = Math.max(120, this._resizeState.origH + dy);
         this._renderWindowPositions();
         return;
       }
       if (!this._dragState) return;
-      const dx = e.clientX - this._dragState.startX;
-      const dy = e.clientY - this._dragState.startY;
+      const dx = me.clientX - this._dragState.startX;
+      const dy = me.clientY - this._dragState.startY;
       this._dragState.win.x = Math.max(0, this._dragState.origX + dx);
       this._dragState.win.y = Math.max(0, this._dragState.origY + dy);
       this._renderWindowPositions();
-    });
+    };
+    document.addEventListener("mousemove", mouseMoveFn);
+    this._globalDocListeners.push({ type: "mousemove", fn: mouseMoveFn });
 
-    // Mouse up to end drag/resize — same reason as mousemove above
-    document.addEventListener("mouseup", () => {
+    const mouseUpFn = () => {
       this._dragState = null;
       this._resizeState = null;
-    });
+    };
+    document.addEventListener("mouseup", mouseUpFn);
+    this._globalDocListeners.push({ type: "mouseup", fn: mouseUpFn });
 
     // Double-click title bar → toggle maximize
     this._container.addEventListener("dblclick", (e) => {
