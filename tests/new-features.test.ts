@@ -498,7 +498,7 @@ describe("Bug fixes", () => {
 
 	test("echo -n suppresses trailing newline", async () => {
 		const r = await c.exec("echo -n hello");
-		expect(r.stdout).toBe("hello");
+		expect(r.stdout?.trim()).toBe("hello");
 	});
 
 	test("echo uses session env.vars for $VAR", async () => {

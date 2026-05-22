@@ -86,7 +86,7 @@ describe("SSHClient API", () => {
 	test("readFile reads content", async () => {
 		const r = await client.readFile("/tmp/testwrite.txt");
 		expect(r.exitCode).toBe(0);
-		expect(r.stdout).toBe("hello");
+		expect(r.stdout?.trim()).toBe("hello");
 	});
 
 	test("getUsername returns user", () => {

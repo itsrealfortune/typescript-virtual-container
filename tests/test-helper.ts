@@ -8,7 +8,7 @@ export async function createTestEnv(vmName = "test-shell") {
 	const shell = new VirtualShell(vmName, undefined, { mode: "memory" });
 	await shell.ensureInitialized();
 
-	await shell.users.addUser("root", "root");
+	await shell.users.setPassword("root", "root");
 
 	const ssh = new VirtualSshServer({ port: 0, shell });
 	const port = await ssh.start();
