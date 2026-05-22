@@ -85,9 +85,9 @@
 - [x] Think about adding `delete` keyword and using more `Buffer.alloc(0)` on some modules and commands variables and functions to free up memory when they are no longer needed, especially for large data structures like the VFS, process table, and network connections (after reading a file, writing it, if its VFS snapshot file, we can delete it from memory, and only keep it on disk; after a process terminates, we can delete its entry from the process table; after a network connection is closed, we can delete its entry from the connection table, etc...)
 - [x] Made some methods and props static when they don't rely on instance state (e.g. some methods in VirtualFileSystem, VirtualSwitch, VirtualUserManager, VirtualNetworkManager, etc.) to avoid unnecessary instantiation and improve performance
 - [x] Add a more realistic file caching mechanism that simulates disk read/write speeds and cache eviction policies
+- [x] Add a process scheduler to manage CPU time between running processes, ensuring fair resource allocation and preventing any single process from monopolizing the CPU
 </details>
 
 ## Priority
 
-- [ ] Add a process scheduler to manage CPU time between running processes, ensuring fair resource allocation and preventing any single process from monopolizing the CPU
 - [ ] WebSocket-based remote shell client (experimental)
