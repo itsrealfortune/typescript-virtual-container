@@ -214,8 +214,9 @@ export async function runCommandDirect(
 	// Register as visible process only at the outermost call level
 	const isTopLevel = _callDepth === 1;
 	const ppid = 1; // PID 1 is init
+	const nice = env.vars.NICE_PRIORITY ? parseInt(env.vars.NICE_PRIORITY, 10) : 0;
 	const pid = isTopLevel
-		? shell.users.registerProcess(authUser, name, [name, ...args], env.vars.__TTY ?? "?", abortController, ppid)
+		? shell.users.registerProcess(authUser, name, [name, ...args], env.vars.__TTY ?? "?", abortController, ppid, Number.isNaN(nice) ? 0 : nice)
 		: -1;
 	const startTime = Date.now();
 	try {

@@ -4,6 +4,7 @@ import * as path from "node:path";
 import { type PerfLogger, createPerfLogger } from "../../utils/perfLogger";
 import type VirtualFileSystem from "../VirtualFileSystem";
 import { VirtualGroupManager, type VirtualGroupRecord } from "./groups";
+import { ProcessScheduler, type SchedulerConfig, type SchedulerStats, type ProcessPriority } from "./processScheduler";
 
 /** 
  * Persisted virtual user credential record.
@@ -64,6 +65,10 @@ export interface VirtualProcess {
 	signalHandlers: Map<number, (sig: number, pid: number) => void>;
 	/** Wall-clock ms the process has been running (used for CPU enforcement). */
 	cpuTimeMs: number;
+	/** Nice value (-20 to 19, default 0). Lower = higher priority. */
+	nice: number;
+	/** Scheduling priority category (derived from nice value). */
+	priority: ProcessPriority;
 }
 
 /** Runtime representation of authenticated SSH session. */
@@ -164,6 +169,10 @@ export class VirtualUserManager extends EventEmitter {
 	private readonly _sudoTimestampWindowMs = 5 * 60 * 1000;
 	/** Login failure TTL in ms (1 hour). */
 	private readonly _loginFailureTtlMs = 60 * 60 * 1000;
+	/** Process scheduler for fair CPU time allocation. */
+	private _scheduler: ProcessScheduler;
+	/** Scheduler enabled flag. */
+	private _schedulerEnabled = false;
 
 	/**
 	 * Creates a user manager instance backed by a virtual filesystem.
@@ -180,6 +189,7 @@ export class VirtualUserManager extends EventEmitter {
 		super();
 		perf.mark("constructor");
 		this._groups = new VirtualGroupManager(_vfs);
+		this._scheduler = new ProcessScheduler();
 	}
 
 	/**
@@ -741,6 +751,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param tty - TTY device identifier (e.g. "pts/0").
 	 * @param abortController - Optional AbortController for process cancellation.
 	 * @param ppid - Parent process ID (default: 1 / init).
+	 * @param nice - Nice value for scheduling priority (-20 to 19, default 0).
 	 * @returns The newly assigned PID.
 	 */
 	public registerProcess(
@@ -750,8 +761,10 @@ export class VirtualUserManager extends EventEmitter {
 		tty: string,
 		abortController?: AbortController,
 		ppid = 1,
+		nice = 0,
 	): number {
 		const pid = this._nextPid++;
+		const priority = this._scheduler.niceToPriority(nice);
 		this._activeProcesses.set(pid, {
 			pid,
 			ppid,
@@ -764,6 +777,8 @@ export class VirtualUserManager extends EventEmitter {
 			abortController,
 			signalHandlers: new Map(),
 			cpuTimeMs: 0,
+			nice,
+			priority,
 		});
 		return pid;
 	}
@@ -775,6 +790,7 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public unregisterProcess(pid: number): void {
 		this._processCpuTime.delete(pid);
+		this._scheduler.removeProcess(pid);
 		const proc = this._activeProcesses.get(pid);
 		if (proc) {
 			proc.status = "done";
@@ -997,6 +1013,131 @@ export class VirtualUserManager extends EventEmitter {
 				this.emit("process:killed:cpu", { pid, command: proc.command, cpuTime: effectiveCpu });
 			}
 		}
+	}
+
+	// ── Process Scheduler ─────────────────────────────────────────────────────
+
+	/**
+	 * Enable the process scheduler with optional configuration.
+	 * When enabled, processes are scheduled based on priority (nice values)
+	 * with fair CPU time allocation.
+	 * @param config - Optional scheduler configuration.
+	 */
+	public enableScheduler(config: SchedulerConfig = {}): void {
+		this._scheduler = new ProcessScheduler(config);
+		this._schedulerEnabled = true;
+	}
+
+	/**
+	 * Disable the process scheduler. Falls back to FIFO execution.
+	 */
+	public disableScheduler(): void {
+		this._schedulerEnabled = false;
+	}
+
+	/**
+	 * Returns whether the scheduler is enabled.
+	 */
+	public isSchedulerEnabled(): boolean {
+		return this._schedulerEnabled;
+	}
+
+	/**
+	 * Get scheduler statistics.
+	 * @returns SchedulerStats object, or null if scheduler is disabled.
+	 */
+	public getSchedulerStats(): SchedulerStats | null {
+		return this._schedulerEnabled ? this._scheduler.getStats() : null;
+	}
+
+	/**
+	 * Reset scheduler statistics.
+	 */
+	public resetSchedulerStats(): void {
+		this._scheduler.resetStats();
+	}
+
+	/**
+	 * Change the nice value of a process.
+	 * @param pid - Process ID.
+	 * @param nice - New nice value (-20 to 19).
+	 * @returns True if the process was found and updated.
+	 */
+	public setProcessNice(pid: number, nice: number): boolean {
+		if (!this._scheduler.isValidNice(nice)) return false;
+
+		const proc = this._activeProcesses.get(pid);
+		if (!proc) return false;
+
+		proc.nice = nice;
+		proc.priority = this._scheduler.niceToPriority(nice);
+		this.emit("process:nice", { pid, nice, priority: proc.priority });
+		return true;
+	}
+
+	/**
+	 * Get the nice value of a process.
+	 * @param pid - Process ID.
+	 * @returns Nice value (-20 to 19), or 0 if process not found.
+	 */
+	public getProcessNice(pid: number): number {
+		return this._activeProcesses.get(pid)?.nice ?? 0;
+	}
+
+	/**
+	 * Get the scheduling priority of a process.
+	 * @param pid - Process ID.
+	 * @returns Priority name, or "normal" if process not found.
+	 */
+	public getProcessPriority(pid: number): ProcessPriority {
+		return this._activeProcesses.get(pid)?.priority ?? "normal";
+	}
+
+	/**
+	 * Calculate the recommended timeslice for a process.
+	 * @param pid - Process ID.
+	 * @returns Timeslice in milliseconds.
+	 */
+	getProcessTimeslice(pid: number): number {
+		const nice = this._activeProcesses.get(pid)?.nice ?? 0;
+		return this._scheduler.calculateTimeslice(nice);
+	}
+
+	/**
+	 * Record CPU time for a process and check if it should be throttled.
+	 * Called by the shell runtime during command execution.
+	 * @param pid - Process ID.
+	 * @param elapsedMs - Milliseconds of CPU time consumed.
+	 * @returns True if the process should yield (throttled).
+	 */
+	public recordAndCheckThrottle(pid: number, elapsedMs: number): boolean {
+		if (!this._schedulerEnabled) return false;
+
+		this._scheduler.recordCpuTime(pid, elapsedMs);
+
+		const proc = this._activeProcesses.get(pid);
+		if (!proc || proc.status !== "running") return false;
+
+		const runningCount = this.listProcesses().filter((p) => p.status === "running").length;
+		return this._scheduler.shouldThrottle(pid, proc.nice, runningCount);
+	}
+
+	/**
+	 * Get CPU time consumed by a process in the current accounting window.
+	 * @param pid - Process ID.
+	 * @returns CPU time in ms.
+	 */
+	public getSchedulerCpuTime(pid: number): number {
+		return this._scheduler.getProcessCpuTime(pid);
+	}
+
+	/**
+	 * Remove process from scheduler tracking.
+	 * Called when a process is unregistered.
+	 * @param pid - Process ID.
+	 */
+	public removeProcessFromScheduler(pid: number): void {
+		this._scheduler.removeProcess(pid);
 	}
 
 	private _loadFromVfs(): void {
@@ -1743,3 +1884,8 @@ function normalizeVfsPath(targetPath: string): string {
 	const normalized = path.posix.normalize(targetPath);
 	return normalized.startsWith("/") ? normalized : `/${normalized}`;
 }
+
+// Re-export scheduler types for external consumers
+export { ProcessScheduler } from "./processScheduler";
+export type { SchedulerConfig, SchedulerStats, ProcessPriority, SchedulerAction } from "./processScheduler";
+
