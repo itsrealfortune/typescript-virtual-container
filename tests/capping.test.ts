@@ -17,13 +17,11 @@ async function setupClient(vmName: string, options?: { ramCapBytes?: number; cpu
 // ─── RAM capping — reporting ─────────────────────────────────────────────────
 
 describe("RAM capping — reporting", () => {
-	let shell: VirtualShell;
 	let client: InstanceType<typeof SshClient>;
 	let ssh: InstanceType<typeof VirtualSshServer>;
 
 	beforeAll(async () => {
 		const env = await setupClient("ram-report", { ramCapBytes: 256 * 1024 * 1024 });
-		shell = env.shell;
 		client = env.client;
 		ssh = env.ssh;
 	});
@@ -89,7 +87,7 @@ describe("RAM capping — enforcement", () => {
 	});
 
 	test("dd command fails with ENOMEM when VFS is near cap", async () => {
-		const { shell, client, ssh } = await setupClient("ram-enforce-dd", { ramCapBytes: 64 * 1024 });
+		const { client, ssh } = await setupClient("ram-enforce-dd", { ramCapBytes: 64 * 1024 });
 		const r = await client.exec("dd if=/dev/zero of=/tmp/big bs=1024 count=16 2>&1");
 		const output = (r.stdout || "") + (r.stderr || "");
 		if (r.exitCode !== 0) {
@@ -149,13 +147,11 @@ describe("RAM capping — runtime sysctl changes", () => {
 // ─── CPU capping — reporting ─────────────────────────────────────────────────
 
 describe("CPU capping — reporting", () => {
-	let shell: VirtualShell;
 	let client: InstanceType<typeof SshClient>;
 	let ssh: InstanceType<typeof VirtualSshServer>;
 
 	beforeAll(async () => {
 		const env = await setupClient("cpu-report", { cpuCapCores: 2 });
-		shell = env.shell;
 		client = env.client;
 		ssh = env.ssh;
 	});
