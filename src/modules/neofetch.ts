@@ -287,7 +287,7 @@ function resolveDefaults(info: NeofetchInfo): Required<NeofetchInfo> {
 		uptimeSeconds: info.uptimeSeconds ?? os.uptime(),
 		packages: info.packages ?? resolvePackagesLabel(),
 		shell: resolveShellLabel(info.shell),
-		shellProps: (info.shellProps as ShellProperties) ?? {
+		shellProps: info.shellProps ?? {
 			kernel: info.kernel ?? os.release(),
 			os: info.osName ?? `${readOsPrettyName() ?? os.type()} ${os.arch()}`,
 			arch: os.arch(),
