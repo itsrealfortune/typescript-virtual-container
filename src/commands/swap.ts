@@ -11,7 +11,6 @@ export const swapCommand: ShellModule = {
 	category: "system",
 	params: ["[-s|--stats] [-c|--clear]"],
 	run: ({ shell, args }) => {
-		const showStats = args.includes("-s") || args.includes("--stats");
 		const clearSwap = args.includes("-c") || args.includes("--clear");
 
 		if (!shell.vfs.isSwapEnabled()) {
