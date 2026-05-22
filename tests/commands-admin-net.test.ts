@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { SshClient, type VirtualShell, type VirtualSshServer } from "../src";
+import { SshClient, type VirtualShell } from "../src";
 import { createTestEnv, runCmd } from "./test-helper";
 
 // Skip network-dependent tests by default. Run with:
@@ -11,14 +11,12 @@ let client: InstanceType<typeof SshClient>;
 let nonRootClient: InstanceType<typeof SshClient>;
 let sudoerClient: InstanceType<typeof SshClient>;
 let shell: VirtualShell;
-let _ssh: VirtualSshServer;
 let port: number;
 
 beforeAll(async () => {
 	const env = await createTestEnv("test-admin");
 	client = env.client;
 	shell = env.shell;
-	_ssh = env.ssh;
 	port = env.port;
 
 	await shell.users.addUser("regular", "pass");

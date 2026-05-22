@@ -9,7 +9,8 @@
     "linter": {
         "rules": {
             "suspicious": {
-                "noDebugger": "off"
+                "noDebugger": "off",
+                "useAwait": "error"
             },
             "style": {
                 "noShoutyConstants": "warn",
