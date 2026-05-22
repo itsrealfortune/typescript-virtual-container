@@ -13,7 +13,7 @@
 ## Table of Contents
 
 - [Three ways to run](#three-ways-to-run) · [Get Started](#get-started)
-- [How It Works](#how-it-works) · [Resource Capping](#resource-capping) · [Built-in Commands](#built-in-commands-157)
+- [How It Works](#how-it-works) · [Resource Capping](#resource-capping) · [Swap File Store](#swap-file-store) · [Virtual Package Manager](#virtual-package-manager) · [Built-in Commands](#built-in-commands-157)
 - [Shell Scripting](#shell-scripting) · [Linux Rootfs](#linux-rootfs--vfs-path-resolution)
 - [Configuration](#configuration) · [Troubleshooting](#troubleshooting)
 - [FAQ](#faq) · [Contributing](#contributing)
@@ -307,6 +307,106 @@ Both caps can be changed at runtime via `sysctl`:
 sysctl vm.ram_cap_bytes=1073741824   # 1 GiB
 sysctl kernel.cpu_cap_cores=2         # 2 vCPUs
 sysctl vm.ram_cap_bytes=0             # remove RAM cap
+```
+
+---
+
+## Swap File Store
+
+When running in `"fs"` persistence mode with `swapEnabled: true`, the VFS can offload evicted file contents to individual swap files on disk. This provides two benefits:
+
+1. **O(1) reload** — reading an evicted file loads from its swap file directly, instead of parsing the entire snapshot.
+2. **RAM overflow handling** — when a write would exceed `ramCapBytes`, the VFS swaps out the least recently used (LRU) files to make room instead of immediately rejecting with `ENOMEM`.
+
+```typescript
+import { VirtualFileSystem } from "typescript-virtual-container";
+
+const vfs = new VirtualFileSystem({
+  mode: "fs",
+  snapshotPath: "./data",
+  swapEnabled: true,         // enable swap store
+  swapDir: "./data/swap",    // optional: custom swap directory (defaults to <snapshotPath>/swap)
+});
+```
+
+### How it works
+
+- When a file is evicted (by `evictLargeFiles()`, `evictUnusedLargeFiles()`, or RAM cap pressure), its content is written to `<swapDir>/<hash>.swap` with a small binary header.
+- The in-memory node keeps `evicted: true` and `content = Buffer.alloc(0)`.
+- On the next `readFile()`, the content is loaded from the swap file and the swap entry is deleted.
+- Swap is **disabled by default** — it must be explicitly enabled via `VfsOptions`.
+
+### Swap command
+
+```bash
+$ swap -s              # show swap statistics
+Swap usage:
+  Files swapped out : 12
+  Swap disk usage   : 4.2 MB
+  Original size     : 3.8 MB
+  Swap-in ops       : 45
+  Swap-out ops      : 57
+
+$ swap -c              # clear all swap files
+swap: swap files cleared
+```
+
+---
+
+## Virtual Package Manager
+
+The `apt`/`dpkg`/`pacman` commands are **fully virtual** — they do not install real system packages. Instead, they manage a curated database of ~25 virtual packages that write files into the VFS and register new shell commands.
+
+### What `apt install` actually does
+
+1. Looks up the package in the internal database (`VirtualPackageManager`)
+2. Writes the package's files into the VFS (e.g. `/usr/bin/python3.12`, `/usr/lib/...`)
+3. Registers any bundled commands in the shell's command registry
+4. Records the installation in `/var/lib/dpkg/status`
+
+### Available packages
+
+| Package | Version | Category | What it provides |
+|---|---|---|---|
+| `python3` | 3.12.3 | interpreter | Virtual Python REPL, `/usr/bin/python3.12` |
+| `node` | 22.x | interpreter | Virtual Node.js REPL |
+| `npm` | 10.x | package manager | Virtual npm stub |
+| `gcc` | 13.3.0 | compiler | Compiler stub + headers |
+| `g++` | 13.3.0 | compiler | C++ compiler stub |
+| `openjdk-21` | 21.0.1 | runtime | Java runtime stub |
+| `curl` | 8.5.0 | network | Already built-in, package is metadata only |
+| `git` | 2.43.0 | vcs | Git stub with basic commands |
+| `vim` | 9.0 | editor | Already built-in (nano), package is metadata only |
+| `htop` | 3.3.0 | system | Already built-in, package is metadata only |
+| `tmux` | 3.4 | terminal | Tmux stub |
+| `wget` | 1.21 | network | Already built-in, package is metadata only |
+| `zip` | 3.0 | archive | Already built-in, package is metadata only |
+| `unzip` | 6.0 | archive | Already built-in, package is metadata only |
+| `rsync` | 3.2.7 | network | Rsync stub |
+| `strace` | 6.6 | debug | Already built-in, package is metadata only |
+| `lsof` | 4.95 | system | Already built-in, package is metadata only |
+| `iperf3` | 3.16 | network | Iperf stub |
+| `jq` | 1.7 | text | jq stub |
+| `tree` | 2.1.1 | files | Already built-in, package is metadata only |
+| `neofetch` | 7.1.0 | system | Already built-in, package is metadata only |
+| `cmatrix` | 2.0 | fun | Already built-in, package is metadata only |
+| `sl` | 5.02 | fun | Already built-in, package is metadata only |
+| `fortune` | 1.99 | fun | Already built-in, package is metadata only |
+| `cowsay` | 3.03 | fun | Already built-in, package is metadata only |
+
+> **Important:** These are **not real packages**. Installing `python3` does not give you a full Python interpreter — it provides a virtual REPL stub that simulates basic Python behavior. The same applies to all other packages. This is intentional: the project is designed to be a self-contained virtual environment, not a real package manager.
+
+### Package-gated commands
+
+Some commands require `apt install` before they become available:
+
+```bash
+$ gcc --version
+Command 'gcc' not found
+
+$ apt install gcc
+$ gcc --version
+gcc (Fortune 13.3.0-nyx1) 13.3.0
 ```
 
 ---
