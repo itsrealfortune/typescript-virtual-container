@@ -227,7 +227,7 @@ export class VirtualUserManager extends EventEmitter {
 		maxBytes: number,
 	): Promise<void> {
 		perf.mark("setQuotaBytes");
-		this._validateUsername(username);
+		VirtualUserManager._validateUsername(username);
 		if (!this._users.has(username)) {
 			throw new Error(`quota: user '${username}' does not exist`);
 		}
@@ -247,7 +247,7 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public async clearQuota(username: string): Promise<void> {
 		perf.mark("clearQuota");
-		this._validateUsername(username);
+		VirtualUserManager._validateUsername(username);
 		this._quotas.delete(username);
 		await this.persist();
 	}
@@ -340,11 +340,11 @@ export class VirtualUserManager extends EventEmitter {
 		const record = this._users.get(username);
 		if (!record) {
 			// Perform a dummy hash to avoid timing leakage on unknown usernames
-			this.hashPassword(password, "");
+			VirtualUserManager.hashPassword(password, "");
 			return false;
 		}
 
-		const computed = this.hashPassword(password, record.salt);
+		const computed = VirtualUserManager.hashPassword(password, record.salt);
 		const expected = record.passwordHash;
 		// timingSafeEqual prevents timing-based password oracle attacks
 		try {
@@ -365,8 +365,8 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public async addUser(username: string, password: string): Promise<void> {
 		perf.mark("addUser");
-		this._validateUsername(username);
-		this._validatePassword(password);
+		VirtualUserManager._validateUsername(username);
+		VirtualUserManager._validatePassword(password);
 
 		if (this._users.has(username)) {
 			return;
@@ -486,8 +486,8 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public async setPassword(username: string, password: string): Promise<void> {
 		perf.mark("setPassword");
-		this._validateUsername(username);
-		this._validatePassword(password);
+		VirtualUserManager._validateUsername(username);
+		VirtualUserManager._validatePassword(password);
 
 		if (!this._users.has(username)) {
 			throw new Error(`passwd: user '${username}' does not exist`);
@@ -505,7 +505,7 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public async deleteUser(username: string): Promise<void> {
 		perf.mark("deleteUser");
-		this._validateUsername(username);
+		VirtualUserManager._validateUsername(username);
 
 		if (username === "root") {
 			throw new Error("deluser: cannot delete root");
@@ -551,7 +551,7 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public async addSudoer(username: string): Promise<void> {
 		perf.mark("addSudoer");
-		this._validateUsername(username);
+		VirtualUserManager._validateUsername(username);
 		if (!this._users.has(username)) {
 			throw new Error(`sudoers: user '${username}' does not exist`);
 		}
@@ -569,7 +569,7 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public async removeSudoer(username: string): Promise<void> {
 		perf.mark("removeSudoer");
-		this._validateUsername(username);
+		VirtualUserManager._validateUsername(username);
 		if (username === "root") {
 			throw new Error("sudoers: cannot remove root");
 		}
@@ -1202,7 +1202,7 @@ export class VirtualUserManager extends EventEmitter {
 			uid: assignedUid,
 			gid: assignedGid,
 			salt,
-			passwordHash: this.hashPassword(password, salt),
+			passwordHash: VirtualUserManager.hashPassword(password, salt),
 			lastPasswordChange: Math.floor(Date.now() / 86400000),
 			minPasswordAge: 0,
 			maxPasswordAge: 99999,
@@ -1233,7 +1233,7 @@ export class VirtualUserManager extends EventEmitter {
 		const record = this._users.get(username);
 		if (!record) return false;
 		// Empty password hash computed with the record's own salt
-		const emptyHash = this.hashPassword("", record.salt);
+		const emptyHash = VirtualUserManager.hashPassword("", record.salt);
 		if (record.passwordHash === emptyHash) return false;
 		return !!record.passwordHash;
 	}
@@ -1256,7 +1256,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param salt - The salt parameter.
 	 * @returns The result string.
 	 */
-	public hashPassword(password: string, salt = ""): string {
+	public static hashPassword(password: string, salt = ""): string {
 		if (VirtualUserManager._fastPasswordHash) {
 			return createHash("sha256")
 				.update(salt)
@@ -1267,7 +1267,7 @@ export class VirtualUserManager extends EventEmitter {
 		return scryptSync(password, salt || "", 32).toString("hex");
 	}
 
-	private _validateUsername(username: string): void {
+	private static _validateUsername(username: string): void {
 		if (!username || username.trim() === "") {
 			throw new Error("invalid username");
 		}
@@ -1277,7 +1277,7 @@ export class VirtualUserManager extends EventEmitter {
 		}
 	}
 
-	private _validatePassword(password: string): void {
+	private static _validatePassword(password: string): void {
 		if (!password || password.trim() === "") {
 			throw new Error("invalid password");
 		}

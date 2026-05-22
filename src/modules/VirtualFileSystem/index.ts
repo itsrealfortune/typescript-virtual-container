@@ -210,12 +210,12 @@ class VirtualFileSystem extends EventEmitter {
 			this._flushAfterNWrites = 0;
 			this._swapEnabled = false;
 		}
-		this._root = this._makeDir("", 0o755);
+		this._root = VirtualFileSystem._makeDir("", 0o755);
 	}
 
 	// ── Internal helpers ──────────────────────────────────────────────────────
 
-	private _makeDir(name: string, mode: number, uid = 0, gid = 0): InternalDirectoryNode {
+	private static _makeDir(name: string, mode: number, uid = 0, gid = 0): InternalDirectoryNode {
 		const now = Date.now();
 		return {
 			type: "directory",
@@ -253,7 +253,7 @@ class VirtualFileSystem extends EventEmitter {
 		};
 	}
 
-	private _makeStub(name: string, content: string, mode: number, uid = 0, gid = 0): InternalStubNode {
+	private static _makeStub(name: string, content: string, mode: number, uid = 0, gid = 0): InternalStubNode {
 		const now = Date.now();
 		return { type: "stub", name, stubContent: content, mode, uid, gid, createdAt: now, updatedAt: now };
 	}
@@ -305,7 +305,7 @@ class VirtualFileSystem extends EventEmitter {
 		}
 		if (existing?.type === "file") return;
 		if (!existing) { parent._childCount++; parent._sortedKeys = null; }
-		parent.children[name] = this._makeStub(name, content, mode);
+		parent.children[name] = VirtualFileSystem._makeStub(name, content, mode);
 	}
 
 	/**
@@ -484,7 +484,7 @@ class VirtualFileSystem extends EventEmitter {
 			builtPath += `/${part}`;
 			let child = current.children[part];
 			if (!child) {
-				child = this._makeDir(part, mode);
+				child = VirtualFileSystem._makeDir(part, mode);
 				if (uid !== undefined) child.uid = uid;
 				if (gid !== undefined) child.gid = gid;
 				current.children[part] = child;
@@ -708,7 +708,7 @@ class VirtualFileSystem extends EventEmitter {
 	 */
 	public releaseTree(): void {
 		// Replace root with a minimal stub — keeps the object alive but frees all children
-		this._root = this._makeDir("", 0o755);
+		this._root = VirtualFileSystem._makeDir("", 0o755);
 	}
 
 	/** Set to true during journal replay to suppress re-journaling. */

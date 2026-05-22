@@ -207,7 +207,7 @@ export class VirtualNetworkManager {
 				? (iface.type === "loopback" ? "LOOPBACK,UP,LOWER_UP" : "BROADCAST,MULTICAST,UP,LOWER_UP")
 				: "DOWN";
 			lines.push(`${idx}: ${iface.name}: <${flags}> mtu ${iface.mtu} qdisc mq state ${iface.state === "UP" ? "UNKNOWN" : "DOWN"} group default qlen 1000`);
-			lines.push(`    link/${this._linkType(iface.type)} ${iface.mac} brd ff:ff:ff:ff:ff:ff`);
+			lines.push(`    link/${VirtualNetworkManager._linkType(iface.type)} ${iface.mac} brd ff:ff:ff:ff:ff:ff`);
 			lines.push(`    inet ${iface.ipv4}/${iface.ipv4Mask} scope global ${iface.name}`);
 			lines.push(`       valid_lft forever preferred_lft forever`);
 			lines.push(`    inet6 ${iface.ipv6}/64 scope link`);
@@ -224,7 +224,7 @@ export class VirtualNetworkManager {
 			if (r.destination === "default") {
 				lines.push(`default via ${r.gateway} dev ${r.device}${r.metric ? ` metric ${r.metric}` : ""}`);
 			} else {
-				lines.push(`${r.destination}/${this._maskToCidr(r.netmask)} dev ${r.device}${r.metric ? ` metric ${r.metric}` : ""}${r.scope ? ` scope ${r.scope}` : ""}${r.proto ? ` proto ${r.proto}` : ""}`);
+				lines.push(`${r.destination}/${VirtualNetworkManager._maskToCidr(r.netmask)} dev ${r.device}${r.metric ? ` metric ${r.metric}` : ""}${r.scope ? ` scope ${r.scope}` : ""}${r.proto ? ` proto ${r.proto}` : ""}`);
 			}
 		}
 		return lines.join("\n");
@@ -240,7 +240,7 @@ export class VirtualNetworkManager {
 			if (r.destination === "default") {
 				return `default via ${r.gateway} dev ${r.device}`;
 			}
-			return `${r.destination}/${this._maskToCidr(r.netmask)} dev ${r.device} proto kernel scope link src ${this._ipForDevice(r.device)}`;
+			return `${r.destination}/${VirtualNetworkManager._maskToCidr(r.netmask)} dev ${r.device} proto kernel scope link src ${this._ipForDevice(r.device)}`;
 		}).join("\n");
 	}
 
@@ -280,7 +280,7 @@ export class VirtualNetworkManager {
 			if (iface.speed) extra += `    ${iface.speed}Mb/s`;
 			if (iface.duplex) extra += ` ${iface.duplex}-duplex`;
 			lines.push(`${idx}: ${iface.name}: <${flags}> mtu ${iface.mtu} qdisc mq state ${iface.state === "UP" ? "UNKNOWN" : "DOWN"} mode DEFAULT group default qlen 1000`);
-			lines.push(`    link/${this._linkType(iface.type)} ${iface.mac} brd ff:ff:ff:ff:ff:ff${extra}`);
+			lines.push(`    link/${VirtualNetworkManager._linkType(iface.type)} ${iface.mac} brd ff:ff:ff:ff:ff:ff${extra}`);
 			idx++;
 		}
 		return lines.join("\n");
@@ -292,7 +292,7 @@ export class VirtualNetworkManager {
 		).join("\n");
 	}
 
-	private _linkType(type: VirtualInterface["type"]): string {
+	private static _linkType(type: VirtualInterface["type"]): string {
 		switch (type) {
 			case "loopback": return "loopback";
 			case "wifi": return "ieee802.11";
@@ -303,7 +303,7 @@ export class VirtualNetworkManager {
 		}
 	}
 
-	private _maskToCidr(mask: string): number {
+	private static _maskToCidr(mask: string): number {
 		return mask.split(".").reduce((acc, oct) => acc + (parseInt(oct, 10) ? parseInt(oct, 10).toString(2).split("1").length - 1 : 0), 0);
 	}
 
@@ -489,8 +489,8 @@ export class VirtualNetworkManager {
 		if (pattern.includes("/")) {
 			const [base, maskStr] = pattern.split("/");
 			const mask = parseInt(maskStr ?? "32", 10);
-			const ipInt = this._ipToInt(ip);
-			const baseInt = this._ipToInt(base ?? "0.0.0.0");
+			const ipInt = VirtualNetworkManager._ipToInt(ip);
+			const baseInt = VirtualNetworkManager._ipToInt(base ?? "0.0.0.0");
 			const maskInt = mask === 0 ? 0 : (~0 << (32 - mask)) >>> 0;
 			return (ipInt & maskInt) === (baseInt & maskInt);
 		}
@@ -503,13 +503,13 @@ export class VirtualNetworkManager {
 		if (route.destination.includes("/")) {
 			return this._ipMatchesRule(ip, route.destination);
 		}
-		const ipInt = this._ipToInt(ip);
-		const destInt = this._ipToInt(route.destination);
-		const maskInt = this._ipToInt(route.netmask);
+		const ipInt = VirtualNetworkManager._ipToInt(ip);
+		const destInt = VirtualNetworkManager._ipToInt(route.destination);
+		const maskInt = VirtualNetworkManager._ipToInt(route.netmask);
 		return (ipInt & maskInt) === (destInt & maskInt);
 	}
 
-	private _ipToInt(ip: string): number {
+	private static _ipToInt(ip: string): number {
 		return ip.split(".").reduce((acc, oct) => (acc << 8) + parseInt(oct, 10), 0) >>> 0;
 	}
 }

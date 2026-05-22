@@ -88,7 +88,7 @@ export class SwapStore {
 	 * @param compressed Whether the content is gzip-compressed.
 	 */
 	public swapOut(vfsPath: string, content: Buffer, compressed: boolean): void {
-		const hash = this._hashPath(vfsPath);
+		const hash = SwapStore._hashPath(vfsPath);
 		const swapFile = path.join(this._swapDir, `${hash}.swap`);
 
 		// Header: [4 bytes size][1 byte compressed flag]
@@ -122,7 +122,7 @@ export class SwapStore {
 		const entry = this._entries.get(vfsPath);
 		if (!entry) return null;
 
-		const hash = this._hashPath(vfsPath);
+		const hash = SwapStore._hashPath(vfsPath);
 		const swapFile = path.join(this._swapDir, `${hash}.swap`);
 
 		try {
@@ -171,7 +171,7 @@ export class SwapStore {
 		const entry = this._entries.get(vfsPath);
 		if (!entry) return false;
 		// Verify the swap file actually exists
-		const hash = this._hashPath(vfsPath);
+		const hash = SwapStore._hashPath(vfsPath);
 		const swapFile = path.join(this._swapDir, `${hash}.swap`);
 		return fsSync.existsSync(swapFile);
 	}
@@ -182,7 +182,7 @@ export class SwapStore {
 	 * @param vfsPath Virtual filesystem path.
 	 */
 	public deleteSwap(vfsPath: string): void {
-		const hash = this._hashPath(vfsPath);
+		const hash = SwapStore._hashPath(vfsPath);
 		const swapFile = path.join(this._swapDir, `${hash}.swap`);
 		try { fsSync.unlinkSync(swapFile); } catch { /* best-effort */ }
 		this._entries.delete(vfsPath);
@@ -257,7 +257,7 @@ export class SwapStore {
 	 * Generates a deterministic hash for a VFS path.
 	 * Uses SHA-256 truncated to 16 hex chars (8 bytes).
 	 */
-	private _hashPath(vfsPath: string): string {
+	private static _hashPath(vfsPath: string): string {
 		return createHash("sha256").update(vfsPath).digest("hex").slice(0, 16);
 	}
 
