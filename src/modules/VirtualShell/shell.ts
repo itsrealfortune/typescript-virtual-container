@@ -189,15 +189,13 @@ export function startShell(
 		}
 
 		const runCwd = challenge.loginShell ? userHome(challenge.targetUser) : cwd;
-		const result = await Promise.resolve(
-			runCommand(
-				challenge.commandLine,
-				challenge.targetUser,
-				hostname,
-				"shell",
-				runCwd,
-				shell,
-			),
+		const result = await runCommand(
+			challenge.commandLine,
+			challenge.targetUser,
+			hostname,
+			"shell",
+			runCwd,
+			shell,
 		);
 
 		stream.write("\r\n");
@@ -453,9 +451,7 @@ export function startShell(
 						const cmd = hd.cmdBefore;
 						pendingHeredoc = null;
 						pushHistory(`${cmd} << ${hd.delimiter}`);
-						const result = await Promise.resolve(
-							runCommand(cmd, authUser, hostname, "shell", cwd, shell, stdin, shellEnv),
-						);
+						const result = await runCommand(cmd, authUser, hostname, "shell", cwd, shell, stdin, shellEnv);
 						if (result.stdout) { stream.write(`${toTtyLines(result.stdout)}\r\n`); }
 						if (result.stderr) { stream.write(`${toTtyLines(result.stderr)}\r\n`); }
 						if (result.nextCwd) { cwd = result.nextCwd; }
@@ -683,18 +679,16 @@ export function startShell(
 				}
 
 				if (line.length > 0) {
-					const result = await Promise.resolve(
-						runCommand(
-							line,
-							authUser,
-							hostname,
-							"shell",
-							cwd,
-							shell,
-							undefined,
-							shellEnv,
-						),
-					);
+				const result = await runCommand(
+					line,
+					authUser,
+					hostname,
+					"shell",
+					cwd,
+					shell,
+					undefined,
+					shellEnv,
+				);
 
 					pushHistory(line);
 
