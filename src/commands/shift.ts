@@ -14,8 +14,8 @@ export const shiftCommand: ShellModule = {
 	// In the current impl, positional params ($1 $2 …) aren't tracked in env by default.
 	// We store them under env.vars.__argv and shift there if present.
 	run: ({ args, env }) => {
-		if (!env) return { exitCode: 0 };
-		const n = parseInt(args[0] ?? "1", 10) || 1;
+		if (!env) { return { exitCode: 0 }; }
+		const n = Number.parseInt(args[0] ?? "1", 10) || 1;
 		const argv = env.vars.__argv?.split("\x00").filter(Boolean) ?? [];
 		env.vars.__argv = argv.slice(n).join("\x00");
 		// Update $1 $2 … in env
@@ -39,7 +39,7 @@ export const trapCommand: ShellModule = {
 	params: ["[action] [signal...]"],
 	// Store trap handlers in env for EXIT signal support
 	run: ({ args, env }) => {
-		if (!env || args.length === 0) return { exitCode: 0 };
+		if (!env || args.length === 0) { return { exitCode: 0 }; }
 		const action = args[0] ?? "";
 		const signals = args.slice(1);
 		for (const sig of signals) {
@@ -55,8 +55,8 @@ export const returnCommand: ShellModule = {
 	category: "shell",
 	params: ["[n]"],
 	run: ({ args, env }) => {
-		const code = parseInt(args[0] ?? "0", 10);
-		if (env) env.lastExitCode = code;
+		const code = Number.parseInt(args[0] ?? "0", 10);
+		if (env) { env.lastExitCode = code; }
 		// Signal the caller via exitCode; function return is handled by runBlocks
 		return { exitCode: code };
 	},

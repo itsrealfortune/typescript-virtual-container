@@ -13,7 +13,7 @@ export const declareCommand: ShellModule = {
 	category: "shell",
 	params: ["[-i] [-r] [-x] [-a] [name[=value]...]"],
 	run: ({ args, env }) => {
-		if (!env) return { exitCode: 0 };
+		if (!env) { return { exitCode: 0 }; }
 
 		const integer = ifFlag(args, ["-i"]);
 		const printAll = args.filter((a) => !a.startsWith("-")).length === 0;
@@ -30,12 +30,12 @@ export const declareCommand: ShellModule = {
 			const eq = token.indexOf("=");
 			if (eq === -1) {
 				// Just declare (no value)
-				if (!(token in env.vars)) env.vars[token] = "";
+				if (!(token in env.vars)) { env.vars[token] = ""; }
 			} else {
 				const name = token.slice(0, eq);
 				let val = token.slice(eq + 1);
 				if (integer) {
-					const n = parseInt(val, 10);
+					const n = Number.parseInt(val, 10);
 					val = Number.isNaN(n) ? "0" : String(n);
 				}
 				env.vars[name] = val;

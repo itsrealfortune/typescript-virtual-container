@@ -26,9 +26,9 @@ function bar(ratio: number, width: number): string {
 }
 
 function fmtBytes(b: number): string {
-	if (b >= 1024 ** 3) return `${(b / 1024 ** 3).toFixed(1)}G`;
-	if (b >= 1024 ** 2) return `${(b / 1024 ** 2).toFixed(1)}M`;
-	if (b >= 1024)      return `${(b / 1024).toFixed(1)}K`;
+	if (b >= 1024 ** 3) { return `${(b / 1024 ** 3).toFixed(1)}G`; }
+	if (b >= 1024 ** 2) { return `${(b / 1024 ** 2).toFixed(1)}M`; }
+	if (b >= 1024)      { return `${(b / 1024).toFixed(1)}K`; }
 	return `${b}B`;
 }
 
@@ -38,7 +38,7 @@ function fmtUptime(ms: number): string {
 	const h   = Math.floor((s % 86400) / 3600);
 	const m   = Math.floor((s % 3600) / 60);
 	const sec = s % 60;
-	if (d > 0) return `${d}d ${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+	if (d > 0) { return `${d}d ${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`; }
 	return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
 }
 
@@ -57,14 +57,14 @@ export const htopCommand: ShellModule = {
 		const hostTotalMem  = os.totalmem();
 		const hostFreeMem   = os.freemem();
 		const ramCap = shell.resourceCaps?.ramCapBytes;
-		const totalMem  = ramCap != null ? Math.min(hostTotalMem, ramCap) : hostTotalMem;
-		const freeMem   = ramCap != null ? Math.floor(totalMem * (hostFreeMem / hostTotalMem)) : hostFreeMem;
+		const totalMem  = ramCap === null ? hostTotalMem : Math.min(hostTotalMem, ramCap);
+		const freeMem   = ramCap === null ? hostFreeMem : Math.floor(totalMem * (hostFreeMem / hostTotalMem));
 		const usedMem   = totalMem - freeMem;
 		const swapTotal = Math.floor(totalMem * 0.5);
 		const swapUsed  = Math.floor(swapTotal * 0.02);
 
 		const hostCpus       = os.cpus();
-		const cpuCapCount    = shell.resourceCaps?.cpuCapCores != null ? Math.min(shell.resourceCaps.cpuCapCores, hostCpus.length) : hostCpus.length;
+		const cpuCapCount    = shell.resourceCaps?.cpuCapCores === null ? hostCpus.length : Math.min(shell.resourceCaps.cpuCapCores, hostCpus.length);
 		const cpuCount   = cpuCapCount || 4;
 		const uptimeMs   = Date.now() - shell.startTime;
 		const sessions   = shell.users.listActiveSessions();
@@ -165,7 +165,7 @@ export const htopCommand: ShellModule = {
 			lines.push(
 				`${String(p.pid).padStart(5)} ` +
 				`${userColor}${p.user.padEnd(10).slice(0, 10)}${C.reset} ` +
-				` 20   0 ` +
+				" 20   0 " +
 				`${virt.padStart(6)} ${res.padStart(6)} ${shr.padStart(5)} ` +
 				`S ${cpuPct} ${memPct} ` +
 				`${time.padStart(9)}  ` +

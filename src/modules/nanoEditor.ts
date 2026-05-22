@@ -32,7 +32,7 @@ function stripAnsi(s: string): string {
 	while (i < s.length) {
 		if (s[i] === ESC && s[i + 1] === "[") {
 			i += 2;
-			while (i < s.length && (s.charAt(i) < "@" || s.charAt(i) > "~")) i++;
+			while (i < s.length && (s.charAt(i) < "@" || s.charAt(i) > "~")) { i++; }
 			i++;
 		} else {
 			out += s[i];
@@ -167,7 +167,7 @@ export class NanoEditor {
 		if (this._lines.length > 1 && this._lines.at(-1) === "") {
 			this._lines.pop();
 		}
-		if (this._lines.length === 0) this._lines = [""];
+		if (this._lines.length === 0) { this._lines = [""]; }
 	}
 
 	// ── Public API ────────────────────────────────────────────────────────────
@@ -214,7 +214,7 @@ export class NanoEditor {
 			if (data[i + 1] === "[") {
 				// CSI sequence
 				let j = i + 2;
-				while (j < data.length && (data.charAt(j) < "@" || data.charAt(j) > "~")) j++;
+				while (j < data.length && (data.charAt(j) < "@" || data.charAt(j) > "~")) { j++; }
 				const seq = data.slice(i, j + 1);
 				this._handleEscape(seq);
 				return j - i + 1;
@@ -262,7 +262,7 @@ export class NanoEditor {
 		if (k === "g") { this._enterGotoLine(); return; }
 		if (k === "r") { this._doSearchReplace(); return; }
 		if (k === "a") { this._toggleMark(); return; }
-		if (k === "^") { this._doUndo(); return; } // Alt+6 = Alt+^
+		if (k === "^") { this._doUndo(); } // Alt+6 = Alt+^
 	}
 
 	private _handleChar(ch: string): void {
@@ -324,7 +324,7 @@ export class NanoEditor {
 	}
 
 	private _dispatch(action: string): void {
-		if (this._mode !== "normal") return;
+		if (this._mode !== "normal") { return; }
 		switch (action) {
 			case "up": this._moveCursor(-1); break;
 			case "down": this._moveCursor(1); break;
@@ -379,7 +379,7 @@ export class NanoEditor {
 			if (code === 13) {
 				// Confirm filename
 				const name = this._inputBuffer.trim();
-				if (name) this._filename = name;
+				if (name) { this._filename = name; }
 				const content = this._getCurrentContent();
 				this._modified = false;
 				if (this._mode === "exit-filename") {
@@ -415,8 +415,8 @@ export class NanoEditor {
 					this._searchState = { query, caseSensitive: false, row: this._cursorRow, col: this._cursorCol + 1 };
 				}
 				this._mode = "normal";
-				if (this._searchState) this._doSearchNext();
-				else this.fullRedraw();
+				if (this._searchState) { this._doSearchNext(); }
+				else { this.fullRedraw(); }
 				return;
 			}
 			if (code === 7 || code === 3) {
@@ -472,10 +472,10 @@ export class NanoEditor {
 		this._cursorCol = Math.min(this._cursorCol, this._currentLine().length);
 		const prevScrollTop = this._scrollTop;
 		this._clampScroll();
-		if (this._scrollTop !== prevScrollTop) {
-			this._renderEditArea();
-		} else {
+		if (this._scrollTop === prevScrollTop) {
 			this._renderCursor();
+		} else {
+			this._renderEditArea();
 		}
 	}
 
@@ -488,7 +488,7 @@ export class NanoEditor {
 		}
 		const prevScrollTop = this._scrollTop;
 		this._clampScroll();
-		if (this._scrollTop !== prevScrollTop) { this._renderEditArea(); } else { this._renderCursor(); }
+		if (this._scrollTop === prevScrollTop) { this._renderCursor(); } else { this._renderEditArea(); }
 	}
 
 	private _moveCursorRight(): void {
@@ -501,7 +501,7 @@ export class NanoEditor {
 		}
 		const prevScrollTop = this._scrollTop;
 		this._clampScroll();
-		if (this._scrollTop !== prevScrollTop) { this._renderEditArea(); } else { this._renderCursor(); }
+		if (this._scrollTop === prevScrollTop) { this._renderCursor(); } else { this._renderEditArea(); }
 	}
 
 	private _moveCursorHome(): void {
@@ -525,8 +525,8 @@ export class NanoEditor {
 	private _moveWordRight(): void {
 		const line = this._currentLine();
 		let col = this._cursorCol;
-		while (col < line.length && /\w/.test(line.charAt(col))) col++;
-		while (col < line.length && !/\w/.test(line.charAt(col))) col++;
+		while (col < line.length && /\w/.test(line.charAt(col))) { col++; }
+		while (col < line.length && !/\w/.test(line.charAt(col))) { col++; }
 		this._cursorCol = col;
 		this._renderCursor();
 	}
@@ -534,9 +534,9 @@ export class NanoEditor {
 	private _moveWordLeft(): void {
 		const line = this._currentLine();
 		let col = this._cursorCol;
-		if (col > 0) col--;
-		while (col > 0 && !/\w/.test(line.charAt(col))) col--;
-		while (col > 0 && /\w/.test(line.charAt(col - 1))) col--;
+		if (col > 0) { col--; }
+		while (col > 0 && !/\w/.test(line.charAt(col))) { col--; }
+		while (col > 0 && /\w/.test(line.charAt(col - 1))) { col--; }
 		this._cursorCol = col;
 		this._renderCursor();
 	}
@@ -545,7 +545,7 @@ export class NanoEditor {
 
 	private _pushUndo(): void {
 		this._undoStack.push({ lines: [...this._lines], cursorRow: this._cursorRow, cursorCol: this._cursorCol });
-		if (this._undoStack.length > 200) this._undoStack.shift();
+		if (this._undoStack.length > 200) { this._undoStack.shift(); }
 		this._redoStack = [];
 	}
 
@@ -577,7 +577,7 @@ export class NanoEditor {
 	}
 
 	private _doBackspace(): void {
-		if (this._cursorCol === 0 && this._cursorRow === 0) return;
+		if (this._cursorCol === 0 && this._cursorRow === 0) { return; }
 		this._pushUndo();
 		if (this._cursorCol > 0) {
 			const line = this._currentLine();
@@ -600,7 +600,7 @@ export class NanoEditor {
 
 	private _doDelete(): void {
 		const line = this._currentLine();
-		if (this._cursorCol === line.length && this._cursorRow === this._lines.length - 1) return;
+		if (this._cursorCol === line.length && this._cursorRow === this._lines.length - 1) { return; }
 		this._pushUndo();
 		if (this._cursorCol < line.length) {
 			this._lines[this._cursorRow] = line.slice(0, this._cursorCol) + line.slice(this._cursorCol + 1);
@@ -617,10 +617,10 @@ export class NanoEditor {
 
 	private _doCutLine(): void {
 		this._pushUndo();
-		if (this._lines.length === 1 && this._lines[0] === "") return;
+		if (this._lines.length === 1 && this._lines[0] === "") { return; }
 		const cut = this._lines.splice(this._cursorRow, 1)[0] ?? "";
 		this._clipboard.push(cut);
-		if (this._lines.length === 0) this._lines = [""];
+		if (this._lines.length === 0) { this._lines = [""]; }
 		this._cursorRow = Math.min(this._cursorRow, this._lines.length - 1);
 		this._cursorCol = Math.min(this._cursorCol, this._currentLine().length);
 		this._modified = true;
@@ -632,7 +632,7 @@ export class NanoEditor {
 	}
 
 	private _doUncut(): void {
-		if (this._clipboard.length === 0) return;
+		if (this._clipboard.length === 0) { return; }
 		this._pushUndo();
 		const lines = [...this._clipboard];
 		this._clipboard = [];
@@ -654,7 +654,7 @@ export class NanoEditor {
 		const current = { lines: [...this._lines], cursorRow: this._cursorRow, cursorCol: this._cursorCol };
 		this._redoStack.push(current);
 		const prev = this._undoStack.pop();
-		if (prev === undefined) return;
+		if (prev === undefined) { return; }
 		this._lines = prev.lines;
 		this._cursorRow = prev.cursorRow;
 		this._cursorCol = prev.cursorCol;
@@ -671,7 +671,7 @@ export class NanoEditor {
 		const current = { lines: [...this._lines], cursorRow: this._cursorRow, cursorCol: this._cursorCol };
 		this._undoStack.push(current);
 		const next = this._redoStack.pop();
-		if (next === undefined) return;
+		if (next === undefined) { return; }
 		this._lines = next.lines;
 		this._cursorRow = next.cursorRow;
 		this._cursorCol = next.cursorCol;
@@ -818,7 +818,7 @@ export class NanoEditor {
 	}
 
 	private static _pad(s: string, width: number): string {
-		if (s.length >= width) return s.slice(0, width);
+		if (s.length >= width) { return s.slice(0, width); }
 		return s + " ".repeat(width - s.length);
 	}
 
@@ -856,7 +856,7 @@ export class NanoEditor {
 
 	private _renderLine(row: number): void {
 		const screenRow = row - this._scrollTop + this._editAreaStart();
-		if (screenRow < this._editAreaStart() || screenRow >= this._editAreaStart() + this._editAreaRows()) return;
+		if (screenRow < this._editAreaStart() || screenRow >= this._editAreaStart() + this._editAreaRows()) { return; }
 		const buf: string[] = [];
 		buf.push(ansi.cursorHide());
 		buf.push(ansi.cup(screenRow, 1));
@@ -971,7 +971,7 @@ export class NanoEditor {
 			const label2 = shortcuts[i + 1]?.[1] ?? "";
 			const cell = `${ansi.reverse(key)} ${label.padEnd(colWidth - 5)}${ansi.reverse(key2)} ${label2.padEnd(colWidth - 5)}`;
 			result += cell;
-			if (stripAnsi(result).length >= this.cols) break;
+			if (stripAnsi(result).length >= this.cols) { break; }
 		}
 		return result;
 	}

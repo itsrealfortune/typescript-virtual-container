@@ -11,7 +11,7 @@ import { VirtualShell } from "../VirtualShell";
 import type { VirtualUserManager } from "../VirtualUserManager";
 import { loadOrCreateHostKey } from "./hostKey";
 // ── Dev-mode logger — silent in production ────────────────────────────────────
-const DEV = !!process.env.DEV_MODE;
+const DEV = Boolean(process.env.DEV_MODE);
 const devLog  = DEV ? console.log.bind(console)  : () => {};
 const devWarn = DEV ? console.warn.bind(console) : () => {};
 const devErr  = DEV ? console.error.bind(console): () => {};
@@ -267,7 +267,7 @@ export class SftpMimic extends EventEmitter {
 
 				// Add error handling for the client
 				client.on("error", (error: unknown) => {
-					devErr(`[SFTP] Client error:`, error);
+					devErr("[SFTP] Client error:", error);
 				});
 
 				const acceptSession = (username: string): void => {
@@ -887,8 +887,7 @@ export class SftpMimic extends EventEmitter {
 
 			// Security: Confine both source and destination to home directory
 			if (
-				!SftpMimic._isPathWithinHome(fromPath, authUser) ||
-				!SftpMimic._isPathWithinHome(toPath, authUser)
+				!(SftpMimic._isPathWithinHome(fromPath, authUser) &&SftpMimic._isPathWithinHome(toPath, authUser))
 			) {
 				devWarn(
 					`[SFTP] Path traversal attempt blocked: user=${authUser}, from=${fromPath}, to=${toPath}`,

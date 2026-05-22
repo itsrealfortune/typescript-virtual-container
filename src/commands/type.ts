@@ -12,8 +12,9 @@ export const typeCommand: ShellModule = {
 	category: "shell",
 	params: ["<command...>"],
 	run: ({ args, shell, env }) => {
-		if (args.length === 0)
+		if (args.length === 0) {
 			return { stderr: "type: missing argument", exitCode: 1 };
+		}
 
 		const pathDirs = (env?.vars?.PATH ?? "/usr/local/bin:/usr/bin:/bin").split(
 			":",

@@ -298,10 +298,10 @@ export class FileCache {
 	 * @param params - New disk I/O parameters to merge.
 	 */
 	updateDiskIoParams(params: Partial<DiskIoParams>): void {
-		if (params.readLatencyMs !== undefined) this._diskIo.readLatencyMs = params.readLatencyMs;
-		if (params.writeLatencyMs !== undefined) this._diskIo.writeLatencyMs = params.writeLatencyMs;
-		if (params.sequentialReadThroughput !== undefined) this._diskIo.sequentialReadThroughput = params.sequentialReadThroughput;
-		if (params.sequentialWriteThroughput !== undefined) this._diskIo.sequentialWriteThroughput = params.sequentialWriteThroughput;
+		if (params.readLatencyMs !== undefined) { this._diskIo.readLatencyMs = params.readLatencyMs; }
+		if (params.writeLatencyMs !== undefined) { this._diskIo.writeLatencyMs = params.writeLatencyMs; }
+		if (params.sequentialReadThroughput !== undefined) { this._diskIo.sequentialReadThroughput = params.sequentialReadThroughput; }
+		if (params.sequentialWriteThroughput !== undefined) { this._diskIo.sequentialWriteThroughput = params.sequentialWriteThroughput; }
 	}
 
 	/**
@@ -317,7 +317,7 @@ export class FileCache {
 
 		// Evict if necessary
 		while (this._cache.size >= this._maxEntries || this._totalMemoryUsage + size > this._maxMemoryBytes) {
-			if (!this._evictOne()) break;
+			if (!this._evictOne()) { break; }
 		}
 
 		const entry: CacheEntry = {
@@ -337,7 +337,7 @@ export class FileCache {
 	 * @returns True if an entry was evicted.
 	 */
 	private _evictOne(): boolean {
-		if (this._cache.size === 0) return false;
+		if (this._cache.size === 0) { return false; }
 
 		let targetKey: string | null = null;
 
@@ -368,7 +368,7 @@ export class FileCache {
 	 * Find the least recently used entry.
 	 */
 	private _findLru(): string | null {
-		let oldest = Infinity;
+		let oldest = Number.POSITIVE_INFINITY;
 		let targetKey: string | null = null;
 
 		for (const [key, entry] of this._cache) {
@@ -385,7 +385,7 @@ export class FileCache {
 	 * Find the least frequently used entry.
 	 */
 	private _findLfu(): string | null {
-		let lowest = Infinity;
+		let lowest = Number.POSITIVE_INFINITY;
 		let targetKey: string | null = null;
 
 		for (const [key, entry] of this._cache) {
@@ -402,7 +402,7 @@ export class FileCache {
 	 * Find the first-in entry (oldest insertion).
 	 */
 	private _findFifo(): string | null {
-		let earliest = Infinity;
+		let earliest = Number.POSITIVE_INFINITY;
 		let targetKey: string | null = null;
 
 		for (const [key, entry] of this._cache) {
@@ -427,7 +427,7 @@ export class FileCache {
 	 * Note: This blocks the event loop - use sparingly.
 	 */
 	private _syncDelay(ms: number): void {
-		if (ms <= 0) return;
+		if (ms <= 0) { return; }
 		const start = Date.now();
 		while (Date.now() - start < ms) {
 			// Busy wait - simulates disk I/O blocking

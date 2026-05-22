@@ -101,7 +101,7 @@ async function quickStart() {
 	console.log("Step 9️⃣  Exporting audit log...\n");
 	const fullLog = honeypot.getAuditLog();
 	console.log(`  ✓ Exported ${fullLog.length} audit entries`);
-	console.log(`  ✓ Ready to store in database, file, or monitoring system\n`);
+	console.log("  ✓ Ready to store in database, file, or monitoring system\n");
 
 	// Cleanup
 	client.disconnect();

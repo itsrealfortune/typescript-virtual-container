@@ -72,8 +72,8 @@ export function startShell(
 	authUser: string,
 	hostname: string,
 	sessionId: string | null,
-	remoteAddress = "unknown",
-	terminalSize: TerminalSize = { cols: 80, rows: 24 },
+	remoteAddress,
+	terminalSize: TerminalSize,
 	shell: VirtualShell,
 ): void {
 	let lineBuffer = "";
@@ -86,13 +86,13 @@ export function startShell(
 	const shellEnv: ShellEnv = makeDefaultEnv(authUser, hostname);
 	if (sessionId) {
 		const sess = shell.users.listActiveSessions().find((s) => s.id === sessionId);
-		if (sess) shellEnv.vars.__TTY = sess.tty;
+		if (sess) { shellEnv.vars.__TTY = sess.tty; }
 	}
 	const sessionStack: Array<{ authUser: string; cwd: string }> = [];
 	let nanoSession: NanoSession | HtopSession | PacmanSession | null = null;
 	let pendingSudo: PendingSudo | null = null;
 	const buildCurrentPrompt = (): string => {
-		if (shellEnv.vars.PS1) return buildPrompt(authUser, hostname, "", shellEnv.vars.PS1, cwd);
+		if (shellEnv.vars.PS1) { return buildPrompt(authUser, hostname, "", shellEnv.vars.PS1, cwd); }
 		const homePath = userHome(authUser);
 		const cwdLabel = cwd === homePath ? "~" : path.posix.basename(cwd) || "/";
 		return buildPrompt(authUser, hostname, cwdLabel);
@@ -105,18 +105,18 @@ export function startShell(
 	// Source login/rc files before first prompt.
 	let loginReady = false;
 	const sourceFile = async (filePath: string, isEnvFile = false) => {
-		if (!shell.vfs.exists(filePath)) return;
+		if (!shell.vfs.exists(filePath)) { return; }
 		try {
 			const content = shell.vfs.readFile(filePath);
 			for (const line of content.split("\n")) {
 				const l = line.trim();
-				if (!l || l.startsWith("#")) continue;
+				if (!l || l.startsWith("#")) { continue; }
 				if (isEnvFile) {
 					const m = l.match(/^([A-Za-z_][A-Za-z0-9_]*)=["']?(.+?)["']?\s*$/);
-					if (m) shellEnv.vars[m[1] as string] = m[2] as string;
+					if (m) { shellEnv.vars[m[1] as string] = m[2] as string; }
 				} else {
 					const r = await runCommand(l, authUser, hostname, "shell", cwd, shell, undefined, shellEnv);
-					if (r.stdout) stream.write(r.stdout.replace(/\n/g, "\r\n"));
+					if (r.stdout) { stream.write(r.stdout.replace(/\n/g, "\r\n")); }
 				}
 			}
 		} catch { /* ignore */ }
@@ -398,9 +398,9 @@ export function startShell(
 	}
 
 	function pushHistory(cmd: string): void {
-		if (cmd.length === 0) return;
+		if (cmd.length === 0) { return; }
 		history.push(cmd);
-		if (history.length > 500) history = history.slice(history.length - 500);
+		if (history.length > 500) { history = history.slice(history.length - 500); }
 		saveHistory(shell.vfs, authUser, history);
 	}
 
@@ -415,7 +415,7 @@ export function startShell(
 
 	stream.on("data", (chunk: Buffer) => {
 		void (async () => {
-		if (!loginReady) return;
+		if (!loginReady) { return; }
 		if (nanoSession) {
 			if (nanoSession.kind === "nano") {
 				nanoSession.editor.handleInput(chunk);
@@ -456,9 +456,9 @@ export function startShell(
 						const result = await Promise.resolve(
 							runCommand(cmd, authUser, hostname, "shell", cwd, shell, stdin, shellEnv),
 						);
-						if (result.stdout) stream.write(`${toTtyLines(result.stdout)}\r\n`);
-						if (result.stderr) stream.write(`${toTtyLines(result.stderr)}\r\n`);
-						if (result.nextCwd) cwd = result.nextCwd;
+						if (result.stdout) { stream.write(`${toTtyLines(result.stdout)}\r\n`); }
+						if (result.stderr) { stream.write(`${toTtyLines(result.stderr)}\r\n`); }
+						if (result.nextCwd) { cwd = result.nextCwd; }
 						renderLine();
 						return;
 					}
@@ -500,14 +500,14 @@ export function startShell(
 					if (pendingSudo.onPassword) {
 						const { result, nextPrompt } = await pendingSudo.onPassword(typed, shell);
 						stream.write("\r\n");
-						if (result !== null) {
-							pendingSudo = null;
-							if (result.stdout) stream.write(result.stdout.replace(/\n/g, "\r\n"));
-							if (result.stderr) stream.write(result.stderr.replace(/\n/g, "\r\n"));
-							renderLine();
-						} else {
-							if (nextPrompt) pendingSudo.prompt = nextPrompt;
+						if (result === null) {
+							if (nextPrompt) { pendingSudo.prompt = nextPrompt; }
 							stream.write(pendingSudo.prompt);
+						} else {
+							pendingSudo = null;
+							if (result.stdout) { stream.write(result.stdout.replace(/\n/g, "\r\n")); }
+							if (result.stderr) { stream.write(result.stderr.replace(/\n/g, "\r\n")); }
+							renderLine();
 						}
 						return;
 					}
@@ -649,8 +649,8 @@ export function startShell(
 			if (ch === "\u0015") { lineBuffer = lineBuffer.slice(cursorPos); cursorPos = 0; renderLine(); continue; } // Ctrl+U
 			if (ch === "\u0017") { // Ctrl+W — kill word backward
 				let wStart = cursorPos;
-				while (wStart > 0 && lineBuffer[wStart - 1] === " ") wStart--;
-				while (wStart > 0 && lineBuffer[wStart - 1] !== " ") wStart--;
+				while (wStart > 0 && lineBuffer[wStart - 1] === " ") { wStart--; }
+				while (wStart > 0 && lineBuffer[wStart - 1] !== " ") { wStart--; }
 				lineBuffer = lineBuffer.slice(0, wStart) + lineBuffer.slice(cursorPos);
 				cursorPos = wStart;
 				renderLine();

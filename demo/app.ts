@@ -18,7 +18,7 @@ const terminal = document.getElementById('terminal') as HTMLPreElement;
 const scrollbackEl = document.getElementById('scrollback') as HTMLPreElement;
 terminal.focus();
 document.addEventListener('click', () => {
-  if (!window.getSelection()?.toString()) terminal.focus();
+  if (!window.getSelection()?.toString()) { terminal.focus(); }
 });
 
 // ── Measure character cell size ───────────────────────────────────────────────
@@ -51,12 +51,12 @@ let rafPending = false;
 const wrapper = document.getElementById('terminal-wrapper') as HTMLDivElement;
 let fullscreenMode = false;
 function flush(): void {
-  if (rafPending) return;
+  if (rafPending) { return; }
   rafPending = true;
   requestAnimationFrame(() => {
     rafPending = false;
     const cleared = renderer.consumeCleared();
-    if (cleared) fullscreenMode = true;
+    if (cleared) { fullscreenMode = true; }
     scrollbackEl.innerHTML = renderer.renderScrollbackHtml();
     terminal.innerHTML = renderer.renderHtml();
     if (fullscreenMode) {
@@ -87,10 +87,10 @@ const closeListeners: (() => void)[] = [];
 const stream: ShellStream = {
   write: (data: string) => { renderer.write(data); flush(); },
   exit: () => undefined,
-  end: () => { for (const l of closeListeners) l(); },
+  end: () => { for (const l of closeListeners) { l();  }},
   on: (event: 'data' | 'close', listener: ((chunk: Buffer) => void) & (() => void)) => {
-    if (event === 'data') dataListeners.push(listener);
-    else if (event === 'close') closeListeners.push(listener as () => void);
+    if (event === 'data') { dataListeners.push(listener); }
+    else if (event === 'close') { closeListeners.push(listener as () => void); }
   },
 };
 
@@ -109,7 +109,7 @@ terminal.addEventListener('keydown', (e: KeyboardEvent) => {
     return;
   }
   // Allow browser shortcuts (Ctrl+C copy, Ctrl+V paste, F12, etc.)
-  if (e.metaKey) return;
+  if (e.metaKey) { return; }
   if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'a') && !e.altKey) {
     // Let Ctrl+C pass through to shell (it's also used for copy but shell needs it)
     // Only block if there's a selection (user is copying)
@@ -121,9 +121,9 @@ terminal.addEventListener('keydown', (e: KeyboardEvent) => {
   }
 
   const bytes = keyToBytes(e);
-  if (!bytes) return;
+  if (!bytes) { return; }
 
-  for (const l of dataListeners) l(toChunk(bytes));
+  for (const l of dataListeners) { l(toChunk(bytes)); }
   terminal.scrollTop = terminal.scrollHeight;
 });
 
@@ -131,10 +131,10 @@ terminal.addEventListener('keydown', (e: KeyboardEvent) => {
 terminal.addEventListener('paste', (e: ClipboardEvent) => {
   e.preventDefault();
   const text = e.clipboardData?.getData('text') ?? '';
-  if (!text) return;
+  if (!text) { return; }
   const enc = new TextEncoder();
   const bytes = enc.encode(text);
-  for (const l of dataListeners) l(toChunk(bytes));
+  for (const l of dataListeners) { l(toChunk(bytes)); }
   terminal.scrollTop = terminal.scrollHeight;
 });
 
@@ -159,11 +159,11 @@ function detectGpu(): string | undefined {
   try {
     const canvas = document.createElement('canvas');
     const gl = canvas.getContext('webgl') ?? canvas.getContext('experimental-webgl') as WebGLRenderingContext | null;
-    if (!gl) return undefined;
+    if (!gl) { return ; }
     const ext = (gl as WebGLRenderingContext).getExtension('WEBGL_debug_renderer_info');
-    if (!ext) return undefined;
+    if (!ext) { return ; }
     return (gl as WebGLRenderingContext).getParameter(ext.UNMASKED_RENDERER_WEBGL) as string || undefined;
-  } catch { return undefined; }
+  } catch { }
 }
 
 // ── Shell setup ───────────────────────────────────────────────────────────────
@@ -187,7 +187,7 @@ shell.vfs.restoreMirror();
 const isFirstRun = !shell.vfs.exists('/bin');
 if (isFirstRun) {
   shell.ensureInitialized();
-  if (!shell.vfs.exists('/root')) shell.vfs.mkdir('/root', 0o700);
+  if (!shell.vfs.exists('/root')) { shell.vfs.mkdir('/root', 0o700); }
   shell.vfs.writeFile('/root/README.txt', `Welcome to ${HOSTNAME}\n`);
   shell.vfs.flushMirror();
 } else {

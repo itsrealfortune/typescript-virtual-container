@@ -36,7 +36,7 @@ describe("RAM capping — reporting", () => {
 		expect(r.exitCode).toBe(0);
 		const memTotalLine = r.stdout!.split("\n").find((l) => l.startsWith("MemTotal:"));
 		expect(memTotalLine).toBeDefined();
-		const memTotalKb = parseInt(memTotalLine!.split(/\s+/)[1] ?? "0", 10);
+		const memTotalKb = Number.parseInt(memTotalLine!.split(/\s+/)[1] ?? "0", 10);
 		expect(memTotalKb).toBeLessThanOrEqual(262144);
 	});
 
@@ -55,7 +55,7 @@ describe("RAM capping — reporting", () => {
 	test("cgroup memory.limit_in_bytes shows cap", async () => {
 		const r = await client.cat("/sys/fs/cgroup/memory/memory.limit_in_bytes");
 		expect(r.exitCode).toBe(0);
-		const limit = parseInt(r.stdout!.trim(), 10);
+		const limit = Number.parseInt(r.stdout!.trim(), 10);
 		expect(limit).toBeLessThanOrEqual(256 * 1024 * 1024);
 	});
 });
@@ -171,13 +171,13 @@ describe("CPU capping — reporting", () => {
 	test("nproc returns capped count", async () => {
 		const r = await client.exec("nproc");
 		expect(r.exitCode).toBe(0);
-		expect(parseInt(r.stdout!.trim(), 10)).toBe(2);
+		expect(Number.parseInt(r.stdout!.trim(), 10)).toBe(2);
 	});
 
 	test("cgroup cpu.cfs_quota_us shows cap", async () => {
 		const r = await client.cat("/sys/fs/cgroup/cpu/cpu.cfs_quota_us");
 		expect(r.exitCode).toBe(0);
-		const quota = parseInt(r.stdout!.trim(), 10);
+		const quota = Number.parseInt(r.stdout!.trim(), 10);
 		expect(quota).toBe(200000);
 	});
 
@@ -267,7 +267,7 @@ describe("CPU capping — runtime sysctl changes", () => {
 
 		const r3 = await client.exec("nproc");
 		expect(r3.exitCode).toBe(0);
-		expect(parseInt(r3.stdout!.trim(), 10)).toBe(1);
+		expect(Number.parseInt(r3.stdout!.trim(), 10)).toBe(1);
 	});
 
 	test("setting kernel.cpu_cap_cores=0 disables enforcement", async () => {
@@ -276,7 +276,7 @@ describe("CPU capping — runtime sysctl changes", () => {
 
 		const r2 = await client.exec("nproc");
 		expect(r2.exitCode).toBe(0);
-		expect(parseInt(r2.stdout!.trim(), 10)).toBe(4);
+		expect(Number.parseInt(r2.stdout!.trim(), 10)).toBe(4);
 	});
 });
 
@@ -313,7 +313,7 @@ describe("Combined RAM + CPU caps", () => {
 	test("nproc shows capped CPU", async () => {
 		const r = await client.exec("nproc");
 		expect(r.exitCode).toBe(0);
-		expect(parseInt(r.stdout!.trim(), 10)).toBe(1);
+		expect(Number.parseInt(r.stdout!.trim(), 10)).toBe(1);
 	});
 
 	test("/proc/cpuinfo shows 1 processor", async () => {
@@ -365,7 +365,7 @@ describe("No caps — host passthrough", () => {
 		const r = await client.cat("/proc/meminfo");
 		expect(r.exitCode).toBe(0);
 		const memTotalLine = r.stdout!.split("\n").find((l) => l.startsWith("MemTotal:"));
-		const memTotalKb = parseInt(memTotalLine!.split(/\s+/)[1] ?? "0", 10);
+		const memTotalKb = Number.parseInt(memTotalLine!.split(/\s+/)[1] ?? "0", 10);
 		const hostTotalKb = Math.floor(os.totalmem() / 1024);
 		expect(memTotalKb).toBe(hostTotalKb);
 	});
@@ -380,7 +380,7 @@ describe("No caps — host passthrough", () => {
 	test("nproc shows default (4 when uncapped)", async () => {
 		const r = await client.exec("nproc");
 		expect(r.exitCode).toBe(0);
-		expect(parseInt(r.stdout!.trim(), 10)).toBe(4);
+		expect(Number.parseInt(r.stdout!.trim(), 10)).toBe(4);
 	});
 
 	test("cgroup cpu.cfs_quota_us is -1 (unlimited)", async () => {

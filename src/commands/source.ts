@@ -32,7 +32,7 @@ export const sourceCommand: ShellModule = {
 
 		for (const line of content.split("\n")) {
 			const l = line.trim();
-			if (!l || l.startsWith("#")) continue;
+			if (!l || l.startsWith("#")) { continue; }
 			const result = await runCommand(
 				l,
 				authUser,
@@ -44,7 +44,7 @@ export const sourceCommand: ShellModule = {
 				env,
 			);
 			lastExitCode = result.exitCode ?? 0;
-			if (result.closeSession || result.switchUser) return result;
+			if (result.closeSession || result.switchUser) { return result; }
 		}
 
 		return { exitCode: lastExitCode };

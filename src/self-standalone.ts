@@ -94,7 +94,7 @@ function makeCompleter(getState: () => { cwd: string }) {
 
 function askHiddenQuestion(rl: Interface, promptText: string): Promise<string> {
 	return new Promise((resolve) => {
-		if (!stdin.isTTY || !stdout.isTTY) {
+		if (!(stdin.isTTY && stdout.isTTY)) {
 			rl.question(promptText, resolve);
 			return;
 		}
@@ -104,7 +104,7 @@ function askHiddenQuestion(rl: Interface, promptText: string): Promise<string> {
 
 		const cleanup = (): void => {
 			stdin.off("data", onData);
-			if (!wasRawMode) stdin.setRawMode(false);
+			if (!wasRawMode) { stdin.setRawMode(false); }
 		};
 
 		const finish = (value: string): void => {
@@ -119,13 +119,13 @@ function askHiddenQuestion(rl: Interface, promptText: string): Promise<string> {
 				const ch = input.charAt(i);
 				if (ch === "\r" || ch === "\n") { finish(buffer); return; }
 				if (ch === "" || ch === "\b") { buffer = buffer.slice(0, -1); continue; }
-				if (ch >= " ") buffer += ch;
+				if (ch >= " ") { buffer += ch; }
 			}
 		};
 
 		rl.pause();
 		stdout.write(promptText);
-		if (!wasRawMode) stdin.setRawMode(true);
+		if (!wasRawMode) { stdin.setRawMode(true); }
 		stdin.resume();
 		stdin.on("data", onData);
 	});
@@ -218,14 +218,14 @@ async function runReadlineShell(): Promise<void> {
 	{
 		const rlRecord2 = rl as unknown as Record<string, unknown>;
 		const ttyWrite = rlRecord2._ttyWrite as ((s: string, key: { ctrl?: boolean; name?: string } | null) => void) | undefined;
-		if (ttyWrite === undefined) return;
+		if (ttyWrite === undefined) { return; }
 		const orig = ttyWrite.bind(rl);
 		rlRecord2._ttyWrite = (s: string, key: { ctrl?: boolean; name?: string } | null) => {
 			const line = rlRecord2.line as string;
 			if (key?.ctrl && key?.name === "d" && line === "" && sessionStack.length > 0) {
 				stdout.write("^D\n");
 				const prev = sessionStack.pop();
-				if (prev === undefined) return;
+				if (prev === undefined) { return; }
 				authUser = prev.authUser;
 				cwd = prev.cwd;
 				shellEnv.vars.USER = authUser;
@@ -262,11 +262,11 @@ async function runReadlineShell(): Promise<void> {
 			// Store them to restore later — this is safer than rl.pause()/resume()
 			// which leaves readline's internal state machine in a broken position.
 			const stdinListeners = stdin.listeners("data") as ((chunk: Buffer) => void)[];
-			for (const l of stdinListeners) stdin.off("data", l);
+			for (const l of stdinListeners) { stdin.off("data", l); }
 
 			// Also steal the "keypress" listeners readline attaches for raw key events.
 			const keypressListeners = stdin.listeners("keypress") as ((...args: unknown[]) => void)[];
-			for (const l of keypressListeners) stdin.off("keypress", l);
+			for (const l of keypressListeners) { stdin.off("keypress", l); }
 
 			function cleanup(): void {
 				process.off("SIGWINCH", onResize);
@@ -277,8 +277,8 @@ async function runReadlineShell(): Promise<void> {
 				// readline re-enables raw mode itself when it resumes — calling
 				// setRawMode(false) here leaves stdin in cooked mode and causes
 				// escape sequences to print as literal text.
-				for (const l of stdinListeners) stdin.on("data", l);
-				for (const l of keypressListeners) stdin.on("keypress", l);
+				for (const l of stdinListeners) { stdin.on("data", l); }
+				for (const l of keypressListeners) { stdin.on("keypress", l); }
 
 				// Reset terminal visual state only (cursor, SGR).
 				stdout.write("\x1b[?25h\x1b[0m");
@@ -343,22 +343,22 @@ async function runReadlineShell(): Promise<void> {
 
 			// Steal stdin listeners from readline so game gets raw input
 			const stdinListeners = stdin.listeners("data") as ((chunk: Buffer) => void)[];
-			for (const l of stdinListeners) stdin.off("data", l);
+			for (const l of stdinListeners) { stdin.off("data", l); }
 			const keypressListeners = stdin.listeners("keypress") as ((...args: unknown[]) => void)[];
-			for (const l of keypressListeners) stdin.off("keypress", l);
+			for (const l of keypressListeners) { stdin.off("keypress", l); }
 
 			function cleanup(): void {
 				process.off("SIGWINCH", onResize);
 				process.off("SIGINT", onSigint);
 				stdin.off("data", forwardInput);
-				for (const l of stdinListeners) stdin.on("data", l);
-				for (const l of keypressListeners) stdin.on("keypress", l);
+				for (const l of stdinListeners) { stdin.on("data", l); }
+				for (const l of keypressListeners) { stdin.on("keypress", l); }
 				stdout.write("\x1b[?25h\x1b[0m");
 				rl.resume();
 				resolve();
 			}
 
-			if (stdin.isTTY) stdin.setRawMode(true);
+			if (stdin.isTTY) { stdin.setRawMode(true); }
 			stdin.resume();
 
 			const game = new PacmanGame({
@@ -525,7 +525,10 @@ async function runReadlineShell(): Promise<void> {
 		if (result.closeSession) {
 			flushVfs();
 			const prev = sessionStack.pop();
-			if (prev !== undefined) {
+			if (prev === undefined) {
+				rl.close();
+				process.exit(result.exitCode ?? 0);
+			} else {
 				authUser = prev.authUser;
 				cwd = prev.cwd;
 				shellEnv.vars.USER = authUser;
@@ -535,9 +538,6 @@ async function runReadlineShell(): Promise<void> {
 				shellEnv.vars.PS1 = makeDefaultEnv(authUser, hostname).vars.PS1 ?? "";
 				stdout.write("logout\n");
 				// resume prompt handled by caller
-			} else {
-				rl.close();
-				process.exit(result.exitCode ?? 0);
 			}
 		}
 	}
@@ -545,7 +545,7 @@ async function runReadlineShell(): Promise<void> {
 	// ── Prompt helper ──────────────────────────────────────────────────────────
 
 	const renderPrompt = (): string => {
-		if (shellEnv.vars.PS1) return buildPrompt(authUser, hostname, "", shellEnv.vars.PS1, cwd, true);
+		if (shellEnv.vars.PS1) { return buildPrompt(authUser, hostname, "", shellEnv.vars.PS1, cwd, true); }
 		const cwdLabel = cwd === userHome(authUser) ? "~" : basename(cwd) || "/";
 		return buildPrompt(authUser, hostname, cwdLabel, undefined, undefined, true);
 	};
@@ -574,13 +574,13 @@ async function runReadlineShell(): Promise<void> {
 
 	// Source login/rc files so PS1, aliases, exports are applied before first prompt.
 	for (const rcPath of ["/etc/environment", `${userHome(authUser)}/.profile`, `${userHome(authUser)}/.bashrc`]) {
-		if (!virtualShell.vfs.exists(rcPath)) continue;
+		if (!virtualShell.vfs.exists(rcPath)) { continue; }
 		for (const raw of virtualShell.vfs.readFile(rcPath).split("\n")) {
 			const l = raw.trim();
-			if (!l || l.startsWith("#")) continue;
+			if (!l || l.startsWith("#")) { continue; }
 			try {
 				const r = await runCommand(l, authUser, hostname, "shell", cwd, virtualShell, undefined, shellEnv);
-				if (r.stdout) stdout.write(r.stdout);
+				if (r.stdout) { stdout.write(r.stdout); }
 			} catch { /* ignore */ }
 		}
 	}
@@ -598,7 +598,7 @@ async function runReadlineShell(): Promise<void> {
 	let busy = false;
 
 	rl.on("line", async (inputLine: string) => {
-		if (busy) return;
+		if (busy) { return; }
 		busy = true;
 		rl.pause();
 
@@ -607,7 +607,7 @@ async function runReadlineShell(): Promise<void> {
 			// ignoredups: skip consecutive duplicates
 			if (history.at(-1) !== inputLine) {
 				history.push(inputLine);
-				if (history.length > 500) history = history.slice(history.length - 500);
+				if (history.length > 500) { history = history.slice(history.length - 500); }
 				saveHistory(virtualShell.vfs, authUser, history);
 			}
 			rlRecord.history = [...history].reverse();
@@ -639,17 +639,17 @@ async function runReadlineShell(): Promise<void> {
 
 	rl.on("close", () => {
 		const prev = sessionStack.pop();
-		if (prev !== undefined) {
+		if (prev === undefined) {
+			void flushVfs(); 
+			console.log("");
+			process.exit(0);
+		} else {
 			// Ctrl+D inside a su session: pop back to outer user then exit cleanly.
 			// Readline is already closed at this point so we can't re-prompt;
 			// just flush and exit with 0 (same UX as real ssh when inner shell dies).
 			authUser = prev.authUser;
 			void flushVfs();
-			stdout.write(`logout\n`);
-			process.exit(0);
-		} else {
-			void flushVfs(); 
-			console.log("");
+			stdout.write("logout\n");
 			process.exit(0);
 		}
 	});
@@ -666,7 +666,7 @@ runReadlineShell().catch((error: unknown) => {
 // ── Graceful shutdown (process-level) ────────────────────────────────────────
 let _shuttingDown = false;
 function _gracefulShutdown(signal: string): void {
-	if (_shuttingDown) return;
+	if (_shuttingDown) { return; }
 	_shuttingDown = true;
 	process.stdout.write(`\n[${signal}] Saving VFS...\n`);
 	try { virtualShell.vfs.stopAutoFlush(); } catch { /* best-effort flush on shutdown */ }

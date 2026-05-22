@@ -605,7 +605,7 @@ class VirtualShell extends EventEmitter {
 	 * @param options - Idle configuration (threshold, check interval).
 	 */
 	public enableIdleManagement(options?: IdleManagerOptions): void {
-		if (this._idle) return;
+		if (this._idle) { return; }
 		this._idle = new IdleManager(this, options);
 		this._idle.on("freeze", () => this.emit("shell:freeze"));
 		this._idle.on("thaw",   () => this.emit("shell:thaw"));
@@ -618,7 +618,7 @@ class VirtualShell extends EventEmitter {
 	 * Safe to call even if idle management was never enabled.
 	 */
 	public disableIdleManagement(): void {
-		if (!this._idle) return;
+		if (!this._idle) { return; }
 		this._idle.stop();
 		this._idle = null;
 	}

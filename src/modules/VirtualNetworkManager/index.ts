@@ -73,15 +73,15 @@ export class VirtualNetworkManager {
 	}
 
 	public addInterface(iface: Omit<VirtualInterface, "state">): boolean {
-		if (this._interfaces.some((i) => i.name === iface.name)) return false;
+		if (this._interfaces.some((i) => i.name === iface.name)) { return false; }
 		this._interfaces.push({ ...iface, state: "DOWN" });
 		return true;
 	}
 
 	public removeInterface(name: string): boolean {
-		if (name === "lo") return false;
+		if (name === "lo") { return false; }
 		const idx = this._interfaces.findIndex((i) => i.name === name);
-		if (idx === -1) return false;
+		if (idx === -1) { return false; }
 		this._interfaces.splice(idx, 1);
 		this._routes = this._routes.filter((r) => r.device !== name);
 		this.arpCache = this.arpCache.filter((e) => e.device !== name);
@@ -90,21 +90,21 @@ export class VirtualNetworkManager {
 
 	public setInterfaceType(name: string, type: VirtualInterface["type"]): boolean {
 		const iface = this._interfaces.find((i) => i.name === name);
-		if (!iface) return false;
+		if (!iface) { return false; }
 		iface.type = type;
 		return true;
 	}
 
 	public setInterfaceMtu(name: string, mtu: number): boolean {
 		const iface = this._interfaces.find((i) => i.name === name);
-		if (!iface) return false;
+		if (!iface) { return false; }
 		iface.mtu = mtu;
 		return true;
 	}
 
 	public setInterfaceSpeed(name: string, speed: number): boolean {
 		const iface = this._interfaces.find((i) => i.name === name);
-		if (!iface) return false;
+		if (!iface) { return false; }
 		iface.speed = speed;
 		return true;
 	}
@@ -115,7 +115,7 @@ export class VirtualNetworkManager {
 			gateway,
 			netmask,
 			device,
-			flags: gateway !== "0.0.0.0" ? "UG" : "U",
+			flags: gateway === "0.0.0.0" ? "U" : "UG",
 			metric: metric ?? 0,
 			scope: gateway === "0.0.0.0" ? "link" : "global",
 		});
@@ -123,7 +123,7 @@ export class VirtualNetworkManager {
 
 	public delRoute(dest: string): boolean {
 		const idx = this._routes.findIndex((r) => r.destination === dest);
-		if (idx === -1) return false;
+		if (idx === -1) { return false; }
 		this._routes.splice(idx, 1);
 		return true;
 	}
@@ -144,7 +144,7 @@ export class VirtualNetworkManager {
 
 	public addRouteToTable(dest: string, gateway: string, netmask: string, device: string, tableId: number): boolean {
 		const table = this._routingTables.find((t) => t.id === tableId);
-		if (!table) return false;
+		if (!table) { return false; }
 		table.routes.push({ destination: dest, gateway, netmask, device, flags: "UG" });
 		return true;
 	}
@@ -163,21 +163,21 @@ export class VirtualNetworkManager {
 
 	public delPolicyRule(priority: number): boolean {
 		const idx = this._policyRules.findIndex((r) => r.priority === priority);
-		if (idx === -1) return false;
+		if (idx === -1) { return false; }
 		this._policyRules.splice(idx, 1);
 		return true;
 	}
 
 	public setInterfaceState(name: string, state: "UP" | "DOWN" | "UNKNOWN"): boolean {
 		const iface = this._interfaces.find((i) => i.name === name);
-		if (!iface) return false;
+		if (!iface) { return false; }
 		iface.state = state;
 		return true;
 	}
 
 	public setInterfaceIp(name: string, ipv4: string, mask: number): boolean {
 		const iface = this._interfaces.find((i) => i.name === name);
-		if (!iface) return false;
+		if (!iface) { return false; }
 		iface.ipv4 = ipv4;
 		iface.ipv4Mask = mask;
 		return true;
@@ -195,7 +195,7 @@ export class VirtualNetworkManager {
 		if (arp && arp.state === "REACHABLE") {
 			return 0.5 + Math.random() * 2;
 		}
-		if (Math.random() < 0.05) return -1;
+		if (Math.random() < 0.05) { return -1; }
 		return 0.8 + Math.random() * 5;
 	}
 
@@ -209,9 +209,9 @@ export class VirtualNetworkManager {
 			lines.push(`${idx}: ${iface.name}: <${flags}> mtu ${iface.mtu} qdisc mq state ${iface.state === "UP" ? "UNKNOWN" : "DOWN"} group default qlen 1000`);
 			lines.push(`    link/${VirtualNetworkManager._linkType(iface.type)} ${iface.mac} brd ff:ff:ff:ff:ff:ff`);
 			lines.push(`    inet ${iface.ipv4}/${iface.ipv4Mask} scope global ${iface.name}`);
-			lines.push(`       valid_lft forever preferred_lft forever`);
+			lines.push("       valid_lft forever preferred_lft forever");
 			lines.push(`    inet6 ${iface.ipv6}/64 scope link`);
-			lines.push(`       valid_lft forever preferred_lft forever`);
+			lines.push("       valid_lft forever preferred_lft forever");
 			idx++;
 		}
 		return lines.join("\n");
@@ -235,7 +235,7 @@ export class VirtualNetworkManager {
 			return this.formatIpRoute();
 		}
 		const table = this._routingTables.find((t) => t.id === tableId);
-		if (!table || table.routes.length === 0) return "";
+		if (!table || table.routes.length === 0) { return ""; }
 		return table.routes.map((r) => {
 			if (r.destination === "default") {
 				return `default via ${r.gateway} dev ${r.device}`;
@@ -252,10 +252,10 @@ export class VirtualNetworkManager {
 		const lines: string[] = [];
 		for (const rule of rules) {
 			let line = `${rule.priority}:\t`;
-			if (rule.from) line += `from ${rule.from} `;
-			if (rule.to) line += `to ${rule.to} `;
-			if (rule.iif) line += `iif ${rule.iif} `;
-			if (rule.oif) line += `oif ${rule.oif} `;
+			if (rule.from) { line += `from ${rule.from} `; }
+			if (rule.to) { line += `to ${rule.to} `; }
+			if (rule.iif) { line += `iif ${rule.iif} `; }
+			if (rule.oif) { line += `oif ${rule.oif} `; }
 			if (rule.action === "lookup") {
 				const table = this._routingTables.find((t) => t.id === rule.table);
 				line += `lookup ${table?.name ?? rule.table}`;
@@ -277,8 +277,8 @@ export class VirtualNetworkManager {
 				? (iface.type === "loopback" ? "LOOPBACK,UP,LOWER_UP" : "BROADCAST,MULTICAST,UP,LOWER_UP")
 				: "DOWN";
 			let extra = "";
-			if (iface.speed) extra += `    ${iface.speed}Mb/s`;
-			if (iface.duplex) extra += ` ${iface.duplex}-duplex`;
+			if (iface.speed) { extra += `    ${iface.speed}Mb/s`; }
+			if (iface.duplex) { extra += ` ${iface.duplex}-duplex`; }
 			lines.push(`${idx}: ${iface.name}: <${flags}> mtu ${iface.mtu} qdisc mq state ${iface.state === "UP" ? "UNKNOWN" : "DOWN"} mode DEFAULT group default qlen 1000`);
 			lines.push(`    link/${VirtualNetworkManager._linkType(iface.type)} ${iface.mac} brd ff:ff:ff:ff:ff:ff${extra}`);
 			idx++;
@@ -304,7 +304,7 @@ export class VirtualNetworkManager {
 	}
 
 	private static _maskToCidr(mask: string): number {
-		return mask.split(".").reduce((acc, oct) => acc + (parseInt(oct, 10) ? parseInt(oct, 10).toString(2).split("1").length - 1 : 0), 0);
+		return mask.split(".").reduce((acc, oct) => acc + (Number.parseInt(oct, 10) ? Number.parseInt(oct, 10).toString(2).split("1").length - 1 : 0), 0);
 	}
 
 	private _ipForDevice(device: string): string {
@@ -317,7 +317,7 @@ export class VirtualNetworkManager {
 	}
 
 	public removeFirewallRule(index: number): boolean {
-		if (index < 0 || index >= this._firewallRules.length) return false;
+		if (index < 0 || index >= this._firewallRules.length) { return false; }
 		this._firewallRules.splice(index, 1);
 		return true;
 	}
@@ -327,7 +327,7 @@ export class VirtualNetworkManager {
 	}
 
 	public setPolicy(chain: string, policy: "ACCEPT" | "DROP"): boolean {
-		if (!(chain in this._policies)) return false;
+		if (!(chain in this._policies)) { return false; }
 		this._policies[chain] = policy;
 		return true;
 	}
@@ -344,11 +344,11 @@ export class VirtualNetworkManager {
 		destPort?: number,
 	): "ACCEPT" | "DROP" | "REJECT" {
 		for (const rule of this._firewallRules) {
-			if (rule.chain !== chain) continue;
-			if (rule.protocol !== "all" && rule.protocol !== protocol) continue;
-			if (rule.source && source && rule.source !== source) continue;
-			if (rule.destination && destination && rule.destination !== destination) continue;
-			if (rule.destPort && destPort && rule.destPort !== destPort) continue;
+			if (rule.chain !== chain) { continue; }
+			if (rule.protocol !== "all" && rule.protocol !== protocol) { continue; }
+			if (rule.source && source && rule.source !== source) { continue; }
+			if (rule.destination && destination && rule.destination !== destination) { continue; }
+			if (rule.destPort && destPort && rule.destPort !== destPort) { continue; }
 			return rule.action === "MASQUERADE" || rule.action === "SNAT" || rule.action === "DNAT" ? "ACCEPT" : rule.action;
 		}
 		return this._policies[chain] ?? "ACCEPT";
@@ -364,7 +364,7 @@ export class VirtualNetworkManager {
 			lines.push(`Chain ${chain} (policy ${this._policies[chain] ?? "ACCEPT"})`);
 			lines.push("target     prot opt source               destination");
 			for (const rule of this._firewallRules) {
-				if (rule.chain !== chain) continue;
+				if (rule.chain !== chain) { continue; }
 				const target = rule.action.padEnd(10);
 				const prot = rule.protocol.padEnd(6);
 				const src = (rule.source ?? "0.0.0.0/0").padEnd(20);
@@ -416,7 +416,7 @@ export class VirtualNetworkManager {
 			entry.packetsSent++;
 			entry.bytesSent += bytes ?? 0;
 			entry.timestamp = Date.now();
-			if (entry.state === "NEW") entry.state = "ESTABLISHED";
+			if (entry.state === "NEW") { entry.state = "ESTABLISHED"; }
 		} else {
 			const reverse = this._findConntrack(dstIp, srcIp, protocol, dstPort, srcPort);
 			if (reverse) {
@@ -467,16 +467,16 @@ export class VirtualNetworkManager {
 
 	public resolveRoute(dstIp: string): { route: VirtualRoute | null; table: number } {
 		for (const rule of this.listPolicyRules()) {
-			if (rule.from && !this._ipMatchesRule(dstIp, rule.from)) continue;
-			if (rule.to && !this._ipMatchesRule(dstIp, rule.to)) continue;
-			if (rule.action === "blackhole") return { route: null, table: -1 };
-			if (rule.action === "unreachable") return { route: null, table: -2 };
-			if (rule.action === "prohibit") return { route: null, table: -3 };
+			if (rule.from && !this._ipMatchesRule(dstIp, rule.from)) { continue; }
+			if (rule.to && !this._ipMatchesRule(dstIp, rule.to)) { continue; }
+			if (rule.action === "blackhole") { return { route: null, table: -1 }; }
+			if (rule.action === "unreachable") { return { route: null, table: -2 }; }
+			if (rule.action === "prohibit") { return { route: null, table: -3 }; }
 			if (rule.action === "lookup") {
 				const table = this._routingTables.find((t) => t.id === rule.table);
 				if (table) {
 					const route = table.routes.find((r) => this._ipMatchesDestination(dstIp, r));
-					if (route) return { route, table: rule.table };
+					if (route) { return { route, table: rule.table }; }
 				}
 			}
 		}
@@ -485,10 +485,10 @@ export class VirtualNetworkManager {
 	}
 
 	private _ipMatchesRule(ip: string, pattern: string): boolean {
-		if (pattern === "all") return true;
+		if (pattern === "all") { return true; }
 		if (pattern.includes("/")) {
 			const [base, maskStr] = pattern.split("/");
-			const mask = parseInt(maskStr ?? "32", 10);
+			const mask = Number.parseInt(maskStr ?? "32", 10);
 			const ipInt = VirtualNetworkManager._ipToInt(ip);
 			const baseInt = VirtualNetworkManager._ipToInt(base ?? "0.0.0.0");
 			const maskInt = mask === 0 ? 0 : (~0 << (32 - mask)) >>> 0;
@@ -498,8 +498,8 @@ export class VirtualNetworkManager {
 	}
 
 	private _ipMatchesDestination(ip: string, route: VirtualRoute): boolean {
-		if (route.destination === "default") return true;
-		if (route.destination === ip) return true;
+		if (route.destination === "default") { return true; }
+		if (route.destination === ip) { return true; }
 		if (route.destination.includes("/")) {
 			return this._ipMatchesRule(ip, route.destination);
 		}
@@ -510,6 +510,6 @@ export class VirtualNetworkManager {
 	}
 
 	private static _ipToInt(ip: string): number {
-		return ip.split(".").reduce((acc, oct) => (acc << 8) + parseInt(oct, 10), 0) >>> 0;
+		return ip.split(".").reduce((acc, oct) => (acc << 8) + Number.parseInt(oct, 10), 0) >>> 0;
 	}
 }

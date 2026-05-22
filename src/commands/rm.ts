@@ -29,7 +29,7 @@ export const rmCommand: ShellModule = {
 		const targets: string[] = [];
 		for (let index = 0; ; index += 1) {
 			const target = getArg(args, index, { flags: allFlags });
-			if (!target) break;
+			if (!target) { break; }
 			targets.push(target);
 		}
 
@@ -38,21 +38,21 @@ export const rmCommand: ShellModule = {
 		}
 
 		const resolved = targets.map((t) => resolvePath(cwd, t));
-		for (const r of resolved) checkFilePermission(shell.vfs, shell.users, authUser, path.posix.dirname(r), 2);
+		for (const r of resolved) { checkFilePermission(shell.vfs, shell.users, authUser, path.posix.dirname(r), 2); }
 
 		for (const r of resolved) {
 			if (!shell.vfs.exists(r)) {
-				if (force) continue;
+				if (force) { continue; }
 				return { stderr: `rm: cannot remove '${r}': No such file or directory`, exitCode: 1 };
 			}
 		}
 
 		const doRemove = (sh: VirtualShell): CommandResult => {
-			for (const r of resolved) if (sh.vfs.exists(r)) sh.vfs.remove(r, { recursive }, uid, gid);
+			for (const r of resolved) { if (sh.vfs.exists(r)) { sh.vfs.remove(r, { recursive }, uid, gid); } }
 			return { exitCode: 0 };
 		};
 
-		if (force) return doRemove(shell);
+		if (force) { return doRemove(shell); }
 
 		const label = targets.length === 1 ? `'${targets[0]}'` : `${targets.length} items`;
 		const prompt = recursive

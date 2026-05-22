@@ -17,7 +17,7 @@ export const manCommand: ShellModule = {
 	params: ["<command>"],
 	run: ({ args, shell }) => {
 		const name = args[0];
-		if (!name) return { stderr: "What manual page do you want?", exitCode: 1 };
+		if (!name) { return { stderr: "What manual page do you want?", exitCode: 1 }; }
 
 		// VFS-installed man pages take priority
 		const manPath = `/usr/share/man/man1/${name}.1`;
@@ -29,7 +29,7 @@ export const manCommand: ShellModule = {
 		const normalized = name.toLowerCase();
 		const lookupName = MANUAL_ALIASES[normalized] ?? normalized;
 		const page = MANUALS[lookupName] ?? null;
-		if (page) return { stdout: page, exitCode: 0 };
+		if (page) { return { stdout: page, exitCode: 0 }; }
 
 		return { stderr: `No manual entry for ${name}`, exitCode: 16 };
 	},

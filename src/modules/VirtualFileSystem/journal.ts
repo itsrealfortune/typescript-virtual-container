@@ -107,33 +107,33 @@ function decodeJournal(buf: Buffer): JournalEntry[] {
 
 	try {
 		while (off < buf.length) {
-			if (off + 3 > buf.length) break;
+			if (off + 3 > buf.length) { break; }
 			const op      = buf.readUInt8(off++) as JournalOp;
 			const pathLen = buf.readUInt16LE(off); off += 2;
-			if (off + pathLen > buf.length) break;
+			if (off + pathLen > buf.length) { break; }
 			const path    = buf.subarray(off, off + pathLen).toString(ENC); off += pathLen;
 
 			if (op === JournalOp.WRITE) {
-				if (off + 4 > buf.length) break;
+				if (off + 4 > buf.length) { break; }
 				const cLen = buf.readUInt32LE(off); off += 4;
-				if (off + cLen + 4 > buf.length) break;
+				if (off + cLen + 4 > buf.length) { break; }
 				const content = Buffer.from(buf.subarray(off, off + cLen)); off += cLen;
 				const mode    = buf.readUInt32LE(off); off += 4;
 				entries.push({ op, path, content, mode });
 			} else if (op === JournalOp.MKDIR) {
-				if (off + 4 > buf.length) break;
+				if (off + 4 > buf.length) { break; }
 				const mode = buf.readUInt32LE(off); off += 4;
 				entries.push({ op, path, mode });
 			} else if (op === JournalOp.REMOVE) {
 				entries.push({ op, path });
 			} else if (op === JournalOp.CHMOD) {
-				if (off + 4 > buf.length) break;
+				if (off + 4 > buf.length) { break; }
 				const mode = buf.readUInt32LE(off); off += 4;
 				entries.push({ op, path, mode });
 			} else if (op === JournalOp.MOVE || op === JournalOp.SYMLINK) {
-				if (off + 2 > buf.length) break;
+				if (off + 2 > buf.length) { break; }
 				const dLen = buf.readUInt16LE(off); off += 2;
-				if (off + dLen > buf.length) break;
+				if (off + dLen > buf.length) { break; }
 				const dest = buf.subarray(off, off + dLen).toString(ENC); off += dLen;
 				entries.push({ op, path, dest });
 			} else {
@@ -168,13 +168,13 @@ export function appendJournalEntry(journalPath: string, entry: JournalEntry): vo
 
 /** Read and decode all entries from a journal file. Returns [] if file is absent/empty. */
 export function readJournal(journalPath: string): JournalEntry[] {
-	if (!fsSync.existsSync(journalPath)) return [];
+	if (!fsSync.existsSync(journalPath)) { return []; }
 	const buf = fsSync.readFileSync(journalPath);
-	if (buf.length === 0) return [];
+	if (buf.length === 0) { return []; }
 	return decodeJournal(buf);
 }
 
 /** Delete the journal file (after a successful checkpoint). */
 export function truncateJournal(journalPath: string): void {
-	if (fsSync.existsSync(journalPath)) fsSync.unlinkSync(journalPath);
+	if (fsSync.existsSync(journalPath)) { fsSync.unlinkSync(journalPath); }
 }

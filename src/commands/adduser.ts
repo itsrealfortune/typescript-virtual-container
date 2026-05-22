@@ -81,7 +81,7 @@ export const adduserCommand: ShellModule = {
 						`Adding new user '${username}' (${gid}) with group '${username}' ...`,
 						`Creating home directory '/home/${username}' ...`,
 						`passwd: password set for '${username}'`,
-						`adduser: done.`,
+						"adduser: done.",
 					].join("\n")}\n`,
 					exitCode: 0,
 				},

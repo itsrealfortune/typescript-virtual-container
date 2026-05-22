@@ -60,12 +60,12 @@ export interface LastLogin {
  */
 export function readLastLogin(vfs: VirtualFileSystem, authUser: string): LastLogin | null {
 	const p = authUser === "root" ? "/root/.lastlog.json" : `/home/${authUser}/.lastlog`;
-	if (!vfs.exists(p)) return null;
+	if (!vfs.exists(p)) { return null; }
 	try {
 		const raw = JSON.parse(vfs.readFile(p));
-		if (typeof raw !== "object" || raw === null) return null;
+		if (typeof raw !== "object" || raw === null) { return null; }
 		const obj = raw as Record<string, unknown>;
-		if (typeof obj.from !== "string" || typeof obj.timestamp !== "number") return null;
+		if (typeof obj.from !== "string" || typeof obj.timestamp !== "number") { return null; }
 		return { from: obj.from, at: new Date(obj.timestamp).toISOString() };
 	} catch {
 		return null;

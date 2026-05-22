@@ -14,8 +14,9 @@ export const dpkgCommand: ShellModule = {
 	params: ["[-l] [-s pkg] [-L pkg] [-i pkg] [--remove pkg]"],
 	run: ({ args, authUser, shell }) => {
 		const pm = getPackageManager(shell);
-		if (!pm)
+		if (!pm) {
 			return { stderr: "dpkg: package manager not initialised", exitCode: 1 };
+		}
 
 		const listFlag = ifFlag(args, ["-l", "--list"]);
 		const statusFlag = ifFlag(args, ["-s", "--status"]);
@@ -75,41 +76,48 @@ export const dpkgCommand: ShellModule = {
 
 		if (statusFlag) {
 			const pkgName = positionals[0];
-			if (!pkgName)
+			if (!pkgName) {
 				return { stderr: "dpkg: -s needs a package name", exitCode: 1 };
+			}
 			const info = pm.show(pkgName);
-			if (!info)
+			if (!info) {
 				return {
 					stderr: `dpkg-query: package '${pkgName}' is not installed and no information is available`,
 					exitCode: 1,
 				};
+			}
 			return { stdout: info, exitCode: 0 };
 		}
 
 		if (listFilesFlag) {
 			const pkgName = positionals[0];
-			if (!pkgName)
+			if (!pkgName) {
 				return { stderr: "dpkg: -L needs a package name", exitCode: 1 };
+			}
 			const installed = pm.listInstalled().find((p) => p.name === pkgName);
-			if (!installed)
+			if (!installed) {
 				return {
 					stderr: `dpkg-query: package '${pkgName}' is not installed`,
 					exitCode: 1,
 				};
-			if (installed.files.length === 0)
+			}
+			if (installed.files.length === 0) {
 				return { stdout: "/.keep", exitCode: 0 };
+			}
 			return { stdout: installed.files.join("\n"), exitCode: 0 };
 		}
 
 		if (removeFlag || purgeFlag) {
-			if (authUser !== "root")
+			if (authUser !== "root") {
 				return {
 					stderr:
 						"dpkg: error: requested operation requires superuser privilege",
 					exitCode: 2,
 				};
-			if (positionals.length === 0)
+			}
+			if (positionals.length === 0) {
 				return { stderr: "dpkg: error: need an action option", exitCode: 2 };
+			}
 			const { output, exitCode } = pm.remove(positionals, { purge: purgeFlag });
 			return { stdout: output || undefined, exitCode };
 		}
@@ -138,11 +146,12 @@ export const dpkgQueryCommand: ShellModule = {
 	params: ["-W [pkg] | -l [pattern]"],
 	run: ({ args, shell }) => {
 		const pm = getPackageManager(shell);
-		if (!pm)
+		if (!pm) {
 			return {
 				stderr: "dpkg-query: package manager not initialised",
 				exitCode: 1,
 			};
+		}
 
 		const listFlag = ifFlag(args, ["-l"]);
 		const showFlag = ifFlag(args, ["-W", "--show"]);

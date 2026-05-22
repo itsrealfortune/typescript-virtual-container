@@ -42,7 +42,7 @@ export const dmesgCommand: ShellModule = {
 	category: "system",
 	params: ["[-n n]"],
 	run: ({ args }) => {
-		const n = args.includes("-n") ? parseInt(args[args.indexOf("-n") + 1] ?? "20", 10) : 20;
+		const n = args.includes("-n") ? Number.parseInt(args[args.indexOf("-n") + 1] ?? "20", 10) : 20;
 		const msgs = [
 			"[    0.000000] Booting Linux on physical CPU 0x0",
 			"[    0.000000] Linux version 6.1.0-fortune (gcc (Fortune 13.3.0-nyx1) 13.3.0)",

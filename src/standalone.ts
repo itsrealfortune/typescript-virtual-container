@@ -83,7 +83,7 @@ if (!noSsh) {
 // guarantees all writes since the last checkpoint are replayed on next start.
 let isShuttingDown = false;
 function gracefulShutdown(signal: string): void {
-	if (isShuttingDown) return;
+	if (isShuttingDown) { return; }
 	isShuttingDown = true;
 	console.log(`\n[${signal}] Flushing VFS checkpoint before exit...`);
 	try {

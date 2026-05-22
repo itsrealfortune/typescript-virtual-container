@@ -61,11 +61,11 @@ export function saveSession(windows: DesktopWindow[]): void {
 export function loadSession(): SerializedWindow[] | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
+    if (!raw) { return null; }
     const parsed = JSON.parse(raw);
     if (parsed?.version === VERSION && Array.isArray(parsed.windows)) {
       const windows = parsed.windows;
-      if (!windows.every((w: unknown) => typeof w === "object" && w !== null && "id" in w)) return null;
+      if (!windows.every((w: unknown) => typeof w === "object" && w !== null && "id" in w)) { return null; }
       return windows as SerializedWindow[];
     }
     return null;

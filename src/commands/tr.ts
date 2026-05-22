@@ -19,7 +19,7 @@ function expandTrSet(s: string): string[] {
 			const from = unescaped.charCodeAt(i);
 			const to   = unescaped.charCodeAt(i + 2);
 			if (from <= to) {
-				for (let c = from; c <= to; c++) chars.push(String.fromCharCode(c));
+				for (let c = from; c <= to; c++) { chars.push(String.fromCharCode(c)); }
 				i += 3;
 				continue;
 			}

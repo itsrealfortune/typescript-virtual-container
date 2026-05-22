@@ -25,7 +25,7 @@ import type { SftpMimic } from "./sftp";
 const perf: PerfLogger = createPerfLogger("SshMimic");
 
 // ── Dev-mode logger ───────────────────────────────────────────────────────────
-const DEV = !!process.env.DEV_MODE;
+const DEV = Boolean(process.env.DEV_MODE);
 const devLog = DEV ? console.log.bind(console) : () => {};
 
 
@@ -109,8 +109,8 @@ class SshMimic extends EventEmitter {
 
 	private _isLockedOut(ip: string): boolean {
 		const entry = this._authAttempts.get(ip);
-		if (!entry) return false;
-		if (Date.now() < entry.lockedUntil) return true;
+		if (!entry) { return false; }
+		if (Date.now() < entry.lockedUntil) { return true; }
 		if (entry.lockedUntil > 0) {
 			this._authAttempts.delete(ip);
 		}
@@ -319,7 +319,7 @@ class SshMimic extends EventEmitter {
 
 						session.on("exec", (acceptExec, _rejectExec, info) => {
 							const stream = acceptExec();
-							if (!stream) return;
+							if (!stream) { return; }
 							const cmd = info.command.trim();
 							const parts = cmd.split(/\s+/);
 							if (parts[0] === "scp") {

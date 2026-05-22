@@ -11,7 +11,7 @@ export const perlCommand: ShellModule = {
 	params: ["[-e <expr>] [-p] [-n] [-i] [file]"],
 	run: ({ args, stdin }) => {
 		const eIdx = args.indexOf("-e");
-		const code = eIdx !== -1 ? args[eIdx + 1] : undefined;
+		const code = eIdx === -1 ? undefined : args[eIdx + 1];
 		const printLoop = args.includes("-p");
 		const noAutoprint = args.includes("-n");
 		const hasLoop = printLoop || noAutoprint;
@@ -22,7 +22,7 @@ export const perlCommand: ShellModule = {
 
 		const input = stdin ?? "";
 		const lines = input.split("\n");
-		if (lines[lines.length - 1] === "") lines.pop();
+		if (lines[lines.length - 1] === "") { lines.pop(); }
 		const out: string[] = [];
 
 		if (hasLoop) {
@@ -41,7 +41,7 @@ export const perlCommand: ShellModule = {
 						const re = new RegExp(sMatch[2] as string, flags.includes("i") ? (flags.includes("g") ? "gi" : "i") : flags.includes("g") ? "g" : "");
 						line = line.replace(re, sMatch[3] as string);
 					} catch { /* ignore */ }
-					if (printLoop) out.push(line);
+					if (printLoop) { out.push(line); }
 					continue;
 				}
 
@@ -51,11 +51,11 @@ export const perlCommand: ShellModule = {
 					const val = (printM[1] ?? printM[2] ?? printM[3] ?? "")
 						.replace(/\\n/g, "\n").replace(/\\t/g, "\t");
 					out.push(code.startsWith("say") ? val : val.replace(/\n$/, ""));
-					if (printLoop) out.push(line);
+					if (printLoop) { out.push(line); }
 					continue;
 				}
 
-				if (printLoop) out.push(line);
+				if (printLoop) { out.push(line); }
 			}
 		} else {
 			// Single expression

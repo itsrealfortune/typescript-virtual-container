@@ -18,7 +18,7 @@ export const cpCommand: ShellModule = {
 		const positionals = args.filter((a) => !a.startsWith("-"));
 		const [srcArg, destArg] = positionals;
 
-		if (!srcArg || !destArg) {
+		if (!(srcArg && destArg)) {
 			return { stderr: "cp: missing operand", exitCode: 1 };
 		}
 

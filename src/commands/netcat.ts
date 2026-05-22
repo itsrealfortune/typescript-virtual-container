@@ -19,7 +19,7 @@ export const ncCommand: ShellModule = {
 
 		const isListen = args.includes("-l");
 		const pIdx = args.indexOf("-p");
-		const port = pIdx !== -1 && args[pIdx + 1] ? parseInt(args[pIdx + 1] as string, 10) : undefined;
+		const port = pIdx !== -1 && args[pIdx + 1] ? Number.parseInt(args[pIdx + 1] as string, 10) : undefined;
 		const verbose = args.includes("-v");
 
 		if (isListen && port) {
@@ -43,7 +43,7 @@ export const ncCommand: ShellModule = {
 
 		const nonFlag = args.filter((a) => !a.startsWith("-"));
 		const host = nonFlag[0];
-		const portNum = nonFlag[1] ? parseInt(nonFlag[1], 10) : NaN;
+		const portNum = nonFlag[1] ? Number.parseInt(nonFlag[1], 10) : Number.NaN;
 		if (host && !Number.isNaN(portNum)) {
 			return new Promise((resolve) => {
 				const socket = net.createConnection({ host, port: portNum }, () => {

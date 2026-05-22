@@ -120,7 +120,7 @@ export class SwapStore {
 	 */
 	public swapIn(vfsPath: string): Buffer | null {
 		const entry = this._entries.get(vfsPath);
-		if (!entry) return null;
+		if (!entry) { return null; }
 
 		const hash = SwapStore._hashPath(vfsPath);
 		const swapFile = path.join(this._swapDir, `${hash}.swap`);
@@ -169,7 +169,7 @@ export class SwapStore {
 	 */
 	public hasSwapped(vfsPath: string): boolean {
 		const entry = this._entries.get(vfsPath);
-		if (!entry) return false;
+		if (!entry) { return false; }
 		// Verify the swap file actually exists
 		const hash = SwapStore._hashPath(vfsPath);
 		const swapFile = path.join(this._swapDir, `${hash}.swap`);
@@ -268,12 +268,12 @@ export class SwapStore {
 		try {
 			const files = fsSync.readdirSync(this._swapDir);
 			for (const file of files) {
-				if (!file.endsWith(".swap")) continue;
+				if (!file.endsWith(".swap")) { continue; }
 
 				const swapFile = path.join(this._swapDir, file);
 				try {
 					const stat = fsSync.statSync(swapFile);
-					if (stat.size < 5) continue;
+					if (stat.size < 5) { continue; }
 
 					const raw = fsSync.readFileSync(swapFile);
 					const size = raw.readUInt32LE(0);

@@ -4,7 +4,7 @@ import { createTestEnv, runCmd } from "./test-helper";
 
 // Skip network-dependent tests by default. Run with:
 //   SSH_MIMIC_RUN_NETWORK_TESTS=1 bun test tests/commands-admin-net.test.ts
-const runNetwork = !!process.env.SSH_MIMIC_RUN_NETWORK_TESTS;
+const runNetwork = Boolean(process.env.SSH_MIMIC_RUN_NETWORK_TESTS);
 const describeNetwork = runNetwork ? describe : describe.skip;
 
 let client: InstanceType<typeof SshClient>;
@@ -366,7 +366,7 @@ describe("node command", () => {
 	test("node eval arithmetic", async () => {
 		const r = await runCmd(client, "node -e 'console.log(2*3)'");
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
-		if (r.stdout) expect(r.stdout).toContain("6");
+		if (r.stdout) { expect(r.stdout).toContain("6"); }
 	});
 });
 

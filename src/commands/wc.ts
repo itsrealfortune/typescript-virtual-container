@@ -16,7 +16,7 @@ export const wcCommand: ShellModule = {
 		const lines = ifFlag(args, ["-l"]);
 		const words = ifFlag(args, ["-w"]);
 		const bytes = ifFlag(args, ["-c"]);
-		const showAll = !lines && !words && !bytes;
+		const showAll = !((lines || words ) || bytes);
 		const positionals = args.filter((a) => !a.startsWith("-"));
 
 		const count = (content: string, label: string): string => {
@@ -24,10 +24,10 @@ export const wcCommand: ShellModule = {
 			const w = content.trim().split(/\s+/).filter(Boolean).length;
 			const c = Buffer.byteLength(content, "utf8");
 			const parts: string[] = [];
-			if (showAll || lines) parts.push(String(l).padStart(7));
-			if (showAll || words) parts.push(String(w).padStart(7));
-			if (showAll || bytes) parts.push(String(c).padStart(7));
-			if (label) parts.push(` ${label}`);
+			if (showAll || lines) { parts.push(String(l).padStart(7)); }
+			if (showAll || words) { parts.push(String(w).padStart(7)); }
+			if (showAll || bytes) { parts.push(String(c).padStart(7)); }
+			if (label) { parts.push(` ${label}`); }
 			return parts.join("");
 		};
 

@@ -16,7 +16,7 @@ async function execPing(count: number, host: string): Promise<{ stdout: string }
 		return { stdout: output as string };
 	} catch (err: unknown) {
 		const stderrMsg = err instanceof Error ? (err as Error & { stderr?: string }).stderr : "";
-		if (stderrMsg) return { stderr: stderrMsg };
+		if (stderrMsg) { return { stderr: stderrMsg }; }
 		return null;
 	}
 }
@@ -38,12 +38,12 @@ export const pingCommand: ShellModule = {
 		});
 		const host = positionals[0] ?? "localhost";
 		const countArg = flagsWithValues.get("-c");
-		const count = countArg ? Math.max(1, parseInt(countArg, 10) || 4) : 4;
+		const count = countArg ? Math.max(1, Number.parseInt(countArg, 10) || 4) : 4;
 
 		// Try real system ping first (Node.js only)
 		if (!isBrowser) {
 			const result = await execPing(count, host);
-			if (result) return { ...result, exitCode: "stdout" in result ? 0 : 1 };
+			if (result) { return { ...result, exitCode: "stdout" in result ? 0 : 1 }; }
 		}
 
 		// Fallback: VirtualNetworkManager simulation

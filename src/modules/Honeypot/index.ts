@@ -114,7 +114,7 @@ export class HoneyPot {
 	 *
 	 * @param maxLogSize Maximum audit log entries to retain (default: 10000).
 	 */
-	constructor(maxLogSize: number = 10000) {
+	constructor(maxLogSize = 10000) {
 		perf.mark("constructor");
 		this._maxLogSize = maxLogSize;
 	}
@@ -473,7 +473,7 @@ export class HoneyPot {
 	 * @param limit Number of recent entries to return (default: 100).
 	 * @returns Recent audit log entries.
 	 */
-	public getRecent(limit: number = 100): AuditLogEntry[] {
+	public getRecent(limit = 100): AuditLogEntry[] {
 		perf.mark("getRecent");
 		return this._auditLog.slice(Math.max(0, this._auditLog.length - limit));
 	}

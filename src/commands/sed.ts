@@ -24,24 +24,24 @@ export const sedCommand: ShellModule = {
 			const a = args[i] as string;
 			if (a === "-e" || a === "--expression") {
 				i++;
-				if (args[i]) exprs.push(args[i] as string);
+				if (args[i]) { exprs.push(args[i] as string); }
 				i++;
 			} else if (a === "-n" || a === "-i") {
 				i++;
 			} else if (a.startsWith("-e")) {
 				exprs.push(a.slice(2));
 				i++;
-			} else if (!a.startsWith("-")) {
-				if (exprs.length === 0) exprs.push(a);
-				else fileArg = a;
+			} else if (a.startsWith("-")) {
 				i++;
 			} else {
+				if (exprs.length === 0) { exprs.push(a); }
+				else { fileArg = a; }
 				i++;
 			}
 		}
 		// If only one positional collected as expr and no file yet, check for file after
 		// Re-parse: first non-flag that follows all -e is the file
-		if (exprs.length === 0) return { stderr: "sed: no expression", exitCode: 1 };
+		if (exprs.length === 0) { return { stderr: "sed: no expression", exitCode: 1 }; }
 
 		// Re-check: if exprs[0] was set from positional, remaining positionals are files
 		{
@@ -51,7 +51,7 @@ export const sedCommand: ShellModule = {
 				const a = args[j] as string;
 				if (a === "-e" || a === "--expression") { foundExprFromFlag = true; j += 2; }
 				else if (a.startsWith("-e")) { foundExprFromFlag = true; j++; }
-				else j++;
+				else { j++; }
 			}
 			if (!foundExprFromFlag) {
 				// expr is first positional, file is second
@@ -76,11 +76,11 @@ export const sedCommand: ShellModule = {
 			| { op: "="; addr1?: Addr; addr2?: Addr };
 
 		function parseAddr(s: string): [Addr | undefined, string] {
-			if (!s) return [undefined, s];
-			if (s[0] === "$") return [{ type: "last" }, s.slice(1)];
+			if (!s) { return [undefined, s]; }
+			if (s[0] === "$") { return [{ type: "last" }, s.slice(1)]; }
 			if (/^\d/.test(s)) {
 				const m = s.match(/^(\d+)(.*)/s);
-				if (m) return [{ type: "line", n: parseInt(m[1] as string, 10) }, m[2] as string];
+				if (m) { return [{ type: "line", n: Number.parseInt(m[1] as string, 10) }, m[2] as string]; }
 			}
 			if (s[0] === "/") {
 				const end = s.indexOf("/", 1);
@@ -100,7 +100,7 @@ export const sedCommand: ShellModule = {
 			const parts = expr.split(/\n|(?<=^|[^\\]);/);
 			for (const raw of parts) {
 				const part = raw.trim();
-				if (!part || part.startsWith("#")) continue;
+				if (!part || part.startsWith("#")) { continue; }
 
 				let rest = part;
 				const [addr1, after1] = parseAddr(rest);
@@ -114,7 +114,7 @@ export const sedCommand: ShellModule = {
 				}
 
 				const op = rest[0];
-				if (!op) continue;
+				if (!op) { continue; }
 
 				if (op === "s") {
 					// s/from/to/flags
@@ -149,20 +149,20 @@ export const sedCommand: ShellModule = {
 		const allInstrs: Instr[] = exprs.flatMap(parseInstrs);
 		const lines = content.split("\n");
 		// Remove trailing empty string from trailing newline
-		if (lines[lines.length - 1] === "") lines.pop();
+		if (lines[lines.length - 1] === "") { lines.pop(); }
 		const total = lines.length;
 
 		function matchesAddr(addr: Addr | undefined, lineNo: number, line: string): boolean {
-			if (!addr) return true;
-			if (addr.type === "line") return lineNo === addr.n;
-			if (addr.type === "last") return lineNo === total;
+			if (!addr) { return true; }
+			if (addr.type === "line") { return lineNo === addr.n; }
+			if (addr.type === "last") { return lineNo === total; }
 			return addr.re.test(line);
 		}
 
 		function inRange(instr: Instr & { addr1?: Addr; addr2?: Addr }, lineNo: number, line: string, rangeActive: Map<Instr, boolean>): boolean {
 			const { addr1, addr2 } = instr;
-			if (!addr1) return true;
-			if (!addr2) return matchesAddr(addr1, lineNo, line);
+			if (!addr1) { return true; }
+			if (!addr2) { return matchesAddr(addr1, lineNo, line); }
 			// Two-address range
 			let active = rangeActive.get(instr) ?? false;
 			if (!active && matchesAddr(addr1, lineNo, line)) {
@@ -173,7 +173,7 @@ export const sedCommand: ShellModule = {
 				rangeActive.set(instr, false);
 				return true;
 			}
-			if (active) return true;
+			if (active) { return true; }
 			return false;
 		}
 
@@ -187,7 +187,7 @@ export const sedCommand: ShellModule = {
 			let deleted = false;
 
 			for (const instr of allInstrs) {
-				if (!inRange(instr as Instr & { addr1?: Addr; addr2?: Addr }, lineNo, line, rangeActive)) continue;
+				if (!inRange(instr as Instr & { addr1?: Addr; addr2?: Addr }, lineNo, line, rangeActive)) { continue; }
 				if (instr.op === "d") { deleted = true; break; }
 				if (instr.op === "p") { out.push(line); }
 				if (instr.op === "=") { out.push(String(lineNo)); }
@@ -198,12 +198,12 @@ export const sedCommand: ShellModule = {
 						: line.replace(instr.from, instr.to);
 					if (replaced !== line) {
 						line = replaced;
-						if (instr.print && suppressAuto) out.push(line);
+						if (instr.print && suppressAuto) { out.push(line); }
 					}
 				}
 			}
 
-			if (!deleted && !suppressAuto) out.push(line);
+			if (!(deleted || suppressAuto)) { out.push(line); }
 		}
 
 		const result = out.join("\n") + (out.length > 0 ? "\n" : "");

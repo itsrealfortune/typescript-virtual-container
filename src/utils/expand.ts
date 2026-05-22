@@ -26,7 +26,7 @@ const _shellPatCache = new Map<string, RegExp>();
 function shellPatToRegex(pat: string, anchor: "none" | "prefix" | "suffix", greedy: boolean, global = false): RegExp {
 	const key = `${anchor}:${greedy ? "g" : "s"}:${global ? "G" : ""}:${pat}`;
 	let re = _shellPatCache.get(key);
-	if (re) return re;
+	if (re) { return re; }
 	const esc = pat.replace(/[.+^${}()|[\]\\]/g, "\\$&");
 	const body = greedy
 		? esc.replace(/\*/g, ".*").replace(/\?/g, ".")
@@ -66,14 +66,14 @@ function tokenizeArith(expr: string, env: Record<string, string>): ArithToken[] 
 		if (ch === ")") { tokens.push({ type: "rparen" }); i++; continue; }
 		if (/\d/.test(ch)) {
 			let j = i + 1;
-			while (j < expr.length && /\d/.test(expr.charAt(j))) j++;
+			while (j < expr.length && /\d/.test(expr.charAt(j))) { j++; }
 			tokens.push({ type: "number", value: Number(expr.slice(i, j)) });
 			i = j;
 			continue;
 		}
 		if (/[A-Za-z_]/.test(ch)) {
 			let j = i + 1;
-			while (j < expr.length && /[A-Za-z0-9_]/.test(expr.charAt(j))) j++;
+			while (j < expr.length && /[A-Za-z0-9_]/.test(expr.charAt(j))) { j++; }
 			const name = expr.slice(i, j);
 			const raw = env[name];
 			const value = raw === undefined || raw === "" ? 0 : Number(raw);
@@ -94,9 +94,9 @@ function tokenizeArith(expr: string, env: Record<string, string>): ArithToken[] 
  */
 export function evalArith(expr: string, env: Record<string, string>): number {
 	const trimmed = expr.trim();
-	if (trimmed.length === 0 || trimmed.length > 1024) return NaN;
+	if (trimmed.length === 0 || trimmed.length > 1024) { return Number.NaN; }
 	const tokens = tokenizeArith(trimmed, env);
-	if (tokens.length === 0) return NaN;
+	if (tokens.length === 0) { return Number.NaN; }
 
 	let index = 0;
 
@@ -105,15 +105,15 @@ export function evalArith(expr: string, env: Record<string, string>): number {
 
 	const parsePrimary = (): number => {
 		const token = consume();
-		if (!token) return NaN;
-		if (token.type === "number") return token.value;
+		if (!token) { return Number.NaN; }
+		if (token.type === "number") { return token.value; }
 		if (token.type === "lparen") {
 			const value = parseExpression();
-			if (tokens[index]?.type !== "rparen") return NaN;
+			if (tokens[index]?.type !== "rparen") { return Number.NaN; }
 			index++;
 			return value;
 		}
-		return NaN;
+		return Number.NaN;
 	};
 
 	const parseUnary = (): number => {
@@ -134,7 +134,7 @@ export function evalArith(expr: string, env: Record<string, string>): number {
 		while (peek()?.type === "pow") {
 			consume();
 			const right = parseUnary();
-			left = left ** right;
+			left **= right;
 		}
 		return left;
 	};
@@ -151,13 +151,13 @@ export function evalArith(expr: string, env: Record<string, string>): number {
 			if (token?.type === "div") {
 				consume();
 				const right = parsePower();
-				left = right === 0 ? NaN : left / right;
+				left = right === 0 ? Number.NaN : left / right;
 				continue;
 			}
 			if (token?.type === "mod") {
 				consume();
 				const right = parsePower();
-				left = right === 0 ? NaN : left % right;
+				left = right === 0 ? Number.NaN : left % right;
 				continue;
 			}
 			return left;
@@ -183,7 +183,7 @@ export function evalArith(expr: string, env: Record<string, string>): number {
 	};
 
 	const result = parseExpression();
-	if (!Number.isFinite(result) || index !== tokens.length) return NaN;
+	if (!Number.isFinite(result) || index !== tokens.length) { return Number.NaN; }
 	return Math.trunc(result);
 }
 
@@ -198,7 +198,7 @@ function outsideSingleQuotes(
 	replacer: (chunk: string) => string,
 ): string {
 	// Fast path: no single quotes → apply replacer to whole string, no allocation
-	if (!input.includes("'")) return replacer(input);
+	if (!input.includes("'")) { return replacer(input); }
 
 	const parts: string[] = [];
 	let i = 0;
@@ -244,14 +244,14 @@ export function expandBraces(token: string): string[] {
 	const MaxBraceExpansions = 256;
 
 	function expandBracesInternal(value: string, depth: number): string[] {
-		if (depth > MaxBraceDepth) return [value];
+		if (depth > MaxBraceDepth) { return [value]; }
 		// Find the first { not preceded by $
 		let braceDepth = 0;
 		let start = -1;
 		for (let i = 0; i < value.length; i++) {
 			const ch = value.charAt(i);
 			if (ch === "{" && value[i - 1] !== "$") {
-				if (braceDepth === 0) start = i;
+				if (braceDepth === 0) { start = i; }
 				braceDepth++;
 			} else if (ch === "}") {
 				braceDepth--;
@@ -266,9 +266,9 @@ export function expandBraces(token: string): string[] {
 					if (rangeMatch) {
 						const items: string[] = [];
 						if (/\d/.test(rangeMatch[1] as string)) {
-							const from = parseInt(rangeMatch[1] as string, 10);
-							const to = parseInt(rangeMatch[2] as string, 10);
-							const step = rangeMatch[3] ? parseInt(rangeMatch[3], 10) : 1;
+							const from = Number.parseInt(rangeMatch[1] as string, 10);
+							const to = Number.parseInt(rangeMatch[2] as string, 10);
+							const step = rangeMatch[3] ? Number.parseInt(rangeMatch[3], 10) : 1;
 							const inc = from <= to ? step : -step;
 							for (let n = from; from <= to ? n <= to : n >= to; n += inc) {
 								items.push(String(n));
@@ -286,7 +286,7 @@ export function expandBraces(token: string): string[] {
 						const output: string[] = [];
 						for (const item of expanded) {
 							output.push(...expandBracesInternal(item, depth + 1));
-							if (output.length > MaxBraceExpansions) return [value];
+							if (output.length > MaxBraceExpansions) { return [value]; }
 						}
 						return output;
 					}
@@ -307,7 +307,7 @@ export function expandBraces(token: string): string[] {
 						const output: string[] = [];
 						for (const part of parts) {
 							output.push(...expandBracesInternal(`${prefix}${part}${suffix}`, depth + 1));
-							if (output.length > MaxBraceExpansions) return [value];
+							if (output.length > MaxBraceExpansions) { return [value]; }
 						}
 						return output;
 					}
@@ -322,7 +322,7 @@ export function expandBraces(token: string): string[] {
 }
 
 function expandArithmeticChunks(input: string, env: Record<string, string>): string {
-	if (!input.includes("$((")) return input;
+	if (!input.includes("$((")) { return input; }
 	let result = "";
 	let index = 0;
 	let flush = 0;
@@ -376,7 +376,7 @@ export function expandSync(
 	home?: string,
 ): string {
 	// Fast path: nothing to expand (no $ and no ~ and no single quotes)
-	if (!input.includes("$") && !input.includes("~") && !input.includes("'")) return input;
+	if (!((input.includes("$") || input.includes("~") ) || input.includes("'"))) { return input; }
 
 	const homePath = home ?? env.HOME ?? "/home/user";
 
@@ -408,7 +408,7 @@ export function expandSync(
 		// ${#arr[@]} — array length
 		s = s.replace(/\$\{#([A-Za-z_][A-Za-z0-9_]*)[@*]\}/g, (_, name) => {
 			let count = 0;
-			for (const k of Object.keys(env)) { if (k.startsWith(`${name}[`)) count++; }
+			for (const k of Object.keys(env)) { if (k.startsWith(`${name}[`)) { count++;  }}
 			return String(count);
 		});
 
@@ -426,7 +426,7 @@ export function expandSync(
 		s = s.replace(
 			/\$\{([A-Za-z_][A-Za-z0-9_]*):=([^}]*)\}/g,
 			(_, name, def) => {
-				if (env[name] === undefined || env[name] === "") env[name] = def;
+				if (env[name] === undefined || env[name] === "") { env[name] = def; }
 				return env[name] as string;
 			},
 		);
@@ -443,9 +443,9 @@ export function expandSync(
 			/\$\{([A-Za-z_][A-Za-z0-9_]*):(-?\d+)(?::(\d+))?\}/g,
 			(_, name, offset, len) => {
 				const val = env[name] ?? "";
-				const off = parseInt(offset, 10);
+				const off = Number.parseInt(offset, 10);
 				const start = off < 0 ? Math.max(0, val.length + off) : Math.min(off, val.length);
-				return len !== undefined ? val.slice(start, start + parseInt(len, 10)) : val.slice(start);
+				return len === undefined ? val.slice(start) : val.slice(start, start + Number.parseInt(len, 10));
 			},
 		);
 
@@ -566,10 +566,10 @@ export async function expandAsync(
 				let depth = 0;
 				let j = i + 1;
 				while (j < input.length) {
-					if (input[j] === "(") depth++;
+					if (input[j] === "(") { depth++; }
 					else if (input[j] === ")") {
 						depth--;
-						if (depth === 0) break;
+						if (depth === 0) { break; }
 					}
 					j++;
 				}
@@ -588,8 +588,8 @@ export async function expandAsync(
 
 	return expandSync(input, env, lastExit);
 	} finally {
-		if (currentDepth <= 0) delete env[depthKey];
-		else env[depthKey] = String(currentDepth);
+		if (currentDepth <= 0) { delete env[depthKey]; }
+		else { env[depthKey] = String(currentDepth); }
 	}
 }
 
@@ -600,15 +600,15 @@ export async function expandAsync(
  * Supports star (any chars in segment) and double-star (any path).
  * Returns the original pattern if no matches found (bash behavior).
  */
-type GlobVfs = {
+interface GlobVfs {
 	list: (p: string) => string[];
 	exists: (p: string) => boolean;
 	stat: (p: string) => { type: string };
 	statType?: (p: string) => string | null;
-};
+}
 
 function nodeType(vfs: GlobVfs, p: string): string | null {
-	if (vfs.statType) return vfs.statType(p);
+	if (vfs.statType) { return vfs.statType(p); }
 	try { return vfs.stat(p).type; } catch { return null; }
 }
 
@@ -627,29 +627,30 @@ export function expandGlob(
 	vfs: GlobVfs,
 ): string[] {
 	// No glob chars → return as-is
-	if (!pattern.includes('*') && !pattern.includes('?')) return [pattern];
+	if (!(pattern.includes('*') || pattern.includes('?'))) { return [pattern]; }
 
 	const isAbsolute = pattern.startsWith('/');
 	const base = isAbsolute ? '/' : cwd;
 	const relPattern = isAbsolute ? pattern.slice(1) : pattern;
 
 	const results = matchGlob(base, relPattern.split('/'), vfs);
-	if (results.length === 0) return [pattern]; // no match → literal
+	if (results.length === 0) { return [pattern]; // no match → literal
+}
 	return results.sort();
 }
 
 function matchGlob(dir: string, segments: string[], vfs: GlobVfs): string[] {
-	if (segments.length === 0) return [dir];
+	if (segments.length === 0) { return [dir]; }
 	const [seg, ...rest] = segments;
-	if (!seg) return [dir];
+	if (!seg) { return [dir]; }
 
 	// ** matches zero or more path segments
 	if (seg === '**') {
 		const all = walkAll(dir, vfs);
-		if (rest.length === 0) return all;
+		if (rest.length === 0) { return all; }
 		const out: string[] = [];
 		for (const d of all) {
-			if (nodeType(vfs, d) === 'directory') out.push(...matchGlob(d, rest, vfs));
+			if (nodeType(vfs, d) === 'directory') { out.push(...matchGlob(d, rest, vfs)); }
 		}
 		return out;
 	}
@@ -661,10 +662,10 @@ function matchGlob(dir: string, segments: string[], vfs: GlobVfs): string[] {
 	const showHidden = seg.startsWith('.');
 	const matched: string[] = [];
 	for (const e of entries) {
-		if ((!showHidden && e.startsWith('.')) || !re.test(e)) continue;
+		if ((!showHidden && e.startsWith('.')) || !re.test(e)) { continue; }
 		const full = dir === '/' ? `/${e}` : `${dir}/${e}`;
 		if (rest.length === 0) { matched.push(full); continue; }
-		if (nodeType(vfs, full) === 'directory') matched.push(...matchGlob(full, rest, vfs));
+		if (nodeType(vfs, full) === 'directory') { matched.push(...matchGlob(full, rest, vfs)); }
 	}
 	return matched;
 }
@@ -675,7 +676,7 @@ function walkAll(dir: string, vfs: GlobVfs): string[] {
 	try { entries = vfs.list(dir); } catch { return results; }
 	for (const e of entries) {
 		const full = dir === '/' ? `/${e}` : `${dir}/${e}`;
-		if (nodeType(vfs, full) === 'directory') results.push(...walkAll(full, vfs));
+		if (nodeType(vfs, full) === 'directory') { results.push(...walkAll(full, vfs)); }
 	}
 	return results;
 }

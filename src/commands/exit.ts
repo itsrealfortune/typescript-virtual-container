@@ -13,6 +13,6 @@ export const exitCommand: ShellModule = {
 	params: ["[code]"],
 	run: ({ args }) => ({
 		closeSession: true,
-		exitCode: parseInt(args[0] ?? "0", 10) || 0,
+		exitCode: Number.parseInt(args[0] ?? "0", 10) || 0,
 	}),
 };

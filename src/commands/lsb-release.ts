@@ -19,18 +19,21 @@ export const lsbReleaseCommand: ShellModule = {
 		try {
 			const content = shell.vfs.readFile("/etc/os-release");
 			for (const line of content.split("\n")) {
-				if (line.startsWith("PRETTY_NAME="))
+				if (line.startsWith("PRETTY_NAME=")) {
 					osName = line
 						.slice("PRETTY_NAME=".length)
 						.replace(/^"|"$/g, "")
 						.trim();
-				if (line.startsWith("VERSION_CODENAME="))
+				}
+				if (line.startsWith("VERSION_CODENAME=")) {
 					codename = line.slice("VERSION_CODENAME=".length).trim();
-				if (line.startsWith("VERSION_ID="))
+				}
+				if (line.startsWith("VERSION_ID=")) {
 					version = line
 						.slice("VERSION_ID=".length)
 						.replace(/^"|"$/g, "")
 						.trim();
+				}
 			}
 		} catch { /* /etc/os-release may not exist */ }
 
@@ -43,7 +46,7 @@ export const lsbReleaseCommand: ShellModule = {
 		if (all || args.length === 0) {
 			return {
 				stdout: [
-					`Distributor ID:\tFortune`,
+					"Distributor ID:\tFortune",
 					`Description:\t${osName}`,
 					`Release:\t${version}`,
 					`Codename:\t${codename}`,
@@ -53,10 +56,10 @@ export const lsbReleaseCommand: ShellModule = {
 		}
 
 		const lines: string[] = [];
-		if (showId) lines.push(`Distributor ID:\tFortune`);
-		if (showDesc) lines.push(`Description:\t${osName}`);
-		if (showRelease) lines.push(`Release:\t${version}`);
-		if (showCodename) lines.push(`Codename:\t${codename}`);
+		if (showId) { lines.push("Distributor ID:\tFortune"); }
+		if (showDesc) { lines.push(`Description:\t${osName}`); }
+		if (showRelease) { lines.push(`Release:\t${version}`); }
+		if (showCodename) { lines.push(`Codename:\t${codename}`); }
 
 		return { stdout: lines.join("\n"), exitCode: 0 };
 	},

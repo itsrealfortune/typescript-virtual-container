@@ -12,7 +12,7 @@ function applySymbolicMode(existing: number, modeStr: string): number | null {
 	let mode = existing;
 	for (const part of parts) {
 		const m = part.trim().match(pattern);
-		if (!m) return null;
+		if (!m) { return null; }
 		const [, who = "a", op, perms = ""] = m;
 		const targets = who === "" || who === "a" ? ["u", "g", "o"] : who.split("");
 		const bits: Record<string, Record<string, number>> = {
@@ -23,9 +23,9 @@ function applySymbolicMode(existing: number, modeStr: string): number | null {
 		for (const t of targets) {
 			for (const p of perms.split("")) {
 				const bit = bits[t]?.[p];
-				if (bit === undefined) continue;
-				if (op === "+") mode |= bit;
-				else if (op === "-") mode &= ~bit;
+				if (bit === undefined) { continue; }
+				if (op === "+") { mode |= bit; }
+				else if (op === "-") { mode &= ~bit; }
 				else if (op === "=") {
 					// clear all bits for this target, then set requested
 					const mask = Object.values(bits[t] ?? {}).reduce((a, b) => a | b, 0);
@@ -49,7 +49,7 @@ export const chmodCommand: ShellModule = {
 	params: ["<mode> <file>"],
 	run: ({ authUser, shell, cwd, args, uid }) => {
 		const [modeArg, fileArg] = args;
-		if (!modeArg || !fileArg) {
+		if (!(modeArg && fileArg)) {
 			return { stderr: "chmod: missing operand", exitCode: 1 };
 		}
 
@@ -63,7 +63,7 @@ export const chmodCommand: ShellModule = {
 				};
 			}
 			let mode: number;
-			const octal = parseInt(modeArg, 8);
+			const octal = Number.parseInt(modeArg, 8);
 			if (!Number.isNaN(octal) && /^[0-7]+$/.test(modeArg)) {
 				mode = octal;
 			} else {

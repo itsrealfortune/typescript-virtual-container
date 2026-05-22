@@ -330,7 +330,7 @@ function buildCache(): void {
 	commandRegistry.clear();
 	for (const mod of getCommandModules()) {
 		commandRegistry.set(mod.name, mod);
-		for (const alias of mod.aliases ?? []) commandRegistry.set(alias, mod);
+		for (const alias of mod.aliases ?? []) { commandRegistry.set(alias, mod); }
 	}
 	cachedCommandNames = Array.from(commandRegistry.keys()).sort();
 }
@@ -360,7 +360,7 @@ export function registerCommand(module: ShellModule): void {
 	customCommands.push(normalized);
 	// Incremental insert — avoids full Map rebuild for every registerCommand call
 	commandRegistry.set(normalized.name, normalized);
-	for (const alias of normalized.aliases ?? []) commandRegistry.set(alias, normalized);
+	for (const alias of normalized.aliases ?? []) { commandRegistry.set(alias, normalized); }
 	// Invalidate sorted names cache; rebuilt lazily on next getCommandNames()
 	cachedCommandNames = null;
 }
@@ -390,7 +390,7 @@ export function createCustomCommand(
  * @returns A sorted array of command names
  */
 export function getCommandNames(): string[] {
-	if (!cachedCommandNames) buildCache();
+	if (!cachedCommandNames) { buildCache(); }
 	return cachedCommandNames!;
 }
 
@@ -412,6 +412,6 @@ export function getCommandModulesPublic(): ShellModule[] {
  * @returns The matching ShellModule, or undefined if not found
  */
 export function resolveModule(name: string): ShellModule | undefined {
-	if (!cachedCommandNames) buildCache();
+	if (!cachedCommandNames) { buildCache(); }
 	return commandRegistry.get(name.toLowerCase());
 }

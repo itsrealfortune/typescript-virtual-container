@@ -28,9 +28,9 @@ export const exprCommand: ShellModule = {
 		}
 
 		if (args.length >= 3) {
-			const left = parseInt(args[0] as string, 10);
+			const left = Number.parseInt(args[0] as string, 10);
 			const op = args[1] as string;
-			const right = parseInt(args[2] as string, 10);
+			const right = Number.parseInt(args[2] as string, 10);
 			if (Number.isNaN(left) || Number.isNaN(right)) {
 				return { stderr: "expr: non-integer argument\n", exitCode: 1 };
 			}
@@ -40,11 +40,11 @@ export const exprCommand: ShellModule = {
 				case "-": result = left - right; break;
 				case "*": result = left * right; break;
 				case "/":
-					if (right === 0) return { stderr: "expr: division by zero\n", exitCode: 2 };
+					if (right === 0) { return { stderr: "expr: division by zero\n", exitCode: 2 }; }
 					result = Math.trunc(left / right);
 					break;
 				case "%":
-					if (right === 0) return { stderr: "expr: division by zero\n", exitCode: 2 };
+					if (right === 0) { return { stderr: "expr: division by zero\n", exitCode: 2 }; }
 					result = left % right;
 					break;
 				default:

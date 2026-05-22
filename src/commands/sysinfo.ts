@@ -14,22 +14,22 @@ export const lscpuCommand: ShellModule = {
 	run: ({ shell }) => {
 		const hostCpus = os.cpus();
 		const cpuCap = shell.resourceCaps?.cpuCapCores;
-		const cpus = cpuCap != null && cpuCap > 0 ? hostCpus.slice(0, cpuCap) : hostCpus;
+		const cpus = cpuCap !== null && cpuCap > 0 ? hostCpus.slice(0, cpuCap) : hostCpus;
 		const arch = os.arch();
 		const endian = os.endianness();
 		const cores = cpus.length;
 		const model = cpus.length > 0 ? (cpus[0] as os.CpuInfo).model : "Unknown";
 		const lines = [
 			`Architecture:        ${arch}`,
-			`CPU op-mode(s):      32-bit, 64-bit`,
+			"CPU op-mode(s):      32-bit, 64-bit",
 			`Byte Order:          ${endian}`,
 			`CPU(s):              ${cores}`,
 			`On-line CPU(s) list: 0-${cores - 1}`,
 			`Model name:          ${model}`,
-			`Thread(s) per core:  1`,
+			"Thread(s) per core:  1",
 			`Core(s) per socket:  ${cores}`,
-			`Socket(s):           1`,
-			`Vendor ID:           GenuineIntel`,
+			"Socket(s):           1",
+			"Vendor ID:           GenuineIntel",
 		];
 		return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 	},

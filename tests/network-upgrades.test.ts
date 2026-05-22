@@ -202,7 +202,7 @@ describe("VirtualSwitch - Bandwidth Enforcement", () => {
 		const baie = new Baie("bw-test", "10.0.1.0/24");
 		void baie.createVM("test");
 		const port = baie.switch.getPorts().values().next().value;
-		if (!port) return;
+		if (!port) { return; }
 
 		baie.switch.setTrafficRule(port.mac, {
 			vms: ["test"],
@@ -261,7 +261,7 @@ describe("VirtualSwitch - Packet Reordering", () => {
 		const baie = new Baie("reorder", "10.0.1.0/24");
 		void baie.createVM("test");
 		const port = baie.switch.getPorts().values().next().value;
-		if (!port) return;
+		if (!port) { return; }
 
 		baie.switch.addQdiscRule(port.mac, {
 			interface: "eth0",
@@ -287,7 +287,7 @@ describe("VirtualSwitch - MTU Enforcement", () => {
 		const baie = new Baie("mtu", "10.0.1.0/24");
 		void baie.createVM("test");
 		const port = baie.switch.getPorts().values().next().value;
-		if (!port) return;
+		if (!port) { return; }
 
 		const result = await baie.switch.route({
 			srcIp: port.ip,
@@ -308,7 +308,7 @@ describe("VirtualSwitch - Gaussian Jitter", () => {
 		const baie = new Baie("jitter", "10.0.1.0/24");
 		void baie.createVM("test");
 		const port = baie.switch.getPorts().values().next().value;
-		if (!port) return;
+		if (!port) { return; }
 
 		baie.switch.setTrafficRule(port.mac, {
 			vms: ["test"],

@@ -24,17 +24,17 @@ function colorize(name: string, color: string): string {
 }
 
 function entryColor(mode: number, type: "file" | "directory" | "device", isLink: boolean): string {
-	if (isLink) return C_LINK;
+	if (isLink) { return C_LINK; }
 	if (type === "directory") {
-		const sticky  = !!(mode & 0o1000);
-		const worldW  = !!(mode & 0o002);
-		if (sticky && worldW) return C_STICKY_WX;
-		if (sticky)           return C_STICKY;
-		if (worldW)           return C_OTHER_WX;
+		const sticky  = Boolean((mode & 0o1000));
+		const worldW  = Boolean((mode & 0o002));
+		if (sticky && worldW) { return C_STICKY_WX; }
+		if (sticky)           { return C_STICKY; }
+		if (worldW)           { return C_OTHER_WX; }
 		return C_DIR;
 	}
-	if (type === "device") return C_NORMAL;
-	if (mode & 0o111) return C_EXEC;
+	if (type === "device") { return C_NORMAL; }
+	if (mode & 0o111) { return C_EXEC; }
 	return C_NORMAL;
 }
 
@@ -42,27 +42,27 @@ function entryColor(mode: number, type: "file" | "directory" | "device", isLink:
 
 function formatPermissions(mode: number, type: "file" | "directory" | "device", isLink: boolean): string {
 	let ft: string;
-	if (isLink)                    ft = "l";
-	else if (type === "directory") ft = "d";
-	else if (type === "device")    ft = "c";
-	else                           ft = "-";
+	if (isLink)                    { ft = "l"; }
+	else if (type === "directory") { ft = "d"; }
+	else if (type === "device")    { ft = "c"; }
+	else                           { ft = "-"; }
 
 	const r = (bit: number) => (mode & bit ? "r" : "-");
 	const w = (bit: number) => (mode & bit ? "w" : "-");
 
 	const xOwner = (() => {
-		const exec = !!(mode & 0o100);
-		if (mode & 0o4000) return exec ? "s" : "S";
+		const exec = Boolean((mode & 0o100));
+		if (mode & 0o4000) { return exec ? "s" : "S"; }
 		return exec ? "x" : "-";
 	})();
 	const xGroup = (() => {
-		const exec = !!(mode & 0o010);
-		if (mode & 0o2000) return exec ? "s" : "S";
+		const exec = Boolean((mode & 0o010));
+		if (mode & 0o2000) { return exec ? "s" : "S"; }
 		return exec ? "x" : "-";
 	})();
 	const xOther = (() => {
-		const exec = !!(mode & 0o001);
-		if (type === "directory" && (mode & 0o1000)) return exec ? "t" : "T";
+		const exec = Boolean((mode & 0o001));
+		if (type === "directory" && (mode & 0o1000)) { return exec ? "t" : "T"; }
 		return exec ? "x" : "-";
 	})();
 
@@ -119,7 +119,7 @@ function shortListing(
 
 // ─── long listing ────────────────────────────────────────────────────────────
 
-type VfsStat = {
+interface VfsStat {
 	mode:          number;
 	type:          "file" | "directory" | "device";
 	updatedAt:     Date;
@@ -130,7 +130,7 @@ type VfsStat = {
 	deviceKind?:   string;
 	major?:        number;
 	minor?:        number;
-};
+}
 
 function longListing(
 	vfs: {
@@ -144,7 +144,13 @@ function longListing(
 ): string {
 	const base = dir === "/" ? "" : dir;
 
-	type Row = { perms: string; nlink: string; size: string; date: string; label: string };
+	interface Row {
+    perms: string;
+    nlink: string;
+    size: string;
+    date: string;
+    label: string 
+}
 
 	const rows: Row[] = items.map((name) => {
 		const childPath = `${base}/${name}`;

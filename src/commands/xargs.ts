@@ -15,7 +15,7 @@ export const xargsCommand: ShellModule = {
 		const baseCmd = args[0] ?? "echo";
 		const extraArgs = args.slice(1);
 		const items = (stdin ?? "").trim().split(/\s+/).filter(Boolean);
-		if (items.length === 0) return { exitCode: 0 };
+		if (items.length === 0) { return { exitCode: 0 }; }
 		const fullCmd = [baseCmd, ...extraArgs, ...items].join(" ");
 		return runCommand(
 			fullCmd,

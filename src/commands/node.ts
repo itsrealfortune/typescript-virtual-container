@@ -164,12 +164,12 @@ class ExitSignal {
 }
 
 function formatValue(v: unknown): string {
-	if (v === null) return "null";
-	if (v === undefined) return "undefined";
-	if (typeof v === "string") return v;
-	if (typeof v === "function") return `[Function: ${v.name || "(anonymous)"}]`;
-	if (Array.isArray(v)) return `[ ${v.map(formatValue).join(", ")} ]`;
-	if (v instanceof Error) return `${v.name}: ${v.message}`;
+	if (v === null) { return "null"; }
+	if (v === undefined) { return "undefined"; }
+	if (typeof v === "string") { return v; }
+	if (typeof v === "function") { return `[Function: ${v.name || "(anonymous)"}]`; }
+	if (Array.isArray(v)) { return `[ ${v.map(formatValue).join(", ")} ]`; }
+	if (v instanceof Error) { return `${v.name}: ${v.message}`; }
 	if (typeof v === "object") {
 		try {
 			const entries = Object.entries(v as Record<string, unknown>)
@@ -230,19 +230,9 @@ function runJsFile(code: string): {
 	// wrap it to capture the return value like a REPL would
 	const trimmed = code.trim();
 	const isExpression =
-		!trimmed.includes("\n") &&
-		!trimmed.startsWith("const ") &&
-		!trimmed.startsWith("let ") &&
-		!trimmed.startsWith("var ") &&
-		!trimmed.startsWith("function ") &&
-		!trimmed.startsWith("class ") &&
-		!trimmed.startsWith("if ") &&
-		!trimmed.startsWith("for ") &&
-		!trimmed.startsWith("while ") &&
-		!trimmed.startsWith("import ") &&
-		!trimmed.startsWith("//");
+		!((((((((((trimmed.includes("\n") ||trimmed.startsWith("const ") ) ||trimmed.startsWith("let ") ) ||trimmed.startsWith("var ") ) ||trimmed.startsWith("function ") ) ||trimmed.startsWith("class ") ) ||trimmed.startsWith("if ") ) ||trimmed.startsWith("for ") ) ||trimmed.startsWith("while ") ) ||trimmed.startsWith("import ") ) ||trimmed.startsWith("//"));
 
-	if (isExpression) return runJs(trimmed);
+	if (isExpression) { return runJs(trimmed); }
 
 	// Multi-line: wrap in IIFE
 	return runJs(`(async () => { ${code} })()`);
@@ -284,8 +274,9 @@ export const nodeCommand: ShellModule = {
 		const eIdx = args.findIndex((a) => a === "-e" || a === "--eval");
 		if (eIdx !== -1) {
 			const expr = args[eIdx + 1];
-			if (!expr)
+			if (!expr) {
 				return { stderr: "node: -e requires an argument\n", exitCode: 1 };
+			}
 			const { stdout, stderr, exitCode } = runJs(expr);
 			return {
 				stdout: stdout || undefined,
@@ -298,8 +289,9 @@ export const nodeCommand: ShellModule = {
 		const pIdx = args.findIndex((a) => a === "-p" || a === "--print");
 		if (pIdx !== -1) {
 			const expr = args[pIdx + 1];
-			if (!expr)
+			if (!expr) {
 				return { stderr: "node: -p requires an argument\n", exitCode: 1 };
+			}
 			const { stdout, stderr, exitCode } = runJs(expr);
 			return {
 				stdout: stdout || (exitCode === 0 ? "\n" : undefined),
@@ -332,7 +324,7 @@ export const nodeCommand: ShellModule = {
 			stdout: [
 				`Welcome to Node.js ${VIRTUAL_VERSION}.`,
 				`Type ".exit" to exit the REPL.`,
-				`> `,
+				"> ",
 			].join("\n"),
 			exitCode: 0,
 		};

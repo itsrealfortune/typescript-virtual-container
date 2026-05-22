@@ -24,21 +24,21 @@ export const usermodCommand: ShellModule = {
 
 		for (let i = 0; i < args.length; i++) {
 			const arg = args[i];
-			if (!arg) continue;
+			if (!arg) { continue; }
 
 			if (arg === "-g") {
 				const val = args[i + 1];
-				if (!val) break;
+				if (!val) { break; }
 				primaryGroup = val;
 				i++;
 			} else if (arg === "-G") {
 				const val = args[i + 1];
-				if (!val) break;
+				if (!val) { break; }
 				supplementaryGroups = val.split(",");
 				i++;
 			} else if (arg === "-aG") {
 				const val = args[i + 1];
-				if (!val) break;
+				if (!val) { break; }
 				appendGroups = true;
 				supplementaryGroups = val.split(",");
 				i++;
@@ -83,7 +83,7 @@ export const usermodCommand: ShellModule = {
 			}
 			for (const g of supplementaryGroups) {
 				const trimmed = g.trim();
-				if (!trimmed) continue;
+				if (!trimmed) { continue; }
 				if (!shell.users.getGroup(trimmed)) {
 					return { stderr: `usermod: group '${trimmed}' does not exist\n`, exitCode: 1 };
 				}

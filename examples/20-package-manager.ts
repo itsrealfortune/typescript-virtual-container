@@ -26,7 +26,7 @@ console.log(`\n--- Available packages: ${pm.listAvailable().length} total ---`);
 // ── Inspect a specific package ────────────────────────────────────
 console.log("\n--- Inspect curl ---");
 const curlInfo = pm.show("curl");
-if (curlInfo) console.log(curlInfo);
+if (curlInfo) { console.log(curlInfo); }
 
 // ── List installed ────────────────────────────────────────────────
 console.log(`\n--- Currently installed: ${pm.installedCount()} packages ---`);

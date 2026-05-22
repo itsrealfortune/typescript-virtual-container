@@ -4,7 +4,7 @@ import { SshClient } from "../src/modules/SSHClient";
 
 // Skip slow network tests by default. Run with:
 //   SSH_MIMIC_RUN_NETWORK_TESTS=1 bun test tests/new-features.test.ts
-const runNetwork = !!process.env.SSH_MIMIC_RUN_NETWORK_TESTS;
+const runNetwork = Boolean(process.env.SSH_MIMIC_RUN_NETWORK_TESTS);
 const itNetwork = runNetwork ? test : test.skip;
 
 async function setupClient(vmName: string) {

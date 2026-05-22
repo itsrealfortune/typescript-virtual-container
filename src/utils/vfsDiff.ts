@@ -122,7 +122,7 @@ export function diffSnapshots(
 
 	// Added — in after, not in before
 	for (const [path, node] of afterMap) {
-		if (shouldIgnore(path)) continue;
+		if (shouldIgnore(path)) { continue; }
 		if (!beforeMap.has(path)) {
 			added.push({ path, type: node.type });
 		}
@@ -130,7 +130,7 @@ export function diffSnapshots(
 
 	// Removed — in before, not in after
 	for (const [path, node] of beforeMap) {
-		if (shouldIgnore(path)) continue;
+		if (shouldIgnore(path)) { continue; }
 		if (!afterMap.has(path)) {
 			removed.push({ path, type: node.type });
 		}
@@ -138,10 +138,12 @@ export function diffSnapshots(
 
 	// Modified — in both, but content or mode changed
 	for (const [path, afterNode] of afterMap) {
-		if (shouldIgnore(path)) continue;
+		if (shouldIgnore(path)) { continue; }
 		const beforeNode = beforeMap.get(path);
-		if (!beforeNode) continue; // already in added
-		if (afterNode.type !== beforeNode.type) continue; // type change = add+remove
+		if (!beforeNode) { continue; // already in added
+}
+		if (afterNode.type !== beforeNode.type) { continue; // type change = add+remove
+}
 
 		if (afterNode.type === "file" && beforeNode.type === "file") {
 			const beforeContent = decodeContent(beforeNode);
@@ -189,7 +191,7 @@ export function formatDiff(
 		maxContentChars?: number;
 	} = {},
 ): string {
-	if (diff.clean) return "(no changes)";
+	if (diff.clean) { return "(no changes)"; }
 
 	const { showContent = false, maxContentChars = 120 } = options;
 	const lines: string[] = [];

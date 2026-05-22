@@ -20,7 +20,7 @@ export function getOptionString(argv: string[], name: string, fallback: string):
 	const prefix = `${name}=`;
 	for (let i = 0; i < argv.length; i++) {
 		const a = argv[i] as string;
-		if (a.startsWith(prefix)) return a.slice(prefix.length);
+		if (a.startsWith(prefix)) { return a.slice(prefix.length); }
 		if (a === name) {
 			const next = argv[i + 1];
 			return (next && !next.startsWith("--")) ? next : fallback;
@@ -41,10 +41,10 @@ export function getOptionInt(argv: string[], name: string, fallback: number): nu
 	const prefix = `${name}=`;
 	for (let i = 0; i < argv.length; i++) {
 		const a = argv[i] as string;
-		if (a.startsWith(prefix)) return parseInt(a.slice(prefix.length), 10);
+		if (a.startsWith(prefix)) { return Number.parseInt(a.slice(prefix.length), 10); }
 		if (a === name) {
 			const next = argv[i + 1];
-			return next ? parseInt(next, 10) : fallback;
+			return next ? Number.parseInt(next, 10) : fallback;
 		}
 	}
 	return fallback;

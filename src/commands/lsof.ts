@@ -14,8 +14,8 @@ export const lsofCommand: ShellModule = {
 		if (iNet) {
 			const header = "COMMAND    PID     USER   FD   TYPE DEVICE SIZE/OFF NODE NAME";
 			const rows = [
-				`sshd       1234     root    3u  IPv4  12345      0t0  TCP *:22 (LISTEN)`,
-				`nginx       567     root    6u  IPv4  23456      0t0  TCP *:80 (LISTEN)`,
+				"sshd       1234     root    3u  IPv4  12345      0t0  TCP *:22 (LISTEN)",
+				"nginx       567     root    6u  IPv4  23456      0t0  TCP *:80 (LISTEN)",
 			];
 			return { stdout: `${header}\n${rows.join("\n")}`, exitCode: 0 };
 		}

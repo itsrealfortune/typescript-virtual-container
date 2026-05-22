@@ -40,7 +40,7 @@ export const psCommand: ShellModule = {
 				);
 			}
 			for (const p of procs) {
-				if (!showAll && p.username !== authUser) continue;
+				if (!showAll && p.username !== authUser) { continue; }
 				const user = p.username.padEnd(10).slice(0, 10);
 				const mem = (Math.random() * 1.5).toFixed(1);
 				const vsz = Math.floor(Math.random() * 50000 + 10000);
@@ -60,13 +60,13 @@ export const psCommand: ShellModule = {
 		const header = "  PID TTY          TIME CMD";
 		const rows: string[] = [header];
 		for (const s of sessions) {
-			if (!showAll && s.username !== authUser) continue;
+			if (!showAll && s.username !== authUser) { continue; }
 			rows.push(
 				`${String(sessionPids.get(s.id)).padStart(5)} ${s.tty.padEnd(12)} 00:00:00 ${s.username === authUser ? "bash" : `bash (${s.username})`}`,
 			);
 		}
 		for (const p of procs) {
-			if (!showAll && p.username !== authUser) continue;
+			if (!showAll && p.username !== authUser) { continue; }
 			rows.push(
 				`${String(p.pid).padStart(5)} ${p.tty.padEnd(12)} 00:00:00 ${p.command}`,
 			);

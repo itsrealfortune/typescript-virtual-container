@@ -169,7 +169,7 @@ export class ProcessScheduler {
 	 */
 	niceToPriority(nice: number): ProcessPriority {
 		for (const [name, value] of Object.entries(PRIORITY_TO_NICE)) {
-			if (value === nice) return name as ProcessPriority;
+			if (value === nice) { return name as ProcessPriority; }
 		}
 		// Find closest
 		let closest: ProcessPriority = "normal";
@@ -221,7 +221,7 @@ export class ProcessScheduler {
 	 * @returns True if the process should be throttled.
 	 */
 	shouldThrottle(pid: number, nice: number, totalRunningProcesses: number): boolean {
-		if (!this._enforceFairShare || totalRunningProcesses <= 1) return false;
+		if (!this._enforceFairShare || totalRunningProcesses <= 1) { return false; }
 
 		const now = Date.now();
 		const windowElapsed = now - this._windowStart;

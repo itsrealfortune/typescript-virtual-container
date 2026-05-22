@@ -15,7 +15,7 @@ export const yesCommand: ShellModule = {
 	run: ({ args }) => {
 		const word = args.length ? args.join(" ") : "y";
 		// Output 200 lines (simulate before Ctrl+C which isn't supported in virtual shell)
-		return { stdout: Array(200).fill(word).join("\n"), exitCode: 0 };
+		return { stdout: new Array(200).fill(word).join("\n"), exitCode: 0 };
 	},
 };
 
@@ -70,8 +70,8 @@ function cowsay(message: string, dead = false): string {
 		? `< ${lines[0]} >`
 		: lines.map((l, i) => {
 			const pad = " ".repeat(maxLen - l.length);
-			if (i === 0) return `/ ${l}${pad} \\`;
-			if (i === lines.length - 1) return `\\ ${l}${pad} /`;
+			if (i === 0) { return `/ ${l}${pad} \\`; }
+			if (i === lines.length - 1) { return `\\ ${l}${pad} /`; }
 			return `| ${l}${pad} |`;
 		}).join("\n");
 	const eyes = dead ? "xx" : "oo";
@@ -79,11 +79,11 @@ function cowsay(message: string, dead = false): string {
 		` ${"_".repeat(maxLen + 2)}`,
 		`( ${body} )`,
 		` ${"‾".repeat(maxLen + 2)}`,
-		`        \\   ^__^`,
+		"        \\   ^__^",
 		`         \\  (${eyes})\\_______`,
-		`            (__)\\       )\\/\\`,
-		`                ||----w |`,
-		`                ||     ||`,
+		"            (__)\\       )\\/\\",
+		"                ||----w |",
+		"                ||     ||",
 	].join("\n");
 }
 
@@ -143,9 +143,9 @@ export const cmatrixCommand: ShellModule = {
 			let line = "";
 			for (let c = 0; c < cols; c++) {
 				const ch = chars[Math.floor(Math.random() * chars.length)] as string;
-				if (Math.random() < 0.05) line += bright + ch + reset;
-				else if (Math.random() < 0.7) line += green + ch + reset;
-				else line += " ";
+				if (Math.random() < 0.05) { line += bright + ch + reset; }
+				else if (Math.random() < 0.7) { line += green + ch + reset; }
+				else { line += " "; }
 			}
 			lines.push(line);
 		}

@@ -161,7 +161,7 @@ function encodeNode(enc: Encoder, node: InternalNode): void {
 		enc.writeFloat64(d.updatedAt);
 		const children = Object.values(d.children);
 		enc.writeUint32(children.length);
-		for (const child of children) encodeNode(enc, child);
+		for (const child of children) { encodeNode(enc, child); }
 	}
 }
 
@@ -300,12 +300,12 @@ const _namePool = new Map<string, string>();
 const _maxNamePoolSize = 500;
 function internName(s: string): string {
 	const cached = _namePool.get(s);
-	if (cached !== undefined) return cached;
+	if (cached !== undefined) { return cached; }
 	if (_namePool.size >= _maxNamePoolSize) {
 		// Evict first 25% of entries (simple LRU approximation)
 		const toRemove = Math.floor(_maxNamePoolSize / 4);
 		const keys = [..._namePool.keys()];
-		for (let i = 0; i < toRemove; i++) _namePool.delete(keys[i] as string);
+		for (let i = 0; i < toRemove; i++) { _namePool.delete(keys[i] as string); }
 	}
 	_namePool.set(s, s);
 	return s;
@@ -348,7 +348,7 @@ export function forkDirTree(base: InternalDirectoryNode): InternalDirectoryNode 
  * @returns Reconstructed root directory node.
  */
 export function decodeVfs(buf: Buffer): InternalDirectoryNode {
-	if (buf.length < 5) throw new Error("[VFS binary] Buffer too short");
+	if (buf.length < 5) { throw new Error("[VFS binary] Buffer too short"); }
 
 	const magic = buf.slice(0, 4);
 	if (!magic.equals(MAGIC)) {
