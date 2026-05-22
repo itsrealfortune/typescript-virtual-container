@@ -65,7 +65,7 @@ export const ssCommand: ShellModule = {
 			lines.push("State      Recv-Q Send-Q Local Address:Port               Peer Address:Port");
 		}
 
-		return { stdout: lines.join("\n") + "\n", exitCode: 0 };
+		return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 	},
 };
 
@@ -114,7 +114,7 @@ function _showSummary(net: import("../modules/VirtualNetworkManager").VirtualNet
 		`Conntrack entries: ${conntrackCount}/${conntrackMax}`,
 	];
 
-	return { stdout: lines.join("\n") + "\n", exitCode: 0 };
+	return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 }
 
 function _showConntrack(net: import("../modules/VirtualNetworkManager").VirtualNetworkManager): { stdout: string; exitCode: number } {
@@ -130,7 +130,7 @@ function _showConntrack(net: import("../modules/VirtualNetworkManager").VirtualN
 		`entries: ${entries.length}  max: ${net.getConntrackMax()}`,
 	];
 
-	return { stdout: lines.join("\n") + "\n", exitCode: 0 };
+	return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 }
 
 function _getSimulatedConnectionCount(protocol?: string): number {

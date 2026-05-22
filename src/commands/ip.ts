@@ -83,7 +83,7 @@ export const ipCommand: ShellModule = {
 				const mtuIdx = args.indexOf("mtu");
 				if (mtuIdx !== -1 && dev) {
 					const mtu = parseInt(args[mtuIdx + 1] ?? "1500", 10);
-					if (!isNaN(mtu)) net.setInterfaceMtu(dev, mtu);
+					if (!Number.isNaN(mtu)) net.setInterfaceMtu(dev, mtu);
 				}
 				return { exitCode: 0 };
 			}
