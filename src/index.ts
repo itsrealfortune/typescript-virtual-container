@@ -98,6 +98,7 @@ export { FileCache, HDD_DISK_IO, NVME_DISK_IO } from "./modules/VirtualFileSyste
 export type { CacheEvictionPolicy, CacheStats, DiskIoParams, FileCacheOptions } from "./modules/VirtualFileSystem/fileCache";
 export { SwapStore } from "./modules/VirtualFileSystem/swapStore";
 export type { SwapStats } from "./modules/VirtualFileSystem/swapStore";
+export { JournalOp } from "./modules/VirtualFileSystem/journal";
 export { resolveEffectiveUid, resolveEffectiveGid } from "./modules/VirtualFileSystem/permissions";
 
 export { loadOrCreateHostKey } from "./modules/SSHMimic/hostKey";
