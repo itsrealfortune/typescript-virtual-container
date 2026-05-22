@@ -4,6 +4,8 @@
  * Provides a convenient API for running shell commands (exec, ls, cat, mkdir, etc.)
  * without real SSH transport overhead. Maintains working-directory state across
  * invocations and runs commands as a single authenticated user.
+ * 
+ * THIS IS NOT A REAL SSH CLIENT — it does not implement the SSH protocol or network transport.
  *
  * @example
  * ```ts

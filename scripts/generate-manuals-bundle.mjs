@@ -11,7 +11,7 @@
  */
 
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join, basename } from "node:path";
+import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
@@ -37,7 +37,6 @@ const output = `/**
  * Inlines all src/commands/manuals/*.txt files so that standalone and web
  * builds have access to man pages without needing filesystem access.
  */
-/** biome-ignore-all lint/style/useNamingConvention: generated keys match command names (e.g. lsb_release) */
 
 /** Static map of command name → man page content. */
 export const MANUALS: Readonly<Record<string, string>> = {

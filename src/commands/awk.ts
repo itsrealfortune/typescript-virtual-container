@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/style/useNamingConvention: AWK vars (NR, NF, FS, OFS, ORS) are spec names */
 import type { ShellModule } from "../types/commands";
 import { assertPathAccess, resolvePath } from "./helpers";
 

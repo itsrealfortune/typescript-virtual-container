@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/style/useNamingConvention: ENV */
 /** biome-ignore-all lint/suspicious/noTemplateCurlyInString: expand */
 import { beforeAll, describe, expect, test } from "bun:test";
 import type { SshClient, VirtualShell } from "../src";

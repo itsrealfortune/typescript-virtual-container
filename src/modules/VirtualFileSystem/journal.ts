@@ -17,7 +17,6 @@
  *   0x05 MOVE   — [2B dest_len] [dest bytes]
  *   0x06 SYMLINK — [2B target_len] [target bytes]
  */
-/** biome-ignore-all lint/style/useNamingConvention: JournalOp modes */
 
 import * as fsSync from "node:fs";
 

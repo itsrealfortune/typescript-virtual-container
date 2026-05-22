@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/style/useNamingConvention: const as enum */
 import { EventEmitter } from "node:events";
 import * as path from "node:path";
 import type { AuthenticationType, KeyboardAuthContext } from "ssh2";

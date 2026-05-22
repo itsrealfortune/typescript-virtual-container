@@ -4,7 +4,6 @@
  * Tracks kernel tunables that can be read/written via /proc/sys/* files
  * or the `sysctl` command. Values affect simulator behavior when applicable.
  */
-/** biome-ignore-all lint/style/useNamingConvention: to fix later*/
 
 /**
  * Writable /proc/sys state — all tunable kernel parameters exposed via

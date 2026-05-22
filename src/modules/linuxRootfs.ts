@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/style/useNamingConvention: ENV VAR KEYS + system names */
 /**
  * linuxRootfs.ts
  *
@@ -19,8 +18,7 @@
  */
 
 import * as os from "node:os";
-import type { ShellProperties } from "../modules/VirtualShell";
-import type { VirtualShellResourceCaps } from "../modules/VirtualShell";
+import type { ShellProperties, VirtualShellResourceCaps } from "../modules/VirtualShell";
 import VirtualFileSystem from "./VirtualFileSystem";
 import { decodeVfs } from "./VirtualFileSystem/binaryPack";
 import type { VirtualNetworkManager } from "./VirtualNetworkManager";
