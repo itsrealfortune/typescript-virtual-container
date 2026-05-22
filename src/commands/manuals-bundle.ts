@@ -2101,6 +2101,29 @@ SYNOPSIS
 OPTIONS
        -i          run login shell as target user
        -u USER     run command as USER`,
+	"swap": `SWAP(1)               User Commands               SWAP(1)
+
+NAME
+       swap - view and manage swap file usage
+
+SYNOPSIS
+       swap [options]
+
+OPTIONS
+       -s, --stats   show swap statistics
+       -c, --clear   clear all swap files
+
+DESCRIPTION
+       swap displays information about the swap file store,
+       which holds evicted file contents on disk for O(1)
+       reload. Swap is only available in "fs" persistence mode
+       with swapEnabled=true.
+
+EXAMPLES
+       swap -s              # show swap statistics
+       swap --stats         # same as above
+       swap -c              # clear all swap files
+       swap --clear         # same as above`,
 	"sysctl": `SYSCTL(8)       System Administration       SYSCTL(8)
 
 NAME
