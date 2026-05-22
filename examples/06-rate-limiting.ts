@@ -17,6 +17,7 @@ const ssh = new VirtualSshServer({
 	lockoutDurationMs: 300_000, // 5 minutes
 });
 
+// Listen for lockout events
 ssh.on("auth:failure", ({ username, remoteAddress }) => {
 	console.log(`[AUTH FAIL] ${username} from ${remoteAddress}`);
 });
@@ -26,13 +27,18 @@ ssh.on("auth:lockout", ({ ip, until }) => {
 });
 
 const port = await ssh.start();
-console.log(`SSH server on port ${port} (max 3 attempts, 5min lockout)`);
+console.log(`SSH server on port ${port} (max 3 attempts, 5min lockout)\n`);
 
-// The lockout is triggered internally by the SSH server after maxAuthAttempts failures.
-// Here we verify the configuration:
-console.log(`Max auth attempts: 3`);
-console.log(`Lockout duration: 300000ms`);
-console.log(`Manual override available via ssh.clearLockout(ip)`);
+// Simulate lockout by triggering the event directly
+// (In production, this fires automatically after maxAuthAttempts failures)
+const testIp = "192.168.1.100";
+console.log(`Simulating 3 failed auth attempts from ${testIp}...`);
+ssh.emit("auth:lockout", { ip: testIp, until: new Date(Date.now() + 300_000) });
+
+console.log(`\n${testIp} is now locked out — further connections will be rejected`);
+console.log("Admin overrides the lockout...");
+ssh.clearLockout(testIp);
+console.log(`Lockout cleared for ${testIp} — connections allowed again`);
 
 ssh.stop();
 console.log("\nSSH server stopped");
