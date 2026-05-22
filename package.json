@@ -53,7 +53,8 @@
     "publish-doc-app": "bun build-all && bunx gh-pages -d docs && git add docs/app.js && git commit -m 'docs: update web terminal app' && git push",
     "generate-manuals": "node scripts/generate-manuals-bundle.mjs",
     "generate-wiki": "node scripts/generate-wiki.mjs",
-    "generate-wiki:push": "node scripts/generate-wiki.mjs --push --auto"
+    "generate-wiki:push": "node scripts/generate-wiki.mjs --push --auto",
+    "run-examples": "for i in 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19; do echo \"=== $i ===\" && timeout 20 bun run examples/$i-*.ts 2>&1 | tail -5 && echo \"\" ; done"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",
