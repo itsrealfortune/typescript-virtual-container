@@ -5,11 +5,31 @@
  * VirtualShell instance, so files written via SSH are visible via SFTP.
  */
 
-import { VirtualSftpServer, VirtualShell, VirtualSshServer } from "typescript-virtual-container";
+import { VirtualSftpServer as SftpMimic, VirtualShell } from "../src";
 
 const shell = new VirtualShell("my-container");
-const ssh   = new VirtualSshServer({ port: 2222, shell });
-const sftp  = new VirtualSftpServer({ port: 2223, shell });
+await shell.ensureInitialized();
 
-await ssh.start();
-await sftp.start();
+// Create a file via the VFS (simulating SSH write)
+shell.vfs.writeFile("/shared/hello.txt", "Written via SSH");
+console.log("File written via VFS: /shared/hello.txt");
+
+// Start SFTP server sharing the same shell
+const sftp = new SftpMimic({ port: 0, shell });
+const sftpPort = await sftp.start();
+console.log(`SFTP server started on port ${sftpPort}`);
+
+// Verify the file is visible through the shared VFS
+const content = shell.vfs.readFile("/shared/hello.txt");
+console.log(`File content via shared VFS: "${content.trim()}"`);
+
+// Write via SFTP's shared VFS
+shell.vfs.writeFile("/shared/sftp-upload.txt", "Uploaded via SFTP");
+console.log("File written via SFTP: /shared/sftp-upload.txt");
+
+// Both files are visible in the same filesystem
+const files = shell.vfs.list("/shared");
+console.log(`Files in /shared: ${files.join(", ")}`);
+
+sftp.stop();
+console.log("SFTP server stopped");
