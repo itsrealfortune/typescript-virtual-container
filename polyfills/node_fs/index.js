@@ -81,6 +81,15 @@ export function readFileSync(path, optionsOrEncoding) {
   return globalThis.Buffer.from(bytes); 
 }
 
+export function renameSync(oldPath, newPath) {
+  if (!memCache.has(oldPath)) throw Object.assign(new Error(`ENOENT: no such file: ${oldPath}`), { code: 'ENOENT' });
+  const val = memCache.get(oldPath);
+  memCache.set(newPath, val);
+  idbSet(newPath, val);
+  memCache.delete(oldPath);
+  idbSet(oldPath, null);
+}
+
 export function writeFileSync(path, data, optionsOrEncoding) {
   const enc = typeof optionsOrEncoding === 'string' ? optionsOrEncoding : optionsOrEncoding?.encoding;
   const bytes = toBytes(data, enc);
@@ -198,5 +207,5 @@ globalThis.__fsReady__ = ready;
 export default {
   existsSync, readFileSync, writeFileSync, appendFileSync,
   unlinkSync, rmSync, mkdirSync, readdirSync, statSync,
-  openSync, writeSync, closeSync, constants, ready
+  renameSync, openSync, writeSync, closeSync, constants, ready
 };
