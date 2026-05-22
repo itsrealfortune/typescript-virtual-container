@@ -167,9 +167,11 @@ export const zipCommand: ShellModule = {
 			const p = resolvePath(cwd, src);
 			if (!shell.vfs.exists(p)) { return { stderr: `zip warning: name not matched: ${src}`, exitCode: 12 }; }
 			const st = shell.vfs.stat(p);
+			// Strip leading slash — real zip does this for security (avoids absolute-path extraction)
+			const storeName = src.startsWith("/") ? src.slice(1) : src;
 			if (st.type === "file") {
 				const content = shell.vfs.readFileRaw(p);
-				entries.push({ name: src, content });
+				entries.push({ name: storeName, content });
 				verboseLines.push(`  adding: ${src} (deflated)`);
 			} else if (recursive) {
 				const walk = (dir: string, prefix: string) => {
@@ -180,12 +182,12 @@ export const zipCommand: ShellModule = {
 						if (s.type === "directory") { walk(full, rel); }
 						else {
 							const content = shell.vfs.readFileRaw(full);
-							entries.push({ name: rel, content });
+							entries.push({ name: rel.startsWith("/") ? rel.slice(1) : rel, content });
 							verboseLines.push(`  adding: ${rel} (deflated)`);
 						}
 					}
 				};
-				walk(p, src);
+				walk(p, storeName);
 			}
 		}
 
@@ -234,7 +236,8 @@ export const unzipCommand: ShellModule = {
 
 		const out: string[] = [`Archive:  ${archive}`];
 		for (const { name, content } of files) {
-			const destPath = name.startsWith("/") ? name : resolvePath(cwd, name);
+			const cleanName = name.startsWith("/") ? name.slice(1) : name;
+			const destPath = resolvePath(dest, cleanName);
 			shell.vfs.writeFile(destPath, content, {}, uid, gid);
 			out.push(`  inflating: ${destPath}`);
 		}
