@@ -233,6 +233,7 @@ describe("linuxrootfs write protection for non-sudoers", () => {
 	test("non-sudo user cannot write to /usr", () => {
 		const vfs = makeVfs();
 		vfs.mkdir("/usr", 0o755, 0, 0);
+		vfs.mkdir("/usr/bin", 0o755, 0, 0);
 		expect(() => vfs.writeFile("/usr/bin/fake", "binary", {}, 1001, 1001)).toThrow(/EACCES/);
 	});
 
@@ -251,7 +252,8 @@ describe("linuxrootfs write protection for non-sudoers", () => {
 	test("non-sudo user cannot write to /lib", () => {
 		const vfs = makeVfs();
 		vfs.mkdir("/lib", 0o755, 0, 0);
-		expect(() => vfs.writeFile("/lib/fake.so", "lib", {}, 1001, 1001)).toThrow(/EACCES/);
+		vfs.mkdir("/lib/modules", 0o755, 0, 0);
+		expect(() => vfs.writeFile("/lib/modules/fake.so", "lib", {}, 1001, 1001)).toThrow(/EACCES/);
 	});
 
 	test("non-sudo user cannot write to /var/log", () => {
@@ -293,5 +295,63 @@ describe("linuxrootfs write protection for non-sudoers", () => {
 		vfs.mkdir("/etc", 0o755, 0, 0);
 		vfs.writeFile("/etc/passwd", "root:x:0:0:...", { mode: 0o644 }, 0, 0);
 		expect(() => vfs.chown("/etc/passwd", 1001, 1001, 1001)).toThrow(/EPERM/);
+	});
+});
+
+describe("symlink and move permission enforcement", () => {
+	test("non-sudo user cannot create symlink in /root", () => {
+		const vfs = makeVfs();
+		vfs.mkdir("/root", 0o700, 0, 0);
+		expect(() => vfs.symlink("/tmp/target", "/root/evil-link", 1001, 1001)).toThrow(/EACCES/);
+	});
+
+	test("non-sudo user cannot create symlink in /etc", () => {
+		const vfs = makeVfs();
+		vfs.mkdir("/etc", 0o755, 0, 0);
+		expect(() => vfs.symlink("/tmp/target", "/etc/evil-link", 1001, 1001)).toThrow(/EACCES/);
+	});
+
+	test("non-sudo user cannot move file into /root", () => {
+		const vfs = makeVfs();
+		vfs.mkdir("/root", 0o700, 0, 0);
+		vfs.mkdir("/tmp", 0o755, 0, 0);
+		vfs.chmod("/tmp", 0o777, 0);
+		vfs.writeFile("/tmp/myfile.txt", "data", { mode: 0o644 }, 1001, 1001);
+		expect(() => vfs.move("/tmp/myfile.txt", "/root/stolen.txt", 1001, 1001)).toThrow(/EACCES/);
+	});
+
+	test("non-sudo user cannot move file into /etc", () => {
+		const vfs = makeVfs();
+		vfs.mkdir("/etc", 0o755, 0, 0);
+		vfs.mkdir("/tmp", 0o755, 0, 0);
+		vfs.chmod("/tmp", 0o777, 0);
+		vfs.writeFile("/tmp/myfile.txt", "data", { mode: 0o644 }, 1001, 1001);
+		expect(() => vfs.move("/tmp/myfile.txt", "/etc/fake.conf", 1001, 1001)).toThrow(/EACCES/);
+	});
+
+	test("non-sudo user cannot move system file", () => {
+		const vfs = makeVfs();
+		vfs.mkdir("/etc", 0o755, 0, 0);
+		vfs.writeFile("/etc/hosts", "127.0.0.1 localhost", { mode: 0o644 }, 0, 0);
+		vfs.mkdir("/tmp", 0o755, 0, 0);
+		vfs.chmod("/tmp", 0o777, 0);
+		expect(() => vfs.move("/etc/hosts", "/tmp/stolen-hosts", 1001, 1001)).toThrow(/EACCES/);
+	});
+
+	test("owner can create symlink in own directory", () => {
+		const vfs = makeVfs();
+		vfs.mkdir("/home", 0o755, 0, 0);
+		vfs.chown("/home", 1001, 1001, 0);
+		vfs.mkdir("/home/alice", 0o755, 1001, 1001);
+		expect(() => vfs.symlink("/tmp/target", "/home/alice/link", 1001, 1001)).not.toThrow();
+	});
+
+	test("owner can move own files", () => {
+		const vfs = makeVfs();
+		vfs.mkdir("/home", 0o755, 0, 0);
+		vfs.chown("/home", 1001, 1001, 0);
+		vfs.mkdir("/home/alice", 0o755, 1001, 1001);
+		vfs.writeFile("/home/alice/old.txt", "data", { mode: 0o644 }, 1001, 1001);
+		expect(() => vfs.move("/home/alice/old.txt", "/home/alice/new.txt", 1001, 1001)).not.toThrow();
 	});
 });

@@ -153,7 +153,7 @@ export const tarCommand: ShellModule = {
 
 			const tarBuf = buildTar(entries);
 			const finalBuf = autoGzip ? Buffer.from(gzipSync(tarBuf)) : tarBuf;
-			shell.vfs.writeFile(archivePath, finalBuf);
+			shell.vfs.writeFile(archivePath, finalBuf, {}, uid, gid);
 			return { stdout: verbose ? verboseLines.join("\n") : undefined, exitCode: 0 };
 		}
 

@@ -149,7 +149,7 @@ export const zipCommand: ShellModule = {
 	description: "Package and compress files",
 	category: "archive",
 	params: ["[-r] <archive.zip> <file...>"],
-	run: ({ shell, cwd, args }) => {
+	run: ({ shell, cwd, args, authUser }) => {
 		const recursive = args.includes("-r") || args.includes("-R");
 		const files = args.filter((a) => !a.startsWith("-"));
 		const archiveArg = files[0];
@@ -160,6 +160,8 @@ export const zipCommand: ShellModule = {
 		const archivePath = resolvePath(cwd, archiveArg.endsWith(".zip") ? archiveArg : `${archiveArg}.zip`);
 		const entries: Array<{ name: string; content: Buffer }> = [];
 		const verboseLines: string[] = [];
+		const uid = shell.users.getUid(authUser);
+		const gid = shell.users.getGid(authUser);
 
 		for (const src of sources) {
 			const p = resolvePath(cwd, src);
@@ -189,7 +191,7 @@ export const zipCommand: ShellModule = {
 
 		if (entries.length === 0) { return { stderr: "zip: nothing to do!", exitCode: 12 }; }
 		const zipBuf = buildZip(entries);
-		shell.vfs.writeFile(archivePath, zipBuf);
+		shell.vfs.writeFile(archivePath, zipBuf, {}, uid, gid);
 		return { stdout: verboseLines.join("\n"), exitCode: 0 };
 	},
 };
@@ -203,7 +205,7 @@ export const unzipCommand: ShellModule = {
 	description: "Extract compressed files from ZIP archives",
 	category: "archive",
 	params: ["[-l] [-o] <archive.zip> [-d <dir>]"],
-	run: ({ shell, cwd, args }) => {
+	run: ({ shell, cwd, args, authUser }) => {
 		const listOnly = args.includes("-l");
 		const dIdx = args.indexOf("-d");
 		const destDir = dIdx === -1 ? undefined : args[dIdx + 1];
@@ -216,9 +218,11 @@ export const unzipCommand: ShellModule = {
 		const raw = shell.vfs.readFileRaw(archivePath);
 		let files: Array<{ name: string; content: Buffer }>;
 		try { files = parseZip(raw); }
-		catch { return { stderr: `unzip: ${archive}: not a valid ZIP file`, exitCode: 1 }; }
+		catch (e) { return { stderr: `unzip: ${archive}: not a valid ZIP file: ${e instanceof Error ? e.message : String(e)}`, exitCode: 1 }; }
 
 		const dest = destDir ? resolvePath(cwd, destDir) : cwd;
+		const uid = shell.users.getUid(authUser);
+		const gid = shell.users.getGid(authUser);
 
 		if (listOnly) {
 			const header = `Archive:  ${archive}\n  Length      Date    Time    Name\n---------  ---------- -----   ----`;
@@ -230,8 +234,8 @@ export const unzipCommand: ShellModule = {
 
 		const out: string[] = [`Archive:  ${archive}`];
 		for (const { name, content } of files) {
-			const destPath = `${dest}/${name}`;
-			shell.vfs.writeFile(destPath, content);
+			const destPath = name.startsWith("/") ? name : resolvePath(cwd, name);
+			shell.vfs.writeFile(destPath, content, {}, uid, gid);
 			out.push(`  inflating: ${destPath}`);
 		}
 		return { stdout: out.join("\n"), exitCode: 0 };
