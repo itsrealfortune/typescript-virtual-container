@@ -157,13 +157,13 @@ describe("VirtualUserManager ensureUser", () => {
 		await users.initialize();
 		users.ensureUser("fox");
 		const gid = users.getGid("fox");
-		expect(users.getGroup(gid)).toBe("fox");
+		expect(users.getNameByGid(gid)).toBe("fox");
 	});
 
-	test("getGroup returns null for unknown gid", async () => {
+	test("getNameByGid returns null for unknown gid", async () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
 		await users.initialize();
-		expect(users.getGroup(99999)).toBeNull();
+		expect(users.getNameByGid(99999)).toBeNull();
 	});
 });

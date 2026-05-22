@@ -3,6 +3,7 @@ import { EventEmitter } from "node:events";
 import * as path from "node:path";
 import { type PerfLogger, createPerfLogger } from "../../utils/perfLogger";
 import type VirtualFileSystem from "../VirtualFileSystem";
+import { VirtualGroupManager, type VirtualGroupRecord } from "./groups";
 
 /** 
  * Persisted virtual user credential record.
@@ -19,6 +20,18 @@ export interface VirtualUserRecord {
 	salt: string;
 	/** Scrypt-derived password hash in hex encoding. */
 	passwordHash: string;
+	/** Days since epoch when password was last changed. */
+	lastPasswordChange: number;
+	/** Minimum days before password can be changed (0 = no minimum). */
+	minPasswordAge: number;
+	/** Maximum days password is valid (99999 = no expiration). */
+	maxPasswordAge: number;
+	/** Days before expiration to warn user (7 = default). */
+	passwordWarnDays: number;
+	/** Days after expiration before account is locked. */
+	passwordInactiveDays: number;
+	/** Days since epoch when account expires (0 = no expiration). */
+	accountExpiryDate: number;
 }
 
 export type ProcessStatus = "running" | "stopped" | "done";
@@ -138,6 +151,16 @@ export class VirtualUserManager extends EventEmitter {
 	private _processCpuTime = new Map<number, number>();
 	/** Watcher interval handle for CPU enforcement. */
 	private _cpuWatcher: ReturnType<typeof setInterval> | null = null;
+	/** Group manager for /etc/group handling. */
+	private _groups!: VirtualGroupManager;
+	/** Sudo timestamp cache: username → timestamp of last sudo auth (ms). */
+	private _sudoTimestamps = new Map<string, number>();
+	/** Login failure tracking: username → { count, lastTime, sourceIp }. */
+	private _loginFailures = new Map<string, { count: number; lastTime: number; sourceIp: string }>();
+	/** Max login failures before account is locked. */
+	private readonly _maxLoginFailures = 5;
+	/** Sudo timestamp validity window in ms (5 minutes). */
+	private readonly _sudoTimestampWindowMs = 5 * 60 * 1000;
 
 	/**
 	 * Creates a user manager instance backed by a virtual filesystem.
@@ -153,6 +176,7 @@ export class VirtualUserManager extends EventEmitter {
 	) {
 		super();
 		perf.mark("constructor");
+		this._groups = new VirtualGroupManager(_vfs);
 	}
 
 	/**
@@ -161,6 +185,7 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public async initialize(): Promise<void> {
 		perf.mark("initialize");
+		this._groups.initialize();
 		this._loadFromVfs();
 		this._loadSudoersFromVfs();
 		this._loadQuotasFromVfs();
@@ -345,11 +370,28 @@ export class VirtualUserManager extends EventEmitter {
 			// throw new Error(`adduser: user '${username}' already exists`);
 		}
 
-		this._users.set(username, this._createRecord(username, password));
+		const record = this._createRecord(username, password);
+		this._users.set(username, record);
 		if (this._autoSudoForNewUsers) {
 			this._sudoers.add(username);
 		}
-		const record = this._users.get(username) as VirtualUserRecord;
+
+		// Create per-user group (matching real Linux behavior)
+		const userGroupName = username;
+		if (!this._groups.getGroup(userGroupName)) {
+			try {
+				this._groups.createGroup(userGroupName, record.gid);
+				this._groups.addMember(userGroupName, username);
+			} catch {
+				// Group might already exist — best-effort
+			}
+		}
+
+		// Add to sudo group if sudoer
+		if (this._autoSudoForNewUsers) {
+			try { this._groups.addMember("sudo", username); } catch { /* best-effort */ }
+		}
+
 		const uid = record.uid;
 		const gid = record.gid;
 		const homePath = username === "root" ? "/root" : `/home/${username}`;
@@ -379,12 +421,27 @@ export class VirtualUserManager extends EventEmitter {
 			this._users.set("root", this._createRecord("root", ""));
 			return;
 		}
-		this._users.set(username, this._createRecord(username, ""));
+		const record = this._createRecord(username, "");
+		this._users.set(username, record);
 		if (this._autoSudoForNewUsers) {
 			this._sudoers.add(username);
 		}
-		const uid = this._nextUid - 1;
-		const gid = this._nextGid - 1;
+
+		// Create per-user group
+		const userGroupName = username;
+		if (!this._groups.getGroup(userGroupName)) {
+			try {
+				this._groups.createGroup(userGroupName, record.gid);
+				this._groups.addMember(userGroupName, username);
+			} catch { /* best-effort */ }
+		}
+
+		if (this._autoSudoForNewUsers) {
+			try { this._groups.addMember("sudo", username); } catch { /* best-effort */ }
+		}
+
+		const uid = record.uid;
+		const gid = record.gid;
 		const homePath = `/home/${username}`;
 		if (!this._vfs.exists(homePath)) {
 			this._vfs.mkdir(homePath, 0o700, uid, gid);
@@ -457,6 +514,17 @@ export class VirtualUserManager extends EventEmitter {
 
 		this._sudoers.delete(username);
 
+		// Remove from sudo group
+		try { this._groups.removeMember("sudo", username); } catch { /* best-effort */ }
+
+		// Remove per-user group if it exists and has no other members
+		const userGroup = this._groups.getGroup(username);
+		if (userGroup && userGroup.members.length <= 1) {
+			try { this._groups.deleteGroup(username); } catch { /* best-effort */ }
+		} else if (userGroup) {
+			try { this._groups.removeMember(username, username); } catch { /* best-effort */ }
+		}
+
 		this.emit("user:delete", { username });
 		await this.persist();
 	}
@@ -486,6 +554,7 @@ export class VirtualUserManager extends EventEmitter {
 		}
 
 		this._sudoers.add(username);
+		try { this._groups.addMember("sudo", username); } catch { /* best-effort */ }
 		await this.persist();
 	}
 
@@ -503,6 +572,7 @@ export class VirtualUserManager extends EventEmitter {
 		}
 
 		this._sudoers.delete(username);
+		try { this._groups.removeMember("sudo", username); } catch { /* best-effort */ }
 		await this.persist();
 	}
 
@@ -937,19 +1007,51 @@ export class VirtualUserManager extends EventEmitter {
 				continue;
 			}
 
-			// Format: username:uid:gid:salt:passwordHash (new) or username:salt:passwordHash (legacy)
-			if (parts.length >= 5) {
+			// Format: username:uid:gid:salt:passwordHash:lastChange:minAge:maxAge:warnDays:inactiveDays:expiry (new)
+			// Format: username:uid:gid:salt:passwordHash (legacy v1.7.1)
+			// Format: username:salt:passwordHash (legacy older)
+			if (parts.length >= 11) {
+				const [username, uidStr, gidStr, salt, passwordHash, lastChange, minAge, maxAge, warnDays, inactiveDays, expiry] = parts;
+				if (!username || !salt || !passwordHash) continue;
+				const uid = parseInt(uidStr ?? "1001", 10);
+				const gid = parseInt(gidStr ?? "1001", 10);
+				this._users.set(username, {
+					username, uid, gid, salt, passwordHash,
+					lastPasswordChange: parseInt(lastChange ?? "0", 10),
+					minPasswordAge: parseInt(minAge ?? "0", 10),
+					maxPasswordAge: parseInt(maxAge ?? "99999", 10),
+					passwordWarnDays: parseInt(warnDays ?? "7", 10),
+					passwordInactiveDays: parseInt(inactiveDays ?? "0", 10),
+					accountExpiryDate: parseInt(expiry ?? "0", 10),
+				});
+			} else if (parts.length >= 5) {
 				const [username, uidStr, gidStr, salt, passwordHash] = parts;
 				if (!username || !salt || !passwordHash) continue;
 				const uid = parseInt(uidStr ?? "1001", 10);
 				const gid = parseInt(gidStr ?? "1001", 10);
-				this._users.set(username, { username, uid, gid, salt, passwordHash });
+				this._users.set(username, {
+					username, uid, gid, salt, passwordHash,
+					lastPasswordChange: Math.floor(Date.now() / 86400000),
+					minPasswordAge: 0,
+					maxPasswordAge: 99999,
+					passwordWarnDays: 7,
+					passwordInactiveDays: 0,
+					accountExpiryDate: 0,
+				});
 			} else {
 				const [username, salt, passwordHash] = parts;
 				if (!username || !salt || !passwordHash) continue;
 				const uid = username === "root" ? 0 : this._nextUid++;
 				const gid = username === "root" ? 0 : this._nextGid++;
-				this._users.set(username, { username, uid, gid, salt, passwordHash });
+				this._users.set(username, {
+					username, uid, gid, salt, passwordHash,
+					lastPasswordChange: Math.floor(Date.now() / 86400000),
+					minPasswordAge: 0,
+					maxPasswordAge: 99999,
+					passwordWarnDays: 7,
+					passwordInactiveDays: 0,
+					accountExpiryDate: 0,
+				});
 			}
 		}
 	}
@@ -1002,7 +1104,19 @@ export class VirtualUserManager extends EventEmitter {
 		const authContent = Array.from(this._users.values())
 			.sort((left, right) => left.username.localeCompare(right.username))
 			.map((record) =>
-				[record.username, record.uid, record.gid, record.salt, record.passwordHash].join(":"),
+				[
+					record.username,
+					record.uid,
+					record.gid,
+					record.salt,
+					record.passwordHash,
+					record.lastPasswordChange,
+					record.minPasswordAge,
+					record.maxPasswordAge,
+					record.passwordWarnDays,
+					record.passwordInactiveDays,
+					record.accountExpiryDate,
+				].join(":"),
 			)
 			.join("\n");
 		const sudoersContent = Array.from(this._sudoers.values()).sort().join("\n");
@@ -1060,17 +1174,30 @@ export class VirtualUserManager extends EventEmitter {
 		const cacheKey = createHash("sha256").update(username).update(":").update(password).digest("hex");
 		const cached = VirtualUserManager._recordCache.get(cacheKey);
 		if (cached) {
-			return cached;
+			return {
+				...cached,
+				lastPasswordChange: Math.floor(Date.now() / 86400000),
+				minPasswordAge: 0,
+				maxPasswordAge: 99999,
+				passwordWarnDays: 7,
+				passwordInactiveDays: 0,
+				accountExpiryDate: 0,
+			};
 		}
 
 		const salt = randomBytes(16).toString("hex");
-		const record = {
+		const record: VirtualUserRecord = {
 			username,
 			uid: assignedUid,
 			gid: assignedGid,
 			salt,
-			// Hash uses the generated salt — verifyPassword must use record.salt
 			passwordHash: this.hashPassword(password, salt),
+			lastPasswordChange: Math.floor(Date.now() / 86400000),
+			minPasswordAge: 0,
+			maxPasswordAge: 99999,
+			passwordWarnDays: 7,
+			passwordInactiveDays: 0,
+			accountExpiryDate: 0,
 		};
 
 		VirtualUserManager._recordCache.set(cacheKey, record);
@@ -1181,6 +1308,410 @@ export class VirtualUserManager extends EventEmitter {
 		username: string,
 	): Array<{ algo: string; data: Buffer }> {
 		return this._authorizedKeys.get(username) ?? [];
+	}
+
+	// ======================== GROUP MANAGEMENT ========================
+
+	/**
+	 * Creates a new group with an auto-assigned GID.
+	 *
+	 * @param name Group name.
+	 * @param gid Optional explicit GID.
+	 */
+	public createGroup(name: string, gid?: number): VirtualGroupRecord {
+		return this._groups.createGroup(name, gid);
+	}
+
+	/**
+	 * Deletes a group.
+	 *
+	 * @param name Group name.
+	 */
+	public deleteGroup(name: string): void {
+		this._groups.deleteGroup(name);
+	}
+
+	/**
+	 * Adds a user as a supplementary member of a group.
+	 *
+	 * @param groupName Target group.
+	 * @param username User to add.
+	 */
+	public addGroupMember(groupName: string, username: string): void {
+		this._groups.addMember(groupName, username);
+	}
+
+	/**
+	 * Removes a user from a group's supplementary member list.
+	 *
+	 * @param groupName Target group.
+	 * @param username User to remove.
+	 */
+	public removeGroupMember(groupName: string, username: string): void {
+		this._groups.removeMember(groupName, username);
+	}
+
+	/**
+	 * Returns the group record by name.
+	 *
+	 * @param name Group name.
+	 */
+	public getGroup(name: string): VirtualGroupRecord | undefined {
+		return this._groups.getGroup(name);
+	}
+
+	/**
+	 * Returns the group record by GID.
+	 *
+	 * @param gid Numeric group ID.
+	 */
+	public getGroupByGid(gid: number): VirtualGroupRecord | undefined {
+		return this._groups.getGroupByGid(gid);
+	}
+
+	/**
+	 * Resolves a group name to its GID.
+	 *
+	 * @param name Group name.
+	 */
+	public getGidByName(name: string): number | null {
+		return this._groups.getGidByName(name);
+	}
+
+	/**
+	 * Resolves a GID to its group name.
+	 *
+	 * @param gid Numeric group ID.
+	 */
+	public getNameByGid(gid: number): string | null {
+		return this._groups.getNameByGid(gid);
+	}
+
+	/**
+	 * Returns all supplementary groups for a user (by membership in /etc/group).
+	 *
+	 * @param username Target user.
+	 */
+	public getUserSupplementaryGroups(username: string): string[] {
+		return this._groups.getUserSupplementaryGroups(username);
+	}
+
+	/**
+	 * Returns all groups a user belongs to, including their primary group.
+	 *
+	 * @param username Target user.
+	 */
+	public getUserAllGroups(username: string): string[] {
+		const primaryGid = this.getGid(username);
+		return this._groups.getUserAllGroups(username, primaryGid);
+	}
+
+	/**
+	 * Checks if a user is a member of a specific group.
+	 *
+	 * @param username Target user.
+	 * @param groupName Target group.
+	 */
+	public isMemberOf(username: string, groupName: string): boolean {
+		const primaryGid = this.getGid(username);
+		return this._groups.isMemberOf(username, groupName, primaryGid);
+	}
+
+	/**
+	 * Returns all registered groups.
+	 */
+	public listGroups(): VirtualGroupRecord[] {
+		return this._groups.listGroups();
+	}
+
+	/**
+	 * Generates /etc/group file content.
+	 */
+	public generateGroupFile(): string {
+		return this._groups.generateGroupFile();
+	}
+
+	// ======================== PASSWORD AGING ========================
+
+	/**
+	 * Sets password aging parameters for a user.
+	 *
+	 * @param username Target user.
+	 * @param minDays Minimum days before password can be changed (0 = no minimum).
+	 * @param maxDays Maximum days password is valid (99999 = no expiration).
+	 * @param warnDays Days before expiration to warn user.
+	 * @param inactiveDays Days after expiration before account is locked.
+	 */
+	public async setPasswordAging(
+		username: string,
+		minDays?: number,
+		maxDays?: number,
+		warnDays?: number,
+		inactiveDays?: number,
+	): Promise<void> {
+		const record = this._users.get(username);
+		if (!record) {
+			throw new Error(`chage: user '${username}' does not exist`);
+		}
+
+		if (minDays !== undefined) record.minPasswordAge = minDays;
+		if (maxDays !== undefined) record.maxPasswordAge = maxDays;
+		if (warnDays !== undefined) record.passwordWarnDays = warnDays;
+		if (inactiveDays !== undefined) record.passwordInactiveDays = inactiveDays;
+
+		await this.persist();
+	}
+
+	/**
+	 * Returns password aging information for a user.
+	 *
+	 * @param username Target user.
+	 * @returns Aging parameters or null if user not found.
+	 */
+	public getPasswordAging(username: string): {
+		lastChange: number;
+		minAge: number;
+		maxAge: number;
+		warnDays: number;
+		inactiveDays: number;
+		expiryDate: number;
+	} | null {
+		const record = this._users.get(username);
+		if (!record) return null;
+		return {
+			lastChange: record.lastPasswordChange,
+			minAge: record.minPasswordAge,
+			maxAge: record.maxPasswordAge,
+			warnDays: record.passwordWarnDays,
+			inactiveDays: record.passwordInactiveDays,
+			expiryDate: record.accountExpiryDate,
+		};
+	}
+
+	/**
+	 * Sets the account expiry date for a user.
+	 *
+	 * @param username Target user.
+	 * @param expiryDate Days since epoch when account expires (0 = no expiration).
+	 */
+	public async setAccountExpiry(username: string, expiryDate: number): Promise<void> {
+		const record = this._users.get(username);
+		if (!record) {
+			throw new Error(`chage: user '${username}' does not exist`);
+		}
+
+		record.accountExpiryDate = expiryDate;
+		await this.persist();
+	}
+
+	/**
+	 * Forces a password change on next login by setting lastChange to 0.
+	 *
+	 * @param username Target user.
+	 */
+	public async forcePasswordChange(username: string): Promise<void> {
+		const record = this._users.get(username);
+		if (!record) {
+			throw new Error(`chage: user '${username}' does not exist`);
+		}
+
+		record.lastPasswordChange = 0;
+		await this.persist();
+	}
+
+	/**
+	 * Checks if a user's password has expired.
+	 *
+	 * @param username Target user.
+	 * @returns True if password is expired.
+	 */
+	public isPasswordExpired(username: string): boolean {
+		const record = this._users.get(username);
+		if (!record || record.maxPasswordAge === 99999) return false;
+		const today = Math.floor(Date.now() / 86400000);
+		return (today - record.lastPasswordChange) > record.maxPasswordAge;
+	}
+
+	/**
+	 * Locks a user account by prefixing the password hash with '!'.
+	 *
+	 * @param username Target user.
+	 */
+	public async lockAccount(username: string): Promise<void> {
+		const record = this._users.get(username);
+		if (!record) {
+			throw new Error(`usermod: user '${username}' does not exist`);
+		}
+
+		if (!record.passwordHash.startsWith("!")) {
+			record.passwordHash = `!${record.passwordHash}`;
+			await this.persist();
+		}
+	}
+
+	/**
+	 * Unlocks a user account by removing the '!' prefix from the password hash.
+	 *
+	 * @param username Target user.
+	 */
+	public async unlockAccount(username: string): Promise<void> {
+		const record = this._users.get(username);
+		if (!record) {
+			throw new Error(`usermod: user '${username}' does not exist`);
+		}
+
+		if (record.passwordHash.startsWith("!")) {
+			record.passwordHash = record.passwordHash.slice(1);
+			await this.persist();
+		}
+	}
+
+	/**
+	 * Checks if a user account is locked (password hash prefixed with '!').
+	 *
+	 * @param username Target user.
+	 * @returns True if account is locked.
+	 */
+	public isAccountLocked(username: string): boolean {
+		const record = this._users.get(username);
+		return record?.passwordHash.startsWith("!") ?? false;
+	}
+
+	/**
+	 * Generates /etc/shadow file content with password aging data.
+	 *
+	 * Format: `name:passwordHash:lastChange:min:max:warn:inactive:expiry:reserved`
+	 *
+	 * @returns Shadow file content string.
+	 */
+	public generateShadowFile(): string {
+		const systemAccounts = [
+			{ name: "root", hash: "*", lastChange: 19000, min: 0, max: 99999, warn: 7 },
+			{ name: "daemon", hash: "*", lastChange: 19000, min: 0, max: 99999, warn: 7 },
+			{ name: "nobody", hash: "*", lastChange: 19000, min: 0, max: 99999, warn: 7 },
+			{ name: "messagebus", hash: "*", lastChange: 19000, min: 0, max: 99999, warn: 7 },
+			{ name: "_apt", hash: "*", lastChange: 19000, min: 0, max: 99999, warn: 7 },
+			{ name: "systemd-network", hash: "!", lastChange: 19000, min: 0, max: 99999, warn: 7 },
+			{ name: "systemd-resolve", hash: "!", lastChange: 19000, min: 0, max: 99999, warn: 7 },
+			{ name: "polkitd", hash: "!", lastChange: 19000, min: 0, max: 99999, warn: 7 },
+		];
+
+		const lines = systemAccounts.map(
+			(a) => `${a.name}:${a.hash}:${a.lastChange}:${a.min}:${a.max}:${a.warn}:::`,
+		);
+
+		for (const record of this._users.values()) {
+			if (record.username === "root") continue;
+			const hash = record.passwordHash.startsWith("!") ? "!" : record.passwordHash;
+			lines.push(
+				`${record.username}:${hash}:${record.lastPasswordChange}:${record.minPasswordAge}:${record.maxPasswordAge}:${record.passwordWarnDays}:${record.passwordInactiveDays}:${record.accountExpiryDate}:`,
+			);
+		}
+
+		return lines.join("\n");
+	}
+
+	// ======================== SUDO TIMESTAMP ========================
+
+	/**
+	 * Grants a sudo timestamp to a user, allowing password-less sudo for 5 minutes.
+	 *
+	 * @param username Target user.
+	 */
+	public grantSudoTimestamp(username: string): void {
+		this._sudoTimestamps.set(username, Date.now());
+	}
+
+	/**
+	 * Checks if a user has a valid sudo timestamp (within 5-minute window).
+	 * Root always returns true.
+	 *
+	 * @param username Target user.
+	 * @returns True if user can sudo without re-authenticating.
+	 */
+	public hasValidSudoTimestamp(username: string): boolean {
+		if (username === "root") return true;
+		const ts = this._sudoTimestamps.get(username);
+		if (!ts) return false;
+		return (Date.now() - ts) < this._sudoTimestampWindowMs;
+	}
+
+	/**
+	 * Clears the sudo timestamp for a user.
+	 *
+	 * @param username Target user.
+	 */
+	public clearSudoTimestamp(username: string): void {
+		this._sudoTimestamps.delete(username);
+	}
+
+	// ======================== LOGIN FAILURE TRACKING ========================
+
+	/**
+	 * Records a failed login attempt for a user.
+	 *
+	 * @param username Target user.
+	 * @param sourceIp IP address of the failed attempt.
+	 */
+	public recordLoginFailure(username: string, sourceIp: string): void {
+		const existing = this._loginFailures.get(username);
+		if (existing) {
+			existing.count++;
+			existing.lastTime = Date.now();
+			existing.sourceIp = sourceIp;
+		} else {
+			this._loginFailures.set(username, { count: 1, lastTime: Date.now(), sourceIp });
+		}
+	}
+
+	/**
+	 * Resets the login failure counter for a user (called on successful login).
+	 *
+	 * @param username Target user.
+	 */
+	public recordLoginSuccess(username: string): void {
+		this._loginFailures.delete(username);
+	}
+
+	/**
+	 * Returns the number of consecutive failed login attempts for a user.
+	 *
+	 * @param username Target user.
+	 * @returns Failure count (0 if no failures).
+	 */
+	public getLoginFailures(username: string): number {
+		return this._loginFailures.get(username)?.count ?? 0;
+	}
+
+	/**
+	 * Resets the login failure counter for a user.
+	 *
+	 * @param username Target user.
+	 */
+	public resetLoginFailures(username: string): void {
+		this._loginFailures.delete(username);
+	}
+
+	/**
+	 * Checks if a user's account is locked due to too many failed login attempts.
+	 *
+	 * @param username Target user.
+	 * @returns True if account is locked by failure threshold.
+	 */
+	public isAccountLockedByFailures(username: string): boolean {
+		const failures = this._loginFailures.get(username);
+		if (!failures) return false;
+		return failures.count >= this._maxLoginFailures;
+	}
+
+	/**
+	 * Returns the timestamp of the last failed login attempt.
+	 *
+	 * @param username Target user.
+	 * @returns Timestamp in ms, or 0 if no failures.
+	 */
+	public getLastFailureTime(username: string): number {
+		return this._loginFailures.get(username)?.lastTime ?? 0;
 	}
 }
 
