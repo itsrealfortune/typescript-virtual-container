@@ -3,8 +3,9 @@
 
 ## Roadmap
 
+## Done
 <details>
-<summary>## Done</summary>
+<summary>Those tasks are done:</summary>
 
 - [x] Custom command plugin API · per-user quotas · SSH public-key auth · per-IP rate limiting
 - [x] Pure in-memory VFS · symlinks · binary snapshot format (VFSB, ~27% smaller than JSON+base64)
@@ -89,7 +90,8 @@
 </details>
 
 ## Priority
-None — all features are important and will be implemented as time allows. Contributions welcome!
+<!-- None — all features are important and will be implemented as time allows. Contributions welcome! -->
+- [ ] See if we can tur SSHClient into a real SSHClient
 
 ## Not started, and may never be
 - [ ] WebSocket-based remote shell client (experimental)
