@@ -5,17 +5,22 @@
  * for public-key authentication.
  */
 
-import { readFileSync } from "node:fs";
-import { VirtualShell, VirtualSshServer } from "../src";
+import { VirtualShell } from "../src";
 
 const shell = new VirtualShell("secure-vm");
 await shell.ensureInitialized();
 await shell.users.addUser("alice", "fallback-password");
 
-const pubLine = readFileSync(`${process.env.HOME}/.ssh/id_ed25519.pub`, "utf8").trim();
-const [algo, b64] = pubLine.split(" ");
-shell.users.addAuthorizedKey("alice", algo, Buffer.from(b64, "base64"));
+// Simulate a public key (normally read from ~/.ssh/id_ed25519.pub)
+const pubLine = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGtFeG9hbXBsZUtleUZvckRlbW9uc3RyYXRpb25Pbmx5 alice@demo";
+const [_algo, b64] = pubLine.split(" ");
+shell.users.addAuthorizedKey("alice", _algo, Buffer.from(b64, "base64"));
 
-const ssh = new VirtualSshServer({ port: 2222, shell });
-await ssh.start();
+// Verify the key was added
+const keys = shell.users.getAuthorizedKeys("alice");
+console.log(`Alice has ${keys.length} authorized key(s)`);
+console.log(`Key algo: ${keys[0].algo}`);
+console.log(`Key size: ${keys[0].data.length} bytes`);
+
+// The user can now authenticate via public key instead of password
 // ssh -i ~/.ssh/id_ed25519 alice@localhost -p 2222
