@@ -94,7 +94,7 @@
 <!-- None — all features are important and will be implemented as time allows. Contributions welcome! -->
 - [ ] See if we can tur SSHClient into a real SSHClient
 - [ ] Check for async functions that are not async, and then recursively transform await calls to async ones
-- [ ] Add setPassword in addUser so we don't have to use setPassword just after addUser to set a password for the user (it may be related to this._users)
+- [ ] Add setPassword in addUser so we don't have to use setPassword just after addUser to set a password for the user (it may an issue be related to this._users)
 
 ## Not started, and may never be
 - [ ] WebSocket-based remote shell client (experimental)
