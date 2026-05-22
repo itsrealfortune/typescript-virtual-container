@@ -1,0 +1,14 @@
+GROUPDEL(8)       System Administration       GROUPDEL(8)
+
+NAME
+       groupdel - delete a group
+
+SYNOPSIS
+       groupdel group
+
+DESCRIPTION
+       groupdel deletes a group account. It does not remove
+       any files owned by the group.
+
+EXAMPLES
+       groupadd developers       # delete the developers group

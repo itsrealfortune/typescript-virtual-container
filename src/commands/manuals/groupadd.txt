@@ -1,0 +1,19 @@
+GROUPADD(8)       System Administration       GROUPADD(8)
+
+NAME
+       groupadd - create a new group
+
+SYNOPSIS
+       groupadd [options] group
+
+OPTIONS
+       -g GID   specify group ID
+
+DESCRIPTION
+       groupadd creates a new group account using the values
+       specified on the command line plus the default values
+       from the system.
+
+EXAMPLES
+       groupadd developers        # create group with auto GID
+       groupadd -g 2000 staff     # create group with GID 2000

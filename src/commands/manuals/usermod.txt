@@ -1,0 +1,23 @@
+USERMOD(8)       System Administration       USERMOD(8)
+
+NAME
+       usermod - modify a user account
+
+SYNOPSIS
+       usermod [options] user
+
+OPTIONS
+       -g group    change primary group
+       -G groups   set supplementary groups
+       -aG group   append user to group
+       -L          lock account
+       -U          unlock account
+
+DESCRIPTION
+       usermod modifies the system account files to reflect
+       the changes specified on the command line.
+
+EXAMPLES
+       usermod -aG developers alice   # add alice to developers
+       usermod -g staff bob           # change bob's primary group
+       usermod -L charlie             # lock charlie's account

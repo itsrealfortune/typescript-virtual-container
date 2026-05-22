@@ -1,0 +1,25 @@
+CHAGE(1)               User Commands               CHAGE(1)
+
+NAME
+       chage - change user password expiry information
+
+SYNOPSIS
+       chage [options] user
+
+OPTIONS
+       -m days   minimum days between password changes
+       -M days   maximum days password is valid
+       -W days   days of warning before password expires
+       -I days   days of inactivity before account lock
+       -E date   account expiration date (YYYY-MM-DD or -1)
+       -l        show aging information
+
+DESCRIPTION
+       chage changes the number of days between password
+       changes and the date of the last password change.
+
+EXAMPLES
+       chage -M 90 alice           # password expires in 90 days
+       chage -W 7 alice            # warn 7 days before expiry
+       chage -E 2025-12-31 alice   # account expires end of 2025
+       chage -l alice              # show alice's aging info
