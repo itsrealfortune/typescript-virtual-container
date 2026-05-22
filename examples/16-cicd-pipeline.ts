@@ -5,7 +5,7 @@
  * deploy phases running in isolated VMs on a virtual network.
  */
 
-import { Baie, SshClient } from "../src";
+import { Baie, SshClient, VirtualSshServer } from "../src";
 
 function lastLine(s: string | undefined): string {
 	return (s ?? "").trim().split("\n").pop() ?? "";
@@ -21,12 +21,31 @@ const testVM = await baie.createVM("test");
 const buildVM = await baie.createVM("build");
 const deployVM = await baie.createVM("deploy");
 
+const sshLint = new VirtualSshServer({ port: 0, shell: lintVM });
+const sshTest = new VirtualSshServer({ port: 0, shell: testVM });
+const sshBuild = new VirtualSshServer({ port: 0, shell: buildVM });
+const sshDeploy = new VirtualSshServer({ port: 0, shell: deployVM });
+
+const [portLint, portTest, portBuild, portDeploy] = await Promise.all([
+	sshLint.start(),
+	sshTest.start(),
+	sshBuild.start(),
+	sshDeploy.start(),
+]);
+
 const clients = {
-	lint: new SshClient(lintVM, "root"),
-	test: new SshClient(testVM, "root"),
-	build: new SshClient(buildVM, "root"),
-	deploy: new SshClient(deployVM, "root"),
+	lint: new SshClient(),
+	test: new SshClient(),
+	build: new SshClient(),
+	deploy: new SshClient(),
 };
+
+await Promise.all([
+	clients.lint.connect({ host: "localhost", port: portLint, username: "root", password: "" }),
+	clients.test.connect({ host: "localhost", port: portTest, username: "root", password: "" }),
+	clients.build.connect({ host: "localhost", port: portBuild, username: "root", password: "" }),
+	clients.deploy.connect({ host: "localhost", port: portDeploy, username: "root", password: "" }),
+]);
 
 for (const [name, vm] of Object.entries({ lint: lintVM, test: testVM, build: buildVM, deploy: deployVM })) {
 	vm.vfs.setRamCap(50 * 1024 * 1024);
@@ -107,3 +126,12 @@ for (const [name, vm] of Object.entries({ lint: lintVM, test: testVM, build: bui
 }
 
 console.log("\n--- Pipeline complete ---");
+
+clients.lint.disconnect();
+clients.test.disconnect();
+clients.build.disconnect();
+clients.deploy.disconnect();
+sshLint.stop();
+sshTest.stop();
+sshBuild.stop();
+sshDeploy.stop();

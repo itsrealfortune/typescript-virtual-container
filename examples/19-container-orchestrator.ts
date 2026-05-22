@@ -5,12 +5,14 @@
  * and network policies across a virtual cluster.
  */
 
-import { Baie, SshClient, type VirtualShell } from "../src";
+import { Baie, SshClient, VirtualSshServer, type VirtualShell } from "../src";
 
 interface Pod {
 	name: string;
 	vm: VirtualShell;
+	ssh: VirtualSshServer;
 	client: SshClient;
+	port: number;
 	image: string;
 	ports: number[];
 	ready: boolean;
@@ -48,17 +50,23 @@ for (const spec of podSpecs) {
 	vm.vfs.setRamCap(256 * 1024 * 1024);
 	vm.users.setCpuCapCores(1);
 
-	const client = new SshClient(vm, "root");
+	const ssh = new VirtualSshServer({ port: 0, shell: vm });
+	const port = await ssh.start();
+
+	const client = new SshClient();
+	await client.connect({ host: "localhost", port, username: "root", password: "" });
 
 	await client.exec(`mkdir -p /app && echo '${spec.image}' > /app/image`);
-	for (const port of spec.ports) {
-		await client.exec(`echo "Listening on port ${port}" > /app/port-${port}`);
+	for (const p of spec.ports) {
+		await client.exec(`echo "Listening on port ${p}" > /app/port-${p}`);
 	}
 
 	const pod: Pod = {
 		name: spec.name,
 		vm,
+		ssh,
 		client,
+		port,
 		image: spec.image,
 		ports: spec.ports,
 		ready: true,
@@ -100,10 +108,10 @@ for (const svc of services) {
 // ── Apply network policies ────────────────────────────────────────
 console.log("\n--- Apply network policies ---");
 
-const webClient = new SshClient(pods[0]!.vm, "root");
+const webClient = pods[0]!.client;
 await webClient.exec("iptables -A OUTPUT -d 172.16.0.0/16 -j ACCEPT");
 
-const dbClient = new SshClient(pods.find((p) => p.name === "db-1")!.vm, "root");
+const dbClient = pods.find((p) => p.name === "db-1")!.client;
 await dbClient.exec("iptables -A INPUT -s 172.16.0.4 -p tcp --dport 5432 -j ACCEPT");
 await dbClient.exec("iptables -A INPUT -s 172.16.0.5 -p tcp --dport 5432 -j ACCEPT");
 await dbClient.exec("iptables -P INPUT DROP");
@@ -168,3 +176,8 @@ for (const pod of pods) {
 console.log(`  Total processes: ${pods.reduce((sum, p) => sum + p.vm.users.listProcesses().length, 0)}`);
 
 console.log("\n--- Cluster running ---");
+
+for (const pod of pods) {
+	pod.client.disconnect();
+	pod.ssh.stop();
+}

@@ -47,9 +47,10 @@ console.log("--- Start server ---");
 const port = await ssh.start();
 console.log(`Server ready on port ${port}`);
 
-// ── Simulate activity via SshClient ───────────────────────────────
+// ── Simulate activity via real SSH client ─────────────────────────
 console.log("--- Simulate activity via SshClient ---");
-const client = new SshClient(shell, "root");
+const client = new SshClient();
+await client.connect({ host: "localhost", port, username: "root", password: "" });
 
 const result = await client.exec("echo 'Hello from connected client'");
 console.log(`Command output: ${result.stdout!.trim()}`);
@@ -68,4 +69,5 @@ console.log("Lockout cleared");
 
 // ── Graceful shutdown ─────────────────────────────────────────────
 console.log("--- Graceful shutdown ---");
+client.disconnect();
 ssh.stop();
