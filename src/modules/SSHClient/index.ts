@@ -302,10 +302,13 @@ export class SshClient {
 	 */
 	async writeFile(path: string, content: string): Promise<CommandResult> {
 		perf.mark("writeFile");
+		// Escape backslashes and double quotes for double-quoted string
 		const escaped = content
 			.replace(/\\/g, "\\\\")
-			.replace(/'/g, "'\\''");
-		return this.exec(`printf '%s' '${escaped}' > '${path}'`);
+			.replace(/"/g, '\\"')
+			.replace(/`/g, "\\`")
+			.replace(/\$/g, "\\$");
+		return this.exec(`printf "%s" "${escaped}" > "${path}"`);
 	}
 
 	/**

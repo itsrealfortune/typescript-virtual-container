@@ -13,8 +13,11 @@ await shell.ensureInitialized();
 await shell.users.setPassword("root", "root");
 
 await shell.users.addUser("alice", "alice123");
+await shell.users.setPassword("alice", "alice123");
 await shell.users.addUser("bob", "bob456");
+await shell.users.setPassword("bob", "bob456");
 await shell.users.addUser("charlie", "charlie789");
+await shell.users.setPassword("charlie", "charlie789");
 
 const ssh = new VirtualSshServer({ port: 0, shell });
 const port = await ssh.start();

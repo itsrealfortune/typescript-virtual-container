@@ -5,7 +5,7 @@
  * connection tracking, lockout, and graceful shutdown.
  */
 
-import { SshClient, VirtualShell, VirtualSshServer } from "../src";
+import { SshClient, VirtualShell, VirtualSshServer } from "../src/index";
 
 const shell = new VirtualShell("lab-environment");
 await shell.ensureInitialized();
