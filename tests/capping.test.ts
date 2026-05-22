@@ -6,10 +6,11 @@ import { SshClient } from "../src/modules/SSHClient";
 async function setupClient(vmName: string, options?: { ramCapBytes?: number; cpuCapCores?: number }) {
 	const shell = new VirtualShell(vmName, undefined, { mode: "memory" }, options);
 	await shell.ensureInitialized();
+	await shell.users.setPassword("root", "root");
 	const ssh = new VirtualSshServer({ port: 0, shell });
 	const port = await ssh.start();
 	const client = new SshClient();
-	await client.connect({ host: "localhost", port, username: "root", password: "" });
+	await client.connect({ host: "localhost", port, username: "root", password: "root" });
 	return { shell, client, ssh };
 }
 
