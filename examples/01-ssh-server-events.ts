@@ -3,15 +3,20 @@
  *
  * Demonstrates the full SSH server event lifecycle: start, auth events,
  * connection tracking, lockout, and graceful shutdown.
+ *
+ * The SSH server started here accepts real SSH connections — test it manually:
+ *   ssh root@localhost -p 2222
  */
 
-import { SshClient, VirtualShell, VirtualSshServer } from "../src/index";
+import { runCommand } from "../src/commands/index";
+import { VirtualShell } from "../src/modules/VirtualShell/index";
+import { SshMimic as VirtualSshServer } from "../src/modules/SSHMimic/index";
 
 const shell = new VirtualShell("lab-environment");
 await shell.ensureInitialized();
 await shell.users.setPassword("root", "root");
 
-const ssh = new VirtualSshServer({ port: 0, shell, maxAuthAttempts: 3 });
+const ssh = new VirtualSshServer({ port: 2222, shell });
 
 // ── Register all event listeners ──────────────────────────────────
 console.log("--- Register all event listeners ---");
@@ -47,14 +52,12 @@ ssh.on("client:disconnect", ({ user }) => {
 console.log("--- Start server ---");
 const port = await ssh.start();
 console.log(`Server ready on port ${port}`);
+console.log("Accepting real SSH connections: ssh root@localhost -p", port);
 
-// ── Simulate activity via real SSH client ─────────────────────────
-console.log("--- Simulate activity via SshClient ---");
-const client = new SshClient();
-await client.connect({ host: "localhost", port, username: "root", password: "root", readyTimeout: 30000 });
-
-const result = await client.exec("echo 'Hello from connected client'");
-console.log(`Command output: ${result.stdout!.trim()}`);
+// ── Simulate activity via command runner ──────────────────────────
+console.log("--- Simulate activity ---");
+const result = await runCommand("echo 'Hello from connected client'", "root", "lab-environment", "exec", "/", shell);
+console.log(`Command output: ${result.stdout?.trim()}`);
 
 // ── Demonstrate lockout mechanism ─────────────────────────────────
 console.log("--- Demonstrate lockout mechanism ---");
@@ -70,5 +73,4 @@ console.log("Lockout cleared");
 
 // ── Graceful shutdown ─────────────────────────────────────────────
 console.log("--- Graceful shutdown ---");
-client.disconnect();
 ssh.stop();
