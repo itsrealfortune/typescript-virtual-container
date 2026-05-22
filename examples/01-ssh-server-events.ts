@@ -57,17 +57,16 @@ console.log(`Command output: ${result.stdout!.trim()}`);
 console.log("\n--- Lockout demo ---");
 const attackerIp = "10.0.0.99";
 
-// Manually simulate 3 failed attempts (normally done by SSH server internally)
-interface RateLimitEntry { attempts: number; lockedUntil: number }
-const attempts = (ssh as unknown as { _authAttempts: Map<string, RateLimitEntry> })._authAttempts;
-attempts.set(attackerIp, { attempts: 3, lockedUntil: Date.now() + 300_000 });
-
-// Emit the lockout event (normally fires automatically when threshold is reached)
-ssh.emit("auth:lockout", { ip: attackerIp, until: new Date(Date.now() + 300_000) });
+// Record auth failures via the public API, simulating brute-force attempts.
+// Each call increments the internal counter; at maxAuthAttempts (3) the IP is locked.
+ssh.recordAuthFailure(attackerIp);
+ssh.recordAuthFailure(attackerIp);
+ssh.recordAuthFailure(attackerIp);
+// The third failure emits "auth:lockout" automatically
 
 console.log(`\nAdmin clears lockout for ${attackerIp}...`);
 ssh.clearLockout(attackerIp);
-console.log(`Lockout cleared\n`);
+console.log(`Lockout cleared`);
 
 // ── Graceful shutdown ─────────────────────────────────────────────
 ssh.stop();

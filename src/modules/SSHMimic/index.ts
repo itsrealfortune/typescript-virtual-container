@@ -372,6 +372,15 @@ class SshMimic extends EventEmitter {
 	}
 
 	/**
+	 * Records a simulated authentication failure for the given IP.
+	 * If the failure count reaches `maxAuthAttempts`, the IP is locked out
+	 * and an `auth:lockout` event is emitted.
+	 */
+	public recordAuthFailure(ip: string): void {
+		this._recordFailure(ip);
+	}
+
+	/**
 	 * Manually clears the rate-limit record for an IP address.
 	 * Useful in tests or admin tooling.
 	 */

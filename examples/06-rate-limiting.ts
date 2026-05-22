@@ -34,37 +34,25 @@ console.log(`Config: max 3 attempts, 5s lockout\n`);
 
 // ── Simulate progressive auth failures ────────────────────────────
 const attackerIp = "192.168.1.100";
-interface RateLimitEntry { attempts: number; lockedUntil: number }
-const attempts = (ssh as unknown as { _authAttempts: Map<string, RateLimitEntry> })._authAttempts;
 
 console.log("Simulating brute-force attack from", attackerIp);
 
 // Failure 1
 console.log("\n  Attempt 1/3:");
-attempts.set(attackerIp, { attempts: 1, lockedUntil: 0 });
-ssh.emit("auth:failure", { username: "root", remoteAddress: attackerIp });
+ssh.recordAuthFailure(attackerIp);
 
 // Failure 2
 console.log("  Attempt 2/3:");
-attempts.set(attackerIp, { attempts: 2, lockedUntil: 0 });
-ssh.emit("auth:failure", { username: "admin", remoteAddress: attackerIp });
+ssh.recordAuthFailure(attackerIp);
 
-// Failure 3 → triggers lockout
+// Failure 3 → triggers lockout automatically
 console.log("  Attempt 3/3:");
-attempts.set(attackerIp, { attempts: 3, lockedUntil: Date.now() + 5_000 });
-ssh.emit("auth:lockout", { ip: attackerIp, until: new Date(Date.now() + 5_000) });
-
-// ── Verify lockout is active ──────────────────────────────────────
-console.log("\n  Verifying lockout state...");
-const entry = attempts.get(attackerIp);
-const isLocked = entry && Date.now() < entry.lockedUntil;
-console.log(`  IP ${attackerIp} locked: ${isLocked ? "YES 🔒" : "NO"}`);
+ssh.recordAuthFailure(attackerIp);
 
 // ── Admin override ────────────────────────────────────────────────
 console.log("\n  Admin clears lockout...");
 ssh.clearLockout(attackerIp);
-const afterClear = attempts.get(attackerIp);
-console.log(`  IP ${attackerIp} locked: ${afterClear ? "YES" : "NO ✅ cleared"}`);
+console.log(`  IP ${attackerIp} cleared`);
 
 // ── Cleanup ───────────────────────────────────────────────────────
 ssh.stop();
