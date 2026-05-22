@@ -119,8 +119,8 @@ export class SshClient {
 				stream.on("close", (code: number | string) => {
 					const exitCode = typeof code === "number" ? code : 0;
 					const result: CommandResult = {
-						stdout: stdout || undefined,
-						stderr: stderr || undefined,
+						stdout: stdout.replace(/\r\n/g, "\n") || undefined,
+						stderr: stderr.replace(/\r\n/g, "\n") || undefined,
 						exitCode,
 					};
 
