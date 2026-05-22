@@ -19,7 +19,7 @@ afterAll(() => {
 });
 
 function makeShellWithFsVfs() {
-	return new VirtualShell("test-vm-fs", undefined);
+	return new VirtualShell("test-vm-fs", undefined, { mode: "fs", snapshotPath: tmpDir });
 }
 
 describe("IdleManager", () => {
@@ -130,7 +130,7 @@ describe("IdleManager", () => {
 	test("evictUnusedLargeFiles evicts files without open FDs", () => {
 		const shell = makeShellWithFsVfs();
 		shell.ensureInitialized();
-		shell.vfs.writeFile("/tmp/big.txt", "x".repeat(10_000));
+		shell.vfs.writeFile("/tmp/big.txt", "x".repeat(100_000));
 
 		// biome-ignore lint/suspicious/noExplicitAny: accessing internal VFS node for test verification
 		const node = (shell.vfs as any)._root.children.tmp.children["big.txt"];
@@ -148,7 +148,7 @@ describe("IdleManager", () => {
 	test("evictUnusedLargeFiles skips files with open FDs", () => {
 		const shell = makeShellWithFsVfs();
 		shell.ensureInitialized();
-		shell.vfs.writeFile("/tmp/open.txt", "y".repeat(10_000));
+		shell.vfs.writeFile("/tmp/open.txt", "y".repeat(100_000));
 
 		const fd = shell.vfs.fdOpen("/tmp/open.txt", 0);
 		const openPaths = shell.vfs.getOpenPaths();
