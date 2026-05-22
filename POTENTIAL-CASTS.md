@@ -1,4 +1,4 @@
-# Potential Casts Audit
+# Casts Audit
 
 ## `src/` — 0 `as any` ✅
 
@@ -9,48 +9,41 @@ All `as any` casts have been eliminated from source code.
 ### DOM casts (~30)
 **Files:** `thunarManager.ts`, `desktopManager.ts`
 **Pattern:** `as HTMLElement`, `as HTMLInputElement`
-**Justification:** DOM APIs return `EventTarget` or `Element`. Narrowing to specific element types is required to access properties like `.value`, `.closest()`, `.querySelector()`.
+**Justification:** DOM APIs return `EventTarget` or `Element`. Narrowing to specific element types is required to access properties like `.value`, `.closest()`, `.querySelector()`. This is standard TypeScript browser practice.
 
-### Discriminated union narrowing (~25)
-**Files:** `VirtualFileSystem/index.ts`
-**Pattern:** `as InternalFileNode`, `as InternalDirectoryNode`, `as InternalDeviceNode`, `as InternalStubNode`
-**Justification:** After checking `node.type === "file"`, TypeScript doesn't always narrow the union in all contexts (especially with optional chaining or nested property access). These are safe narrowing casts following a type guard check.
+### Library interop (1)
+**Files:** `SSHMimic/sftp.ts`
+**Pattern:** `as KeyboardAuthContext`
+**Justification:** ssh2 library's auth context types don't use discriminated unions. The `ctx.method === "keyboard-interactive"` check is the runtime guard, but TS can't narrow the type automatically.
 
-### Dynamic property access (~15)
-**Files:** `sysctl.ts`, `python.ts`, `commands/sysctl.ts`
-**Pattern:** `as unknown as Record<string, unknown>`
-**Justification:** Sysctl tree is a nested object with dynamic keys determined at runtime. Python interpreter stores arbitrary attributes on module objects. These objects have no static shape that can be expressed in TypeScript.
-
-### 2D array indexing (~12)
-**Files:** `webTermRenderer.ts`, `pacmanGame.ts`
-**Pattern:** `as Cell[]`
-**Justification:** `_screen[r]` can be `undefined` when `r` is at boundaries. The cast asserts the row exists after bounds checking. Could be improved with proper null checks.
-
-### JSON parse results (2)
-**Files:** `shellSession.ts`, `sessionManager.ts`
-**Pattern:** `as LastLogin`, `as SerializedWindow[]`
-**Justification:** `JSON.parse` returns `unknown`. The cast asserts the parsed shape matches the expected interface.
-
-### Stack pops (2)
-**Files:** `nanoEditor.ts`
-**Pattern:** `as UndoEntry`
-**Justification:** `.pop()` returns `T | undefined`. The cast asserts the stack is non-empty (checked before pop).
-
-### Library interop (3)
-**Files:** `SSHMimic/sftp.ts`, `VirtualFileSystem/index.ts`
-**Pattern:** `as KeyboardAuthContext`, `as NodeJS.Timeout`
-**Justification:** ssh2 library types and Node.js timer types that don't perfectly align with the code's usage.
+### Python interpreter internals (~8)
+**Files:** `commands/python.ts`
+**Pattern:** `as unknown as Record<string, PyVal>`, `as unknown as PyVal`
+**Justification:** The Python interpreter stores arbitrary attributes on module objects and dict values. `PyVal` is a union type (`string | number | PyDict | ...`) and the interpreter dynamically attaches properties like `__methods__`, `_cwd`, and `path`. These casts express the dynamic nature of Python's object model and are unavoidable without a major redesign.
 
 ### Readline internals (2)
 **Files:** `self-standalone.ts`
-**Pattern:** `as Interface & { history: string[] }`
-**Justification:** Access to readline's internal `_history` property not exposed in the public type.
+**Pattern:** `as unknown as Record<string, unknown>`
+**Justification:** Access to readline's internal `_ttyWrite` and `history` properties not exposed in the public `Interface` type. Used for Ctrl+D interception and history injection in the CLI standalone.
 
-## Improvement opportunities
+## Fixed (no longer present)
 
-| Priority | Category | Approach |
-|----------|----------|----------|
-| Medium | 2D array indexing | Add proper null/undefined checks instead of casts |
-| Medium | Stack pops | Use non-null assertion `!` or add guards |
-| Low | Union narrowing | Create type guard functions (`isFileNode()`, `isDirNode()`) |
-| Low | JSON parse | Use runtime validation (zod/io-ts) instead of casts |
+| Category | Before | After |
+|----------|--------|-------|
+| 2D array indexing | ~24 casts (`as Cell[]`) | `_row()` / `_gridRow()` helpers with runtime bounds checks |
+| Union narrowing | ~25 casts (`as Internal*Node`) | TS now narrows automatically after `type === "file"` checks |
+| Stack pops | 2 casts (`as UndoEntry`) | `undefined` guards after `.pop()` |
+| JSON parse | 2 casts (`as LastLogin`, `as SerializedWindow[]`) | Runtime shape validation |
+| Dynamic sysctl props | 5 casts (`as unknown as Record<...>`) | Generic `access<T>()` helper with `key in obj` check |
+| Color array indexing | 6 casts (`as string`) | `??` fallbacks + typed arrays |
+| Dir enum casts | 4 casts (`as Dir[]`) | `readonly Dir[]` constants |
+| Ghost array indexing | 2 casts (`as Ghost`) | `_ghost()` helper with bounds check |
+| Prev ghost pos | 1 cast | `undefined` guard |
+
+## Summary
+
+| Status | Count |
+|--------|-------|
+| `as any` in `src/` | **0** |
+| Remaining casts (justified) | ~41 |
+| Casts eliminated this session | ~70 |
