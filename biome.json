@@ -1,4 +1,5 @@
 {
+    "root": true,
     "assist": {
         "actions": {
             "source": {
@@ -7,6 +8,7 @@
         }
     },
     "linter": {
+        "enabled": true,
         "rules": {
             "recommended": true,
             "nursery": {
@@ -252,6 +254,9 @@
                 "noReExportAll": "off"
             }
         }
+    },
+    "javascript": {
+        "globals": ["Bun"]
     },
     "formatter": {
         "enabled": false,
