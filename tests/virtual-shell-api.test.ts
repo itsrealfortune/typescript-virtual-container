@@ -4,7 +4,7 @@ import { VirtualShell } from "../src";
 let shell: VirtualShell;
 
 beforeAll(async () => {
-	shell = new VirtualShell("api-test", undefined, { mode: "memory" } as any);
+	shell = new VirtualShell("api-test", undefined, { mode: "memory" });
 	await shell.ensureInitialized();
 });
 

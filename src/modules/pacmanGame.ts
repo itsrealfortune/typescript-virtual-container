@@ -114,7 +114,13 @@ function parseMaze(tpl: string[]): Cell[][] {
 type Dir = 0 | 1 | 2 | 3; // right, down, left, up
 const DR = [0, 1, 0, -1] as const;
 const DC = [1, 0, -1, 0] as const;
-const OPP: Dir[] = [2, 3, 0, 1];
+const OPP: readonly Dir[] = [2, 3, 0, 1];
+const ALL_DIRS: readonly Dir[] = [0, 1, 2, 3];
+const DIR_PRIORITY: readonly Dir[] = [3, 2, 1, 0]; // up > left > down > right
+
+function oppositeDir(d: Dir): Dir {
+	return OPP[d]!;
+}
 
 // ── Ghost ─────────────────────────────────────────────────────────────────────
 
@@ -171,6 +177,20 @@ export class PacmanGame {
 
 	private _grid: Cell[][];
 	private _visualGrid: string[][];
+
+	/** Safely access a grid row. The grid is always fully populated. */
+	private _gridRow(r: number): Cell[] {
+		const row = this._grid[r];
+		if (row === undefined) throw new Error(`PacmanGame: row ${r} out of range`);
+		return row;
+	}
+
+	/** Safely access a ghost by index. Ghosts are always initialized. */
+	private _ghost(i: number): Ghost {
+		const g = this._ghosts[i];
+		if (g === undefined) throw new Error(`PacmanGame: ghost ${i} not found`);
+		return g;
+	}
 
 	// Pacman — spawn r22,c16 (open dot, mid corridor left of center pillars)
 	private _pacR = 22;
@@ -373,7 +393,7 @@ export class PacmanGame {
 				for (const g of this._ghosts) {
 					if (!g.inHouse && g.mode !== "fright" && g.mode !== "eaten") {
 						g.mode = this._globalMode;
-						g.dir = (OPP[g.dir] ?? g.dir) as Dir;
+						g.dir = oppositeDir(g.dir);
 					}
 				}
 			}
@@ -418,10 +438,10 @@ export class PacmanGame {
 
 		const cell = this._grid[this._pacR]?.[this._pacC];
 		if (cell === "dot") {
-			(this._grid[this._pacR] as Cell[])[this._pacC] = "empty";
+			this._gridRow(this._pacR)[this._pacC] = "empty";
 			this._score += 10; this._dotsEaten++;
 		} else if (cell === "pellet") {
-			(this._grid[this._pacR] as Cell[])[this._pacC] = "empty";
+			this._gridRow(this._pacR)[this._pacC] = "empty";
 			this._score += 50; this._dotsEaten++;
 			this._activateFright();
 		}
@@ -439,7 +459,7 @@ export class PacmanGame {
 				g.mode = "fright";
 				g.frightTicks = this._frightDuration;
 				g.movePeriod = 2; // half speed during fright (arcade accurate)
-				if (!g.inHouse) g.dir = (OPP[g.dir] ?? g.dir) as Dir;
+				if (!g.inHouse) g.dir = oppositeDir(g.dir);
 			}
 		}
 		// Do not interrupt global mode schedule tick during fright
@@ -466,7 +486,7 @@ export class PacmanGame {
 
 			case "Inky": {
 				// Pivot: 2 tiles ahead of pacman, then double-vector from Blinky
-				const blinky = this._ghosts[0] as Ghost;
+				const blinky = this._ghost(0);
 				const pr = this._pacR + DR[this._pacDir] * 2;
 				let pc = this._pacC + DC[this._pacDir] * 2;
 				if (this._pacDir === 3) pc = this._pacC - 2; // NES bug mirror
@@ -502,7 +522,7 @@ export class PacmanGame {
 			if (this._dotsEaten < g.dotThreshold) {
 				// Bounce vertically inside house
 				const nextR = g.r + DR[g.dir];
-				if (nextR < 15 || nextR > 17) g.dir = (OPP[g.dir] ?? g.dir) as Dir;
+				if (nextR < 15 || nextR > 17) g.dir = oppositeDir(g.dir);
 				else g.r = nextR;
 				return;
 			}
@@ -541,7 +561,7 @@ export class PacmanGame {
 		}
 
 		// Normal: pick best direction at each tile
-		const candidates: Dir[] = ([0, 1, 2, 3] as Dir[]).filter(d => d !== (OPP[g.dir] as Dir));
+		const candidates: Dir[] = [...ALL_DIRS].filter(d => d !== OPP[g.dir]);
 		const walkable = candidates.filter(d => {
 			const nr = g.r + DR[d];
 			const nc = ((g.c + DC[d]) % COLS + COLS) % COLS;
@@ -557,7 +577,7 @@ export class PacmanGame {
 			const [tR, tC] = this._ghostTarget(g);
 			let best = Number.MAX_SAFE_INTEGER;
 			// Original priority: up > left > down > right when tied
-			for (const d of ([3, 2, 1, 0] as Dir[])) {
+			for (const d of DIR_PRIORITY) {
 				if (!walkable.includes(d)) continue;
 				const nr = g.r + DR[d];
 				const nc = ((g.c + DC[d]) % COLS + COLS) % COLS;
@@ -581,13 +601,14 @@ export class PacmanGame {
 		prevPacC: number,
 	): void {
 		for (let i = 0; i < this._ghosts.length; i++) {
-			const g = this._ghosts[i] as Ghost;
+			const g = this._ghost(i);
 			if (g.inHouse || g.mode === "eaten") continue;
 
 			// Same-cell collision
 			const sameTile = g.r === this._pacR && g.c === this._pacC;
 			// Cross-collision: pacman and ghost swapped positions this tick
-			const prev = prevGhostPos[i] as { r: number; c: number };
+			const prev = prevGhostPos[i];
+			if (prev === undefined) continue;
 			const crossed = prev.r === this._pacR && prev.c === this._pacC
 				&& g.r === prevPacR && g.c === prevPacC;
 

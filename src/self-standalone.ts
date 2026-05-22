@@ -206,17 +206,23 @@ async function runReadlineShell(): Promise<void> {
 		completer: makeCompleter(() => ({ cwd })),
 	});
 
-	const rlWithHistory = rl as Interface & { history: string[] };
-	rlWithHistory.history = [...history].reverse();
+	// Inject history into readline's internal history array.
+	// readline exposes `history` as a public property in Node.js but it's not in the TS types.
+	const rlRecord = rl as unknown as Record<string, string[] | undefined>;
+	if ("history" in rlRecord) {
+		rlRecord.history = [...history].reverse();
+	}
 
 	// Intercept Ctrl+D at the readline level: when inside a nested session,
 	// pop the session stack and re-prompt instead of closing readline.
 	{
-		type RlInternal = { _ttyWrite: (s: string, key: { ctrl?: boolean; name?: string } | null) => void; line: string };
-		const rlI = rl as unknown as RlInternal;
-		const orig = rlI._ttyWrite.bind(rl);
-		rlI._ttyWrite = (s, key) => {
-			if (key?.ctrl && key?.name === "d" && rlI.line === "" && sessionStack.length > 0) {
+		const rlRecord2 = rl as unknown as Record<string, unknown>;
+		const ttyWrite = rlRecord2._ttyWrite as ((s: string, key: { ctrl?: boolean; name?: string } | null) => void) | undefined;
+		if (ttyWrite === undefined) return;
+		const orig = ttyWrite.bind(rl);
+		rlRecord2._ttyWrite = (s: string, key: { ctrl?: boolean; name?: string } | null) => {
+			const line = rlRecord2.line as string;
+			if (key?.ctrl && key?.name === "d" && line === "" && sessionStack.length > 0) {
 				stdout.write("^D\n");
 				const prev = sessionStack.pop();
 				if (prev === undefined) return;
@@ -603,7 +609,7 @@ async function runReadlineShell(): Promise<void> {
 				if (history.length > 500) history = history.slice(history.length - 500);
 				saveHistory(virtualShell.vfs, authUser, history);
 			}
-			rlWithHistory.history = [...history].reverse();
+			rlRecord.history = [...history].reverse();
 		}
 
 		const result = await runCommand(

@@ -40,7 +40,7 @@ export class WebTermRenderer {
 	private _rows: number;
 	/** Number of columns. */
 	private _cols: number;
-	/** 2D grid of screen cells. */
+	/** 2D grid of screen cells — always fully populated. */
 	private _screen: Cell[][];
 	/** Scrollback buffer (rows that scrolled off screen). */
 	private _scrollback: Cell[][] = [];
@@ -63,6 +63,16 @@ export class WebTermRenderer {
 	private _buf = "";
 
 	/**
+	 * Safely access a screen row. The screen is always fully populated by
+	 * `_makeScreen()`, so this never returns undefined in practice.
+	 */
+	private _row(r: number): Cell[] {
+		const row = this._screen[r];
+		if (row === undefined) throw new Error(`WebTermRenderer: row ${r} out of range (0..${this._rows - 1})`);
+		return row;
+	}
+
+	/**
 	 * Create a new terminal screen buffer.
 	 * @param rows - Number of visible rows (default: 24).
 	 * @param cols - Number of columns (default: 80).
@@ -81,8 +91,10 @@ export class WebTermRenderer {
 	resize(rows: number, cols: number): void {
 		const newScreen = this._makeScreen(rows, cols);
 		for (let r = 0; r < Math.min(rows, this._rows); r++) {
+			const newRow = newScreen[r];
+			if (newRow === undefined) continue;
 			for (let c = 0; c < Math.min(cols, this._cols); c++) {
-				(newScreen[r] as Cell[])[c] = this._screen[r]?.[c] ?? makeCell();
+				newRow[c] = this._screen[r]?.[c] ?? makeCell();
 			}
 		}
 		this._rows = rows;
@@ -169,16 +181,19 @@ export class WebTermRenderer {
 			// Erase line from cursor to end
 			const mode = seq === "" ? 0 : Number.parseInt(seq, 10);
 			if (mode === 0) {
+				const row = this._row(this._curRow);
 				for (let c = this._curCol; c < this._cols; c++) {
-					(this._screen[this._curRow] as Cell[])[c] = makeCell();
+					row[c] = makeCell();
 				}
 			} else if (mode === 1) {
+				const row = this._row(this._curRow);
 				for (let c = 0; c <= this._curCol; c++) {
-					(this._screen[this._curRow] as Cell[])[c] = makeCell();
+					row[c] = makeCell();
 				}
 			} else if (mode === 2) {
+				const row = this._row(this._curRow);
 				for (let c = 0; c < this._cols; c++) {
-					(this._screen[this._curRow] as Cell[])[c] = makeCell();
+					row[c] = makeCell();
 				}
 			}
 			return;
@@ -206,11 +221,19 @@ export class WebTermRenderer {
 		if (cmd === "J") {
 			const mode = seq === "" ? 0 : Number.parseInt(seq, 10);
 			if (mode === 0) {
-				for (let c = this._curCol; c < this._cols; c++) (this._screen[this._curRow] as Cell[])[c] = makeCell();
-				for (let r = this._curRow + 1; r < this._rows; r++) this._screen[r] = Array.from({ length: this._cols }, () => makeCell());
+				const curRow = this._row(this._curRow);
+				for (let c = this._curCol; c < this._cols; c++) curRow[c] = makeCell();
+				for (let r = this._curRow + 1; r < this._rows; r++) {
+					const row = this._screen[r];
+					if (row !== undefined) this._screen[r] = Array.from({ length: this._cols }, () => makeCell());
+				}
 			} else if (mode === 1) {
-				for (let r = 0; r < this._curRow; r++) this._screen[r] = Array.from({ length: this._cols }, () => makeCell());
-				for (let c = 0; c <= this._curCol; c++) (this._screen[this._curRow] as Cell[])[c] = makeCell();
+				for (let r = 0; r < this._curRow; r++) {
+					const row = this._screen[r];
+					if (row !== undefined) this._screen[r] = Array.from({ length: this._cols }, () => makeCell());
+				}
+				const curRow = this._row(this._curRow);
+				for (let c = 0; c <= this._curCol; c++) curRow[c] = makeCell();
 			} else if (mode === 2) {
 				this._screen = this._makeScreen();
 				this._scrollback = [];
@@ -226,7 +249,8 @@ export class WebTermRenderer {
 		const codes = seq === "" ? [0] : seq.split(";").map((n) => Number.parseInt(n || "0", 10));
 		let i = 0;
 		while (i < codes.length) {
-			const code = codes[i] as number;
+			const code = codes[i];
+			if (code === undefined) { i++; continue; }
 			if (code === 0) {
 				this._bold = false; this._reverse = false; this._fg = null; this._bg = null;
 			} else if (code === 1) {
@@ -238,10 +262,10 @@ export class WebTermRenderer {
 			} else if (code === 27) {
 				this._reverse = false;
 			} else if (code >= 30 && code <= 37) {
-				this._fg = ANSI_COLORS[code - 30] as string;
+				this._fg = ANSI_COLORS[code - 30] ?? null;
 			} else if (code === 38) {
 				if (codes[i + 1] === 5 && codes[i + 2] !== undefined) {
-					this._fg = xterm256(codes[i + 2] as number);
+					this._fg = xterm256(codes[i + 2]!);
 					i += 2;
 				} else if (codes[i + 1] === 2 && codes[i + 4] !== undefined) {
 					this._fg = `rgb(${codes[i + 2]},${codes[i + 3]},${codes[i + 4]})`;
@@ -250,10 +274,10 @@ export class WebTermRenderer {
 			} else if (code === 39) {
 				this._fg = null;
 			} else if (code >= 40 && code <= 47) {
-				this._bg = ANSI_COLORS[code - 40] as string;
+				this._bg = ANSI_COLORS[code - 40] ?? null;
 			} else if (code === 48) {
 				if (codes[i + 1] === 5 && codes[i + 2] !== undefined) {
-					this._bg = xterm256(codes[i + 2] as number);
+					this._bg = xterm256(codes[i + 2]!);
 					i += 2;
 				} else if (codes[i + 1] === 2 && codes[i + 4] !== undefined) {
 					this._bg = `rgb(${codes[i + 2]},${codes[i + 3]},${codes[i + 4]})`;
@@ -262,9 +286,9 @@ export class WebTermRenderer {
 			} else if (code === 49) {
 				this._bg = null;
 			} else if (code >= 90 && code <= 97) {
-				this._fg = ANSI_COLORS_BRIGHT[code - 90] as string;
+				this._fg = ANSI_COLORS_BRIGHT[code - 90] ?? null;
 			} else if (code >= 100 && code <= 107) {
-				this._bg = ANSI_COLORS_BRIGHT[code - 100] as string;
+				this._bg = ANSI_COLORS_BRIGHT[code - 100] ?? null;
 			}
 			i++;
 		}
@@ -284,7 +308,8 @@ export class WebTermRenderer {
 			this._curCol = 0;
 			if (this._curRow < this._rows - 1) { this._curRow++; } else { this._scrollUp(); }
 		}
-		(this._screen[this._curRow] as Cell[])[this._curCol] = makeCell({
+		const row = this._row(this._curRow);
+		row[this._curCol] = makeCell({
 			ch,
 			bold: this._bold,
 			reverse: this._reverse,
@@ -304,11 +329,12 @@ export class WebTermRenderer {
 	renderHtml(): string {
 		const parts: string[] = [];
 		for (let r = 0; r < this._rows; r++) {
-			const row = this._screen[r] as Cell[];
+			const row = this._row(r);
 			let spanOpen = false;
 			let lastStyle = "";
 			for (let c = 0; c < this._cols; c++) {
-				const cell = row[c] as Cell;
+				const cell = row[c];
+				if (cell === undefined) continue;
 				const isCursor = this._cursorVisible && r === this._curRow && c === this._curCol;
 
 				let fg = cell.fg ?? "#ccc";
@@ -394,11 +420,15 @@ function escHtml(ch: string): string {
 	return ch;
 }
 
-const ANSI_COLORS = ["#000", "#c00", "#0c0", "#cc0", "#00c", "#c0c", "#0cc", "#ccc"];
-const ANSI_COLORS_BRIGHT = ["#555", "#f55", "#5f5", "#ff5", "#55f", "#f5f", "#5ff", "#fff"];
+const ANSI_COLORS: readonly string[] = ["#000", "#c00", "#0c0", "#cc0", "#00c", "#c0c", "#0cc", "#ccc"];
+const ANSI_COLORS_BRIGHT: readonly string[] = ["#555", "#f55", "#5f5", "#ff5", "#55f", "#f5f", "#5ff", "#fff"];
 
 function xterm256(n: number): string {
-	if (n < 16) return (n < 8 ? ANSI_COLORS : ANSI_COLORS_BRIGHT)[n < 8 ? n : n - 8] as string;
+	if (n < 16) {
+		const colors = n < 8 ? ANSI_COLORS : ANSI_COLORS_BRIGHT;
+		const idx = n < 8 ? n : n - 8;
+		return colors[idx] ?? "#000";
+	}
 	if (n < 232) {
 		const i = n - 16;
 		const r = Math.floor(i / 36) * 51;

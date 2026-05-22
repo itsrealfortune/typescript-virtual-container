@@ -264,12 +264,14 @@ async function _runCommandDirectInner(
 		assignCount += 1;
 	}
 	if (assignCount > 0) {
-		const assignments = invocation.slice(0, assignCount).map((token) => token.match(assignRe) as RegExpMatchArray);
+		const assignments = invocation.slice(0, assignCount).map((token) => token.match(assignRe)).filter((m): m is RegExpMatchArray => m !== null);
 		const remaining = invocation.slice(assignCount);
 		const restored: Array<[string, string | undefined]> = [];
 		for (const [, key, value] of assignments) {
-			restored.push([key as string, env.vars[key as string]]);
-			env.vars[key as string] = value as string;
+			if (key !== undefined && value !== undefined) {
+				restored.push([key, env.vars[key]]);
+				env.vars[key] = value;
+			}
 		}
 		if (remaining.length === 0) {
 			return { exitCode: 0 };

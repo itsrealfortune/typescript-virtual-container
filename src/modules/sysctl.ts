@@ -150,26 +150,29 @@ export function resolveSysctlPath(
 	sysPath: string,
 ): { value: string | number; set: (v: string) => void } | null {
 	const parts = sysPath.replace("/proc/sys/", "").split("/");
-	const setNum = (obj: Record<string, unknown>, key: string, v: string) => {
-		const num = Number(v);
-		obj[key] = Number.isNaN(num) ? v : num;
+
+	// Dynamic property accessor: checks `key in obj`, returns value + setter.
+	// Avoids `as unknown as Record<string, unknown>` casts by using a typed helper.
+	const access = <T extends object>(obj: T, key: string): { value: string | number; set: (v: string) => void } | null => {
+		if (!(key in obj)) return null;
+		const rec = obj as Record<string, unknown>;
+		const raw = rec[key];
+		const value = typeof raw === "number" ? raw : String(raw);
+		return { value, set: (v: string) => { const num = Number(v); rec[key] = Number.isNaN(num) ? v : num; } };
 	};
 
 	switch (parts[0]) {
 		case "kernel": {
-			const k = state.kernel;
 			const key = parts[1];
 			if (!key) break;
-			if (key in k) return { value: k[key as keyof typeof k] as string | number, set: (v) => setNum(k as unknown as Record<string, unknown>, key, v) };
-			break;
+			return access(state.kernel, key);
 		}
 		case "net": {
 			const proto = parts[1];
 			if (proto === "ipv4") {
-				const n = state.net.ipv4;
 				const key = parts[2];
 				if (!key) break;
-				if (key in n) return { value: n[key as keyof typeof n] as string | number, set: (v) => setNum(n as unknown as Record<string, unknown>, key, v) };
+				return access(state.net.ipv4, key);
 			} else if (proto === "ipv6") {
 				const key = parts[2];
 				if (key === "disable_ipv6") return { value: state.net.ipv6.disable_ipv6, set: (v) => { state.net.ipv6.disable_ipv6 = Number(v); } };
@@ -177,26 +180,22 @@ export function resolveSysctlPath(
 					return { value: state.net.ipv6.disable_ipv6, set: (v) => { state.net.ipv6.disable_ipv6 = Number(v); } };
 				}
 			} else if (proto === "core") {
-				const n = state.net.core;
 				const key = parts[2];
 				if (!key) break;
-				if (key in n) return { value: n[key as keyof typeof n] as string | number, set: (v) => setNum(n as unknown as Record<string, unknown>, key, v) };
+				return access(state.net.core, key);
 			}
 			break;
 		}
 		case "vm": {
-			const v = state.vm;
 			const key = parts[1];
 			if (!key) break;
-			if (key in v) return { value: v[key as keyof typeof v] as string | number, set: (val) => setNum(v as unknown as Record<string, unknown>, key, val) };
-			break;
+			return access(state.vm, key);
 		}
 		case "fs": {
 			if (parts[1] === "inotify") {
-				const i = state.fs.inotify;
 				const key = parts[2];
 				if (!key) break;
-				if (key in i) return { value: i[key as keyof typeof i] as string | number, set: (v) => setNum(i as unknown as Record<string, unknown>, key, v) };
+				return access(state.fs.inotify, key);
 			} else {
 				const f = state.fs;
 				const key = parts[1];

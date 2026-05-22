@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { Baie, VirtualSwitch, VirtualNetworkManager } from "../src";
+import { Baie, VirtualNetworkManager } from "../src";
 
 describe("VirtualNetworkManager - Multiple Interfaces", () => {
 	test("addInterface creates new interface", () => {
@@ -200,7 +200,7 @@ describe("VirtualNetworkManager - Connection Tracking", () => {
 describe("VirtualSwitch - Bandwidth Enforcement", () => {
 	test("bandwidth limit allows small packets", async () => {
 		const baie = new Baie("bw-test", "10.0.1.0/24");
-		const vm = await baie.createVM("test");
+		void await baie.createVM("test");
 		const port = baie.switch.getPorts().values().next().value;
 		if (!port) return;
 
@@ -259,7 +259,7 @@ describe("VirtualSwitch - Qdisc Rules", () => {
 describe("VirtualSwitch - Packet Reordering", () => {
 	test("reorderPct can mark packets as reordered", async () => {
 		const baie = new Baie("reorder", "10.0.1.0/24");
-		const vm = await baie.createVM("test");
+		void await baie.createVM("test");
 		const port = baie.switch.getPorts().values().next().value;
 		if (!port) return;
 
@@ -285,7 +285,7 @@ describe("VirtualSwitch - Packet Reordering", () => {
 describe("VirtualSwitch - MTU Enforcement", () => {
 	test("packet exceeding MTU is dropped", async () => {
 		const baie = new Baie("mtu", "10.0.1.0/24");
-		const vm = await baie.createVM("test");
+		void await baie.createVM("test");
 		const port = baie.switch.getPorts().values().next().value;
 		if (!port) return;
 
@@ -306,7 +306,7 @@ describe("VirtualSwitch - MTU Enforcement", () => {
 describe("VirtualSwitch - Gaussian Jitter", () => {
 	test("jitterMs adds variable latency", async () => {
 		const baie = new Baie("jitter", "10.0.1.0/24");
-		const vm = await baie.createVM("test");
+		void await baie.createVM("test");
 		const port = baie.switch.getPorts().values().next().value;
 		if (!port) return;
 

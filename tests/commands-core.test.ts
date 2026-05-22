@@ -757,7 +757,7 @@ describe("nproc command", () => {
 	test("nproc returns number", async () => {
 		const r = await runCmd(client, "nproc");
 		expect(r.exitCode).toBe(0);
-		expect(parseInt(r.stdout?.trim() ?? "0")).toBeGreaterThan(0);
+		expect(parseInt(r.stdout?.trim() ?? "0", 10)).toBeGreaterThan(0);
 	});
 });
 

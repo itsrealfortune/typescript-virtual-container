@@ -26,9 +26,8 @@
 
 import type {
 	VfsSnapshot,
-	VfsSnapshotDirectoryNode,
 	VfsSnapshotFileNode,
-	VfsSnapshotNode,
+	VfsSnapshotNode
 } from "../types/vfs";
 
 // ─── types ────────────────────────────────────────────────────────────────────
@@ -72,7 +71,7 @@ function flattenSnapshot(
 	const path = prefix === "" ? "/" : prefix;
 	out.set(path, node);
 	if (node.type === "directory") {
-		for (const child of (node as VfsSnapshotDirectoryNode).children ?? []) {
+		for (const child of node.children ?? []) {
 			flattenSnapshot(child, `${prefix}/${child.name}`, out);
 		}
 	}
@@ -145,8 +144,8 @@ export function diffSnapshots(
 		if (afterNode.type !== beforeNode.type) continue; // type change = add+remove
 
 		if (afterNode.type === "file" && beforeNode.type === "file") {
-			const beforeContent = decodeContent(beforeNode as VfsSnapshotFileNode);
-			const afterContent = decodeContent(afterNode as VfsSnapshotFileNode);
+			const beforeContent = decodeContent(beforeNode);
+			const afterContent = decodeContent(afterNode);
 			const modeChanged = afterNode.mode !== beforeNode.mode;
 			if (beforeContent !== afterContent || modeChanged) {
 				modified.push({

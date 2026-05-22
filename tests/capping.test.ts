@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { beforeAll, describe, expect, test } from "bun:test";
 import * as os from "node:os";
 import { VirtualShell } from "../src";
 import { SshClient } from "../src/modules/SSHClient";
@@ -22,7 +22,7 @@ describe("RAM capping — reporting", () => {
 		expect(r.exitCode).toBe(0);
 		const memTotalLine = r.stdout!.split("\n").find((l) => l.startsWith("MemTotal:"));
 		expect(memTotalLine).toBeDefined();
-		const memTotalKb = parseInt(memTotalLine!.split(/\s+/)[1], 10);
+		const memTotalKb = parseInt(memTotalLine!.split(/\s+/)[1] ?? "0", 10);
 		expect(memTotalKb).toBeLessThanOrEqual(262144); // 256 MiB in KiB
 	});
 
@@ -339,7 +339,7 @@ describe("No caps — host passthrough", () => {
 		const r = await client.cat("/proc/meminfo");
 		expect(r.exitCode).toBe(0);
 		const memTotalLine = r.stdout!.split("\n").find((l) => l.startsWith("MemTotal:"));
-		const memTotalKb = parseInt(memTotalLine!.split(/\s+/)[1], 10);
+		const memTotalKb = parseInt(memTotalLine!.split(/\s+/)[1] ?? "0", 10);
 		const hostTotalKb = Math.floor(os.totalmem() / 1024);
 		expect(memTotalKb).toBe(hostTotalKb);
 	});

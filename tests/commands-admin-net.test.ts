@@ -162,7 +162,7 @@ describeNetwork("curl command", () => {
 	});
 
 	test("curl blocked by firewall", async () => {
-		const r = await runCmd(client, "iptables -A OUTPUT -d 127.0.0.1 -j DROP");
+		await runCmd(client, "iptables -A OUTPUT -d 127.0.0.1 -j DROP");
 		// curl to localhost — blocked by OUTPUT rule
 		const r2 = await runCmd(client, "curl http://127.0.0.1");
 		const output = (r2.stderr ?? "") + (r2.stdout ?? "");

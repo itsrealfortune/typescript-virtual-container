@@ -39,10 +39,12 @@
     "resolveJsonModule": true,
     "declaration": true,
     "declarationMap": false,
+    "rootDir": "src",
+    "outDir": "dist",
     "sourceMap": false,
     "composite": true,
     "tsBuildInfoFile": "dist/.tsbuildinfo"
   },    
-  "include": ["src/**/*","tests/**/*"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }

@@ -327,6 +327,7 @@ describe("Password aging", () => {
 		expect(users.isPasswordExpired("alice")).toBe(false);
 		// Set maxAge to 1 and force lastChange to 2 days ago
 		await users.setPasswordAging("alice", 0, 1);
+		// biome-ignore lint/suspicious/noExplicitAny: accessing internal user record to simulate time passage
 		const record = (users as any)._users.get("alice");
 		record.lastPasswordChange = Math.floor(Date.now() / 86400000) - 2;
 		expect(users.isPasswordExpired("alice")).toBe(true);

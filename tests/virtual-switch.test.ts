@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { Baie, VirtualProxy, VirtualVpn, SshClient } from "../src";
+import { Baie, VirtualProxy, VirtualVpn, } from "../src";
 
 describe("Baie", () => {
 	test("createVM assigns IP from subnet", async () => {
@@ -129,7 +129,7 @@ describe("VirtualSwitch", () => {
 
 	test("traffic shaping: packetLossPct drops packets", () => {
 		const baie = new Baie("ts", "10.0.1.0/24");
-		baie.switch.setTrafficRule("*", { packetLossPct: 100 });
+		baie.switch.setTrafficRule("*", { vms: ["*"], packetLossPct: 100 });
 		// 100% loss means every "routed" packet is dropped
 		baie.switch.removeTrafficRule("*");
 	});
@@ -179,7 +179,6 @@ describe("VirtualVpn", () => {
 	test("addPeer is callable", () => {
 		const a = new Baie("a", "10.0.1.0/24");
 		const b = new Baie("b", "10.0.2.0/24");
-		const c = new Baie("c", "10.0.3.0/24");
 		const vpn = new VirtualVpn(a, b, { key: "k" });
 		expect(() => vpn.addPeer({} as never)).not.toThrow();
 	});

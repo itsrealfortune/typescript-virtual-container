@@ -361,7 +361,8 @@ export class VirtualSwitch {
 		if (lb.algorithm === "round-robin") {
 			const idx = (this._lbCounters.get(lb.name) ?? 0) % targets.length;
 			this._lbCounters.set(lb.name, idx + 1);
-			const target = targets[idx] as (typeof targets)[number];
+			const target = targets[idx];
+			if (target === undefined) return undefined;
 			return this.resolveDns(target.hostname) ?? target.hostname;
 		}
 		const totalWeight = targets.reduce((sum, t) => sum + t.weight, 0);
@@ -376,9 +377,11 @@ export class VirtualSwitch {
 	}
 
 	private _resolveDstMac(ip: string): MacAddress | undefined {
-		if (this._ipToMac.has(ip)) return this._ipToMac.get(ip) as MacAddress;
+		const mac = this._ipToMac.get(ip);
+		if (mac !== undefined) return mac;
 		for (const record of this._dnsRecords.values()) {
-			if (this._ipToMac.has(record)) return this._ipToMac.get(record) as MacAddress;
+			const mac2 = this._ipToMac.get(record);
+			if (mac2 !== undefined) return mac2;
 		}
 		return undefined;
 	}

@@ -520,7 +520,7 @@ class VirtualFileSystem extends EventEmitter {
 					`Cannot create directory '${builtPath}': path is a file.`,
 				);
 			}
-			current = child as InternalDirectoryNode;
+			current = child;
 		}
 	}
 
@@ -992,9 +992,8 @@ class VirtualFileSystem extends EventEmitter {
 				const normalized = normalizePath(p);
 				const node = getNodeNormalized(this._root, normalized);
 				if (node.type === "file") {
-					const f = node as InternalFileNode;
-					if (f.evicted) this._reloadEvicted(f, normalized);
-					const raw = f.compressed ? gunzipSync(f.content) : f.content;
+					if (node.evicted) this._reloadEvicted(node, normalized);
+					const raw = node.compressed ? gunzipSync(node.content) : node.content;
 					this._fileCache.setSync(normalized, raw);
 					loaded++;
 				}
@@ -1353,9 +1352,8 @@ class VirtualFileSystem extends EventEmitter {
 		}
 
 		if (existing?.type === "device") {
-			const dev = existing as InternalDeviceNode;
-			VirtualFileSystem._writeDeviceNode(dev, normalized);
-			dev.updatedAt = Date.now();
+			VirtualFileSystem._writeDeviceNode(existing, normalized);
+			existing.updatedAt = Date.now();
 			this.emit("device:write", { path: normalized });
 			return;
 		}
@@ -1372,7 +1370,7 @@ class VirtualFileSystem extends EventEmitter {
 		// RAM cap enforcement: try to swap out LRU files to make room before rejecting
 		if (this._ramCapBytes !== null) {
 			const currentUsage = this._getCachedUsage();
-			const existingSize = existing?.type === "file" ? (existing as InternalFileNode).content.length : 0;
+			const existingSize = existing?.type === "file" ? existing.content.length : 0;
 			const projectedUsage = currentUsage - existingSize + storedContent.length;
 			if (projectedUsage > this._ramCapBytes) {
 				const excess = projectedUsage - this._ramCapBytes;
@@ -1391,13 +1389,12 @@ class VirtualFileSystem extends EventEmitter {
 		}
 
 		if (existing && existing.type === "file") {
-			const f = existing as InternalFileNode;
-			f.content = storedContent;
-			f.compressed = shouldCompress;
-			f.mode = mode;
-			if (uid !== undefined) f.uid = uid;
-			if (gid !== undefined) f.gid = gid;
-			f.updatedAt = Date.now();
+			existing.content = storedContent;
+			existing.compressed = shouldCompress;
+			existing.mode = mode;
+			if (uid !== undefined) existing.uid = uid;
+			if (gid !== undefined) existing.gid = gid;
+			existing.updatedAt = Date.now();
 		} else {
 			if (!existing) { parent._childCount++; parent._sortedKeys = null; }
 			parent.children[name] = VirtualFileSystem._makeFile(name, storedContent, mode, shouldCompress, uid, gid);
@@ -1458,7 +1455,7 @@ class VirtualFileSystem extends EventEmitter {
 			return node.stubContent;
 		}
 		if (node.type === "device") {
-			const content = VirtualFileSystem._readDeviceNode(node as InternalDeviceNode, normalized);
+			const content = VirtualFileSystem._readDeviceNode(node, normalized);
 			this.emit("file:read", { path: normalized, size: content.length });
 			return content;
 		}
@@ -1466,9 +1463,8 @@ class VirtualFileSystem extends EventEmitter {
 			throw new Error(`Cannot read '${targetPath}': not a file.`);
 		}
 		if (uid !== undefined && gid !== undefined) enforceAccess(this._root, normalized, uid, gid, R_OK);
-		const f = node as InternalFileNode;
-		if (f.evicted) this._reloadEvicted(f, normalized);
-		const raw = f.compressed ? gunzipSync(f.content) : f.content;
+		if (node.evicted) this._reloadEvicted(node, normalized);
+		const raw = node.compressed ? gunzipSync(node.content) : node.content;
 
 		// Update cache on read (tracks miss)
 		if (this._cacheEnabled && this._fileCache) {
@@ -1507,7 +1503,7 @@ class VirtualFileSystem extends EventEmitter {
 			return buf;
 		}
 		if (node.type === "device") {
-			const content = VirtualFileSystem._readDeviceNode(node as InternalDeviceNode, normalized);
+			const content = VirtualFileSystem._readDeviceNode(node, normalized);
 			const buf = Buffer.from(content, "binary");
 			this.emit("file:read", { path: normalized, size: buf.length });
 			return buf;
@@ -1515,9 +1511,8 @@ class VirtualFileSystem extends EventEmitter {
 		if (node.type !== "file") {
 			throw new Error(`Cannot read '${targetPath}': not a file.`);
 		}
-		const f = node as InternalFileNode;
-		if (f.evicted) this._reloadEvicted(f, normalized);
-		const raw = f.compressed ? gunzipSync(f.content) : f.content;
+		if (node.evicted) this._reloadEvicted(node, normalized);
+		const raw = node.compressed ? gunzipSync(node.content) : node.content;
 
 		// Update cache on read
 		if (this._cacheEnabled && this._fileCache) {
@@ -1662,62 +1657,58 @@ class VirtualFileSystem extends EventEmitter {
 		const node = getNodeNormalized(this._root, normalized);
 		const name = normalized === "/" ? "" : path.posix.basename(normalized);
 		if (node.type === "stub") {
-			const s = node as InternalStubNode;
 			return {
 				type: "file",
 				name,
 				path: normalized,
-				mode: s.mode,
-				uid: s.uid,
-				gid: s.gid,
-				createdAt: new Date(s.createdAt),
-				updatedAt: new Date(s.updatedAt),
+				mode: node.mode,
+				uid: node.uid,
+				gid: node.gid,
+				createdAt: new Date(node.createdAt),
+				updatedAt: new Date(node.updatedAt),
 				compressed: false,
-				size: s.stubContent.length,
+				size: node.stubContent.length,
 			};
 		}
 		if (node.type === "file") {
-			const f = node as InternalFileNode;
 			return {
 				type: "file",
 				name,
 				path: normalized,
-				mode: f.mode,
-				uid: f.uid,
-				gid: f.gid,
-				createdAt: new Date(f.createdAt),
-				updatedAt: new Date(f.updatedAt),
-				compressed: f.compressed,
-				size: f.evicted ? (f.size ?? 0) : f.content.length,
+				mode: node.mode,
+				uid: node.uid,
+				gid: node.gid,
+				createdAt: new Date(node.createdAt),
+				updatedAt: new Date(node.updatedAt),
+				compressed: node.compressed,
+				size: node.evicted ? (node.size ?? 0) : node.content.length,
 			};
 		}
 		if (node.type === "device") {
-			const dev = node as InternalDeviceNode;
 			return {
 				type: "device",
 				name,
 				path: normalized,
-				mode: dev.mode,
-				uid: dev.uid,
-				gid: dev.gid,
-				createdAt: new Date(dev.createdAt),
-				updatedAt: new Date(dev.updatedAt),
-				deviceKind: dev.deviceKind,
-				major: dev.major,
-				minor: dev.minor,
+				mode: node.mode,
+				uid: node.uid,
+				gid: node.gid,
+				createdAt: new Date(node.createdAt),
+				updatedAt: new Date(node.updatedAt),
+				deviceKind: node.deviceKind,
+				major: node.major,
+				minor: node.minor,
 			} satisfies VfsDeviceNode;
 		}
-		const d = node as InternalDirectoryNode;
 		return {
 			type: "directory",
 			name,
 			path: normalized,
-			mode: d.mode,
-			uid: d.uid,
-			gid: d.gid,
-			createdAt: new Date(d.createdAt),
-			updatedAt: new Date(d.updatedAt),
-			childrenCount: d._childCount,
+			mode: node.mode,
+			uid: node.uid,
+			gid: node.gid,
+			createdAt: new Date(node.createdAt),
+			updatedAt: new Date(node.updatedAt),
+			childrenCount: node._childCount,
 		};
 	}
 
@@ -1807,9 +1798,8 @@ class VirtualFileSystem extends EventEmitter {
 		if (node.type !== "directory") {
 			throw new Error(`Cannot list '${dirPath}': not a directory.`);
 		}
-		const dir = node as InternalDirectoryNode;
-		if (!dir._sortedKeys) dir._sortedKeys = Object.keys(dir.children).sort();
-		return dir._sortedKeys;
+		if (!node._sortedKeys) node._sortedKeys = Object.keys(node.children).sort();
+		return node._sortedKeys;
 	}
 
 	/**
@@ -1825,7 +1815,7 @@ class VirtualFileSystem extends EventEmitter {
 			throw new Error(`Cannot render tree for '${dirPath}': not a directory.`);
 		}
 		const label = dirPath === "/" ? "/" : path.posix.basename(normalized);
-		return this._renderTreeLines(node as InternalDirectoryNode, label);
+		return this._renderTreeLines(node, label);
 	}
 
 	private _renderTreeLines(dir: InternalDirectoryNode, label: string): string {
@@ -1833,14 +1823,16 @@ class VirtualFileSystem extends EventEmitter {
 		if (!dir._sortedKeys) dir._sortedKeys = Object.keys(dir.children).sort();
 		const entries = dir._sortedKeys;
 		for (let i = 0; i < entries.length; i++) {
-			const name = entries[i] as string;
-			const child = dir.children[name] as InternalNode;
+			const name = entries[i];
+			if (name === undefined) continue;
+			const child = dir.children[name];
+			if (child === undefined) continue;
 			const isLast = i === entries.length - 1;
 			const connector = isLast ? "└── " : "├── ";
 			const nextPrefix = isLast ? "    " : "│   ";
 			lines.push(`${connector}${name}`);
 			if (child.type === "directory") {
-				const sub = this._renderTreeLines(child as InternalDirectoryNode, "")
+				const sub = this._renderTreeLines(child, "")
 					.split("\n")
 					.slice(1)
 					.map((l) => `${nextPrefix}${l}`);
@@ -1861,11 +1853,11 @@ class VirtualFileSystem extends EventEmitter {
 	}
 
 	private _computeUsage(node: InternalNode): number {
-		if (node.type === "file") return (node as InternalFileNode).content.length;
-		if (node.type === "stub") return (node as InternalStubNode).stubContent.length;
+		if (node.type === "file") return node.content.length;
+		if (node.type === "stub") return node.stubContent.length;
 		if (node.type === "device") return 0;
 		let total = 0;
-		for (const child of Object.values((node as InternalDirectoryNode).children)) {
+		for (const child of Object.values(node.children)) {
 			total += this._computeUsage(child);
 		}
 		return total;
@@ -1907,11 +1899,10 @@ class VirtualFileSystem extends EventEmitter {
 		const node = getNodeNormalized(this._root, normalizePath(targetPath));
 		if (node.type !== "file")
 			throw new Error(`Cannot compress '${targetPath}': not a file.`);
-		const f = node as InternalFileNode;
-		if (!f.compressed) {
-			f.content = gzipSync(f.content);
-			f.compressed = true;
-			f.updatedAt = Date.now();
+		if (!node.compressed) {
+			node.content = gzipSync(node.content);
+			node.compressed = true;
+			node.updatedAt = Date.now();
 		}
 	}
 
@@ -1923,11 +1914,10 @@ class VirtualFileSystem extends EventEmitter {
 		const node = getNodeNormalized(this._root, normalizePath(targetPath));
 		if (node.type !== "file")
 			throw new Error(`Cannot decompress '${targetPath}': not a file.`);
-		const f = node as InternalFileNode;
-		if (f.compressed) {
-			f.content = gunzipSync(f.content);
-			f.compressed = false;
-			f.updatedAt = Date.now();
+		if (node.compressed) {
+			node.content = gunzipSync(node.content);
+			node.compressed = false;
+			node.updatedAt = Date.now();
 		}
 	}
 
@@ -1999,7 +1989,7 @@ class VirtualFileSystem extends EventEmitter {
 			try {
 				const node = getNodeNormalized(this._root, current);
 				if (node.type === "file" && node.mode === 0o120777) {
-					const target = (node as InternalFileNode).content.toString("utf8");
+					const target = node.content.toString("utf8");
 					current = target.startsWith("/")
 						? target
 						: normalizePath(
@@ -2046,8 +2036,7 @@ class VirtualFileSystem extends EventEmitter {
 		}
 		const node = getNodeNormalized(this._root, normalized);
 		if (node.type === "directory") {
-			const dir = node as InternalDirectoryNode;
-			if (!options.recursive && dir._childCount > 0) {
+			if (!options.recursive && node._childCount > 0) {
 				throw new Error(
 					`Directory '${normalized}' is not empty. Use recursive option.`,
 				);
@@ -2133,23 +2122,22 @@ class VirtualFileSystem extends EventEmitter {
 					contentBase64: Buffer.from(child.stubContent, "utf8").toString("base64"),
 				} satisfies VfsSnapshotFileNode);
 			} else if (child.type === "file") {
-				children.push(VirtualFileSystem._serializeFile(child as InternalFileNode));
+				children.push(VirtualFileSystem._serializeFile(child));
 			} else if (child.type === "device") {
-				const dev = child as InternalDeviceNode;
 				children.push({
 					type: "device",
-					name: dev.name,
-					mode: dev.mode,
-					uid: dev.uid,
-					gid: dev.gid,
-					createdAt: new Date(dev.createdAt).toISOString(),
-					updatedAt: new Date(dev.updatedAt).toISOString(),
-					deviceKind: dev.deviceKind,
-					major: dev.major,
-					minor: dev.minor,
+					name: child.name,
+					mode: child.mode,
+					uid: child.uid,
+					gid: child.gid,
+					createdAt: new Date(child.createdAt).toISOString(),
+					updatedAt: new Date(child.updatedAt).toISOString(),
+					deviceKind: child.deviceKind,
+					major: child.major,
+					minor: child.minor,
 				} satisfies VfsSnapshotDeviceNode);
 			} else {
-				children.push(this._serializeDir(child as InternalDirectoryNode));
+				children.push(this._serializeDir(child));
 			}
 		}
 		return {
@@ -2227,35 +2215,33 @@ class VirtualFileSystem extends EventEmitter {
 		};
 		for (const child of snap.children) {
 			if (child.type === "file") {
-				const f = child as VfsSnapshotFileNode;
-				dir.children[f.name] = {
+				dir.children[child.name] = {
 					type: "file",
-					name: f.name,
-					mode: f.mode,
-					uid: f.uid ?? 0,
-					gid: f.gid ?? 0,
-					createdAt: Date.parse(f.createdAt),
-					updatedAt: Date.parse(f.updatedAt),
-					compressed: f.compressed,
-					content: Buffer.from(f.contentBase64, "base64"),
+					name: child.name,
+					mode: child.mode,
+					uid: child.uid ?? 0,
+					gid: child.gid ?? 0,
+					createdAt: Date.parse(child.createdAt),
+					updatedAt: Date.parse(child.updatedAt),
+					compressed: child.compressed,
+					content: Buffer.from(child.contentBase64, "base64"),
 				};
 			} else if (child.type === "device") {
-				const d = child as VfsSnapshotDeviceNode;
-				dir.children[d.name] = {
+				dir.children[child.name] = {
 					type: "device",
-					name: d.name,
-					mode: d.mode,
-					uid: d.uid ?? 0,
-					gid: d.gid ?? 0,
-					createdAt: Date.parse(d.createdAt),
-					updatedAt: Date.parse(d.updatedAt),
-					deviceKind: d.deviceKind as DeviceKind,
-					major: d.major,
-					minor: d.minor,
+					name: child.name,
+					mode: child.mode,
+					uid: child.uid ?? 0,
+					gid: child.gid ?? 0,
+					createdAt: Date.parse(child.createdAt),
+					updatedAt: Date.parse(child.updatedAt),
+					deviceKind: child.deviceKind as DeviceKind,
+					major: child.major,
+					minor: child.minor,
 				};
 			} else {
 				const sub = this._deserializeDir(
-					child as VfsSnapshotDirectoryNode,
+					child,
 					child.name,
 				);
 				dir.children[child.name] = sub;
