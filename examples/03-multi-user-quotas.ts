@@ -5,7 +5,7 @@
  * and verifying file permission isolation between users.
  */
 
-import { SshClient, VirtualShell, VirtualSshServer } from "typescript-virtual-container";
+import { SshClient, VirtualShell, VirtualSshServer } from "../src";
 
 const shell = new VirtualShell("typescript-vm");
 const ssh   = new VirtualSshServer({ port: 2222, shell });

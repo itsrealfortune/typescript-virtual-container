@@ -5,7 +5,7 @@
  * VirtualShell instance, so files written via SSH are visible via SFTP.
  */
 
-import { VirtualSftpServer, VirtualShell, VirtualSshServer } from "typescript-virtual-container";
+import { VirtualSftpServer, VirtualShell, VirtualSshServer } from "../src";
 
 const shell = new VirtualShell("my-container");
 const ssh   = new VirtualSshServer({ port: 2222, shell });

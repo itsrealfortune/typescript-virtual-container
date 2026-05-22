@@ -6,11 +6,11 @@
  * - Memory mode: manual JSON snapshot / restore
  */
 
-import { VirtualFileSystem } from "typescript-virtual-container";
-import { writeFileSync, readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
+import { VirtualFileSystem } from "../src";
 
 // FS mode — automatic .vfsb persistence
-const shell = new VirtualShell("my-vm", undefined, {
+const _shell = new VirtualShell("my-vm", undefined, {
   mode: "fs",
   snapshotPath: "./container-data",
 });

@@ -5,7 +5,7 @@
  * then asserting on the diff to verify expected changes.
  */
 
-import { diffSnapshots, assertDiff } from "typescript-virtual-container";
+import { assertDiff, diffSnapshots } from "../src";
 
 const before = shell.vfs.toSnapshot();
 await client.exec("apt install vim && mkdir -p /app");

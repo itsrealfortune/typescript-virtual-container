@@ -5,7 +5,7 @@
  * manual lockout override.
  */
 
-import { VirtualSshServer } from "typescript-virtual-container";
+import { VirtualSshServer } from "../src";
 
 const ssh = new VirtualSshServer({
   port: 2222,

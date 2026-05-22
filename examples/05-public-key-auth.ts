@@ -6,7 +6,7 @@
  */
 
 import { readFileSync } from "node:fs";
-import { VirtualShell, VirtualSshServer } from "typescript-virtual-container";
+import { VirtualShell, VirtualSshServer } from "../src";
 
 const shell = new VirtualShell("secure-vm");
 await shell.ensureInitialized();

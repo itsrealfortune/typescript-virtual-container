@@ -5,8 +5,8 @@
  * across multiple tests for fast, isolated fixtures.
  */
 
-import { VirtualFileSystem } from "typescript-virtual-container";
-import type { VfsSnapshot } from "typescript-virtual-container";
+import type { VfsSnapshot } from "../src";
+import { VirtualFileSystem } from "../src";
 
 function buildFixture(): VfsSnapshot {
   const vfs = new VirtualFileSystem();

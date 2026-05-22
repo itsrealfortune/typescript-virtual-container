@@ -4,7 +4,7 @@
  * Demonstrates creating and resolving symbolic links in the VFS.
  */
 
-import { VirtualFileSystem } from "typescript-virtual-container";
+import { VirtualFileSystem } from "../src";
 
 const vfs = new VirtualFileSystem();
 vfs.writeFile("/opt/myapp/bin/app", "#!/bin/sh\necho hello");

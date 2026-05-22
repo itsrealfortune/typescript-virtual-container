@@ -5,7 +5,7 @@
  * track statistics, and detect anomalies.
  */
 
-import { HoneyPot, VirtualShell, VirtualSshServer } from "typescript-virtual-container";
+import { HoneyPot, VirtualShell, VirtualSshServer } from "../src";
 
 const shell = new VirtualShell("typescript-vm");
 const ssh   = new VirtualSshServer({ port: 2222, shell });
@@ -17,6 +17,6 @@ hp.attach(shell, shell.vfs, shell.users, ssh);
 const stats = hp.getStats();
 console.log(`Commands: ${stats.commands}, File writes: ${stats.fileWrites}`);
 
-hp.detectAnomalies().forEach(a =>
-  console.log(`[${a.severity.toUpperCase()}] ${a.type}: ${a.message}`)
-);
+for (const a of hp.detectAnomalies()) {
+  console.log(`[${a.severity.toUpperCase()}] ${a.type}: ${a.message}`);
+}
