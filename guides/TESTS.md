@@ -2,10 +2,10 @@
 
 ## Overview
 
-- **845 tests** (824 pass, 21 skip, 0 fail)
-- **22 files**, 1367 expect() calls
-- **~2.73s** runtime (default, without network/SFTP)
-- **73.93% line coverage**, 72.54% function coverage
+- **921 tests** (900 pass, 21 skip, 0 fail)
+- **26 test files**, 1,545 expect() calls
+- **~3.0s** runtime (default, without network/SFTP)
+- **~74% line coverage**
 
 ## Running Tests
 
@@ -40,23 +40,29 @@ bun test tests/permissions.test.ts
 
 | File | Duration | Tests |
 |------|----------|-------|
-| `new-features.test.ts` | 675ms | 135 |
-| `commands-admin-net.test.ts` | 422ms | 137 |
-| `users.test.ts` | 397ms | 14 |
-| `commands-missing.test.ts` | 355ms | 71 |
-| `commands-specific-units.test.ts` | 348ms | 48 |
-| `commands-text-sys.test.ts` | 336ms | 50 |
-| `commands-advanced.test.ts` | 309ms | 67 |
-| `commands-core.test.ts` | 296ms | 87 |
-| `parser-executor.test.ts` | 278ms | 3 |
-| `sftp.test.ts` | 238ms | 5 (skipped) |
-| `ssh-exec.test.ts` | 365ms | 1 |
-| `permissions.test.ts` | 85ms | 20 |
+| `new-features.test.ts` | ~675ms | 135 |
+| `commands-admin-net.test.ts` | ~422ms | 137 |
+| `commands-missing.test.ts` | ~355ms | 71 |
+| `commands-specific-units.test.ts` | ~348ms | 48 |
+| `commands-text-sys.test.ts` | ~336ms | 50 |
+| `commands-advanced.test.ts` | ~309ms | 67 |
+| `commands-core.test.ts` | ~296ms | 87 |
+| `ssh-exec.test.ts` | ~365ms | 1 |
+| `parser-executor.test.ts` | ~278ms | 3 |
+| `sftp.test.ts` | ~238ms | 5 (skipped) |
+| `virtual-switch.test.ts` | ~200ms | ~30 |
 | `network-upgrades.test.ts` | ~1s | 28 |
-| `expand.test.ts` | 73ms | 31 |
-| `command-helpers.test.ts` | 40ms | 17 |
-| `helpers.test.ts` | 37ms | 15 |
-| **Total** | **~2.73s** | **845** |
+| `cache.test.ts` | ~150ms | 18 |
+| `scheduler.test.ts` | ~65ms | 18 |
+| `swap.test.ts` | ~100ms | 12 |
+| `capping.test.ts` | ~80ms | ~10 |
+| `idle-manager.test.ts` | ~80ms | ~10 |
+| `permissions.test.ts` | ~85ms | 20 |
+| `expand.test.ts` | ~73ms | 31 |
+| `command-helpers.test.ts` | ~40ms | 17 |
+| `helpers.test.ts` | ~37ms | 15 |
+| `users.test.ts` | ~397ms | 14 |
+| **Total** | **~3.0s** | **921** |
 
 ## File-by-file Coverage
 
@@ -150,8 +156,11 @@ bun test tests/permissions.test.ts
 | `VirtualFileSystem/permissions.ts` | 67% | 63% | 🔶 permission engine |
 | `VirtualFileSystem/binaryPack.ts` | 91% | 83% | ✅ |
 | `VirtualFileSystem/path.ts` | 93% | 100% | ✅ |
+| `VirtualFileSystem/fileCache.ts` | — | — | ✅ (cache.test.ts) |
+| `VirtualFileSystem/swapStore.ts` | — | — | ✅ (swap.test.ts) |
 | `VirtualUserManager/index.ts` | 78% | 73% | 🔶 user management |
 | `VirtualUserManager/signals.ts` | 61% | 0% | ⬜ signal definitions (data) |
+| `VirtualUserManager/processScheduler.ts` | — | — | ✅ (scheduler.test.ts) |
 | `VirtualShell/index.ts` | 56% | 52% | 🔶 shell API layer |
 | `VirtualShell/shellParser.ts` | 92% | 100% | ✅ |
 | `VirtualPackageManager/index.ts` | 99% | 94% | ✅ |
