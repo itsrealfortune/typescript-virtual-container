@@ -6,7 +6,7 @@
  * VirtualSwitch, VirtualProxy, and IdleManager.
  */
 
-import { VirtualProxy, VirtualShell, VirtualSwitch } from "../src";
+import { VirtualPackageManager, VirtualProxy, VirtualShell, VirtualSwitch } from "../src";
 
 // ── Infrastructure — create virtual switch and two VMs ─────────────
 console.log("--- Infrastructure ---");
@@ -131,12 +131,12 @@ console.log(`  developer usage: ${web.users.getUsageBytes("developer")} bytes`);
 // ── Package management ─────────────────────────────────────────────
 console.log("\n--- Package management ---");
 web.packageManager.load();
-console.log(`  available packages: ${web.packageManager.listAvailable().length}`);
+console.log(`  available packages: ${VirtualPackageManager.listAvailable().length}`);
 
-const nginxPkg = web.packageManager.findInRegistry("nginx");
+const nginxPkg = VirtualPackageManager.findInRegistry("nginx");
 if (nginxPkg) { console.log(`  nginx: ${nginxPkg.version} — ${nginxPkg.description}`); }
 
-const nodePkg = web.packageManager.findInRegistry("node");
+const nodePkg = VirtualPackageManager.findInRegistry("node");
 if (nodePkg) { console.log(`  node:  ${nodePkg.version} — ${nodePkg.description}`); }
 
 // ── VFS: files, directories, mounts ───────────────────────────────

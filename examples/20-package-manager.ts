@@ -5,7 +5,7 @@
  * list available/installed packages, and inspect individual packages.
  */
 
-import { VirtualShell, VirtualSshServer } from "../src";
+import { VirtualPackageManager, VirtualShell, VirtualSshServer } from "../src";
 
 const shell = new VirtualShell("package-manager-demo");
 shell.ensureInitialized();
@@ -14,14 +14,14 @@ const pm = shell.packageManager;
 
 // ── Search ────────────────────────────────────────────────────────
 console.log("--- Search for packages ---");
-const results = pm.search("python");
+const results = VirtualPackageManager.search("python");
 console.log(`Found ${results.length} packages matching "python":`);
 for (const pkg of results.slice(0, 5)) {
 	console.log(`  ${pkg.name.padEnd(20)} ${pkg.version}\t${pkg.description}`);
 }
 
 // ── List available ────────────────────────────────────────────────
-console.log(`\n--- Available packages: ${pm.listAvailable().length} total ---`);
+console.log(`\n--- Available packages: ${VirtualPackageManager.listAvailable().length} total ---`);
 
 // ── Inspect a specific package ────────────────────────────────────
 console.log("\n--- Inspect curl ---");
@@ -52,7 +52,7 @@ console.log(`  tree installed: ${pm.isInstalled("tree")}`);
 
 // ── Load from registry ────────────────────────────────────────────
 console.log("\n--- Lookup by name ---");
-const def = pm.findInRegistry("neofetch");
+const def = VirtualPackageManager.findInRegistry("neofetch");
 if (def) {
 	console.log(`  neofetch: ${def.version} — ${def.description}`);
 	console.log(`  Dependencies: ${def.depends?.join(", ") ?? "none"}`);
