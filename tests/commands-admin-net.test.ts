@@ -22,9 +22,7 @@ beforeAll(async () => {
 	port = env.port;
 
 	await shell.users.addUser("regular", "pass");
-	await shell.users.setPassword("regular", "pass");
 	await shell.users.addUser("sudoer", "pass");
-	await shell.users.setPassword("sudoer", "pass");
 	shell.users.addSudoer("sudoer");
 
 	nonRootClient = new SshClient();
@@ -66,7 +64,6 @@ describe("useradd command", () => {
 	test("useradd non-root fails", async () => {
 		const env = await createTestEnv("test-admin-nonroot");
 		await env.shell.users.addUser("testuser", "pass");
-		await env.shell.users.setPassword("testuser", "pass");
 		const nonrootClient = new SshClient();
 		await nonrootClient.connect({ host: "localhost", port: env.port, username: "testuser", password: "pass" });
 		const r = await runCmd(nonrootClient, "useradd -m newuser");
