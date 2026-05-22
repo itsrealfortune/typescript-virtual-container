@@ -6,6 +6,8 @@ import * as path from "node:path";
 import { gunzipSync, gzipSync } from "node:zlib";
 import type {
 	RemoveOptions,
+	VfsCacheOptions,
+	VfsCacheStats,
 	VfsDeviceNode,
 	VfsDirectoryNode,
 	VfsFileNode,
@@ -18,6 +20,7 @@ import type {
 	WriteFileOptions,
 } from "../../types/vfs";
 import { decodeVfs, encodeVfs, isBinarySnapshot } from "./binaryPack";
+import { FileCache, type FileCacheOptions } from "./fileCache";
 import type {
 	DeviceKind,
 	InternalDeviceNode,
@@ -91,6 +94,12 @@ export interface VfsOptions {
 	 * Only used when `swapEnabled` is `true`.
 	 */
 	swapDir?: string;
+	/**
+	 * File cache configuration.
+	 * When enabled, frequently accessed files are cached in memory with
+	 * simulated disk I/O latencies and configurable eviction policies.
+	 */
+	cache?: VfsCacheOptions;
 }
 
 // ── VirtualFileSystem ─────────────────────────────────────────────────────────
@@ -160,6 +169,10 @@ class VirtualFileSystem extends EventEmitter {
 	private _swapStore: SwapStore | null = null;
 	/** True when swap is enabled. */
 	private readonly _swapEnabled: boolean;
+	/** File cache with disk I/O simulation (null when disabled). */
+	private _fileCache: FileCache | null = null;
+	/** True when cache is enabled. */
+	private readonly _cacheEnabled: boolean;
 	/** True when running in a browser environment (no host FS access). */
 	private static readonly _isBrowser =
 		typeof process === "undefined" || typeof (process as NodeJS.Process).versions?.node === "undefined";
@@ -209,6 +222,17 @@ class VirtualFileSystem extends EventEmitter {
 			this._evictionThreshold = 0; // disabled in memory mode
 			this._flushAfterNWrites = 0;
 			this._swapEnabled = false;
+		}
+		this._cacheEnabled = options.cache?.enabled ?? false;
+		if (this._cacheEnabled) {
+			const cacheOptions: FileCacheOptions = {
+				maxEntries: options.cache?.maxEntries,
+				maxMemoryBytes: options.cache?.maxMemoryBytes,
+				policy: options.cache?.policy,
+				diskIo: options.cache?.diskIo,
+				simulateDiskIo: options.cache?.simulateDiskIo,
+			};
+			this._fileCache = new FileCache(cacheOptions);
 		}
 		this._root = VirtualFileSystem._makeDir("", 0o755);
 	}
@@ -921,6 +945,66 @@ class VirtualFileSystem extends EventEmitter {
 	}
 
 	/**
+	 * Returns file cache statistics.
+	 *
+	 * @returns VfsCacheStats object, or null if cache is disabled.
+	 */
+	public getCacheStats(): VfsCacheStats | null {
+		return this._fileCache?.getStats() ?? null;
+	}
+
+	/**
+	 * Returns whether file cache is enabled.
+	 */
+	public isCacheEnabled(): boolean {
+		return this._cacheEnabled;
+	}
+
+	/**
+	 * Clears all cache entries and resets cache statistics.
+	 */
+	public clearCache(): void {
+		this._fileCache?.clear();
+		this._fileCache?.resetStats();
+	}
+
+	/**
+	 * Invalidate a specific path from cache.
+	 * Called automatically on writeFile to ensure stale data is not served.
+	 * @param targetPath - Absolute VFS path to invalidate from cache.
+	 */
+	public invalidateCache(targetPath: string): void {
+		const normalized = normalizePath(targetPath);
+		this._fileCache?.delete(normalized);
+	}
+
+	/**
+	 * Preload files into cache from the VFS tree.
+	 * Useful for warming up cache before heavy read operations.
+	 * @param paths - Array of absolute VFS paths to preload.
+	 * @returns Number of files successfully cached.
+	 */
+	public preloadCache(paths: string[]): number {
+		if (!this._cacheEnabled || !this._fileCache) return 0;
+
+		let loaded = 0;
+		for (const p of paths) {
+			try {
+				const normalized = normalizePath(p);
+				const node = getNodeNormalized(this._root, normalized);
+				if (node.type === "file") {
+					const f = node as InternalFileNode;
+					if (f.evicted) this._reloadEvicted(f, normalized);
+					const raw = f.compressed ? gunzipSync(f.content) : f.content;
+					this._fileCache.setSync(normalized, raw);
+					loaded++;
+				}
+			} catch { /* skip files that don't exist or can't be read */ }
+		}
+		return loaded;
+	}
+
+	/**
 	 * Finds the VFS path of a node by traversing from root.
 	 * Returns null if the node is not found in the tree.
 	 */
@@ -1323,6 +1407,11 @@ class VirtualFileSystem extends EventEmitter {
 		this.emit("file:write", { path: normalized, size: storedContent.length });
 		this._journal({ op: JournalOp.WRITE, path: normalized, content: rawContent, mode });
 		this._cachedUsageBytes = null; // invalidate cache
+
+		// Invalidate cache entry on write
+		if (this._cacheEnabled && this._fileCache) {
+			this._fileCache.delete(normalized);
+		}
 	}
 
 	/**
@@ -1350,6 +1439,15 @@ class VirtualFileSystem extends EventEmitter {
 			return resolved;
 		}
 
+		// Check cache first if enabled
+		if (this._cacheEnabled && this._fileCache) {
+			if (this._fileCache.has(normalized)) {
+				const cached = this._fileCache.getSync(normalized, () => Buffer.alloc(0));
+				this.emit("file:read", { path: normalized, size: cached.length });
+				return cached.toString("utf8");
+			}
+		}
+
 		if (uid !== undefined && gid !== undefined) {
 			enforcePathTraversal(this._root, normalized, uid, gid);
 		}
@@ -1372,6 +1470,12 @@ class VirtualFileSystem extends EventEmitter {
 		const f = node as InternalFileNode;
 		if (f.evicted) this._reloadEvicted(f, normalized);
 		const raw = f.compressed ? gunzipSync(f.content) : f.content;
+
+		// Update cache on read (tracks miss)
+		if (this._cacheEnabled && this._fileCache) {
+			this._fileCache.setSync(normalized, raw);
+		}
+
 		this.emit("file:read", { path: normalized, size: raw.length });
 		return raw.toString("utf8");
 	}
@@ -1389,6 +1493,14 @@ class VirtualFileSystem extends EventEmitter {
 		}
 		const normalized = normalizePath(targetPath);
 		this._triggerReadHook(normalized);
+
+		// Check cache first if enabled
+		if (this._cacheEnabled && this._fileCache?.has(normalized)) {
+			const cached = this._fileCache.getSync(normalized, () => Buffer.alloc(0));
+			this.emit("file:read", { path: normalized, size: cached.length });
+			return cached;
+		}
+
 		const node = getNodeNormalized(this._root, normalized);
 		if (node.type === "stub") {
 			const buf = Buffer.from(node.stubContent, "utf8");
@@ -1407,6 +1519,12 @@ class VirtualFileSystem extends EventEmitter {
 		const f = node as InternalFileNode;
 		if (f.evicted) this._reloadEvicted(f, normalized);
 		const raw = f.compressed ? gunzipSync(f.content) : f.content;
+
+		// Update cache on read
+		if (this._cacheEnabled && this._fileCache) {
+			this._fileCache.setSync(normalized, raw);
+		}
+
 		this.emit("file:read", { path: normalized, size: raw.length });
 		return raw;
 	}
