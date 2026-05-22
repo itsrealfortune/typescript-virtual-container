@@ -13,7 +13,7 @@
 ## Table of Contents
 
 - [Three ways to run](#three-ways-to-run) · [Get Started](#get-started)
-- [How It Works](#how-it-works) · [Resource Capping](#resource-capping) · [Process Scheduler](#process-scheduler) · [Swap File Store](#swap-file-store) · [Virtual Package Manager](#virtual-package-manager) · [Built-in Commands](#built-in-commands-157)
+- [How It Works](#how-it-works) · [Resource Capping](#resource-capping) · [Process Scheduler](#process-scheduler) · [Swap File Store](#swap-file-store) · [Virtual Package Manager](#virtual-package-manager) · [Built-in Commands](#built-in-commands-173)
 - [Shell Scripting](#shell-scripting) · [Linux Rootfs](#linux-rootfs--vfs-path-resolution)
 - [Configuration](#configuration) · [Troubleshooting](#troubleshooting)
 - [FAQ](#faq) · [Contributing](#contributing)
@@ -463,7 +463,7 @@ All examples are available as runnable TypeScript files in the [`examples/`](exa
 ---
 
 <details>
-<summary><strong>Built-in Commands (172)</strong></summary>
+<summary><strong>Built-in Commands (173)</strong></summary>
 
 Type `help` in the shell for a grouped, colorized listing. Type `help <command>` for detailed usage. Type `man <command>` for full manual pages — all commands are documented.
 
@@ -667,7 +667,7 @@ Type `help` in the shell for a grouped, colorized listing. Type `help <command>`
 | `pacman` | Pacman game (mock) |
 | `help` | Full list: type `help` in the shell |
 
-**ℹ️ All 157 built-in commands include complete JSDoc documentation** with `@category` and `@params` tags. See [src/commands/](https://github.com/itsrealfortune/typescript-virtual-container/tree/main/src/commands) for source code and inline documentation.
+**ℹ️ All 173 built-in commands include complete JSDoc documentation** with `@category` and `@params` tags. See [src/commands/](https://github.com/itsrealfortune/typescript-virtual-container/tree/main/src/commands) for source code and inline documentation.
 
 Custom commands: `shell.addCommand(name, params, callback)`.
 
