@@ -19,7 +19,7 @@ export const suCommand: ShellModule = {
 	description: "Switch user",
 	category: "users",
 	params: ["[-] [-c <cmd>] [username]"],
-	run: async ({ authUser, shell, args, hostname, mode, cwd }) => {
+	run: ({ authUser, shell, args, hostname, mode, cwd }) => {
 		const loginShellFlag = args.includes("-") || args.includes("-l") || args.includes("--login");
 		const cIdx = args.indexOf("-c");
 		const cmdLine = cIdx !== -1 ? args[cIdx + 1] : undefined;

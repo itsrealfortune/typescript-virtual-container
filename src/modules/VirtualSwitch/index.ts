@@ -1,8 +1,8 @@
 import { VirtualNetworkManager } from "../VirtualNetworkManager";
 import { cidrRange, intToIp, ipToInt, nextMac } from "./helpers";
-import type { DnsRecord, LoadBalancerRule, MacAddress, Packet, PacketResult, TrafficRule, VmPort, QdiscRule } from "./types";
+import type { DnsRecord, LoadBalancerRule, MacAddress, Packet, PacketResult, QdiscRule, TrafficRule, VmPort } from "./types";
 export { cidrRange, intToIp, ipToInt, nextMac } from "./helpers";
-export type { DnsRecord, LoadBalancerRule, LoadBalancerTarget, MacAddress, Packet, PacketResult, TrafficRule, VmPort, QdiscRule, ConntrackEntry } from "./types";
+export type { ConntrackEntry, DnsRecord, LoadBalancerRule, LoadBalancerTarget, MacAddress, Packet, PacketResult, QdiscRule, TrafficRule, VmPort } from "./types";
 
 function gaussianRandom(mean = 0, stdev = 1): number {
 	const u = 1 - Math.random();
@@ -477,7 +477,7 @@ export class Baie {
 		return shell;
 	}
 
-	public async destroyVM(hostname: string): Promise<void> {
+	public destroyVM(hostname: string): void {
 		const shell = this._vms.get(hostname);
 		if (!shell) return;
 		const mac = this._findMac(shell);

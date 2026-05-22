@@ -494,7 +494,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param password New plaintext password (must be non-empty).
 	 * @throws When the user does not exist or the password is empty.
 	 */
-	public async setPassword(username: string, password: string): Promise<void> {
+	public setPassword(username: string, password: string): void {
 		perf.mark("setPassword");
 		VirtualUserManager._validateUsername(username);
 		VirtualUserManager._validatePassword(password);
@@ -504,7 +504,7 @@ export class VirtualUserManager extends EventEmitter {
 		}
 
 		this._users.set(username, this._createRecord(username, password));
-		await this.persist();
+		this.persist();
 	}
 
 	/**
@@ -1248,7 +1248,7 @@ export class VirtualUserManager extends EventEmitter {
 		}
 	}
 
-	private async persist(): Promise<void> {
+	private persist(): void {
 		if (!this._vfs.exists(this._authDirPath)) {
 			this._vfs.mkdir(this._authDirPath, 0o700);
 		}
@@ -1298,7 +1298,7 @@ export class VirtualUserManager extends EventEmitter {
 			) || changed;
 
 		if (changed) {
-			await this._vfs.flushMirror();
+			this._vfs.flushMirror();
 		}
 	}
 

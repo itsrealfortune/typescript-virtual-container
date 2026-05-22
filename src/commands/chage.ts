@@ -10,7 +10,7 @@ export const chageCommand: ShellModule = {
 	description: "Change user password expiry information",
 	category: "users",
 	params: ["[-m min_days|-M max_days|-W warn_days|-I inactive_days|-E expire_date|-l] <user>"],
-	run: async ({ authUser, shell, args }) => {
+	run:  async ({ authUser, shell, args }) => {
 		if (authUser !== "root") {
 			return { stderr: "chage: permission denied\n", exitCode: 1 };
 		}

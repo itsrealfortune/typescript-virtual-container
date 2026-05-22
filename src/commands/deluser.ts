@@ -18,7 +18,7 @@ export const deluserCommand: ShellModule = {
 	description: "Delete a user",
 	category: "users",
 	params: ["[-f] <username>"],
-	run: async ({ authUser, args, shell }) => {
+	run:  async ({ authUser, args, shell }) => {
 		if (authUser !== "root") {
 			return { stderr: "deluser: permission denied\n", exitCode: 1 };
 		}

@@ -11,7 +11,7 @@ export const ncCommand: ShellModule = {
 	description: "Netcat network utility",
 	category: "net",
 	params: ["[-l] [-p port] [-v]"],
-	run: async ({ args }) => {
+	run:  async ({ args }) => {
 		let mod: typeof import("node:net");
 		try { mod = await import("node:net") as typeof import("node:net"); }
 		catch { return { stderr: "nc: not available in this environment\n", exitCode: 1 }; }

@@ -680,7 +680,7 @@ describe("/proc/self and /proc/<pid>", () => {
 		ssh4.stop();
 	});
 
-	test("/proc/self exists and has comm file", async () => {
+	test("/proc/self exists and has comm file", () => {
 		expect(shell4.vfs.exists("/proc/self")).toBe(true);
 		expect(shell4.vfs.exists("/proc/self/comm")).toBe(true);
 	});
@@ -696,7 +696,7 @@ describe("/proc/self and /proc/<pid>", () => {
 		expect(r.exitCode).toBe(0);
 	});
 
-	test("/proc/1 (init) exists", async () => {
+	test("/proc/1 (init) exists", () => {
 		expect(shell4.vfs.exists("/proc/1")).toBe(true);
 		expect(shell4.vfs.exists("/proc/1/status")).toBe(true);
 	});
@@ -752,7 +752,7 @@ describe("VFS snapshot diff tooling", () => {
 		expect(diff.clean).toBe(false);
 	});
 
-	test("diffSnapshots detects added directory", async () => {
+	test("diffSnapshots detects added directory", () => {
 		const before = shell5.vfs.toSnapshot();
 		shell5.vfs.mkdir("/tmp/diff-newdir", 0o755);
 		const after = shell5.vfs.toSnapshot();
@@ -761,7 +761,7 @@ describe("VFS snapshot diff tooling", () => {
 		expect(paths).toContain("/tmp/diff-newdir");
 	});
 
-	test("diffSnapshots detects modified file", async () => {
+	test("diffSnapshots detects modified file", () => {
 		shell5.vfs.writeFile("/tmp/modtest.txt", "before");
 		const before = shell5.vfs.toSnapshot();
 		shell5.vfs.writeFile("/tmp/modtest.txt", "after");
@@ -773,7 +773,7 @@ describe("VFS snapshot diff tooling", () => {
 		expect(mod?.after).toBe("after");
 	});
 
-	test("diffSnapshots detects removed file", async () => {
+	test("diffSnapshots detects removed file", () => {
 		shell5.vfs.writeFile("/tmp/toremove.txt", "bye");
 		const before = shell5.vfs.toSnapshot();
 		shell5.vfs.remove("/tmp/toremove.txt");
@@ -783,7 +783,7 @@ describe("VFS snapshot diff tooling", () => {
 		expect(paths).toContain("/tmp/toremove.txt");
 	});
 
-	test("diffSnapshots ignores specified prefixes", async () => {
+	test("diffSnapshots ignores specified prefixes", () => {
 		shell5.vfs.writeFile("/proc/uptime", "999.00 888.00\n");
 		const before = shell5.vfs.toSnapshot();
 		shell5.vfs.writeFile("/proc/uptime", "1000.00 900.00\n");
@@ -798,7 +798,7 @@ describe("VFS snapshot diff tooling", () => {
 		expect(formatDiff(diff)).toBe("(no changes)");
 	});
 
-	test("formatDiff includes change summary", async () => {
+	test("formatDiff includes change summary", () => {
 		const before = shell5.vfs.toSnapshot();
 		shell5.vfs.writeFile("/tmp/format-test.txt", "x");
 		const after = shell5.vfs.toSnapshot();
@@ -807,7 +807,7 @@ describe("VFS snapshot diff tooling", () => {
 		expect(formatted).toContain("added");
 	});
 
-	test("assertDiff passes when paths match", async () => {
+	test("assertDiff passes when paths match", () => {
 		shell5.vfs.writeFile("/tmp/assert-test.txt", "hello");
 		const before = shell5.vfs.toSnapshot();
 		shell5.vfs.writeFile("/tmp/assert-new.txt", "new");
@@ -1005,7 +1005,7 @@ describe("python3 enhanced interpreter", () => {
 		ssh8.stop();
 	});
 
-	const py = async (code: string) => {
+	const py = (code: string) => {
 		shell8.vfs.writeFile("/tmp/t.py", code);
 		return c8.exec("python3 /tmp/t.py");
 	};

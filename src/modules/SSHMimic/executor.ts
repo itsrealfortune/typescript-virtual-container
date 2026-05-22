@@ -161,7 +161,7 @@ export async function executeStatements(
  * @param abortController - The abortController parameter.
  * @returns A promise that resolves with the result.
  */
-export async function executePipeline(
+export function executePipeline(
 	pipeline: Pipeline,
 	authUser: string,
 	hostname: string,
@@ -170,7 +170,7 @@ export async function executePipeline(
 	shell: VirtualShell,
 	env?: ShellEnv,
 	abortController?: AbortController,
-): Promise<CommandResult> {
+): CommandResult | Promise<CommandResult> {
 	if (!pipeline.isValid)
 		return { stderr: pipeline.error || "Syntax error", exitCode: 1 };
 	if (pipeline.commands.length === 0) return { exitCode: 0 };

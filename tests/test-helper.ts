@@ -42,7 +42,7 @@ export async function createTestEnvWithSsh(vmName = "test-shell") {
  * @param cmd Command string (e.g., "ls /tmp")
  * @returns { exitCode, stdout, stderr }
  */
-export async function runCmd(client: InstanceType<typeof SshClient>, cmd: string) {
+export function runCmd(client: InstanceType<typeof SshClient>, cmd: string) {
 	return client.exec(cmd);
 }
 
@@ -52,7 +52,7 @@ export async function runCmd(client: InstanceType<typeof SshClient>, cmd: string
  * @param cmd Command with pipes (e.g., "echo hello | grep h")
  * @returns { exitCode, stdout, stderr }
  */
-export async function runPipedCmd(client: InstanceType<typeof SshClient>, cmd: string) {
+export function runPipedCmd(client: InstanceType<typeof SshClient>, cmd: string) {
 	return client.exec(cmd);
 }
 

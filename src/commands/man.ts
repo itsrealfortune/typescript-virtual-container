@@ -15,7 +15,7 @@ export const manCommand: ShellModule = {
 	description: "Interface to the system reference manuals",
 	category: "shell",
 	params: ["<command>"],
-	run: async ({ args, shell }) => {
+	run: ({ args, shell }) => {
 		const name = args[0];
 		if (!name) return { stderr: "What manual page do you want?", exitCode: 1 };
 

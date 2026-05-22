@@ -598,7 +598,7 @@ export class SftpMimic extends EventEmitter {
 
 		sftp.on(
 			"WRITE",
-			async (reqid: number, handle: Buffer, offset: number, data: Buffer) => {
+			(reqid: number, handle: Buffer, offset: number, data: Buffer) => {
 				const entry = this._getHandle(handle);
 				if (!entry || entry.type !== "file") {
 					sftp.status(reqid, SFTP_STATUS_CODE.FAILURE);
@@ -632,7 +632,7 @@ export class SftpMimic extends EventEmitter {
 			}
 		});
 
-		sftp.on("CLOSE", async (reqid: number, handle: Buffer) => {
+		sftp.on("CLOSE", (reqid: number, handle: Buffer) => {
 			const entry = this._getHandle(handle);
 			if (!entry) {
 				sftp.status(reqid, SFTP_STATUS_CODE.FAILURE);

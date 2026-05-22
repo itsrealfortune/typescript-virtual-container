@@ -533,7 +533,7 @@ class VirtualFileSystem extends EventEmitter {
 	 *
 	 * In `"memory"` mode: no-op (kept for API compatibility).
 	 */
-	public async restoreMirror(): Promise<void> {
+	public restoreMirror(): void {
 		if (this._mode !== "fs" || !this._snapshotFile) return;
 
 		if (!fsSync.existsSync(this._snapshotFile)) {
@@ -580,7 +580,7 @@ class VirtualFileSystem extends EventEmitter {
 	 *
 	 * In `"memory"` mode: emits `"mirror:flush"` and returns (no disk write).
 	 */
-	public async flushMirror(): Promise<void> {
+	public flushMirror(): void {
 		if (this._mode !== "fs" || !this._snapshotFile) {
 			this.emit("mirror:flush");
 			return;
