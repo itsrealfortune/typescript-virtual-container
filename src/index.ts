@@ -3,8 +3,8 @@ export { SshClient } from "./modules/SSHClient/index";
 export { SftpMimic as VirtualSftpServer, SshMimic as VirtualSshServer } from "./modules/SSHMimic/index";
 export type { SftpMimicOptions as VirtualSftpServerOptions } from "./modules/SSHMimic/sftp";
 export { default as VirtualFileSystem } from "./modules/VirtualFileSystem/index";
-export { VirtualNetworkManager } from "./modules/VirtualNetworkManager";
-export type { FirewallRule, VirtualArpEntry, VirtualInterface, VirtualRoute } from "./modules/VirtualNetworkManager";
+export { VirtualNetworkManager, randomMac } from "./modules/VirtualNetworkManager";
+export type { ConntrackEntry, FirewallRule, PolicyRule, RoutingTable, VirtualArpEntry, VirtualInterface, VirtualRoute } from "./modules/VirtualNetworkManager";
 export { VirtualPackageManager } from "./modules/VirtualPackageManager/index";
 export { VirtualProxy } from "./modules/VirtualProxy";
 export { IdleManager } from "./modules/VirtualShell/idleManager";
@@ -22,7 +22,7 @@ export type {
 	HoneyPotStats
 } from "./modules/Honeypot/index";
 export type { VfsOptions, VfsPersistenceMode } from "./modules/VirtualFileSystem/index";
-export type { ShellProperties, VirtualShellVfsLike, VirtualShellVfsOptions } from "./modules/VirtualShell/index";
+export type { ShellProperties, VirtualShellVfsLike, VirtualShellVfsOptions, VirtualShellResourceCaps } from "./modules/VirtualShell/index";
 export type {
 	CommandContext,
 	CommandMode,
@@ -46,14 +46,20 @@ export type {
 	VfsBaseNode,
 	VfsDirectoryNode,
 	VfsFileNode,
+	VfsDeviceNode,
 	VfsNodeStats,
 	VfsNodeType,
 	VfsSnapshot,
 	VfsSnapshotBaseNode,
 	VfsSnapshotDirectoryNode,
 	VfsSnapshotFileNode,
+	VfsSnapshotDeviceNode,
 	VfsSnapshotNode,
-	WriteFileOptions
+	WriteFileOptions,
+	VfsCacheOptions,
+	VfsCacheStats,
+	VfsCacheEvictionPolicy,
+	VfsDiskIoParams,
 } from "./types/vfs";
 
 export { NanoEditor } from "./modules/nanoEditor";
@@ -87,7 +93,12 @@ export { shellQuote, toTtyLines, withTerminalSize } from "./modules/shellRuntime
 export { R_OK, W_OK, X_OK } from "./modules/VirtualFileSystem/permissions";
 export { enforceAccess, enforcePathTraversal, enforceDelete, enforceChown, enforceChmod, isExecutable } from "./modules/VirtualFileSystem/permissions";
 
-export { encodeVfs, decodeVfs, isBinarySnapshot } from "./modules/VirtualFileSystem/binaryPack";
+export { encodeVfs, decodeVfs, isBinarySnapshot, forkDirTree } from "./modules/VirtualFileSystem/binaryPack";
+export { FileCache, HDD_DISK_IO, NVME_DISK_IO } from "./modules/VirtualFileSystem/fileCache";
+export type { CacheEvictionPolicy, CacheStats, DiskIoParams, FileCacheOptions } from "./modules/VirtualFileSystem/fileCache";
+export { SwapStore } from "./modules/VirtualFileSystem/swapStore";
+export type { SwapStats } from "./modules/VirtualFileSystem/swapStore";
+export { resolveEffectiveUid, resolveEffectiveGid } from "./modules/VirtualFileSystem/permissions";
 
 export { loadOrCreateHostKey } from "./modules/SSHMimic/hostKey";
 export { buildLoginBanner } from "./modules/SSHMimic/loginBanner";
@@ -132,5 +143,4 @@ export type { SignalName, SignalHandler } from "./modules/VirtualUserManager/sig
 
 export type { NeofetchInfo } from "./modules/neofetch";
 export type { SysctlState } from "./modules/sysctl";
-export type { VirtualShellResourceCaps } from "./modules/VirtualShell";
 
