@@ -83,6 +83,7 @@
 - [x] Add a more realistic user management system that supports user groups, permissions, and authentication mechanisms (e.g. password hashing, PAM)
 - [x] Add a swap file mechanism to handle memory overflow when RAM is full (e.g. move least recently used data to disk)
 - [x] Think about adding `delete` keyword and using more `Buffer.alloc(0)` on some modules and commands variables and functions to free up memory when they are no longer needed, especially for large data structures like the VFS, process table, and network connections (after reading a file, writing it, if its VFS snapshot file, we can delete it from memory, and only keep it on disk; after a process terminates, we can delete its entry from the process table; after a network connection is closed, we can delete its entry from the connection table, etc...)
+- [x] Made some methods and props static when they don't rely on instance state (e.g. some methods in VirtualFileSystem, VirtualSwitch, VirtualUserManager, VirtualNetworkManager, etc.) to avoid unnecessary instantiation and improve performance
 </details>
 
 ## Priority
