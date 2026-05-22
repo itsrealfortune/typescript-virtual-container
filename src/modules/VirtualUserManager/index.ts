@@ -409,7 +409,13 @@ export class VirtualUserManager extends EventEmitter {
 		const gid = record.gid;
 		const homePath = username === "root" ? "/root" : `/home/${username}`;
 		if (!this._vfs.exists(homePath)) {
-			this._vfs.mkdir(homePath, 0o700, uid, gid);
+			// Ensure parent directory exists
+			if (username !== "root" && !this._vfs.exists("/home")) {
+				this._vfs.mkdir("/home", 0o755, 0, 0);
+			}
+			// Create home as root, then chown — matches real Linux useradd behavior
+			this._vfs.mkdir(homePath, 0o700, 0, 0);
+			this._vfs.chown(homePath, uid, gid, 0);
 			this._vfs.writeFile(
 				`${homePath}/README.txt`,
 				`Welcome to the virtual environment, ${username}`,
@@ -460,7 +466,13 @@ export class VirtualUserManager extends EventEmitter {
 			// Ensure existing home dir is owned by the user
 			try { this._vfs.chown(homePath, uid, gid, 0); } catch { /* best-effort */ }
 		} else {
-			this._vfs.mkdir(homePath, 0o700, uid, gid);
+			// Ensure /home exists
+			if (!this._vfs.exists("/home")) {
+				this._vfs.mkdir("/home", 0o755, 0, 0);
+			}
+			// Create as root, then chown — matches real Linux useradd behavior
+			this._vfs.mkdir(homePath, 0o700, 0, 0);
+			this._vfs.chown(homePath, uid, gid, 0);
 		}
 		if (!this._vfs.exists(`${homePath}/README.txt`)) {
 			this._vfs.writeFile(

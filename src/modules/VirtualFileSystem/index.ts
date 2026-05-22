@@ -30,7 +30,7 @@ import type {
 } from "./internalTypes";
 import { appendJournalEntry, JournalOp, readJournal, truncateJournal } from "./journal";
 import { getNodeNormalized, getParentDirectory, normalizePath } from "./path";
-import { enforceAccess, enforceChmod, enforceChown, enforceDelete, enforcePathTraversal, R_OK, W_OK } from "./permissions";
+import { enforceAccess, enforceChmod, enforceChown, enforceDelete, enforcePathTraversal, R_OK, W_OK, X_OK } from "./permissions";
 import { SwapStore, type SwapStats } from "./swapStore";
 
 // ── Persistence options ───────────────────────────────────────────────────────
@@ -1294,6 +1294,20 @@ class VirtualFileSystem extends EventEmitter {
 				`Cannot create directory '${normalized}': path is a file.`,
 			);
 		}
+		if (uid !== undefined && gid !== undefined && !existing) {
+			const parentPath = path.posix.dirname(normalized);
+			if (parentPath !== normalized) {
+				try {
+					enforceAccess(this._root, parentPath, uid, gid, W_OK | X_OK);
+				} catch (err: unknown) {
+					// If parent doesn't exist, _mkdirRecursive will create it with
+					// correct ownership — skip the check. Otherwise re-throw.
+					if (!((err instanceof Error) && err.message.includes("does not exist"))) {
+						throw err;
+					}
+				}
+			}
+		}
 		this._mkdirRecursive(normalized, mode, uid, gid);
 	}
 
@@ -1332,6 +1346,19 @@ class VirtualFileSystem extends EventEmitter {
 
 		if (uid !== undefined && gid !== undefined) {
 			enforcePathTraversal(this._root, normalized, uid, gid);
+			// Enforce write permission on parent directory when creating new files
+			const parentPath = path.posix.dirname(normalized);
+			if (parentPath !== normalized) {
+				try {
+					enforceAccess(this._root, parentPath, uid, gid, W_OK | X_OK);
+				} catch (err: unknown) {
+					// If parent doesn't exist, getParentDirectory will create it.
+					// Otherwise re-throw the access denied error.
+					if (!((err instanceof Error) && err.message.includes("does not exist"))) {
+						throw err;
+					}
+				}
+			}
 		}
 
 		const { parent, name } = getParentDirectory(
