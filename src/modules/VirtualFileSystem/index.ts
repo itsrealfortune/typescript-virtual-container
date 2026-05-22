@@ -231,7 +231,7 @@ class VirtualFileSystem extends EventEmitter {
 		};
 	}
 
-	private _makeFile(
+	private static _makeFile(
 		name: string,
 		content: Buffer,
 		mode: number,
@@ -258,7 +258,7 @@ class VirtualFileSystem extends EventEmitter {
 		return { type: "stub", name, stubContent: content, mode, uid, gid, createdAt: now, updatedAt: now };
 	}
 
-	private _makeDeviceNode(
+	private static _makeDeviceNode(
 		name: string,
 		deviceKind: DeviceKind,
 		mode: number,
@@ -336,7 +336,7 @@ class VirtualFileSystem extends EventEmitter {
 		if (existing) {
 			throw new Error(`EEXIST: file already exists, '${normalized}'`);
 		}
-		parent.children[name] = this._makeDeviceNode(name, deviceKind, mode, major, minor);
+		parent.children[name] = VirtualFileSystem._makeDeviceNode(name, deviceKind, mode, major, minor);
 		parent._childCount++;
 		parent._sortedKeys = null;
 		this.emit("device:create", { path: normalized, deviceKind });
@@ -1271,7 +1271,7 @@ class VirtualFileSystem extends EventEmitter {
 
 		if (existing?.type === "device") {
 			const dev = existing as InternalDeviceNode;
-			this._writeDeviceNode(dev, normalized);
+			VirtualFileSystem._writeDeviceNode(dev, normalized);
 			dev.updatedAt = Date.now();
 			this.emit("device:write", { path: normalized });
 			return;
@@ -1317,7 +1317,7 @@ class VirtualFileSystem extends EventEmitter {
 			f.updatedAt = Date.now();
 		} else {
 			if (!existing) { parent._childCount++; parent._sortedKeys = null; }
-			parent.children[name] = this._makeFile(name, storedContent, mode, shouldCompress, uid, gid);
+			parent.children[name] = VirtualFileSystem._makeFile(name, storedContent, mode, shouldCompress, uid, gid);
 		}
 
 		this.emit("file:write", { path: normalized, size: storedContent.length });
@@ -1361,7 +1361,7 @@ class VirtualFileSystem extends EventEmitter {
 			return node.stubContent;
 		}
 		if (node.type === "device") {
-			const content = this._readDeviceNode(node as InternalDeviceNode, normalized);
+			const content = VirtualFileSystem._readDeviceNode(node as InternalDeviceNode, normalized);
 			this.emit("file:read", { path: normalized, size: content.length });
 			return content;
 		}
@@ -1396,7 +1396,7 @@ class VirtualFileSystem extends EventEmitter {
 			return buf;
 		}
 		if (node.type === "device") {
-			const content = this._readDeviceNode(node as InternalDeviceNode, normalized);
+			const content = VirtualFileSystem._readDeviceNode(node as InternalDeviceNode, normalized);
 			const buf = Buffer.from(content, "binary");
 			this.emit("file:read", { path: normalized, size: buf.length });
 			return buf;
@@ -1616,7 +1616,7 @@ class VirtualFileSystem extends EventEmitter {
 	 * @param path - Normalized VFS path (used in error messages).
 	 * @returns Device content string (varies by device kind).
 	 */
-	private _readDeviceNode(node: InternalDeviceNode, path: string): string {
+	private static _readDeviceNode(node: InternalDeviceNode, path: string): string {
 		switch (node.deviceKind) {
 			case "null":
 				return "";
@@ -1640,7 +1640,7 @@ class VirtualFileSystem extends EventEmitter {
 	 * @param node - Device node with deviceKind property.
 	 * @param path - Normalized VFS path (used in error messages).
 	 */
-	private _writeDeviceNode(node: InternalDeviceNode, path: string): void {
+	private static _writeDeviceNode(node: InternalDeviceNode, path: string): void {
 		switch (node.deviceKind) {
 			case "full":
 				throw new Error(`ENOSPC: no space left on device, write '${path}'`);
@@ -2016,7 +2016,7 @@ class VirtualFileSystem extends EventEmitter {
 					contentBase64: Buffer.from(child.stubContent, "utf8").toString("base64"),
 				} satisfies VfsSnapshotFileNode);
 			} else if (child.type === "file") {
-				children.push(this._serializeFile(child as InternalFileNode));
+				children.push(VirtualFileSystem._serializeFile(child as InternalFileNode));
 			} else if (child.type === "device") {
 				const dev = child as InternalDeviceNode;
 				children.push({
@@ -2047,7 +2047,7 @@ class VirtualFileSystem extends EventEmitter {
 		};
 	}
 
-	private _serializeFile(file: InternalFileNode): VfsSnapshotFileNode {
+	private static _serializeFile(file: InternalFileNode): VfsSnapshotFileNode {
 		return {
 			type: "file",
 			name: file.name,
