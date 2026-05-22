@@ -89,5 +89,7 @@
 </details>
 
 ## Priority
+None — all features are important and will be implemented as time allows. Contributions welcome!
 
+## Not started, and may never be
 - [ ] WebSocket-based remote shell client (experimental)
