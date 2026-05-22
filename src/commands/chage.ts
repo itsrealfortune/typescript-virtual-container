@@ -27,37 +27,47 @@ export const chageCommand: ShellModule = {
 			const arg = args[i];
 			if (!arg) continue;
 
-			if (arg === "-m" && args[i + 1]) {
-				minDays = parseInt(args[i + 1], 10);
+			if (arg === "-m") {
+				const val = args[i + 1];
+				if (!val) break;
+				minDays = parseInt(val, 10);
 				if (Number.isNaN(minDays)) {
-					return { stderr: `chage: invalid number '${args[i + 1]}'\n`, exitCode: 1 };
+					return { stderr: `chage: invalid number '${val}'\n`, exitCode: 1 };
 				}
 				i++;
-			} else if (arg === "-M" && args[i + 1]) {
-				maxDays = parseInt(args[i + 1], 10);
+			} else if (arg === "-M") {
+				const val = args[i + 1];
+				if (!val) break;
+				maxDays = parseInt(val, 10);
 				if (Number.isNaN(maxDays)) {
-					return { stderr: `chage: invalid number '${args[i + 1]}'\n`, exitCode: 1 };
+					return { stderr: `chage: invalid number '${val}'\n`, exitCode: 1 };
 				}
 				i++;
-			} else if (arg === "-W" && args[i + 1]) {
-				warnDays = parseInt(args[i + 1], 10);
+			} else if (arg === "-W") {
+				const val = args[i + 1];
+				if (!val) break;
+				warnDays = parseInt(val, 10);
 				if (Number.isNaN(warnDays)) {
-					return { stderr: `chage: invalid number '${args[i + 1]}'\n`, exitCode: 1 };
+					return { stderr: `chage: invalid number '${val}'\n`, exitCode: 1 };
 				}
 				i++;
-			} else if (arg === "-I" && args[i + 1]) {
-				inactiveDays = parseInt(args[i + 1], 10);
+			} else if (arg === "-I") {
+				const val = args[i + 1];
+				if (!val) break;
+				inactiveDays = parseInt(val, 10);
 				if (Number.isNaN(inactiveDays)) {
-					return { stderr: `chage: invalid number '${args[i + 1]}'\n`, exitCode: 1 };
+					return { stderr: `chage: invalid number '${val}'\n`, exitCode: 1 };
 				}
 				i++;
-			} else if (arg === "-E" && args[i + 1]) {
-				if (args[i + 1] === "-1" || args[i + 1] === "99999") {
+			} else if (arg === "-E") {
+				const val = args[i + 1];
+				if (!val) break;
+				if (val === "-1" || val === "99999") {
 					expiryDate = 0;
 				} else {
-					expiryDate = Math.floor(new Date(args[i + 1]).getTime() / 86400000);
+					expiryDate = Math.floor(new Date(val).getTime() / 86400000);
 					if (Number.isNaN(expiryDate)) {
-						return { stderr: `chage: invalid date '${args[i + 1]}'\n`, exitCode: 1 };
+						return { stderr: `chage: invalid date '${val}'\n`, exitCode: 1 };
 					}
 				}
 				i++;
@@ -85,17 +95,16 @@ export const chageCommand: ShellModule = {
 
 			const formatDate = (days: number): string => {
 				if (days === 0) return "never";
-				return new Date(days * 86400000).toISOString().split("T")[0];
+				return new Date(days * 86400000).toISOString().split("T")[0] as string;
 			};
 
 			const lastChangeDate = formatDate(aging.lastChange);
 			const maxAgeDate = aging.maxAge === 99999 ? "never" : formatDate(aging.lastChange + aging.maxAge);
-			const warnDate = aging.warnDays > 0 ? formatDate((aging.lastChange + aging.maxAge) - aging.warnDays) : "never";
 			const inactiveDate = aging.inactiveDays > 0 ? formatDate((aging.lastChange + aging.maxAge) + aging.inactiveDays) : "never";
 			const expiryDateStr = formatDate(aging.expiryDate);
 
 			return {
-				stdout: [
+				stdout: `${[
 					`Last password change                                    : ${lastChangeDate}`,
 					`Password expires                                        : ${maxAgeDate}`,
 					`Password inactive                                       : ${inactiveDate}`,
@@ -103,17 +112,18 @@ export const chageCommand: ShellModule = {
 					`Minimum number of days between password change          : ${aging.minAge}`,
 					`Maximum number of days between password change          : ${aging.maxAge}`,
 					`Number of days of warning before password expires       : ${aging.warnDays}`,
-				].join("\n") + "\n",
+				].join("\n")}\n`,
 				exitCode: 0,
 			};
 		}
 
+		const targetUser = username;
 		try {
-			await shell.users.setPasswordAging(username, minDays, maxDays, warnDays, inactiveDays);
+			await shell.users.setPasswordAging(targetUser, minDays, maxDays, warnDays, inactiveDays);
 			if (expiryDate !== undefined) {
-				await shell.users.setAccountExpiry(username, expiryDate);
+				await shell.users.setAccountExpiry(targetUser, expiryDate);
 			}
-			return { stdout: `chage: password aging updated for '${username}'\n`, exitCode: 0 };
+			return { stdout: `chage: password aging updated for '${targetUser}'\n`, exitCode: 0 };
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
 			return { stderr: `${msg}\n`, exitCode: 1 };

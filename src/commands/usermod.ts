@@ -26,15 +26,21 @@ export const usermodCommand: ShellModule = {
 			const arg = args[i];
 			if (!arg) continue;
 
-			if (arg === "-g" && args[i + 1]) {
-				primaryGroup = args[i + 1];
+			if (arg === "-g") {
+				const val = args[i + 1];
+				if (!val) break;
+				primaryGroup = val;
 				i++;
-			} else if (arg === "-G" && args[i + 1]) {
-				supplementaryGroups = args[i + 1].split(",");
+			} else if (arg === "-G") {
+				const val = args[i + 1];
+				if (!val) break;
+				supplementaryGroups = val.split(",");
 				i++;
-			} else if (arg === "-aG" && args[i + 1]) {
+			} else if (arg === "-aG") {
+				const val = args[i + 1];
+				if (!val) break;
 				appendGroups = true;
-				supplementaryGroups = args[i + 1].split(",");
+				supplementaryGroups = val.split(",");
 				i++;
 			} else if (arg === "-L") {
 				lock = true;

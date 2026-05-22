@@ -722,7 +722,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param gid - Group ID number to resolve.
 	 * @returns Group/username string, or null if GID not found.
 	 */
-	public getGroup(gid: number): string | null {
+	public getGroupName(gid: number): string | null {
 		for (const [name, record] of this._users) {
 			if (record.gid === gid) return name;
 		}

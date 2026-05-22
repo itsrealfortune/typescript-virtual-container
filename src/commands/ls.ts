@@ -138,7 +138,7 @@ function longListing(
 		isSymlink: (p: string) => boolean;
 		readFile:  (p: string) => string;
 	},
-	users: { getUsername: (uid: number) => string | null; getGroup: (gid: number) => string | null },
+	users: { getUsername: (uid: number) => string | null; getGroupName: (gid: number) => string | null },
 	dir: string,
 	items: string[],
 ): string {
@@ -194,7 +194,7 @@ function longListing(
 		const uid = st && "uid" in st ? (st as { uid: number }).uid : 0;
 		const gid = st && "gid" in st ? (st as { gid: number }).gid : 0;
 		const uidStr = users.getUsername(uid) ?? String(uid);
-		const gidStr = users.getGroup(gid) ?? String(gid);
+		const gidStr = users.getGroupName(gid) ?? String(gid);
 		return `${r.perms} ${r.nlink.padStart(wNlink)} ${uidStr} ${gidStr} ${r.size.padStart(wSize)} ${r.date} ${r.label}`;
 	});
 
@@ -242,7 +242,7 @@ export const lsCommand: ShellModule = {
 					const uid = "uid" in st ? (st as { uid: number }).uid : 0;
 					const gid = "gid" in st ? (st as { gid: number }).gid : 0;
 					const uidStr = shell.users.getUsername(uid) ?? String(uid);
-					const gidStr = shell.users.getGroup(gid) ?? String(gid);
+					const gidStr = shell.users.getGroupName(gid) ?? String(gid);
 					return {
 						stdout: `${perms} 1 ${uidStr} ${gidStr} ${size} ${formatDate(st.updatedAt)} ${label}\n`,
 						exitCode: 0,
