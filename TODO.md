@@ -92,6 +92,7 @@
 ## Priority
 <!-- None — all features are important and will be implemented as time allows. Contributions welcome! -->
 - [ ] See if we can tur SSHClient into a real SSHClient
+- [ ] Check for async functions that are not async, and then recursively transform await calls to async ones
 
 ## Not started, and may never be
 - [ ] WebSocket-based remote shell client (experimental)
