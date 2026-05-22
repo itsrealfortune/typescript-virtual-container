@@ -244,10 +244,12 @@ export class DesktopManager {
   getFocusedTerminal(): { stream: ShellStream; dataListeners: Array<(chunk: Buffer) => void>; preEl: HTMLPreElement } | null {
     for (const w of this._windows) {
       if (w.content.type === "terminal" && w.focused && !w.minimized) {
+        const { stream, preEl } = w.content;
+        if (stream === undefined || preEl === undefined) continue;
         return {
-          stream: w.content.stream as ShellStream,
+          stream,
           dataListeners: w.content.dataListeners,
-          preEl: w.content.preEl as HTMLPreElement,
+          preEl,
         };
       }
     }
@@ -339,7 +341,7 @@ export class DesktopManager {
     // Attach stream to the window
     const w = this._windows.find((ww) => ww.id === winId);
     if (w && w.content.type === "terminal") {
-      (w.content as TerminalContent).stream = stream;
+      w.content.stream = stream;
     }
 
     // Start shell asynchronously so the calling command can finish first
@@ -429,12 +431,11 @@ export class DesktopManager {
       clearInterval(w.content.refreshInterval);
     }
     if (w.content.type === "terminal") {
-      const term = w.content as TerminalContent;
       // End the shell stream if it exists
-      if (term.stream && typeof term.stream.end === "function") term.stream.end();
+      if (w.content.stream && typeof w.content.stream.end === "function") w.content.stream.end();
       // Clear data listeners array (stream will be GC'd when window closes)
-      term.dataListeners = [];
-      term.stream = undefined;
+      w.content.dataListeners = [];
+      w.content.stream = undefined;
     }
     this._windows.splice(idx, 1);
     if (this._windows.length > 0) {
