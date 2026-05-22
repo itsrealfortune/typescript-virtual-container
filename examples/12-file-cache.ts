@@ -4,7 +4,10 @@
  * Demonstrates the VFS file cache with configurable eviction policies
  * (LRU, LFU, FIFO) and simulated disk read/write latencies.
  */
+import * as fs from "node:fs";
 import { VirtualFileSystem } from "../src";
+
+fs.mkdirSync(".vfs-cache-demo", { recursive: true });
 
 const vfs = new VirtualFileSystem({
 	mode: "fs",

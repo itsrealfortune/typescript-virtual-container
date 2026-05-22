@@ -88,7 +88,7 @@ async function runCiCdPipeline() {
 
 	const stages = [
 		{ name: "Lint", result: lintResult },
-		{ name: "Test", result: testResult },
+		{ name: "Tests", result: testResult },
 		{ name: "Build", result: buildResult },
 		{ name: "Deploy", result: deployResult },
 	];
