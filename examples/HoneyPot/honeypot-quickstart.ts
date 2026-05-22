@@ -47,7 +47,7 @@ async function quickStart() {
 
 	// Create a client
 	const client = new SshClient();
-	await client.connect({ host: "localhost", port: 2222, username: "dev_user", password: "" });
+	await client.connect({ host: "localhost", port: 2222, username: "dev_user", password: "root" });
 
 	// Create files
 	await client.mkdir("/app", true);

@@ -51,7 +51,7 @@ console.log(`Server ready on port ${port}`);
 // ── Simulate activity via real SSH client ─────────────────────────
 console.log("--- Simulate activity via SshClient ---");
 const client = new SshClient();
-await client.connect({ host: "localhost", port, username: "root", password: "root" });
+await client.connect({ host: "localhost", port, username: "root", password: "root", readyTimeout: 30000 });
 
 const result = await client.exec("echo 'Hello from connected client'");
 console.log(`Command output: ${result.stdout!.trim()}`);

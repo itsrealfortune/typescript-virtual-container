@@ -87,6 +87,7 @@
 - [x] Made some methods and props static when they don't rely on instance state (e.g. some methods in VirtualFileSystem, VirtualSwitch, VirtualUserManager, VirtualNetworkManager, etc.) to avoid unnecessary instantiation and improve performance
 - [x] Add a more realistic file caching mechanism that simulates disk read/write speeds and cache eviction policies
 - [x] Add a process scheduler to manage CPU time between running processes, ensuring fair resource allocation and preventing any single process from monopolizing the CPU
+- [x] Convert SSHClient to use real SSH protocol via ssh2.Client
 </details>
 
 ## Priority
