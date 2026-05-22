@@ -27,7 +27,7 @@
 | Mode | Entry point | Use case |
 |------|-------------|----------|
 | **SSH/SFTP server** | `VirtualSshServer` / `VirtualSftpServer` | Honeypots, remote testing, training environments |
-| **Web shell** | `demo/app.ts` → bundled with esbuild | Embedded terminals, interactive tutorials, browser demos — run `startxfce4` for a full XFCE desktop |
+| **Web shell** | `builds/fortune-nyx-v1.7.4-web.min.js` (ESM) | Embedded terminals, interactive tutorials, browser demos — run `startxfce4` for a full XFCE desktop |
 | **Standalone CLI** | `builds/fortune-nyx-v1.7.4-directbash-k6.1.0.mjs` (single file) | Local shell, one-liner demos, no install required |
 <!-- /BUILD:mode-table -->
 
