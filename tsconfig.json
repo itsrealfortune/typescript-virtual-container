@@ -15,7 +15,7 @@
     // Bundler mode
     "moduleResolution": "bundler",
     "verbatimModuleSyntax": true,
-    "noEmit": false,
+    "noEmit": true,
     "rewriteRelativeImportExtensions": true,
     
     // Best practices
@@ -37,11 +37,10 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "declaration": true,
+    "declaration": false,
     "declarationMap": false,
     "sourceMap": false,
-    "composite": true,
-    "tsBuildInfoFile": "dist/.tsbuildinfo"
+    "composite": false
   },    
   "include": ["src/**/*","tests/**/*", "examples/**/*", "demo/**/*"],
   "exclude": ["node_modules", "dist", "demo/build.js", "demo/app.js", "demo/server.js"]
