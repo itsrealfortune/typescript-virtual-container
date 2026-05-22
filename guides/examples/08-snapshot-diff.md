@@ -25,7 +25,7 @@ This example simulates a package installation operation and uses `diffSnapshots`
 
 The diff should show three added entries and one modified entry, with no deletions.
 
-## Module Imports
+## Modules Used
 
 ```ts
 import { assertDiff, diffSnapshots } from "../src";

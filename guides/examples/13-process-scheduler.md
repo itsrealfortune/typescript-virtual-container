@@ -4,11 +4,11 @@ group: Examples
 ---
 # Example 13 — Process Scheduler
 
-## Real-World Scenario
+## The Scenario
 
 Operating system schedulers are responsible for dividing CPU time among competing processes. The Linux Completely Fair Scheduler (CFS) uses a red-black tree of tasks ordered by `vruntime`, aiming to give each task an equal share of the processor. Each task has a **nice value** ranging from -20 (highest priority) to +19 (lowest priority), which acts as a weight multiplier on its time slice. A web server like nginx (typically run at nice -10) gets more CPU than a background backup job (nice +15). This virtual scheduler models the same behavior: processes are registered with nice values, the scheduler computes weighted time slices, tracks consumed CPU time, throttles processes that exceed their allotment, and reports global statistics. This is useful for simulating resource contention and priority inversion scenarios in a controlled virtual environment.
 
-## Modules Imported
+## Modules Used
 
 ```ts
 import { VirtualShell } from "../src";
@@ -140,7 +140,7 @@ for (const pid of pids) {
 
 Each process is killed with signal 9 (SIGKILL) and then unregistered from the scheduler. `killProcess()` records the signal in the process's exit status; `unregisterProcess()` removes it from the process table and scheduler data structures. After this, `runQueueLength` drops to 0.
 
-## How the Scheduler Works Under the Hood
+## Module Interactions
 
 The virtual CFS scheduler uses a simplified version of Linux's scheduling algorithm:
 
@@ -209,7 +209,7 @@ bun run examples/13-process-scheduler.ts
 
 The exact `avgTimesliceMs` value varies with the weight calculations, but the output structure is deterministic.
 
-## Key Concepts and Patterns
+## Key Concepts
 
 - **Nice value and priority separation:** Nice is a user-facing "niceness" hint; priority is the internal scheduling value. A lower nice value produces a higher priority (lower numeric priority value). The mapping is linear: `priority = 20 - nice` when nice is negative, `priority = nice + 20` when nice is positive.
 - **Weighted fair sharing:** CPU time is proportional to weight, not equal. A process at nice -20 gets ~88× more CPU than a process at nice +19. This matches Linux CFS behavior.

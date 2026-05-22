@@ -5,11 +5,11 @@ group: Examples
 
 # Example 10 — Honeypot Auditing
 
-## Real-World Scenario
+## The Scenario
 
 Security auditing is essential for detecting unauthorized access, data exfiltration, and anomalous behavior in production systems. A **honeypot** is a decoy system or component that lures attackers by appearing legitimate, then logs every interaction for forensic analysis. In this virtual environment, the `HoneyPot` auditor wraps the shell, filesystem, and user database to silently record all commands, file reads, and file writes — similar to how tools like `auditd`, `osquery`, or Falco monitor real Linux systems. The buffered event log and anomaly detection make it possible to surface suspicious patterns (e.g., rapid-fire commands, access to sensitive paths) without modifying the target components.
 
-## Modules Imported
+## Modules Used
 
 ```ts
 import { HoneyPot, VirtualShell, SshClient } from "../src";
@@ -118,7 +118,7 @@ const recent = hp.getRecent(3);
 
 `getRecent(n)` returns the `n` most recent audit entries from the ring buffer. Each entry contains a `type` field (e.g., `"command"`, `"file_read"`, `"file_write"`), a `source` (the component that emitted it), a `timestamp`, and optional `data` with contextual information (command string, file path, etc.). This is useful for live tailing or forensic snapshotting without dumping the entire buffer.
 
-## How HoneyPot Interacts Under the Hood
+## Module Interactions
 
 The `HoneyPot` uses an **aspect-oriented** pattern: it wraps each subsystem's event emitter with a listener layer rather than requiring the subsystems to know about auditing. When `attach(subsystem)` is called:
 
@@ -156,7 +156,7 @@ bun run examples/10-honeypot-auditing.ts
 
 The exact anomaly output depends on the threshold configuration and timing, but the pattern is: command spikes that exceed the normal human typing speed (more than 2–3 commands per second) trigger a `rapid_commands` anomaly.
 
-## Key Concepts and Patterns
+## Key Concepts
 
 - **Aspect-Oriented Observation (AOP):** The HoneyPot never modifies `VirtualShell`, `VirtualFileSystem`, or `UserManager` source code. It attaches externally via their event emitters. This is clean separation of concerns — the core subsystems are not polluted with auditing logic.
 - **Bounded Ring Buffer:** Using a fixed-size circular buffer prevents memory leaks in long-running scenarios. The `maxEntries` constructor argument lets you control memory overhead (roughly `maxEntries × averageEntrySize` bytes).

@@ -10,9 +10,7 @@ removes them by host port, and cleanly stops all proxy listeners.
 
 **Modules:** `Baie`, `VirtualProxy`
 
----
-
-## Real-world scenario
+## The Scenario
 
 You have virtual machines running inside a virtual network (`VirtualSwitch`)
 with private IPs (`10.0.0.0/24`). These VMs are not directly reachable from
@@ -26,9 +24,7 @@ and Vagrant uses with `config.vm.network "forwarded_port"`.
 The `VirtualProxy` creates real TCP listeners on the host machine and relays
 connections to the destination VM inside the virtual network.
 
----
-
-## Imports and initialization
+## Modules Used
 
 ```typescript
 import { Baie, VirtualProxy } from "../src";
@@ -53,9 +49,9 @@ The `VirtualProxy` constructor accepts a `Baie` instance (or an object with
 `getVM` and `listVMs` methods). The proxy uses these to resolve VM names to
 their network addresses when forwarding connections.
 
----
+## Step-by-Step Walkthrough
 
-## Port forwarding
+### Port forwarding
 
 ```typescript
 proxy.exposePort("web-server", 80, 34501);
@@ -93,9 +89,7 @@ A brief wait is needed because the TCP server creation is asynchronous
 not yet reflect all active listeners, depending on how quickly the event
 loop processes the listen callbacks.
 
----
-
-## Listing forwards
+### Listing forwards
 
 ```typescript
 console.log(`  Forwards active: ${proxy.listPorts().length}`);
@@ -115,9 +109,7 @@ for (const f of proxy.listPorts()) {
 The loop prints each mapping in a bidirectional arrow notation
 (`vm:port ↔ host:port`) to clearly show the direction of traffic flow.
 
----
-
-## Removing a forward
+### Removing a forward
 
 ```typescript
 const first = proxy.listPorts()[0];
@@ -137,9 +129,7 @@ console.log(`  Forwards remaining: ${proxy.listPorts().length}`);
 
 After removal, the forward count decreases by one (from 3 to 2).
 
----
-
-## Cleanup
+### Cleanup
 
 ```typescript
 proxy.stop();
@@ -157,9 +147,11 @@ separation of concerns means you could stop forwarding while leaving the
 VMs running, or destroy VMs to make their forwards stale (the proxy handles
 this gracefully by failing connections when the target VM is gone).
 
----
+## Module Interactions
 
-## Expected output
+`VirtualProxy` pairs with `Baie` to forward host ports to VM ports. `Baie` manages VM lifecycle and provides VM-to-IP resolution. `VirtualProxy` creates real TCP listeners and bridges connections to VMs. They interact through a `Baie`-compatible interface: the proxy queries the baie for VM network addresses when routing connections.
+
+## Expected Output
 
 When you run `bun run examples/23-virtual-proxy.ts`, the output shows:
 
@@ -174,9 +166,7 @@ When you run `bun run examples/23-virtual-proxy.ts`, the output shows:
   All forwards stopped
 ```
 
----
-
-## Key concepts
+## Key Concepts
 
 - **Real TCP listeners:** Unlike most of the library's APIs that simulate
   state, `exposePort()` creates actual operating system TCP sockets. You can

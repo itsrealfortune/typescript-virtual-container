@@ -10,9 +10,7 @@ conntrack, and ARP cache via `VirtualNetworkManager`.
 
 **Modules:** `VirtualShell` (via `shell.network`)
 
----
-
-## Real-world scenario
+## The Scenario
 
 You are provisioning a virtual machine that needs to behave like a real
 Linux server. It needs:
@@ -29,9 +27,7 @@ The `VirtualNetworkManager` exposes all of these through a unified API,
 with formatters that produce output matching `ip addr`, `ip route`, `ip rule`,
 and `iptables -L`.
 
----
-
-## Imports and initialization
+## Modules Used
 
 ```typescript
 import { VirtualShell } from "../src";
@@ -46,9 +42,9 @@ After `ensureInitialized()` resolves, the shell's internal subsystems are
 ready. The `network` property returns the `VirtualNetworkManager` instance
 that backs all network operations for this shell.
 
----
+## Step-by-Step Walkthrough
 
-## Interfaces
+### Interfaces
 
 ```typescript
 net.addInterface({ name: "eth0", type: "ether", mac: "02:42:ac:10:00:01", mtu: 1500, ipv4: "10.0.0.1", ipv4Mask: 8, ipv6: "::1", speed: 1000 });
@@ -79,9 +75,7 @@ real system: each interface shows its MAC, IPv4, IPv6, MTU, state, and
 speed. The loopback is left down (as it typically starts up automatically
 in real Linux, but here we simply didn't call `setInterfaceState("lo", "UP")`).
 
----
-
-## Routes
+### Routes
 
 ```typescript
 net.addRoute("10.0.0.0/8", "0.0.0.0", "255.0.0.0", "eth0");
@@ -104,9 +98,7 @@ destination prefix, using longest-prefix-match for lookups.
 `formatIpRoute()` prints the routing table in `ip route` format, showing
 each route's destination, gateway, netmask, device, and metric.
 
----
-
-## Policy routing
+### Policy routing
 
 ```typescript
 net.addRoutingTable("custom");
@@ -128,9 +120,7 @@ Beyond the main routing table, the API supports **policy routing** (Linux
 action). This is how real Linux implements multi-homed routing policies
 (e.g., VPN split tunneling).
 
----
-
-## Firewall
+### Firewall
 
 ```typescript
 net.addFirewallRule({
@@ -164,9 +154,7 @@ best practice.
 the chain name, policy, and each rule with its protocol, source, destination,
 port, and action.
 
----
-
-## Firewall checks
+### Firewall checks
 
 ```typescript
 const checks = [
@@ -191,9 +179,7 @@ in order, respecting the default policy.
 This is the same algorithm Linux uses: linear scan of rules in the chain,
 first match wins, default policy applies if none match.
 
----
-
-## Conntrack
+### Conntrack
 
 ```typescript
 net.updateConntrack("10.0.0.2", "10.0.0.1", "tcp", 40000, 80, 1024);
@@ -218,9 +204,7 @@ bytes transferred.
 This mirrors the real `/proc/net/nf_conntrack` table that the Linux kernel
 maintains for stateful firewall inspection.
 
----
-
-## ARP cache
+### ARP cache
 
 ```typescript
 if (net.getArpCache().length === 0) {
@@ -234,9 +218,11 @@ real scenario, the cache would be populated as the VM communicates with
 other hosts. This demonstrates that the network manager tracks not just
 routes and firewall state but also Layer-2 address resolution.
 
----
+## Module Interactions
 
-## Expected output
+`VirtualNetworkManager` is accessed through `VirtualShell`'s `network` property. The manager is a self-contained module that manages interfaces, routes, firewall rules, conntrack entries, and ARP caches in a unified data model. It does not depend on other virtual subsystems — it can be used standalone as long as a `VirtualShell` instance is initialized.
+
+## Expected Output
 
 When you run `bun run examples/21-network-management.ts`, the output shows:
 
@@ -260,9 +246,7 @@ When you run `bun run examples/21-network-management.ts`, the output shows:
   (ARP cache empty — populate via traffic)
 ```
 
----
-
-## Key concepts
+## Key Concepts
 
 - **Interface lifecycle:** `addInterface` creates a config, `setInterfaceState`
   controls operational status. The two-step model matches Linux where you

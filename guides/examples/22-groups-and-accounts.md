@@ -11,9 +11,7 @@ group file generation via `VirtualUserManager`.
 
 **Modules:** `VirtualShell` (via `shell.users`)
 
----
-
-## Real-world scenario
+## The Scenario
 
 You are managing user accounts on a virtual Linux server that multiple
 people (or automation pipelines) access. You need to:
@@ -33,9 +31,7 @@ The `VirtualUserManager` handles all of this through a single API surface,
 storing state internally and providing standard-formatted output for
 system file generation.
 
----
-
-## Imports and initialization
+## Modules Used
 
 ```typescript
 import { VirtualShell } from "../src";
@@ -49,9 +45,9 @@ const users = shell.users;
 `VirtualUserManager`. All user, group, and policy operations go through
 this reference.
 
----
+## Step-by-Step Walkthrough
 
-## Users
+### Users
 
 ```typescript
 await users.addUser("alice", "password123");
@@ -69,9 +65,7 @@ files). Each user is stored with:
 - A home directory (`/home/<username>`)
 - Metadata fields (created timestamp, last password change, expiry, etc.)
 
----
-
-## Groups
+### Groups
 
 ```typescript
 users.createGroup("developers", 5000);
@@ -103,9 +97,7 @@ supplementary groups they belong to. `isMemberOf()` checks membership in a
 specific named group. Under the hood, the manager maintains a
 `Map<username, Set<groupName>>` for O(1) membership tests.
 
----
-
-## Group listing
+### Group listing
 
 ```typescript
 for (const g of users.listGroups()) {
@@ -118,9 +110,7 @@ member list. This reflects what `/etc/group` contains. Each user's primary
 group is implicit (created by `addUser`) and will have that user as a member.
 Supplementary groups show every user added via `addGroupMember`.
 
----
-
-## Password aging
+### Password aging
 
 ```typescript
 await users.setPasswordAging("alice", 1, 90, 7, 30);
@@ -156,9 +146,7 @@ past epoch value), causing `isPasswordExpired()` to return `true`. This
 forces the user to change their password on next login — effectively the
 `passwd -e` command.
 
----
-
-## Account expiry
+### Account expiry
 
 ```typescript
 const nextWeekTs = Date.now() + 7 * 24 * 60 * 60 * 1000;
@@ -170,9 +158,7 @@ milliseconds since epoch, matching JavaScript's `Date.now()` convention).
 Internally, the manager stores this as an epoch timestamp and checks it
 during login validation. Carol's account will be disabled after 7 days.
 
----
-
-## Account locking
+### Account locking
 
 ```typescript
 console.log(`  alice locked: ${users.isAccountLocked("alice")}`);
@@ -192,9 +178,7 @@ The lock/unlock cycle demonstrates manual account suspension:
 
 This is used to suspend compromised accounts or offboarded employees.
 
----
-
-## Login failure tracking
+### Login failure tracking
 
 ```typescript
 users.recordLoginFailure("bob", "10.0.0.99");
@@ -223,9 +207,7 @@ console.log(`  bob failures after reset: ${users.getLoginFailures("bob")}`);
 
 This implements the `pam_tally2` / `pam_faillock` pattern from real Linux.
 
----
-
-## Sudo
+### Sudo
 
 ```typescript
 console.log(`  alice sudoer: ${users.isSudoer("alice")}`);
@@ -238,9 +220,7 @@ console.log(`  alice sudoer: ${users.isSudoer("alice")}`);
 set of sudo-enabled usernames that can be exported to a sudoers-compatible
 format.
 
----
-
-## Session tracking
+### Session tracking
 
 ```typescript
 users.registerSession("alice", "10.0.0.5");
@@ -256,9 +236,7 @@ output of `who` or `w` on a real system.
 Sessions can also be removed with `unregisterSession()` when a user logs
 out (not shown in this example but available in the API).
 
----
-
-## Shadow file generation
+### Shadow file generation
 
 ```typescript
 console.log(`${users.generateShadowFile().split("\n").slice(0, 3).join("\n")}\n...`);
@@ -277,9 +255,7 @@ user state. Each line contains:
 The output is sliced to 3 lines to keep the console output concise, but the
 full string contains one line per user with all aging and lock data embedded.
 
----
-
-## Group file generation
+### Group file generation
 
 ```typescript
 console.log(users.generateGroupFile());
@@ -292,9 +268,7 @@ supplementary group. Primary group memberships are **not** listed in
 `/etc/group` member fields — they are implicit (matching real system
 behavior).
 
----
-
-## Group deletion
+### Group deletion
 
 ```typescript
 users.deleteGroup("interns");
@@ -305,9 +279,11 @@ console.log(`  interns exists: ${users.getGroup("interns") !== undefined}`);
 `getGroup()` returns `undefined` and the group no longer appears in
 `listGroups()` or `generateGroupFile()`.
 
----
+## Module Interactions
 
-## Expected output
+`VirtualUserManager` is accessed through `VirtualShell`'s `users` property. It manages users, groups, password policies, session tracking, and system file generation (`/etc/shadow`, `/etc/group`) as a unified module. It operates independently of other virtual subsystems (network, VFS, etc.) but its state can be consumed by the VFS to populate system files.
+
+## Expected Output
 
 When you run `bun run examples/22-groups-and-accounts.ts`, the output
 shows the full lifecycle:
@@ -356,9 +332,7 @@ Users: alice, bob, carol
   interns exists: false
 ```
 
----
-
-## Key concepts
+## Key Concepts
 
 - **Primary vs supplementary groups:** Each user has an implicit primary
   group (same name). Supplementary groups are created separately and

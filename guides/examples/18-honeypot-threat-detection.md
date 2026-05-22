@@ -5,11 +5,11 @@ group: Examples
 
 # Example 18 — Honeypot Threat Detection
 
-## Real-World Scenario
+## The Scenario
 
 Security teams deploy **honeypots** — decoy systems that mimic production servers — to lure attackers and study their behavior. A well-configured honeypot looks like a real server with plausible files (`/etc/passwd`, SSH keys, credentials, bash history) that an attacker would target post-exploitation. Every command the attacker runs is logged, audited, and analyzed for anomalous patterns (brute-force attempts, backdoor installation, credential dumping). This example simulates an SSH honeypot with planted decoy files, executes a realistic attacker command chain (reading sensitive files, downloading a backdoor, creating a user account), and generates an audit report with anomaly detection. The same `SshClient` and `VirtualShell` infrastructure used for legitimate scenarios is repurposed here — the honeypot is observationally identical to a real VM from the attacker's perspective.
 
-## Modules Imported
+## Modules Used
 
 ```ts
 import { HoneyPot, VirtualShell } from "../src";
@@ -176,7 +176,7 @@ for (const a of anomalies) {
 
 Each anomaly is printed with severity-appropriate icons: 🔴 for high, 🟡 for medium, 🟢 for low.
 
-## How the HoneyPot Monitors Activity Under the Hood
+## Module Interactions
 
 **Hook-based interception:** When `honeypot.attach(shell, vfs, users)` is called, the `HoneyPot` registers callbacks on three subsystems:
 
@@ -258,7 +258,7 @@ When running `bun run examples/18-honeypot-threat-detection.ts`:
 
 Exact anomaly count and messages depend on the `HoneyPot` implementation. The file read count (12) is higher than the explicit `cat` calls (5) because some commands trigger implicit file reads (e.g., `ls` reads directory inodes, `wget` checks DNS configs).
 
-## Key Concepts and Patterns
+## Key Concepts
 
 - **Honeypot deception via decoy files:** The VFS is planted with realistic-looking sensitive files (`/etc/shadow`, credentials, bash history). The attacker cannot distinguish these from real production files because they are accessed through the same `SshClient`/`VirtualShell` interface. The quality of decoys determines how long the attacker stays engaged.
 - **Transparent monitoring via hooks:** The `HoneyPot` uses the VFS's hook system (`onBeforeRead`, `onBeforeWrite`) and process wrapping to monitor all activity. The shell, VFS, and user manager are completely unaware they are being monitored — the hooks fire invisibly.

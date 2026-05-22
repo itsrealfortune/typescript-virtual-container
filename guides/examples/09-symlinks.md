@@ -5,7 +5,7 @@ group: Examples
 
 # Example 09 — Symbolic Links
 
-## Real-World Scenario
+## The Scenario
 
 Symbolic links (symlinks) are one of the most fundamental abstractions in Unix-like filesystem management. They appear everywhere in production Linux environments:
 
@@ -18,7 +18,7 @@ Symbolic links (symlinks) are one of the most fundamental abstractions in Unix-l
 
 This example demonstrates how the `virtual-env-js` `VirtualFileSystem` handles symbolic links — creating them, identifying them, and resolving their targets — all in pure memory with no disk involvement. The entire example is only 14 lines of code, but it illustrates the three fundamental symlink operations that underpin all of the above use cases: creation, type detection, and target resolution.
 
-## Module Import
+## Modules Used
 
 ```ts
 import { VirtualFileSystem } from "../src";
@@ -264,7 +264,7 @@ The function returns `"/opt/myapp/bin/app"`, which is the resolved target path.
 
 **Relative symlink handling**: If the target path did not start with `/` (a relative symlink like `../releases/v2/app`), the method resolves it relative to the directory containing the symlink using `path.posix.join(dirname(current), target)`. This mirrors the POSIX kernel behavior where the kernel resolves relative symlink targets against the directory of the link, not the process's current working directory.
 
-## How Symlinks Work Under the Hood
+## Module Interactions
 
 ### Storage Representation
 
@@ -324,7 +324,7 @@ Line 2: `/opt/myapp/bin/app` — the result of resolving the symlink chain. The 
 
 If you called `vfs.isSymlink("/opt/myapp/bin/app")`, it would return `false` because that node has mode `0o644` (a regular file). If you called `vfs.readFile("/usr/local/bin/app")`, it would return `"/opt/myapp/bin/app"` (the symlink's content, i.e., the target path), not `"#!/bin/sh\necho hello"` (the target's content) — because `readFile()` does not follow symlinks automatically.
 
-## Key Concepts and Patterns
+## Key Concepts
 
 - **Symlink vs. hard link**: A symlink is a path-based pointer that can cross filesystem boundaries and can dangle (point to a nonexistent path). A hard link is a second directory entry pointing to the same inode (same filesystem only, cannot dangle). The VFS implements only symlinks because they are more common in scripting and testing scenarios. Hard links would require reference counts on internal nodes, adding complexity without proportional benefit.
 

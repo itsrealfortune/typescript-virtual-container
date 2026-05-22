@@ -5,11 +5,11 @@ group: Examples
 
 # Example 16 — CI/CD Pipeline
 
-## Real-World Scenario
+## The Scenario
 
 Continuous Integration and Deployment pipelines automate the lifecycle of software delivery: linting source code, running test suites, compiling artifacts, and deploying to production. Real CI/CD systems (GitHub Actions, GitLab CI, Jenkins) typically run each **stage** in an isolated environment — a fresh container or VM — to prevent cross-stage contamination. Build artifacts from earlier stages are passed to later stages, and a failure in any stage halts the entire pipeline. This example simulates a 4-stage pipeline (lint → test → build → deploy) where each stage executes in its own virtual machine on an isolated virtual network. Each VM has resource caps (RAM, CPU) and a process scheduler, mirroring how cloud CI runners enforce resource limits to prevent a single build from starving others.
 
-## Modules Imported
+## Modules Used
 
 ```ts
 import { Baie, SshClient } from "../src";
@@ -169,7 +169,7 @@ for (const [name, vm] of Object.entries({ lint: lintVM, test: testVM, build: bui
 
 After the pipeline completes, each VM reports its process count and scheduler statistics. `listProcesses()` returns all processes that were registered and are still tracked. `getSchedulerStats()` returns an object with `scheduleCount` (how many times the scheduler ran), `totalTimeslices`, and other metrics. If the scheduler was never enabled on a VM, this returns `null`. The output shows that each VM ran commands and the scheduler was active.
 
-## How Pipeline Stages Interact Under the Hood
+## Module Interactions
 
 **Isolation model:** Each `createVM()` call spawns a completely independent `VirtualShell` with its own VFS tree, user database, process table, and scheduler. There is no shared state between VMs — they cannot see each other's files, processes, or users. The only shared resource is the `VirtualSwitch` inside the `Baie`, which enables IP-level communication between VMs (though this example does not use inter-VM networking).
 
@@ -227,7 +227,7 @@ When running `bun run examples/16-cicd-pipeline.ts`:
 
 Process counts may vary slightly depending on how the shell parser registers internal processes. The key invariant is that every stage reports `passed` and the pipeline verdict is `PASSED`.
 
-## Key Concepts and Patterns
+## Key Concepts
 
 - **Per-stage isolation:** Each pipeline stage runs in its own VM with a separate VFS, user database, and process scheduler. This is how real CI systems prevent cross-stage contamination — build artifacts from the lint stage are not visible to the test stage unless explicitly passed.
 - **Stage-gated progression:** The pipeline uses `await` (sequential execution) — each stage waits for the previous one to complete. Combined with `&&` chaining inside commands, a failure in any stage would prevent subsequent stages from running. The return values are checked after all stages complete, not between them, but the pattern can easily be adapted to early-exit on failure.

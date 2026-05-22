@@ -11,7 +11,7 @@ Multi-tenant environments like shared hosting platforms, training VMs, or CI/CD 
 
 The concrete scenario: a team of developers (Alice and Bob) share a Linux VM. Alice stores secrets in her home directory. Bob should not be able to read those secrets. Bob should also be unable to run `sudo` commands, and his disk usage should be capped at 5 MB so he cannot fill the disk and cause a denial of service for Alice.
 
-## Module Imports
+## Modules Used
 
 ```ts
 import { SshClient, VirtualShell } from "../src";

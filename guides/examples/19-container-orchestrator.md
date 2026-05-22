@@ -5,11 +5,11 @@ group: Examples
 
 # Example 19 — Container Orchestrator
 
-## Real-World Scenario
+## The Scenario
 
 Container orchestrators like Kubernetes manage clusters of compute nodes, scheduling containers into **pods**, exposing them via **services** with load balancing, enforcing **network policies** for security, and supporting **rolling updates** for zero-downtime deployments. Each pod has resource limits (CPU/memory), each service provides stable DNS and load-balanced access to a set of pods, and network policies (implemented via iptables or CNI plugins) restrict which pods can communicate. This example simulates a Kubernetes-like orchestrator on a virtual network (`172.16.0.0/16`) with 7 pods across 4 tiers (web, API, database, cache), 4 services with round-robin load balancers, iptables-based network policies, a rolling update of the web tier from `nginx:1.25` to `nginx:1.26`, and cluster-wide network bandwidth reporting.
 
-## Modules Imported
+## Modules Used
 
 ```ts
 import { Baie, SshClient, type VirtualShell } from "../src";
@@ -206,7 +206,7 @@ console.log(`  Total processes: ${pods.reduce((sum, p) => sum + p.vm.users.listP
 
 The total process count across all pods is reported. Each command execution registers a process in the scheduler. This gives a rough measure of how much work each pod performed.
 
-## How Container Orchestration Works Under the Hood
+## Module Interactions
 
 **Pod-to-VM mapping:** Each `Pod` object wraps a `VirtualShell` (VM). The VM provides filesystem isolation (separate VFS), process isolation (separate scheduler and process table), and user isolation (separate `VirtualUserManager`). From the orchestrator's perspective, each pod is an isolated execution unit — just like a Kubernetes pod is an isolated container group.
 
@@ -289,7 +289,7 @@ When running `bun run examples/19-container-orchestrator.ts`:
 
 Bandwidth byte counts and process counts depend on command execution volume and will vary between runs.
 
-## Key Concepts and Patterns
+## Key Concepts
 
 - **Single flat cluster network:** Unlike the SaaS example (separate `Baie` per tenant), all pods share one `Baie` with a `/16` subnet. This mimics Kubernetes clusters where all pods get IPs from a single CIDR and communicate directly via the CNI plugin.
 - **Service abstraction with DNS + load balancer:** The `addDnsRecord()` + `addLoadBalancer()` pair provides discovery and distribution. Pods reference services by name (DNS), and the switch distributes traffic across healthy pods (load balancer). This is the virtual equivalent of kube-proxy + CoreDNS.

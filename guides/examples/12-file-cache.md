@@ -4,11 +4,11 @@ group: Examples
 ---
 # Example 12 — File Cache
 
-## Real-World Scenario
+## The Scenario
 
 In production systems, reading files from disk is orders of magnitude slower than reading from memory. A typical SSD has ~50µs latency; RAM has ~50ns — a 1000× difference. Operating systems mitigate this with the page cache: frequently accessed files or blocks are kept in free RAM so subsequent reads bypass disk entirely. This virtual filesystem cache mimics that behavior in user-space JavaScript. The scenario is a long-running daemon (e.g., an HTTP server or database) that repeatedly reads configuration files, logs, or other hot data. With caching enabled, the first read pays the (simulated) disk latency cost, but subsequent reads are served from memory instantly. The configurable eviction policy (LRU, LFU, or FIFO) lets you tune cache behavior for different access patterns.
 
-## Modules Imported
+## Modules Used
 
 ```ts
 import * as fs from "node:fs";
@@ -155,7 +155,7 @@ vfs.clearCache();
 
 Empties all cache entries. This is equivalent to dropping the page cache on Linux (`echo 3 > /proc/sys/vm/drop_caches`). All counters (hits, misses) are reset to zero.
 
-## How the Cache Works Under the Hood
+## Module Interactions
 
 The cache is a data structure with three layers:
 
@@ -199,7 +199,7 @@ bun run examples/12-file-cache.ts
 
 Note the second read appears instantly (no perceptible delay), while the first and post-invalidation reads have a ~5ms pause due to simulated disk latency.
 
-## Key Concepts and Patterns
+## Key Concepts
 
 - **Cache-aside pattern:** The VFS checks the cache first on read (`look-aside`), and on write it invalidates the cache entry (`write-invalidate`). This is the simplest correct caching strategy — no write-through or write-back complexity.
 - **Configurable eviction policy:** LRU is best for workloads with temporal locality (recently accessed files are likely to be accessed again). LFU works well for static hot files (configs, binaries). FIFO is a baseline with low overhead.

@@ -11,9 +11,7 @@ garbage collection.
 
 **Modules:** `VirtualShell` (via `enableIdleManagement()`)
 
----
-
-## Real-world scenario
+## The Scenario
 
 Virtual environments consume memory and CPU even when idle — processes
 remain resident, file descriptors stay open, and scheduler state is
@@ -35,9 +33,7 @@ This is conceptually similar to how cloud providers suspend idle VMs
 inactivity. At a smaller scale, it also mirrors how `systemd` manages
 idle services with `StopWhenUnneeded=`.
 
----
-
-## Imports and initialization
+## Modules Used
 
 ```typescript
 import { VirtualShell } from "../src";
@@ -50,9 +46,9 @@ The `VirtualShell` is initialized normally. The idle manager is optional
 and must be explicitly enabled — it is off by default to avoid surprise
 freezing.
 
----
+## Step-by-Step Walkthrough
 
-## Enabling idle management
+### Enabling idle management
 
 ```typescript
 shell.enableIdleManagement({
@@ -90,9 +86,7 @@ console.log(`  idle duration: ${shell.idleMs}ms`);
 Immediately after enabling, the shell is `"active"` and `idleMs` is close
 to 0 (or exactly 0 if no activity has been tracked yet).
 
----
-
-## Simulating activity
+### Simulating activity
 
 ```typescript
 await shell.executeCommand("echo 'user activity'", "root", "/root");
@@ -107,9 +101,7 @@ specific commands (e.g., a file watcher polling every few seconds).
 `pingIdle()` sets `lastActivity = Date.now()`, which resets the idle clock.
 The state remains `"active"`.
 
----
-
-## Waiting for freeze
+### Waiting for freeze
 
 ```typescript
 await new Promise((r) => setTimeout(r, 3_000));
@@ -135,9 +127,7 @@ The shell is still accessible via API — you can inspect state, read the VFS,
 etc. Only execution of new virtual commands and scheduler tick advancement
 are blocked.
 
----
-
-## Thawing on activity
+### Thawing on activity
 
 ```typescript
 shell.pingIdle();
@@ -155,9 +145,7 @@ Thaw is designed to be transparent: any API call that implies activity
 (commands, pings, VFS reads/writes) can trigger it. The goal is that
 callers don't need to know whether the shell was frozen — it just works.
 
----
-
-## Manual garbage collection
+### Manual garbage collection
 
 ```typescript
 const gcStats = shell.runGc();
@@ -191,9 +179,7 @@ The garbage collector scans:
 In this example, since no processes or files have been created, GC stats
 will show zeros — but the API still returns a valid stats object.
 
----
-
-## Disabling idle management
+### Disabling idle management
 
 ```typescript
 await shell.disableIdleManagement();
@@ -211,9 +197,11 @@ After disabling, the shell operates normally without any idle monitoring
 or auto-freezing. The `idleState` property is still readable but no longer
 transitions automatically.
 
----
+## Module Interactions
 
-## Expected output
+`IdleManager` is integrated into `VirtualShell` via `enableIdleManagement()`. It monitors shell activity through command execution and explicit pings, then freezes or thaws the shell's process scheduler accordingly. The garbage collector subsystem works alongside the idle manager to reclaim resources independent of the freeze/thaw cycle.
+
+## Expected Output
 
 When you run `bun run examples/24-idle-manager.ts`, the output shows:
 
@@ -234,9 +222,7 @@ When you run `bun run examples/24-idle-manager.ts`, the output shows:
   idle state: active
 ```
 
----
-
-## Key concepts
+## Key Concepts
 
 - **Time-based state machine:** The shell transitions between `active` and
   `frozen` based on wall-clock time since last activity, with a

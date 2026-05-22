@@ -4,11 +4,11 @@ group: Examples
 ---
 # Example 11 — Concurrent Clients
 
-## Real-World Scenario
+## The Scenario
 
 Multi-user systems like shared hosting environments, CI/CD runners, and classroom VMs must support many users operating on the same filesystem simultaneously. Each user expects isolated home directories but shared access to common spaces like `/tmp`. Real-world systems handle this with kernel-level locking, permission bits, and concurrent I/O schedulers. This example simulates three users — Alice, Bob, and Charlie — running file operations in parallel against the same virtual shell. It demonstrates that the VFS correctly serializes concurrent writes, preserves data integrity under parallel reads, and presents a consistent directory listing to all clients, exactly as a real POSIX filesystem would.
 
-## Modules Imported
+## Modules Used
 
 ```ts
 import { SshClient, VirtualShell } from "../src";
@@ -109,7 +109,7 @@ const results = await Promise.all(commands);
 
 Five commands run in parallel — a mix of echo greetings, `hostname`, and `whoami`. Each command runs in its own shell context under the respective user's identity. `whoami` returns the username of the client that issued it (Bob), proving that user identity is correctly scoped to the `SshClient` instance even under concurrent execution.
 
-## How Concurrent Operations Work Under the Hood
+## Module Interactions
 
 The VFS is a **single-threaded synchronous store** wrapped in async APIs. When multiple `SshClient` instances issue operations simultaneously:
 
@@ -161,7 +161,7 @@ bun run examples/11-concurrent-clients.ts
 
 Timestamps in the output will vary, but the structure and exit codes are deterministic.
 
-## Key Concepts and Patterns
+## Key Concepts
 
 - **Shared VFS, multiple auth contexts:** All clients share one filesystem but authenticate as different users. This mirrors real-world multitenancy where isolation is at the permission level, not the filesystem level.
 - **`Promise.all()` for concurrency simulation:** Without needing threads or worker processes, `Promise.all()` creates concurrent pressure on the VFS. This is the idiomatic JavaScript approach to testing shared-state correctness.

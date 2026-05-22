@@ -5,7 +5,7 @@ group: Examples
 
 # Example 01 — SSH Server Lifecycle
 
-## The Real-World Scenario
+## The Scenario
 
 When you deploy an SSH server in production — whether it is a bastion host that gates access to internal infrastructure, a jump box for cloud VPCs, an audit server that records every keystroke, or an SSH honeypot designed to trap attackers — you need deep observability into the server's lifecycle. You need to know:
 
@@ -17,7 +17,7 @@ When you deploy an SSH server in production — whether it is a bastion host tha
 
 Real SSH daemons like OpenSSH handle these through log files (`/var/log/auth.log`) and monitoring hooks. In `virtual-env-js`, the `VirtualSshServer` (implemented by `SshMimic` in `src/modules/SSHMimic/index.ts`) exposes all of this as typed events via Node.js's `EventEmitter`. This example wires up every lifecycle event and demonstrates the full state machine from boot to shutdown, including the IP-based lockout mechanism that protects against brute-force attacks.
 
-## Module Imports
+## Modules Used
 
 Three classes are imported from the library barrel (`../src`), each playing a distinct role:
 
@@ -215,13 +215,11 @@ ssh.stop();
 
 If `stop()` is called when the server is not running (e.g., if `start()` was never called or failed), the `"stop"` event is never emitted because the `if (this.server)` guard prevents the `close()` call.
 
-## Module Interactions Under the Hood
+## Module Interactions
 
 `VirtualSshServer` (SshMimic) holds a reference to the `VirtualShell` instance but does not wrap or proxy it. The shell is used as a dependency — the authentication handler calls `shell.users.verifyPassword()`, `shell.users.getAuthorizedKeys()`, `shell.users.registerSession()`, and methods on `shell.vfs` (like `exists()`, `mkdir()`, `writeFile()` for home directory bootstrapping). The `SshClient` also holds a reference to the same `VirtualShell` and calls into the same VFS and user manager. This is a textbook **dependency injection** pattern: the shell is the single source of truth, and both server and client are consumers that share state through it.
 
 No real SSH protocol traffic flows between the client and server in this example because `SshClient` does not use the `ssh2` library at all. If you wanted end-to-end protocol-level testing, you would need a real SSH client connecting over TCP to the port that `SshMimic` bound to.
-
-## Under the Hood: Internal Mechanics
 
 ### EventEmitter Architecture (Node.js `events` module)
 
@@ -268,7 +266,7 @@ Lockout cleared
 
 Note the sequence: the `SshClient.exec()` command output appears at line 6, interleaved with the lockout demo because the lockout failures come after the client execution in the code. The `client:connect` event fires when the `ssh2` server establishes a connection, but since the example uses `SshClient` (which does not connect to the server), those events would only fire if a real SSH client connected. In the example output, the `client:connect` and `auth:success` events appear if the server accepted a real connection — but the `SshClient` bypass does not trigger them. The expected output reflects the actual code flow: the lockout failures are simulated via the public API, not via real SSH connections.
 
-## Key Concepts and Patterns
+## Key Concepts
 
 - **Event-driven architecture**: The server is observable via typed events rather than requiring polling, callbacks, or log file scraping. Each event carries a typed payload that external monitoring code can consume.
 - **IP-based lockout**: Lockouts are scoped to IP addresses, not usernames. This means one user's repeated failures from a single IP affect all users from that IP. This mirrors how real fail2ban and OpenSSH `MaxAuthTries` work. An attacker cannot bypass the lockout by trying different usernames.

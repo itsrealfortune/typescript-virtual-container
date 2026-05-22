@@ -4,11 +4,11 @@ group: Examples
 ---
 # Example 14 — Swap Store
 
-## Real-World Scenario
+## The Scenario
 
 Operating systems use swap space to extend apparent RAM: when memory pressure is high, the kernel moves inactive pages to a dedicated swap partition or swap file on disk, then transparently loads them back when needed. This virtual swap store implements the same concept for the VFS's file cache. When files exceed a configurable size threshold (`evictionThresholdBytes`), their content is automatically offloaded to individual swap files on the real filesystem during `flushMirror()`. The swap store is designed for memory-constrained environments like embedded devices, low-RAM containers, or serverless functions where keeping every file's content in RAM is prohibitively expensive. Files are swapped out on a per-file basis, and reloading is O(1) — the swap file is found by path hash, not scanned.
 
-## Modules Imported
+## Modules Used
 
 ```ts
 import * as fs from "node:fs";
@@ -164,7 +164,7 @@ fs.rmSync(testDir, { recursive: true, force: true });
 
 `clearSwap()` deletes all swap files from disk and resets the swap store's internal state. Then the entire `.vfs-swap-demo` directory is recursively removed. After cleanup, no traces of the swap or snapshot remain on the filesystem.
 
-## How Swap Works Under the Hood
+## Module Interactions
 
 The swap store is a separate subsystem from the main VFS storage layer:
 
@@ -221,7 +221,7 @@ bun run examples/14-swap-store.ts
 
 The "0 files" LRU result may vary depending on implementation details of what remains in RAM after the manual swap-out.
 
-## Key Concepts and Patterns
+## Key Concepts
 
 - **Size-based eviction threshold:** Files below `evictionThresholdBytes` are "hot" — they stay in RAM. Files above it are "cold" — they get swapped to disk. This is analogous to the Linux kernel's `vm.swappiness` parameter, but applied at the file level rather than the page level.
 - **O(1) swap-in via path hashing:** Because swap files are named by a deterministic hash of the VFS path, reloading a swapped file does not require scanning a swap table. This is critical for large swap stores with hundreds of files.

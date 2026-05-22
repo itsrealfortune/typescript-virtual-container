@@ -5,7 +5,7 @@ group: Examples
 
 # Example 02 — SSH/SFTP Shared State
 
-## The Real-World Scenario
+## The Scenario
 
 In production Linux environments, users regularly access the same filesystem through multiple protocols. A developer might:
 
@@ -18,7 +18,7 @@ In all these cases, the user expects **immediate consistency** — a file writte
 
 This example demonstrates how `virtual-env-js` achieves that consistency through a single shared `VirtualShell` instance. Both the SSH server (represented here by direct VFS writes as a stand-in for SSH activity) and the SFTP server (`VirtualSftpServer`, implemented by `SftpMimic` in `src/modules/SSHMimic/sftp.ts`) access the same `VirtualFileSystem` object. Because JavaScript passes objects by reference, there is exactly one filesystem in memory — no sync, no replication lag, no cache invalidation.
 
-## Module Imports
+## Modules Used
 
 Two classes are imported from the library barrel:
 
@@ -184,7 +184,7 @@ console.log("SFTP server stopped");
 
 `SftpMimic.stop()` (line 418) closes the underlying `ssh2` `Server` (if running) and emits the `"stop"` event in the close callback. If the server was already stopped or never started, the `if (this.server)` guard prevents a crash. The VFS remains intact — stopping the SFTP server does not clear or flush the filesystem. This means you could start a new SFTP server on the same shell and still see all files.
 
-## Module Interactions Under the Hood
+## Module Interactions
 
 The critical design insight is **JavaScript reference sharing**. When you write:
 
@@ -207,8 +207,6 @@ this.vfs = new VirtualFileSystem();
 So `shell.vfs` and `sftp._vfs` point to the exact same `VirtualFileSystem` instance. The `Map` that stores all file content is shared. When `shell.vfs.writeFile()` is called, it mutates the `_root` tree of that shared instance. When `sftp.getVfs().readFile()` is later called, it reads from that same `_root` tree.
 
 This pattern is called **dependency injection**: the filesystem is a dependency that is created once and injected into all consumers (the SSH server, the SFTP server, the SSH client). There is no synchronization step, no event bus for file changes, no polling loop. The consistency is guaranteed by the JavaScript runtime's memory model — two references to the same object always see the same state.
-
-## Under the Hood: VFS Internal Mechanics
 
 ### Tree Structure
 
@@ -280,7 +278,7 @@ Line-by-line explanation:
 5. **`Files in /shared: hello.txt, sftp-upload.txt`** — the `list` call returns both filenames in alphabetical order. The order is `hello.txt` before `sftp-upload.txt` because `h` < `s` in Unicode.
 6. **`SFTP server stopped`** — the `sftp.stop()` call completed without error.
 
-## Key Concepts and Patterns
+## Key Concepts
 
 - **Shared-nothing inverted**: Rather than each service maintaining its own filesystem and syncing changes (which is how real distributed systems often work), all services share a single VFS reference. This eliminates sync bugs, race conditions, and cache invalidation problems that plague real SFTP/SCP/SSH protocol stacks.
 - **Dependency injection for consistency**: The `VirtualShell` is the single source of truth. Any module that needs filesystem or user access receives the shell (or its VFS) in its constructor. This makes testing straightforward — you can pass a pre-populated VFS to simulate any scenario.

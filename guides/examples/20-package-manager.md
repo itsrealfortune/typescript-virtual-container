@@ -5,11 +5,11 @@ group: Examples
 
 # Example 20 — Package Manager
 
-## Real-World Scenario
+## The Scenario
 
 Linux package managers like `apt` (Debian/Ubuntu) and `dnf` (Fedora/RHEL) provide a unified interface for discovering, installing, upgrading, and removing software. They maintain a **registry** of available packages (sourced from remote repositories), track which packages are **installed** on the system, resolve dependencies, and execute installation scripts. Users search for packages (`apt-cache search python`), inspect details (`apt-cache show curl`), install (`apt install jq`), and remove (`apt remove tree`). This example demonstrates the full `VirtualPackageManager` API — searching the registry, listing available and installed packages, inspecting package details, installing and removing packages, verifying installation status, and integrating with the SSH server for remote package management.
 
-## Modules Imported
+## Modules Used
 
 ```ts
 import { VirtualShell, VirtualSshServer } from "../src";
@@ -161,7 +161,7 @@ ssh.stop();
 
 A `VirtualSshServer` is created on a dynamic port, bound to the shell that contains the package manager. This demonstrates that the package manager is fully usable over SSH — a remote client could SSH in and run `install`, `remove`, `search`, or `list` commands through the shell. The server is started and immediately stopped after logging its port, proving the integration works without keeping the server running.
 
-## How the Package Manager Works Under the Hood
+## Module Interactions
 
 **Registry structure:** The `VirtualPackageManager` holds a `Map<string, PackageDef>` called the registry. This map is populated at construction time from an embedded JSON dataset. Each `PackageDef` has:
 
@@ -241,7 +241,7 @@ SSH server on port <dynamic>
 
 `<N>` (available count) and `<M>` (initial installed count) depend on the embedded registry size and base package set. The search output shows `python3`, `python3-pip`, and `python3-venv` — the exact list may vary. The SSH port is dynamically assigned.
 
-## Key Concepts and Patterns
+## Key Concepts
 
 - **Registry vs. installed separation:** The package manager maintains two distinct data structures — a read-only registry (all known packages) and a mutable installed set (packages currently on the system). This mirrors the `apt` model where `/var/lib/apt/lists/` holds the registry and `/var/lib/dpkg/status` tracks installed packages.
 - **Search and exact lookup duality:** Two search mechanisms serve different needs: `search()` for fuzzy discovery (users typing partial names) and `findInRegistry()`/`show()` for exact metadata inspection (scripts checking for specific packages).

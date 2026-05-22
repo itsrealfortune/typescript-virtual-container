@@ -11,9 +11,7 @@ for isolation, and traffic statistics on `VirtualSwitch`.
 
 **Modules:** `VirtualShell`, `VirtualSwitch`
 
----
-
-## Real-world scenario
+## The Scenario
 
 You have a simulated multi-tier infrastructure with three VMs: two
 application servers (`app-1`, `app-2`) and one database server (`db-1`).
@@ -35,9 +33,7 @@ The `VirtualSwitch` is a standalone network fabric that operates
 independently of any single `VirtualShell` — think of it as a software
 switch with built-in DNS, QoS, and load balancing capabilities.
 
----
-
-## Imports
+## Modules Used
 
 ```typescript
 import { VirtualShell, VirtualSwitch } from "../src";
@@ -47,9 +43,9 @@ We import both `VirtualShell` (the VM abstraction) and `VirtualSwitch`
 (the network fabric). The switch exists independently of any shell —
 shells are attached to it later.
 
----
+## Step-by-Step Walkthrough
 
-## Attaching VMs
+### Attaching VMs
 
 ```typescript
 const net = new VirtualSwitch("10.0.0.0/24");
@@ -86,9 +82,7 @@ console.log(`\n  Total ports: ${net.getPorts().size}`);
 `getPorts()` returns the internal `Map<MacAddress, PortEntry>` where each
 entry tracks the VM's name, shell reference, IP, MAC, and traffic counters.
 
----
-
-## DNS records
+### DNS records
 
 ```typescript
 net.addDnsRecord("app.example.com", "10.0.0.10");
@@ -115,9 +109,7 @@ string (or a single IP, depending on implementation). This is a simple
 DNS — no CNAME, no TTL, no recursion — but sufficient for service
 discovery within the virtual network.
 
----
-
-## Traffic shaping
+### Traffic shaping
 
 ```typescript
 net.setTrafficRule(port1.mac, {
@@ -143,9 +135,7 @@ are applied to compute the simulated delivery time and bandwidth
 consumption. The latency/jitter is modeled as an additional fixed delay
 plus a uniform random offset.
 
----
-
-## Qdisc (queuing discipline)
+### Qdisc (queuing discipline)
 
 ```typescript
 net.addQdiscRule(port1.mac, {
@@ -161,7 +151,7 @@ queue level:
 
 - **`type: "netem"`** — models the Linux `netem` (Network Emulator) qdisc,
   the standard tool for emulating WAN properties
-- **`latencyMs: 100`** — additional queue-level delay (stacked on top of
+- **`latencyMs: 100`** — additional queue-level latency (stacked on top of
   the traffic rule's 50ms)
 - **`packetLossPct: 5`** — randomly drops 5% of packets to simulate an
   unreliable link
@@ -180,9 +170,7 @@ for (const rule of net.getQdiscRules(port1.mac)) {
 `getQdiscRules(mac)` retrieves all queuing disciplines applied to the
 given MAC.
 
----
-
-## Load balancing
+### Load balancing
 
 ```typescript
 net.addLoadBalancer({
@@ -224,9 +212,7 @@ weighted target pool. The weighted pool expands targets according to their
 weight (target with weight 2 appears twice), then round-robin cycles
 through the expanded array.
 
----
-
-## Network partitions
+### Network partitions
 
 ```typescript
 net.setPartitions([
@@ -256,9 +242,7 @@ source and destination are in the same group. If not, the action is
 Partitions are the switch-level equivalent of network ACLs or security
 groups in cloud environments (AWS security groups, GCP firewall rules).
 
----
-
-## Traffic statistics
+### Traffic statistics
 
 ```typescript
 console.log(`  Bytes sent by app-1: ${net.getBytesSent(port1.mac)}`);
@@ -275,9 +259,7 @@ increments the sent counter and the destination MAC's received counter
 by the packet size, providing observable statistics without needing to
 actually transmit bytes over a physical network.
 
----
-
-## Detach and cleanup
+### Detach and cleanup
 
 ```typescript
 net.detach(port1.mac);
@@ -295,9 +277,11 @@ The VMs (`VirtualShell` instances) are not destroyed — they continue to
 exist independently. They simply lose their network connectivity via this
 switch.
 
----
+## Module Interactions
 
-## Expected output
+`VirtualSwitch` is a standalone network fabric independent of any `VirtualShell`. Shells are attached to the switch as ports. The switch provides DNS resolution, traffic shaping, qdisc rules, load balancing, partition isolation, and traffic statistics — all as built-in services. `VirtualShell` instances need only configure their internal network interface to use the switch for traffic.
+
+## Expected Output
 
 When you run `bun run examples/26-virtual-switch-advanced.ts`, the output
 shows:
@@ -334,9 +318,7 @@ shows:
   Ports remaining: 0
 ```
 
----
-
-## Key concepts
+## Key Concepts
 
 - **Layer-2 bridge with Layer-3 features:** The switch attaches VMs by
   MAC address (L2) but also supports DNS, routing, and load balancing (L3).

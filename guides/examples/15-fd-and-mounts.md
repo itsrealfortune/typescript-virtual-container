@@ -5,11 +5,11 @@ group: Examples
 
 # Example 15 — File Descriptors & Mounts
 
-## Real-World Scenario
+## The Scenario
 
 Operating systems manage open file handles through a **file descriptor table** — a per-process mapping of integer FDs to open file descriptions. When a process calls `open()`, the kernel allocates the lowest available FD number and points it to an internal file object holding the current offset, access flags, and inode reference. POSIX defines `dup()` and `dup2()` for duplicating descriptors (used by shells for I/O redirection like `2>&1`), and `close()` for releasing them. Meanwhile, **mount points** let the OS graft one filesystem tree onto another — `mount --bind` attaches a directory elsewhere, `mount -o ro` enforces read-only access, and `unmount` detaches it. This example demonstrates both subsystems inside the virtual environment: managing FDs with `fdOpen`, `fdDup`, `fdDup2`, `fdClose`, and `closeAllFds`, plus mounting a real host directory into the VFS with read-only enforcement.
 
-## Modules Imported
+## Modules Used
 
 ```ts
 import * as fs from "node:fs";
@@ -181,7 +181,7 @@ fs.rmSync(hostDir, { recursive: true, force: true });
 
 Removes the temporary host directory from the real filesystem. This is cleanup — nothing to do with the VFS itself.
 
-## How FDs and Mounts Work Under the Hood
+## Module Interactions
 
 **FD table internals:** The VFS maintains a `Map<number, FdEntry>` where each `FdEntry` stores the file path, the flags (read/write mode), and the current seek position. `fdOpen` creates a new entry with position 0 and the given flags. `fdDup` creates a new entry with the same path, same flags, and same position (shallow copy of the file description, not the FD number). `fdDup2` behaves like `dup` but allows specifying the target FD number, closing the target first if it is occupied. `fdClose` deletes the entry. `closeAllFds` clears the entire map. FD numbers 0, 1, and 2 are reserved but not automatically created — they exist only if explicitly allocated.
 
@@ -218,7 +218,7 @@ Unmounted /mnt/host
 
 FD numbers (3, 4, 5, 100) are deterministic because the FD allocator always assigns the lowest available integer. The mount host path in the output will show the actual working directory.
 
-## Key Concepts and Patterns
+## Key Concepts
 
 - **POSIX FD emulation:** `fdOpen`/`fdClose`/`fdDup`/`fdDup2` mirror the `open`/`close`/`dup`/`dup2` POSIX syscalls. The FD allocator uses lowest-available-number semantics identical to the kernel.
 - **Descriptor duplication vs. reopening:** `fdDup` creates a new FD pointing to the same file description (shared offset and flags). Opening the same file a second time creates an independent file description with its own offset. This matters for concurrent reads — duplicated FDs share the seek position, separate `fdOpen` calls do not.

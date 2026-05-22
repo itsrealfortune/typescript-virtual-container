@@ -19,7 +19,7 @@ This example implements the complete rate-limiting lifecycle in about 60 lines o
 
 The lockout duration is set to 5 seconds for the demo (so you can see the full cycle in a single terminal session). In production, typical values range from 5 minutes for aggressive protection to 24 hours for high-security environments.
 
-## Module Imports
+## Modules Used
 
 ```ts
 import { VirtualShell, VirtualSshServer } from "../src";

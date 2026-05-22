@@ -17,7 +17,7 @@ This example demonstrates a better approach: build the desired filesystem state 
 
 The concrete scenario: a web application with a configuration directory and a public assets directory. Multiple tests need to read config files, modify them, and list directory contents — all starting from the same initial state, without interference between tests.
 
-## Module Imports
+## Modules Used
 
 ```ts
 import type { VfsSnapshot } from "../src";

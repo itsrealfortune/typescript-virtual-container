@@ -14,7 +14,7 @@ In-memory state is great for tests: it is fast, deterministic, and requires no c
 
 This example demonstrates two persistence strategies built into `VirtualFileSystem`: automatic binary snapshots to disk (FS mode) and manual JSON snapshots for portability (memory mode). Both let you save and restore the entire filesystem tree without touching real disk in the traditional sense — the "disk" in FS mode is still just a binary blob managed by the library.
 
-## Module Imports
+## Modules Used
 
 ```ts
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";

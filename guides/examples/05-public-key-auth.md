@@ -12,7 +12,7 @@ In production, public key auth is set up by appending a public key to `~/.ssh/au
 
 The simulated SSH auth flow at the end of the example shows how the server would verify a client: it looks up the user's stored keys, compares the algorithm and key data, and either grants access or falls back to password authentication.
 
-## Module Imports
+## Modules Used
 
 ```ts
 import { VirtualShell } from "../src";

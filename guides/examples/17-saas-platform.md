@@ -5,11 +5,11 @@ group: Examples
 
 # Example 17 — Multi-Tenant SaaS Platform
 
-## Real-World Scenario
+## The Scenario
 
 Software-as-a-Service providers must host multiple customers on shared infrastructure while guaranteeing **hard isolation** between tenants. Each customer's data, user accounts, network traffic, and resource consumption must be invisible to every other customer. Real SaaS platforms achieve this through a combination of virtual private clouds (VPCs), per-tenant database instances, dedicated user directories, and network ACLs. This example simulates a SaaS provider with three tenants (Acme Corp, Globex Inc, Initech), each on an isolated subnet with their own pair of application and database VMs, user accounts, resource caps, and SSH access. After provisioning, cross-tenant isolation is verified by attempting network connections between tenants, and a consolidated resource usage report is generated.
 
-## Modules Imported
+## Modules Used
 
 ```ts
 import { Baie, SshClient, type VirtualShell, VirtualSshServer } from "../src";
@@ -172,7 +172,7 @@ for (const tenant of tenants) {
 
 Each tenant's SSH server is stopped, releasing the bound port. This is the virtual equivalent of terminating customer-facing infrastructure.
 
-## How Multi-Tenant Isolation Works Under the Hood
+## Module Interactions
 
 **Network isolation via separate Baie instances:** The `Baie` class internally creates a `VirtualSwitch` bound to the given subnet. Each switch maintains its own ARP table, routing table, DNS records, and load balancer state. Because each tenant gets a separate `Baie` with a non-overlapping subnet, there is no network path between tenants unless explicitly bridged. The `VirtualSwitch.route()` method checks against its own routing table only — it has no knowledge of other `Baie` instances.
 
@@ -237,7 +237,7 @@ All SSH servers stopped
 
 The SSH server ports are dynamically assigned and will vary between runs. All 6 cross-tenant isolation checks should show `🔒 isolated`.
 
-## Key Concepts and Patterns
+## Key Concepts
 
 - **Baie-per-tenant isolation:** Each tenant gets their own `Baie` (network namespace + switch) with a dedicated subnet. This is the strongest form of network isolation — there is no routing between subnets unless explicitly configured. This mirrors how public clouds use VPCs to isolate customer networks.
 - **App/DB tier separation within a tenant:** Each tenant has two VMs, simulating a two-tier architecture. The app VM runs application code; the DB VM runs the database. In a real deployment, these would be on separate subnets within the tenant's VPC with firewall rules between them.
