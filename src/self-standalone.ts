@@ -395,7 +395,7 @@ async function runReadlineShell(): Promise<void> {
 			let promptText = challenge.prompt;
 			while (true) {
 				const typed = await askHiddenQuestion(rl, promptText);
-				const step = challenge.onPassword(typed, virtualShell);
+				const step = await challenge.onPassword(typed, virtualShell);
 				if (step.result === null) {
 					promptText = step.nextPrompt ?? promptText;
 					continue;

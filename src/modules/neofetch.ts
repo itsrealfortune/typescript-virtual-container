@@ -232,7 +232,7 @@ function resolvePackagesLabel(): string {
 function resolveCpuLabel(info: NeofetchInfo): string {
 	const hostCpus = os.cpus();
 	const cap = info.cpuCapCores;
-	const cpus = cap !== null && cap > 0 ? hostCpus.slice(0, cap) : hostCpus;
+	const cpus = cap !== undefined && cap > 0 ? hostCpus.slice(0, cap) : hostCpus;
 	if (cpus.length === 0) {
 		return "unknown";
 	}
@@ -258,8 +258,8 @@ function resolveDefaults(info: NeofetchInfo): Required<NeofetchInfo> {
 	const hostTotalMem = os.totalmem();
 	const hostFreeMem = os.freemem();
 	const ramCap = info.ramCapBytes;
-	const totalMem = ramCap !== null && ramCap > 0 ? Math.min(hostTotalMem, ramCap) : hostTotalMem;
-	const freeMem = ramCap !== null && ramCap > 0 ? Math.floor(totalMem * (hostFreeMem / hostTotalMem)) : hostFreeMem;
+	const totalMem = ramCap !== undefined && ramCap > 0 ? Math.min(hostTotalMem, ramCap) : hostTotalMem;
+	const freeMem = ramCap !== undefined && ramCap > 0 ? Math.floor(totalMem * (hostFreeMem / hostTotalMem)) : hostFreeMem;
 	const usedMem = Math.max(0, totalMem - freeMem);
 	const shellProps = info.shellProps;
 

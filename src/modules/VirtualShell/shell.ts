@@ -72,7 +72,7 @@ export function startShell(
 	authUser: string,
 	hostname: string,
 	sessionId: string | null,
-	remoteAddress,
+	remoteAddress: string,
 	terminalSize: TerminalSize,
 	shell: VirtualShell,
 ): void {

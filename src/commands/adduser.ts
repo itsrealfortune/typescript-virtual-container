@@ -43,10 +43,10 @@ export const adduserCommand: ShellModule = {
 		type Step = "new" | "retype";
 		let step: Step = "new";
 
-		const onPassword = (
+		const onPassword = async (
 			input: string,
 			sh: VirtualShell,
-		): { result: CommandResult | null; nextPrompt?: string } => {
+		): Promise<{ result: CommandResult | null; nextPrompt?: string }> => {
 			if (step === "new") {
 				if (input.length < 1) {
 					return {

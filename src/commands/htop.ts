@@ -57,14 +57,14 @@ export const htopCommand: ShellModule = {
 		const hostTotalMem  = os.totalmem();
 		const hostFreeMem   = os.freemem();
 		const ramCap = shell.resourceCaps?.ramCapBytes;
-		const totalMem  = ramCap === null ? hostTotalMem : Math.min(hostTotalMem, ramCap);
+		const totalMem  = ramCap === undefined ? hostTotalMem : Math.min(hostTotalMem, ramCap);
 		const freeMem   = ramCap === null ? hostFreeMem : Math.floor(totalMem * (hostFreeMem / hostTotalMem));
 		const usedMem   = totalMem - freeMem;
 		const swapTotal = Math.floor(totalMem * 0.5);
 		const swapUsed  = Math.floor(swapTotal * 0.02);
 
 		const hostCpus       = os.cpus();
-		const cpuCapCount    = shell.resourceCaps?.cpuCapCores === null ? hostCpus.length : Math.min(shell.resourceCaps.cpuCapCores, hostCpus.length);
+		const cpuCapCount    = shell.resourceCaps?.cpuCapCores === undefined ? hostCpus.length : Math.min(shell.resourceCaps.cpuCapCores, hostCpus.length);
 		const cpuCount   = cpuCapCount || 4;
 		const uptimeMs   = Date.now() - shell.startTime;
 		const sessions   = shell.users.listActiveSessions();

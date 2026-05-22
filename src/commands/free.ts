@@ -20,8 +20,8 @@ export const freeCommand: ShellModule = {
 		const hostTotalB = os.totalmem();
 		const hostFreeB = os.freemem();
 		const ramCap = shell.resourceCaps?.ramCapBytes;
-		const osTotalB = ramCap === null ? hostTotalB : Math.min(hostTotalB, ramCap);
-		const osFreeB = ramCap === null ? hostFreeB : Math.floor(osTotalB * (hostFreeB / hostTotalB));
+		const osTotalB = ramCap === undefined ? hostTotalB : Math.min(hostTotalB, ramCap);
+		const osFreeB = ramCap === undefined ? hostFreeB : Math.floor(osTotalB * (hostFreeB / hostTotalB));
 		const usedB = osTotalB - osFreeB;
 		const sharedB = Math.floor(osTotalB * 0.02);
 		const buffersB = Math.floor(osTotalB * 0.05);

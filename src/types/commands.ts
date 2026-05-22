@@ -62,10 +62,10 @@ export interface SudoChallenge {
 	 * Returns a `CommandResult` written to the terminal, or `null` to show
 	 * another prompt (pass `nextPrompt` to change the prompt text).
 	 */
-	onPassword?: (input: string, shell: VirtualShell) => {
+	onPassword?: (input: string, shell: VirtualShell) => Promise<{
 		result: CommandResult | null;
 		nextPrompt?: string;
-	};
+	}>;
 }
 
 /** Generic password challenge — used by adduser, passwd, deluser. */

@@ -89,7 +89,7 @@ function resolveFastPasswordHash(): boolean {
 	const configured = process.env.SSH_MIMIC_FAST_PASSWORD_HASH;
 	return (
 		Boolean(configured) &&
-		!["0", "false", "no", "off"].includes(configured.toLowerCase())
+		!["0", "false", "no", "off"].includes(configured!.toLowerCase())
 	);
 }
 

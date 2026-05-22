@@ -14,7 +14,7 @@ export const lscpuCommand: ShellModule = {
 	run: ({ shell }) => {
 		const hostCpus = os.cpus();
 		const cpuCap = shell.resourceCaps?.cpuCapCores;
-		const cpus = cpuCap !== null && cpuCap > 0 ? hostCpus.slice(0, cpuCap) : hostCpus;
+		const cpus = cpuCap !== undefined && cpuCap > 0 ? hostCpus.slice(0, cpuCap) : hostCpus;
 		const arch = os.arch();
 		const endian = os.endianness();
 		const cores = cpus.length;

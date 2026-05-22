@@ -60,10 +60,10 @@ export const deluserCommand: ShellModule = {
 		}
 
 		// Interactive confirmation
-		const onPassword = (
+		const onPassword = async (
 			input: string,
 			sh: VirtualShell,
-		): { result: CommandResult | null; nextPrompt?: string } => {
+		): Promise<{ result: CommandResult | null; nextPrompt?: string }> => {
 			if (input.trim() !== username) {
 				return {
 					result: {

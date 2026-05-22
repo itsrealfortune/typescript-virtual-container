@@ -15,8 +15,8 @@ export class VirtualVpn {
 	private readonly _routes: Map<string, VirtualVpn> = new Map();
 
 	constructor(
-		private readonly _baieA: { switch: { route: (p: Packet) => PacketResult; subnet: string } },
-		private readonly _baieB: { switch: { route: (p: Packet) => PacketResult; subnet: string } },
+		private readonly _baieA: { switch: { route: (p: Packet) => Promise<PacketResult>; subnet: string } },
+		private readonly _baieB: { switch: { route: (p: Packet) => Promise<PacketResult>; subnet: string } },
 		options: VpnOptions,
 	) {
 		this._key = deriveKey(options.key);
@@ -47,7 +47,7 @@ export class VirtualVpn {
 		this._routes.set(bSubnet, this);
 	}
 
-	private _routeTo(packet: Packet): PacketResult {
+	private async _routeTo(packet: Packet): Promise<PacketResult> {
 		const aSubnet = this._baieA.switch.subnet.split("/")[0] as string;
 		const aPrefix = aSubnet.slice(0, aSubnet.lastIndexOf("."));
 		const bSubnet = this._baieB.switch.subnet.split("/")[0] as string;

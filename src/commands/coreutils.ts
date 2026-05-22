@@ -64,7 +64,7 @@ export const nprocCommand: ShellModule = {
 	params: ["[--all]"],
 	run: ({ shell }) => {
 		const cap = shell.resourceCaps?.cpuCapCores;
-		const count = cap !== null && cap > 0 ? cap : 4;
+		const count = cap !== undefined && cap > 0 ? cap : 4;
 		return { stdout: `${count}`, exitCode: 0 };
 	},
 };

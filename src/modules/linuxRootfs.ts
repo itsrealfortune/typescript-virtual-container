@@ -675,7 +675,7 @@ export function refreshProc(
 	// meminfo — real host values, Linux-compatible format (or capped)
 	const hostTotalMemKb = Math.floor(os.totalmem() / 1024);
 	const hostFreeMemKb  = Math.floor(os.freemem() / 1024);
-	const ramCapKb       = resourceCaps?.ramCapBytes === null ? null : Math.floor(resourceCaps.ramCapBytes / 1024);
+	const ramCapKb       = resourceCaps?.ramCapBytes === undefined ? null : Math.floor(resourceCaps.ramCapBytes / 1024);
 	const totalMemKb     = ramCapKb === null ? hostTotalMemKb : Math.min(hostTotalMemKb, ramCapKb);
 	const freeMemKb      = ramCapKb === null ? hostFreeMemKb : Math.floor(totalMemKb * (hostFreeMemKb / hostTotalMemKb));
 	const availMemKb     = Math.floor(freeMemKb * 0.95);
@@ -745,7 +745,7 @@ export function refreshProc(
 
 	// cpuinfo — real host CPU passthrough + x86 feature flags matching Firecracker Xeon (or capped)
 	const hostCpus = os.cpus();
-	const cpuCapCount = resourceCaps?.cpuCapCores === null ? hostCpus.length : Math.min(resourceCaps.cpuCapCores, hostCpus.length);
+	const cpuCapCount = resourceCaps?.cpuCapCores === undefined ? hostCpus.length : Math.min(resourceCaps.cpuCapCores, hostCpus.length);
 	const cpus = hostCpus.slice(0, cpuCapCount);
 	const cpuLines: string[] = [];
 	for (let i = 0; i < cpus.length; i++) {
@@ -1109,7 +1109,7 @@ export function refreshProc(
 
 	// /sys/fs/cgroup — update resource caps dynamically
 	const effectiveRamCap = resourceCaps?.ramCapBytes ?? os.totalmem();
-	const effectiveCpuQuota = resourceCaps?.cpuCapCores === null ? -1 : resourceCaps.cpuCapCores * 100000;
+	const effectiveCpuQuota = resourceCaps?.cpuCapCores === undefined ? -1 : resourceCaps.cpuCapCores * 100000;
 	ensureDir(vfs, "/sys/fs/cgroup/memory");
 	write(vfs, "/sys/fs/cgroup/memory/memory.limit_in_bytes", `${effectiveRamCap}\n`);
 	write(vfs, "/sys/fs/cgroup/memory/memory.usage_in_bytes", `${effectiveRamCap - os.freemem()}\n`);
@@ -1247,7 +1247,7 @@ function bootstrapSys(vfs: VirtualFileSystem, hostname: string, props: ShellProp
 	ensureFile(vfs, "/sys/fs/cgroup/memory/memory.usage_in_bytes",      `${ramCapBytes - os.freemem()}\n`);
 	ensureFile(vfs, "/sys/fs/cgroup/memory/memory.memsw.limit_in_bytes",`${ramCapBytes}\n`);
 	ensureFile(vfs, "/sys/fs/cgroup/cpu/cpu.cfs_period_us",             "100000\n");
-	ensureFile(vfs, "/sys/fs/cgroup/cpu/cpu.cfs_quota_us",              resourceCaps?.cpuCapCores === null ? "-1\n" : `${resourceCaps.cpuCapCores * 100000}\n`);
+	ensureFile(vfs, "/sys/fs/cgroup/cpu/cpu.cfs_quota_us",              resourceCaps?.cpuCapCores === undefined ? "-1\n" : `${resourceCaps.cpuCapCores * 100000}\n`);
 	ensureFile(vfs, "/sys/fs/cgroup/cpu/cpu.shares",                    "1024\n");
 
 	ensureDir(vfs, "/sys/kernel");

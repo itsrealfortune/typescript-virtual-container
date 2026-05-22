@@ -67,7 +67,7 @@ export const rmCommand: ShellModule = {
 				loginShell: false,
 				prompt,
 				mode: "confirm",
-				onPassword: (input, sh) => {
+				onPassword: async (input, sh) => {
 					const answer = input.trim().toLowerCase();
 					if (answer !== "y" && answer !== "yes") {
 						return { result: { stdout: "rm: cancelled\n", exitCode: 1 } };
