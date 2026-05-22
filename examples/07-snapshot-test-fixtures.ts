@@ -19,7 +19,7 @@ function buildFixture(): VfsSnapshot {
 }
 
 const FIXTURE = buildFixture();
-console.log(`Fixture built: ${Object.keys(FIXTURE.children ?? {}).length} top-level entries\n`);
+console.log(`Fixture built: ${Object.keys(FIXTURE.root.children ?? {}).length} top-level entries\n`);
 
 // Test 1: reads config file
 console.log("Test 1: reads config file");
