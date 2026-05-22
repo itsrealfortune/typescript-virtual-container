@@ -13,7 +13,7 @@ shell.ensureInitialized();
 
 // ── Create user with password fallback ────────────────────────────
 console.log("--- Create user with password fallback ---");
-await shell.users.addUser("alice", "fallback-password");
+shell.users.addUser("alice", "fallback-password");
 console.log("Created user 'alice' with password fallback");
 
 // ── Simulate SSH key pair ─────────────────────────────────────────

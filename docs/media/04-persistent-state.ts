@@ -6,8 +6,8 @@
  * - Memory mode: manual JSON snapshot / restore
  */
 
-import { existsSync, mkdirSync, rmSync } from "node:fs";
-import { VirtualFileSystem } from "../../src";
+import { VirtualFileSystem } from "../src";
+import { mkdirSync, existsSync, rmSync } from "node:fs";
 
 // ── FS mode — automatic .vfsb persistence ─────────────────────────
 console.log("--- FS mode — automatic .vfsb persistence ---");
