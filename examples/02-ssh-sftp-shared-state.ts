@@ -1,5 +1,5 @@
 /**
- * SSH + SFTP with Shared State
+ * 02 - SSH + SFTP with Shared State
  *
  * Demonstrates running SSH and SFTP servers that share the same
  * VirtualShell instance, so files written via SSH are visible via SFTP.

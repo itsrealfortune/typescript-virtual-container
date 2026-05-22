@@ -1,5 +1,5 @@
 /**
- * Persistent State
+ * 04 - Persistent State
  *
  * Demonstrates two persistence strategies:
  * - FS mode: automatic .vfsb persistence to disk

@@ -1,7 +1,8 @@
 /**
- * Symlinks
- * 
- * Demonstrates creating and resolving symbolic links in the VFS.
+ * 09 - Symlinks
+ *
+ * Demonstrates creating and resolving symbolic links in the VFS,
+ * including target resolution and symlink type detection.
  */
 
 import { VirtualFileSystem } from "../src";

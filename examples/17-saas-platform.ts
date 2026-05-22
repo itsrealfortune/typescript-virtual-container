@@ -1,9 +1,10 @@
 /**
- * Multi-tenant SaaS platform with isolated environments
+ * 17 - SaaS Platform
  *
- * Real-world scenario: A SaaS provider hosts multiple customers, each
- * with their own isolated network, VMs, user accounts, and resource caps.
+ * Demonstrates multi-tenant isolation with separate networks, VMs,
+ * user accounts, and resource caps for each customer.
  */
+
 import { Baie, SshClient, type VirtualShell, VirtualSshServer } from "../src";
 
 interface Tenant {

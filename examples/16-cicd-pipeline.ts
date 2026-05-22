@@ -1,12 +1,10 @@
 /**
- * CI/CD pipeline simulation
+ * 16 - CI/CD Pipeline Simulation
  *
- * Real-world scenario: Simulate a CI/CD pipeline with multiple stages
- * running in isolated VMs on a virtual network.
- *
- * Stages: lint → test → build → deploy
- * Each stage runs in its own VM with resource caps and process scheduling.
+ * Simulates a multi-stage CI/CD pipeline with lint, test, build, and
+ * deploy phases running in isolated VMs on a virtual network.
  */
+
 import { Baie, SshClient } from "../src";
 
 function lastLine(s: string | undefined): string {

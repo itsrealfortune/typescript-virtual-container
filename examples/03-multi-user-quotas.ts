@@ -1,5 +1,5 @@
 /**
- * Multi-User Environment with Quotas
+ * 03 - Multi-User Environment with Quotas
  *
  * Demonstrates creating users, managing sudo access, setting disk quotas,
  * and verifying file permission isolation between users.

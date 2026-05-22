@@ -1,5 +1,5 @@
 /**
- * Snapshot-Based Test Fixtures
+ * 07 - Snapshot-Based Test Fixtures
  *
  * Demonstrates building a VFS snapshot once and reusing it
  * across multiple isolated "test" environments.

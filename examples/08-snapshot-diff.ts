@@ -1,5 +1,5 @@
 /**
- * Snapshot Diff in Tests
+ * 08 - Snapshot Diff in Tests
  *
  * Demonstrates capturing VFS snapshots before and after an operation,
  * then asserting on the diff to verify expected changes.

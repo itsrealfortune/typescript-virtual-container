@@ -1,5 +1,5 @@
 /**
- * File cache with disk I/O simulation
+ * 12 - File Cache with Disk I/O Simulation
  * 
  * Demonstrates the VFS file cache with configurable eviction policies
  * (LRU, LFU, FIFO) and simulated disk read/write latencies.

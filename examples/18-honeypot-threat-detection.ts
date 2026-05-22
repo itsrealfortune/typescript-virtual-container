@@ -1,9 +1,10 @@
 /**
- * Security honeypot with threat detection
+ * 18 - Honeypot Threat Detection
  *
- * Real-world scenario: Deploy an SSH honeypot that logs all attacker
- * behavior, detects brute-force attempts, and generates audit reports.
+ * Deploys an SSH honeypot that logs attacker behavior, detects
+ * brute-force attempts, and generates audit reports.
  */
+
 import { HoneyPot, SshClient, VirtualShell } from "../src";
 
 // ── Deploy honeypot ───────────────────────────────────────────────

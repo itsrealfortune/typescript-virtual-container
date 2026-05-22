@@ -1,5 +1,5 @@
 /**
- * Idle Manager (freeze/thaw, GC)
+ * 24 - Idle Manager
  *
  * Demonstrates the IdleManager API: monitoring shell inactivity,
  * automatic freeze after idle threshold, thaw on activity, garbage

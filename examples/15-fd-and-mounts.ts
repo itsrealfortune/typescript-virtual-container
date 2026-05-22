@@ -1,6 +1,6 @@
 /**
- * VFS file descriptors and mount points
- * 
+ * 15 - File Descriptors and Mount Points
+ *
  * Demonstrates POSIX-like file descriptor operations (open, close, dup)
  * and host directory mounting into the VFS.
  */

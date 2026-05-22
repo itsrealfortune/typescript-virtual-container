@@ -1,9 +1,8 @@
 /**
- * Groups and Account Policies
+ * 22 - Groups and Accounts
  *
- * Demonstrates group management (create, members, supplementary groups),
- * password aging (min/max days, warning), account locking/unlocking,
- * and account expiry policies.
+ * Demonstrates group management, password aging, account locking,
+ * unlocking, and account expiry policies.
  */
 
 import { VirtualShell } from "../src";

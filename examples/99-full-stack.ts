@@ -1,13 +1,9 @@
 /**
- * Full-stack virtual infrastructure (ALL modules)
+ * 99 - Full-Stack Infrastructure
  *
- * Comprehensive end-to-end scenario exercising every major module:
- * VirtualShell, VirtualFileSystem, VirtualUserManager,
- * VirtualNetworkManager, VirtualPackageManager, VirtualSwitch,
- * VirtualProxy, IdleManager, and ProcessScheduler.
- *
- * Scenario: Deploy a two-tier application (web + database) with users,
- * network policies, service discovery, traffic shaping, and monitoring.
+ * Comprehensive end-to-end scenario exercising VirtualShell, VFS,
+ * user management, network management, package management,
+ * VirtualSwitch, VirtualProxy, and IdleManager.
  */
 
 import { VirtualProxy, VirtualShell, VirtualSwitch } from "../src";

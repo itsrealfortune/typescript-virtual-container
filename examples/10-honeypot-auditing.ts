@@ -1,5 +1,5 @@
 /**
- * Security Auditing with HoneyPot
+ * 10 - Security Auditing with HoneyPot
  * 
  * Demonstrates attaching HoneyPot to virtual components to log events,
  * track statistics, and detect anomalies.

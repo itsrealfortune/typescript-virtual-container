@@ -1,5 +1,5 @@
 /**
- * Rate Limiting
+ * 06 - Rate Limiting
  *
  * Demonstrates the full rate limiting lifecycle: configuration,
  * progressive auth failures, automatic lockout, connection rejection,

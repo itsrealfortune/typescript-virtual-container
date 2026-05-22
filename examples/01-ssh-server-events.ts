@@ -1,5 +1,5 @@
 /**
- * SSH Server with Events
+ * 01 - SSH Server with Events
  *
  * Demonstrates the full SSH server event lifecycle: start, auth events,
  * connection tracking, lockout, and graceful shutdown.

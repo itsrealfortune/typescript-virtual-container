@@ -1,5 +1,5 @@
 /**
- * Swap file store for memory-constrained environments
+ * 14 - Swap File Store for Memory-Constrained Environments
  * 
  * Demonstrates the VFS swap store that offloads evicted file contents
  * to individual swap files on disk for O(1) reload.

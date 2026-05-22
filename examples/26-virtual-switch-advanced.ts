@@ -1,9 +1,8 @@
 /**
- * VirtualSwitch Advanced (DNS, traffic shaping, load balancing, partitions)
+ * 26 - Virtual Switch Advanced
  *
- * Demonstrates the standalone VirtualSwitch API: attach/detach VMs, DNS resolution,
- * traffic shaping with latency/jitter/packet loss, load balancing across targets,
- * and network partitions for isolation between groups.
+ * Demonstrates the VirtualSwitch API including DNS resolution, traffic
+ * shaping, load balancing, and network partitions for isolation.
  */
 
 import { VirtualShell, VirtualSwitch } from "../src";

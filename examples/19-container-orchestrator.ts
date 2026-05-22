@@ -1,10 +1,10 @@
 /**
- * Container orchestration simulator
+ * 19 - Container Orchestrator
  *
- * Real-world scenario: Simulate a Kubernetes-like orchestrator that
- * manages pods (VMs), services (load balancers), and network policies
- * (firewall rules) across a virtual cluster.
+ * Simulates a Kubernetes-like orchestrator managing pods, services,
+ * and network policies across a virtual cluster.
  */
+
 import { Baie, SshClient, type VirtualShell } from "../src";
 
 interface Pod {

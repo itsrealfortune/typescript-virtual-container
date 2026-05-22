@@ -1,8 +1,8 @@
 /**
- * Virtual Proxy (port forwarding)
+ * 23 - Virtual Proxy
  *
  * Demonstrates the VirtualProxy API: expose VM ports to the host,
- * list port forwards, remove forwards, and port lifecycle.
+ * list and remove port forwards, and manage port lifecycle.
  */
 
 import { Baie, VirtualProxy } from "../src";

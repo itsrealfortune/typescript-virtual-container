@@ -1,9 +1,8 @@
 /**
- * VFS Hooks and Content Resolvers
+ * 25 - VFS Hooks
  *
- * Demonstrates the VirtualFileSystem hook system: register content resolvers
- * that dynamically generate file content on read, and beforeRead/beforeWrite
- * hooks for monitoring or access control.
+ * Demonstrates the VFS hook system including content resolvers for
+ * dynamic file generation and beforeRead/beforeWrite hooks.
  */
 
 import { VirtualFileSystem } from "../src";

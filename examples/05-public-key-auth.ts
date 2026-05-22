@@ -1,5 +1,5 @@
 /**
- * Public-Key Authentication
+ * 05 - Public-Key Authentication
  *
  * Demonstrates the full public-key auth flow: generating keys,
  * adding them to authorized_keys, verifying key presence,

@@ -1,9 +1,8 @@
 /**
- * Network Management (interfaces, routes, firewall)
+ * 21 - Network Management
  *
- * Demonstrates the VirtualNetworkManager API: create interfaces, add routes,
- * configure firewall rules with iptables-like syntax, inspect conntrack, and
- * format output for ip/iptables commands.
+ * Demonstrates the VirtualNetworkManager API for creating interfaces,
+ * adding routes, configuring firewall rules, and inspecting conntrack.
  */
 
 import { VirtualShell } from "../src";
