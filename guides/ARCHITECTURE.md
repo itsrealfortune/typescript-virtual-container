@@ -101,8 +101,9 @@ src/
     │   ├── shellParser.ts            — Shell syntax parser
     │   └── idleManager.ts            — Idle session management
     │
-    ├── VirtualUserManager/           (3 .ts files)
+    ├── VirtualUserManager/           (4 .ts files)
     │   ├── index.ts                  — User management
+    │   ├── groups.ts                 — /etc/group management
     │   ├── signals.ts                — POSIX signal definitions
     │   └── processScheduler.ts       — CPU scheduler (CFS-inspired)
     │
@@ -126,9 +127,18 @@ src/
     ├── Honeypot/                     (1 .ts file)
     │   └── index.ts                  — Security auditing/telemetry
     │
-    ├── VirtualNetworkManager/        (subdirectory)
-    ├── VirtualSwitch/                (subdirectory)
-    ├── VirtualVpn/                   (subdirectory)
+    ├── VirtualNetworkManager/        (2 .ts files)
+    │   ├── index.ts                  — Networking stack
+    │   └── types.ts                  — Network type definitions
+    │
+    ├── VirtualSwitch/                (3 .ts files)
+    │   ├── index.ts                  — Multi-VM switch
+    │   ├── helpers.ts                — Switch utilities
+    │   └── types.ts                  — Switch type definitions
+    │
+    ├── VirtualVpn/                   (2 .ts files)
+    │   ├── index.ts                  — Encrypted tunnel between Baies
+    │   └── crypto.ts                 — Crypto helpers for VPN
     │
     ├── linuxRootfs.ts                — Linux root FS bootstrap
     ├── nanoEditor.ts                 — Built-in nano editor
@@ -289,9 +299,9 @@ src/
 ---
 
 <details>
-<summary>9. VirtualUserManager — 3 files, ~1,950 lines</summary>
+<summary>9. VirtualUserManager — 4 files, ~2,400 lines</summary>
 
-**Files** (3): `index.ts` (1,891), `signals.ts` (63), `processScheduler.ts` (340) — **~1,950 lines total**
+**Files** (4): `index.ts` (1,891), `groups.ts` (120), `signals.ts` (63), `processScheduler.ts` (340) — **~2,400 lines total**
 
 - `VirtualUserManager` class (EventEmitter) — Complete virtual user management system.
 - User records with: `username`, `uid`, `gid`, `salt`, `passwordHash` (scrypt-derived).
@@ -336,12 +346,17 @@ src/
 | `pacmanGame.ts` | 733 | Playable Pac-Man game rendered in terminal |
 | `neofetch.ts` | 360 | System info display (logo + hardware/distro info) |
 | `webTermRenderer.ts` | 362 | Web-based terminal emulator renderer |
-| `VirtualNetworkManager.ts` | 515 | Virtual networking stack: interfaces, routing table, ARP cache, latency/packet loss simulation |
-| `VirtualSwitch.ts` | 520 | Multi-VM switch with NAT, DNS, traffic shaping, load balancing |
 | `VirtualProxy.ts` | 198 | Port forwarding + SOCKS5 proxy |
-| `VirtualVpn.ts` | 96 | Encrypted tunnel between Baies |
+| `sysctl.ts` | 193 | Writable /proc/sys state |
+| `sessionManager.ts` | 80 | Shell session management |
 | `shellInteractive.ts` | — | Interactive shell session controller |
 | `shellRuntime.ts` | — | Shell runtime helpers |
+| `thunarManager.ts` | — | Thunar file manager simulation |
+
+**Subdirectories** (documented separately above):
+- `VirtualNetworkManager/` (2 files) — Networking stack
+- `VirtualSwitch/` (3 files) — Multi-VM switch with NAT, DNS, traffic shaping, LB
+- `VirtualVpn/` (2 files) — Encrypted tunnel between Baies
 
 </details>
 
@@ -399,6 +414,9 @@ src/
 | `capping.test.ts` | ~100 | Resource cap tests |
 | `ssh-client.test.ts` | ~50 | SSH client tests |
 | `ssh-exec.test.ts` | 45 | SSH exec session tests |
+| `executor.test.ts` | ~30 | Command executor tests |
+| `user-upgrades.test.ts` | ~30 | User upgrade path tests |
+| `virtual-shell-api.test.ts` | ~30 | VirtualShell API tests |
 | `parser-executor.test.ts` | 37 | Shell parser + executor tests |
 | `test-helper.ts` | 79 | Shared test utilities/fixtures |
 
