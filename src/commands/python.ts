@@ -418,7 +418,7 @@ class Interpreter {
 
 	// ── tokenizer / parser helpers ──────────────────────────────────────────
 
-	private _splitArgs(s: string): string[] {
+	private static _splitArgs(s: string): string[] {
 		// Split on commas respecting balanced parens, brackets, braces, quotes
 		const args: string[] = [];
 		let depth = 0;
@@ -522,14 +522,14 @@ class Interpreter {
 				}
 				return result;
 			}
-			return this._splitArgs(inner).map((a) => this.pyEval(a, scope));
+			return Interpreter._splitArgs(inner).map((a) => this.pyEval(a, scope));
 		}
 
 		// Tuple (...)
 		if (expr.startsWith("(") && expr.endsWith(")")) {
 			const inner = expr.slice(1, -1).trim();
 			if (!inner) { return []; }
-			const parts = this._splitArgs(inner);
+			const parts = Interpreter._splitArgs(inner);
 			if (parts.length === 1 && !inner.endsWith(",")) {
 				return this.pyEval(parts[0] as string, scope);
 			}
@@ -541,7 +541,7 @@ class Interpreter {
 			const inner = expr.slice(1, -1).trim();
 			if (!inner) { return pyDict(); }
 			const dict = pyDict();
-			for (const entry of this._splitArgs(inner)) {
+			for (const entry of Interpreter._splitArgs(inner)) {
 				const colonIdx = entry.indexOf(":");
 				if (colonIdx === -1) { continue; }
 				const k = pyStr(this.pyEval(entry.slice(0, colonIdx).trim(), scope));
@@ -578,7 +578,7 @@ class Interpreter {
 		// Subscript: expr[key] or expr[start:stop]
 		if (process.env.PY_DEBUG) { console.error("eval:", JSON.stringify(expr)); }
 		if (expr.endsWith("]") && !expr.startsWith("[")) {
-			const bracketStart = this._findMatchingBracket(expr, "[");
+			const bracketStart = Interpreter._findMatchingBracket(expr, "[");
 			if (bracketStart !== -1) {
 				const obj = this.pyEval(expr.slice(0, bracketStart), scope);
 				const key = expr.slice(bracketStart + 1, -1);
@@ -591,7 +591,7 @@ class Interpreter {
 		const callMatch = expr.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*\(([\s\S]*)\)$/);
 		if (callMatch) {
 			const [, name, argsStr] = callMatch;
-			const callArgs = (argsStr?.trim() ? this._splitArgs(argsStr) : []).map(
+			const callArgs = (argsStr?.trim() ? Interpreter._splitArgs(argsStr) : []).map(
 				(a) => this.pyEval(a, scope),
 			);
 			return this._callBuiltin(name as string, callArgs, scope);
@@ -606,11 +606,11 @@ class Interpreter {
 			if (callPart !== undefined) {
 				const argsInner = callPart.slice(1, -1);
 				const callArgs = argsInner.trim()
-					? this._splitArgs(argsInner).map((a) => this.pyEval(a, scope))
+					? Interpreter._splitArgs(argsInner).map((a) => this.pyEval(a, scope))
 					: [];
 				return this._callMethod(obj, attr, callArgs);
 			}
-			return this._getAttr(obj, attr, scope);
+			return Interpreter._getAttr(obj, attr, scope);
 		}
 
 		// Variable lookup
@@ -629,7 +629,7 @@ class Interpreter {
 					throw new PyError("NameError", `name '${parts[0]}' is not defined`);
 				})();
 			for (const part of parts.slice(1)) {
-				val = this._getAttr(val, part, scope);
+				val = Interpreter._getAttr(val, part, scope);
 			}
 			return val;
 		}
@@ -637,7 +637,7 @@ class Interpreter {
 		return NONE;
 	}
 
-	private _findMatchingBracket(s: string, open: string): number {
+	private static _findMatchingBracket(s: string, open: string): number {
 		const close = open === "[" ? "]" : open === "(" ? ")" : "}";
 		let depth = 0;
 		for (let i = s.length - 1; i >= 0; i--) {
@@ -805,7 +805,7 @@ class Interpreter {
 			}
 			case "%": {
 				if (typeof left === "string") {
-					return this._pyStringFormat(
+					return Interpreter._pyStringFormat(
 						left,
 						Array.isArray(right) ? right : [right],
 					);
@@ -833,9 +833,9 @@ class Interpreter {
 			case ">=":
 				return (left as number) >= (right as number);
 			case "in":
-				return this._pyIn(right, left);
+				return Interpreter._pyIn(right, left);
 			case "not in":
-				return !this._pyIn(right, left);
+				return !Interpreter._pyIn(right, left);
 			case "is":
 				return (
 					left === right ||
@@ -851,7 +851,7 @@ class Interpreter {
 		}
 	}
 
-	private _pyIn(container: PyVal, item: PyVal): boolean {
+	private static _pyIn(container: PyVal, item: PyVal): boolean {
 		if (typeof container === "string") {
 			return typeof item === "string" && container.includes(item);
 		}
@@ -893,7 +893,7 @@ class Interpreter {
 
 	// ── attribute access ─────────────────────────────────────────────────────
 
-	private _getAttr(obj: PyVal, attr: string, _scope: Scope): PyVal {
+	private static _getAttr(obj: PyVal, attr: string, _scope: Scope): PyVal {
 		if (isPyDict(obj)) {
 			if (obj.data.has(attr)) { return obj.data.get(attr) as PyVal; }
 			// Special dict attributes
@@ -961,7 +961,7 @@ class Interpreter {
 				case "count":
 					return obj.split(pyStr(args[0] ?? "")).length - 1;
 				case "format":
-					return this._pyStringFormat(obj, args);
+					return Interpreter._pyStringFormat(obj, args);
 				case "encode":
 					return obj; // bytes stub
 				case "decode":
@@ -1234,7 +1234,7 @@ class Interpreter {
 		);
 	}
 
-	private _pyStringFormat(fmt: string, args: PyVal[]): string {
+	private static _pyStringFormat(fmt: string, args: PyVal[]): string {
 		let i = 0;
 		return fmt.replace(/%([diouxXeEfFgGcrs%])/g, (_, spec: string) => {
 			if (spec === "%") { return "%"; }
@@ -1676,7 +1676,7 @@ class Interpreter {
 		return NONE;
 	}
 
-	private _getIndent(line: string): number {
+	private static _getIndent(line: string): number {
 		let n = 0;
 		for (const ch of line) {
 			if (ch === " ") { n++; }
@@ -1698,7 +1698,7 @@ class Interpreter {
 				block.push("");
 				continue;
 			}
-			if (this._getIndent(l) <= baseIndent) { break; }
+			if (Interpreter._getIndent(l) <= baseIndent) { break; }
 			block.push(l.slice(baseIndent + 4));
 		}
 		return block;
@@ -1708,7 +1708,7 @@ class Interpreter {
 		const raw = lines[idx];
 		if (raw === undefined) { return idx + 1; }
 		const line = raw.trim();
-		const indent = this._getIndent(raw);
+		const indent = Interpreter._getIndent(raw);
 
 		// pass
 		if (line === "pass") { return idx + 1; }
@@ -1870,7 +1870,7 @@ class Interpreter {
 				while (j < lines.length) {
 					const l = (lines[j] as string).trim();
 					if (
-						this._getIndent(lines[j] as string) < indent ||
+						Interpreter._getIndent(lines[j] as string) < indent ||
 						(!(l.startsWith("elif") || l.startsWith("else")))
 					) {
 						break;
@@ -1886,7 +1886,7 @@ class Interpreter {
 			while (j < lines.length) {
 				const el = lines[j] as string;
 				const elt = el.trim();
-				if (this._getIndent(el) !== indent) { break; }
+				if (Interpreter._getIndent(el) !== indent) { break; }
 
 				const elifMatch = elt.match(/^elif\s+(.+):$/);
 				if (elifMatch) {
@@ -1898,7 +1898,7 @@ class Interpreter {
 						while (j < lines.length) {
 							const sl = (lines[j] as string).trim();
 							if (
-								this._getIndent(lines[j] as string) !== indent ||
+								Interpreter._getIndent(lines[j] as string) !== indent ||
 								(!(sl.startsWith("elif") || sl.startsWith("else")))
 							) {
 								break;
@@ -1991,7 +1991,7 @@ class Interpreter {
 			while (j < lines.length) {
 				const el = lines[j] as string;
 				const elt = el.trim();
-				if (this._getIndent(el) !== indent) { break; }
+				if (Interpreter._getIndent(el) !== indent) { break; }
 				if (elt.startsWith("except")) {
 					const excMatch = elt.match(
 						/^except(?:\s+(\w+)(?:\s+as\s+(\w+))?)?\s*:$/,

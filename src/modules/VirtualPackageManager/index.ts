@@ -746,7 +746,7 @@ export class VirtualPackageManager {
 	 * @param name Package name (case-insensitive).
 	 * @returns The matching `PackageDefinition`, or `undefined` if not found.
 	 */
-	public findInRegistry(name: string): PackageDefinition | undefined {
+	public static findInRegistry(name: string): PackageDefinition | undefined {
 		return _REGISTRY_MAP.get(name.toLowerCase());
 	}
 
@@ -755,7 +755,7 @@ export class VirtualPackageManager {
 	 *
 	 * @returns Array of `PackageDefinition` entries.
 	 */
-	public listAvailable(): PackageDefinition[] {
+	public static listAvailable(): PackageDefinition[] {
 		return _REGISTRY_SORTED;
 	}
 
@@ -821,7 +821,7 @@ export class VirtualPackageManager {
 			if (seen.has(name)) { return; }
 			seen.add(name);
 			if (this.isInstalled(name)) { return; }
-			const def = this.findInRegistry(name);
+			const def = VirtualPackageManager.findInRegistry(name);
 			if (!def) {
 				notFound.push(name);
 				return;
@@ -985,7 +985,7 @@ export class VirtualPackageManager {
 			}
 
 			// Run remove hook
-			const def = this.findInRegistry(pkg.name);
+			const def = VirtualPackageManager.findInRegistry(pkg.name);
 			def?.onRemove?.(this._vfs);
 
 			this._installed.delete(pkg.name);
@@ -1008,7 +1008,7 @@ export class VirtualPackageManager {
 	 * @param term Search string.
 	 * @returns Matching `PackageDefinition` entries sorted alphabetically.
 	 */
-	public search(term: string): PackageDefinition[] {
+	public static search(term: string): PackageDefinition[] {
 		const t = term.toLowerCase();
 		return PACKAGE_REGISTRY.filter(
 			(p) =>
@@ -1027,7 +1027,7 @@ export class VirtualPackageManager {
 	 */
 	public show(name: string): string | null {
 		this._ensureLoaded();
-		const def = this.findInRegistry(name);
+		const def = VirtualPackageManager.findInRegistry(name);
 		if (!def) { return null; }
 		const inst = this._installed.get(name);
 		return [

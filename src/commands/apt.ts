@@ -1,3 +1,4 @@
+import { VirtualPackageManager } from "../modules/VirtualPackageManager";
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 import { getPackageManager } from "./helpers";
@@ -89,7 +90,7 @@ export const aptCommand: ShellModule = {
 				if (!term) {
 					return { stderr: "apt: search requires a term", exitCode: 1 };
 				}
-				const results = pm.search(term);
+				const results = VirtualPackageManager.search(term);
 				if (results.length === 0) {
 					return {
 						stdout: "Sorting... Done\nFull Text Search... Done\n(no results)",
@@ -141,7 +142,7 @@ export const aptCommand: ShellModule = {
 					};
 				}
 				// all available
-				const all = pm.listAvailable();
+				const all = VirtualPackageManager.listAvailable();
 				const lines = all.map(
 					(p) => `${p.name}/${p.section ?? "misc"} ${p.version} amd64`,
 				);
@@ -195,7 +196,7 @@ export const aptCacheCommand: ShellModule = {
 		switch (sub) {
 			case "search": {
 				if (!pkgName) { return { stderr: "Need a search term", exitCode: 1 }; }
-				const results = pm.search(pkgName);
+				const results = VirtualPackageManager.search(pkgName);
 				return {
 					stdout:
 						results
@@ -213,7 +214,7 @@ export const aptCacheCommand: ShellModule = {
 			}
 			case "policy": {
 				if (!pkgName) { return { stderr: "Need a package name", exitCode: 1 }; }
-				const def = pm.findInRegistry(pkgName);
+				const def = VirtualPackageManager.findInRegistry(pkgName);
 				if (!def) {
 					return {
 						stderr: `N: Unable to locate package ${pkgName}`,

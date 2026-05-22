@@ -200,7 +200,7 @@ export class IdleManager extends EventEmitter {
 		stats.terminatedProcesses = this._cleanupTerminatedProcesses();
 		stats.staleCpuEntries = this._cleanupStaleCpuEntries();
 		stats.evictedFiles = this._evictClosedFiles();
-		stats.forcedGc = this._forceNodeGc();
+		stats.forcedGc = IdleManager._forceNodeGc();
 
 		this.emit("gc:run", stats);
 		return stats;
@@ -229,7 +229,7 @@ export class IdleManager extends EventEmitter {
 		const activePids = new Set(procs.map((p) => p.pid));
 		let cleaned = 0;
 
-		const allPids = this._getAllTrackedPids(users);
+		const allPids = IdleManager._getAllTrackedPids(users);
 		for (const pid of allPids) {
 			if (!activePids.has(pid) && users.getProcessCpuTime(pid) > 0) {
 				cleaned++;
@@ -238,7 +238,7 @@ export class IdleManager extends EventEmitter {
 		return cleaned;
 	}
 
-	private _getAllTrackedPids(users: GcUserManager): number[] {
+	private static _getAllTrackedPids(users: GcUserManager): number[] {
 		const procs = users.listProcesses();
 		return procs.map((p) => p.pid);
 	}
@@ -250,7 +250,7 @@ export class IdleManager extends EventEmitter {
 		return evicted;
 	}
 
-	private _forceNodeGc(): boolean {
+	private static _forceNodeGc(): boolean {
 		const gc = (globalThis as Record<string, unknown>).gc as (() => void) | undefined;
 		if (typeof gc === "function") {
 			gc();

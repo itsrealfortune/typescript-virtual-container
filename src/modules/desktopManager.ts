@@ -148,7 +148,7 @@ export class DesktopManager {
       showContextMenu: (x, y, items) => this._showContextMenu(x, y, items),
       closeContextMenu: () => this._closeContextMenu(),
       createEditorWindow: (path) => this.createEditorWindow(path),
-      escapeHtml: (s) => this._escapeHtml(s),
+      escapeHtml: (s) => DesktopManager._escapeHtml(s),
     }, container);
     this._setupEventDelegation();
   }
@@ -464,7 +464,7 @@ export class DesktopManager {
     const w = this._windows.find((ww) => ww.id === id);
     if (!w) { return; }
     if (w.maximized) {
-      this._unmaximize(w);
+      DesktopManager._unmaximize(w);
     } else {
       w.savedRect = { x: w.x, y: w.y, width: w.width, height: w.height };
       const panelEl = this._container.querySelector("#desktop-panel") as HTMLElement | null;
@@ -478,7 +478,7 @@ export class DesktopManager {
     this._renderAll();
   }
 
-  private _unmaximize(w: DesktopWindow): void {
+  private static _unmaximize(w: DesktopWindow): void {
     if (w.savedRect) {
       w.x = w.savedRect.x;
       w.y = w.savedRect.y;
@@ -540,7 +540,7 @@ export class DesktopManager {
       el.setAttribute("data-win-id", win.id);
       el.innerHTML = `
         <div class="win-header">
-          <span class="win-title">${this._escapeHtml(win.title)}</span>
+          <span class="win-title">${DesktopManager._escapeHtml(win.title)}</span>
           <div class="win-controls">
             <button class="win-min">─</button>
             <button class="win-max"></button>
@@ -766,7 +766,7 @@ export class DesktopManager {
       this.focusWindow(id);
 
       if (win.maximized) {
-        this._unmaximize(win);
+        DesktopManager._unmaximize(win);
       }
 
       this._dragState = {
@@ -918,7 +918,7 @@ export class DesktopManager {
     // Update only what changes: task buttons, clock, menu
     const list = panel.querySelector(".xfce-window-list") as HTMLElement;
     list.innerHTML = this._windows.map((w) =>
-      `<span class="xfce-taskbutton${w.focused ? " active" : ""}" data-win-id="${w.id}">${this._escapeHtml(w.title)}</span>`
+      `<span class="xfce-taskbutton${w.focused ? " active" : ""}" data-win-id="${w.id}">${DesktopManager._escapeHtml(w.title)}</span>`
     ).join("");
 
     const now = new Date();
@@ -1033,10 +1033,10 @@ export class DesktopManager {
     contentArea.innerHTML = `
       <div class="editor-toolbar">
         <button class="editor-save-btn" data-win-id="${winId}">Save</button>
-        <span class="editor-path">${this._escapeHtml(content.path)}</span>
+        <span class="editor-path">${DesktopManager._escapeHtml(content.path)}</span>
         <span class="editor-dirty" data-win-id="${winId}" style="display:none">●</span>
       </div>
-      <textarea class="editor-textarea" data-win-id="${winId}" spellcheck="false">${this._escapeHtml(fileText)}</textarea>
+      <textarea class="editor-textarea" data-win-id="${winId}" spellcheck="false">${DesktopManager._escapeHtml(fileText)}</textarea>
     `;
 
   }
@@ -1108,7 +1108,7 @@ export class DesktopManager {
       rows += `<tr>
         <td>—</td>
         <td>root</td>
-        <td><i class="fa-solid ${icon}"></i> ${this._escapeHtml(w.title)}</td>
+        <td><i class="fa-solid ${icon}"></i> ${DesktopManager._escapeHtml(w.title)}</td>
         <td>desktop</td>
         <td><span class="taskmgr-status running">running</span></td>
         <td><button class="taskmgr-close" data-win-id="${w.id}">Close</button></td>
@@ -1120,9 +1120,9 @@ export class DesktopManager {
       const pid = 1000 + i;
       rows += `<tr>
         <td>${pid}</td>
-        <td>${this._escapeHtml(s.username)}</td>
+        <td>${DesktopManager._escapeHtml(s.username)}</td>
         <td>bash</td>
-        <td>${this._escapeHtml(s.tty)}</td>
+        <td>${DesktopManager._escapeHtml(s.tty)}</td>
         <td><span class="taskmgr-status running">running</span></td>
         <td><button class="taskmgr-kill" data-pid="${pid}">Kill</button></td>
       </tr>`;
@@ -1131,9 +1131,9 @@ export class DesktopManager {
       const statusClass = p.status === "running" ? "running" : p.status === "stopped" ? "stopped" : "done";
       rows += `<tr>
         <td>${p.pid}</td>
-        <td>${this._escapeHtml(p.username)}</td>
-        <td>${this._escapeHtml(p.command)}</td>
-        <td>${this._escapeHtml(p.tty)}</td>
+        <td>${DesktopManager._escapeHtml(p.username)}</td>
+        <td>${DesktopManager._escapeHtml(p.command)}</td>
+        <td>${DesktopManager._escapeHtml(p.tty)}</td>
         <td><span class="taskmgr-status ${statusClass}">${p.status}</span></td>
         <td><button class="taskmgr-kill" data-pid="${p.pid}">Kill</button></td>
       </tr>`;
@@ -1175,7 +1175,7 @@ export class DesktopManager {
       const item = items[i] as (typeof items)[number];
       const el = document.createElement("div");
       el.className = `ctx-item${item.danger ? " ctx-danger" : ""}`;
-      el.innerHTML = `<i class="${item.icon}"></i><span>${this._escapeHtml(item.label)}</span>`;
+      el.innerHTML = `<i class="${item.icon}"></i><span>${DesktopManager._escapeHtml(item.label)}</span>`;
       el.setAttribute("data-ctx-index", String(i));
       menu.appendChild(el);
     }
@@ -1199,7 +1199,7 @@ export class DesktopManager {
     this._container.querySelector(".desktop-context-menu")?.remove();
   }
 
-  private _escapeHtml(s: string): string {
+  private static _escapeHtml(s: string): string {
     return s
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")

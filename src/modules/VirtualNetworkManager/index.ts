@@ -467,8 +467,8 @@ export class VirtualNetworkManager {
 
 	public resolveRoute(dstIp: string): { route: VirtualRoute | null; table: number } {
 		for (const rule of this.listPolicyRules()) {
-			if (rule.from && !this._ipMatchesRule(dstIp, rule.from)) { continue; }
-			if (rule.to && !this._ipMatchesRule(dstIp, rule.to)) { continue; }
+			if (rule.from && !VirtualNetworkManager._ipMatchesRule(dstIp, rule.from)) { continue; }
+			if (rule.to && !VirtualNetworkManager._ipMatchesRule(dstIp, rule.to)) { continue; }
 			if (rule.action === "blackhole") { return { route: null, table: -1 }; }
 			if (rule.action === "unreachable") { return { route: null, table: -2 }; }
 			if (rule.action === "prohibit") { return { route: null, table: -3 }; }
@@ -484,7 +484,7 @@ export class VirtualNetworkManager {
 		return { route: route ?? null, table: 254 };
 	}
 
-	private _ipMatchesRule(ip: string, pattern: string): boolean {
+	private static _ipMatchesRule(ip: string, pattern: string): boolean {
 		if (pattern === "all") { return true; }
 		if (pattern.includes("/")) {
 			const [base, maskStr] = pattern.split("/");
@@ -501,7 +501,7 @@ export class VirtualNetworkManager {
 		if (route.destination === "default") { return true; }
 		if (route.destination === ip) { return true; }
 		if (route.destination.includes("/")) {
-			return this._ipMatchesRule(ip, route.destination);
+			return VirtualNetworkManager._ipMatchesRule(ip, route.destination);
 		}
 		const ipInt = VirtualNetworkManager._ipToInt(ip);
 		const destInt = VirtualNetworkManager._ipToInt(route.destination);

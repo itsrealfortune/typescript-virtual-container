@@ -764,7 +764,7 @@ export class VirtualUserManager extends EventEmitter {
 		nice = 0,
 	): number {
 		const pid = this._nextPid++;
-		const priority = this._scheduler.niceToPriority(nice);
+		const priority = ProcessScheduler.niceToPriority(nice);
 		this._activeProcesses.set(pid, {
 			pid,
 			ppid,
@@ -1060,13 +1060,13 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns True if the process was found and updated.
 	 */
 	public setProcessNice(pid: number, nice: number): boolean {
-		if (!this._scheduler.isValidNice(nice)) { return false; }
+		if (!ProcessScheduler.isValidNice(nice)) { return false; }
 
 		const proc = this._activeProcesses.get(pid);
 		if (!proc) { return false; }
 
 		proc.nice = nice;
-		proc.priority = this._scheduler.niceToPriority(nice);
+		proc.priority = ProcessScheduler.niceToPriority(nice);
 		this.emit("process:nice", { pid, nice, priority: proc.priority });
 		return true;
 	}
