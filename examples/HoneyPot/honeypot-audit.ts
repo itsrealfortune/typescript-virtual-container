@@ -39,7 +39,8 @@ async function demonstrateHoneypot() {
 	await users.addUser("alice", "alice_pass123");
 	await users.addUser("bob", "bob_pass456");
 
-	const alice = new SshClient(shell, "alice");
+	const alice = new SshClient();
+	await alice.connect({ host: "localhost", port: 2222, username: "alice", password: "alice_pass123" });
 	await alice.mkdir("/home/alice/work", true);
 	await alice.writeFile("/home/alice/work/notes.txt", "Project notes");
 	await alice.ls("/home/alice/work");
@@ -50,7 +51,8 @@ async function demonstrateHoneypot() {
 	// ------ Scenario 2: Bob attempts suspicious operations ------
 	console.log("--- Scenario 2: Suspicious Attempt ---\n");
 
-	const bob = new SshClient(shell, "bob");
+	const bob = new SshClient();
+	await bob.connect({ host: "localhost", port: 2222, username: "bob", password: "bob_pass456" });
 	// These will fail but are tracked
 	await bob.readFile("/etc/shadow");
 	await bob.readFile("/etc/passwd");
@@ -166,6 +168,8 @@ async function demonstrateHoneypot() {
 	console.log(`${JSON.stringify(exportData, null, 2).substring(0, 300)}...\n`);
 
 	// Cleanup
+	alice.disconnect();
+	bob.disconnect();
 	ssh.stop();
 
 	console.log(

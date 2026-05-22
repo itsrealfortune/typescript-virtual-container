@@ -1,98 +1,211 @@
 /**
- * SSHClient — programmatic client for executing commands against a VirtualShell.
+ * SSHClient — real SSH client for executing commands against a VirtualSshServer.
  *
- * Provides a convenient API for running shell commands (exec, ls, cat, mkdir, etc.)
- * without real SSH transport overhead. Maintains working-directory state across
- * invocations and runs commands as a single authenticated user.
- * 
- * THIS IS NOT A REAL SSH CLIENT — it does not implement the SSH protocol or network transport.
+ * Connects over TCP using the SSH protocol via ssh2. Maintains working-directory
+ * state across invocations by tracking cwd changes from command output.
  *
  * @example
  * ```ts
- * const shell = new VirtualShell("typescript-vm");
- * const client = new SshClient(shell, "alice");
+ * const client = new SshClient();
+ * await client.connect({ host: "localhost", port: 2222, username: "alice", password: "secret" });
  * await client.cd("/tmp");
  * const list = await client.ls();
+ * await client.disconnect();
  * ```
  */
-import { runCommand } from "../../commands";
+import type { ClientChannel, ConnectConfig } from "ssh2";
+import { Client } from "ssh2";
 import type { CommandResult } from "../../types/commands";
 import { type PerfLogger, createPerfLogger } from "../../utils/perfLogger";
-import type { VirtualShell } from "../VirtualShell";
 
-/**
- * Programmatic client for executing shell commands against a virtual shell.
- *
- * Maintains working-directory state across invocations and runs commands as a
- * single authenticated user without SSH transport overhead.
- *
- * @example
- * ```ts
- * const shell = new VirtualShell("typescript-vm");
- * const client = new SshClient(shell, "alice");
- * const result = await client.cd("/tmp");
- * const list = await client.ls();
- * ```
- */
 const perf: PerfLogger = createPerfLogger("SshClient");
 
+export interface SshClientConnectOptions {
+	host?: string;
+	port?: number;
+	username: string;
+	password?: string;
+	privateKey?: Buffer | string;
+	passphrase?: Buffer | string;
+	readyTimeout?: number;
+}
+
 /**
- * Programmatic SSH client wrapping a VirtualShell instance.
- * Provides typed methods (exec, ls, cat, mkdir, etc.) without real SSH.
+ * Real SSH client wrapping ssh2.Client.
+ * Provides typed methods (exec, ls, cat, mkdir, etc.) over a real SSH connection.
  *
- * @see {@link VirtualShell}
  * @see {@link VirtualSshServer}
  */
 export class SshClient {
+	private _client: Client;
 	private _currentCwd = "/";
+	private _username = "";
+	private _connected = false;
 
-	/**
-	 * Creates a programmatic client bound to a virtual shell and user.
-	 *
-	 * @param _shell Parent virtual shell instance.
-	 * @param _username Login user for all commands.
-	 */
-	constructor(
-		private _shell: VirtualShell,
-		private _username: string,
-	) {
+	constructor() {
 		perf.mark("constructor");
+		this._client = new Client();
 	}
 
 	/**
-	 * Executes raw shell command.
+	 * Connects to an SSH server.
+	 *
+	 * @param options Connection parameters.
+	 * @returns Promise resolved when authenticated.
+	 */
+	async connect(options: SshClientConnectOptions): Promise<void> {
+		perf.mark("connect");
+		const config: ConnectConfig = {
+			host: options.host ?? "localhost",
+			port: options.port ?? 22,
+			username: options.username,
+			password: options.password,
+			privateKey: options.privateKey,
+			passphrase: options.passphrase,
+			readyTimeout: options.readyTimeout ?? 10_000,
+		};
+
+		return new Promise<void>((resolve, reject) => {
+			this._client.on("ready", () => {
+				this._username = options.username;
+				this._connected = true;
+				resolve();
+			});
+			this._client.on("error", (err) => {
+				reject(err);
+			});
+			this._client.connect(config);
+		});
+	}
+
+	/**
+	 * Disconnects from the SSH server.
+	 */
+	disconnect(): void {
+		perf.mark("disconnect");
+		this._client.end();
+		this._connected = false;
+	}
+
+	/**
+	 * Returns whether the client is currently connected.
+	 */
+	get isConnected(): boolean {
+		return this._connected;
+	}
+
+	/**
+	 * Executes raw shell command over SSH exec channel.
 	 *
 	 * @param command Unparsed command line.
 	 * @returns Command result with stdout/stderr/exitCode.
 	 */
 	async exec(command: string): Promise<CommandResult> {
 		perf.mark("exec");
-		const vfs = this._shell.getVfs();
-		const users = this._shell.getUsers();
-		const hostname = this._shell.getHostname();
-
-		if (!vfs || !users) {
-			throw new Error("SSH client not started");
+		if (!this._connected) {
+			throw new Error("SSH client not connected");
 		}
 
-		const result = runCommand(
-			command,
-			this._username,
-			hostname,
-			"exec",
-			this._currentCwd,
-			this._shell,
-		);
+		// Detect simple cd commands to update internal cwd
+		// Only match standalone cd commands like "cd /path" or "cd 'path'"
+		// Do NOT match compound commands like "cd /tmp && pwd" or "cd /tmp; ls"
+		const trimmed = command.trim();
+		const cdMatch = trimmed.match(/^cd\s+(['"]?)([^'";&|]+?)\1\s*$/);
+		if (cdMatch) {
+			const target = cdMatch[2]!.trim();
+			// Don't prefix cd commands - they handle their own directory changes
+			return new Promise<CommandResult>((resolve) => {
+				this._client.exec(command, (err: Error | undefined, stream: ClientChannel) => {
+					if (err) {
+						resolve({ stderr: err.message, exitCode: 1 });
+						return;
+					}
 
-		// Handle async results
-		const resolved = result instanceof Promise ? await result : result;
+					let stdout = "";
+					let stderr = "";
 
-		// Propagate cwd changes (cd, su, etc.)
-		if (resolved.nextCwd && (resolved.exitCode ?? 0) === 0) {
-			this._currentCwd = resolved.nextCwd;
+					stream.on("close", (code: number | string) => {
+						const exitCode = typeof code === "number" ? code : 0;
+						// Only update cwd if command succeeded
+						if (exitCode === 0) {
+							if (target === "/" || target.startsWith("/")) {
+								this._currentCwd = target;
+							} else if (target === "~" || target.startsWith("~/")) {
+								this._currentCwd = `/root${target === "~" ? "" : target.slice(1)}`;
+							} else if (target === "-") {
+								// Keep current (simplified)
+							} else {
+								// Relative path
+								const base = this._currentCwd === "/" ? "" : this._currentCwd;
+								const parts = `${base}/${target}`.split("/").filter(Boolean);
+								const resolved: string[] = [];
+								for (const part of parts) {
+									if (part === "..") {
+										resolved.pop();
+									} else if (part !== ".") {
+										resolved.push(part);
+									}
+								}
+								this._currentCwd = `/${resolved.join("/")}` || "/";
+							}
+						}
+
+						const result: CommandResult = {
+							stdout: stdout.replace(/\r\n/g, "\n") || undefined,
+							stderr: stderr.replace(/\r\n/g, "\n") || undefined,
+							exitCode,
+						};
+
+						resolve(result);
+					});
+
+					stream.on("data", (data: Buffer) => {
+						stdout += data.toString();
+					});
+
+					stream.stderr?.on("data", (data: Buffer) => {
+						stderr += data.toString();
+					});
+				});
+			});
 		}
 
-		return resolved;
+		// Prefix command with cd to maintain cwd state across exec sessions
+		const escapedCwd = this._currentCwd.replace(/'/g, "'\\''");
+		const prefixedCommand = this._currentCwd === "/"
+			? command
+			: `cd '${escapedCwd}' && ${command}`;
+
+		return new Promise<CommandResult>((resolve) => {
+			this._client.exec(prefixedCommand, (err: Error | undefined, stream: ClientChannel) => {
+				if (err) {
+					resolve({ stderr: err.message, exitCode: 1 });
+					return;
+				}
+
+				let stdout = "";
+				let stderr = "";
+
+				stream.on("close", (code: number | string) => {
+					const exitCode = typeof code === "number" ? code : 0;
+					const result: CommandResult = {
+						stdout: stdout.replace(/\r\n/g, "\n") || undefined,
+						stderr: stderr.replace(/\r\n/g, "\n") || undefined,
+						exitCode,
+					};
+
+					resolve(result);
+				});
+
+				stream.on("data", (data: Buffer) => {
+					stdout += data.toString();
+				});
+
+				stream.stderr?.on("data", (data: Buffer) => {
+					stderr += data.toString();
+				});
+			});
+		});
 	}
 
 	/**
@@ -125,9 +238,9 @@ export class SshClient {
 	 */
 	async cd(path: string): Promise<CommandResult> {
 		perf.mark("cd");
-		const result = await this.exec(`cd ${path}`);
-		if (result.nextCwd && result.exitCode !== 1) {
-			this._currentCwd = result.nextCwd;
+		const result = await this.exec(`cd '${path}' && pwd`);
+		if (result.exitCode === 0 && result.stdout) {
+			this._currentCwd = result.stdout.trim();
 		}
 		return result;
 	}
@@ -140,7 +253,7 @@ export class SshClient {
 	 */
 	async cat(path: string): Promise<CommandResult> {
 		perf.mark("cat");
-		return this.exec(`cat ${path}`);
+		return this.exec(`cat '${path}'`);
 	}
 
 	/**
@@ -153,7 +266,7 @@ export class SshClient {
 	async mkdir(path: string, recursive = false): Promise<CommandResult> {
 		perf.mark("mkdir");
 		const flag = recursive ? "-p " : "";
-		return this.exec(`mkdir ${flag}${path}`);
+		return this.exec(`mkdir ${flag}'${path}'`);
 	}
 
 	/**
@@ -164,7 +277,7 @@ export class SshClient {
 	 */
 	async touch(path: string): Promise<CommandResult> {
 		perf.mark("touch");
-		return this.exec(`touch ${path}`);
+		return this.exec(`touch '${path}'`);
 	}
 
 	/**
@@ -177,60 +290,36 @@ export class SshClient {
 	async rm(path: string, recursive = false): Promise<CommandResult> {
 		perf.mark("rm");
 		const flag = recursive ? "-r " : "";
-		return this.exec(`rm ${flag}${path}`);
+		return this.exec(`rm ${flag}'${path}'`);
 	}
 
 	/**
-	 * Writes file content.
+	 * Writes file content over SSH.
 	 *
 	 * @param path Target file path.
 	 * @param content Text to write.
-	 * @returns Result from touch/write simulation.
+	 * @returns Result from write operation.
 	 */
 	async writeFile(path: string, content: string): Promise<CommandResult> {
 		perf.mark("writeFile");
-		const vfs = this._shell.getVfs();
-		const users = this._shell.getUsers();
-
-		if (!vfs || !users) {
-			throw new Error("SSH client not started");
-		}
-
-		const uid = users.getUid(this._username);
-		const gid = users.getGid(this._username);
-		try {
-			vfs.writeFile(path, content, {}, uid, gid);
-			return { stdout: `File '${path}' written`, exitCode: 0 };
-		} catch (error) {
-			return {
-				stderr: `Failed to write '${path}': ${error instanceof Error ? error.message : String(error)}`,
-				exitCode: 1,
-			};
-		}
+		// Escape backslashes and double quotes for double-quoted string
+		const escaped = content
+			.replace(/\\/g, "\\\\")
+			.replace(/"/g, '\\"')
+			.replace(/`/g, "\\`")
+			.replace(/\$/g, "\\$");
+		return this.exec(`printf "%s" "${escaped}" > "${path}"`);
 	}
 
 	/**
-	 * Reads file content programmatically.
+	 * Reads file content over SSH.
 	 *
 	 * @param path Target file path.
 	 * @returns File content as string or error in result.
 	 */
 	async readFile(path: string): Promise<CommandResult> {
 		perf.mark("readFile");
-		const vfs = this._shell.getVfs();
-		if (!vfs) {
-			throw new Error("SSH client not started");
-		}
-
-		try {
-			const content = vfs.readFile(path);
-			return { stdout: content, exitCode: 0 };
-		} catch (error) {
-			return {
-				stderr: `Failed to read '${path}': ${error instanceof Error ? error.message : String(error)}`,
-				exitCode: 1,
-			};
-		}
+		return this.exec(`cat '${path}'`);
 	}
 
 	/**

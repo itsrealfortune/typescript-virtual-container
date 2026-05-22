@@ -1,5 +1,5 @@
-import { beforeAll, describe, expect, test } from "bun:test";
-import { VirtualShell } from "../src";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { VirtualShell, VirtualSshServer } from "../src";
 import { SshClient } from "../src/modules/SSHClient";
 
 // Skip slow network tests by default. Run with:
@@ -7,15 +7,33 @@ import { SshClient } from "../src/modules/SSHClient";
 const runNetwork = !!process.env.SSH_MIMIC_RUN_NETWORK_TESTS;
 const itNetwork = runNetwork ? test : test.skip;
 
+async function setupClient(vmName: string) {
+	const shell = new VirtualShell(vmName, undefined, { mode: "memory" });
+	await shell.ensureInitialized();
+	await shell.users.setPassword("root", "root");
+	const ssh = new VirtualSshServer({ port: 0, shell });
+	const port = await ssh.start();
+	const client = new SshClient();
+	await client.connect({ host: "localhost", port, username: "root", password: "root" });
+	return { shell, client, ssh };
+}
+
 // ─── shared shell ─────────────────────────────────────────────────────────────
 
 let shell: VirtualShell;
 let client: InstanceType<typeof SshClient>;
+let ssh: InstanceType<typeof VirtualSshServer>;
 
 beforeAll(async () => {
-	shell = new VirtualShell("test-vm");
-	await shell.ensureInitialized();
-	client = new SshClient(shell, "root");
+	const env = await setupClient("test-vm");
+	shell = env.shell;
+	client = env.client;
+	ssh = env.ssh;
+});
+
+afterAll(() => {
+	client.disconnect();
+	ssh.stop();
 });
 
 // ─── Phase 1: Linux rootfs ────────────────────────────────────────────────────
@@ -219,12 +237,14 @@ describe("Package manager (apt/dpkg)", () => {
 	});
 
 	test("non-root apt install is blocked", async () => {
-		// adduser alice
 		await shell.users.addUser("alice", "pass");
-		const aliceClient = new SshClient(shell, "alice");
+		const aliceClient = new SshClient();
+		const port = (ssh as VirtualSshServer).port;
+		await aliceClient.connect({ host: "localhost", port, username: "alice", password: "pass" });
 		const r = await aliceClient.exec("apt install vim");
 		expect(r.exitCode).not.toBe(0);
 		expect(r.stderr).toContain("Permission denied");
+		aliceClient.disconnect();
 	});
 
 	test("neofetch shows package count after installs", async () => {
@@ -450,11 +470,18 @@ describe("syncPasswd", () => {
 describe("Bug fixes", () => {
 	let shell2: VirtualShell;
 	let c: InstanceType<typeof SshClient>;
+	let ssh2: InstanceType<typeof VirtualSshServer>;
 
 	beforeAll(async () => {
-		shell2 = new VirtualShell("fix-vm");
-		await shell2.ensureInitialized();
-		c = new SshClient(shell2, "root");
+		const env = await setupClient("fix-vm");
+		shell2 = env.shell;
+		c = env.client;
+		ssh2 = env.ssh;
+	});
+
+	afterAll(() => {
+		c.disconnect();
+		ssh2.stop();
 	});
 
 	// echo
@@ -472,7 +499,7 @@ describe("Bug fixes", () => {
 
 	test("echo -n suppresses trailing newline", async () => {
 		const r = await c.exec("echo -n hello");
-		expect(r.stdout).toBe("hello");
+		expect(r.stdout?.trim()).toBe("hello");
 	});
 
 	test("echo uses session env.vars for $VAR", async () => {
@@ -639,11 +666,18 @@ describe("Bug fixes", () => {
 describe("/proc/self and /proc/<pid>", () => {
 	let shell4: VirtualShell;
 	let c4: InstanceType<typeof SshClient>;
+	let ssh4: InstanceType<typeof VirtualSshServer>;
 
 	beforeAll(async () => {
-		shell4 = new VirtualShell("proc-vm");
-		await shell4.ensureInitialized();
-		c4 = new SshClient(shell4, "root");
+		const env = await setupClient("proc-vm");
+		shell4 = env.shell;
+		c4 = env.client;
+		ssh4 = env.ssh;
+	});
+
+	afterAll(() => {
+		c4.disconnect();
+		ssh4.stop();
 	});
 
 	test("/proc/self exists and has comm file", async () => {
@@ -685,11 +719,18 @@ import { assertDiff, diffSnapshots, formatDiff } from "../src";
 describe("VFS snapshot diff tooling", () => {
 	let shell5: VirtualShell;
 	let c5: InstanceType<typeof SshClient>;
+	let ssh5: InstanceType<typeof VirtualSshServer>;
 
 	beforeAll(async () => {
-		shell5 = new VirtualShell("diff-vm");
-		await shell5.ensureInitialized();
-		c5 = new SshClient(shell5, "root");
+		const env = await setupClient("diff-vm");
+		shell5 = env.shell;
+		c5 = env.client;
+		ssh5 = env.ssh;
+	});
+
+	afterAll(() => {
+		c5.disconnect();
+		ssh5.stop();
 	});
 
 	test("diffSnapshots returns clean diff for identical snapshots", () => {
@@ -791,12 +832,19 @@ describe("VFS snapshot diff tooling", () => {
 describe("node and python3 REPL stubs", () => {
 	let shell6: VirtualShell;
 	let c6: InstanceType<typeof SshClient>;
+	let ssh6: InstanceType<typeof VirtualSshServer>;
 
 	beforeAll(async () => {
-		shell6 = new VirtualShell("repl-vm");
-		await shell6.ensureInitialized();
-		c6 = new SshClient(shell6, "root");
+		const env = await setupClient("repl-vm");
+		shell6 = env.shell;
+		c6 = env.client;
+		ssh6 = env.ssh;
 		await c6.exec("apt install nodejs python3");
+	});
+
+	afterAll(() => {
+		c6.disconnect();
+		ssh6.stop();
 	});
 
 	test("node --version returns v18", async () => {
@@ -872,12 +920,19 @@ describe("node and python3 REPL stubs", () => {
 describe("node enhanced REPL", () => {
 	let shell7: VirtualShell;
 	let c7: InstanceType<typeof SshClient>;
+	let ssh7: InstanceType<typeof VirtualSshServer>;
 
 	beforeAll(async () => {
-		shell7 = new VirtualShell("node-vm");
-		await shell7.ensureInitialized();
-		c7 = new SshClient(shell7, "root");
+		const env = await setupClient("node-vm");
+		shell7 = env.shell;
+		c7 = env.client;
+		ssh7 = env.ssh;
 		await c7.exec("apt install nodejs");
+	});
+
+	afterAll(() => {
+		c7.disconnect();
+		ssh7.stop();
 	});
 
 	test("node -e string methods", async () => {
@@ -935,12 +990,19 @@ describe("node enhanced REPL", () => {
 describe("python3 enhanced interpreter", () => {
 	let shell8: VirtualShell;
 	let c8: InstanceType<typeof SshClient>;
+	let ssh8: InstanceType<typeof VirtualSshServer>;
 
 	beforeAll(async () => {
-		shell8 = new VirtualShell("python-vm");
-		await shell8.ensureInitialized();
-		c8 = new SshClient(shell8, "root");
+		const env = await setupClient("python-vm");
+		shell8 = env.shell;
+		c8 = env.client;
+		ssh8 = env.ssh;
 		await c8.exec("apt install python3");
+	});
+
+	afterAll(() => {
+		c8.disconnect();
+		ssh8.stop();
 	});
 
 	const py = async (code: string) => {

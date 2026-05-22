@@ -1,5 +1,5 @@
-import { beforeAll, describe, expect, test } from "bun:test";
-import { type VirtualShell, SshClient } from "../src";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { SshClient, type VirtualShell, type VirtualSshServer } from "../src";
 import { createTestEnv, runCmd } from "./test-helper";
 
 // Skip network-dependent tests by default. Run with:
@@ -11,16 +11,32 @@ let client: InstanceType<typeof SshClient>;
 let nonRootClient: InstanceType<typeof SshClient>;
 let sudoerClient: InstanceType<typeof SshClient>;
 let shell: VirtualShell;
+let ssh: VirtualSshServer;
+let port: number;
 
 beforeAll(async () => {
 	const env = await createTestEnv("test-admin");
 	client = env.client;
 	shell = env.shell;
+	ssh = env.ssh;
+	port = env.port;
+
 	await shell.users.addUser("regular", "pass");
+	await shell.users.setPassword("regular", "pass");
 	await shell.users.addUser("sudoer", "pass");
+	await shell.users.setPassword("sudoer", "pass");
 	shell.users.addSudoer("sudoer");
-	nonRootClient = new SshClient(shell, "regular");
-	sudoerClient = new SshClient(shell, "sudoer");
+
+	nonRootClient = new SshClient();
+	await nonRootClient.connect({ host: "localhost", port, username: "regular", password: "pass" });
+
+	sudoerClient = new SshClient();
+	await sudoerClient.connect({ host: "localhost", port, username: "sudoer", password: "pass" });
+});
+
+afterAll(() => {
+	nonRootClient.disconnect();
+	sudoerClient.disconnect();
 });
 
 // ─── USERADD tests ────────────────────────────────────────────────────────
@@ -49,9 +65,14 @@ describe("useradd command", () => {
 
 	test("useradd non-root fails", async () => {
 		const env = await createTestEnv("test-admin-nonroot");
-		const nonrootClient = new SshClient(env.shell, "testuser");
+		await env.shell.users.addUser("testuser", "pass");
+		await env.shell.users.setPassword("testuser", "pass");
+		const nonrootClient = new SshClient();
+		await nonrootClient.connect({ host: "localhost", port: env.port, username: "testuser", password: "pass" });
 		const r = await runCmd(nonrootClient, "useradd -m newuser");
 		expect(r.exitCode).not.toBe(0);
+		nonrootClient.disconnect();
+		env.ssh.stop();
 	});
 });
 

@@ -1,15 +1,26 @@
-import { beforeAll, describe, expect, test } from "bun:test";
-import { VirtualShell, SshClient } from "../src";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { VirtualShell, VirtualSshServer, SshClient } from "../src";
 import { runExec } from "../src/modules/SSHMimic/exec";
 import type { ExecStream } from "../src/types/streams";
 
 let shell: VirtualShell;
+let ssh: VirtualSshServer;
 let client: SshClient;
+let port: number;
 
 beforeAll(async () => {
 	shell = new VirtualShell("exec-test");
 	await shell.ensureInitialized();
-	client = new SshClient(shell, "root");
+	await shell.users.setPassword("root", "root");
+	ssh = new VirtualSshServer({ port: 0, shell });
+	port = await ssh.start();
+	client = new SshClient();
+	await client.connect({ host: "localhost", port, username: "root", password: "root" });
+});
+
+afterAll(() => {
+	client.disconnect();
+	ssh.stop();
 });
 
 describe("runExec", () => {

@@ -5,13 +5,14 @@
  * brute-force attempts, and generates audit reports.
  */
 
-import { HoneyPot, SshClient, VirtualShell } from "../src";
+import { HoneyPot, SshClient, VirtualShell, VirtualSshServer } from "../src";
 
 // ── Deploy honeypot ───────────────────────────────────────────────
 console.log("--- Deploy honeypot ---");
 
 const shell = new VirtualShell("honeypot");
 await shell.ensureInitialized();
+await shell.users.setPassword("root", "root");
 const vfs = shell.getVfs()!;
 const users = shell.getUsers()!;
 
@@ -31,10 +32,15 @@ console.log("  - Decoy files planted: 6");
 console.log("  - Audit logging: enabled");
 console.log("  - Anomaly detection: enabled");
 
+// ── Start SSH server ──────────────────────────────────────────────
+const ssh = new VirtualSshServer({ port: 0, shell });
+const port = await ssh.start();
+
 // ── Simulate attacker activity ────────────────────────────────────
 console.log("\n--- Simulate attacker activity ---");
 
-const attacker = new SshClient(shell, "root");
+const attacker = new SshClient();
+await attacker.connect({ host: "localhost", port, username: "root", password: "root" });
 
 const commands = [
 	"cat /etc/passwd",
@@ -87,3 +93,6 @@ if (anomalies.length === 0) {
 }
 
 console.log("\n--- Honeypot audit complete ---");
+
+attacker.disconnect();
+ssh.stop();

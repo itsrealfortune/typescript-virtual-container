@@ -46,7 +46,8 @@ async function quickStart() {
 	console.log("  ✓ Created user 'dev_user'");
 
 	// Create a client
-	const client = new SshClient(shell, "dev_user");
+	const client = new SshClient();
+	await client.connect({ host: "localhost", port: 2222, username: "dev_user", password: "root" });
 
 	// Create files
 	await client.mkdir("/app", true);
@@ -103,6 +104,7 @@ async function quickStart() {
 	console.log(`  ✓ Ready to store in database, file, or monitoring system\n`);
 
 	// Cleanup
+	client.disconnect();
 	ssh.stop();
 	console.log("✅ Example complete!");
 }

@@ -12,7 +12,10 @@ interface Tenant {
 	baie: Baie;
 	appVM: VirtualShell;
 	dbVM: VirtualShell;
-	sshServer: VirtualSshServer;
+	appSsh: VirtualSshServer;
+	dbSsh: VirtualSshServer;
+	appPort: number;
+	dbPort: number;
 	users: string[];
 }
 
@@ -39,30 +42,38 @@ for (const config of tenantConfigs) {
 	dbVM.vfs.setRamCap(200 * 1024 * 1024);
 	dbVM.users.setCpuCapCores(2);
 
+	appVM.users.setPassword("root", "root");
+	dbVM.users.setPassword("root", "root");
+
 	for (const username of config.users) {
 		await appVM.users.addUser(username, "password123");
 		await dbVM.users.addUser(username, "password123");
 	}
 
-	const appClient = new SshClient(appVM, "root");
+	const appSsh = new VirtualSshServer({ port: 0, shell: appVM });
+	const dbSsh = new VirtualSshServer({ port: 0, shell: dbVM });
+	const [appPort, dbPort] = await Promise.all([appSsh.start(), dbSsh.start()]);
+
+	const appClient = new SshClient();
+	await appClient.connect({ host: "localhost", port: appPort, username: "root", password: "root" });
 	await appClient.exec(
 		"mkdir -p /app/config /app/logs /app/data && " +
 		`echo '{"tenant":"${config.id}","env":"production"}' > /app/config/app.json && ` +
 		"echo 'App initialized' > /app/logs/init.log"
 	);
+	appClient.disconnect();
 
-	const dbClient = new SshClient(dbVM, "root");
+	const dbClient = new SshClient();
+	await dbClient.connect({ host: "localhost", port: dbPort, username: "root", password: "root" });
 	await dbClient.exec(
 		"mkdir -p /var/lib/db /var/log/db && " +
 		`echo 'CREATE DATABASE ${config.id.replace(/-/g, "_")};' > /var/lib/db/init.sql && ` +
 		"echo 'Database initialized' > /var/log/db/init.log"
 	);
+	dbClient.disconnect();
 
-	const sshServer = new VirtualSshServer({ port: 0, shell: appVM });
-	await sshServer.start();
-
-	tenants.push({ id: config.id, baie, appVM, dbVM, sshServer, users: config.users });
-	console.log(`  ${config.id}: ${config.users.length} users, app+db VMs, SSH on port ${sshServer.port}`);
+	tenants.push({ id: config.id, baie, appVM, dbVM, appSsh, dbSsh, appPort, dbPort, users: config.users });
+	console.log(`  ${config.id}: ${config.users.length} users, app+db VMs, app SSH ${appPort}, db SSH ${dbPort}`);
 }
 
 // ── Cross-tenant isolation verification ───────────────────────────
@@ -75,8 +86,10 @@ for (let i = 0; i < tenants.length; i++) {
 		const t1 = tenants[i]!;
 		const t2 = tenants[j]!;
 
-		const appClient = new SshClient(t1.appVM, "root");
+		const appClient = new SshClient();
+		await appClient.connect({ host: "localhost", port: t1.appPort, username: "root", password: "root" });
 		const result = await appClient.exec(`nc -z -w 1 ${t2.baie.switch.gateway} 5432 2>&1 || echo "unreachable"`);
+		appClient.disconnect();
 
 		const isolated = result.stdout!.includes("unreachable") || result.exitCode !== 0;
 		console.log(`  ${t1.id} -> ${t2.id}: ${isolated ? "isolated" : "connected"}`);
@@ -104,6 +117,7 @@ for (const tenant of tenants) {
 // ── Cleanup ───────────────────────────────────────────────────────
 console.log("\n--- Cleanup ---");
 for (const tenant of tenants) {
-	await tenant.sshServer.stop();
+	await tenant.appSsh.stop();
+	await tenant.dbSsh.stop();
 }
 console.log("All SSH servers stopped");
