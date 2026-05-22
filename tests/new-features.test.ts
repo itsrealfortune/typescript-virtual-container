@@ -468,91 +468,75 @@ describe("syncPasswd", () => {
 // ─── Bug fixes ────────────────────────────────────────────────────────────────
 
 describe("Bug fixes", () => {
-	let shell2: VirtualShell;
-	let c: InstanceType<typeof SshClient>;
-	let ssh2: InstanceType<typeof VirtualSshServer>;
-
-	beforeAll(async () => {
-		const env = await setupClient("fix-vm");
-		shell2 = env.shell;
-		c = env.client;
-		ssh2 = env.ssh;
-	});
-
-	afterAll(() => {
-		c.disconnect();
-		ssh2.stop();
-	});
-
 	// echo
 	test("echo adds newline — >> append works", async () => {
-		await c.exec("echo line1 > /tmp/append.txt");
-		await c.exec("echo line2 >> /tmp/append.txt");
-		const content = shell2.vfs.readFile("/tmp/append.txt");
+		await client.exec("echo line1 > /tmp/append.txt");
+		await client.exec("echo line2 >> /tmp/append.txt");
+		const content = shell.vfs.readFile("/tmp/append.txt");
 		expect(content).toBe("line1\nline2\n");
 	});
 
 	test("echo -e interprets escape sequences", async () => {
-		const r = await c.exec("echo -e 'a\\tb'");
+		const r = await client.exec("echo -e 'a\\tb'");
 		expect(r.stdout?.trim()).toBe("a\tb");
 	});
 
 	test("echo -n suppresses trailing newline", async () => {
-		const r = await c.exec("echo -n hello");
+		const r = await client.exec("echo -n hello");
 		expect(r.stdout?.trim()).toBe("hello");
 	});
 
 	test("echo uses session env.vars for $VAR", async () => {
-		const r = await c.exec("export MYVAR=world && echo $MYVAR");
+		const r = await client.exec("export MYVAR=world && echo $MYVAR");
 		expect(r.stdout?.trim()).toBe("world");
 	});
 
 	// ls -a
 	test("ls -a shows dotfiles", async () => {
-		await c.exec("touch /tmp/.hidden && touch /tmp/visible");
-		const normal = await c.exec("ls /tmp");
-		const all = await c.exec("ls -a /tmp");
-		expect(normal.stdout).not.toContain(".hidden");
-		expect(all.stdout).toContain(".hidden");
-		expect(all.stdout).toContain("visible");
+		await client.exec("touch /tmp/.hidden-bf && touch /tmp/visible-bf");
+		const normal = await client.exec("ls /tmp");
+		const all = await client.exec("ls -a /tmp");
+		expect(normal.stdout).not.toContain(".hidden-bf");
+		expect(all.stdout).toContain(".hidden-bf");
+		expect(all.stdout).toContain("visible-bf");
 	});
 
 	// chmod symbolic
 	test("chmod +x adds execute bit", async () => {
-		await c.exec("touch /tmp/script.sh");
-		const before = shell2.vfs.stat("/tmp/script.sh").mode;
-		await c.exec("chmod +x /tmp/script.sh");
-		const after = shell2.vfs.stat("/tmp/script.sh").mode;
+		await client.exec("touch /tmp/script-bf.sh");
+		const before = shell.vfs.stat("/tmp/script-bf.sh").mode;
+		await client.exec("chmod +x /tmp/script-bf.sh");
+		const after = shell.vfs.stat("/tmp/script-bf.sh").mode;
 		expect(after & 0o111).toBeGreaterThan(0);
 		expect(before & 0o111).toBe(0);
 	});
 
 	test("chmod u+x adds only user execute bit", async () => {
-		await c.exec("touch /tmp/u.sh && chmod 644 /tmp/u.sh");
-		await c.exec("chmod u+x /tmp/u.sh");
-		const mode = shell2.vfs.stat("/tmp/u.sh").mode;
-		expect(mode & 0o100).toBe(0o100); // user x set
-		expect(mode & 0o010).toBe(0); // group x not set
+		await client.exec("touch /tmp/u-bf.sh && chmod 644 /tmp/u-bf.sh");
+		await client.exec("chmod u+x /tmp/u-bf.sh");
+		const mode = shell.vfs.stat("/tmp/u-bf.sh").mode;
+		expect(mode & 0o100).toBe(0o100);
+		expect(mode & 0o010).toBe(0);
 	});
 
 	test("chmod go-r removes group+other read", async () => {
-		await c.exec("touch /tmp/priv.sh && chmod 755 /tmp/priv.sh");
-		await c.exec("chmod go-r /tmp/priv.sh");
-		const mode = shell2.vfs.stat("/tmp/priv.sh").mode;
+		await client.exec("touch /tmp/priv-bf.sh && chmod 755 /tmp/priv-bf.sh");
+		await client.exec("chmod go-r /tmp/priv-bf.sh");
+		const mode = shell.vfs.stat("/tmp/priv-bf.sh").mode;
 		expect(mode & 0o044).toBe(0);
 	});
 
 	// cat -n
 	test("cat -n numbers lines", async () => {
-		await c.exec("echo -e 'foo\\nbar' > /tmp/cattest.txt");
-		const r = await c.exec("cat -n /tmp/cattest.txt");
+		await client.exec("echo -e 'foo\\nbar' > /tmp/cattest-bf.txt");
+		const r = await client.exec("cat -n /tmp/cattest-bf.txt");
 		expect(r.stdout).toContain("1\t");
 		expect(r.stdout).toContain("2\t");
 	});
 
 	// ping -c
 	test("ping -c sends correct packet count", async () => {
-		const r = await c.exec("ping -c 1 localhost");
+		const r = await client.exec("ping -c 1 localhost");
 		const dataLines = r.stdout
 			?.split("\n")
 			.filter((l) => l.includes("icmp_seq="));
@@ -561,102 +545,100 @@ describe("Bug fixes", () => {
 
 	// test / [ command
 	test("[ -f path ] returns 0 for existing file", async () => {
-		await c.exec("touch /tmp/testfile");
-		const r = await c.exec("[ -f /tmp/testfile ] && echo yes || echo no");
+		await client.exec("touch /tmp/testfile-bf");
+		const r = await client.exec("[ -f /tmp/testfile-bf ] && echo yes || echo no");
 		expect(r.stdout?.trim()).toBe("yes");
 	});
 
 	test("[ -d path ] returns 0 for existing directory", async () => {
-		const r = await c.exec("[ -d /etc ] && echo yes || echo no");
+		const r = await client.exec("[ -d /etc ] && echo yes || echo no");
 		expect(r.stdout?.trim()).toBe("yes");
 	});
 
 	test("[ -f path ] returns 1 for non-existent file", async () => {
-		const r = await c.exec(
-			"[ -f /tmp/doesnotexist999 ] && echo yes || echo no",
+		const r = await client.exec(
+			"[ -f /tmp/doesnotexist-bf999 ] && echo yes || echo no",
 		);
 		expect(r.stdout?.trim()).toBe("no");
 	});
 
 	test("[ -e path ] returns 0 for existing path", async () => {
-		const r = await c.exec("[ -e /etc/hostname ] && echo yes || echo no");
+		const r = await client.exec("[ -e /etc/hostname ] && echo yes || echo no");
 		expect(r.stdout?.trim()).toBe("yes");
 	});
 
 	test("test string comparison = works", async () => {
-		const r = await c.exec("[ hello = hello ] && echo yes || echo no");
+		const r = await client.exec("[ hello = hello ] && echo yes || echo no");
 		expect(r.stdout?.trim()).toBe("yes");
 	});
 
 	test("test numeric -eq works", async () => {
-		const r = await c.exec("[ 5 -eq 5 ] && echo yes || echo no");
+		const r = await client.exec("[ 5 -eq 5 ] && echo yes || echo no");
 		expect(r.stdout?.trim()).toBe("yes");
 	});
 
 	test("test numeric -lt works", async () => {
-		const r = await c.exec("[ 3 -lt 5 ] && echo yes || echo no");
+		const r = await client.exec("[ 3 -lt 5 ] && echo yes || echo no");
 		expect(r.stdout?.trim()).toBe("yes");
 	});
 
 	test("test -z empty string", async () => {
-		const r = await c.exec("[ -z '' ] && echo yes || echo no");
+		const r = await client.exec("[ -z '' ] && echo yes || echo no");
 		expect(r.stdout?.trim()).toBe("yes");
 	});
 
 	test("test -n non-empty string", async () => {
-		const r = await c.exec("[ -n hello ] && echo yes || echo no");
+		const r = await client.exec("[ -n hello ] && echo yes || echo no");
 		expect(r.stdout?.trim()).toBe("yes");
 	});
 
 	// source / .
 	test("source executes file in current env", async () => {
-		shell2.vfs.writeFile("/tmp/setup.sh", "export SOURCED=yes\n");
-		const r = await c.exec("source /tmp/setup.sh && echo $SOURCED");
+		shell.vfs.writeFile("/tmp/setup-bf.sh", "export SOURCED=yes\n");
+		const r = await client.exec("source /tmp/setup-bf.sh && echo $SOURCED");
 		expect(r.stdout?.trim()).toBe("yes");
 	});
 
 	test(". (dot) is alias for source", async () => {
-		shell2.vfs.writeFile("/tmp/dot.sh", "export DOTTED=ok\n");
-		const r = await c.exec(". /tmp/dot.sh && echo $DOTTED");
+		shell.vfs.writeFile("/tmp/dot-bf.sh", "export DOTTED=ok\n");
+		const r = await client.exec(". /tmp/dot-bf.sh && echo $DOTTED");
 		expect(r.stdout?.trim()).toBe("ok");
 	});
 
 	// sh -c with $(cmd)
 	test("sh -c handles $(cmd) substitution", async () => {
-		const r = await c.exec("sh -c 'echo user=$(whoami)'");
+		const r = await client.exec("sh -c 'echo user=$(whoami)'");
 		expect(r.stdout?.trim()).toBe("user=root");
 	});
 
 	test("sh -c for loop with $(cmd)", async () => {
-		const r = await c.exec("sh -c 'for x in a b; do echo $(echo $x); done'");
+		const r = await client.exec("sh -c 'for x in a b; do echo $(echo $x); done'");
 		expect(r.stdout?.trim()).toBe("a\nb");
 	});
 
 	// history
 	test("history command returns command list", async () => {
-		// history reads from VFS .bash_history (written by interactive shell)
-		// in non-interactive context it may be empty — just check it doesn't crash
-		const r = await c.exec("history");
+		const r = await client.exec("history");
 		expect(r.exitCode).toBe(0);
 	});
 
 	// ps -u
 	test("ps -u shows USER column", async () => {
-		const r = await c.exec("ps -u");
+		const r = await client.exec("ps -u");
 		expect(r.stdout).toContain("USER");
 		expect(r.stdout).toContain("PID");
 		expect(r.stdout).toContain("%CPU");
 	});
 
 	test("ps aux shows extended format", async () => {
-		const r = await c.exec("ps aux");
+		const r = await client.exec("ps aux");
 		expect(r.stdout).toContain("USER");
 		expect(r.exitCode).toBe(0);
 	});
 
 	// wc -l with pipe (after echo -e fix)
 	test("wc -l counts newlines correctly via pipe", async () => {
-		const r = await c.exec("echo -e 'a\\nb\\nc' | wc -l");
+		const r = await client.exec("echo -e 'a\\nb\\nc' | wc -l");
 		expect(r.stdout?.trim()).toBe("3");
 	});
 });
@@ -664,77 +646,45 @@ describe("Bug fixes", () => {
 // ─── Roadmap features ────────────────────────────────────────────────────────
 
 describe("/proc/self and /proc/<pid>", () => {
-	let shell4: VirtualShell;
-	let c4: InstanceType<typeof SshClient>;
-	let ssh4: InstanceType<typeof VirtualSshServer>;
-
-	beforeAll(async () => {
-		const env = await setupClient("proc-vm");
-		shell4 = env.shell;
-		c4 = env.client;
-		ssh4 = env.ssh;
-	});
-
-	afterAll(() => {
-		c4.disconnect();
-		ssh4.stop();
-	});
-
 	test("/proc/self exists and has comm file", () => {
-		expect(shell4.vfs.exists("/proc/self")).toBe(true);
-		expect(shell4.vfs.exists("/proc/self/comm")).toBe(true);
+		expect(shell.vfs.exists("/proc/self")).toBe(true);
+		expect(shell.vfs.exists("/proc/self/comm")).toBe(true);
 	});
 
 	test("/proc/self/status has Name field", async () => {
-		const r = await c4.exec("cat /proc/self/status");
+		const r = await client.exec("cat /proc/self/status");
 		expect(r.exitCode).toBe(0);
 		expect(r.stdout).toContain("Name:");
 	});
 
 	test("/proc/self/cmdline is readable", async () => {
-		const r = await c4.exec("cat /proc/self/cmdline");
+		const r = await client.exec("cat /proc/self/cmdline");
 		expect(r.exitCode).toBe(0);
 	});
 
 	test("/proc/1 (init) exists", () => {
-		expect(shell4.vfs.exists("/proc/1")).toBe(true);
-		expect(shell4.vfs.exists("/proc/1/status")).toBe(true);
+		expect(shell.vfs.exists("/proc/1")).toBe(true);
+		expect(shell.vfs.exists("/proc/1/status")).toBe(true);
 	});
 
 	test("/proc/1/status has correct pid", async () => {
-		const r = await c4.exec("cat /proc/1/status");
+		const r = await client.exec("cat /proc/1/status");
 		expect(r.stdout).toContain("Pid:");
 		expect(r.stdout).toContain("1");
 	});
 
 	test("refreshProcFs updates /proc contents", () => {
-		shell4.refreshProcFs();
-		expect(shell4.vfs.exists("/proc/uptime")).toBe(true);
-		expect(shell4.vfs.exists("/proc/self")).toBe(true);
+		shell.refreshProcFs();
+		expect(shell.vfs.exists("/proc/uptime")).toBe(true);
+		expect(shell.vfs.exists("/proc/self")).toBe(true);
 	});
 });
 
 import { assertDiff, diffSnapshots, formatDiff } from "../src";
 
 describe("VFS snapshot diff tooling", () => {
-	let shell5: VirtualShell;
-	let c5: InstanceType<typeof SshClient>;
-	let ssh5: InstanceType<typeof VirtualSshServer>;
-
-	beforeAll(async () => {
-		const env = await setupClient("diff-vm");
-		shell5 = env.shell;
-		c5 = env.client;
-		ssh5 = env.ssh;
-	});
-
-	afterAll(() => {
-		c5.disconnect();
-		ssh5.stop();
-	});
-
 	test("diffSnapshots returns clean diff for identical snapshots", () => {
-		const snap = shell5.vfs.toSnapshot();
+		const snap = shell.vfs.toSnapshot();
 		const diff = diffSnapshots(snap, snap);
 		expect(diff.clean).toBe(true);
 		expect(diff.added).toHaveLength(0);
@@ -743,174 +693,161 @@ describe("VFS snapshot diff tooling", () => {
 	});
 
 	test("diffSnapshots detects added file", async () => {
-		const before = shell5.vfs.toSnapshot();
-		await c5.exec("echo test > /tmp/diff-test.txt");
-		const after = shell5.vfs.toSnapshot();
+		const before = shell.vfs.toSnapshot();
+		await client.exec("echo test > /tmp/diff-test-nf.txt");
+		const after = shell.vfs.toSnapshot();
 		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
 		const paths = diff.added.map((e) => e.path);
-		expect(paths).toContain("/tmp/diff-test.txt");
+		expect(paths).toContain("/tmp/diff-test-nf.txt");
 		expect(diff.clean).toBe(false);
 	});
 
 	test("diffSnapshots detects added directory", () => {
-		const before = shell5.vfs.toSnapshot();
-		shell5.vfs.mkdir("/tmp/diff-newdir", 0o755);
-		const after = shell5.vfs.toSnapshot();
+		const before = shell.vfs.toSnapshot();
+		shell.vfs.mkdir("/tmp/diff-newdir-nf", 0o755);
+		const after = shell.vfs.toSnapshot();
 		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
 		const paths = diff.added.map((e) => e.path);
-		expect(paths).toContain("/tmp/diff-newdir");
+		expect(paths).toContain("/tmp/diff-newdir-nf");
 	});
 
 	test("diffSnapshots detects modified file", () => {
-		shell5.vfs.writeFile("/tmp/modtest.txt", "before");
-		const before = shell5.vfs.toSnapshot();
-		shell5.vfs.writeFile("/tmp/modtest.txt", "after");
-		const after = shell5.vfs.toSnapshot();
+		shell.vfs.writeFile("/tmp/modtest-nf.txt", "before");
+		const before = shell.vfs.toSnapshot();
+		shell.vfs.writeFile("/tmp/modtest-nf.txt", "after");
+		const after = shell.vfs.toSnapshot();
 		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
-		const mod = diff.modified.find((e) => e.path === "/tmp/modtest.txt");
+		const mod = diff.modified.find((e) => e.path === "/tmp/modtest-nf.txt");
 		expect(mod).toBeDefined();
 		expect(mod?.before).toBe("before");
 		expect(mod?.after).toBe("after");
 	});
 
 	test("diffSnapshots detects removed file", () => {
-		shell5.vfs.writeFile("/tmp/toremove.txt", "bye");
-		const before = shell5.vfs.toSnapshot();
-		shell5.vfs.remove("/tmp/toremove.txt");
-		const after = shell5.vfs.toSnapshot();
+		shell.vfs.writeFile("/tmp/toremove-nf.txt", "bye");
+		const before = shell.vfs.toSnapshot();
+		shell.vfs.remove("/tmp/toremove-nf.txt");
+		const after = shell.vfs.toSnapshot();
 		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
 		const paths = diff.removed.map((e) => e.path);
-		expect(paths).toContain("/tmp/toremove.txt");
+		expect(paths).toContain("/tmp/toremove-nf.txt");
 	});
 
 	test("diffSnapshots ignores specified prefixes", () => {
-		shell5.vfs.writeFile("/proc/uptime", "999.00 888.00\n");
-		const before = shell5.vfs.toSnapshot();
-		shell5.vfs.writeFile("/proc/uptime", "1000.00 900.00\n");
-		const after = shell5.vfs.toSnapshot();
+		shell.vfs.writeFile("/proc/uptime", "999.00 888.00\n");
+		const before = shell.vfs.toSnapshot();
+		shell.vfs.writeFile("/proc/uptime", "1000.00 900.00\n");
+		const after = shell.vfs.toSnapshot();
 		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
 		expect(diff.modified.map((e) => e.path)).not.toContain("/proc/uptime");
 	});
 
 	test("formatDiff returns (no changes) for clean diff", () => {
-		const snap = shell5.vfs.toSnapshot();
+		const snap = shell.vfs.toSnapshot();
 		const diff = diffSnapshots(snap, snap);
 		expect(formatDiff(diff)).toBe("(no changes)");
 	});
 
 	test("formatDiff includes change summary", () => {
-		const before = shell5.vfs.toSnapshot();
-		shell5.vfs.writeFile("/tmp/format-test.txt", "x");
-		const after = shell5.vfs.toSnapshot();
+		const before = shell.vfs.toSnapshot();
+		shell.vfs.writeFile("/tmp/format-test-nf.txt", "x");
+		const after = shell.vfs.toSnapshot();
 		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
 		const formatted = formatDiff(diff);
 		expect(formatted).toContain("added");
 	});
 
 	test("assertDiff passes when paths match", () => {
-		shell5.vfs.writeFile("/tmp/assert-test.txt", "hello");
-		const before = shell5.vfs.toSnapshot();
-		shell5.vfs.writeFile("/tmp/assert-new.txt", "new");
-		shell5.vfs.remove("/tmp/assert-test.txt");
-		const after = shell5.vfs.toSnapshot();
+		shell.vfs.writeFile("/tmp/assert-test-nf.txt", "hello");
+		const before = shell.vfs.toSnapshot();
+		shell.vfs.writeFile("/tmp/assert-new-nf.txt", "new");
+		shell.vfs.remove("/tmp/assert-test-nf.txt");
+		const after = shell.vfs.toSnapshot();
 		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
 		expect(() =>
 			assertDiff(diff, {
-				added: ["/tmp/assert-new.txt"],
-				removed: ["/tmp/assert-test.txt"],
+				added: ["/tmp/assert-new-nf.txt"],
+				removed: ["/tmp/assert-test-nf.txt"],
 			}),
 		).not.toThrow();
 	});
 
 	test("assertDiff throws when expected path is missing", () => {
-		const snap = shell5.vfs.toSnapshot();
+		const snap = shell.vfs.toSnapshot();
 		const diff = diffSnapshots(snap, snap);
 		expect(() => assertDiff(diff, { added: ["/nonexistent"] })).toThrow();
 	});
 });
 
 describe("node and python3 REPL stubs", () => {
-	let shell6: VirtualShell;
-	let c6: InstanceType<typeof SshClient>;
-	let ssh6: InstanceType<typeof VirtualSshServer>;
-
 	beforeAll(async () => {
-		const env = await setupClient("repl-vm");
-		shell6 = env.shell;
-		c6 = env.client;
-		ssh6 = env.ssh;
-		await c6.exec("apt install nodejs python3");
-	});
-
-	afterAll(() => {
-		c6.disconnect();
-		ssh6.stop();
+		await client.exec("apt install nodejs python3");
 	});
 
 	test("node --version returns v18", async () => {
-		const r = await c6.exec("node --version");
+		const r = await client.exec("node --version");
 		expect(r.exitCode).toBe(0);
 		expect(r.stdout?.trim()).toBe("v18.19.0");
 	});
 
 	test("node -e evaluates arithmetic", async () => {
-		const r = await c6.exec("node -e '2 + 3'");
+		const r = await client.exec("node -e '2 + 3'");
 		expect(r.exitCode).toBe(0);
 		expect(r.stdout?.trim()).toBe("5");
 	});
 
 	test("node -e console.log works", async () => {
-		const r = await c6.exec("node -e 'console.log(42)'");
+		const r = await client.exec("node -e 'console.log(42)'");
 		expect(r.stdout?.trim()).toBe("42");
 	});
 
 	test("node executes VFS file", async () => {
-		shell6.vfs.writeFile("/tmp/test.js", "console.log(10 + 5);\n");
-		const r = await c6.exec("node /tmp/test.js");
+		shell.vfs.writeFile("/tmp/test-nf.js", "console.log(10 + 5);\n");
+		const r = await client.exec("node /tmp/test-nf.js");
 		expect(r.stdout?.trim()).toBe("15");
 	});
 
 	test("node missing file returns exit 1", async () => {
-		const r = await c6.exec("node /tmp/nonexistent.js");
+		const r = await client.exec("node /tmp/nonexistent-nf.js");
 		expect(r.exitCode).toBe(1);
 		expect(r.stderr).toContain("No such file or directory");
 	});
 
 	test("python3 --version returns Python 3.11", async () => {
-		const r = await c6.exec("python3 --version");
+		const r = await client.exec("python3 --version");
 		expect(r.exitCode).toBe(0);
 		expect(r.stdout?.trim()).toContain("Python 3.11");
 	});
 
 	test("python3 -c print arithmetic", async () => {
-		const r = await c6.exec("python3 -c 'print(2 + 3)'");
+		const r = await client.exec("python3 -c 'print(2 + 3)'");
 		expect(r.stdout?.trim()).toBe("5");
 	});
 
 	test("python3 -c f-string", async () => {
-		const r = await c6.exec("python3 -c 'print(f\"result: {1+1}\")'");
+		const r = await client.exec("python3 -c 'print(f\"result: {1+1}\")'");
 		expect(r.stdout?.trim()).toBe("result: 2");
 	});
 
 	test("python3 executes VFS script", async () => {
-		shell6.vfs.writeFile("/tmp/test.py", "print(10 + 5)\n");
-		const r = await c6.exec("python3 /tmp/test.py");
+		shell.vfs.writeFile("/tmp/test-nf.py", "print(10 + 5)\n");
+		const r = await client.exec("python3 /tmp/test-nf.py");
 		expect(r.stdout?.trim()).toBe("15");
 	});
 
 	test("python alias works", async () => {
-		const r = await c6.exec("python --version");
+		const r = await client.exec("python --version");
 		expect(r.exitCode).toBe(0);
 		expect(r.stdout?.trim()).toContain("Python");
 	});
 
 	test("python3 missing file returns exit 2", async () => {
-		const r = await c6.exec("python3 /tmp/nonexistent.py");
+		const r = await client.exec("python3 /tmp/nonexistent-nf.py");
 		expect(r.exitCode).toBe(2);
 	});
 
 	test("node is available as a shell command", async () => {
-		const r = await c6.exec("node --version");
+		const r = await client.exec("node --version");
 		expect(r.exitCode).toBe(0);
 	});
 });
@@ -918,96 +855,70 @@ describe("node and python3 REPL stubs", () => {
 // ─── Enhanced REPL tests (post-rewrite) ──────────────────────────────────────
 
 describe("node enhanced REPL", () => {
-	let shell7: VirtualShell;
-	let c7: InstanceType<typeof SshClient>;
-	let ssh7: InstanceType<typeof VirtualSshServer>;
-
 	beforeAll(async () => {
-		const env = await setupClient("node-vm");
-		shell7 = env.shell;
-		c7 = env.client;
-		ssh7 = env.ssh;
-		await c7.exec("apt install nodejs");
-	});
-
-	afterAll(() => {
-		c7.disconnect();
-		ssh7.stop();
+		await client.exec("apt install nodejs");
 	});
 
 	test("node -e string methods", async () => {
-		shell7.vfs.writeFile("/tmp/str.js", "'hello'.toUpperCase()");
-		const r = await c7.exec("node /tmp/str.js");
+		shell.vfs.writeFile("/tmp/str-nf.js", "'hello'.toUpperCase()");
+		const r = await client.exec("node /tmp/str-nf.js");
 		expect(r.stdout?.trim()).toBe("HELLO");
 	});
 
 	test("node -e array methods", async () => {
-		shell7.vfs.writeFile("/tmp/arr.js", "[1,2,3].map(x => x*2).join(',')");
-		const r = await c7.exec("node /tmp/arr.js");
+		shell.vfs.writeFile("/tmp/arr-nf.js", "[1,2,3].map(x => x*2).join(',')");
+		const r = await client.exec("node /tmp/arr-nf.js");
 		expect(r.stdout?.trim()).toBe("2,4,6");
 	});
 
 	test("node process.version is virtual", async () => {
-		const r = await c7.exec("node -e 'process.version'");
+		const r = await client.exec("node -e 'process.version'");
 		expect(r.stdout?.trim()).toBe("v18.19.0");
 	});
 
 	test("node require path works", async () => {
-		shell7.vfs.writeFile(
-			"/tmp/path.js",
+		shell.vfs.writeFile(
+			"/tmp/path-nf.js",
 			"const p = require('path'); console.log(p.join('a', 'b'))",
 		);
-		const r = await c7.exec("node /tmp/path.js");
+		const r = await client.exec("node /tmp/path-nf.js");
 		expect(r.stdout?.trim()).toBe("a/b");
 	});
 
 	test("node require fs throws gracefully", async () => {
-		shell7.vfs.writeFile(
-			"/tmp/fs.js",
+		shell.vfs.writeFile(
+			"/tmp/fs-nf.js",
 			"try { require('fs') } catch(e) { console.log('blocked') }",
 		);
-		const r = await c7.exec("node /tmp/fs.js");
+		const r = await client.exec("node /tmp/fs-nf.js");
 		expect(r.stdout?.trim()).toBe("blocked");
 	});
 
 	test("node console.log output", async () => {
-		shell7.vfs.writeFile("/tmp/log.js", "console.log('hello', 'world')");
-		const r = await c7.exec("node /tmp/log.js");
+		shell.vfs.writeFile("/tmp/log-nf.js", "console.log('hello', 'world')");
+		const r = await client.exec("node /tmp/log-nf.js");
 		expect(r.stdout?.trim()).toBe("hello world");
 	});
 
 	test("node Math methods", async () => {
-		const r = await c7.exec("node -e 'Math.floor(3.9)'");
+		const r = await client.exec("node -e 'Math.floor(3.9)'");
 		expect(r.stdout?.trim()).toBe("3");
 	});
 
 	test("node JSON.stringify", async () => {
-		const r = await c7.exec("node -e 'JSON.stringify({x:1})'");
+		const r = await client.exec("node -e 'JSON.stringify({x:1})'");
 		expect(r.stdout?.trim()).toBe('{"x":1}');
 	});
 });
 
 describe("python3 enhanced interpreter", () => {
-	let shell8: VirtualShell;
-	let c8: InstanceType<typeof SshClient>;
-	let ssh8: InstanceType<typeof VirtualSshServer>;
-
 	beforeAll(async () => {
-		const env = await setupClient("python-vm");
-		shell8 = env.shell;
-		c8 = env.client;
-		ssh8 = env.ssh;
-		await c8.exec("apt install python3");
-	});
-
-	afterAll(() => {
-		c8.disconnect();
-		ssh8.stop();
+		await client.exec("apt install python3");
 	});
 
 	const py = (code: string) => {
-		shell8.vfs.writeFile("/tmp/t.py", code);
-		return c8.exec("python3 /tmp/t.py");
+		shell.vfs.writeFile("/tmp/t-nf.py", code);
+		return client.exec("python3 /tmp/t-nf.py");
 	};
 
 	test("str.upper()", async () => {
