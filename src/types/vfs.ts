@@ -126,3 +126,50 @@ export interface MountPoint {
 	hostPath: string;
 	readOnly: boolean;
 }
+
+/** Cache eviction policy for the file cache. */
+export type VfsCacheEvictionPolicy = "lru" | "lfu" | "fifo";
+
+/** Disk I/O simulation parameters for the file cache. */
+export interface VfsDiskIoParams {
+	/** Simulated read latency in milliseconds. */
+	readLatencyMs: number;
+	/** Simulated write latency in milliseconds. */
+	writeLatencyMs: number;
+	/** Simulated sequential read throughput in bytes/ms. */
+	sequentialReadThroughput: number;
+	/** Simulated sequential write throughput in bytes/ms. */
+	sequentialWriteThroughput: number;
+}
+
+/** Configuration options for the VFS file cache. */
+export interface VfsCacheOptions {
+	/** Enable file caching. Default: false. */
+	enabled?: boolean;
+	/** Maximum number of entries in cache. Default: 1000. */
+	maxEntries?: number;
+	/** Maximum total memory usage in bytes. Default: 64 MB. */
+	maxMemoryBytes?: number;
+	/** Eviction policy to use. Default: "lru". */
+	policy?: VfsCacheEvictionPolicy;
+	/** Disk I/O simulation parameters. */
+	diskIo?: Partial<VfsDiskIoParams>;
+	/** Enable/disable disk I/O simulation. Default: true. */
+	simulateDiskIo?: boolean;
+}
+
+/** Cache statistics from the VFS file cache. */
+export interface VfsCacheStats {
+	/** Total number of cache hits. */
+	hits: number;
+	/** Total number of cache misses. */
+	misses: number;
+	/** Total number of cache evictions. */
+	evictions: number;
+	/** Current number of entries in cache. */
+	entries: number;
+	/** Current total memory usage of cache in bytes. */
+	memoryUsage: number;
+	/** Hit rate as a percentage (0-100). */
+	hitRate: number;
+}
