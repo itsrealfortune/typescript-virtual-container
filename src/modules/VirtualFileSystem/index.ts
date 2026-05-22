@@ -2215,35 +2215,33 @@ class VirtualFileSystem extends EventEmitter {
 		};
 		for (const child of snap.children) {
 			if (child.type === "file") {
-				const f = child as VfsSnapshotFileNode;
-				dir.children[f.name] = {
+				dir.children[child.name] = {
 					type: "file",
-					name: f.name,
-					mode: f.mode,
-					uid: f.uid ?? 0,
-					gid: f.gid ?? 0,
-					createdAt: Date.parse(f.createdAt),
-					updatedAt: Date.parse(f.updatedAt),
-					compressed: f.compressed,
-					content: Buffer.from(f.contentBase64, "base64"),
+					name: child.name,
+					mode: child.mode,
+					uid: child.uid ?? 0,
+					gid: child.gid ?? 0,
+					createdAt: Date.parse(child.createdAt),
+					updatedAt: Date.parse(child.updatedAt),
+					compressed: child.compressed,
+					content: Buffer.from(child.contentBase64, "base64"),
 				};
 			} else if (child.type === "device") {
-				const d = child as VfsSnapshotDeviceNode;
-				dir.children[d.name] = {
+				dir.children[child.name] = {
 					type: "device",
-					name: d.name,
-					mode: d.mode,
-					uid: d.uid ?? 0,
-					gid: d.gid ?? 0,
-					createdAt: Date.parse(d.createdAt),
-					updatedAt: Date.parse(d.updatedAt),
-					deviceKind: d.deviceKind as DeviceKind,
-					major: d.major,
-					minor: d.minor,
+					name: child.name,
+					mode: child.mode,
+					uid: child.uid ?? 0,
+					gid: child.gid ?? 0,
+					createdAt: Date.parse(child.createdAt),
+					updatedAt: Date.parse(child.updatedAt),
+					deviceKind: child.deviceKind as DeviceKind,
+					major: child.major,
+					minor: child.minor,
 				};
 			} else {
 				const sub = this._deserializeDir(
-					child as VfsSnapshotDirectoryNode,
+					child,
 					child.name,
 				);
 				dir.children[child.name] = sub;
