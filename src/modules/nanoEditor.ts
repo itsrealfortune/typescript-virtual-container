@@ -815,7 +815,7 @@ export class NanoEditor {
 		return `${this._lines.join("\n")}\n`;
 	}
 
-	private _pad(s: string, width: number): string {
+	private static _pad(s: string, width: number): string {
 		if (s.length >= width) return s.slice(0, width);
 		return s + " ".repeat(width - s.length);
 	}
@@ -876,7 +876,7 @@ export class NanoEditor {
 		// Status line is 1 row above the bottom help bar (row = rows - 1)
 		buf.push(ansi.cup(this.rows - 1, 1));
 		buf.push(ansi.el());
-		buf.push(ansi.reverse(this._pad(msg, this.cols)));
+		buf.push(ansi.reverse(NanoEditor._pad(msg, this.cols)));
 		buf.push(ansi.cursorShow());
 		buf.push(this._buildCursorPosition());
 		this._stream.write(buf.join(""));
@@ -899,11 +899,11 @@ export class NanoEditor {
 		const modMark = this._modified ? "Modified" : "";
 		const title = ` GNU nano  ${this._filename || "New Buffer"}`;
 		const right = modMark;
-		const mid = this._pad(
+		const mid = NanoEditor._pad(
 			title + " ".repeat(Math.max(0, Math.floor((this.cols - title.length - right.length) / 2))),
 			this.cols - right.length,
 		);
-		const full = this._pad(mid + right, this.cols);
+		const full = NanoEditor._pad(mid + right, this.cols);
 		buf.push(ansi.cup(1, 1));
 		buf.push(ansi.reverse(full));
 	}
@@ -994,7 +994,7 @@ export class NanoEditor {
 		buf.push(ansi.cursorHide());
 		buf.push(ansi.ed());
 		buf.push(ansi.cup(1, 1));
-		buf.push(ansi.reverse(this._pad(" GNU nano — Help", this.cols)));
+		buf.push(ansi.reverse(NanoEditor._pad(" GNU nano — Help", this.cols)));
 
 		const help = [
 			"",

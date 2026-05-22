@@ -54,7 +54,7 @@ export class VirtualGroupManager {
 	 * @throws When the group already exists or the name is invalid.
 	 */
 	public createGroup(name: string, gid?: number): VirtualGroupRecord {
-		this._validateGroupName(name);
+		VirtualGroupManager._validateGroupName(name);
 		if (this._groups.has(name)) {
 			throw new Error(`groupadd: group '${name}' already exists`);
 		}
@@ -360,7 +360,7 @@ export class VirtualGroupManager {
 		}
 	}
 
-	private _validateGroupName(name: string): void {
+	private static _validateGroupName(name: string): void {
 		if (!name || name.trim() === "") {
 			throw new Error("invalid group name");
 		}

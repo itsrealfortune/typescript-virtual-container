@@ -666,7 +666,7 @@ export class VirtualPackageManager {
 		const blocks = status.split(/\n\n+/);
 		for (const block of blocks) {
 			if (!block.trim()) continue;
-			const fields = this._parseFields(block);
+			const fields = VirtualPackageManager._parseFields(block);
 			const name = fields.Package;
 			if (!name) continue;
 			this._installed.set(name, {
@@ -706,7 +706,7 @@ export class VirtualPackageManager {
 		this._vfs.writeFile(this._registryPath, `${blocks.join("\n\n")}\n`);
 	}
 
-	private _parseFields(block: string): Record<string, string> {
+	private static _parseFields(block: string): Record<string, string> {
 		const result: Record<string, string> = {};
 		for (const line of block.split("\n")) {
 			const idx = line.indexOf(": ");
