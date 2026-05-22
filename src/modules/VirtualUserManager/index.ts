@@ -1156,7 +1156,7 @@ export class VirtualUserManager extends EventEmitter {
 			}
 
 			// Format: username:uid:gid:salt:passwordHash:lastChange:minAge:maxAge:warnDays:inactiveDays:expiry (new)
-			// Format: username:uid:gid:salt:passwordHash (legacy v1.7.3)
+			// Format: username:uid:gid:salt:passwordHash (legacy v1.7.4)
 			// Format: username:salt:passwordHash (legacy older)
 			if (parts.length >= 11) {
 				const [username, uidStr, gidStr, salt, passwordHash, lastChange, minAge, maxAge, warnDays, inactiveDays, expiry] = parts;

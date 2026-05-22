@@ -3,7 +3,7 @@ title: Architecture
 group: Guides
 ---
 
-# Architecture — typescript-virtual-container v1.7.3
+# Architecture — typescript-virtual-container v1.7.4
 
 **Repository**: `github.com/itsrealfortune/typescript-virtual-container`
 **Package**: `typescript-virtual-container` — Scalable Linux emulator with SSH/SFTP server, virtual filesystem, and typed programmatic API for testing, automation, and interactive shell scripting in TypeScript/JavaScript.
@@ -440,9 +440,9 @@ src/
 
 | File | Lines | Format | Description |
 |---|---|---|---|
-| `fortune-nyx-v1.7.3-directbash-k6.1.0.mjs` | 3,882 | ESM | Direct bash bundle (Node.js) |
-| `fortune-nyx-v1.7.3-ssh.cjs` | 3,876 | CJS | SSH server bundle |
-| `fortune-nyx-v1.7.3-web.min.js` | 35,254 | ESM (minified) | Web browser shell |
+| `fortune-nyx-v1.7.4-directbash-k6.1.0.mjs` | 3,882 | ESM | Direct bash bundle (Node.js) |
+| `fortune-nyx-v1.7.4-ssh.cjs` | 3,876 | CJS | SSH server bundle |
+| `fortune-nyx-v1.7.4-web.min.js` | 35,254 | ESM (minified) | Web browser shell |
 
 ### `dist/` (compiled TypeScript output)
 
@@ -508,8 +508,8 @@ docs/
 | **Contributors** | 3 |
 | **Primary author** | `itsrealfortune` (873 commits) |
 | **Other contributors** | `fox3000foxy` (78), `Fortune` (66) |
-| **Latest tag** | `v1.7.3` |
-| **Total tags** | 50+ (from `v1.0.0` through `v1.7.3`) |
+| **Latest tag** | `v1.7.4` |
+| **Total tags** | 50+ (from `v1.0.0` through `v1.7.4`) |
 | **Local branches** | 62 |
 | **Remote branches** | 66 (plus `gh-pages`) |
 | **Active branch** | `main` |
