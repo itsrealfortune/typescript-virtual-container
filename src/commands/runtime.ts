@@ -126,7 +126,7 @@ function resolveVfsBinary(
 const MAX_CALL_DEPTH = 8;
 
 /** Run a VFS stub file as a command, handling `exec builtin <name>` and `sh -c` stubs. */
-async function runVfsStub(
+function runVfsStub(
 	vfsBinary: string,
 	cmdName: string,
 	args: string[],
@@ -138,7 +138,7 @@ async function runVfsStub(
 	shell: VirtualShell,
 	env: ShellEnv,
 	stdin: string | undefined,
-): Promise<CommandResult> {
+): CommandResult | Promise<CommandResult> {
 	const stubContent = shell.vfs.readFile(vfsBinary);
 	const builtinMatch = stubContent.match(/exec\s+builtin\s+(\S+)/);
 	if (builtinMatch) {
@@ -191,7 +191,7 @@ let _callDepth = 0;
  * @param abortController - Optional controller to abort a background process
  * @returns The command result
  */
-export async function runCommandDirect(
+export function runCommandDirect(
 	name: string,
 	args: string[],
 	authUser: string,
@@ -203,7 +203,7 @@ export async function runCommandDirect(
 	env: ShellEnv,
 	background = false,
 	abortController?: AbortController,
-): Promise<CommandResult> {
+): CommandResult | Promise<CommandResult> {
 	// Anti-loop guard: track call depth via env to avoid infinite recursion
 	_callDepth++;
 	if (_callDepth > MAX_CALL_DEPTH) {
@@ -229,9 +229,9 @@ export async function runCommandDirect(
 					resolve({ stderr: "", exitCode: 130 });
 				}, { once: true });
 			});
-			return await Promise.race([inner, killed]);
+			return Promise.race([inner, killed]);
 		}
-		return await inner;
+		return inner;
 	} finally {
 		_callDepth--;
 		if (isTopLevel && pid !== -1) {

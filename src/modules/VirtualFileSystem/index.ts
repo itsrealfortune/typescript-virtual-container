@@ -533,7 +533,7 @@ class VirtualFileSystem extends EventEmitter {
 	 *
 	 * In `"memory"` mode: no-op (kept for API compatibility).
 	 */
-	public async restoreMirror(): Promise<void> {
+	public restoreMirror(): void {
 		if (this._mode !== "fs" || !this._snapshotFile) return;
 
 		if (!fsSync.existsSync(this._snapshotFile)) {
@@ -580,7 +580,7 @@ class VirtualFileSystem extends EventEmitter {
 	 *
 	 * In `"memory"` mode: emits `"mirror:flush"` and returns (no disk write).
 	 */
-	public async flushMirror(): Promise<void> {
+	public flushMirror(): void {
 		if (this._mode !== "fs" || !this._snapshotFile) {
 			this.emit("mirror:flush");
 			return;
@@ -625,9 +625,9 @@ class VirtualFileSystem extends EventEmitter {
 	// ── Auto-flush scheduler ──────────────────────────────────────────────────
 
 	/** Internal: flush triggered by timer or write-count threshold. */
-	private async _autoFlush(): Promise<void> {
+	private _autoFlush(): void {
 		if (!this._dirty) return;
-		await this.flushMirror();
+		this.flushMirror();
 	}
 
 	/** Mark VFS as having unflushed writes and trigger threshold flush if needed. */
@@ -654,12 +654,12 @@ class VirtualFileSystem extends EventEmitter {
 	 * });
 	 * ```
 	 */
-	public async stopAutoFlush(): Promise<void> {
+	public stopAutoFlush(): void {
 		if (this._flushTimer !== null) {
 			clearInterval(this._flushTimer);
 			this._flushTimer = null;
 		}
-		if (this._dirty) await this.flushMirror();
+		if (this._dirty) this.flushMirror();
 	}
 
 	/**

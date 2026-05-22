@@ -22,8 +22,8 @@
 
 import { EventEmitter } from "node:events";
 import type VirtualFileSystem from "../VirtualFileSystem";
-import type { VirtualShell } from "../VirtualShell";
 import { decodeVfs } from "../VirtualFileSystem/binaryPack";
+import type { VirtualShell } from "../VirtualShell";
 
 export interface IdleManagerOptions {
 	/**
@@ -117,7 +117,7 @@ export class IdleManager extends EventEmitter {
 	}
 
 	/** Stop monitoring and thaw if frozen. Call on shell destroy. */
-	public async stop(): Promise<void> {
+	public stop(): void {
 		if (this._checkTimer) {
 			clearInterval(this._checkTimer);
 			this._checkTimer = null;
@@ -166,10 +166,10 @@ export class IdleManager extends EventEmitter {
 		}
 	}
 
-	private async _freeze(): Promise<void> {
+	private _freeze(): void {
 		if (this._state === "frozen") return;
 		// Flush any pending writes before freezing
-		await this._vfs.stopAutoFlush();
+		this._vfs.stopAutoFlush();
 		// Serialise the live tree to a compact binary buffer
 		this._frozenBuffer = this._vfs.encodeBinary();
 		// Release the live tree — GC can now collect all InternalNode objects

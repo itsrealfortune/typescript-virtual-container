@@ -13,7 +13,7 @@ export const passwdCommand: ShellModule = {
 	description: "Change user password",
 	category: "users",
 	params: ["[username]"],
-	run: async ({ authUser, args, shell, stdin }) => {
+	run:  async ({ authUser, args, shell, stdin }) => {
 		const targetUser = args[0] ?? authUser;
 
 		// Permission check

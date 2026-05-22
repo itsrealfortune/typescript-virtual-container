@@ -13,7 +13,7 @@ export const findCommand: ShellModule = {
 	description: "Search for files",
 	category: "files",
 	params: ["[path] [expression...]"],
-	run: async ({ authUser, shell, cwd, args, env, hostname, mode }) => {
+	run:  async ({ authUser, shell, cwd, args, env, hostname, mode }) => {
 		// Collect root paths (positional args before first - option)
 		const roots: string[] = [];
 		let i = 0;

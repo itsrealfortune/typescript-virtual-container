@@ -11,7 +11,7 @@ export const timeoutCommand: ShellModule = {
 	description: "Run command with time limit",
 	category: "shell",
 	params: ["<duration>", "<command>", "[args...]"],
-	run: async ({ args, authUser, hostname, mode, cwd, shell, env, stdin }) => {
+	run:  async ({ args, authUser, hostname, mode, cwd, shell, env, stdin }) => {
 		// First arg is duration (ignored in simulation), rest is the command
 		if (args.length < 2) return { stderr: "timeout: missing operand", exitCode: 1 };
 		const { runCommand } = await import("./runtime");

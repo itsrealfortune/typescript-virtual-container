@@ -11,7 +11,7 @@ export const xargsCommand: ShellModule = {
 	description: "Build and execute command lines from stdin",
 	category: "text",
 	params: ["[command] [args...]"],
-	run: async ({ authUser, hostname, mode, cwd, args, stdin, shell, env }) => {
+	run: ({ authUser, hostname, mode, cwd, args, stdin, shell, env }) => {
 		const baseCmd = args[0] ?? "echo";
 		const extraArgs = args.slice(1);
 		const items = (stdin ?? "").trim().split(/\s+/).filter(Boolean);

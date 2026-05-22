@@ -53,7 +53,7 @@ export class SshClient {
 	 * @param options Connection parameters.
 	 * @returns Promise resolved when authenticated.
 	 */
-	async connect(options: SshClientConnectOptions): Promise<void> {
+	connect(options: SshClientConnectOptions): Promise<void> {
 		perf.mark("connect");
 		const config: ConnectConfig = {
 			host: options.host ?? "localhost",
@@ -100,7 +100,7 @@ export class SshClient {
 	 * @param command Unparsed command line.
 	 * @returns Command result with stdout/stderr/exitCode.
 	 */
-	async exec(command: string): Promise<CommandResult> {
+	exec(command: string): Promise<CommandResult> {
 		perf.mark("exec");
 		if (!this._connected) {
 			throw new Error("SSH client not connected");
@@ -214,7 +214,7 @@ export class SshClient {
 	 * @param path Target directory, defaults to cwd.
 	 * @returns Result with directory listing in stdout.
 	 */
-	async ls(path?: string): Promise<CommandResult> {
+	ls(path?: string): Promise<CommandResult> {
 		perf.mark("ls");
 		const target = path ?? ".";
 		return this.exec(`ls ${target}`);
@@ -225,7 +225,7 @@ export class SshClient {
 	 *
 	 * @returns Result with cwd path in stdout.
 	 */
-	async pwd(): Promise<CommandResult> {
+	pwd(): Promise<CommandResult> {
 		perf.mark("pwd");
 		return this.exec("pwd");
 	}
@@ -251,7 +251,7 @@ export class SshClient {
 	 * @param path File path.
 	 * @returns Result with file content in stdout.
 	 */
-	async cat(path: string): Promise<CommandResult> {
+	cat(path: string): Promise<CommandResult> {
 		perf.mark("cat");
 		return this.exec(`cat '${path}'`);
 	}
@@ -263,7 +263,7 @@ export class SshClient {
 	 * @param recursive When true, create parents.
 	 * @returns Result from mkdir command.
 	 */
-	async mkdir(path: string, recursive = false): Promise<CommandResult> {
+	mkdir(path: string, recursive = false): Promise<CommandResult> {
 		perf.mark("mkdir");
 		const flag = recursive ? "-p " : "";
 		return this.exec(`mkdir ${flag}'${path}'`);
@@ -275,7 +275,7 @@ export class SshClient {
 	 * @param path File path.
 	 * @returns Result from touch command.
 	 */
-	async touch(path: string): Promise<CommandResult> {
+	touch(path: string): Promise<CommandResult> {
 		perf.mark("touch");
 		return this.exec(`touch '${path}'`);
 	}
@@ -287,7 +287,7 @@ export class SshClient {
 	 * @param recursive When true, delete directory tree.
 	 * @returns Result from rm command.
 	 */
-	async rm(path: string, recursive = false): Promise<CommandResult> {
+	rm(path: string, recursive = false): Promise<CommandResult> {
 		perf.mark("rm");
 		const flag = recursive ? "-r " : "";
 		return this.exec(`rm ${flag}'${path}'`);
@@ -300,7 +300,7 @@ export class SshClient {
 	 * @param content Text to write.
 	 * @returns Result from write operation.
 	 */
-	async writeFile(path: string, content: string): Promise<CommandResult> {
+	writeFile(path: string, content: string): Promise<CommandResult> {
 		perf.mark("writeFile");
 		// Escape backslashes and double quotes for double-quoted string
 		const escaped = content
@@ -317,7 +317,7 @@ export class SshClient {
 	 * @param path Target file path.
 	 * @returns File content as string or error in result.
 	 */
-	async readFile(path: string): Promise<CommandResult> {
+	readFile(path: string): Promise<CommandResult> {
 		perf.mark("readFile");
 		return this.exec(`cat '${path}'`);
 	}
@@ -348,7 +348,7 @@ export class SshClient {
 	 * @param path Target directory, defaults to cwd.
 	 * @returns Result with ASCII tree in stdout.
 	 */
-	async tree(path?: string): Promise<CommandResult> {
+	tree(path?: string): Promise<CommandResult> {
 		perf.mark("tree");
 		const target = path ?? ".";
 		return this.exec(`tree ${target}`);
@@ -359,7 +359,7 @@ export class SshClient {
 	 *
 	 * @returns Result from whoami command.
 	 */
-	async whoami(): Promise<CommandResult> {
+	whoami(): Promise<CommandResult> {
 		perf.mark("whoami");
 		return this.exec("whoami");
 	}
@@ -369,7 +369,7 @@ export class SshClient {
 	 *
 	 * @returns Result from hostname command.
 	 */
-	async hostname(): Promise<CommandResult> {
+	hostname(): Promise<CommandResult> {
 		perf.mark("hostname");
 		return this.exec("hostname");
 	}
@@ -379,7 +379,7 @@ export class SshClient {
 	 *
 	 * @returns Result from who command.
 	 */
-	async who(): Promise<CommandResult> {
+	who(): Promise<CommandResult> {
 		perf.mark("who");
 		return this.exec("who");
 	}

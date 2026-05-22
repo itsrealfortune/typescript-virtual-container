@@ -261,7 +261,7 @@ export class VirtualGroupManager {
 	/**
 	 * Persists the current group state to /etc/group in the VFS.
 	 */
-	private async _persist(): Promise<void> {
+	private _persist(): void {
 		const content = this.generateGroupFile();
 		this._vfs.writeFile(this._groupsPath, content.length > 0 ? `${content}\n` : "", { mode: 0o644 });
 	}

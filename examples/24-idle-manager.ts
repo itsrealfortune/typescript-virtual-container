@@ -9,7 +9,7 @@
 import { VirtualShell } from "../src";
 
 const shell = new VirtualShell("idle-demo");
-await shell.ensureInitialized();
+shell.ensureInitialized();
 
 // ── Enable idle management ────────────────────────────────────────
 console.log("--- Enabling idle management ---");
@@ -48,5 +48,5 @@ if (gcStats) {
 
 // ── Disable idle management ───────────────────────────────────────
 console.log("\n--- Disabling idle management ---");
-await shell.disableIdleManagement();
+shell.disableIdleManagement();
 console.log(`  idle state: ${shell.idleState}`);

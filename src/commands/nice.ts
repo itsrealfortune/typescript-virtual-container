@@ -12,7 +12,7 @@ export const niceCommand: ShellModule = {
 	description: "Run command with adjusted scheduling priority",
 	category: "system",
 	params: ["[-n priority] [-p pid] [command [args...]]"],
-	run: async ({ authUser, hostname, mode, cwd, shell, stdin, env, args }) => {
+	run: ({ authUser, hostname, mode, cwd, shell, stdin, env, args }) => {
 		const { flagsWithValues, positionals } = parseArgs(args, {
 			flagsWithValue: ["-n", "-p"],
 		});

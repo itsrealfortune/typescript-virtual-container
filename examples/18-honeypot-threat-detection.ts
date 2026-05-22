@@ -11,8 +11,8 @@ import { HoneyPot, SshClient, VirtualShell, VirtualSshServer } from "../src";
 console.log("--- Deploy honeypot ---");
 
 const shell = new VirtualShell("honeypot");
-await shell.ensureInitialized();
-await shell.users.setPassword("root", "root");
+shell.ensureInitialized();
+shell.users.setPassword("root", "root");
 const vfs = shell.getVfs()!;
 const users = shell.getUsers()!;
 

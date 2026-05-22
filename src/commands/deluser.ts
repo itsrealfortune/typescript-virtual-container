@@ -18,7 +18,7 @@ export const deluserCommand: ShellModule = {
 	description: "Delete a user",
 	category: "users",
 	params: ["[-f] <username>"],
-	run: async ({ authUser, args, shell }) => {
+	run: ({ authUser, args, shell }) => {
 		if (authUser !== "root") {
 			return { stderr: "deluser: permission denied\n", exitCode: 1 };
 		}
@@ -52,7 +52,7 @@ export const deluserCommand: ShellModule = {
 
 		// Force mode — delete without confirmation
 		if (force) {
-			await shell.users.deleteUser(username);
+			shell.users.deleteUser(username);
 			return {
 				stdout: `Removing user '${username}' ...\ndeluser: done.\n`,
 				exitCode: 0,
@@ -60,10 +60,10 @@ export const deluserCommand: ShellModule = {
 		}
 
 		// Interactive confirmation
-		const onPassword = async (
+		const onPassword = (
 			input: string,
 			sh: VirtualShell,
-		): Promise<{ result: CommandResult | null; nextPrompt?: string }> => {
+		): { result: CommandResult | null; nextPrompt?: string } => {
 			if (input.trim() !== username) {
 				return {
 					result: {
@@ -73,7 +73,7 @@ export const deluserCommand: ShellModule = {
 				};
 			}
 
-			await sh.users.deleteUser(username);
+			sh.users.deleteUser(username);
 			return {
 				result: {
 					stdout: `Removing user '${username}' ...\ndeluser: done.\n`,

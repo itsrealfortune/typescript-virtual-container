@@ -8,7 +8,7 @@
 import { VirtualShell, VirtualSshServer } from "../src";
 
 const shell = new VirtualShell("package-manager-demo");
-await shell.ensureInitialized();
+shell.ensureInitialized();
 
 const pm = shell.packageManager;
 

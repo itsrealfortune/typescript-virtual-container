@@ -13,7 +13,7 @@ export const sourceCommand: ShellModule = {
 	description: "Execute commands from a file in the current shell environment",
 	category: "shell",
 	params: ["<file> [args...]"],
-	run: async ({ args, authUser, hostname, cwd, shell, env }) => {
+	run:  async ({ args, authUser, hostname, cwd, shell, env }) => {
 		const fileArg = args[0];
 		if (!fileArg) {
 			return { stderr: "source: missing filename", exitCode: 1 };

@@ -11,7 +11,7 @@ export const nohupCommand: ShellModule = {
 	description: "Run command immune to hup signals",
 	category: "system",
 	params: ["<command> [args...]"],
-	run: async ({ authUser, hostname, mode, cwd, shell, stdin, env, args }) => {
+	run: ({ authUser, hostname, mode, cwd, shell, stdin, env, args }) => {
 		const cmd = args.join(" ");
 		if (!cmd) return { stderr: "nohup: missing command\n", exitCode: 1 };
 		return runCommand(cmd, authUser, hostname, mode, cwd, shell, stdin, env);

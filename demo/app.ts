@@ -182,16 +182,16 @@ const shell = new VirtualShell(HOSTNAME, {
   flushIntervalMs: 10_000,
 });
 
-await shell.vfs.restoreMirror();
+shell.vfs.restoreMirror();
 
 const isFirstRun = !shell.vfs.exists('/bin');
 if (isFirstRun) {
-  await shell.ensureInitialized();
+  shell.ensureInitialized();
   if (!shell.vfs.exists('/root')) shell.vfs.mkdir('/root', 0o700);
   shell.vfs.writeFile('/root/README.txt', `Welcome to ${HOSTNAME}\n`);
-  await shell.vfs.flushMirror();
+  shell.vfs.flushMirror();
 } else {
-  await shell.ensureInitialized();
+  shell.ensureInitialized();
 }
 
 window.addEventListener('beforeunload', () => { shell.vfs.flushMirror(); });

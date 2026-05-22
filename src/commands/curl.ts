@@ -12,7 +12,7 @@ export const curlCommand: ShellModule = {
 	description: "Transfer data from or to a server (pure fetch)",
 	category: "network",
 	params: ["[options] <url>"],
-	run: async ({ authUser, cwd, args, shell, uid, gid }) => {
+	run:  async ({ authUser, cwd, args, shell, uid, gid }) => {
 		const { flagsWithValues, positionals } = parseArgs(args, {
 			flagsWithValue: [
 				"-o",

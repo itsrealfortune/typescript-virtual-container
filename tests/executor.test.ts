@@ -10,8 +10,8 @@ let port: number;
 
 beforeAll(async () => {
 	shell = new VirtualShell("exec-test");
-	await shell.ensureInitialized();
-	await shell.users.setPassword("root", "root");
+	shell.ensureInitialized();
+	shell.users.setPassword("root", "root");
 	ssh = new VirtualSshServer({ port: 0, shell });
 	port = await ssh.start();
 	client = new SshClient();

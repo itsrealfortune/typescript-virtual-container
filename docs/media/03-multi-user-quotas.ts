@@ -8,7 +8,7 @@
 import { SshClient, VirtualShell } from "../src";
 
 const shell = new VirtualShell("typescript-vm");
-await shell.ensureInitialized();
+shell.ensureInitialized();
 
 // ── Create users ──────────────────────────────────────────────────
 console.log("--- Create users ---");

@@ -9,12 +9,12 @@
  */
 
 import { runCommand } from "../src/commands/index";
-import { VirtualShell } from "../src/modules/VirtualShell/index";
 import { SshMimic as VirtualSshServer } from "../src/modules/SSHMimic/index";
+import { VirtualShell } from "../src/modules/VirtualShell/index";
 
 const shell = new VirtualShell("lab-environment");
-await shell.ensureInitialized();
-await shell.users.setPassword("root", "root");
+shell.ensureInitialized();
+shell.users.setPassword("root", "root");
 
 const ssh = new VirtualSshServer({ port: 2222, shell });
 

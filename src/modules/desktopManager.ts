@@ -97,7 +97,7 @@ export interface DesktopState {
  * @example
  * ```ts
  * const shell = new VirtualShell("desktop-vm");
- * await shell.ensureInitialized();
+ * shell.ensureInitialized();
  *
  * const desktop = new DesktopManager(shell, document.getElementById("desktop")!);
  * desktop.setOnExit(() => console.log("Desktop closed"));

@@ -8,8 +8,8 @@
 import { HoneyPot, SshClient, VirtualShell, VirtualSshServer } from "../src";
 
 const shell = new VirtualShell("typescript-vm");
-await shell.ensureInitialized();
-await shell.users.setPassword("root", "root");
+shell.ensureInitialized();
+shell.users.setPassword("root", "root");
 
 // ── Attach HoneyPot ────────────────────────────────────────────────
 console.log("--- Attach HoneyPot ---");

@@ -71,7 +71,7 @@ describeSftp("SftpMimic", () => {
 		const vfs = new VirtualFileSystem();
 		const users = new VirtualUserManager(vfs);
 
-		await users.initialize();
+		users.initialize();
 
 		const rootPath = "/root";
 		if (!vfs.exists(rootPath)) {
@@ -132,7 +132,7 @@ describeSftp("SftpMimic", () => {
 		const vfs = new VirtualFileSystem();
 		const users = new VirtualUserManager(vfs);
 
-		await users.initialize();
+		users.initialize();
 
 		const rootPath = "/root";
 		if (!vfs.exists(rootPath)) {
@@ -195,8 +195,8 @@ describeSftp("SftpMimic", () => {
 		const vfs = new VirtualFileSystem();
 		const users = new VirtualUserManager(vfs);
 
-		await users.initialize();
-		await users.addUser("alice", "alice-pass");
+		users.initialize();
+		users.addUser("alice", "alice-pass");
 
 		// Ensure alice's home exists (addUser should create it, but let's be explicit)
 		if (!vfs.exists("/home/alice")) {
@@ -246,8 +246,8 @@ describeSftp("SftpMimic", () => {
 		const vfs = new VirtualFileSystem();
 		const users = new VirtualUserManager(vfs);
 
-		await users.initialize();
-		await users.addUser("bob", "correct-pass");
+		users.initialize();
+		users.addUser("bob", "correct-pass");
 
 		const server = new SftpMimic({
 			port: 0,
@@ -269,7 +269,7 @@ describeSftp("SftpMimic", () => {
 		const vfs = new VirtualFileSystem();
 		const users = new VirtualUserManager(vfs);
 
-		await users.initialize();
+		users.initialize();
 
 		if (!vfs.exists("/root")) {
 			vfs.mkdir("/root", 0o755);

@@ -8,9 +8,17 @@
     },
     "linter": {
         "rules": {
+            "nursery": {
+                "useAwaitThenable": "error",
+                "noFloatingPromises": "error",
+                "noMisusedPromises": "error"
+            },
             "suspicious": {
                 "noDebugger": "off",
                 "useAwait": "error"
+            },
+            "complexity": {
+                "useArrowFunction": "error"
             },
             "style": {
                 "noShoutyConstants": "warn",

@@ -22,7 +22,7 @@ const RE_FUNC_KW_ONLY = new RegExp(`^function\\s+(${_funcNamePat})\\s*\\{?\\s*$`
  * Expand all shell forms including $(cmd) substitution.
  * Delegates to centralised expandAsync (single-quote-aware, depth-tracked).
  */
-async function expandVars(
+function expandVars(
 	line: string,
 	env: Record<string, string>,
 	lastExit: number,
@@ -544,7 +544,7 @@ export const shCommand: ShellModule = {
 	description: "Execute shell script or command",
 	category: "shell",
 	params: ["-c <script>", "[<file>]"],
-	run: async (ctx: CommandContext) => {
+	run: (ctx: CommandContext) => {
 		const { args, shell, cwd } = ctx;
 
 		// sh -c "inline script"

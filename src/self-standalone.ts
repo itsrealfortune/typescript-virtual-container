@@ -71,8 +71,8 @@ const virtualShell = new VirtualShell(hostname, undefined, {
 
 // ── VFS helpers ───────────────────────────────────────────────────────────────
 
-async function flushVfs(): Promise<void> {
-	await virtualShell.vfs.stopAutoFlush();
+function flushVfs(): void {
+	virtualShell.vfs.stopAutoFlush();
 }
 
 // ── Tab completion ────────────────────────────────────────────────────────────
@@ -165,7 +165,7 @@ virtualShell.addCommand("demo", [], () => ({
 // ── Main shell ────────────────────────────────────────────────────────────────
 
 async function runReadlineShell(): Promise<void> {
-	await virtualShell.ensureInitialized();
+	virtualShell.ensureInitialized();
 
 	const selectedUser = initialUser.trim() || "root";
 	if (virtualShell.users.getPasswordHash(selectedUser) === null) {
@@ -180,7 +180,7 @@ async function runReadlineShell(): Promise<void> {
 	const readmePath = `${homePath}/README.txt`;
 	if (!virtualShell.vfs.exists(readmePath)) {
 		virtualShell.vfs.writeFile(readmePath, `Welcome to ${hostname}\n`);
-		await virtualShell.vfs.stopAutoFlush();
+		virtualShell.vfs.stopAutoFlush();
 	}
 
 	const shellEnv = makeDefaultEnv(selectedUser, hostname);
@@ -234,7 +234,8 @@ async function runReadlineShell(): Promise<void> {
 				shellEnv.vars.PWD = cwd;
 				shellEnv.vars.PS1 = makeDefaultEnv(authUser, hostname).vars.PS1 ?? "";
 				stdout.write("logout\n");
-				void flushVfs().then(() => { prompt(); });
+				void flushVfs();
+				prompt();
 				return;
 			}
 			orig(s, key);
@@ -394,7 +395,7 @@ async function runReadlineShell(): Promise<void> {
 			let promptText = challenge.prompt;
 			while (true) {
 				const typed = await askHiddenQuestion(rl, promptText);
-				const step = await challenge.onPassword(typed, virtualShell);
+				const step = challenge.onPassword(typed, virtualShell);
 				if (step.result === null) {
 					promptText = step.nextPrompt ?? promptText;
 					continue;
@@ -445,7 +446,7 @@ async function runReadlineShell(): Promise<void> {
 
 		switch (challenge.action) {
 			case "passwd":
-				await virtualShell.users.setPassword(challenge.targetUsername, first);
+				virtualShell.users.setPassword(challenge.targetUsername, first);
 				stdout.write("passwd: password updated successfully\n");
 				break;
 			case "adduser":
@@ -453,11 +454,11 @@ async function runReadlineShell(): Promise<void> {
 					process.stderr.write("adduser: missing username\n");
 					return;
 				}
-				await virtualShell.users.addUser(challenge.newUsername, first);
+				virtualShell.users.addUser(challenge.newUsername, first);
 				stdout.write(`adduser: user '${challenge.newUsername}' created\n`);
 				break;
 			case "deluser":
-				await virtualShell.users.deleteUser(challenge.targetUsername);
+				virtualShell.users.deleteUser(challenge.targetUsername);
 				stdout.write(`Removing user '${challenge.targetUsername}' ...\ndeluser: done.\n`);
 				break;
 			case "su":
@@ -522,7 +523,7 @@ async function runReadlineShell(): Promise<void> {
 		}
 
 		if (result.closeSession) {
-			await flushVfs();
+			flushVfs();
 			const prev = sessionStack.pop();
 			if (prev !== undefined) {
 				authUser = prev.authUser;
@@ -584,7 +585,7 @@ async function runReadlineShell(): Promise<void> {
 		}
 	}
 
-	await flushVfs();
+	flushVfs();
 
 	// ── Event-driven line handler (enables completer) ──────────────────────────
 	//
@@ -623,7 +624,7 @@ async function runReadlineShell(): Promise<void> {
 			shellEnv,
 		);
 		await handleCommandResult(result);
-		await flushVfs();
+		flushVfs();
 
 		busy = false;
 		rl.resume();
@@ -643,15 +644,13 @@ async function runReadlineShell(): Promise<void> {
 			// Readline is already closed at this point so we can't re-prompt;
 			// just flush and exit with 0 (same UX as real ssh when inner shell dies).
 			authUser = prev.authUser;
-			void flushVfs().then(() => {
-				stdout.write(`logout\n`);
-				process.exit(0);
-			});
+			void flushVfs();
+			stdout.write(`logout\n`);
+			process.exit(0);
 		} else {
-			void flushVfs().then(() => {
-				console.log("");
-				process.exit(0);
-			});
+			void flushVfs(); 
+			console.log("");
+			process.exit(0);
 		}
 	});
 
@@ -666,11 +665,11 @@ runReadlineShell().catch((error: unknown) => {
 
 // ── Graceful shutdown (process-level) ────────────────────────────────────────
 let _shuttingDown = false;
-async function _gracefulShutdown(signal: string): Promise<void> {
+function _gracefulShutdown(signal: string): void {
 	if (_shuttingDown) return;
 	_shuttingDown = true;
 	process.stdout.write(`\n[${signal}] Saving VFS...\n`);
-	try { await virtualShell.vfs.stopAutoFlush(); } catch { /* best-effort flush on shutdown */ }
+	try { virtualShell.vfs.stopAutoFlush(); } catch { /* best-effort flush on shutdown */ }
 	process.exit(0);
 }
 process.on("SIGTERM", () => { void _gracefulShutdown("SIGTERM"); });

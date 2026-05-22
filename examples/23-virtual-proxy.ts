@@ -9,8 +9,8 @@ import { Baie, VirtualProxy } from "../src";
 
 const baie = new Baie("proxy-demo", "10.0.0.0/24");
 
-await baie.createVM("web-server");
-await baie.createVM("client");
+baie.createVM("web-server");
+baie.createVM("client");
 
 const proxy = new VirtualProxy(baie);
 
@@ -45,5 +45,5 @@ console.log("\n--- Cleanup ---");
 proxy.stop();
 console.log("  All forwards stopped");
 
-await baie.destroyVM("web-server");
-await baie.destroyVM("client");
+baie.destroyVM("web-server");
+baie.destroyVM("client");
