@@ -29,7 +29,7 @@ bun install
 
 | Script | Command | Output |
 |---|---|---|
-| `build` | `tsc --project tsconfig.json` | `dist/` — compiled JS + `.d.ts` |
+| `build` | `tsc --project tsconfig-build.json` | `dist/` — compiled JS + `.d.ts` |
 | `standalone-build` | `esbuild src/standalone.ts` | `builds/standalone.cjs` (Node.js CLI) |
 | `web-build` | `esbuild src/web.ts` | `builds/web.min.js` (browser ESM) |
 | `web-build-iife` | `esbuild src/web.ts --format=iife` | `builds/web-iife.min.js` (browser IIFE) |
@@ -117,7 +117,7 @@ src/
 
 | Tool | Purpose | Config |
 |---|---|---|
-| **TypeScript** 6.x | Compiler | `tsconfig.json` (strict, ESNext, bundler module) |
+| **TypeScript** 6.x | Compiler | `tsconfig-build.json` (strict, ESNext, bundler module) |
 | **esbuild** | Bundler for web/standalone | Called via package scripts |
 | **Biome** | Linter + formatter | `biome.json` (tabs, width 80, LF) |
 | **Bun** | Runtime + test runner | `bun:test` (no external test lib) |
