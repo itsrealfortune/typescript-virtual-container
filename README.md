@@ -13,7 +13,7 @@
 ## Table of Contents
 
 - [Three ways to run](#three-ways-to-run) · [Get Started](#get-started)
-- [How It Works](#how-it-works) · [Resource Capping](#resource-capping) · [Swap File Store](#swap-file-store) · [Virtual Package Manager](#virtual-package-manager) · [Built-in Commands](#built-in-commands-157)
+- [How It Works](#how-it-works) · [Resource Capping](#resource-capping) · [Process Scheduler](#process-scheduler) · [Swap File Store](#swap-file-store) · [Virtual Package Manager](#virtual-package-manager) · [Built-in Commands](#built-in-commands-157)
 - [Shell Scripting](#shell-scripting) · [Linux Rootfs](#linux-rootfs--vfs-path-resolution)
 - [Configuration](#configuration) · [Troubleshooting](#troubleshooting)
 - [FAQ](#faq) · [Contributing](#contributing)
@@ -292,6 +292,30 @@ Killed  # exit code 137
 ```
 
 Short commands (`ls`, `echo`, `cat`) are unaffected. The `process:killed:cpu` event is emitted with `{ pid, command, cpuTime }`.
+
+### Process scheduler
+
+The VFS includes a priority-based process scheduler inspired by Linux CFS. When enabled, processes receive CPU time proportional to their nice value (-20 = highest priority, 19 = lowest):
+
+```typescript
+shell.users.enableScheduler({
+  baseTimesliceMs: 100,
+  maxTimesliceMs: 500,
+  enforceFairShare: true,
+});
+
+shell.users.setProcessNice(1234, -10); // boost priority
+shell.users.getSchedulerStats();       // { scheduleCount, throttleCount, ... }
+```
+
+In the shell:
+```bash
+nice -n -10 my-command    # run with high priority
+nice -n 15 -p 1234        # lower priority of running process
+ps aux                    # shows NI (nice) and PRI columns
+```
+
+The scheduler tracks per-process CPU time in accounting windows and throttles processes that consume more than 2× their fair share, preventing any single process from monopolizing the CPU.
 
 ### Runtime changes
 
