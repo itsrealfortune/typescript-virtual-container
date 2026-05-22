@@ -12,6 +12,7 @@ console.log("--- Deploy honeypot ---");
 
 const shell = new VirtualShell("honeypot");
 await shell.ensureInitialized();
+await shell.users.setPassword("root", "root");
 const vfs = shell.getVfs()!;
 const users = shell.getUsers()!;
 
@@ -39,7 +40,7 @@ const port = await ssh.start();
 console.log("\n--- Simulate attacker activity ---");
 
 const attacker = new SshClient();
-await attacker.connect({ host: "localhost", port, username: "root", password: "" });
+await attacker.connect({ host: "localhost", port, username: "root", password: "root" });
 
 const commands = [
 	"cat /etc/passwd",

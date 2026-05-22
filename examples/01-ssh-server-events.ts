@@ -9,6 +9,7 @@ import { SshClient, VirtualShell, VirtualSshServer } from "../src";
 
 const shell = new VirtualShell("lab-environment");
 await shell.ensureInitialized();
+await shell.users.setPassword("root", "root");
 
 const ssh = new VirtualSshServer({ port: 0, shell, maxAuthAttempts: 3 });
 
@@ -50,7 +51,7 @@ console.log(`Server ready on port ${port}`);
 // ── Simulate activity via real SSH client ─────────────────────────
 console.log("--- Simulate activity via SshClient ---");
 const client = new SshClient();
-await client.connect({ host: "localhost", port, username: "root", password: "" });
+await client.connect({ host: "localhost", port, username: "root", password: "root" });
 
 const result = await client.exec("echo 'Hello from connected client'");
 console.log(`Command output: ${result.stdout!.trim()}`);

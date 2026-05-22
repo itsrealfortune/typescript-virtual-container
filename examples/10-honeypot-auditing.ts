@@ -9,6 +9,7 @@ import { HoneyPot, SshClient, VirtualShell, VirtualSshServer } from "../src";
 
 const shell = new VirtualShell("typescript-vm");
 await shell.ensureInitialized();
+await shell.users.setPassword("root", "root");
 
 // ── Attach HoneyPot ────────────────────────────────────────────────
 console.log("--- Attach HoneyPot ---");
@@ -24,7 +25,7 @@ const port = await ssh.start();
 console.log("\n--- Simulate activity ---");
 
 const client = new SshClient();
-await client.connect({ host: "localhost", port, username: "root", password: "" });
+await client.connect({ host: "localhost", port, username: "root", password: "root" });
 await client.exec("echo 'secret data' > /etc/secrets.txt");
 await client.exec("cat /etc/secrets.txt");
 await client.exec("ls -la /tmp");

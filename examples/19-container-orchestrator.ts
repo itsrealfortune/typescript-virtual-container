@@ -49,12 +49,13 @@ for (const spec of podSpecs) {
 	const vm = await cluster.createVM(spec.name);
 	vm.vfs.setRamCap(256 * 1024 * 1024);
 	vm.users.setCpuCapCores(1);
+	vm.users.setPassword("root", "root");
 
 	const ssh = new VirtualSshServer({ port: 0, shell: vm });
 	const port = await ssh.start();
 
 	const client = new SshClient();
-	await client.connect({ host: "localhost", port, username: "root", password: "" });
+	await client.connect({ host: "localhost", port, username: "root", password: "root" });
 
 	await client.exec(`mkdir -p /app && echo '${spec.image}' > /app/image`);
 	for (const p of spec.ports) {

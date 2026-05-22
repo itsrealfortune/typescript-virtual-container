@@ -41,15 +41,16 @@ const clients = {
 };
 
 await Promise.all([
-	clients.lint.connect({ host: "localhost", port: portLint, username: "root", password: "" }),
-	clients.test.connect({ host: "localhost", port: portTest, username: "root", password: "" }),
-	clients.build.connect({ host: "localhost", port: portBuild, username: "root", password: "" }),
-	clients.deploy.connect({ host: "localhost", port: portDeploy, username: "root", password: "" }),
+	clients.lint.connect({ host: "localhost", port: portLint, username: "root", password: "root" }),
+	clients.test.connect({ host: "localhost", port: portTest, username: "root", password: "root" }),
+	clients.build.connect({ host: "localhost", port: portBuild, username: "root", password: "root" }),
+	clients.deploy.connect({ host: "localhost", port: portDeploy, username: "root", password: "root" }),
 ]);
 
 for (const [name, vm] of Object.entries({ lint: lintVM, test: testVM, build: buildVM, deploy: deployVM })) {
 	vm.vfs.setRamCap(50 * 1024 * 1024);
 	vm.users.setCpuCapCores(1);
+	vm.users.setPassword("root", "root");
 	vm.users.enableScheduler({ baseTimesliceMs: 50 });
 	console.log(`  ${name} VM: 50MB RAM, 1 vCPU, scheduler enabled`);
 }
