@@ -59,6 +59,8 @@ export const iptablesCommand: ShellModule = {
 				case "--jump":
 					rule.action = (args[++i] ?? "ACCEPT") as FirewallRule["action"];
 					break;
+				default:
+					break;
 			}
 		}
 
@@ -107,6 +109,9 @@ export const iptablesCommand: ShellModule = {
 				});
 				return { stdout: `Rule added at index ${idx}\n`, exitCode: 0 };
 			}
+
+			default:
+				return { stderr: "iptables: no action specified (-L, -A, -F, -P)", exitCode: 1 };
 		}
 	},
 };

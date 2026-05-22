@@ -64,11 +64,9 @@ export const perlCommand: ShellModule = {
 				const val = (printM[1] ?? printM[2] ?? printM[3] ?? "")
 					.replace(/\\n/g, "\n").replace(/\\t/g, "\t");
 				out.push(val);
-			} else {
+			} else if (code.trim() === 'print $]' || code.includes("version")) {
 				// Version string
-				if (code.trim() === 'print $]' || code.includes("version")) {
-					out.push("5.036001");
-				}
+				out.push("5.036001");
 			}
 		}
 

@@ -470,6 +470,8 @@ async function runReadlineShell(): Promise<void> {
 				shellEnv.vars.HOME = userHome(authUser);
 				shellEnv.vars.PWD = cwd;
 				break;
+			default:
+				break;
 		}
 	}
 

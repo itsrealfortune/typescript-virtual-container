@@ -351,6 +351,8 @@ export class FileCache {
 			case "fifo":
 				targetKey = this._findFifo();
 				break;
+			default:
+				throw new Error(`Unknown eviction policy: ${this._policy}`);
 		}
 
 		if (targetKey) {

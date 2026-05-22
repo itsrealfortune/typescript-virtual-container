@@ -203,6 +203,8 @@ export function resolveSysctlPath(
 				if (key === "file-max") { return { value: f.file_max, set: (v) => { f.file_max = Number(v); } }; }
 			break;
 		}
+		default:
+			break;
 	}
 	return null;
 }

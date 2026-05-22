@@ -252,6 +252,8 @@ export class NanoEditor {
 			case `${ESC}[1;5D`: this._dispatch("ctrl-left"); break;
 			case `${ESC}[1;5A`: this._dispatch("ctrl-up"); break;
 			case `${ESC}[1;5B`: this._dispatch("ctrl-down"); break;
+			default:
+				break;
 		}
 	}
 
@@ -320,6 +322,8 @@ export class NanoEditor {
 
 			// Goto line
 			case 31: this._enterGotoLine(); break;          // ^_
+			default:
+				break;
 		}
 	}
 
@@ -339,6 +343,8 @@ export class NanoEditor {
 			case "ctrl-left": this._moveWordLeft(); break;
 			case "ctrl-up": this._moveCursor(-1); break;
 			case "ctrl-down": this._moveCursor(1); break;
+			default:
+				break;
 		}
 	}
 

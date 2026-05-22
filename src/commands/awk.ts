@@ -164,6 +164,7 @@ export const awkCommand: ShellModule = {
 					.replace(/\$NF\b/g, String(nf > 0 ? numVal(fields[nf - 1]) : 0))
 					.replace(/\$(\d+)/g, (_, n) => String(numVal(fields[Number.parseInt(n, 10) - 1])))
 					.replace(/\b([A-Za-z_][A-Za-z0-9_]*)\b/g, (_, v) => String(numVal(vars[v])));
+				// biome-ignore lint/nursery/noImpliedEval: awk expression evaluator needs dynamic code execution
 				const result = Function(`"use strict"; return (${subst});`)();
 				if (typeof result === "number" || typeof result === "boolean") { return Number(result); }
 			} catch { /* fall through */ }
@@ -419,6 +420,7 @@ export const awkCommand: ShellModule = {
 					case ">=": return lhs >= rhs;
 					case "<":  return lhs < rhs;
 					case "<=": return lhs <= rhs;
+					default: return false;
 				}
 			}
 

@@ -77,6 +77,8 @@ function evalTest(
 				return operand.length > 0;
 			case "-L":
 				return shell.vfs.isSymlink(path);
+			default:
+				break;
 		}
 	}
 
@@ -110,6 +112,8 @@ function evalTest(
 				return leftN > rightN;
 			case "-ge":
 				return leftN >= rightN;
+			default:
+				break;
 		}
 	}
 

@@ -91,19 +91,19 @@ function parseMaze(tpl: string[]): Cell[][] {
 		const line = tpl[r] as string;
 		for (let c = 0; c < COLS; c++) {
 			const ch = line[c] ?? " ";
-			if (WALL_SET.has(ch)) row.push("wall");
-			else if (ch === ".") row.push("dot");
-			else if (ch === "o") row.push("pellet");
-			else row.push("empty");
+			if (WALL_SET.has(ch)) { row.push("wall"); }
+			else if (ch === ".") { row.push("dot"); }
+			else if (ch === "o") { row.push("pellet"); }
+			else { row.push("empty"); }
 		}
 		grid.push(row);
 	}
 	// Mark ghost house interior (walls at c14,c21 already "wall"; interior = ghost-house)
 	for (let r = 15; r <= 17; r++) {
 		const row = grid[r];
-		if (!row) continue;
+		if (!row) { continue; }
 		for (let c = 15; c <= 20; c++) {
-			if (row[c] === "empty") row[c] = "ghost-house";
+			if (row[c] === "empty") { row[c] = "ghost-house"; }
 		}
 	}
 	return grid;
@@ -181,14 +181,14 @@ export class PacmanGame {
 	/** Safely access a grid row. The grid is always fully populated. */
 	private _gridRow(r: number): Cell[] {
 		const row = this._grid[r];
-		if (row === undefined) throw new Error(`PacmanGame: row ${r} out of range`);
+		if (row === undefined) { throw new Error(`PacmanGame: row ${r} out of range`); }
 		return row;
 	}
 
 	/** Safely access a ghost by index. Ghosts are always initialized. */
 	private _ghost(i: number): Ghost {
 		const g = this._ghosts[i];
-		if (g === undefined) throw new Error(`PacmanGame: ghost ${i} not found`);
+		if (g === undefined) { throw new Error(`PacmanGame: ghost ${i} not found`); }
 		return g;
 	}
 
@@ -248,9 +248,11 @@ export class PacmanGame {
 
 	private _countDots(): void {
 		this._dotsTotal = 0;
-		for (const row of this._grid)
-			for (const c of row)
-				if (c === "dot" || c === "pellet") this._dotsTotal++;
+		for (const row of this._grid) {
+			for (const c of row) {
+				if (c === "dot" || c === "pellet") { this._dotsTotal++; }
+			}
+		}
 	}
 
 	private _initGhosts(): void {
@@ -333,18 +335,18 @@ export class PacmanGame {
 				}
 				if (data[i + 1] === "[") {
 					const code = data[i + 2];
-					if (code === "A") this._inputKey = 3;
-					else if (code === "B") this._inputKey = 1;
-					else if (code === "C") this._inputKey = 0;
-					else if (code === "D") this._inputKey = 2;
+					if (code === "A") { this._inputKey = 3; }
+					else if (code === "B") { this._inputKey = 1; }
+					else if (code === "C") { this._inputKey = 0; }
+					else if (code === "D") { this._inputKey = 2; }
 					i += 3; continue;
 				}
 				i++; continue;
 			}
-			if (ch === "w" || ch === "W") this._inputKey = 3;
-			else if (ch === "s" || ch === "S") this._inputKey = 1;
-			else if (ch === "a" || ch === "A") this._inputKey = 2;
-			else if (ch === "d" || ch === "D") this._inputKey = 0;
+			if (ch === "w" || ch === "W") { this._inputKey = 3; }
+			else if (ch === "s" || ch === "S") { this._inputKey = 1; }
+			else if (ch === "a" || ch === "A") { this._inputKey = 2; }
+			else if (ch === "d" || ch === "D") { this._inputKey = 0; }
 			i++;
 		}
 	}
@@ -355,7 +357,7 @@ export class PacmanGame {
 		if (this._gameOver || this._won) {
 			this._msgTicks++;
 			if (this._msgTicks > 32) { this.stop(); this._onExit(); }
-			else this._renderDiff();
+			else { this._renderDiff(); }
 			return;
 		}
 
@@ -401,12 +403,13 @@ export class PacmanGame {
 
 		// Snapshot ghost positions before move (for cross-collision detection)
 		const prevGhostPos = this._ghosts.map(g => ({ r: g.r, c: g.c }));
-		const prevPacR = this._pacR, prevPacC = this._pacC;
+		const prevPacR = this._pacR;
+		const prevPacC = this._pacC;
 
 		this._movePacman();
 		this._pacMouthOpen = !this._pacMouthOpen;
 
-		for (const g of this._ghosts) this._moveGhost(g);
+		for (const g of this._ghosts) { this._moveGhost(g); }
 
 		this._checkCollisions(prevGhostPos, prevPacR, prevPacC);
 		this._renderDiff();
@@ -415,12 +418,12 @@ export class PacmanGame {
 	// ── Walkability ───────────────────────────────────────────────────────────
 
 	private _isWalkable(r: number, c: number, ghost = false): boolean {
-		if (r < 0 || r >= ROWS) return false;
+		if (r < 0 || r >= ROWS) { return false; }
 		// Horizontal tunnel wrap handled elsewhere
 		const cc = ((c % COLS) + COLS) % COLS;
 		const cell = this._grid[r]?.[cc];
-		if (cell === "wall") return false;
-		if (!ghost && cell === "ghost-house") return false;
+		if (cell === "wall") { return false; }
+		if (!ghost && cell === "ghost-house") { return false; }
 		return cell !== undefined;
 	}
 
@@ -430,7 +433,7 @@ export class PacmanGame {
 		// Try queued dir
 		const qr = this._pacR + DR[this._pacNextDir];
 		const qc = ((this._pacC + DC[this._pacNextDir]) % COLS + COLS) % COLS;
-		if (this._isWalkable(qr, qc)) this._pacDir = this._pacNextDir;
+		if (this._isWalkable(qr, qc)) { this._pacDir = this._pacNextDir; }
 
 		const mr = this._pacR + DR[this._pacDir];
 		const mc = ((this._pacC + DC[this._pacDir]) % COLS + COLS) % COLS;
@@ -459,7 +462,7 @@ export class PacmanGame {
 				g.mode = "fright";
 				g.frightTicks = this._frightDuration;
 				g.movePeriod = 2; // half speed during fright (arcade accurate)
-				if (!g.inHouse) g.dir = oppositeDir(g.dir);
+				if (!g.inHouse) { g.dir = oppositeDir(g.dir); }
 			}
 		}
 		// Do not interrupt global mode schedule tick during fright
@@ -468,7 +471,7 @@ export class PacmanGame {
 	// ── Ghost: target tile (original Pac-Man logic) ───────────────────────────
 
 	private _ghostTarget(g: Ghost): [number, number] {
-		if (g.mode === "scatter") return [g.scatterR, g.scatterC];
+		if (g.mode === "scatter") { return [g.scatterR, g.scatterC]; }
 
 		// Chase targets — faithful to original arcade
 		switch (g.name) {
@@ -480,7 +483,8 @@ export class PacmanGame {
 				// Target 4 tiles ahead of pacman (with original NES up-bug: up = up-left*4)
 				const tr = this._pacR + DR[this._pacDir] * 4;
 				let tc = this._pacC + DC[this._pacDir] * 4;
-				if (this._pacDir === 3) tc = this._pacC - 4; // NES bug: facing up → also goes left
+				if (this._pacDir === 3) { tc = this._pacC - 4; // NES bug: facing up → also goes left
+}
 				return [tr, tc];
 			}
 
@@ -489,7 +493,8 @@ export class PacmanGame {
 				const blinky = this._ghost(0);
 				const pr = this._pacR + DR[this._pacDir] * 2;
 				let pc = this._pacC + DC[this._pacDir] * 2;
-				if (this._pacDir === 3) pc = this._pacC - 2; // NES bug mirror
+				if (this._pacDir === 3) { pc = this._pacC - 2; // NES bug mirror
+}
 				// Target = pivot + (pivot - blinky)
 				return [pr * 2 - blinky.r, pc * 2 - blinky.c];
 			}
@@ -498,7 +503,7 @@ export class PacmanGame {
 				// Chase if dist > 8 tiles (Euclidean), else scatter corner
 				const dr = g.r - this._pacR;
 				const dc = g.c - this._pacC;
-				if (dr * dr + dc * dc > 64) return [this._pacR, this._pacC];
+				if (dr * dr + dc * dc > 64) { return [this._pacR, this._pacC]; }
 				return [g.scatterR, g.scatterC];
 			}
 
@@ -512,7 +517,7 @@ export class PacmanGame {
 	private _moveGhost(g: Ghost): void {
 		// Per-ghost speed throttle
 		g.movePhase = (g.movePhase + 1) % g.movePeriod;
-		if (g.movePhase !== 0) return;
+		if (g.movePhase !== 0) { return; }
 
 		// Fright countdown — applied AFTER collision check via tickFrightCountdown()
 		// (moving it here would let mode flip to chase before collision is tested)
@@ -522,12 +527,13 @@ export class PacmanGame {
 			if (this._dotsEaten < g.dotThreshold) {
 				// Bounce vertically inside house
 				const nextR = g.r + DR[g.dir];
-				if (nextR < 15 || nextR > 17) g.dir = oppositeDir(g.dir);
-				else g.r = nextR;
+				if (nextR < 15 || nextR > 17) { g.dir = oppositeDir(g.dir); }
+				else { g.r = nextR; }
 				return;
 			}
 			// Navigate to exit: r=14,c=17 (open gap in ghost house top wall)
-			const exitR = 14, exitC = 17;
+			const exitR = 14;
+			const exitC = 17;
 			if (g.r === exitR && g.c === exitC) {
 				g.inHouse = false;
 				g.mode = this._globalMode;
@@ -545,7 +551,8 @@ export class PacmanGame {
 
 		// Eaten: beeline back to house entrance
 		if (g.mode === "eaten") {
-			const homeR = 14, homeC = 17;
+			const homeR = 14;
+			const homeC = 17;
 			if (g.r === homeR && g.c === homeC) {
 				g.inHouse = true;
 				g.r = 16; g.c = 17; // reset inside house
@@ -555,8 +562,8 @@ export class PacmanGame {
 				return;
 			}
 			// Move one step toward house
-			if (g.c !== homeC) g.c += g.c < homeC ? 1 : -1;
-			else if (g.r !== homeR) g.r += g.r < homeR ? 1 : -1;
+			if (g.c !== homeC) { g.c += g.c < homeC ? 1 : -1; }
+			else if (g.r !== homeR) { g.r += g.r < homeR ? 1 : -1; }
 			return;
 		}
 
@@ -572,16 +579,17 @@ export class PacmanGame {
 
 		if (g.mode === "fright") {
 			// Random walkable direction
-			if (walkable.length > 0) chosen = walkable[Math.floor(Math.random() * walkable.length)] ?? chosen;
+			if (walkable.length > 0) { chosen = walkable[Math.floor(Math.random() * walkable.length)] ?? chosen; }
 		} else {
 			const [tR, tC] = this._ghostTarget(g);
 			let best = Number.MAX_SAFE_INTEGER;
 			// Original priority: up > left > down > right when tied
 			for (const d of DIR_PRIORITY) {
-				if (!walkable.includes(d)) continue;
+				if (!walkable.includes(d)) { continue; }
 				const nr = g.r + DR[d];
 				const nc = ((g.c + DC[d]) % COLS + COLS) % COLS;
-				const dr = nr - tR, dc = nc - tC;
+				const dr = nr - tR;
+				const dc = nc - tC;
 				const dist = dr * dr + dc * dc; // squared Euclidean (same ranking as sqrt)
 				if (dist < best) { best = dist; chosen = d; }
 			}
@@ -602,17 +610,17 @@ export class PacmanGame {
 	): void {
 		for (let i = 0; i < this._ghosts.length; i++) {
 			const g = this._ghost(i);
-			if (g.inHouse || g.mode === "eaten") continue;
+			if (g.inHouse || g.mode === "eaten") { continue; }
 
 			// Same-cell collision
 			const sameTile = g.r === this._pacR && g.c === this._pacC;
 			// Cross-collision: pacman and ghost swapped positions this tick
 			const prev = prevGhostPos[i];
-			if (prev === undefined) continue;
+			if (prev === undefined) { continue; }
 			const crossed = prev.r === this._pacR && prev.c === this._pacC
 				&& g.r === prevPacR && g.c === prevPacC;
 
-			if (!sameTile && !crossed) continue;
+			if (!(sameTile || crossed)) { continue; }
 
 			if (g.mode === "fright") {
 				g.mode = "eaten"; this._score += 200;
@@ -665,16 +673,16 @@ export class PacmanGame {
 			for (let c = 0; c < COLS; c++) {
 				const cell = this._grid[r]?.[c];
 				const vch = rgRow[c] ?? " ";
-				if (WALL_SET.has(vch)) continue;
-				if (cell === "dot") rgRow[c] = "·";
-				else if (cell === "pellet") rgRow[c] = "■";
-				else rgRow[c] = " ";
+				if (WALL_SET.has(vch)) { continue; }
+				if (cell === "dot") { rgRow[c] = "·"; }
+				else if (cell === "pellet") { rgRow[c] = "■"; }
+				else { rgRow[c] = " "; }
 			}
 		}
 
 		// Ghosts
 		for (const g of this._ghosts) {
-			if (g.r < 0 || g.r >= ROWS || g.c < 0 || g.c >= COLS) continue;
+			if (g.r < 0 || g.r >= ROWS || g.c < 0 || g.c >= COLS) { continue; }
 			let sprite: string;
 			if (g.mode === "eaten") {
 				sprite = `${C.white}ö${C.r}`;
@@ -698,8 +706,9 @@ export class PacmanGame {
 				const open = (["ᗧ","ᗦ","ᗤ","ᗣ"] as const)[this._pacDir] ?? "ᗧ";
 				sprite = `${C.yellow}${this._pacMouthOpen ? open : "◯"}${C.r}`;
 			}
-			if (this._pacR >= 0 && this._pacR < ROWS && this._pacC >= 0 && this._pacC < COLS)
+			if (this._pacR >= 0 && this._pacR < ROWS && this._pacC >= 0 && this._pacC < COLS) {
 				(rg[this._pacR] as string[])[this._pacC] = sprite;
+			}
 		}
 
 		// Colorize maze rows
@@ -707,11 +716,11 @@ export class PacmanGame {
 			let row = "";
 			for (let c = 0; c < COLS; c++) {
 				const ch = (rg[r] as string[])[c] as string;
-				if (ch.includes("\x1b")) row += ch;
-				else if (WALL_SET.has(ch)) row += `${C.blue}${ch}${C.r}`;
-				else if (ch === "·") row += `${C.dim}·${C.r}`;
-				else if (ch === "■") row += `${C.white}■${C.r}`;
-				else row += ch;
+				if (ch.includes("\x1b")) { row += ch; }
+				else if (WALL_SET.has(ch)) { row += `${C.blue}${ch}${C.r}`; }
+				else if (ch === "·") { row += `${C.dim}·${C.r}`; }
+				else if (ch === "■") { row += `${C.white}■${C.r}`; }
+				else { row += ch; }
 			}
 			lines.push(row);
 		}
@@ -722,7 +731,7 @@ export class PacmanGame {
 		lines.push(`  ${C.dim}WASD/arrows  Q=quit${C.r}`);
 
 		// Message overlay
-		if (this._msg) lines[18] = `        ${C.yellow}${C.blink}${this._msg}${C.r}`;
+		if (this._msg) { lines[18] = `        ${C.yellow}${C.blink}${this._msg}${C.r}`; }
 
 		return lines;
 	}
@@ -730,7 +739,7 @@ export class PacmanGame {
 	private _renderFull(): void {
 		const lines = this._buildLines();
 		let out = hide + clearScreen;
-		for (let i = 0; i < lines.length; i++) out += cup(i + 1, 1) + (lines[i] ?? "") + eraseEol;
+		for (let i = 0; i < lines.length; i++) { out += cup(i + 1, 1) + (lines[i] ?? "") + eraseEol; }
 		this._stream.write(out);
 		this._prevLines = lines;
 	}
@@ -748,7 +757,7 @@ export class PacmanGame {
 		for (let i = lines.length; i < this._prevLines.length; i++) {
 			out += cup(i + 1, 1) + eraseEol;
 		}
-		if (out) this._stream.write(out);
+		if (out) { this._stream.write(out); }
 		this._prevLines = lines;
 	}
 }

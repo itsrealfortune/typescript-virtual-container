@@ -321,7 +321,7 @@ function internName(s: string): string {
  */
 export function forkDirTree(base: InternalDirectoryNode): InternalDirectoryNode {
 	const children = Object.create(null) as Record<string, InternalNode>;
-	for (const name in base.children) {
+	for (const name of Object.keys(base.children)) {
 		const child = base.children[name] as InternalNode;
 		children[name] = child.type === "directory"
 			? forkDirTree(child as InternalDirectoryNode)

@@ -846,8 +846,9 @@ class Interpreter {
 					left === right ||
 					(isPyNone(left as PyVal) && isPyNone(right as PyVal))
 				);
+			default:
+				return NONE;
 		}
-		return NONE;
 	}
 
 	private _pyIn(container: PyVal, item: PyVal): boolean {
@@ -998,6 +999,8 @@ class Interpreter {
 							c === c.toUpperCase() ? c.toLowerCase() : c.toUpperCase(),
 						)
 						.join("");
+				default:
+					break;
 			}
 		}
 
@@ -1046,6 +1049,8 @@ class Interpreter {
 				case "clear":
 					obj.splice(0);
 					return NONE;
+				default:
+					break;
 			}
 		}
 
@@ -1082,6 +1087,8 @@ class Interpreter {
 					if (!obj.data.has(k)) { obj.data.set(k, args[1] ?? NONE); }
 					return obj.data.get(k) ?? NONE;
 				}
+				default:
+					break;
 			}
 		}
 
@@ -1102,6 +1109,8 @@ class Interpreter {
 					return [];
 				case "path":
 					return obj; // return self
+				default:
+					break;
 			}
 		}
 
@@ -1131,6 +1140,8 @@ class Interpreter {
 					return false;
 				case "isdir":
 					return false;
+				default:
+					break;
 			}
 		}
 
@@ -1143,6 +1154,8 @@ class Interpreter {
 			switch (method) {
 				case "exit":
 					throw new ExitSignal((args[0] as number) ?? 0);
+				default:
+					break;
 			}
 		}
 
