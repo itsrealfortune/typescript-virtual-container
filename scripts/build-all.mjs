@@ -150,7 +150,25 @@ replaceSection(
   [
     `| Bundle | Format | Entry point | Use case |`,
     `|--------|--------|-------------|----------|`,
-    `| \`builds/${web}\` | ESM | \`createWebShell()\` | Embedded terminals, modern bundlers |`,
+    `| \`builds/${web}\` | ESM | \`VirtualShell\`, \`VirtualFileSystem\`, \`SshClient\`, \`DesktopManager\`, … | Embedded terminals, browser demos |`,
+  ].join("\n"),
+);
+replaceSection(
+  "web-options",
+  [
+    `**\`${web}\`** — full library API bundled for the browser:`,
+    ``,
+    `\`\`\`html`,
+    `<script type="module">`,
+    `  import { VirtualShell, VirtualFileSystem, SshClient } from "./builds/${web}";`,
+    ``,
+    `  const shell = new VirtualShell("web-vm", undefined, { mode: "memory" });`,
+    `  await shell.ensureInitialized();`,
+    ``,
+    `  const client = new SshClient(shell, "root");`,
+    `  await client.exec("echo hello from the browser");`,
+    `</script>`,
+    `\`\`\``,
   ].join("\n"),
 );
 replaceSection(

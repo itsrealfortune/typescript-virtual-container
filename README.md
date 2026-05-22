@@ -12,12 +12,12 @@
 
 ## Table of Contents
 
-- [Three ways to run](#three-ways-to-run) · [Get Started](#get-started)
-- [How It Works](#how-it-works) · [Resource Capping](#resource-capping) · [Process Scheduler](#process-scheduler) · [Swap File Store](#swap-file-store) · [Virtual Package Manager](#virtual-package-manager) · [Built-in Commands](#built-in-commands-173)
-- [Shell Scripting](#shell-scripting) · [Linux Rootfs](#linux-rootfs--vfs-path-resolution)
-- [Configuration](#configuration) · [Troubleshooting](#troubleshooting)
-- [FAQ](#faq) · [Contributing](#contributing)
-- [License](#license) · [Roadmap](#roadmap)
+- [Three ways to run](#three-ways-to-run) · [Get Started](#get-started) · [Programmatic API](#programmatic-api)
+- [How It Works](#how-it-works) · [Resource Capping](#resource-capping)
+- [Swap File Store](#swap-file-store) · [Virtual Package Manager](#virtual-package-manager)
+- [Troubleshooting](#troubleshooting) · [FAQ](#faq)
+- [Contributing](#contributing) · [Security](#security) · [Compatibility](#compatibility)
+- [License](#license)
 
 ---
 
@@ -27,7 +27,7 @@
 | Mode | Entry point | Use case |
 |------|-------------|----------|
 | **SSH/SFTP server** | `VirtualSshServer` / `VirtualSftpServer` | Honeypots, remote testing, training environments |
-| **Web shell** | `builds/fortune-nyx-v1.7.4-web.min.js` (ESM) | Embedded terminals, interactive tutorials, browser demos — run `startxfce4` for a full XFCE desktop |
+| **Web shell** | `demo/app.ts` → bundled with esbuild | Embedded terminals, interactive tutorials, browser demos — run `startxfce4` for a full XFCE desktop |
 | **Standalone CLI** | `builds/fortune-nyx-v1.7.4-directbash-k6.1.0.mjs` (single file) | Local shell, one-liner demos, no install required |
 <!-- /BUILD:mode-table -->
 
@@ -103,52 +103,36 @@ await ssh.start();
 
 > **[🖥 Try the live demo →](https://itsrealfortune.fr/typescript-virtual-container/demo)**
 
-Two browser bundles are available:
+The library can run entirely in the browser. The VFS is persisted in **IndexedDB** — state survives page reloads.
 
 <!-- BUILD:web-table -->
 | Bundle | Format | Entry point | Use case |
 |--------|--------|-------------|----------|
-| `builds/fortune-nyx-v1.7.4-web.min.js` | ESM | `createWebShell()` | Embedded terminals, modern bundlers |
+| `builds/fortune-nyx-v1.7.4-web.min.js` | ESM | `VirtualShell`, `VirtualFileSystem`, `SshClient`, `DesktopManager`, … | Embedded terminals, browser demos |
 <!-- /BUILD:web-table -->
 
-Both bundles persist the VFS in **IndexedDB** — state survives page reloads.
+**Build the browser bundle:**
 
 ```bash
-bun run web-build       # → builds/web.min.js + examples/web.min.js
-bun run web-full-build  # → builds/web-full-api.min.js
-bun run build-all       # rebuild everything
+bun run web-build       # → builds/fortune-nyx-v1.7.4-web.min.js
+bun run build-all       # rebuild everything (library + standalone + demo + docs)
 ```
 
-<!-- BUILD:web-options -->
-**`fortune-nyx-v1.7.4-web.min.js`** — lightweight shell with IndexedDB VFS:
+**Use in a project:**
 
 ```html
 <script type="module">
-  import { createWebShell } from "./builds/fortune-nyx-v1.7.4-web.min.js";
+  import { VirtualShell, VirtualFileSystem, SshClient } from "./builds/fortune-nyx-v1.7.4-web.min.js";
 
-  const shell = createWebShell("web-vm", {
-    vfs: { databaseName: "virtual-env-js", storeName: "vfs" },
-  });
+  const shell = new VirtualShell("web-vm", undefined, { mode: "memory" });
   await shell.ensureInitialized();
 
-  const out = await shell.executeCommandLine("ls /etc && echo hello");
-  console.log(out.stdout);
+  const client = new SshClient(shell, "root");
+  await client.exec("echo hello from the browser");
 </script>
 ```
 
-**`fortune-nyx-v1.7.4-web.min.js`** — mirrors the `VirtualShell` programmatic API:
-
-```html
-<script type="module">
-  import { createVirtualShellShim } from "./builds/fortune-nyx-v1.7.4-web.min.js";
-
-  const shell = createVirtualShellShim("web-vm");
-  await shell.ensureInitialized();
-  await shell.executeCommandLine("mkdir -p /app && echo hello > /app/file.txt");
-  console.log(shell.getVfs().readFile("/app/file.txt")); // hello
-</script>
-```
-<!-- /BUILD:web-options -->
+The bundle exports the full library API (`VirtualShell`, `VirtualFileSystem`, `SshClient`, `DesktopManager`, `HoneyPot`, `Baie`, …) — see the [Programmatic API](#programmatic-api) section for usage.
 
 **Run the demo locally:**
 
@@ -157,9 +141,12 @@ bun run example-serve
 # Open http://localhost:8787/index.html
 ```
 
-> You can also try the hosted demo at **[itsrealfortune.fr/typescript-virtual-container/demo](https://itsrealfortune.fr/typescript-virtual-container/demo)**.
+The demo (`demo/app.ts`) adds a terminal renderer (`WebTermRenderer`) and a desktop environment (`DesktopManager`) on top of `VirtualShell`, bundled with esbuild and Node.js polyfills (`node:fs`, `node:crypto`, `node:events`, etc.).
 
-### Programmatic API
+---
+
+<details id="programmatic-api">
+<summary><strong>Programmatic API</strong></summary>
 
 ```typescript
 import { SshClient, VirtualShell } from "typescript-virtual-container";
@@ -191,9 +178,12 @@ See [`guides/EXAMPLES.md`](guides/EXAMPLES.md) for:
 - **Advanced routing** — multiple routing tables, policy-based routing, route metrics
 - **DNS, load balancer, partition**
 
+</details>
+
 ---
 
-## How It Works
+<details id="how-it-works">
+<summary><strong>How It Works</strong></summary>
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -237,9 +227,12 @@ See [`guides/EXAMPLES.md`](guides/EXAMPLES.md) for:
 
 **What it is not:** a fully isolated sandbox. The shell commands are contained — no host binary is ever spawned, `execvp` is never called, `node`/`python3`/`npm` are virtual stubs. Permission enforcement follows POSIX semantics (owner/group/other, sticky bit, setuid) for all file operations, and unknown users are auto-provisioned with non-root UIDs. But `curl`/`wget` use the real `fetch()` API (live network access), all instances share the same JS heap as the host application, and resource capping is enforced at the VFS/process level (not at the kernel level). Do not expose to untrusted input without additional infrastructure-level isolation.
 
+</details>
+
 ---
 
-## Resource Capping
+<details id="resource-capping">
+<summary><strong>Resource Capping</strong></summary>
 
 Limit the RAM and CPU resources visible inside a virtual shell. Pass a `VirtualShellResourceCaps` object as the 4th constructor argument:
 
@@ -327,9 +320,12 @@ sysctl kernel.cpu_cap_cores=2         # 2 vCPUs
 sysctl vm.ram_cap_bytes=0             # remove RAM cap
 ```
 
+</details>
+
 ---
 
-## Swap File Store
+<details id="swap-file-store">
+<summary><strong>Swap File Store</strong></summary>
 
 When running in `"fs"` persistence mode with `swapEnabled: true`, the VFS can offload evicted file contents to individual swap files on disk. This provides two benefits:
 
@@ -369,9 +365,12 @@ $ swap -c              # clear all swap files
 swap: swap files cleared
 ```
 
+</details>
+
 ---
 
-## Virtual Package Manager
+<details id="virtual-package-manager">
+<summary><strong>Virtual Package Manager</strong></summary>
 
 The `apt`/`dpkg`/`pacman` commands are **fully virtual** — they do not install real system packages. Instead, they manage a curated database of ~25 virtual packages that write files into the VFS and register new shell commands.
 
@@ -426,6 +425,8 @@ $ apt install gcc
 $ gcc --version
 gcc (Fortune 13.3.0-nyx1) 13.3.0
 ```
+
+</details>
 
 ---
 
@@ -1045,7 +1046,8 @@ import type {
 
 ---
 
-## Troubleshooting
+<details id="troubleshooting">
+<summary><strong>Troubleshooting</strong></summary>
 
 **`Error: listen EADDRINUSE :::2222`** — port already in use. Change port or stop existing process.
 
@@ -1061,9 +1063,12 @@ import type {
 
 **`Too many levels of symbolic links`** — symlink chain exceeds 8 hops. Check for circular links or increase `maxDepth` in `resolveSymlink()`.
 
+</details>
+
 ---
 
-## FAQ
+<details id="faq">
+<summary><strong>FAQ</strong></summary>
 
 **What exactly is this project?**
 A self-contained Linux environment implemented entirely in TypeScript. It is not a mock, a stub, or a thin SSH wrapper — it is a full virtual container with its own filesystem (`VirtualFileSystem`), user and permission system (`VirtualUserManager`), shell interpreter, package manager, network layer, process table, and desktop environment. Each `VirtualShell` instance is an independent container that runs anywhere TypeScript runs: Node.js, Bun, or the browser.
@@ -1105,9 +1110,12 @@ No — `startxfce4`, `thunar`, and `mousepad` require a DOM. In Node.js/Bun they
 **What does the desktop simulate?**
 A single-user XFCE session: a panel with Applications menu and clock, draggable windows, a file manager (Thunar) with navigation, right-click context menu, rename, and trash, a text editor (Mousepad) with Ctrl+S save, and terminal windows each backed by a real interactive shell session against the same VFS.
 
+</details>
+
 ---
 
-## Contributing
+<details id="contributing">
+<summary><strong>Contributing</strong></summary>
 
 1. Fork and create a feature branch: `git checkout -b feat/my-feature`
 2. Add changes and tests.
@@ -1116,9 +1124,12 @@ A single-user XFCE session: a panel with Applications menu and clock, draggable 
 
 **Standards:** Biome formatting · full TypeScript (no `any`) · ✅ **JSDoc on all built-in commands** · async/await · `description` and `category` fields on new `ShellModule` · unit tests (prioritized for core features; advanced tests planned).
 
+</details>
+
 ---
 
-## Security
+<details id="security">
+<summary><strong>Security</strong></summary>
 
 - Passwords hashed with scrypt (N=32768, r=8, p=1) with random per-user salt.
 - Root account always exists and cannot be deleted.
@@ -1134,12 +1145,17 @@ A single-user XFCE session: a panel with Applications menu and clock, draggable 
 
 Vulnerability reports: contact maintainers privately before public disclosure — see `SECURITY.md`.
 
+</details>
+
 ---
 
-## Compatibility
+<details id="compatibility">
+<summary><strong>Compatibility</strong></summary>
 
 - **Node.js**: `>=18` · **Bun**: Supported · **TypeScript**: `>=5.0`
 - **OS**: Linux, macOS, Windows (via Node/Bun)
+
+</details>
 
 ---
 
