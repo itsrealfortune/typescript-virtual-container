@@ -349,9 +349,12 @@ class SshMimic extends EventEmitter {
 		return new Promise<number>((resolve, reject) => {
 			this.server?.once("error", (err: unknown) => reject(err));
 			this.server?.listen(this.port, "0.0.0.0", () => {
-				devLog(`SSH Mimic listening on port ${this.port}`);
-				this.emit("start", { port: this.port });
-				resolve(this.port);
+				const addr = this.server?.address();
+				const actualPort = typeof addr === "object" && addr ? addr.port : this.port;
+				this.port = actualPort;
+				devLog(`SSH Mimic listening on port ${actualPort}`);
+				this.emit("start", { port: actualPort });
+				resolve(actualPort);
 			});
 		});
 	}
