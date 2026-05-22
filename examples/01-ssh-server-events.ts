@@ -5,7 +5,7 @@
  * connection tracking, lockout, and graceful shutdown.
  */
 
-import { VirtualShell, VirtualSshServer, SshClient } from "../src";
+import { SshClient, VirtualShell, VirtualSshServer } from "../src";
 
 const shell = new VirtualShell("lab-environment");
 await shell.ensureInitialized();
@@ -51,7 +51,7 @@ const client = new SshClient(shell, "root");
 
 // Simulate a command execution (triggers command events in HoneyPot if attached)
 const result = await client.exec("echo 'Hello from connected client'");
-console.log(`Command output: ${result.stdout.trim()}`);
+console.log(`Command output: ${result.stdout!.trim()}`);
 
 // ── Demonstrate lockout mechanism ─────────────────────────────────
 console.log("\n--- Lockout demo ---");

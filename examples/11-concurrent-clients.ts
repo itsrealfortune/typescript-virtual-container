@@ -42,15 +42,15 @@ const [read1, read2, read3] = await Promise.all([
 	client3.cat("/tmp/charlie.txt"),
 ]);
 
-console.log(`Alice's file: "${read1.stdout.trim()}"`);
-console.log(`Bob's file:   "${read2.stdout.trim()}"`);
-console.log(`Charlie's file: "${read3.stdout.trim()}"`);
+console.log(`Alice's file: "${read1.stdout!.trim()}"`);
+console.log(`Bob's file:   "${read2.stdout!.trim()}"`);
+console.log(`Charlie's file: "${read3.stdout!.trim()}"`);
 
 // ── Cross-user file sharing ───────────────────────────────────────
 console.log("\nCross-user file access (shared /tmp):");
 
 const bobReadsAlice = await client2.cat("/tmp/alice.txt");
-console.log(`Bob reads Alice's file: exit ${bobReadsAlice.exitCode} — "${bobReadsAlice.stdout.trim().slice(0, 30)}..."`);
+console.log(`Bob reads Alice's file: exit ${bobReadsAlice.exitCode} — "${bobReadsAlice.stdout!.trim().slice(0, 30)}..."`);
 
 // ── Concurrent directory listing ──────────────────────────────────
 console.log("\nConcurrent directory listing of /tmp:");
@@ -61,9 +61,9 @@ const [ls1, ls2, ls3] = await Promise.all([
 ]);
 
 // All should see the same 3 files
-console.log(`Alice sees: ${ls1.stdout.trim().split("\n").length} entries`);
-console.log(`Bob sees:   ${ls2.stdout.trim().split("\n").length} entries`);
-console.log(`Charlie sees: ${ls3.stdout.trim().split("\n").length} entries`);
+console.log(`Alice sees: ${ls1.stdout!.trim().split("\n").length} entries`);
+console.log(`Bob sees:   ${ls2.stdout!.trim().split("\n").length} entries`);
+console.log(`Charlie sees: ${ls3.stdout!.trim().split("\n").length} entries`);
 
 // ── Concurrent command execution ──────────────────────────────────
 console.log("\nRunning 5 concurrent commands...");
@@ -77,7 +77,7 @@ const commands = [
 
 const results = await Promise.all(commands);
 for (const r of results) {
-	console.log(`  → "${r.stdout.trim()}" (exit ${r.exitCode})`);
+	console.log(`  → "${r.stdout!.trim()}" (exit ${r.exitCode})`);
 }
 
 console.log("\n✅ All concurrent operations completed");
