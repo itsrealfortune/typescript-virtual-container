@@ -989,32 +989,6 @@ A single-user XFCE session: a panel with Applications menu and clock, draggable 
 
 ---
 
-## Roadmap
-
-### Completed
-- [x] Full Linux rootfs with 157+ built-in commands
-- [x] Real shell interpreter (if/for/while/case/functions, arrays, brace/glob expansion, heredocs)
-- [x] Virtual package manager (apt/dpkg, 25+ packages)
-- [x] SSH/SFTP server with password + public-key auth
-- [x] Web shell with XFCE desktop simulation
-- [x] POSIX permission enforcement (owner/group/other, setuid, setgid, sticky bit)
-- [x] Firewall engine (iptables with INPUT/OUTPUT/FORWARD chains)
-- [x] Realistic network stack (latency, bandwidth, packet loss simulation)
-- [x] Resource capping (RAM/CPU limits with enforcement)
-- [x] Garbage collector for memory management
-- [x] **User & group management** — full `/etc/group` support, supplementary groups, `groupadd`/`groupdel`/`gpasswd`/`usermod`/`getent`/`newgrp`
-- [x] **Password aging** — min/max age, warning period, account expiry (`chage`)
-- [x] **Account lockout** — auto-lock after 5 failed login attempts
-- [x] **Sudo timestamp caching** — 5-minute credential cache
-- [x] **Account lock/unlock** — password hash prefix mechanism
-
-### In Progress
-- [ ] Swap file mechanism for memory overflow
-- [ ] Process scheduler for fair CPU allocation
-- [ ] Realistic file caching with disk speed simulation
-
----
-
 ## Contributing
 
 1. Fork and create a feature branch: `git checkout -b feat/my-feature`
