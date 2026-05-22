@@ -125,6 +125,7 @@ const perf: PerfLogger = createPerfLogger("VirtualUserManager");
  */
 export class VirtualUserManager extends EventEmitter {
 	private static readonly _recordCache = new Map<string, VirtualUserRecord>();
+	private static readonly _maxRecordCacheSize = 100;
 	private static readonly _fastPasswordHash = resolveFastPasswordHash();
 	private readonly _usersPath = "/etc/htpasswd";
 	private readonly _sudoersPath = "/etc/sudoers";
@@ -161,6 +162,8 @@ export class VirtualUserManager extends EventEmitter {
 	private readonly _maxLoginFailures = 5;
 	/** Sudo timestamp validity window in ms (5 minutes). */
 	private readonly _sudoTimestampWindowMs = 5 * 60 * 1000;
+	/** Login failure TTL in ms (1 hour). */
+	private readonly _loginFailureTtlMs = 60 * 60 * 1000;
 
 	/**
 	 * Creates a user manager instance backed by a virtual filesystem.
@@ -771,9 +774,12 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param pid - PID of the process to unregister.
 	 */
 	public unregisterProcess(pid: number): void {
+		this._processCpuTime.delete(pid);
 		const proc = this._activeProcesses.get(pid);
 		if (proc) {
 			proc.status = "done";
+			proc.signalHandlers.clear();
+			proc.abortController = undefined;
 			// Emit SIGCHLD to parent
 			this.emit("SIGCHLD", proc.ppid, pid);
 		}
@@ -783,13 +789,18 @@ export class VirtualUserManager extends EventEmitter {
 	/**
 	 * Marks a process as done (keeps it in the table briefly for jobs/ps).
 	 * Sets status to "done" without removing the record immediately.
+	 * Auto-unregisters after 5s to prevent accumulation without idle manager.
 	 * @param pid - PID of the process to mark as done.
 	 */
 	public markProcessDone(pid: number): void {
 		const proc = this._activeProcesses.get(pid);
 		if (proc) {
 			proc.status = "done";
+			proc.signalHandlers.clear();
+			proc.abortController = undefined;
 			this.emit("SIGCHLD", proc.ppid, pid);
+			// Auto-unregister after a brief delay for ps/jobs visibility
+			setTimeout(() => this.unregisterProcess(pid), 5000).unref?.();
 		}
 	}
 
@@ -1201,6 +1212,10 @@ export class VirtualUserManager extends EventEmitter {
 		};
 
 		VirtualUserManager._recordCache.set(cacheKey, record);
+		if (VirtualUserManager._recordCache.size > VirtualUserManager._maxRecordCacheSize) {
+			const firstKey = VirtualUserManager._recordCache.keys().next().value;
+			if (firstKey) VirtualUserManager._recordCache.delete(firstKey);
+		}
 		return record;
 	}
 
@@ -1633,7 +1648,11 @@ export class VirtualUserManager extends EventEmitter {
 		if (username === "root") return true;
 		const ts = this._sudoTimestamps.get(username);
 		if (!ts) return false;
-		return (Date.now() - ts) < this._sudoTimestampWindowMs;
+		if ((Date.now() - ts) >= this._sudoTimestampWindowMs) {
+			this._sudoTimestamps.delete(username);
+			return false;
+		}
+		return true;
 	}
 
 	/**
@@ -1654,13 +1673,18 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param sourceIp IP address of the failed attempt.
 	 */
 	public recordLoginFailure(username: string, sourceIp: string): void {
+		const now = Date.now();
+		// Clean stale entries older than TTL
+		for (const [user, data] of this._loginFailures) {
+			if (now - data.lastTime > this._loginFailureTtlMs) this._loginFailures.delete(user);
+		}
 		const existing = this._loginFailures.get(username);
 		if (existing) {
 			existing.count++;
-			existing.lastTime = Date.now();
+			existing.lastTime = now;
 			existing.sourceIp = sourceIp;
 		} else {
-			this._loginFailures.set(username, { count: 1, lastTime: Date.now(), sourceIp });
+			this._loginFailures.set(username, { count: 1, lastTime: now, sourceIp });
 		}
 	}
 

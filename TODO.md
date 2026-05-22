@@ -84,8 +84,8 @@
 
 ## Priority
 
-- [ ] Add a swap file mechanism to handle memory overflow when RAM is full (e.g. move least recently used data to disk)
 - [ ] Add a process scheduler to manage CPU time between running processes, ensuring fair resource allocation and preventing any single process from monopolizing the CPU
 - [ ] Add a more realistic file caching mechanism that simulates disk read/write speeds and cache eviction policies
 - [ ] Add a more realistic user management system that supports user groups, permissions, and authentication mechanisms (e.g. password hashing, PAM)
+- [x] Add `Buffer.alloc(0)` usage and memory cleanup across modules (VFS, process table, network connections, user manager, desktop manager)
 - [ ] WebSocket-based remote shell client (experimental)

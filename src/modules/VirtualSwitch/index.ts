@@ -29,6 +29,8 @@ export class VirtualSwitch {
 	private _bandwidthTokens: Map<MacAddress, number> = new Map();
 	private _bandwidthLastRefill: Map<MacAddress, number> = new Map();
 	private _reorderBuffer: Array<{ packet: Packet; deliverAt: number }> = [];
+	private readonly _maxReorderBufferSize = 1000;
+	private _latencyIntervals = new Map<MacAddress, ReturnType<typeof setInterval>>();
 
 	constructor(subnet = "10.0.1.0/24") {
 		this.subnet = subnet;
@@ -80,6 +82,14 @@ export class VirtualSwitch {
 	public detach(mac: MacAddress): void {
 		const port = this._ports.get(mac);
 		if (!port) return;
+
+		// Clear latency simulation interval
+		const interval = this._latencyIntervals.get(mac);
+		if (interval) {
+			clearInterval(interval);
+			this._latencyIntervals.delete(mac);
+		}
+
 		this._ports.delete(mac);
 		this._ipToMac.delete(port.ip);
 		this._dnsRecords.forEach((value, key) => {
@@ -88,6 +98,8 @@ export class VirtualSwitch {
 		this._network.arpCache = this._network.arpCache.filter((e) => e.ip !== port.ip);
 		this._bandwidthTokens.delete(mac);
 		this._bandwidthLastRefill.delete(mac);
+		this._bandwidthSent.delete(mac);
+		this._bandwidthReceived.delete(mac);
 	}
 
 	public getPorts(): Map<MacAddress, VmPort> {
@@ -144,11 +156,13 @@ export class VirtualSwitch {
 			const latency = shapeResult.latency;
 
 			if (shapeResult.reordered) {
-				this._reorderBuffer.push({ packet, deliverAt: Date.now() + latency + shapeResult.reorderDelay });
-				setTimeout(() => {
-					const idx = this._reorderBuffer.findIndex((e) => e.packet === packet);
-					if (idx !== -1) this._reorderBuffer.splice(idx, 1);
-				}, latency + shapeResult.reorderDelay);
+				if (this._reorderBuffer.length < this._maxReorderBufferSize) {
+					this._reorderBuffer.push({ packet, deliverAt: Date.now() + latency + shapeResult.reorderDelay });
+					setTimeout(() => {
+						const idx = this._reorderBuffer.findIndex((e) => e.packet === packet);
+						if (idx !== -1) this._reorderBuffer.splice(idx, 1);
+					}, latency + shapeResult.reorderDelay);
+				}
 				return { action: "ACCEPT", latencyMs: latency + shapeResult.reorderDelay, reordered: true };
 			}
 
@@ -415,7 +429,12 @@ export class VirtualSwitch {
 	}
 
 	private _simulateLatency(port: VmPort): void {
-		setInterval(() => {
+		const handle = setInterval(() => {
+			if (!this._ports.has(port.mac)) {
+				clearInterval(handle);
+				this._latencyIntervals.delete(port.mac);
+				return;
+			}
 			const loss = this._applyTrafficShape(0, { srcIp: port.ip, srcMac: port.mac, dstIp: port.ip, protocol: "icmp" }).dropped;
 			if (loss && Math.random() < 0.01) {
 				const virtualPacket: Packet = {
@@ -427,6 +446,8 @@ export class VirtualSwitch {
 				this.route(virtualPacket);
 			}
 		}, 1000);
+		if (typeof handle.unref === "function") handle.unref();
+		this._latencyIntervals.set(port.mac, handle);
 	}
 }
 
