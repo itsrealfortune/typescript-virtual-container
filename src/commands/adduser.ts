@@ -72,12 +72,13 @@ export const adduserCommand: ShellModule = {
 			}
 
 			await sh.users.addUser(username, newPassword);
+			const gid = sh.users.getGid(username);
 			return {
 				result: {
 					stdout: `${[
 						`Adding user '${username}' ...`,
-						`Adding new group '${username}' (1001) ...`,
-						`Adding new user '${username}' (1001) with group '${username}' ...`,
+						`Adding new group '${username}' (${gid}) ...`,
+						`Adding new user '${username}' (${gid}) with group '${username}' ...`,
 						`Creating home directory '/home/${username}' ...`,
 						`passwd: password set for '${username}'`,
 						`adduser: done.`,

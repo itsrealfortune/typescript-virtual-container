@@ -122,6 +122,13 @@ import { ssCommand } from "./ss";
 import { tracerouteCommand } from "./traceroute";
 import { conntrackCommand } from "./conntrack";
 import { ifconfigCommand } from "./ifconfig";
+import { groupaddCommand } from "./groupadd";
+import { groupdelCommand } from "./groupdel";
+import { gpasswdCommand } from "./gpasswd";
+import { getentCommand } from "./getent";
+import { usermodCommand } from "./usermod";
+import { chageCommand } from "./chage";
+import { newgrpCommand } from "./newgrp";
 
 const BASE_COMMANDS: ShellModule[] = [
 	// Navigation
@@ -187,6 +194,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	hostnameCommand,
 	idCommand,
 	groupsCommand,
+	getentCommand,
 	unameCommand,
 	psCommand,
 	killCommand,
@@ -248,6 +256,12 @@ const BASE_COMMANDS: ShellModule[] = [
 	sudoCommand,
 	sysctlCommand,
 	suCommand,
+	groupaddCommand,
+	groupdelCommand,
+	gpasswdCommand,
+	usermodCommand,
+	chageCommand,
+	newgrpCommand,
 	// Misc
 	neofetchCommand,
 	// Package management

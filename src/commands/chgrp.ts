@@ -31,8 +31,8 @@ export const chgrpCommand: ShellModule = {
 				};
 			}
 
-			const gid = parseInt(groupArg, 10);
-			if (Number.isNaN(gid)) {
+			const gid = resolveGroup(shell, groupArg);
+			if (gid === null) {
 				return { stderr: `chgrp: invalid group: ${groupArg}`, exitCode: 1 };
 			}
 
@@ -45,3 +45,11 @@ export const chgrpCommand: ShellModule = {
 		}
 	},
 };
+
+function resolveGroup(shell: { users: { getGidByName: (n: string) => number | null } }, name: string): number | null {
+	const gid = shell.users.getGidByName(name);
+	if (gid !== null) return gid;
+	const num = parseInt(name, 10);
+	if (!Number.isNaN(num)) return num;
+	return null;
+}
