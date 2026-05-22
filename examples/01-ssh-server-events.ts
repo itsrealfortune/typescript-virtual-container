@@ -1,5 +1,5 @@
 /**
- * Example 01: SSH Server with Events
+ * SSH Server with Events
  *
  * Demonstrates the full SSH server event lifecycle: start, auth events,
  * connection tracking, lockout, and graceful shutdown.
@@ -13,6 +13,7 @@ await shell.ensureInitialized();
 const ssh = new VirtualSshServer({ port: 0, shell, maxAuthAttempts: 3 });
 
 // ── Register all event listeners ──────────────────────────────────
+console.log("--- Register all event listeners ---");
 ssh.on("start", ({ port }) => {
 	console.log(`[EVENT] Server started on port ${port}`);
 });
@@ -42,31 +43,29 @@ ssh.on("client:disconnect", ({ user }) => {
 });
 
 // ── Start server ──────────────────────────────────────────────────
+console.log("--- Start server ---");
 const port = await ssh.start();
-console.log(`\nServer ready on port ${port}\n`);
+console.log(`Server ready on port ${port}`);
 
 // ── Simulate activity via SshClient ───────────────────────────────
-// SshClient bypasses SSH auth but shares the same VFS/users
+console.log("--- Simulate activity via SshClient ---");
 const client = new SshClient(shell, "root");
 
-// Simulate a command execution (triggers command events in HoneyPot if attached)
 const result = await client.exec("echo 'Hello from connected client'");
 console.log(`Command output: ${result.stdout!.trim()}`);
 
 // ── Demonstrate lockout mechanism ─────────────────────────────────
-console.log("\n--- Lockout demo ---");
+console.log("--- Demonstrate lockout mechanism ---");
 const attackerIp = "10.0.0.99";
 
-// Record auth failures via the public API, simulating brute-force attempts.
-// Each call increments the internal counter; at maxAuthAttempts (3) the IP is locked.
 ssh.recordAuthFailure(attackerIp);
 ssh.recordAuthFailure(attackerIp);
 ssh.recordAuthFailure(attackerIp);
-// The third failure emits "auth:lockout" automatically
 
-console.log(`\nAdmin clears lockout for ${attackerIp}...`);
+console.log(`Admin clears lockout for ${attackerIp}...`);
 ssh.clearLockout(attackerIp);
-console.log(`Lockout cleared`);
+console.log("Lockout cleared");
 
 // ── Graceful shutdown ─────────────────────────────────────────────
+console.log("--- Graceful shutdown ---");
 ssh.stop();

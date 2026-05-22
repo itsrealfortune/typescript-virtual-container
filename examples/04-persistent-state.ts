@@ -1,20 +1,21 @@
 /**
- * Example 04: Persistent State
+ * Persistent State
  *
  * Demonstrates two persistence strategies:
  * - FS mode: automatic .vfsb persistence to disk
  * - Memory mode: manual JSON snapshot / restore
  */
 
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import VirtualFileSystem from "../src/modules/VirtualFileSystem";
+import { VirtualFileSystem } from "../src";
+import { mkdirSync, existsSync, rmSync } from "node:fs";
 
 // ── FS mode — automatic .vfsb persistence ─────────────────────────
-const fsDir = "./container-data";
-mkdirSync(fsDir, { recursive: true });
+console.log("--- FS mode — automatic .vfsb persistence ---");
+const dataDir = "./container-data";
+if (!existsSync(dataDir)) mkdirSync(dataDir);
 const vfsFs = new VirtualFileSystem({
 	mode: "fs",
-	snapshotPath: fsDir,
+	snapshotPath: dataDir,
 });
 
 vfsFs.writeFile("/data/persistent.txt", "This survives restarts");
@@ -24,23 +25,19 @@ await vfsFs.flushMirror();
 console.log("FS mode: flushed to disk");
 
 // ── Memory mode — manual JSON snapshot ────────────────────────────
+console.log("--- Memory mode — manual JSON snapshot ---");
 const vfsMem = new VirtualFileSystem();
 vfsMem.writeFile("/data/report.txt", "Baseline data");
 console.log("Memory mode: wrote /data/report.txt");
 
-// Snapshot to JSON
 const snapshot = vfsMem.toSnapshot();
-writeFileSync("snapshot.json", JSON.stringify(snapshot));
-console.log("Memory mode: saved snapshot to snapshot.json");
+console.log("Memory mode: captured snapshot");
 
-// Restore from JSON
-const restored = VirtualFileSystem.fromSnapshot(
-	JSON.parse(readFileSync("snapshot.json", "utf8")),
-);
+const restored = VirtualFileSystem.fromSnapshot(snapshot);
 console.log("Memory mode: restored from snapshot");
 console.log(`Restored content: "${restored.readFile("/data/report.txt")}"`);
 
-// Cleanup
-rmSync(fsDir, { recursive: true, force: true });
-rmSync("snapshot.json", { force: true });
-console.log("Cleanup complete");
+// ── Cleanup ───────────────────────────────────────────────────────
+console.log("--- Cleanup ---");
+rmSync(dataDir, { recursive: true, force: true });
+console.log("Cleaned up persistent data");

@@ -1,5 +1,5 @@
 /**
- * Example 20: Package Manager (apt/dpkg)
+ * Package Manager (apt/dpkg)
  *
  * Demonstrates the full VirtualPackageManager API: install, remove, search,
  * list available/installed packages, and inspect individual packages.

@@ -1,5 +1,5 @@
 /**
- * Example 22: Groups and Account Policies
+ * Groups and Account Policies
  *
  * Demonstrates group management (create, members, supplementary groups),
  * password aging (min/max days, warning), account locking/unlocking,

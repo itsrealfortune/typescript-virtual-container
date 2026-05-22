@@ -1,5 +1,5 @@
 /**
- * Example 23: Virtual Proxy (port forwarding)
+ * Virtual Proxy (port forwarding)
  *
  * Demonstrates the VirtualProxy API: expose VM ports to the host,
  * list port forwards, remove forwards, and port lifecycle.

@@ -1,6 +1,6 @@
 /**
- * Example 11: Concurrent Clients
- *
+ * Concurrent Clients
+ * 
  * Demonstrates running operations from multiple SshClient instances
  * in parallel against the same VirtualShell, showing shared state,
  * race conditions, and concurrent file operations.
@@ -11,7 +11,6 @@ import { SshClient, VirtualShell } from "../src";
 const shell = new VirtualShell("typescript-vm");
 await shell.ensureInitialized();
 
-// Create users
 await shell.users.addUser("alice", "alice123");
 await shell.users.addUser("bob", "bob456");
 await shell.users.addUser("charlie", "charlie789");
@@ -20,21 +19,21 @@ const client1 = new SshClient(shell, "alice");
 const client2 = new SshClient(shell, "bob");
 const client3 = new SshClient(shell, "charlie");
 
-// ── Concurrent file writes ────────────────────────────────────────
-console.log("Running 3 concurrent file writes...\n");
+// ── Concurrent file writes ─────────────────────────────────────────
+console.log("--- Concurrent file writes ---");
 
 const [r1, r2, r3] = await Promise.all([
-	client1.writeFile("/tmp/alice.txt", `Alice's data — written at ${Date.now()}`),
-	client2.writeFile("/tmp/bob.txt", `Bob's data — written at ${Date.now()}`),
-	client3.writeFile("/tmp/charlie.txt", `Charlie's data — written at ${Date.now()}`),
+	client1.writeFile("/tmp/alice.txt", `Alice's data -- written at ${Date.now()}`),
+	client2.writeFile("/tmp/bob.txt", `Bob's data -- written at ${Date.now()}`),
+	client3.writeFile("/tmp/charlie.txt", `Charlie's data -- written at ${Date.now()}`),
 ]);
 
 console.log(`Alice write: exit ${r1.exitCode}`);
 console.log(`Bob write:   exit ${r2.exitCode}`);
 console.log(`Charlie write: exit ${r3.exitCode}`);
 
-// ── Concurrent reads ──────────────────────────────────────────────
-console.log("\nReading all files concurrently...");
+// ── Concurrent reads ───────────────────────────────────────────────
+console.log("\n--- Concurrent reads ---");
 
 const [read1, read2, read3] = await Promise.all([
 	client1.cat("/tmp/alice.txt"),
@@ -46,27 +45,28 @@ console.log(`Alice's file: "${read1.stdout!.trim()}"`);
 console.log(`Bob's file:   "${read2.stdout!.trim()}"`);
 console.log(`Charlie's file: "${read3.stdout!.trim()}"`);
 
-// ── Cross-user file sharing ───────────────────────────────────────
-console.log("\nCross-user file access (shared /tmp):");
+// ── Cross-user file sharing ────────────────────────────────────────
+console.log("\n--- Cross-user file sharing ---");
 
 const bobReadsAlice = await client2.cat("/tmp/alice.txt");
-console.log(`Bob reads Alice's file: exit ${bobReadsAlice.exitCode} — "${bobReadsAlice.stdout!.trim().slice(0, 30)}..."`);
+console.log(`Bob reads Alice's file: exit ${bobReadsAlice.exitCode} -- "${bobReadsAlice.stdout!.trim().slice(0, 30)}..."`);
 
-// ── Concurrent directory listing ──────────────────────────────────
-console.log("\nConcurrent directory listing of /tmp:");
+// ── Concurrent directory listing ───────────────────────────────────
+console.log("\n--- Concurrent directory listing ---");
+
 const [ls1, ls2, ls3] = await Promise.all([
 	client1.ls("/tmp"),
 	client2.ls("/tmp"),
 	client3.ls("/tmp"),
 ]);
 
-// All should see the same 3 files
 console.log(`Alice sees: ${ls1.stdout!.trim().split("\n").length} entries`);
 console.log(`Bob sees:   ${ls2.stdout!.trim().split("\n").length} entries`);
 console.log(`Charlie sees: ${ls3.stdout!.trim().split("\n").length} entries`);
 
-// ── Concurrent command execution ──────────────────────────────────
-console.log("\nRunning 5 concurrent commands...");
+// ── Concurrent command execution ───────────────────────────────────
+console.log("\n--- Concurrent command execution ---");
+
 const commands = [
 	client1.exec("echo 'hello from alice'"),
 	client2.exec("echo 'hello from bob'"),
@@ -77,7 +77,5 @@ const commands = [
 
 const results = await Promise.all(commands);
 for (const r of results) {
-	console.log(`  → "${r.stdout!.trim()}" (exit ${r.exitCode})`);
+	console.log(`  -> "${r.stdout!.trim()}" (exit ${r.exitCode})`);
 }
-
-console.log("\n✅ All concurrent operations completed");

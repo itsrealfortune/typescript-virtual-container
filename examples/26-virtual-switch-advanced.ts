@@ -1,5 +1,5 @@
 /**
- * Example 26: VirtualSwitch Advanced (DNS, traffic shaping, load balancing, partitions)
+ * VirtualSwitch Advanced (DNS, traffic shaping, load balancing, partitions)
  *
  * Demonstrates the standalone VirtualSwitch API: attach/detach VMs, DNS resolution,
  * traffic shaping with latency/jitter/packet loss, load balancing across targets,

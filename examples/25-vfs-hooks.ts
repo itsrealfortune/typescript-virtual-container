@@ -1,5 +1,5 @@
 /**
- * Example 25: VFS Hooks and Content Resolvers
+ * VFS Hooks and Content Resolvers
  *
  * Demonstrates the VirtualFileSystem hook system: register content resolvers
  * that dynamically generate file content on read, and beforeRead/beforeWrite

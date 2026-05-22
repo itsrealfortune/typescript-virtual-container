@@ -1,5 +1,5 @@
 /**
- * Example 21: Network Management (interfaces, routes, firewall)
+ * Network Management (interfaces, routes, firewall)
  *
  * Demonstrates the VirtualNetworkManager API: create interfaces, add routes,
  * configure firewall rules with iptables-like syntax, inspect conntrack, and
