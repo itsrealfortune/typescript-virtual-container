@@ -1,0 +1,171 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>24 - Idle Manager | typescript-virtual-container - v1.7.3</title><meta name="description" content="Documentation for typescript-virtual-container"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="../index" class="title">typescript-virtual-container - v1.7.3</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><ul class="tsd-breadcrumb" aria-label="Breadcrumb"><li><a href="" aria-current="page">24 - Idle Manager</a></li></ul></div><div class="tsd-panel tsd-typography"><h1 id="example-24-idle-management" class="tsd-anchor-link">Example 24 — Idle Management<a href="#example-24-idle-management" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p>Monitors shell activity, auto-freezes after a configurable inactivity
+threshold, thaws on activity, and releases unused resources through
+garbage collection.</p>
+<p><strong>Modules:</strong> <code>VirtualShell</code> (via <code>enableIdleManagement()</code>)</p>
+<h2 id="the-scenario" class="tsd-anchor-link">The Scenario<a href="#the-scenario" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Virtual environments consume memory and CPU even when idle — processes
+remain resident, file descriptors stay open, and scheduler state is
+maintained. In a VPS or container environment, idle tenants waste
+infrastructure resources.</p>
+<p>The <code>IdleManager</code> solves this by:</p>
+<ol>
+<li><strong>Monitoring</strong> shell commands and explicit pings to track activity</li>
+<li><strong>Freezing</strong> the shell after a configurable period of inactivity —
+suspending process scheduling and releasing volatile memory</li>
+<li><strong>Thawing</strong> automatically when activity resumes — restoring the shell
+to full operational state</li>
+<li><strong>Garbage collecting</strong> resources that can be safely evicted
+(completed processes, unused cache, stale file handles)</li>
+</ol>
+<p>This is conceptually similar to how cloud providers suspend idle VMs
+(GCP &quot;suspended&quot; state) or how serverless functions go cold after
+inactivity. At a smaller scale, it also mirrors how <code>systemd</code> manages
+idle services with <code>StopWhenUnneeded=</code>.</p>
+<h2 id="modules-used" class="tsd-anchor-link">Modules Used<a href="#modules-used" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code class="typescript"><span class="hl-5">import</span><span class="hl-1"> { </span><span class="hl-6">VirtualShell</span><span class="hl-1"> } </span><span class="hl-5">from</span><span class="hl-1"> </span><span class="hl-2">&quot;../src&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">shell</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualShell</span><span class="hl-1">(</span><span class="hl-2">&quot;idle-demo&quot;</span><span class="hl-1">);</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-0">ensureInitialized</span><span class="hl-1">();</span>
+</code><button type="button">Copy</button></pre>
+
+<p>The <code>VirtualShell</code> is initialized normally. The idle manager is optional
+and must be explicitly enabled — it is off by default to avoid surprise
+freezing.</p>
+<h2 id="step-by-step-walkthrough" class="tsd-anchor-link">Step-by-Step Walkthrough<a href="#step-by-step-walkthrough" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="enabling-idle-management" class="tsd-anchor-link">Enabling idle management<a href="#enabling-idle-management" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-0">enableIdleManagement</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-6">idleThresholdMs:</span><span class="hl-1"> </span><span class="hl-8">2_000</span><span class="hl-1">,   </span><span class="hl-3">// freeze after 2s inactivity</span><br/><span class="hl-1">  </span><span class="hl-6">checkIntervalMs:</span><span class="hl-1"> </span><span class="hl-8">500</span><span class="hl-1">,     </span><span class="hl-3">// check every 500ms</span><br/><span class="hl-1">  </span><span class="hl-6">gcIntervalMs:</span><span class="hl-1"> </span><span class="hl-8">5_000</span><span class="hl-1">,      </span><span class="hl-3">// GC every 5s</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Three configuration parameters control behavior:</p>
+<ul>
+<li><strong><code>idleThresholdMs</code> (2000):</strong> How long the shell must be inactive before
+transitioning to <code>&quot;frozen&quot;</code>. If any activity occurs within this window,
+the timer resets.</li>
+<li><strong><code>checkIntervalMs</code> (500):</strong> How often the manager polls the idle timer.
+Lower values increase responsiveness at the cost of more event-loop
+iterations.</li>
+<li><strong><code>gcIntervalMs</code> (5000):</strong> How often automatic garbage collection runs.
+This is independent of the freeze/thaw cycle — GC can run on active
+shells too, cleaning up terminated processes and evictable cache entries.</li>
+</ul>
+<p>Under the hood, <code>enableIdleManagement</code> starts two interval timers:</p>
+<ol>
+<li>The <strong>idle checker</strong> runs every <code>checkIntervalMs</code> and compares
+<code>Date.now() - lastActivity</code> against <code>idleThresholdMs</code>. If the shell
+is active but the threshold has been exceeded, it calls <code>freeze()</code>.</li>
+<li>The <strong>GC timer</strong> runs every <code>gcIntervalMs</code> and calls the garbage
+collector unconditionally (with optimizations for frozen state).</li>
+</ol>
+<pre><code class="typescript"><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`  idle state: </span><span class="hl-4">${</span><span class="hl-6">shell</span><span class="hl-11">.</span><span class="hl-6">idleState</span><span class="hl-4">}</span><span class="hl-2">`</span><span class="hl-1">);   </span><span class="hl-3">// &quot;active&quot;</span><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`  idle duration: </span><span class="hl-4">${</span><span class="hl-6">shell</span><span class="hl-11">.</span><span class="hl-6">idleMs</span><span class="hl-4">}</span><span class="hl-2">ms`</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Immediately after enabling, the shell is <code>&quot;active&quot;</code> and <code>idleMs</code> is close
+to 0 (or exactly 0 if no activity has been tracked yet).</p>
+<h3 id="simulating-activity" class="tsd-anchor-link">Simulating activity<a href="#simulating-activity" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-0">executeCommand</span><span class="hl-1">(</span><span class="hl-2">&quot;echo &#39;user activity&#39;&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;root&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;/root&quot;</span><span class="hl-1">);</span><br/><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-0">pingIdle</span><span class="hl-1">();</span>
+</code><button type="button">Copy</button></pre>
+
+<p><code>executeCommand()</code> simulates a user running a command. Each command execution
+implicitly pings the idle timer. The explicit <code>pingIdle()</code> call is a manual
+activity reset — useful for long-running operations that don't map to
+specific commands (e.g., a file watcher polling every few seconds).</p>
+<p><code>pingIdle()</code> sets <code>lastActivity = Date.now()</code>, which resets the idle clock.
+The state remains <code>&quot;active&quot;</code>.</p>
+<h3 id="waiting-for-freeze" class="tsd-anchor-link">Waiting for freeze<a href="#waiting-for-freeze" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-16">Promise</span><span class="hl-1">((</span><span class="hl-6">r</span><span class="hl-1">) </span><span class="hl-4">=&gt;</span><span class="hl-1"> </span><span class="hl-0">setTimeout</span><span class="hl-1">(</span><span class="hl-6">r</span><span class="hl-1">, </span><span class="hl-8">3_000</span><span class="hl-1">));</span><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`  idle state: </span><span class="hl-4">${</span><span class="hl-6">shell</span><span class="hl-11">.</span><span class="hl-6">idleState</span><span class="hl-4">}</span><span class="hl-2">`</span><span class="hl-1">);   </span><span class="hl-3">// &quot;frozen&quot;</span><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`  idle duration: </span><span class="hl-4">${</span><span class="hl-6">shell</span><span class="hl-11">.</span><span class="hl-6">idleMs</span><span class="hl-4">}</span><span class="hl-2">ms`</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p>After 3 seconds (exceeding the 2-second threshold), the idle checker fires:</p>
+<ol>
+<li>The checker sees <code>Date.now() - lastActivity &gt;= idleThresholdMs</code></li>
+<li>It calls the internal <code>freeze()</code> method</li>
+<li><code>idleState</code> switches to <code>&quot;frozen&quot;</code></li>
+<li><code>idleMs</code> now reports the total time since last activity</li>
+</ol>
+<p><strong>During freeze:</strong></p>
+<ul>
+<li>Process scheduling is suspended — registered processes are paused
+(their time slices are not advanced)</li>
+<li>The process scheduler's run queue is preserved but not executed</li>
+<li>Memory pressure is reduced (cache entries may be flagged as evictable)</li>
+<li>A <code>&quot;freeze&quot;</code> event is emitted on the shell (subscribable via <code>.on(&quot;freeze&quot;, ...)</code>)</li>
+</ul>
+<p>The shell is still accessible via API — you can inspect state, read the VFS,
+etc. Only execution of new virtual commands and scheduler tick advancement
+are blocked.</p>
+<h3 id="thawing-on-activity" class="tsd-anchor-link">Thawing on activity<a href="#thawing-on-activity" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-0">pingIdle</span><span class="hl-1">();</span><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`  idle state: </span><span class="hl-4">${</span><span class="hl-6">shell</span><span class="hl-11">.</span><span class="hl-6">idleState</span><span class="hl-4">}</span><span class="hl-2">`</span><span class="hl-1">);   </span><span class="hl-3">// &quot;active&quot;</span>
+</code><button type="button">Copy</button></pre>
+
+<p><code>pingIdle()</code> detects the frozen state and triggers a thaw:</p>
+<ol>
+<li><code>idleState</code> transitions to <code>&quot;active&quot;</code></li>
+<li>The process scheduler resumes — pending processes resume their time slices</li>
+<li>A <code>&quot;thaw&quot;</code> event is emitted</li>
+<li>The idle timer restarts</li>
+</ol>
+<p>Thaw is designed to be transparent: any API call that implies activity
+(commands, pings, VFS reads/writes) can trigger it. The goal is that
+callers don't need to know whether the shell was frozen — it just works.</p>
+<h3 id="manual-garbage-collection" class="tsd-anchor-link">Manual garbage collection<a href="#manual-garbage-collection" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">gcStats</span><span class="hl-1"> = </span><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-0">runGc</span><span class="hl-1">();</span><br/><span class="hl-5">if</span><span class="hl-1"> (</span><span class="hl-6">gcStats</span><span class="hl-1">) {</span><br/><span class="hl-1">  </span><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`  GC stats: </span><span class="hl-4">${</span><span class="hl-7">JSON</span><span class="hl-11">.</span><span class="hl-0">stringify</span><span class="hl-11">(</span><span class="hl-6">gcStats</span><span class="hl-11">)</span><span class="hl-4">}</span><span class="hl-2">`</span><span class="hl-1">);</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p><code>runGc()</code> forces an immediate garbage collection pass regardless of the
+GC interval timer. It returns a statistics object (or <code>undefined</code> if GC
+is not enabled):</p>
+<pre><code class="typescript"><span class="hl-4">interface</span><span class="hl-1"> </span><span class="hl-16">GcStats</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-6">terminatedProcesses</span><span class="hl-1">: </span><span class="hl-16">number</span><span class="hl-1">;  </span><span class="hl-3">// reaped zombie processes</span><br/><span class="hl-1">  </span><span class="hl-6">evictedFiles</span><span class="hl-1">: </span><span class="hl-16">number</span><span class="hl-1">;         </span><span class="hl-3">// cache files removed</span><br/><span class="hl-1">  </span><span class="hl-6">freedMemory</span><span class="hl-1">: </span><span class="hl-16">number</span><span class="hl-1">;          </span><span class="hl-3">// estimated bytes reclaimed</span><br/><span class="hl-1">  </span><span class="hl-6">forcedGc</span><span class="hl-1">?: </span><span class="hl-16">boolean</span><span class="hl-1">;           </span><span class="hl-3">// true if manually triggered</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p>The garbage collector scans:</p>
+<ul>
+<li><strong>Process table:</strong> Finds processes with exit status that have not been
+reaped (<code>wait()</code>-ed). These are cleaned up and their memory released.</li>
+<li><strong>VFS cache:</strong> Evicts files marked as cache (not permanently stored).
+This includes temporary files and resolver-generated content that hasn't
+been accessed recently.</li>
+<li><strong>Session state:</strong> Cleans up expired or orphaned sessions.</li>
+</ul>
+<p>In this example, since no processes or files have been created, GC stats
+will show zeros — but the API still returns a valid stats object.</p>
+<h3 id="disabling-idle-management" class="tsd-anchor-link">Disabling idle management<a href="#disabling-idle-management" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-0">disableIdleManagement</span><span class="hl-1">();</span><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`  idle state: </span><span class="hl-4">${</span><span class="hl-6">shell</span><span class="hl-11">.</span><span class="hl-6">idleState</span><span class="hl-4">}</span><span class="hl-2">`</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p><code>disableIdleManagement()</code>:</p>
+<ol>
+<li>Clears both interval timers (<code>idleChecker</code> and <code>gcTimer</code>)</li>
+<li>If the shell is frozen, it thaws it first</li>
+<li>Removes event listeners associated with idle management</li>
+<li>Idle state remains as-is (typically <code>&quot;active&quot;</code> after thaw)</li>
+</ol>
+<p>After disabling, the shell operates normally without any idle monitoring
+or auto-freezing. The <code>idleState</code> property is still readable but no longer
+transitions automatically.</p>
+<h2 id="module-interactions" class="tsd-anchor-link">Module Interactions<a href="#module-interactions" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p><code>IdleManager</code> is integrated into <code>VirtualShell</code> via <code>enableIdleManagement()</code>. It monitors shell activity through command execution and explicit pings, then freezes or thaws the shell's process scheduler accordingly. The garbage collector subsystem works alongside the idle manager to reclaim resources independent of the freeze/thaw cycle.</p>
+<h2 id="expected-output" class="tsd-anchor-link">Expected Output<a href="#expected-output" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>When you run <code>bun run examples/24-idle-manager.ts</code>, the output shows:</p>
+<pre><code><span class="hl-1">--- </span><span class="hl-6">Enabling</span><span class="hl-1"> </span><span class="hl-6">idle</span><span class="hl-1"> </span><span class="hl-6">management</span><span class="hl-1"> ---</span><br/><span class="hl-1">  </span><span class="hl-6">idle</span><span class="hl-1"> </span><span class="hl-14">state</span><span class="hl-1">: </span><span class="hl-6">active</span><br/><span class="hl-1">  </span><span class="hl-6">idle</span><span class="hl-1"> </span><span class="hl-14">duration</span><span class="hl-1">: 0</span><span class="hl-6">ms</span><br/><span class="hl-1">--- </span><span class="hl-6">Activity</span><span class="hl-1"> </span><span class="hl-6">simulation</span><span class="hl-1"> ---</span><br/><span class="hl-1">  </span><span class="hl-6">idle</span><span class="hl-1"> </span><span class="hl-14">state</span><span class="hl-1">: </span><span class="hl-6">active</span><br/><span class="hl-1">--- </span><span class="hl-6">Waiting</span><span class="hl-1"> </span><span class="hl-6">for</span><span class="hl-1"> </span><span class="hl-6">idle</span><span class="hl-1"> </span><span class="hl-0">threshold</span><span class="hl-1"> (2</span><span class="hl-6">s</span><span class="hl-1">)...</span><br/><span class="hl-1">  </span><span class="hl-6">idle</span><span class="hl-1"> </span><span class="hl-14">state</span><span class="hl-1">: </span><span class="hl-6">frozen</span><br/><span class="hl-1">  </span><span class="hl-6">idle</span><span class="hl-1"> </span><span class="hl-14">duration</span><span class="hl-1">: ~2000</span><span class="hl-6">ms</span><br/><span class="hl-1">--- </span><span class="hl-6">Activity</span><span class="hl-1"> </span><span class="hl-6">triggers</span><span class="hl-1"> </span><span class="hl-6">thaw</span><span class="hl-1"> ---</span><br/><span class="hl-1">  </span><span class="hl-6">idle</span><span class="hl-1"> </span><span class="hl-14">state</span><span class="hl-1">: </span><span class="hl-6">active</span><br/><span class="hl-1">--- </span><span class="hl-6">Manual</span><span class="hl-1"> </span><span class="hl-7">GC</span><span class="hl-1"> ---</span><br/><span class="hl-1">  </span><span class="hl-7">GC</span><span class="hl-1"> </span><span class="hl-14">stats</span><span class="hl-1">: {</span><span class="hl-2">&quot;terminatedProcesses&quot;</span><span class="hl-1">:</span><span class="hl-8">0</span><span class="hl-1">,</span><span class="hl-2">&quot;evictedFiles&quot;</span><span class="hl-1">:</span><span class="hl-8">0</span><span class="hl-1">,</span><span class="hl-2">&quot;freedMemory&quot;</span><span class="hl-1">:</span><span class="hl-8">0</span><span class="hl-1">}</span><br/><span class="hl-1">--- </span><span class="hl-6">Disabling</span><span class="hl-1"> </span><span class="hl-6">idle</span><span class="hl-1"> </span><span class="hl-6">management</span><span class="hl-1"> ---</span><br/><span class="hl-1">  </span><span class="hl-6">idle</span><span class="hl-1"> </span><span class="hl-14">state</span><span class="hl-1">: </span><span class="hl-6">active</span>
+</code><button>Copy</button></pre>
+
+<h2 id="key-concepts" class="tsd-anchor-link">Key Concepts<a href="#key-concepts" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><strong>Time-based state machine:</strong> The shell transitions between <code>active</code> and
+<code>frozen</code> based on wall-clock time since last activity, with a
+configurable threshold. This is a simple but effective model.</li>
+<li><strong>Polling vs event-driven:</strong> The idle manager uses polling
+(<code>setInterval</code>) rather than event-driven hooks because activity can come
+from many sources (commands, VFS operations, network, API calls) and
+instrumenting every entry point would be fragile. Polling is simpler
+and more robust.</li>
+<li><strong>Separation of freeze and GC:</strong> Freezing suspends execution; GC reclaims
+memory. They operate on different timers and can be tuned independently.
+In aggressive configurations, GC can run while the shell is still active.</li>
+<li><strong>Transparent thaw:</strong> Callers don't need to check <code>idleState</code> before
+acting — <code>pingIdle()</code> (and other activity sources) handle thaw
+transparently. This makes the idle manager a leaky but practical
+abstraction.</li>
+<li><strong>State inspection:</strong> <code>idleState</code> and <code>idleMs</code> are read-only properties
+that provide insight into the manager's decisions, useful for monitoring
+and debugging.</li>
+</ul>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#example-24-idle-management"><span>Example 24 — <wbr/>Idle <wbr/>Management</span></a><ul><li><a href="#the-scenario"><span>The <wbr/>Scenario</span></a></li><li><a href="#modules-used"><span>Modules <wbr/>Used</span></a></li><li><a href="#step-by-step-walkthrough"><span>Step-<wbr/>by-<wbr/>Step <wbr/>Walkthrough</span></a></li><li><ul><li><a href="#enabling-idle-management"><span>Enabling idle management</span></a></li><li><a href="#simulating-activity"><span>Simulating activity</span></a></li><li><a href="#waiting-for-freeze"><span>Waiting for freeze</span></a></li><li><a href="#thawing-on-activity"><span>Thawing on activity</span></a></li><li><a href="#manual-garbage-collection"><span>Manual garbage collection</span></a></li><li><a href="#disabling-idle-management"><span>Disabling idle management</span></a></li></ul></li><li><a href="#module-interactions"><span>Module <wbr/>Interactions</span></a></li><li><a href="#expected-output"><span>Expected <wbr/>Output</span></a></li><li><a href="#key-concepts"><span>Key <wbr/>Concepts</span></a></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="../modules">typescript-virtual-container - v1.7.3</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>

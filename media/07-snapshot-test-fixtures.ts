@@ -1,14 +1,13 @@
 /**
- * Example 07: Snapshot-Based Test Fixtures
+ * 07 - Snapshot-Based Test Fixtures
  *
  * Demonstrates building a VFS snapshot once and reusing it
  * across multiple isolated "test" environments.
  */
 
 import type { VfsSnapshot } from "../src";
-import VirtualFileSystem from "../src/modules/VirtualFileSystem";
+import { VirtualFileSystem } from "../src";
 
-// Build a fixture snapshot once
 function buildFixture(): VfsSnapshot {
 	const vfs = new VirtualFileSystem();
 	vfs.mkdir("/app/config");
@@ -19,30 +18,30 @@ function buildFixture(): VfsSnapshot {
 }
 
 const FIXTURE = buildFixture();
-console.log(`Fixture built: ${Object.keys(FIXTURE.root.children ?? {}).length} top-level entries\n`);
+console.log(`Fixture built: ${Object.keys(FIXTURE.root.children ?? {}).length} top-level entries`);
 
-// Test 1: reads config file
-console.log("Test 1: reads config file");
+// ── Test 1: reads config file ─────────────────────────────────────
+console.log("\n--- Test 1: reads config file ---");
 {
 	const vfs = VirtualFileSystem.fromSnapshot(FIXTURE);
 	const content = JSON.parse(vfs.readFile("/app/config/settings.json"));
-	console.log(`  env: ${content.env} (expected: test) ${content.env === "test" ? "✅" : "❌"}`);
-	console.log(`  db: ${content.db} (expected: localhost) ${content.db === "localhost" ? "✅" : "❌"}`);
+	console.log(`  env: ${content.env} (expected: test) ${content.env === "test" ? "(ok)" : "(fail)"}`);
+	console.log(`  db: ${content.db} (expected: localhost) ${content.db === "localhost" ? "(ok)" : "(fail)"}`);
 }
 
-// Test 2: isolated writes don't affect fixture
-console.log("\nTest 2: isolated writes don't affect fixture");
+// ── Test 2: isolated writes don't affect fixture ──────────────────
+console.log("\n--- Test 2: isolated writes don't affect fixture ---");
 {
 	const vfs1 = VirtualFileSystem.fromSnapshot(FIXTURE);
 	vfs1.writeFile("/app/config/settings.json", JSON.stringify({ env: "modified" }));
 
 	const vfs2 = VirtualFileSystem.fromSnapshot(FIXTURE);
 	const content = JSON.parse(vfs2.readFile("/app/config/settings.json"));
-	console.log(`  fixture still has env=test: ${content.env === "test" ? "✅" : "❌"}`);
+	console.log(`  fixture still has env=test: ${content.env === "test" ? "(ok)" : "(fail)"}`);
 }
 
-// Test 3: file listing
-console.log("\nTest 3: file listing");
+// ── Test 3: file listing ──────────────────────────────────────────
+console.log("\n--- Test 3: file listing ---");
 {
 	const vfs = VirtualFileSystem.fromSnapshot(FIXTURE);
 	const files = vfs.list("/app/config");

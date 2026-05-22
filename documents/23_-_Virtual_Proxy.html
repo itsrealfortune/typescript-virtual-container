@@ -1,0 +1,146 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>23 - Virtual Proxy | typescript-virtual-container - v1.7.3</title><meta name="description" content="Documentation for typescript-virtual-container"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="../index" class="title">typescript-virtual-container - v1.7.3</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><ul class="tsd-breadcrumb" aria-label="Breadcrumb"><li><a href="" aria-current="page">23 - Virtual Proxy</a></li></ul></div><div class="tsd-panel tsd-typography"><h1 id="example-23-virtual-proxy-port-forwarding" class="tsd-anchor-link">Example 23 — Virtual Proxy (port forwarding)<a href="#example-23-virtual-proxy-port-forwarding" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p>Exposes VM ports to the host via <code>VirtualProxy</code>, lists active forwards,
+removes them by host port, and cleanly stops all proxy listeners.</p>
+<p><strong>Modules:</strong> <code>Baie</code>, <code>VirtualProxy</code></p>
+<h2 id="the-scenario" class="tsd-anchor-link">The Scenario<a href="#the-scenario" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>You have virtual machines running inside a virtual network (<code>VirtualSwitch</code>)
+with private IPs (<code>10.0.0.0/24</code>). These VMs are not directly reachable from
+the host machine. To access a web server running on port 80 inside VM
+&quot;web-server&quot; or SSH on port 22, you need <strong>port forwarding</strong> — a mapping
+from a host port to a VM port.</p>
+<p>This is the same mechanism Docker uses with <code>-p hostPort:containerPort</code>
+and Vagrant uses with <code>config.vm.network &quot;forwarded_port&quot;</code>.</p>
+<p>The <code>VirtualProxy</code> creates real TCP listeners on the host machine and relays
+connections to the destination VM inside the virtual network.</p>
+<h2 id="modules-used" class="tsd-anchor-link">Modules Used<a href="#modules-used" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code class="typescript"><span class="hl-5">import</span><span class="hl-1"> { </span><span class="hl-6">Baie</span><span class="hl-1">, </span><span class="hl-6">VirtualProxy</span><span class="hl-1"> } </span><span class="hl-5">from</span><span class="hl-1"> </span><span class="hl-2">&quot;../src&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">baie</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">Baie</span><span class="hl-1">(</span><span class="hl-2">&quot;proxy-demo&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;10.0.0.0/24&quot;</span><span class="hl-1">);</span><br/><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">baie</span><span class="hl-1">.</span><span class="hl-0">createVM</span><span class="hl-1">(</span><span class="hl-2">&quot;web-server&quot;</span><span class="hl-1">);</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">baie</span><span class="hl-1">.</span><span class="hl-0">createVM</span><span class="hl-1">(</span><span class="hl-2">&quot;client&quot;</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p><code>Baie</code> is the VM manager (hypervisor equivalent). It creates two VMs in the
+same subnet. <code>Baie</code> provides the infrastructure that <code>VirtualProxy</code> needs
+to locate VMs by name: when a connection arrives at a forwarded host port,
+the proxy looks up the target VM via the <code>Baie</code> API to discover its IP and
+routes the connection.</p>
+<pre><code class="typescript"><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">proxy</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualProxy</span><span class="hl-1">(</span><span class="hl-6">baie</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p>The <code>VirtualProxy</code> constructor accepts a <code>Baie</code> instance (or an object with
+<code>getVM</code> and <code>listVMs</code> methods). The proxy uses these to resolve VM names to
+their network addresses when forwarding connections.</p>
+<h2 id="step-by-step-walkthrough" class="tsd-anchor-link">Step-by-Step Walkthrough<a href="#step-by-step-walkthrough" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="port-forwarding" class="tsd-anchor-link">Port forwarding<a href="#port-forwarding" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-6">proxy</span><span class="hl-1">.</span><span class="hl-0">exposePort</span><span class="hl-1">(</span><span class="hl-2">&quot;web-server&quot;</span><span class="hl-1">, </span><span class="hl-8">80</span><span class="hl-1">, </span><span class="hl-8">34501</span><span class="hl-1">);</span><br/><span class="hl-6">proxy</span><span class="hl-1">.</span><span class="hl-0">exposePort</span><span class="hl-1">(</span><span class="hl-2">&quot;web-server&quot;</span><span class="hl-1">, </span><span class="hl-8">22</span><span class="hl-1">, </span><span class="hl-8">34502</span><span class="hl-1">);</span><br/><span class="hl-6">proxy</span><span class="hl-1">.</span><span class="hl-0">exposePort</span><span class="hl-1">(</span><span class="hl-2">&quot;client&quot;</span><span class="hl-1">, </span><span class="hl-8">3000</span><span class="hl-1">, </span><span class="hl-8">34503</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Three forwards are created:</p>
+<table>
+<thead>
+<tr>
+<th>VM</th>
+<th>VM Port</th>
+<th>Host Port</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>web-server</td>
+<td>80</td>
+<td>34501</td>
+<td>HTTP</td>
+</tr>
+<tr>
+<td>web-server</td>
+<td>22</td>
+<td>34502</td>
+<td>SSH</td>
+</tr>
+<tr>
+<td>client</td>
+<td>3000</td>
+<td>34503</td>
+<td>Dev server</td>
+</tr>
+</tbody>
+</table>
+<p>Each call to <code>exposePort()</code> does two things under the hood:</p>
+<ol>
+<li><strong>Registers the mapping</strong> in an internal <code>Map&lt;hostPort, ForwardEntry&gt;</code>
+where each entry stores <code>{ vmName, vmPort, hostPort }</code>.</li>
+<li><strong>Creates a real TCP server</strong> on <code>0.0.0.0:&lt;hostPort&gt;</code> that, on each
+incoming connection, creates a connection to the target VM's IP and port
+and starts a bidirectional copy (relay).</li>
+</ol>
+<p>The proxy operates in <strong>passthrough mode</strong> — it does not inspect, modify, or
+terminate the TCP stream. Bytes flow from host client → proxy → VM server
+as-is. This makes it compatible with any TCP-based protocol (HTTP, SSH,
+MySQL, etc.).</p>
+<pre><code class="typescript"><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-16">Promise</span><span class="hl-1">((</span><span class="hl-6">r</span><span class="hl-1">) </span><span class="hl-4">=&gt;</span><span class="hl-1"> </span><span class="hl-0">setTimeout</span><span class="hl-1">(</span><span class="hl-6">r</span><span class="hl-1">, </span><span class="hl-8">100</span><span class="hl-1">));</span>
+</code><button type="button">Copy</button></pre>
+
+<p>A brief wait is needed because the TCP server creation is asynchronous
+(the OS must bind to the ports). Without this delay, <code>listPorts()</code> might
+not yet reflect all active listeners, depending on how quickly the event
+loop processes the listen callbacks.</p>
+<h3 id="listing-forwards" class="tsd-anchor-link">Listing forwards<a href="#listing-forwards" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`  Forwards active: </span><span class="hl-4">${</span><span class="hl-6">proxy</span><span class="hl-11">.</span><span class="hl-0">listPorts</span><span class="hl-11">().</span><span class="hl-6">length</span><span class="hl-4">}</span><span class="hl-2">`</span><span class="hl-1">);</span><br/><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">&quot;</span><span class="hl-17">\n</span><span class="hl-2">--- Active forwards ---&quot;</span><span class="hl-1">);</span><br/><span class="hl-5">for</span><span class="hl-1"> (</span><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">f</span><span class="hl-1"> </span><span class="hl-4">of</span><span class="hl-1"> </span><span class="hl-6">proxy</span><span class="hl-1">.</span><span class="hl-0">listPorts</span><span class="hl-1">()) {</span><br/><span class="hl-1">  </span><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`  </span><span class="hl-4">${</span><span class="hl-6">f</span><span class="hl-11">.</span><span class="hl-6">vmName</span><span class="hl-4">}</span><span class="hl-2">:</span><span class="hl-4">${</span><span class="hl-6">f</span><span class="hl-11">.</span><span class="hl-6">vmPort</span><span class="hl-4">}</span><span class="hl-2"> ↔ host:</span><span class="hl-4">${</span><span class="hl-6">f</span><span class="hl-11">.</span><span class="hl-6">hostPort</span><span class="hl-4">}</span><span class="hl-2">`</span><span class="hl-1">);</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p><code>listPorts()</code> returns the array of active forward entries. Each entry has:</p>
+<ul>
+<li><code>vmName</code> — the target VM name</li>
+<li><code>vmPort</code> — the port inside the VM</li>
+<li><code>hostPort</code> — the port on the host machine</li>
+</ul>
+<p>The loop prints each mapping in a bidirectional arrow notation
+(<code>vm:port ↔ host:port</code>) to clearly show the direction of traffic flow.</p>
+<h3 id="removing-a-forward" class="tsd-anchor-link">Removing a forward<a href="#removing-a-forward" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">first</span><span class="hl-1"> = </span><span class="hl-6">proxy</span><span class="hl-1">.</span><span class="hl-0">listPorts</span><span class="hl-1">()[</span><span class="hl-8">0</span><span class="hl-1">];</span><br/><span class="hl-5">if</span><span class="hl-1"> (</span><span class="hl-6">first</span><span class="hl-1">) {</span><br/><span class="hl-1">  </span><span class="hl-6">proxy</span><span class="hl-1">.</span><span class="hl-0">removePort</span><span class="hl-1">(</span><span class="hl-6">first</span><span class="hl-1">.</span><span class="hl-6">hostPort</span><span class="hl-1">);</span><br/><span class="hl-1">  </span><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-16">Promise</span><span class="hl-1">((</span><span class="hl-6">r</span><span class="hl-1">) </span><span class="hl-4">=&gt;</span><span class="hl-1"> </span><span class="hl-0">setTimeout</span><span class="hl-1">(</span><span class="hl-6">r</span><span class="hl-1">, </span><span class="hl-8">50</span><span class="hl-1">));</span><br/><span class="hl-1">}</span><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`  Forwards remaining: </span><span class="hl-4">${</span><span class="hl-6">proxy</span><span class="hl-11">.</span><span class="hl-0">listPorts</span><span class="hl-11">().</span><span class="hl-6">length</span><span class="hl-4">}</span><span class="hl-2">`</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p><code>removePort(hostPort)</code> tears down a specific forward by host port:</p>
+<ol>
+<li>Looks up the <code>ForwardEntry</code> for <code>hostPort</code></li>
+<li>Calls <code>close()</code> on the TCP server, releasing the host port</li>
+<li>Removes the entry from the internal map</li>
+<li>The wait allows the close callback to fire before listing</li>
+</ol>
+<p>After removal, the forward count decreases by one (from 3 to 2).</p>
+<h3 id="cleanup" class="tsd-anchor-link">Cleanup<a href="#cleanup" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="typescript"><span class="hl-6">proxy</span><span class="hl-1">.</span><span class="hl-0">stop</span><span class="hl-1">();</span><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">&quot;  All forwards stopped&quot;</span><span class="hl-1">);</span><br/><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">baie</span><span class="hl-1">.</span><span class="hl-0">destroyVM</span><span class="hl-1">(</span><span class="hl-2">&quot;web-server&quot;</span><span class="hl-1">);</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">baie</span><span class="hl-1">.</span><span class="hl-0">destroyVM</span><span class="hl-1">(</span><span class="hl-2">&quot;client&quot;</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p><code>stop()</code> is the full teardown: it iterates all active forwards, closes every
+TCP server, and clears the internal map. No lingering listeners remain.</p>
+<p>The VMs themselves are destroyed separately via the <code>Baie</code> API. This
+separation of concerns means you could stop forwarding while leaving the
+VMs running, or destroy VMs to make their forwards stale (the proxy handles
+this gracefully by failing connections when the target VM is gone).</p>
+<h2 id="module-interactions" class="tsd-anchor-link">Module Interactions<a href="#module-interactions" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p><code>VirtualProxy</code> pairs with <code>Baie</code> to forward host ports to VM ports. <code>Baie</code> manages VM lifecycle and provides VM-to-IP resolution. <code>VirtualProxy</code> creates real TCP listeners and bridges connections to VMs. They interact through a <code>Baie</code>-compatible interface: the proxy queries the baie for VM network addresses when routing connections.</p>
+<h2 id="expected-output" class="tsd-anchor-link">Expected Output<a href="#expected-output" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>When you run <code>bun run examples/23-virtual-proxy.ts</code>, the output shows:</p>
+<pre><code><span class="hl-1">--- </span><span class="hl-6">Port</span><span class="hl-1"> </span><span class="hl-6">forwarding</span><span class="hl-1"> ---</span><br/><span class="hl-1">  </span><span class="hl-6">Forwards</span><span class="hl-1"> </span><span class="hl-14">active</span><span class="hl-1">: </span><span class="hl-8">3</span><br/><span class="hl-1">--- </span><span class="hl-6">Active</span><span class="hl-1"> </span><span class="hl-6">forwards</span><span class="hl-1"> ---</span><br/><span class="hl-1">  </span><span class="hl-6">web</span><span class="hl-1">-</span><span class="hl-14">server</span><span class="hl-1">:</span><span class="hl-8">80</span><span class="hl-1"> ↔ </span><span class="hl-14">host</span><span class="hl-1">:</span><span class="hl-8">34501</span><br/><span class="hl-1">  </span><span class="hl-6">web</span><span class="hl-1">-</span><span class="hl-14">server</span><span class="hl-1">:</span><span class="hl-8">22</span><span class="hl-1"> ↔ </span><span class="hl-14">host</span><span class="hl-1">:</span><span class="hl-8">34502</span><br/><span class="hl-1">  </span><span class="hl-14">client</span><span class="hl-1">:</span><span class="hl-8">3000</span><span class="hl-1"> ↔ </span><span class="hl-14">host</span><span class="hl-1">:</span><span class="hl-8">34503</span><br/><span class="hl-1">--- </span><span class="hl-6">Cleanup</span><span class="hl-1"> ---</span><br/><span class="hl-1">  </span><span class="hl-6">All</span><span class="hl-1"> </span><span class="hl-6">forwards</span><span class="hl-1"> </span><span class="hl-6">stopped</span>
+</code><button>Copy</button></pre>
+
+<h2 id="key-concepts" class="tsd-anchor-link">Key Concepts<a href="#key-concepts" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><strong>Real TCP listeners:</strong> Unlike most of the library's APIs that simulate
+state, <code>exposePort()</code> creates actual operating system TCP sockets. You can
+connect to them with <code>telnet</code> or <code>curl</code>.</li>
+<li><strong>Bidirectional relay:</strong> The proxy uses <code>pipe()</code> (or equivalent) to stream
+data in both directions between host client and VM server. This is a
+standard pattern for TCP proxies and port forwarders.</li>
+<li><strong>Asynchronous lifecycle:</strong> Both <code>exposePort()</code> and <code>removePort()</code> involve
+OS-level socket operations. The async delays in the example ensure
+callbacks have fired, but in production code you would use <code>await</code> or
+listen for <code>listening</code> / <code>close</code> events.</li>
+<li><strong>Separation of concerns:</strong> The <code>Baie</code> manages VM lifecycle (create,
+destroy). The <code>VirtualProxy</code> only manages port forwarding. They interact
+through a well-defined interface: the proxy asks the baie &quot;what IP does
+this VM have?&quot; to route connections.</li>
+<li><strong>Clean teardown:</strong> <code>stop()</code> is essential for tests and hot-reloading
+scenarios. Without it, the host ports remain bound and subsequent runs
+would fail with <code>EADDRINUSE</code>.</li>
+</ul>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#example-23-virtual-proxy-port-forwarding"><span>Example 23 — <wbr/>Virtual <wbr/>Proxy (port forwarding)</span></a><ul><li><a href="#the-scenario"><span>The <wbr/>Scenario</span></a></li><li><a href="#modules-used"><span>Modules <wbr/>Used</span></a></li><li><a href="#step-by-step-walkthrough"><span>Step-<wbr/>by-<wbr/>Step <wbr/>Walkthrough</span></a></li><li><ul><li><a href="#port-forwarding"><span>Port forwarding</span></a></li><li><a href="#listing-forwards"><span>Listing forwards</span></a></li><li><a href="#removing-a-forward"><span>Removing a forward</span></a></li><li><a href="#cleanup"><span>Cleanup</span></a></li></ul></li><li><a href="#module-interactions"><span>Module <wbr/>Interactions</span></a></li><li><a href="#expected-output"><span>Expected <wbr/>Output</span></a></li><li><a href="#key-concepts"><span>Key <wbr/>Concepts</span></a></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="../modules">typescript-virtual-container - v1.7.3</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>
