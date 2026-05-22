@@ -54,8 +54,8 @@
     "generate-manuals": "node scripts/generate-manuals-bundle.mjs",
     "generate-wiki": "node scripts/generate-wiki.mjs",
     "generate-wiki:push": "node scripts/generate-wiki.mjs --push --auto",
-    "run-examples": "for i in 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19; do echo \"=== $i ===\" && timeout 20 bun run examples/$i-*.ts 2>&1 | tail -5 && echo \"\" ; done",
-    "test-examples": "for i in 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19; do timeout 20 bun run examples/$i-*.ts >/dev/null 2>&1; EXIT=$?; if [ $EXIT -eq 124 ]; then echo \"$i ⚠️ TIMEOUT\"; elif [ $EXIT -ne 0 ]; then echo \"$i ❌ EXIT $EXIT\"; else echo \"$i ✅\"; fi; done"
+    "run-examples": "for i in 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26; do echo \"=== $i ===\" && timeout 30 bun run examples/$i-*.ts 2>&1 | tail -5 && echo \"\" ; done",
+    "test-examples": "for i in 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26; do timeout 30 bun run examples/$i-*.ts >/dev/null 2>&1; EXIT=$?; if [ $EXIT -eq 124 ]; then echo \"$i ⚠️ TIMEOUT\"; elif [ $EXIT -ne 0 ]; then echo \"$i ❌ EXIT $EXIT\"; else echo \"$i ✅\"; fi; done"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",
