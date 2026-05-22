@@ -7,6 +7,7 @@ import type { ShellModule } from "../types/commands";
  */
 export const ncCommand: ShellModule = {
 	name: "nc",
+	aliases: ["netcat"],
 	description: "Netcat network utility",
 	category: "net",
 	params: ["[-l] [-p port] [-v]"],
