@@ -1,0 +1,183 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>04 - Persistent State | typescript-virtual-container - v1.7.3</title><meta name="description" content="Documentation for typescript-virtual-container"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="../index" class="title">typescript-virtual-container - v1.7.3</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><ul class="tsd-breadcrumb" aria-label="Breadcrumb"><li><a href="" aria-current="page">04 - Persistent State</a></li></ul></div><div class="tsd-panel tsd-typography"><h1 id="example-04-vfs-persistence" class="tsd-anchor-link">Example 04 — VFS Persistence<a href="#example-04-vfs-persistence" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<h2 id="the-scenario" class="tsd-anchor-link">The Scenario<a href="#the-scenario" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>In-memory state is great for tests: it is fast, deterministic, and requires no cleanup. But when you need to restart a process, transfer a filesystem between machines, or snapshot state for debugging, you need persistence. Real-world use cases include:</p>
+<ul>
+<li><strong>Container checkpointing</strong>: Saving the full filesystem state of a container before shutting it down, then restoring it on a different host.</li>
+<li><strong>CI/CD test fixtures</strong>: Building a complex directory structure once in a setup phase, serializing it, and reusing it across multiple test suites without rebuilding each time.</li>
+<li><strong>State transfer between processes</strong>: Sending a filesystem snapshot over an HTTP API or message queue to a worker process.</li>
+</ul>
+<p>This example demonstrates two persistence strategies built into <code>VirtualFileSystem</code>: automatic binary snapshots to disk (FS mode) and manual JSON snapshots for portability (memory mode). Both let you save and restore the entire filesystem tree without touching real disk in the traditional sense — the &quot;disk&quot; in FS mode is still just a binary blob managed by the library.</p>
+<h2 id="modules-used" class="tsd-anchor-link">Modules Used<a href="#modules-used" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code class="ts"><span class="hl-5">import</span><span class="hl-1"> { </span><span class="hl-6">mkdirSync</span><span class="hl-1">, </span><span class="hl-6">readFileSync</span><span class="hl-1">, </span><span class="hl-6">rmSync</span><span class="hl-1">, </span><span class="hl-6">writeFileSync</span><span class="hl-1"> } </span><span class="hl-5">from</span><span class="hl-1"> </span><span class="hl-2">&quot;node:fs&quot;</span><span class="hl-1">;</span><br/><span class="hl-5">import</span><span class="hl-1"> </span><span class="hl-6">VirtualFileSystem</span><span class="hl-1"> </span><span class="hl-5">from</span><span class="hl-1"> </span><span class="hl-2">&quot;../src/modules/VirtualFileSystem&quot;</span><span class="hl-1">;</span>
+</code><button type="button">Copy</button></pre>
+
+<ul>
+<li>
+<p><strong><code>VirtualFileSystem</code></strong> — imported directly from its module path rather than through the barrel (<code>../src</code>) because we need access to the constructor options (<code>mode</code>, <code>snapshotPath</code>) and the static factory <code>fromSnapshot()</code>. When imported through the barrel, <code>VirtualFileSystem</code> is still the same class, but importing directly makes the dependency explicit.</p>
+</li>
+<li>
+<p><strong><code>node:fs</code> utilities</strong> — standard Node.js filesystem functions for creating directories, reading/writing files, and cleanup. These interact with the real OS filesystem, not the virtual one. The distinction is important: <code>writeFileSync</code> writes to the actual disk; <code>vfs.writeFile</code> writes to the in-memory virtual filesystem.</p>
+</li>
+</ul>
+<h2 id="step-by-step-walkthrough" class="tsd-anchor-link">Step-by-Step Walkthrough<a href="#step-by-step-walkthrough" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="part-1-fs-mode-automatic-binary-persistence" class="tsd-anchor-link">Part 1: FS Mode — Automatic Binary Persistence<a href="#part-1-fs-mode-automatic-binary-persistence" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="ts"><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">fsDir</span><span class="hl-1"> = </span><span class="hl-2">&quot;./container-data&quot;</span><span class="hl-1">;</span><br/><span class="hl-0">mkdirSync</span><span class="hl-1">(</span><span class="hl-6">fsDir</span><span class="hl-1">, { </span><span class="hl-6">recursive:</span><span class="hl-1"> </span><span class="hl-4">true</span><span class="hl-1"> });</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">vfsFs</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualFileSystem</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-6">mode:</span><span class="hl-1"> </span><span class="hl-2">&quot;fs&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-6">snapshotPath:</span><span class="hl-1"> </span><span class="hl-6">fsDir</span><span class="hl-1">,</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<p>The constructor receives an options object with two keys:</p>
+<ul>
+<li><code>mode: &quot;fs&quot;</code> — tells the VFS to enable automatic persistence. Without this, the VFS defaults to <code>&quot;memory&quot;</code> mode (no disk writes).</li>
+<li><code>snapshotPath: &quot;./container-data&quot;</code> — the directory where the binary snapshot file will be written. The directory must exist before construction (hence the <code>mkdirSync</code> call). If the directory does not exist, the constructor will throw.</li>
+</ul>
+<p>Internally, this configures the VFS to prepare a write-behind buffer. When <code>flushMirror()</code> is called later, the VFS serializes all entries and writes them to <code>{snapshotPath}/fs.vfsb</code>. The file extension <code>.vfsb</code> is the convention for &quot;Virtual File System Binary.&quot;</p>
+<pre><code class="ts"><span class="hl-6">vfsFs</span><span class="hl-1">.</span><span class="hl-0">writeFile</span><span class="hl-1">(</span><span class="hl-2">&quot;/data/persistent.txt&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;This survives restarts&quot;</span><span class="hl-1">);</span><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">&quot;FS mode: wrote /data/persistent.txt&quot;</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p>At this point, the data exists only in the in-memory <code>Map&lt;string, VfsEntry&gt;</code>. No disk write has occurred. This is intentional: the VFS batches mutations in memory for performance, and only flushes to disk when explicitly told to.</p>
+<pre><code class="ts"><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">vfsFs</span><span class="hl-1">.</span><span class="hl-0">flushMirror</span><span class="hl-1">();</span><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">&quot;FS mode: flushed to disk&quot;</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p><code>flushMirror()</code> triggers a full serialization of every entry in the VFS. Here is what happens step by step:</p>
+<ol>
+<li>The VFS iterates over all entries in its internal <code>Map</code>.</li>
+<li>Each entry's metadata (path, mode, uid, gid, atime, mtime, ctime) is serialized into a binary format.</li>
+<li>Each entry's content (a <code>Buffer</code>) is concatenated after size-prefixed headers.</li>
+<li>The entire binary blob is atomically written to <code>./container-data/fs.vfsb</code> using <code>writeFileSync</code>.</li>
+</ol>
+<p>The binary format is compact and fast but not human-readable — you cannot open <code>fs.vfsb</code> in a text editor and see the file contents. This makes FS mode ideal for caching and checkpointing where throughput matters, and memory mode ideal for debugging and portability.</p>
+<h3 id="part-2-memory-mode-manual-json-snapshots" class="tsd-anchor-link">Part 2: Memory Mode — Manual JSON Snapshots<a href="#part-2-memory-mode-manual-json-snapshots" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="ts"><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">vfsMem</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualFileSystem</span><span class="hl-1">();</span><br/><span class="hl-6">vfsMem</span><span class="hl-1">.</span><span class="hl-0">writeFile</span><span class="hl-1">(</span><span class="hl-2">&quot;/data/report.txt&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;Baseline data&quot;</span><span class="hl-1">);</span><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">&quot;Memory mode: wrote /data/report.txt&quot;</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p>With no constructor arguments, the VFS defaults to <code>mode: &quot;memory&quot;</code>. No snapshot path is set, no disk writes are configured. All files live only in RAM.</p>
+<pre><code class="ts"><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">snapshot</span><span class="hl-1"> = </span><span class="hl-6">vfsMem</span><span class="hl-1">.</span><span class="hl-0">toSnapshot</span><span class="hl-1">();</span><br/><span class="hl-0">writeFileSync</span><span class="hl-1">(</span><span class="hl-2">&quot;snapshot.json&quot;</span><span class="hl-1">, </span><span class="hl-7">JSON</span><span class="hl-1">.</span><span class="hl-0">stringify</span><span class="hl-1">(</span><span class="hl-6">snapshot</span><span class="hl-1">));</span><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">&quot;Memory mode: saved snapshot to snapshot.json&quot;</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p><code>toSnapshot()</code> is the serialization workhorse. It produces a <code>VfsSnapshot</code> — a plain JavaScript object (JSON-serializable by definition). The structure looks like:</p>
+<pre><code class="ts"><span class="hl-4">interface</span><span class="hl-1"> </span><span class="hl-16">VfsSnapshot</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-6">version</span><span class="hl-1">: </span><span class="hl-16">number</span><span class="hl-1">;</span><br/><span class="hl-1">  </span><span class="hl-6">root</span><span class="hl-1">: {</span><br/><span class="hl-1">    </span><span class="hl-6">children</span><span class="hl-1">: </span><span class="hl-16">Record</span><span class="hl-1">&lt;</span><span class="hl-16">string</span><span class="hl-1">, </span><span class="hl-16">VfsSnapshotEntry</span><span class="hl-1">&gt;;</span><br/><span class="hl-1">  };</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-4">interface</span><span class="hl-1"> </span><span class="hl-16">VfsSnapshotEntry</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-6">type</span><span class="hl-1">: </span><span class="hl-2">&quot;file&quot;</span><span class="hl-1"> | </span><span class="hl-2">&quot;directory&quot;</span><span class="hl-1">;</span><br/><span class="hl-1">  </span><span class="hl-6">mode</span><span class="hl-1">: </span><span class="hl-16">number</span><span class="hl-1">;</span><br/><span class="hl-1">  </span><span class="hl-6">uid</span><span class="hl-1">: </span><span class="hl-16">number</span><span class="hl-1">;</span><br/><span class="hl-1">  </span><span class="hl-6">gid</span><span class="hl-1">: </span><span class="hl-16">number</span><span class="hl-1">;</span><br/><span class="hl-1">  </span><span class="hl-6">content</span><span class="hl-1">?: </span><span class="hl-16">string</span><span class="hl-1">; </span><span class="hl-3">// base64-encoded for files</span><br/><span class="hl-1">  </span><span class="hl-6">mtime</span><span class="hl-1">: </span><span class="hl-16">number</span><span class="hl-1">;</span><br/><span class="hl-1">  </span><span class="hl-3">// ... other metadata</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Key points about the snapshot format:</p>
+<ul>
+<li>File content is base64-encoded (the <code>content</code> field is a string, not a Buffer). This ensures the JSON remains valid UTF-8 and can be transmitted over text-based protocols.</li>
+<li>Directory entries have no <code>content</code> field — they are represented purely by their presence in the parent's <code>children</code> map.</li>
+<li>The <code>version</code> field is a schema version number. If the VFS data format changes in a future release, <code>fromSnapshot</code> can check the version and apply migrations or reject incompatible snapshots.</li>
+<li>Timestamps (<code>mtime</code>, <code>atime</code>, <code>ctime</code>) are stored as Unix epoch milliseconds (numbers), not ISO strings, to save space.</li>
+</ul>
+<p>Writing <code>JSON.stringify(snapshot)</code> to <code>snapshot.json</code> produces a human-readable file. You can open it in an editor, inspect the base64 content, or even manually edit it (though manual editing is risky — one wrong character breaks the JSON).</p>
+<pre><code class="ts"><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">restored</span><span class="hl-1"> = </span><span class="hl-6">VirtualFileSystem</span><span class="hl-1">.</span><span class="hl-0">fromSnapshot</span><span class="hl-1">(</span><br/><span class="hl-1">  </span><span class="hl-7">JSON</span><span class="hl-1">.</span><span class="hl-0">parse</span><span class="hl-1">(</span><span class="hl-0">readFileSync</span><span class="hl-1">(</span><span class="hl-2">&quot;snapshot.json&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;utf8&quot;</span><span class="hl-1">)),</span><br/><span class="hl-1">);</span><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">&quot;Memory mode: restored from snapshot&quot;</span><span class="hl-1">);</span><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`Restored content: &quot;</span><span class="hl-4">${</span><span class="hl-6">restored</span><span class="hl-11">.</span><span class="hl-0">readFile</span><span class="hl-11">(</span><span class="hl-2">&quot;/data/report.txt&quot;</span><span class="hl-11">)</span><span class="hl-4">}</span><span class="hl-2">&quot;`</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p><code>VirtualFileSystem.fromSnapshot(snapshot)</code> is a static factory method. It does:</p>
+<ol>
+<li>Creates a new, empty <code>VirtualFileSystem</code> (mode: &quot;memory&quot;, no snapshot path).</li>
+<li>Iterates over all entries in the snapshot's <code>root.children</code> tree recursively.</li>
+<li>For each entry, creates a <code>VfsEntry</code> with the correct path, mode, UID/GID, and content (decoding base64 back to a Buffer).</li>
+<li>Inserts each entry into the new VFS's internal <code>Map</code>.</li>
+</ol>
+<p>The restored VFS is a fully independent instance. Mutations to <code>restored</code> have no effect on the <code>vfsMem</code> instance or on the JSON file. This immutability contract is important — it enables the copy-on-write test fixture pattern shown in Example 07.</p>
+<pre><code class="ts"><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">content</span><span class="hl-1"> = </span><span class="hl-7">JSON</span><span class="hl-1">.</span><span class="hl-0">parse</span><span class="hl-1">(</span><span class="hl-6">restored</span><span class="hl-1">.</span><span class="hl-0">readFile</span><span class="hl-1">(</span><span class="hl-2">&quot;/data/report.txt&quot;</span><span class="hl-1">));</span><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`Restored content: &quot;</span><span class="hl-4">${</span><span class="hl-6">content</span><span class="hl-4">}</span><span class="hl-2">&quot;`</span><span class="hl-1">);</span><br/><span class="hl-3">// Prints: Restored content: &quot;Baseline data&quot;</span>
+</code><button type="button">Copy</button></pre>
+
+<p>The round-trip is verified: the content written to <code>vfsMem</code> survives serialization to JSON and deserialization back to a new VFS instance.</p>
+<h3 id="part-3-cleanup" class="tsd-anchor-link">Part 3: Cleanup<a href="#part-3-cleanup" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="ts"><span class="hl-0">rmSync</span><span class="hl-1">(</span><span class="hl-6">fsDir</span><span class="hl-1">, { </span><span class="hl-6">recursive:</span><span class="hl-1"> </span><span class="hl-4">true</span><span class="hl-1">, </span><span class="hl-6">force:</span><span class="hl-1"> </span><span class="hl-4">true</span><span class="hl-1"> });</span><br/><span class="hl-0">rmSync</span><span class="hl-1">(</span><span class="hl-2">&quot;snapshot.json&quot;</span><span class="hl-1">, { </span><span class="hl-6">force:</span><span class="hl-1"> </span><span class="hl-4">true</span><span class="hl-1"> });</span><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">&quot;Cleanup complete&quot;</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Both the FS mode snapshot directory and the JSON snapshot file are deleted. The <code>force: true</code> option prevents errors if the file does not exist. This cleanup leaves the working directory in its original state, which is important when the example is run in automated test suites or CI pipelines.</p>
+<h2 id="module-interactions" class="tsd-anchor-link">Module Interactions<a href="#module-interactions" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>The two VFS instances (<code>vfsFs</code> and <code>vfsMem</code>) share the same <code>VirtualFileSystem</code> class. They differ only in their configuration:</p>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>FS mode</th>
+<th>Memory mode</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Constructor options</td>
+<td><code>{ mode: &quot;fs&quot;, snapshotPath }</code></td>
+<td><code>{}</code> or <code>{ mode: &quot;memory&quot; }</code></td>
+</tr>
+<tr>
+<td>Disk writes</td>
+<td>On <code>flushMirror()</code> call</td>
+<td>Never</td>
+</tr>
+<tr>
+<td>Serialization format</td>
+<td>Binary <code>.vfsb</code></td>
+<td>JSON (via <code>toSnapshot</code>)</td>
+</tr>
+<tr>
+<td>Deserialization</td>
+<td>Automatic on construction (if <code>.vfsb</code> exists)</td>
+<td>Manual via <code>fromSnapshot()</code></td>
+</tr>
+<tr>
+<td>Use case</td>
+<td>Caching, checkpointing</td>
+<td>Debugging, portability, fixtures</td>
+</tr>
+</tbody>
+</table>
+<p>Both mode's serialization functions (<code>flushMirror</code> vs <code>toSnapshot</code>) operate on the same internal data structure — the <code>Map&lt;string, VfsEntry&gt;</code>. The difference is only in how they encode that map for storage.</p>
+<h2 id="under-the-hood" class="tsd-anchor-link">Under the Hood<a href="#under-the-hood" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="binary-snapshot-format-fs-mode" class="tsd-anchor-link">Binary snapshot format (FS mode)<a href="#binary-snapshot-format-fs-mode" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>The <code>.vfsb</code> file is a concatenation of variable-length records. Each record has:</p>
+<pre><code><span class="hl-1">┌─────────┬──────────┬──────────┬──────┬──────────┐</span><br/><span class="hl-1">│ </span><span class="hl-6">pathLen</span><span class="hl-1"> │   </span><span class="hl-6">path</span><span class="hl-1">   │ </span><span class="hl-6">metadata</span><span class="hl-1"> │ </span><span class="hl-6">contLen</span><span class="hl-1"> │ </span><span class="hl-6">content</span><span class="hl-1"> │</span><br/><span class="hl-1">│ (</span><span class="hl-8">4</span><span class="hl-1"> </span><span class="hl-7">B</span><span class="hl-1">)   │ (</span><span class="hl-7">UTF</span><span class="hl-1">-</span><span class="hl-8">8</span><span class="hl-1">)  │ (</span><span class="hl-8">32</span><span class="hl-1"> </span><span class="hl-7">B</span><span class="hl-1">)   │ (</span><span class="hl-8">4</span><span class="hl-1"> </span><span class="hl-7">B</span><span class="hl-1">)   │ (</span><span class="hl-7">N</span><span class="hl-1"> </span><span class="hl-7">B</span><span class="hl-1">)   │</span><br/><span class="hl-1">└─────────┴──────────┴──────────┴──────┴──────────┘</span>
+</code><button>Copy</button></pre>
+
+<ul>
+<li><code>pathLen</code>: unsigned 32-bit integer (little-endian) — byte length of the path string.</li>
+<li><code>path</code>: UTF-8 encoded path bytes.</li>
+<li><code>metadata</code>: packed struct with mode (u16), uid (u32), gid (u32), mtime (f64), atime (f64), ctime (f64) — 32 bytes total.</li>
+<li><code>contLen</code>: unsigned 32-bit integer — byte length of the file content (0 for directories).</li>
+<li><code>content</code>: raw bytes of file content.</li>
+</ul>
+<p>The format is append-only — entries are written sequentially. On read, the VFS reads the entire file into memory and parses entries sequentially using the length prefixes as delimiters.</p>
+<h3 id="json-snapshot-format-memory-mode" class="tsd-anchor-link">JSON snapshot format (memory mode)<a href="#json-snapshot-format-memory-mode" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>The JSON format wraps the same data in a human-readable structure:</p>
+<pre><code class="json"><span class="hl-1">{</span><br/><span class="hl-1">  </span><span class="hl-18">&quot;version&quot;</span><span class="hl-1">: </span><span class="hl-8">1</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-18">&quot;root&quot;</span><span class="hl-1">: {</span><br/><span class="hl-1">    </span><span class="hl-18">&quot;children&quot;</span><span class="hl-1">: {</span><br/><span class="hl-1">      </span><span class="hl-18">&quot;data&quot;</span><span class="hl-1">: {</span><br/><span class="hl-1">        </span><span class="hl-18">&quot;type&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;directory&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">        </span><span class="hl-18">&quot;mode&quot;</span><span class="hl-1">: </span><span class="hl-8">16877</span><span class="hl-1">,</span><br/><span class="hl-1">        </span><span class="hl-18">&quot;children&quot;</span><span class="hl-1">: {</span><br/><span class="hl-1">          </span><span class="hl-18">&quot;report.txt&quot;</span><span class="hl-1">: {</span><br/><span class="hl-1">            </span><span class="hl-18">&quot;type&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;file&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">            </span><span class="hl-18">&quot;mode&quot;</span><span class="hl-1">: </span><span class="hl-8">33188</span><span class="hl-1">,</span><br/><span class="hl-1">            </span><span class="hl-18">&quot;uid&quot;</span><span class="hl-1">: </span><span class="hl-8">0</span><span class="hl-1">,</span><br/><span class="hl-1">            </span><span class="hl-18">&quot;gid&quot;</span><span class="hl-1">: </span><span class="hl-8">0</span><span class="hl-1">,</span><br/><span class="hl-1">            </span><span class="hl-18">&quot;content&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;QmFzZWxpbmUgZGF0YQ==&quot;</span><span class="hl-1">,</span><br/><span class="hl-1">            </span><span class="hl-18">&quot;mtime&quot;</span><span class="hl-1">: </span><span class="hl-8">1712345678901</span><br/><span class="hl-1">          }</span><br/><span class="hl-1">        }</span><br/><span class="hl-1">      }</span><br/><span class="hl-1">    }</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p>File modes are full Unix mode bits (including the file type bits — <code>0o100000</code> for regular files, <code>0o40000</code> for directories), which is why they look like large numbers (<code>33188</code> = <code>0o100644</code> = regular file, <code>644</code> permissions).</p>
+<h3 id="performance-characteristics" class="tsd-anchor-link">Performance characteristics<a href="#performance-characteristics" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><code>toSnapshot()</code> performs a full recursive walk of the entry tree. O(n) in entries.</li>
+<li><code>fromSnapshot()</code> performs a full recursive insertion. O(n) in entries.</li>
+<li><code>flushMirror()</code> serializes and writes all entries. O(n) in entries + file I/O.</li>
+<li>Base64 encoding adds ~33% bloat versus binary. This is the main trade-off: JSON snapshots are larger but debuggable.</li>
+</ul>
+<h2 id="expected-output" class="tsd-anchor-link">Expected Output<a href="#expected-output" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code class="text">FS mode: wrote /data/persistent.txt
+FS mode: flushed to disk
+Memory mode: wrote /data/report.txt
+Memory mode: saved snapshot to snapshot.json
+Memory mode: restored from snapshot
+Restored content: &quot;Baseline data&quot;
+Cleanup complete
+</code><button type="button">Copy</button></pre>
+
+<p>After execution, <code>./container-data/</code> and <code>snapshot.json</code> are removed. If you interrupt the script before cleanup, you may find these files left behind on disk.</p>
+<h2 id="key-concepts" class="tsd-anchor-link">Key Concepts<a href="#key-concepts" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li>
+<p><strong>Dual persistence strategies</strong>: FS mode for automatic, efficient binary snapshots; memory mode with manual JSON for portability and debugging. Choose FS mode when performance and automation matter (e.g., periodic container checkpointing). Choose memory mode when you need to inspect, transfer, or version-control the state (e.g., test fixtures checked into git).</p>
+</li>
+<li>
+<p><strong>Snapshot as a value</strong>: <code>VfsSnapshot</code> is a plain serializable object — it has no methods, no references to the VFS instance, and no hidden state. This enables value semantics: you can pass snapshots around, compare them with <code>JSON.stringify</code>, or store them in databases without any VFS dependency at the consumer side.</p>
+</li>
+<li>
+<p><strong>Static factory pattern</strong>: <code>fromSnapshot()</code> is a static method on the class, not an instance method. This is a deliberate API design choice: you do not need an existing VFS to restore one. The method is self-contained — it creates a new VFS, populates it from the snapshot data, and returns it. This is in contrast to a hypothetical <code>vfs.loadSnapshot(snap)</code> which would mutate an existing instance and potentially conflict with existing state.</p>
+</li>
+<li>
+<p><strong>Explicit flush</strong>: Rather than writing to disk on every mutation (which would be catastrophically slow for write-heavy workloads), the FS mode requires an explicit <code>flushMirror()</code> call. This gives the caller control over when I/O occurs and enables batching: make many changes in memory, then flush once to amortize the I/O cost.</p>
+</li>
+<li>
+<p><strong>Cleanup responsibility</strong>: The VFS does not clean up after itself. If you create snapshot files or JSON dumps, you own their lifecycle. The example demonstrates this responsibility with explicit <code>rmSync</code> calls, which is especially important in test environments where leftover files could interfere with subsequent runs.</p>
+</li>
+</ul>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#example-04-vfs-persistence"><span>Example 04 — <wbr/>VFS <wbr/>Persistence</span></a><ul><li><a href="#the-scenario"><span>The <wbr/>Scenario</span></a></li><li><a href="#modules-used"><span>Modules <wbr/>Used</span></a></li><li><a href="#step-by-step-walkthrough"><span>Step-<wbr/>by-<wbr/>Step <wbr/>Walkthrough</span></a></li><li><ul><li><a href="#part-1-fs-mode-automatic-binary-persistence"><span>Part 1: <wbr/>FS <wbr/>Mode — <wbr/>Automatic <wbr/>Binary <wbr/>Persistence</span></a></li><li><a href="#part-2-memory-mode-manual-json-snapshots"><span>Part 2: <wbr/>Memory <wbr/>Mode — <wbr/>Manual <wbr/>JSON <wbr/>Snapshots</span></a></li><li><a href="#part-3-cleanup"><span>Part 3: <wbr/>Cleanup</span></a></li></ul></li><li><a href="#module-interactions"><span>Module <wbr/>Interactions</span></a></li><li><a href="#under-the-hood"><span>Under the <wbr/>Hood</span></a></li><li><ul><li><a href="#binary-snapshot-format-fs-mode"><span>Binary snapshot format (<wbr/>FS mode)</span></a></li><li><a href="#json-snapshot-format-memory-mode"><span>JSON snapshot format (memory mode)</span></a></li><li><a href="#performance-characteristics"><span>Performance characteristics</span></a></li></ul></li><li><a href="#expected-output"><span>Expected <wbr/>Output</span></a></li><li><a href="#key-concepts"><span>Key <wbr/>Concepts</span></a></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="../modules">typescript-virtual-container - v1.7.3</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>

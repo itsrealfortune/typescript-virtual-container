@@ -1,0 +1,140 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>99 - Full-Stack Infrastructure | typescript-virtual-container - v1.7.3</title><meta name="description" content="Documentation for typescript-virtual-container"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="../index" class="title">typescript-virtual-container - v1.7.3</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><ul class="tsd-breadcrumb" aria-label="Breadcrumb"><li><a href="" aria-current="page">99 - Full-Stack Infrastructure</a></li></ul></div><div class="tsd-panel tsd-typography"><h1 id="example-99-full-stack-infrastructure" class="tsd-anchor-link">Example 99 — Full-Stack Infrastructure<a href="#example-99-full-stack-infrastructure" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<h2 id="the-scenario" class="tsd-anchor-link">The Scenario<a href="#the-scenario" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Deploy a two-tier application (web + database) with users, network policies,
+service discovery, traffic shaping, and monitoring. This is the most
+comprehensive example — it chains every major module in a single realistic
+flow: <code>VirtualShell</code>, <code>VirtualFileSystem</code>, <code>VirtualUserManager</code>,
+<code>VirtualNetworkManager</code>, <code>VirtualPackageManager</code>, <code>VirtualSwitch</code>,
+<code>VirtualProxy</code>, <code>IdleManager</code>, and <code>ProcessScheduler</code>.</p>
+<h2 id="modules-used" class="tsd-anchor-link">Modules Used<a href="#modules-used" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><strong><code>VirtualSwitch</code></strong> — Network fabric between VMs (routing, DNS, traffic shaping, load balancing, partitions)</li>
+<li><strong><code>VirtualShell</code></strong> — VM environment with VFS, users, network, packages, scheduler, idle management</li>
+<li><strong><code>VirtualProxy</code></strong> — Expose VM ports to the host</li>
+<li><strong><code>VirtualFileSystem</code></strong> — In-memory filesystem with content resolvers and hooks</li>
+<li><strong><code>VirtualUserManager</code></strong> — Users, groups, sudo, password policies, sessions, quotas, process scheduler</li>
+<li><strong><code>VirtualNetworkManager</code></strong> — Per-VM interfaces, routes, firewall rules</li>
+<li><strong><code>VirtualPackageManager</code></strong> — Package registry lookup</li>
+<li><strong><code>IdleManager</code></strong> — Freeze/thaw lifecycle and garbage collection</li>
+</ul>
+<h2 id="step-by-step-walkthrough" class="tsd-anchor-link">Step-by-Step Walkthrough<a href="#step-by-step-walkthrough" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="infrastructure" class="tsd-anchor-link">Infrastructure<a href="#infrastructure" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>A <code>VirtualSwitch</code> is created on <code>10.0.100.0/24</code>. Two <code>VirtualShell</code> instances
+are created and attached via <code>switch.attach()</code>, which assigns IPs (10.0.100.10
+and 10.0.100.20) and auto-generates MAC addresses.</p>
+<p>The switch knows about both VMs but has not configured their internal stacks.</p>
+<h3 id="per-vm-network-configuration" class="tsd-anchor-link">Per-VM network configuration<a href="#per-vm-network-configuration" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Each VM declares its <code>eth0</code> interface via <code>shell.network.addInterface()</code> with
+the MAC and IP from the switch. The web VM adds a default route via
+<code>10.0.100.1</code> (switch as gateway). The switch's <code>attach()</code> and the VM's
+<code>addInterface()</code> are separate — the switch is the fabric, <code>addInterface()</code> is
+the VM's local config (like <code>/etc/network/interfaces</code>).</p>
+<h3 id="dns-service-discovery" class="tsd-anchor-link">DNS service discovery<a href="#dns-service-discovery" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Hostnames are registered on the switch with <code>addDnsRecord()</code>. Any VM can
+resolve them. The switch acts as a simple DNS server for the subnet.</p>
+<h3 id="firewall" class="tsd-anchor-link">Firewall<a href="#firewall" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Web-01: accepts SSH (22), HTTP (80), HTTPS (443); default policy DROP.
+Db-01: accepts MySQL (3306) only from web-01's IP; default policy DROP.</p>
+<p><code>net.route()</code> simulates packet traversal through the switch, checking
+partitions, VM existence, and traffic rules. <code>checkFirewall()</code> does the
+per-VM iptables check. These are independent layers: switch routing +
+VM firewall.</p>
+<h3 id="users-and-groups" class="tsd-anchor-link">Users and groups<a href="#users-and-groups" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Three users are created on web-01 (admin, developer, deploy). Groups <code>wheel</code>
+and <code>developers</code> are created. Admin is in both groups and gets sudo.
+Developer's password expires every 90 days with a 7-day warning.</p>
+<h3 id="ssh-keys-sessions-login-tracking" class="tsd-anchor-link">SSH keys, sessions, login tracking<a href="#ssh-keys-sessions-login-tracking" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>An SSH authorized key is added for admin. Sessions are registered for all
+users. Login failures are simulated for developer (3 attempts from a hostile
+IP), counted, checked against the lockout threshold, then reset.</p>
+<h3 id="account-locking-and-quotas" class="tsd-anchor-link">Account locking and quotas<a href="#account-locking-and-quotas" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Deploy's account is locked then unlocked. Developer's account expires in 30
+days. Developer gets a 50 MB disk quota.</p>
+<h3 id="package-management" class="tsd-anchor-link">Package management<a href="#package-management" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p><code>load()</code> populates the registry. <code>listAvailable()</code> shows 29 packages.
+<code>findInRegistry()</code> looks up nginx and node metadata.</p>
+<h3 id="vfs-files-and-advanced-hooks" class="tsd-anchor-link">VFS files and advanced hooks<a href="#vfs-files-and-advanced-hooks" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Directories and config files are created (nginx.conf, index.html). A content
+resolver dynamically generates <code>/var/www/status.json</code> with current uptime.
+A <code>beforeWrite</code> hook on <code>/etc</code> fires on writes for audit logging.</p>
+<h3 id="process-scheduling" class="tsd-anchor-link">Process scheduling<a href="#process-scheduling" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>The CFS scheduler is enabled. Three processes are registered (nginx, node,
+tail). Tail is killed with SIGKILL, the others are cleanly unregistered.
+Scheduler stats show the run queue and context switches.</p>
+<h3 id="traffic-shaping-and-load-balancing" class="tsd-anchor-link">Traffic shaping and load balancing<a href="#traffic-shaping-and-load-balancing" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Web-01 gets a traffic rule (100 Mbps, 5ms latency, 2ms jitter) and a netem
+qdisc (50ms latency, 1% packet loss). A round-robin load balancer on port 80
+resolves to web-01 across 3 requests.</p>
+<h3 id="network-partitions" class="tsd-anchor-link">Network partitions<a href="#network-partitions" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Web and db are placed in separate partitions (isolated), then partitions are
+cleared to restore connectivity.</p>
+<h3 id="port-forwarding" class="tsd-anchor-link">Port forwarding<a href="#port-forwarding" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p><code>VirtualProxy</code> creates real TCP listeners: host:35801 → web-01:80 and
+host:35802 → web-01:22. After a brief async delay, forwards are listed and
+then stopped.</p>
+<h3 id="idle-management-and-gc" class="tsd-anchor-link">Idle management and GC<a href="#idle-management-and-gc" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Idle management is enabled with a 60-second GC interval. The shell is pinged
+as active. <code>runGc()</code> forces a garbage collection pass. The manager is then
+disabled.</p>
+<h3 id="system-files-and-traffic-statistics" class="tsd-anchor-link">System files and traffic statistics<a href="#system-files-and-traffic-statistics" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p><code>generateShadowFile()</code> and <code>generateGroupFile()</code> produce standard Unix format
+outputs. <code>getBytesSent()</code>/<code>getBytesReceived()</code> read switch traffic counters.</p>
+<h2 id="module-interactions" class="tsd-anchor-link">Module Interactions<a href="#module-interactions" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>When <code>VirtualShell</code> initializes, it creates and wires:</p>
+<ul>
+<li><code>shell.vfs</code> — <code>VirtualFileSystem</code></li>
+<li><code>shell.users</code> — <code>VirtualUserManager</code></li>
+<li><code>shell.network</code> — <code>VirtualNetworkManager</code></li>
+<li><code>shell.packageManager</code> — <code>VirtualPackageManager</code></li>
+</ul>
+<p>These subsystems communicate through the shell:</p>
+<ul>
+<li><code>registerProcess()</code> adds to the scheduler</li>
+<li><code>setQuotaBytes()</code> computes usage by scanning <code>shell.vfs</code></li>
+<li><code>IdleManager.freeze()</code> suspends the scheduler</li>
+</ul>
+<p>The <code>VirtualSwitch</code> and <code>VirtualProxy</code> are external — they hold references
+to shells but do not own them.</p>
+<p><strong>Key distinction:</strong> <code>VirtualSwitch</code> manages the network <em>between</em> VMs
+(routing, DNS, shaping). <code>VirtualNetworkManager</code> manages the network
+<em>inside</em> a single VM (interfaces, firewall, local routes). Both must be
+configured for connectivity to work.</p>
+<h2 id="expected-output" class="tsd-anchor-link">Expected Output<a href="#expected-output" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>When you run <code>bun run examples/99-full-stack.ts</code>, you'll see ~60+ lines
+showing:</p>
+<ul>
+<li>IP/MAC assignments for both VMs</li>
+<li>DNS resolution results</li>
+<li>Firewall check results (ACCEPT/DROP)</li>
+<li>User/group memberships and sudo status</li>
+<li>Password aging settings</li>
+<li>Session counts and login failure tracking</li>
+<li>Account lock/unlock status</li>
+<li>Quota and usage stats</li>
+<li>Package registry info</li>
+<li>File stats (nginx.conf line count, index.html size)</li>
+<li>Dynamic status.json content</li>
+<li>Audit hook trigger</li>
+<li>Process list and scheduler stats</li>
+<li>Traffic rule and qdisc confirmations</li>
+<li>Load balancer routing (3 requests)</li>
+<li>Port forwarding list</li>
+<li>Idle state and GC stats</li>
+<li>Shadow and group file entry counts</li>
+<li>Traffic byte counters</li>
+<li>Cleanup confirmation (0 ports remaining)</li>
+</ul>
+<h2 id="key-concepts" class="tsd-anchor-link">Key Concepts<a href="#key-concepts" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><strong>Separation of concerns:</strong> Each subsystem is independent and testable in
+isolation. The shell composes them without coupling.</li>
+<li><strong>Two-tier networking:</strong> Internal firewall (per-VM) + switch routing
+(inter-VM) provides defense in depth.</li>
+<li><strong>Dynamic content generation:</strong> Content resolvers produce real-time data
+without filesystem writes.</li>
+<li><strong>Resource lifecycle management:</strong> Processes are created, killed, cleaned
+up. Idle management suspends the shell to free resources.</li>
+<li><strong>Standard format compatibility:</strong> Shadow files, group files, firewall
+output, and routing tables all match standard Unix formats.</li>
+</ul>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#example-99-full-stack-infrastructure"><span>Example 99 — <wbr/>Full-<wbr/>Stack <wbr/>Infrastructure</span></a><ul><li><a href="#the-scenario"><span>The <wbr/>Scenario</span></a></li><li><a href="#modules-used"><span>Modules <wbr/>Used</span></a></li><li><a href="#step-by-step-walkthrough"><span>Step-<wbr/>by-<wbr/>Step <wbr/>Walkthrough</span></a></li><li><ul><li><a href="#infrastructure"><span>Infrastructure</span></a></li><li><a href="#per-vm-network-configuration"><span>Per-<wbr/>VM network configuration</span></a></li><li><a href="#dns-service-discovery"><span>DNS service discovery</span></a></li><li><a href="#firewall"><span>Firewall</span></a></li><li><a href="#users-and-groups"><span>Users and groups</span></a></li><li><a href="#ssh-keys-sessions-login-tracking"><span>SSH keys, sessions, login tracking</span></a></li><li><a href="#account-locking-and-quotas"><span>Account locking and quotas</span></a></li><li><a href="#package-management"><span>Package management</span></a></li><li><a href="#vfs-files-and-advanced-hooks"><span>VFS files and advanced hooks</span></a></li><li><a href="#process-scheduling"><span>Process scheduling</span></a></li><li><a href="#traffic-shaping-and-load-balancing"><span>Traffic shaping and load balancing</span></a></li><li><a href="#network-partitions"><span>Network partitions</span></a></li><li><a href="#port-forwarding"><span>Port forwarding</span></a></li><li><a href="#idle-management-and-gc"><span>Idle management and <wbr/>GC</span></a></li><li><a href="#system-files-and-traffic-statistics"><span>System files and traffic statistics</span></a></li></ul></li><li><a href="#module-interactions"><span>Module <wbr/>Interactions</span></a></li><li><a href="#expected-output"><span>Expected <wbr/>Output</span></a></li><li><a href="#key-concepts"><span>Key <wbr/>Concepts</span></a></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="../modules">typescript-virtual-container - v1.7.3</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>
