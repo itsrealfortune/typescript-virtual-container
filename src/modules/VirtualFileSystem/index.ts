@@ -758,6 +758,7 @@ class VirtualFileSystem extends EventEmitter {
 		if (!this._snapshotFile || this._evictionThreshold === 0) return;
 		if (!fsSync.existsSync(this._snapshotFile)) return;
 		this._evictDir(this._root);
+		this._cachedUsageBytes = null;
 	}
 
 	private _evictDir(dir: InternalDirectoryNode): void {
