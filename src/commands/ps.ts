@@ -28,7 +28,7 @@ export const psCommand: ShellModule = {
 
 		if (showUser) {
 			const header =
-				"USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND";
+				"USER       PID  NI PRI %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND";
 			const rows: string[] = [header];
 			for (const s of sessions) {
 				const user = s.username.padEnd(10).slice(0, 10);
@@ -36,7 +36,7 @@ export const psCommand: ShellModule = {
 				const vsz = Math.floor(Math.random() * 20000 + 5000);
 				const rss = Math.floor(Math.random() * 5000 + 1000);
 				rows.push(
-					`${user} ${String(sessionPids.get(s.id)).padStart(6)}  0.0  ${mem.padStart(4)} ${String(vsz).padStart(6)} ${String(rss).padStart(5)} ${s.tty.padEnd(8)} Ss   00:00   0:00 bash`,
+					`${user} ${String(sessionPids.get(s.id)).padStart(6)}   0  20  0.0  ${mem.padStart(4)} ${String(vsz).padStart(6)} ${String(rss).padStart(5)} ${s.tty.padEnd(8)} Ss   00:00   0:00 bash`,
 				);
 			}
 			for (const p of procs) {
@@ -45,12 +45,14 @@ export const psCommand: ShellModule = {
 				const mem = (Math.random() * 1.5).toFixed(1);
 				const vsz = Math.floor(Math.random() * 50000 + 10000);
 				const rss = Math.floor(Math.random() * 10000 + 2000);
+				const nice = p.nice ?? 0;
+				const priority = 20 - nice; // Linux-style priority display
 				rows.push(
-					`${user} ${String(p.pid).padStart(6)}  0.1  ${mem.padStart(4)} ${String(vsz).padStart(6)} ${String(rss).padStart(5)} ${p.tty.padEnd(8)} S    00:00   0:00 ${p.command}`,
+					`${user} ${String(p.pid).padStart(6)} ${String(nice).padStart(3)} ${String(priority).padStart(3)}  0.1  ${mem.padStart(4)} ${String(vsz).padStart(6)} ${String(rss).padStart(5)} ${p.tty.padEnd(8)} S    00:00   0:00 ${p.command}`,
 				);
 			}
 			rows.push(
-				`root       ${String(nextPid).padStart(6)}  0.0   0.0      0      0 ?        S    00:00   0:00 ps`,
+				`root       ${String(nextPid).padStart(6)}   0  20  0.0   0.0      0      0 ?        S    00:00   0:00 ps`,
 			);
 			return { stdout: rows.join("\n"), exitCode: 0 };
 		}

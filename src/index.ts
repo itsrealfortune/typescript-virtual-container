@@ -13,7 +13,8 @@ export { VirtualShell } from "./modules/VirtualShell/index";
 export { Baie, VirtualSwitch } from "./modules/VirtualSwitch";
 export type { DnsRecord, LoadBalancerRule, LoadBalancerTarget, MacAddress, Packet, PacketResult, TrafficRule, VmPort } from "./modules/VirtualSwitch";
 export { VirtualUserManager } from "./modules/VirtualUserManager/index";
-export type { ProcessStatus, VirtualActiveSession, VirtualProcess, VirtualUserRecord } from "./modules/VirtualUserManager/index";
+export type { ProcessStatus, VirtualActiveSession, VirtualProcess, VirtualUserRecord, SchedulerConfig, SchedulerStats, ProcessPriority, SchedulerAction } from "./modules/VirtualUserManager/index";
+export { ProcessScheduler } from "./modules/VirtualUserManager/index";
 export { VirtualVpn } from "./modules/VirtualVpn";
 export type { VpnOptions } from "./modules/VirtualVpn";
 
