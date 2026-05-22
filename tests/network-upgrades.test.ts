@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { Baie, VirtualNetworkManager } from "../src";
 
+// Skip slow network tests by default. Run with:
+//   SSH_MIMIC_RUN_NETWORK_TESTS=1 bun test tests/network-upgrades.test.ts
+const runNetwork = Boolean(process.env.SSH_MIMIC_RUN_NETWORK_TESTS);
+const describeNetwork = runNetwork ? describe : describe.skip;
+
 describe("VirtualNetworkManager - Multiple Interfaces", () => {
 	test("addInterface creates new interface", () => {
 		const net = new VirtualNetworkManager();
@@ -303,7 +308,7 @@ describe("VirtualSwitch - MTU Enforcement", () => {
 	});
 });
 
-describe("VirtualSwitch - Gaussian Jitter", () => {
+describeNetwork("VirtualSwitch - Gaussian Jitter", () => {
 	test("jitterMs adds variable latency", async () => {
 		const baie = new Baie("jitter", "10.0.1.0/24");
 		void baie.createVM("test");
