@@ -1070,7 +1070,7 @@ class VirtualFileSystem extends EventEmitter {
 	private _triggerWriteHook(normalizedPath: string, content: string | Buffer): void {
 		if (!this._sortedWriteHooks) return;
 		for (const prefix of this._sortedWriteHooks) {
-			if (normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`)) {
+			if (normalizedPath === prefix || normalizedPath.startsWith(prefix === "/" ? "/" : `${prefix}/`)) {
 				const cb = this._writeHooks.get(prefix);
 				if (cb) {
 					cb(normalizedPath, content);
@@ -1096,7 +1096,7 @@ class VirtualFileSystem extends EventEmitter {
 	private _resolveContent(normalizedPath: string): string | null {
 		if (!this._sortedContentResolvers) return null;
 		for (const prefix of this._sortedContentResolvers) {
-			if (normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`)) {
+			if (normalizedPath === prefix || normalizedPath.startsWith(prefix === "/" ? "/" : `${prefix}/`)) {
 				const resolver = this._contentResolvers.get(prefix);
 				if (resolver) return resolver(normalizedPath);
 			}
@@ -1237,7 +1237,7 @@ class VirtualFileSystem extends EventEmitter {
 		if (this._inReadHook) return;
 		if (!this._sortedReadHooks) return;
 		for (const prefix of this._sortedReadHooks) {
-			if (normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`)) {
+			if (normalizedPath === prefix || normalizedPath.startsWith(prefix === "/" ? "/" : `${prefix}/`)) {
 				const cb = this._readHooks.get(prefix);
 				if (cb) {
 					this._inReadHook = true;
@@ -1654,6 +1654,25 @@ class VirtualFileSystem extends EventEmitter {
 		}
 		const normalized = normalizePath(targetPath);
 		if (normalized.startsWith("/proc")) this._triggerReadHook(normalized);
+
+		// Check content resolvers for stat
+		const resolved = this._resolveContent(normalized);
+		if (resolved !== null) {
+			const name = normalized === "/" ? "" : path.posix.basename(normalized);
+			return {
+				type: "file",
+				name,
+				path: normalized,
+				mode: 0o444,
+				uid: 0,
+				gid: 0,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				compressed: false,
+				size: resolved.length,
+			} satisfies VfsFileNode;
+		}
+
 		const node = getNodeNormalized(this._root, normalized);
 		const name = normalized === "/" ? "" : path.posix.basename(normalized);
 		if (node.type === "stub") {

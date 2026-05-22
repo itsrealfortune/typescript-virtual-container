@@ -1,32 +1,34 @@
 /**
- * Example 08: Snapshot Diff in Tests
+ * 08 - Snapshot Diff in Tests
  *
  * Demonstrates capturing VFS snapshots before and after an operation,
  * then asserting on the diff to verify expected changes.
  */
 
-import { assertDiff, diffSnapshots } from "../src";
-import VirtualFileSystem from "../src/modules/VirtualFileSystem";
+import { assertDiff, diffSnapshots, VirtualFileSystem } from "../src";
 
-// Setup: create initial state
+// ── Setup initial state ───────────────────────────────────────────
+console.log("--- Setup initial state ---");
 const vfs = new VirtualFileSystem();
 vfs.mkdir("/app");
 vfs.writeFile("/app/index.js", "console.log('hello')");
 vfs.writeFile("/var/log/syslog", "system boot");
 
 const before = vfs.toSnapshot();
-console.log("Before snapshot captured\n");
+console.log("Before snapshot captured");
 
-// Simulate operations: install a package, create a directory
+// ── Simulate operations ───────────────────────────────────────────
+console.log("\n--- Simulate operations ---");
 vfs.writeFile("/usr/bin/vim", "#!/bin/sh\nvim");
 vfs.mkdir("/app/src");
 vfs.writeFile("/app/src/main.js", "export default {}");
 vfs.writeFile("/var/log/syslog", "system boot\npackage installed");
 
 const after = vfs.toSnapshot();
-console.log("After snapshot captured\n");
+console.log("After snapshot captured");
 
-// Compute and display the diff
+// ── Compute and display diff ──────────────────────────────────────
+console.log("\n--- Compute and display diff ---");
 const diff = diffSnapshots(before, after);
 
 console.log("Added files:");
@@ -44,10 +46,11 @@ for (const entry of diff.removed) {
 	console.log(`  - ${entry.path}`);
 }
 
-// Assert expected changes
+// ── Assert expected changes ───────────────────────────────────────
+console.log("\n--- Assert expected changes ---");
 assertDiff(diff, {
 	added: ["/usr/bin/vim", "/app/src", "/app/src/main.js"],
 	modified: ["/var/log/syslog"],
 });
 
-console.log("\n✅ All assertions passed");
+console.log("[OK] All assertions passed");

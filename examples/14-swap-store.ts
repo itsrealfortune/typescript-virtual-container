@@ -1,24 +1,24 @@
 /**
- * Example 14: Swap file store for memory-constrained environments
- *
+ * 14 - Swap File Store for Memory-Constrained Environments
+ * 
  * Demonstrates the VFS swap store that offloads evicted file contents
  * to individual swap files on disk for O(1) reload.
  */
-import * as fs from "node:fs";
-import * as path from "node:path";
+
 import { VirtualFileSystem } from "../src";
 
-const testDir = path.join(process.cwd(), ".vfs-swap-demo");
-fs.mkdirSync(testDir, { recursive: true });
+const testDir = `${process.cwd()}/.vfs-swap-demo`;
 
 const vfs = new VirtualFileSystem({
 	mode: "fs",
 	snapshotPath: testDir,
-	evictionThresholdBytes: 1024, // Evict files > 1KB
+	evictionThresholdBytes: 1024,
 	swapEnabled: true,
 });
 
-// Write files of various sizes
+// ── Write files ─────────────────────────────────────────────────────
+console.log("--- Write files ---");
+
 vfs.writeFile("/small.txt", "tiny file");
 vfs.writeFile("/medium.txt", "x".repeat(2000));
 vfs.writeFile("/large.txt", "y".repeat(10000));
@@ -26,40 +26,49 @@ vfs.writeFile("/large.txt", "y".repeat(10000));
 console.log("Wrote 3 files");
 console.log("Swap enabled:", vfs.isSwapEnabled());
 
-// Flush to disk — triggers eviction of large files
-vfs.flushMirror().then(() => {
-	console.log("\nFlushed to disk — large files evicted from RAM");
+// ── Flush to disk ───────────────────────────────────────────────────
+console.log("\n--- Flush to disk ---");
 
-	// Check swap stats
-	const swapStats = vfs.getSwapStats();
-	if (swapStats) {
-		console.log("Swap stats:", {
-			filesSwapped: swapStats.filesSwapped,
-			swapOuts: swapStats.swapOuts,
-			swapIns: swapStats.swapIns,
-			diskUsage: `${swapStats.diskUsage} bytes`,
-			originalSize: `${swapStats.originalSize} bytes`,
-		});
-	}
+await vfs.flushMirror();
+console.log("Flushed to disk -- large files evicted from RAM");
 
-	// Read evicted file — reloads from swap (O(1))
-	const large = vfs.readFile("/large.txt");
-	console.log("\nRead /large.txt from swap:", `${large.length} bytes`);
+// ── Swap stats ──────────────────────────────────────────────────────
+console.log("\n--- Swap stats ---");
 
-	// Swap out a specific file manually
-	vfs.swapOutFile("/medium.txt");
-	console.log("Manually swapped out /medium.txt");
+const swapStats = vfs.getSwapStats();
+if (swapStats) {
+	console.log({
+		filesSwapped: swapStats.filesSwapped,
+		swapOuts: swapStats.swapOuts,
+		swapIns: swapStats.swapIns,
+		diskUsage: `${swapStats.diskUsage} bytes`,
+		originalSize: `${swapStats.originalSize} bytes`,
+	});
+}
 
-	// Read it back
-	const medium = vfs.readFile("/medium.txt");
-	console.log("Read /medium.txt from swap:", `${medium.length} bytes`);
+// ── Read from swap ──────────────────────────────────────────────────
+console.log("\n--- Read from swap ---");
 
-	// LRU swap-out: swap out files to free target bytes
-	const swapped = vfs.swapOutLru(5000);
-	console.log(`\nSwapped out ${swapped} files to free 5KB`);
+const large = vfs.readFile("/large.txt");
+console.log(`Read /large.txt from swap: ${large.length} bytes`);
 
-	// Cleanup
-	vfs.clearSwap();
-	fs.rmSync(testDir, { recursive: true, force: true });
-	console.log("Cleanup complete");
-});
+// ── Manual swap out ─────────────────────────────────────────────────
+console.log("\n--- Manual swap out ---");
+
+vfs.swapOutFile("/medium.txt");
+console.log("Manually swapped out /medium.txt");
+
+const medium = vfs.readFile("/medium.txt");
+console.log(`Read /medium.txt from swap: ${medium.length} bytes`);
+
+// ── LRU swap out ────────────────────────────────────────────────────
+console.log("\n--- LRU swap out ---");
+
+const swapped = vfs.swapOutLru(5000);
+console.log(`Swapped out ${swapped} files to free 5KB`);
+
+// ── Cleanup ─────────────────────────────────────────────────────────
+console.log("\n--- Cleanup ---");
+
+vfs.clearSwap();
+console.log("Cleanup complete");
