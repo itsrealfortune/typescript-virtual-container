@@ -29,6 +29,7 @@ import type {
 import { appendJournalEntry, JournalOp, readJournal, truncateJournal } from "./journal";
 import { getNodeNormalized, getParentDirectory, normalizePath } from "./path";
 import { enforceAccess, enforceChmod, enforceChown, enforceDelete, enforcePathTraversal, R_OK, W_OK } from "./permissions";
+import { SwapStore, type SwapStats } from "./swapStore";
 
 // ── Persistence options ───────────────────────────────────────────────────────
 
@@ -75,6 +76,21 @@ export interface VfsOptions {
 	 * Only applies to `"fs"` mode.
 	 */
 	evictionThresholdBytes?: number;
+	/**
+	 * Enable swap file store for evicted files.
+	 * When `true`, evicted file contents are written to individual swap files
+	 * on disk (in `<snapshotPath>/.vfs/swap/`) instead of being lost.
+	 * On read, content is loaded from the swap file (O(1)) instead of parsing
+	 * the entire snapshot (O(n)).
+	 * Default: `false`. Only applies to `"fs"` mode.
+	 */
+	swapEnabled?: boolean;
+	/**
+	 * Custom swap directory path.
+	 * If not set, defaults to `<snapshotPath>/swap/`.
+	 * Only used when `swapEnabled` is `true`.
+	 */
+	swapDir?: string;
 }
 
 // ── VirtualFileSystem ─────────────────────────────────────────────────────────
@@ -140,6 +156,10 @@ class VirtualFileSystem extends EventEmitter {
 	private _ramCapBytes: number | null = null;
 	/** Cached total usage to avoid recomputing on every write (invalidated on writes). */
 	private _cachedUsageBytes: number | null = null;
+	/** Swap file store for evicted files (null when disabled or in memory mode). */
+	private _swapStore: SwapStore | null = null;
+	/** True when swap is enabled. */
+	private readonly _swapEnabled: boolean;
 	/** True when running in a browser environment (no host FS access). */
 	private static readonly _isBrowser =
 		typeof process === "undefined" || typeof (process as NodeJS.Process).versions?.node === "undefined";
@@ -166,6 +186,12 @@ class VirtualFileSystem extends EventEmitter {
 			this._journalFile = path.resolve(options.snapshotPath, "vfs-journal.bin");
 			this._evictionThreshold = options.evictionThresholdBytes ?? 64 * 1024; // 64 KB default
 			this._flushAfterNWrites = options.flushAfterNWrites ?? 500;
+			this._swapEnabled = options.swapEnabled ?? false;
+			if (this._swapEnabled) {
+				const swapDir = options.swapDir ?? path.resolve(options.snapshotPath, "swap");
+				this._swapStore = new SwapStore(swapDir);
+				this._swapStore.initialize();
+			}
 			const intervalMs = options.flushIntervalMs ?? 1_000;
 			if (intervalMs > 0) {
 				this._flushTimer = setInterval(() => {
@@ -182,6 +208,7 @@ class VirtualFileSystem extends EventEmitter {
 			this._journalFile = null;
 			this._evictionThreshold = 0; // disabled in memory mode
 			this._flushAfterNWrites = 0;
+			this._swapEnabled = false;
 		}
 		this._root = this._makeDir("", 0o755);
 	}
@@ -742,11 +769,18 @@ class VirtualFileSystem extends EventEmitter {
 					? (node.size ?? node.content.length * 2)
 					: node.content.length;
 				if (rawSize > this._evictionThreshold) {
+					// Try swap store first
+					if (this._swapEnabled && this._swapStore && node.content.length > 0) {
+						const normalizedPath = this._getNodePath(this._root, node);
+						if (normalizedPath) {
+							this._swapStore.swapOut(normalizedPath, node.content, node.compressed);
+						}
+					}
 					node.size    = rawSize;
 					node.content = Buffer.alloc(0);
 					node.evicted = true;
-		}
-		}
+				}
+			}
 		}
 	}
 
@@ -785,6 +819,10 @@ class VirtualFileSystem extends EventEmitter {
 					? (node.size ?? node.content.length * 2)
 					: node.content.length;
 				if (rawSize > this._evictionThreshold) {
+					// Try swap store first
+					if (this._swapEnabled && this._swapStore && node.content.length > 0) {
+						this._swapStore.swapOut(fullPath, node.content, node.compressed);
+					}
 					node.size = rawSize;
 					node.content = Buffer.alloc(0);
 					node.evicted = true;
@@ -793,6 +831,135 @@ class VirtualFileSystem extends EventEmitter {
 			}
 		}
 		return evicted;
+	}
+
+	/**
+	 * Swap out a file's content to the swap store and evict it from RAM.
+	 * The file node is marked as `evicted` and its content is written to
+	 * a swap file for O(1) reload on next read.
+	 *
+	 * @param normalizedPath Absolute VFS path of the file to swap out.
+	 * @returns True if the file was swapped out, false if swap is disabled
+	 *          or the file doesn't exist/is already evicted.
+	 */
+	public swapOutFile(normalizedPath: string): boolean {
+		if (!this._swapEnabled || !this._swapStore) return false;
+
+		let node: InternalNode;
+		try {
+			node = getNodeNormalized(this._root, normalizedPath);
+		} catch {
+			return false;
+		}
+		if (node.type !== "file" || node.evicted) return false;
+		if (node.content.length === 0) return false;
+
+		const content = node.content;
+		const compressed = node.compressed;
+
+		this._swapStore.swapOut(normalizedPath, content, compressed);
+		node.size = content.length;
+		node.content = Buffer.alloc(0);
+		node.evicted = true;
+
+		return true;
+	}
+
+	/**
+	 * Swap out the LRU (least recently used) files to free RAM.
+	 * Swaps out files in order of oldest access until the target bytes
+	 * are freed or no more candidates are available.
+	 *
+	 * @param targetBytes Number of bytes to free by swapping out.
+	 * @returns Number of files swapped out.
+	 */
+	public swapOutLru(targetBytes: number): number {
+		if (!this._swapEnabled || !this._swapStore) return 0;
+
+		const openPaths = this.getOpenPaths();
+		let freed = 0;
+		let swapped = 0;
+
+		// Collect evictable files sorted by size (largest first for efficiency)
+		const candidates: Array<{ path: string; size: number }> = [];
+		this._collectEvictableFiles(this._root, "", openPaths, candidates);
+		candidates.sort((a, b) => b.size - a.size);
+
+		for (const candidate of candidates) {
+			if (freed >= targetBytes) break;
+			if (this.swapOutFile(candidate.path)) {
+				freed += candidate.size;
+				swapped++;
+			}
+		}
+
+		return swapped;
+	}
+
+	/**
+	 * Returns swap store statistics.
+	 *
+	 * @returns SwapStats object, or null if swap is disabled.
+	 */
+	public getSwapStats(): SwapStats | null {
+		return this._swapStore?.getStats() ?? null;
+	}
+
+	/**
+	 * Returns whether swap is enabled.
+	 */
+	public isSwapEnabled(): boolean {
+		return this._swapEnabled;
+	}
+
+	/**
+	 * Clears all swap files and resets swap statistics.
+	 */
+	public clearSwap(): void {
+		this._swapStore?.clear();
+	}
+
+	/**
+	 * Finds the VFS path of a node by traversing from root.
+	 * Returns null if the node is not found in the tree.
+	 */
+	private _getNodePath(root: InternalDirectoryNode, target: InternalNode): string | null {
+		return this._findNodePath(root, target, "");
+	}
+
+	private _findNodePath(dir: InternalDirectoryNode, target: InternalNode, prefix: string): string | null {
+		for (const [name, node] of Object.entries(dir.children)) {
+			if (node === target) {
+				return prefix ? `${prefix}/${name}` : `/${name}`;
+			}
+			if (node.type === "directory") {
+				const fullPath = prefix ? `${prefix}/${name}` : `/${name}`;
+				const found = this._findNodePath(node, target, fullPath);
+				if (found) return found;
+			}
+		}
+		return null;
+	}
+
+	private _collectEvictableFiles(
+		dir: InternalDirectoryNode,
+		prefix: string,
+		openPaths: Set<string>,
+		candidates: Array<{ path: string; size: number }>,
+	): void {
+		for (const [name, node] of Object.entries(dir.children)) {
+			const fullPath = prefix ? `${prefix}/${name}` : `/${name}`;
+			if (node.type === "directory") {
+				this._collectEvictableFiles(node, fullPath, openPaths, candidates);
+			} else if (node.type === "file" && !node.evicted && !openPaths.has(fullPath)) {
+				const size = node.compressed
+					? (node.size ?? node.content.length * 2)
+					: node.content.length;
+				if (size > 0) {
+					candidates.push({ path: fullPath, size });
+				}
+			}
+		}
 	}
 
 	/**
@@ -855,7 +1022,20 @@ class VirtualFileSystem extends EventEmitter {
 	}
 
 	private _reloadEvicted(node: InternalFileNode, normalizedPath: string): void {
-		if (!node.evicted || !this._snapshotFile) return;
+		if (!node.evicted) return;
+
+		// Try swap store first (O(1))
+		if (this._swapStore) {
+			const content = this._swapStore.swapIn(normalizedPath);
+			if (content) {
+				node.content = content;
+				node.evicted = undefined;
+				return;
+			}
+		}
+
+		// Fall back to snapshot parsing (O(n))
+		if (!this._snapshotFile) return;
 		if (!fsSync.existsSync(this._snapshotFile)) return;
 		try {
 			// Load and parse the snapshot to find this specific node
@@ -1105,15 +1285,24 @@ class VirtualFileSystem extends EventEmitter {
 		const storedContent = shouldCompress ? gzipSync(rawContent) : rawContent;
 		const mode = options.mode ?? 0o644;
 
-		// RAM cap enforcement: reject writes that would exceed the limit
+		// RAM cap enforcement: try to swap out LRU files to make room before rejecting
 		if (this._ramCapBytes !== null) {
 			const currentUsage = this._getCachedUsage();
 			const existingSize = existing?.type === "file" ? (existing as InternalFileNode).content.length : 0;
 			const projectedUsage = currentUsage - existingSize + storedContent.length;
 			if (projectedUsage > this._ramCapBytes) {
-				throw new Error(
-					`ENOMEM: Cannot allocate memory: write to '${normalized}' would exceed RAM cap (${projectedUsage}/${this._ramCapBytes} bytes)`,
-				);
+				const excess = projectedUsage - this._ramCapBytes;
+				// Try to swap out LRU files to free space
+				const swapped = this.swapOutLru(excess);
+				// Re-check usage after swap
+				const newUsage = this._getCachedUsage();
+				const newProjected = newUsage - existingSize + storedContent.length;
+				if (newProjected > this._ramCapBytes && swapped === 0) {
+					// Couldn't free enough space
+					throw new Error(
+						`ENOMEM: Cannot allocate memory: write to '${normalized}' would exceed RAM cap (${newProjected}/${this._ramCapBytes} bytes)`,
+					);
+				}
 			}
 		}
 
