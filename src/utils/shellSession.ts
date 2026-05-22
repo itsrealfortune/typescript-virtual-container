@@ -62,7 +62,11 @@ export function readLastLogin(vfs: VirtualFileSystem, authUser: string): LastLog
 	const p = authUser === "root" ? "/root/.lastlog.json" : `/home/${authUser}/.lastlog`;
 	if (!vfs.exists(p)) return null;
 	try {
-		return JSON.parse(vfs.readFile(p)) as LastLogin;
+		const raw = JSON.parse(vfs.readFile(p));
+		if (typeof raw !== "object" || raw === null) return null;
+		const obj = raw as Record<string, unknown>;
+		if (typeof obj.from !== "string" || typeof obj.timestamp !== "number") return null;
+		return { from: obj.from, at: new Date(obj.timestamp).toISOString() };
 	} catch {
 		return null;
 	}

@@ -653,7 +653,8 @@ export class NanoEditor {
 		}
 		const current = { lines: [...this._lines], cursorRow: this._cursorRow, cursorCol: this._cursorCol };
 		this._redoStack.push(current);
-		const prev = this._undoStack.pop() as UndoEntry;
+		const prev = this._undoStack.pop();
+		if (prev === undefined) return;
 		this._lines = prev.lines;
 		this._cursorRow = prev.cursorRow;
 		this._cursorCol = prev.cursorCol;
@@ -669,7 +670,8 @@ export class NanoEditor {
 		}
 		const current = { lines: [...this._lines], cursorRow: this._cursorRow, cursorCol: this._cursorCol };
 		this._undoStack.push(current);
-		const next = this._redoStack.pop() as UndoEntry;
+		const next = this._redoStack.pop();
+		if (next === undefined) return;
 		this._lines = next.lines;
 		this._cursorRow = next.cursorRow;
 		this._cursorCol = next.cursorCol;

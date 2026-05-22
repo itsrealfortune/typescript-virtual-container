@@ -33,6 +33,13 @@ import { getNodeNormalized, getParentDirectory, normalizePath } from "./path";
 import { enforceAccess, enforceChmod, enforceChown, enforceDelete, enforcePathTraversal, R_OK, W_OK } from "./permissions";
 import { SwapStore, type SwapStats } from "./swapStore";
 
+// ── Type guards for InternalNode discriminated union ──────────────────────────
+
+function isFile(n: InternalNode): n is InternalFileNode { return n.type === "file"; }
+function isStub(n: InternalNode): n is InternalStubNode { return n.type === "stub"; }
+function isDir(n: InternalNode): n is InternalDirectoryNode { return n.type === "directory"; }
+function isDevice(n: InternalNode): n is InternalDeviceNode { return n.type === "device"; }
+
 // ── Persistence options ───────────────────────────────────────────────────────
 
 /**
@@ -520,7 +527,7 @@ class VirtualFileSystem extends EventEmitter {
 					`Cannot create directory '${builtPath}': path is a file.`,
 				);
 			}
-			current = child as InternalDirectoryNode;
+			current = child;
 		}
 	}
 
@@ -992,9 +999,8 @@ class VirtualFileSystem extends EventEmitter {
 				const normalized = normalizePath(p);
 				const node = getNodeNormalized(this._root, normalized);
 				if (node.type === "file") {
-					const f = node as InternalFileNode;
-					if (f.evicted) this._reloadEvicted(f, normalized);
-					const raw = f.compressed ? gunzipSync(f.content) : f.content;
+					if (node.evicted) this._reloadEvicted(node, normalized);
+					const raw = node.compressed ? gunzipSync(node.content) : node.content;
 					this._fileCache.setSync(normalized, raw);
 					loaded++;
 				}
@@ -1353,9 +1359,8 @@ class VirtualFileSystem extends EventEmitter {
 		}
 
 		if (existing?.type === "device") {
-			const dev = existing as InternalDeviceNode;
-			VirtualFileSystem._writeDeviceNode(dev, normalized);
-			dev.updatedAt = Date.now();
+			VirtualFileSystem._writeDeviceNode(existing, normalized);
+			existing.updatedAt = Date.now();
 			this.emit("device:write", { path: normalized });
 			return;
 		}
@@ -1372,7 +1377,7 @@ class VirtualFileSystem extends EventEmitter {
 		// RAM cap enforcement: try to swap out LRU files to make room before rejecting
 		if (this._ramCapBytes !== null) {
 			const currentUsage = this._getCachedUsage();
-			const existingSize = existing?.type === "file" ? (existing as InternalFileNode).content.length : 0;
+			const existingSize = existing?.type === "file" ? existing.content.length : 0;
 			const projectedUsage = currentUsage - existingSize + storedContent.length;
 			if (projectedUsage > this._ramCapBytes) {
 				const excess = projectedUsage - this._ramCapBytes;
@@ -1391,10 +1396,9 @@ class VirtualFileSystem extends EventEmitter {
 		}
 
 		if (existing && existing.type === "file") {
-			const f = existing as InternalFileNode;
-			f.content = storedContent;
-			f.compressed = shouldCompress;
-			f.mode = mode;
+			existing.content = storedContent;
+			existing.compressed = shouldCompress;
+			existing.mode = mode;
 			if (uid !== undefined) f.uid = uid;
 			if (gid !== undefined) f.gid = gid;
 			f.updatedAt = Date.now();
@@ -1458,7 +1462,7 @@ class VirtualFileSystem extends EventEmitter {
 			return node.stubContent;
 		}
 		if (node.type === "device") {
-			const content = VirtualFileSystem._readDeviceNode(node as InternalDeviceNode, normalized);
+			const content = VirtualFileSystem._readDeviceNode(node, normalized);
 			this.emit("file:read", { path: normalized, size: content.length });
 			return content;
 		}
@@ -1466,9 +1470,8 @@ class VirtualFileSystem extends EventEmitter {
 			throw new Error(`Cannot read '${targetPath}': not a file.`);
 		}
 		if (uid !== undefined && gid !== undefined) enforceAccess(this._root, normalized, uid, gid, R_OK);
-		const f = node as InternalFileNode;
-		if (f.evicted) this._reloadEvicted(f, normalized);
-		const raw = f.compressed ? gunzipSync(f.content) : f.content;
+		if (node.evicted) this._reloadEvicted(node, normalized);
+		const raw = node.compressed ? gunzipSync(node.content) : node.content;
 
 		// Update cache on read (tracks miss)
 		if (this._cacheEnabled && this._fileCache) {
@@ -1507,7 +1510,7 @@ class VirtualFileSystem extends EventEmitter {
 			return buf;
 		}
 		if (node.type === "device") {
-			const content = VirtualFileSystem._readDeviceNode(node as InternalDeviceNode, normalized);
+			const content = VirtualFileSystem._readDeviceNode(node, normalized);
 			const buf = Buffer.from(content, "binary");
 			this.emit("file:read", { path: normalized, size: buf.length });
 			return buf;
@@ -1515,9 +1518,8 @@ class VirtualFileSystem extends EventEmitter {
 		if (node.type !== "file") {
 			throw new Error(`Cannot read '${targetPath}': not a file.`);
 		}
-		const f = node as InternalFileNode;
-		if (f.evicted) this._reloadEvicted(f, normalized);
-		const raw = f.compressed ? gunzipSync(f.content) : f.content;
+		if (node.evicted) this._reloadEvicted(node, normalized);
+		const raw = node.compressed ? gunzipSync(node.content) : node.content;
 
 		// Update cache on read
 		if (this._cacheEnabled && this._fileCache) {
@@ -1662,61 +1664,57 @@ class VirtualFileSystem extends EventEmitter {
 		const node = getNodeNormalized(this._root, normalized);
 		const name = normalized === "/" ? "" : path.posix.basename(normalized);
 		if (node.type === "stub") {
-			const s = node as InternalStubNode;
 			return {
 				type: "file",
 				name,
 				path: normalized,
-				mode: s.mode,
-				uid: s.uid,
-				gid: s.gid,
-				createdAt: new Date(s.createdAt),
-				updatedAt: new Date(s.updatedAt),
+				mode: node.mode,
+				uid: node.uid,
+				gid: node.gid,
+				createdAt: new Date(node.createdAt),
+				updatedAt: new Date(node.updatedAt),
 				compressed: false,
-				size: s.stubContent.length,
+				size: node.stubContent.length,
 			};
 		}
 		if (node.type === "file") {
-			const f = node as InternalFileNode;
 			return {
 				type: "file",
 				name,
 				path: normalized,
-				mode: f.mode,
-				uid: f.uid,
-				gid: f.gid,
+				mode: node.mode,
+				uid: node.uid,
+				gid: node.gid,
 				createdAt: new Date(f.createdAt),
 				updatedAt: new Date(f.updatedAt),
-				compressed: f.compressed,
-				size: f.evicted ? (f.size ?? 0) : f.content.length,
+				compressed: node.compressed,
+				size: node.evicted ? (node.size ?? 0) : node.content.length,
 			};
 		}
 		if (node.type === "device") {
-			const dev = node as InternalDeviceNode;
 			return {
 				type: "device",
 				name,
 				path: normalized,
-				mode: dev.mode,
-				uid: dev.uid,
-				gid: dev.gid,
-				createdAt: new Date(dev.createdAt),
-				updatedAt: new Date(dev.updatedAt),
-				deviceKind: dev.deviceKind,
-				major: dev.major,
-				minor: dev.minor,
+				mode: node.mode,
+				uid: node.uid,
+				gid: node.gid,
+				createdAt: new Date(node.createdAt),
+				updatedAt: new Date(node.updatedAt),
+				deviceKind: node.deviceKind,
+				major: node.major,
+				minor: node.minor,
 			} satisfies VfsDeviceNode;
 		}
-		const d = node as InternalDirectoryNode;
 		return {
 			type: "directory",
 			name,
 			path: normalized,
-			mode: d.mode,
-			uid: d.uid,
-			gid: d.gid,
-			createdAt: new Date(d.createdAt),
-			updatedAt: new Date(d.updatedAt),
+			mode: node.mode,
+			uid: node.uid,
+			gid: node.gid,
+			createdAt: new Date(node.createdAt),
+			updatedAt: new Date(node.updatedAt),
 			childrenCount: d._childCount,
 		};
 	}

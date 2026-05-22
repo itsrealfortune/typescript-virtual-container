@@ -64,7 +64,9 @@ export function loadSession(): SerializedWindow[] | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (parsed?.version === VERSION && Array.isArray(parsed.windows)) {
-      return parsed.windows as SerializedWindow[];
+      const windows = parsed.windows;
+      if (!windows.every((w: unknown) => typeof w === "object" && w !== null && "id" in w)) return null;
+      return windows as SerializedWindow[];
     }
     return null;
   } catch {
