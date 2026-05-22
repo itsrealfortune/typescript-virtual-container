@@ -105,7 +105,7 @@ async function runOrchestrator() {
 	console.log("\n🔒 Applying network policies...\n");
 
 	// Only web pods can reach api pods
-	const webClient = new SshClient(pods[0].vm, "root");
+	const webClient = new SshClient(pods[0]!.vm, "root");
 	await webClient.exec("iptables -A OUTPUT -d 172.16.0.0/16 -j ACCEPT");
 
 	// DB only accepts connections from api pods

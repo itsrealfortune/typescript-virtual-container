@@ -77,8 +77,8 @@ async function setupSaaSPlatform() {
 		for (let j = 0; j < tenants.length; j++) {
 			if (i === j) continue;
 
-			const t1 = tenants[i];
-			const t2 = tenants[j];
+			const t1 = tenants[i]!;
+			const t2 = tenants[j]!;
 
 			// Try to reach tenant2's DB from tenant1's app
 			const appClient = new SshClient(t1.appVM, "root");
