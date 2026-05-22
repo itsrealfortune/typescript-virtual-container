@@ -8,15 +8,15 @@
 import { VirtualShell } from "../src";
 
 const shell = new VirtualShell("accounts-demo");
-await shell.ensureInitialized();
+shell.ensureInitialized();
 
 const users = shell.users;
 
 // ── Create users ──────────────────────────────────────────────────
 console.log("--- Create users ---");
-await users.addUser("alice", "password123");
-await users.addUser("bob", "secure456");
-await users.addUser("carol", "pass789");
+users.addUser("alice", "password123");
+users.addUser("bob", "secure456");
+users.addUser("carol", "pass789");
 console.log("Users: alice, bob, carol");
 
 // ── Groups ────────────────────────────────────────────────────────
@@ -44,7 +44,7 @@ for (const g of users.listGroups()) {
 
 // ── Password aging ────────────────────────────────────────────────
 console.log("\n--- Password aging ---");
-await users.setPasswordAging("alice", 1, 90, 7, 30);
+users.setPasswordAging("alice", 1, 90, 7, 30);
 const aging = users.getPasswordAging("alice");
 if (aging) {
 	console.log(`  alice: min=${aging.minAge}d, max=${aging.maxAge}d, warn=${aging.warnDays}d, inactive=${aging.inactiveDays}d`);
@@ -52,21 +52,21 @@ if (aging) {
 console.log(`  alice password expired: ${users.isPasswordExpired("alice")}`);
 
 // Force password change on next login
-await users.forcePasswordChange("bob");
+users.forcePasswordChange("bob");
 console.log(`  bob password expired: ${users.isPasswordExpired("bob")}`);
 
 // ── Account expiry ────────────────────────────────────────────────
 console.log("\n--- Account expiry ---");
 const nextWeekTs = Date.now() + 7 * 24 * 60 * 60 * 1000;
-await users.setAccountExpiry("carol", nextWeekTs);
+users.setAccountExpiry("carol", nextWeekTs);
 console.log(`  carol expires: ${new Date(nextWeekTs).toISOString().slice(0, 10)}`);
 
 // ── Account locking ───────────────────────────────────────────────
 console.log("\n--- Account locking ---");
 console.log(`  alice locked: ${users.isAccountLocked("alice")}`);
-await users.lockAccount("alice");
+users.lockAccount("alice");
 console.log(`  alice locked: ${users.isAccountLocked("alice")}`);
-await users.unlockAccount("alice");
+users.unlockAccount("alice");
 console.log(`  alice locked: ${users.isAccountLocked("alice")}`);
 
 // ── Login failure tracking ────────────────────────────────────────
@@ -82,7 +82,7 @@ console.log(`  bob failures after reset: ${users.getLoginFailures("bob")}`);
 // ── Sudo ──────────────────────────────────────────────────────────
 console.log("\n--- Sudo ---");
 console.log(`  alice sudoer: ${users.isSudoer("alice")}`);
-await users.addSudoer("alice");
+users.addSudoer("alice");
 console.log(`  alice sudoer: ${users.isSudoer("alice")}`);
 
 // ── Session tracking ──────────────────────────────────────────────

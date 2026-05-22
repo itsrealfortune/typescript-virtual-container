@@ -42,7 +42,7 @@ interface RateLimitEntry {
  * @example
  * ```ts
  * const shell = new VirtualShell("my-server");
- * await shell.ensureInitialized();
+ * shell.ensureInitialized();
  *
  * const ssh = new SshMimic(shell, { port: 2222 });
  * const actualPort = await ssh.start();
@@ -157,12 +157,12 @@ class SshMimic extends EventEmitter {
 	 *
 	 * @returns Promise resolved with bound listening port.
 	 */
-	public async start(): Promise<number> {
+	public start(): Promise<number> {
 		perf.mark("start");
 		const shell = this._shell;
 		const privateKey = loadOrCreateHostKey();
 
-		await shell.ensureInitialized();
+		shell.ensureInitialized();
 
 		this.server = new SshServer(
 			{

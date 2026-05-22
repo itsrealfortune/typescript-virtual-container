@@ -73,13 +73,13 @@ describe("sh command - function unit tests", () => {
 
 describe("find command - case analysis", () => {
 	test("find empty directory", async () => {
-		await createTestDir(shell, "/tmp/findempty");
+		createTestDir(shell, "/tmp/findempty");
 		const r = await runCmd(client, "find /tmp/findempty");
 		expect(r.exitCode).toBe(0);
 	});
 
 	test("find with -type f and -name pattern", async () => {
-		await createTestDir(shell, "/tmp/findmix");
+		createTestDir(shell, "/tmp/findmix");
 		createTestFile(shell, "/tmp/findmix/file.txt", "test");
 		createTestFile(shell, "/tmp/findmix/file.log", "log");
 		createTestFile(shell, "/tmp/findmix/data.txt", "data");
@@ -90,7 +90,7 @@ describe("find command - case analysis", () => {
 	});
 
 	test("find with maxdepth", async () => {
-		await createTestDir(shell, "/tmp/findmax/a/b/c");
+		createTestDir(shell, "/tmp/findmax/a/b/c");
 		createTestFile(shell, "/tmp/findmax/file.txt", "1");
 		createTestFile(shell, "/tmp/findmax/a/file.txt", "2");
 		createTestFile(shell, "/tmp/findmax/a/b/file.txt", "3");
@@ -99,7 +99,7 @@ describe("find command - case analysis", () => {
 	});
 
 	test("find -o OR operator", async () => {
-		await createTestDir(shell, "/tmp/findor");
+		createTestDir(shell, "/tmp/findor");
 		createTestFile(shell, "/tmp/findor/a.txt", "a");
 		createTestFile(shell, "/tmp/findor/b.log", "b");
 		const r = await runCmd(client, "find /tmp/findor -name '*.txt' -o -name '*.log'");
@@ -107,7 +107,7 @@ describe("find command - case analysis", () => {
 	});
 
 	test("find with action -exec", async () => {
-		await createTestDir(shell, "/tmp/findexec");
+		createTestDir(shell, "/tmp/findexec");
 		createTestFile(shell, "/tmp/findexec/test.txt", "content");
 		const r = await runCmd(client, "find /tmp/findexec -type f -exec ls -l {} \\;");
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);

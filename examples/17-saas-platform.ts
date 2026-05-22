@@ -34,8 +34,8 @@ for (const config of tenantConfigs) {
 	console.log(`\n--- Tenant: ${config.id} ---`);
 
 	const baie = new Baie(config.id, config.subnet);
-	const appVM = await baie.createVM("app");
-	const dbVM = await baie.createVM("db");
+	const appVM = baie.createVM("app");
+	const dbVM = baie.createVM("db");
 
 	appVM.vfs.setRamCap(100 * 1024 * 1024);
 	appVM.users.setCpuCapCores(2);
@@ -46,8 +46,8 @@ for (const config of tenantConfigs) {
 	dbVM.users.setPassword("root", "root");
 
 	for (const username of config.users) {
-		await appVM.users.addUser(username, "password123");
-		await dbVM.users.addUser(username, "password123");
+		appVM.users.addUser(username, "password123");
+		dbVM.users.addUser(username, "password123");
 	}
 
 	const appSsh = new VirtualSshServer({ port: 0, shell: appVM });
@@ -117,7 +117,7 @@ for (const tenant of tenants) {
 // ── Cleanup ───────────────────────────────────────────────────────
 console.log("\n--- Cleanup ---");
 for (const tenant of tenants) {
-	await tenant.appSsh.stop();
-	await tenant.dbSsh.stop();
+	tenant.appSsh.stop();
+	tenant.dbSsh.stop();
 }
 console.log("All SSH servers stopped");

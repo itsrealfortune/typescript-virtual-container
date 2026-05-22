@@ -227,7 +227,7 @@ function resolveAutoSudoForNewUsers(): boolean {
  * @example
  * ```ts
  * const shell = new VirtualShell("my-vm");
- * await shell.ensureInitialized();
+ * shell.ensureInitialized();
  * const client = new SshClient(shell, "root");
  * const result = await client.exec("uname -a");
  * ```
@@ -260,7 +260,7 @@ class VirtualShell extends EventEmitter {
 	 * constructor's 4th argument or at runtime through `sysctl` tunables
 	 * (`vm.ram_cap_bytes`, `kernel.cpu_cap_cores`). */
 	resourceCaps: VirtualShellResourceCaps;
-	private _initialized: Promise<void>;
+	private _initialized: undefined;
 
 	/**
 	 * Creates a new virtual shell instance.
@@ -311,9 +311,9 @@ class VirtualShell extends EventEmitter {
 		const caps = this.resourceCaps;
 
 		// Initialize both VFS mirror and users, ensuring all is ready before auth
-		this._initialized = (async () => {
-			await vfs.restoreMirror();
-			await users.initialize();
+		this._initialized = (() => {
+			vfs.restoreMirror();
+			users.initialize();
 			// Bootstrap Linux rootfs (idempotent)
 			bootstrapLinuxRootfs(vfs, users, shellHostname, shellProps, startTime, [], network, caps);
 
@@ -368,9 +368,9 @@ class VirtualShell extends EventEmitter {
 	 * Ensures initialization is complete before allowing operations.
 	 * Call this before any authentication or command execution.
 	 */
-	public async ensureInitialized(): Promise<void> {
+	public ensureInitialized(): void {
 		perf.mark("ensureInitialized");
-		await this._initialized;
+		this._initialized;
 	}
 
 	/**
@@ -489,7 +489,7 @@ class VirtualShell extends EventEmitter {
 	 * @example
 	 * ```ts
 	 * const shell = new VirtualShell("dev-vm");
-	 * await shell.ensureInitialized();
+	 * shell.ensureInitialized();
 	 * shell.mount("/workspace", "./my-project");
 	 * // shell commands can now read ./my-project files via /workspace
 	 * ```
@@ -599,7 +599,7 @@ class VirtualShell extends EventEmitter {
 	 *
 	 * @example
 	 * ```ts
-	 * await shell.ensureInitialized();
+	 * shell.ensureInitialized();
 	 * shell.enableIdleManagement({ idleThresholdMs: 60_000 });
 	 * ```
 	 * @param options - Idle configuration (threshold, check interval).
@@ -617,9 +617,9 @@ class VirtualShell extends EventEmitter {
 	 * Disable idle management and thaw the shell if currently frozen.
 	 * Safe to call even if idle management was never enabled.
 	 */
-	public async disableIdleManagement(): Promise<void> {
+	public disableIdleManagement(): void {
 		if (!this._idle) return;
-		await this._idle.stop();
+		this._idle.stop();
 		this._idle = null;
 	}
 

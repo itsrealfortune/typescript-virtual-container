@@ -33,7 +33,7 @@ describe("find command", () => {
 	});
 
 	test("find -type f files only", async () => {
-		await createTestDir(shell, "/tmp/finddir");
+		createTestDir(shell, "/tmp/finddir");
 		createTestFile(shell, "/tmp/finddir/file.txt", "test");
 		const r = await runCmd(client, "find /tmp/finddir -type f");
 		expect(r.exitCode).toBe(0);
@@ -41,14 +41,14 @@ describe("find command", () => {
 	});
 
 	test("find -type d directories only", async () => {
-		await createTestDir(shell, "/tmp/finddir2/subdir");
+		createTestDir(shell, "/tmp/finddir2/subdir");
 		const r = await runCmd(client, "find /tmp/finddir2 -type d");
 		expect(r.exitCode).toBe(0);
 		expect(r.stdout).toContain("subdir");
 	});
 
 	test("find recursive into subdirs", async () => {
-		await createTestDir(shell, "/tmp/findrecur/sub1/sub2");
+		createTestDir(shell, "/tmp/findrecur/sub1/sub2");
 		createTestFile(shell, "/tmp/findrecur/file.txt", "top");
 		createTestFile(shell, "/tmp/findrecur/sub1/file.txt", "sub1");
 		createTestFile(shell, "/tmp/findrecur/sub1/sub2/file.txt", "sub2");
@@ -389,7 +389,7 @@ describe("tree command", () => {
 	});
 
 	test("tree -L limits depth", async () => {
-		await createTestDir(shell, "/tmp/treedepth2/a/b/c");
+		createTestDir(shell, "/tmp/treedepth2/a/b/c");
 		const r = await runCmd(client, "tree -L 2 /tmp/treedepth2 || echo 'tree'");
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});

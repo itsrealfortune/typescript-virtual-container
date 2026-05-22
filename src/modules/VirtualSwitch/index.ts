@@ -1,4 +1,5 @@
 import { VirtualNetworkManager } from "../VirtualNetworkManager";
+import { VirtualShell } from "../VirtualShell";
 import { cidrRange, intToIp, ipToInt, nextMac } from "./helpers";
 import type { DnsRecord, LoadBalancerRule, MacAddress, Packet, PacketResult, QdiscRule, TrafficRule, VmPort } from "./types";
 export { cidrRange, intToIp, ipToInt, nextMac } from "./helpers";
@@ -446,7 +447,7 @@ export class VirtualSwitch {
 					dstIp: port.ip,
 					protocol: "icmp",
 				};
-				this.route(virtualPacket);
+				void this.route(virtualPacket);
 			}
 		}, 1000);
 		if (typeof handle.unref === "function") handle.unref();
@@ -464,10 +465,9 @@ export class Baie {
 		this.switch = new VirtualSwitch(subnet);
 	}
 
-	public async createVM(hostname: string, vfsOptions?: never, preferredIp?: string): Promise<import("../VirtualShell").VirtualShell> {
-		const { VirtualShell } = await import("../VirtualShell");
+	public createVM(hostname: string, vfsOptions?: never, preferredIp?: string): VirtualShell {
 		const shell = new VirtualShell(hostname, undefined, (vfsOptions ?? { mode: "memory" }) as never);
-		await shell.ensureInitialized();
+		shell.ensureInitialized();
 		this.switch.attach(shell, preferredIp);
 
 		const port = this._findPort(shell);

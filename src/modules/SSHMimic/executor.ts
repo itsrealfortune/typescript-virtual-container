@@ -89,7 +89,7 @@ export async function executeStatements(
 		// Background job
 		if (stmt.background && stmt.pipeline) {
 			const ac = new AbortController();
-			executePipeline(
+			void executePipeline(
 				stmt.pipeline, authUser, hostname, "background", currentCwd, shell, env, ac,
 			);
 			last = { exitCode: 0 };

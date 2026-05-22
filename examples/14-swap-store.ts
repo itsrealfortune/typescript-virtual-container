@@ -29,7 +29,7 @@ console.log("Swap enabled:", vfs.isSwapEnabled());
 // ── Flush to disk ───────────────────────────────────────────────────
 console.log("\n--- Flush to disk ---");
 
-await vfs.flushMirror();
+vfs.flushMirror();
 console.log("Flushed to disk -- large files evicted from RAM");
 
 // ── Swap stats ──────────────────────────────────────────────────────

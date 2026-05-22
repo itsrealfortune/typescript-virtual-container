@@ -9,12 +9,12 @@
 import { SshClient, VirtualShell, VirtualSshServer } from "../src";
 
 const shell = new VirtualShell("typescript-vm");
-await shell.ensureInitialized();
-await shell.users.setPassword("root", "root");
+shell.ensureInitialized();
+shell.users.setPassword("root", "root");
 
-await shell.users.addUser("alice", "alice123");
-await shell.users.addUser("bob", "bob456");
-await shell.users.addUser("charlie", "charlie789");
+shell.users.addUser("alice", "alice123");
+shell.users.addUser("bob", "bob456");
+shell.users.addUser("charlie", "charlie789");
 
 const ssh = new VirtualSshServer({ port: 0, shell });
 const port = await ssh.start();

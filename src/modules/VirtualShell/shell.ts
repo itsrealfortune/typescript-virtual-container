@@ -203,7 +203,7 @@ export function startShell(
 		stream.write("\r\n");
 
 		if (result.openEditor) {
-			await startNanoEditor(
+			startNanoEditor(
 				result.openEditor.targetPath,
 				result.openEditor.initialContent,
 			);
@@ -413,7 +413,8 @@ export function startShell(
 	renderLoginBanner();
 	void loginPromise.then(() => renderLine());
 
-	stream.on("data", async (chunk: Buffer) => {
+	stream.on("data", (chunk: Buffer) => {
+		void (async () => {
 		if (!loginReady) return;
 		if (nanoSession) {
 			if (nanoSession.kind === "nano") {
@@ -698,7 +699,7 @@ export function startShell(
 					pushHistory(line);
 
 					if (result.openEditor) {
-						await startNanoEditor(
+						startNanoEditor(
 							result.openEditor.targetPath,
 							result.openEditor.initialContent,
 						);
@@ -780,6 +781,7 @@ export function startShell(
 
 			insertText(ch);
 		}
+		})().catch((err) => { console.error("shell data handler error:", err); });
 	});
 
 	stream.on("close", () => {

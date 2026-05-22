@@ -82,12 +82,12 @@ if (!noSsh) {
 // A kill -9 or OOM crash is unrecoverable here, but the WAL journal on disk
 // guarantees all writes since the last checkpoint are replayed on next start.
 let isShuttingDown = false;
-async function gracefulShutdown(signal: string): Promise<void> {
+function gracefulShutdown(signal: string): void {
 	if (isShuttingDown) return;
 	isShuttingDown = true;
 	console.log(`\n[${signal}] Flushing VFS checkpoint before exit...`);
 	try {
-		await virtualShell.vfs.stopAutoFlush();
+		virtualShell.vfs.stopAutoFlush();
 		console.log("[shutdown] Checkpoint written. Goodbye.");
 	} catch (err) {
 		console.error("[shutdown] Flush failed:", err);

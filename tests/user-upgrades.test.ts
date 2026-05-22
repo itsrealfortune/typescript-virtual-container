@@ -167,71 +167,71 @@ describe("VirtualGroupManager CRUD", () => {
 // ─── VirtualUserManager group integration ────────────────────────────────────
 
 describe("VirtualUserManager group integration", () => {
-	test("addUser creates per-user group", async () => {
+	test("addUser creates per-user group", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
-		await users.initialize();
-		await users.addUser("alice", "pass123");
+		users.initialize();
+		users.addUser("alice", "pass123");
 		const g = users.getGroup("alice");
 		expect(g).toBeDefined();
 		expect(g?.gid).toBe(users.getGid("alice"));
 		expect(g?.members).toContain("alice");
 	});
 
-	test("addUser adds to sudo group when autoSudo", async () => {
+	test("addUser adds to sudo group when autoSudo", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs, true);
-		await users.initialize();
-		await users.addUser("bob", "pass123");
+		users.initialize();
+		users.addUser("bob", "pass123");
 		const sudoGroup = users.getGroup("sudo");
 		expect(sudoGroup?.members).toContain("bob");
 	});
 
-	test("deleteUser removes per-user group", async () => {
+	test("deleteUser removes per-user group", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
-		await users.initialize();
-		await users.addUser("temp", "pass123");
-		await users.deleteUser("temp");
+		users.initialize();
+		users.addUser("temp", "pass123");
+		users.deleteUser("temp");
 		expect(users.getGroup("temp")).toBeUndefined();
 	});
 
-	test("deleteUser removes from sudo group", async () => {
+	test("deleteUser removes from sudo group", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs, true);
-		await users.initialize();
-		await users.addUser("temp", "pass123");
-		await users.deleteUser("temp");
+		users.initialize();
+		users.addUser("temp", "pass123");
+		users.deleteUser("temp");
 		const sudoGroup = users.getGroup("sudo");
 		expect(sudoGroup?.members).not.toContain("temp");
 	});
 
-	test("addSudoer adds to sudo group", async () => {
+	test("addSudoer adds to sudo group", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
-		await users.initialize();
-		await users.addUser("alice", "pass123");
-		await users.addSudoer("alice");
+		users.initialize();
+		users.addUser("alice", "pass123");
+		users.addSudoer("alice");
 		const sudoGroup = users.getGroup("sudo");
 		expect(sudoGroup?.members).toContain("alice");
 	});
 
-	test("removeSudoer removes from sudo group", async () => {
+	test("removeSudoer removes from sudo group", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
-		await users.initialize();
-		await users.addUser("alice", "pass123");
-		await users.addSudoer("alice");
-		await users.removeSudoer("alice");
+		users.initialize();
+		users.addUser("alice", "pass123");
+		users.addSudoer("alice");
+		users.removeSudoer("alice");
 		const sudoGroup = users.getGroup("sudo");
 		expect(sudoGroup?.members).not.toContain("alice");
 	});
 
-	test("getUserAllGroups returns correct groups", async () => {
+	test("getUserAllGroups returns correct groups", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
-		await users.initialize();
-		await users.addUser("alice", "pass123");
+		users.initialize();
+		users.addUser("alice", "pass123");
 		users.createGroup("devs");
 		users.addGroupMember("devs", "alice");
 		const all = users.getUserAllGroups("alice");
@@ -239,11 +239,11 @@ describe("VirtualUserManager group integration", () => {
 		expect(all).toContain("devs");
 	});
 
-	test("isMemberOf works correctly", async () => {
+	test("isMemberOf works correctly", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
-		await users.initialize();
-		await users.addUser("alice", "pass123");
+		users.initialize();
+		users.addUser("alice", "pass123");
 		users.createGroup("devs");
 		users.addGroupMember("devs", "alice");
 		expect(users.isMemberOf("alice", "alice")).toBe(true);
@@ -251,19 +251,19 @@ describe("VirtualUserManager group integration", () => {
 		expect(users.isMemberOf("alice", "ops")).toBe(false);
 	});
 
-	test("getGidByName / getNameByGid pass-through", async () => {
+	test("getGidByName / getNameByGid pass-through", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
-		await users.initialize();
+		users.initialize();
 		users.createGroup("mygroup", 5000);
 		expect(users.getGidByName("mygroup")).toBe(5000);
 		expect(users.getNameByGid(5000)).toBe("mygroup");
 	});
 
-	test("generateGroupFile delegates to group manager", async () => {
+	test("generateGroupFile delegates to group manager", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
-		await users.initialize();
+		users.initialize();
 		users.createGroup("test", 9000);
 		const content = users.generateGroupFile();
 		expect(content).toContain("test:x:9000:");
@@ -273,11 +273,11 @@ describe("VirtualUserManager group integration", () => {
 // ─── Password aging ──────────────────────────────────────────────────────────
 
 describe("Password aging", () => {
-	test("new user has default aging values", async () => {
+	test("new user has default aging values", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
-		await users.initialize();
-		await users.addUser("alice", "pass123");
+		users.initialize();
+		users.addUser("alice", "pass123");
 		const aging = users.getPasswordAging("alice");
 		expect(aging).not.toBeNull();
 		expect(aging?.minAge).toBe(0);
@@ -285,12 +285,12 @@ describe("Password aging", () => {
 		expect(aging?.warnDays).toBe(7);
 	});
 
-	test("setPasswordAging updates values", async () => {
+	test("setPasswordAging updates values", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
-		await users.initialize();
-		await users.addUser("alice", "pass123");
-		await users.setPasswordAging("alice", 1, 90, 14, 30);
+		users.initialize();
+		users.addUser("alice", "pass123");
+		users.setPasswordAging("alice", 1, 90, 14, 30);
 		const aging = users.getPasswordAging("alice");
 		expect(aging?.minAge).toBe(1);
 		expect(aging?.maxAge).toBe(90);
@@ -298,50 +298,50 @@ describe("Password aging", () => {
 		expect(aging?.inactiveDays).toBe(30);
 	});
 
-	test("setAccountExpiry works", async () => {
+	test("setAccountExpiry works", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
-		await users.initialize();
-		await users.addUser("alice", "pass123");
+		users.initialize();
+		users.addUser("alice", "pass123");
 		const expiry = Math.floor(Date.now() / 86400000) + 365;
-		await users.setAccountExpiry("alice", expiry);
+		users.setAccountExpiry("alice", expiry);
 		const aging = users.getPasswordAging("alice");
 		expect(aging?.expiryDate).toBe(expiry);
 	});
 
-	test("forcePasswordChange sets lastChange to 0", async () => {
+	test("forcePasswordChange sets lastChange to 0", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
-		await users.initialize();
-		await users.addUser("alice", "pass123");
-		await users.forcePasswordChange("alice");
+		users.initialize();
+		users.addUser("alice", "pass123");
+		users.forcePasswordChange("alice");
 		const aging = users.getPasswordAging("alice");
 		expect(aging?.lastChange).toBe(0);
 	});
 
-	test("isPasswordExpired detects expired passwords", async () => {
+	test("isPasswordExpired detects expired passwords", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
-		await users.initialize();
-		await users.addUser("alice", "pass123");
+		users.initialize();
+		users.addUser("alice", "pass123");
 		expect(users.isPasswordExpired("alice")).toBe(false);
 		// Set maxAge to 1 and force lastChange to 2 days ago
-		await users.setPasswordAging("alice", 0, 1);
+		users.setPasswordAging("alice", 0, 1);
 		// biome-ignore lint/suspicious/noExplicitAny: accessing internal user record to simulate time passage
 		const record = (users as any)._users.get("alice");
 		record.lastPasswordChange = Math.floor(Date.now() / 86400000) - 2;
 		expect(users.isPasswordExpired("alice")).toBe(true);
 	});
 
-	test("password aging persists through reload", async () => {
+	test("password aging persists through reload", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
-		await users.initialize();
-		await users.addUser("alice", "pass123");
-		await users.setPasswordAging("alice", 5, 60, 10, 15);
+		users.initialize();
+		users.addUser("alice", "pass123");
+		users.setPasswordAging("alice", 5, 60, 10, 15);
 		// Simulate reload by creating new instance
 		const users2 = new VirtualUserManager(vfs);
-		await users2.initialize();
+		users2.initialize();
 		const aging = users2.getPasswordAging("alice");
 		expect(aging?.minAge).toBe(5);
 		expect(aging?.maxAge).toBe(60);
@@ -349,54 +349,54 @@ describe("Password aging", () => {
 		expect(aging?.inactiveDays).toBe(15);
 	});
 
-	test("setPasswordAging throws on missing user", async () => {
+	test("setPasswordAging throws on missing user", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
-		await users.initialize();
-		await expect(users.setPasswordAging("nobody", 0, 90)).rejects.toThrow("does not exist");
+		users.initialize();
+		expect(users.setPasswordAging("nobody", 0, 90)).rejects.toThrow("does not exist");
 	});
 });
 
 // ─── Lock/unlock accounts ────────────────────────────────────────────────────
 
 describe("Account lock/unlock", () => {
-	test("lockAccount prefixes hash with !", async () => {
+	test("lockAccount prefixes hash with !", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
-		await users.initialize();
-		await users.addUser("alice", "pass123");
+		users.initialize();
+		users.addUser("alice", "pass123");
 		expect(users.isAccountLocked("alice")).toBe(false);
-		await users.lockAccount("alice");
+		users.lockAccount("alice");
 		expect(users.isAccountLocked("alice")).toBe(true);
 	});
 
-	test("unlockAccount removes ! prefix", async () => {
+	test("unlockAccount removes ! prefix", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
-		await users.initialize();
-		await users.addUser("alice", "pass123");
-		await users.lockAccount("alice");
-		await users.unlockAccount("alice");
+		users.initialize();
+		users.addUser("alice", "pass123");
+		users.lockAccount("alice");
+		users.unlockAccount("alice");
 		expect(users.isAccountLocked("alice")).toBe(false);
 	});
 
-	test("locked user cannot authenticate", async () => {
+	test("locked user cannot authenticate", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
-		await users.initialize();
-		await users.addUser("alice", "pass123");
+		users.initialize();
+		users.addUser("alice", "pass123");
 		expect(users.verifyPassword("alice", "pass123")).toBe(true);
-		await users.lockAccount("alice");
+		users.lockAccount("alice");
 		expect(users.verifyPassword("alice", "pass123")).toBe(false);
 	});
 
-	test("lock is idempotent", async () => {
+	test("lock is idempotent", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
-		await users.initialize();
-		await users.addUser("alice", "pass123");
-		await users.lockAccount("alice");
-		await users.lockAccount("alice");
+		users.initialize();
+		users.addUser("alice", "pass123");
+		users.lockAccount("alice");
+		users.lockAccount("alice");
 		expect(users.isAccountLocked("alice")).toBe(true);
 	});
 });
@@ -404,38 +404,38 @@ describe("Account lock/unlock", () => {
 // ─── Sudo timestamp caching ──────────────────────────────────────────────────
 
 describe("Sudo timestamp caching", () => {
-	test("grantSudoTimestamp sets timestamp", async () => {
+	test("grantSudoTimestamp sets timestamp", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
-		await users.initialize();
-		await users.addUser("alice", "pass123");
+		users.initialize();
+		users.addUser("alice", "pass123");
 		users.grantSudoTimestamp("alice");
 		expect(users.hasValidSudoTimestamp("alice")).toBe(true);
 	});
 
-	test("sudo timestamp expires after 5 minutes", async () => {
+	test("sudo timestamp expires after 5 minutes", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
-		await users.initialize();
-		await users.addUser("alice", "pass123");
+		users.initialize();
+		users.addUser("alice", "pass123");
 		users.grantSudoTimestamp("alice");
 		// Simulate time passing by clearing the cache
 		users.clearSudoTimestamp("alice");
 		expect(users.hasValidSudoTimestamp("alice")).toBe(false);
 	});
 
-	test("no timestamp by default", async () => {
+	test("no timestamp by default", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
-		await users.initialize();
-		await users.addUser("alice", "pass123");
+		users.initialize();
+		users.addUser("alice", "pass123");
 		expect(users.hasValidSudoTimestamp("alice")).toBe(false);
 	});
 
-	test("root always has valid sudo", async () => {
+	test("root always has valid sudo", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
-		await users.initialize();
+		users.initialize();
 		expect(users.hasValidSudoTimestamp("root")).toBe(true);
 	});
 });
@@ -497,11 +497,11 @@ describe("Login failure tracking", () => {
 		expect(users.getLoginFailures("nobody")).toBe(0);
 	});
 
-	test("successful login resets failures", async () => {
+	test("successful login resets failures", () => {
 		const vfs = makeVfs();
 		const users = new VirtualUserManager(vfs);
-		await users.initialize();
-		await users.addUser("alice", "pass123");
+		users.initialize();
+		users.addUser("alice", "pass123");
 		users.recordLoginFailure("alice", "192.168.1.1");
 		users.recordLoginFailure("alice", "192.168.1.1");
 		users.recordLoginSuccess("alice");

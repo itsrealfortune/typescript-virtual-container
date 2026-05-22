@@ -6,9 +6,9 @@ import { SshClient } from "../src/modules/SSHClient";
  */
 export async function createTestEnv(vmName = "test-shell") {
 	const shell = new VirtualShell(vmName, undefined, { mode: "memory" });
-	await shell.ensureInitialized();
+	shell.ensureInitialized();
 
-	await shell.users.setPassword("root", "root");
+	shell.users.setPassword("root", "root");
 
 	const ssh = new VirtualSshServer({ port: 0, shell });
 	const port = await ssh.start();
@@ -25,7 +25,7 @@ export async function createTestEnv(vmName = "test-shell") {
  */
 export async function createTestEnvWithSsh(vmName = "test-shell") {
 	const shell = new VirtualShell(vmName, undefined, { mode: "memory" });
-	await shell.ensureInitialized();
+	shell.ensureInitialized();
 
 	const ssh = new VirtualSshServer({ port: 0, shell });
 	const port = await ssh.start();

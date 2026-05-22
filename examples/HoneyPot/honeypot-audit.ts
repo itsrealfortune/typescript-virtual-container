@@ -36,8 +36,8 @@ async function demonstrateHoneypot() {
 	// ------ Scenario 1: Normal user activity ------
 	console.log("--- Scenario 1: Normal User Activity ---\n");
 
-	await users.addUser("alice", "alice_pass123");
-	await users.addUser("bob", "bob_pass456");
+	users.addUser("alice", "alice_pass123");
+	users.addUser("bob", "bob_pass456");
 
 	const alice = new SshClient();
 	await alice.connect({ host: "localhost", port: 2222, username: "alice", password: "alice_pass123" });

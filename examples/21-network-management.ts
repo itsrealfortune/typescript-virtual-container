@@ -8,7 +8,7 @@
 import { VirtualShell } from "../src";
 
 const shell = new VirtualShell("network-demo");
-await shell.ensureInitialized();
+shell.ensureInitialized();
 
 const net = shell.network;
 

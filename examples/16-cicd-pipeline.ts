@@ -16,10 +16,10 @@ console.log("--- Pipeline start ---");
 
 const baie = new Baie("ci-pipeline", "10.100.0.0/24");
 
-const lintVM = await baie.createVM("lint");
-const testVM = await baie.createVM("test");
-const buildVM = await baie.createVM("build");
-const deployVM = await baie.createVM("deploy");
+const lintVM = baie.createVM("lint");
+const testVM = baie.createVM("test");
+const buildVM = baie.createVM("build");
+const deployVM = baie.createVM("deploy");
 
 const sshLint = new VirtualSshServer({ port: 0, shell: lintVM });
 const sshTest = new VirtualSshServer({ port: 0, shell: testVM });

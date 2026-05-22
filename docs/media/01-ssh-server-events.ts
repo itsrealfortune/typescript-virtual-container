@@ -8,7 +8,7 @@
 import { SshClient, VirtualShell, VirtualSshServer } from "../src";
 
 const shell = new VirtualShell("lab-environment");
-await shell.ensureInitialized();
+shell.ensureInitialized();
 
 const ssh = new VirtualSshServer({ port: 0, shell, maxAuthAttempts: 3 });
 

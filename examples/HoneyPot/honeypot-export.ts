@@ -58,9 +58,9 @@ async function generateAuditReport() {
 	console.log("Running simulated workload...\n");
 
 	// Simulate various user activities
-	await users.addUser("analyst", "pass123");
-	await users.addUser("developer", "pass456");
-	await users.removeSudoer("developer");
+	users.addUser("analyst", "pass123");
+	users.addUser("developer", "pass456");
+	users.removeSudoer("developer");
 
 	// Analyst activities (authorized)
 	const analyst = new SshClient();

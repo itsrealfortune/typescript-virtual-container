@@ -42,7 +42,7 @@ async function quickStart() {
 	console.log("Step 4️⃣  Performing some operations...\n");
 
 	// Create a user
-	await users.addUser("dev_user", "secure_pass");
+	users.addUser("dev_user", "secure_pass");
 	console.log("  ✓ Created user 'dev_user'");
 
 	// Create a client

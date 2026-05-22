@@ -3,9 +3,9 @@ import { VirtualShell } from "../src";
 
 let shell: VirtualShell;
 
-beforeAll(async () => {
+beforeAll(() => {
 	shell = new VirtualShell("api-test", undefined, { mode: "memory" });
-	await shell.ensureInitialized();
+	shell.ensureInitialized();
 });
 
 describe("VirtualShell API", () => {
@@ -42,12 +42,12 @@ describe("VirtualShell API", () => {
 		expect(shell.vfs.readFile("/tmp/wfau-test.txt")).toBe("hello");
 	});
 
-	test("enableIdleManagement and disableIdleManagement", async () => {
+	test("enableIdleManagement and disableIdleManagement", () => {
 		expect(shell.idleState).toBe("active");
 		shell.enableIdleManagement({ idleThresholdMs: 50000, checkIntervalMs: 10000 });
 		expect(shell.idleState).toBe("active");
 		expect(shell.idleMs).toBe(0);
-		await shell.disableIdleManagement();
+		shell.disableIdleManagement();
 		expect(shell.idleState).toBe("active");
 	});
 });

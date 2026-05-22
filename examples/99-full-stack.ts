@@ -13,11 +13,11 @@ console.log("--- Infrastructure ---");
 const net = new VirtualSwitch("10.0.100.0/24");
 
 const web = new VirtualShell("web-01");
-await web.ensureInitialized();
+web.ensureInitialized();
 const webPort = net.attach(web, "10.0.100.10");
 
 const db = new VirtualShell("db-01");
-await db.ensureInitialized();
+db.ensureInitialized();
 const dbPort = net.attach(db, "10.0.100.20");
 
 console.log(`  web-01: ${webPort.ip} / ${webPort.mac}`);
@@ -70,9 +70,9 @@ console.log(`  db check MySQL  = ${db.network.checkFirewall("INPUT", "tcp", "10.
 
 // ── Users, groups, sudo, password policies ─────────────────────────
 console.log("\n--- Users and groups ---");
-await web.users.addUser("admin", "s3cret!");
-await web.users.addUser("developer", "dev-pass");
-await web.users.addUser("deploy", "deploy-token");
+web.users.addUser("admin", "s3cret!");
+web.users.addUser("developer", "dev-pass");
+web.users.addUser("deploy", "deploy-token");
 
 web.users.createGroup("wheel", 1000);
 web.users.createGroup("developers", 2000);
@@ -83,10 +83,10 @@ web.users.addGroupMember("developers", "developer");
 const groups = web.users.getUserAllGroups("admin");
 console.log(`  admin groups: ${groups.join(", ")}`);
 console.log(`  admin sudoer: ${web.users.isSudoer("admin")}`);
-await web.users.addSudoer("admin");
+web.users.addSudoer("admin");
 console.log(`  admin sudoer after add: ${web.users.isSudoer("admin")}`);
 
-await web.users.setPasswordAging("developer", 1, 90, 7, 30);
+web.users.setPasswordAging("developer", 1, 90, 7, 30);
 const aging = web.users.getPasswordAging("developer");
 if (aging) {
 	console.log(`  developer password: minAge=${aging.minAge}d maxAge=${aging.maxAge}d warn=${aging.warnDays}d`);
@@ -115,16 +115,16 @@ web.users.resetLoginFailures("developer");
 // ── Account locking and expiry ─────────────────────────────────────
 console.log("\n--- Account locking ---");
 console.log(`  deploy locked: ${web.users.isAccountLocked("deploy")}`);
-await web.users.lockAccount("deploy");
+web.users.lockAccount("deploy");
 console.log(`  deploy locked after lock: ${web.users.isAccountLocked("deploy")}`);
-await web.users.unlockAccount("deploy");
+web.users.unlockAccount("deploy");
 
-await web.users.setAccountExpiry("developer", Math.floor(Date.now() / 1000) + 30 * 86400);
+web.users.setAccountExpiry("developer", Math.floor(Date.now() / 1000) + 30 * 86400);
 console.log(`  developer password expired: ${web.users.isPasswordExpired("developer")}`);
 
 // ── Quotas ────────────────────────────────────────────────────────
 console.log("\n--- Quotas ---");
-await web.users.setQuotaBytes("developer", 50 * 1024 * 1024);
+web.users.setQuotaBytes("developer", 50 * 1024 * 1024);
 console.log(`  developer quota: ${web.users.getQuotaBytes("developer")} bytes`);
 console.log(`  developer usage: ${web.users.getUsageBytes("developer")} bytes`);
 
@@ -269,7 +269,7 @@ web.pingIdle();
 const gc = web.runGc();
 if (gc) console.log(`  GC: ${gc.terminatedProcesses} terminated, ${gc.evictedFiles} evicted, forced=${gc.forcedGc}`);
 
-await web.disableIdleManagement();
+web.disableIdleManagement();
 console.log(`  idle manager stopped`);
 
 // ── System files generation ───────────────────────────────────────

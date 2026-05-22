@@ -8,7 +8,7 @@
 import { VirtualSftpServer as SftpMimic, VirtualShell } from "../src";
 
 const shell = new VirtualShell("my-container");
-await shell.ensureInitialized();
+shell.ensureInitialized();
 
 // ── Write file via VFS ────────────────────────────────────────────
 console.log("--- Write file via VFS ---");

@@ -166,10 +166,10 @@ export class IdleManager extends EventEmitter {
 		}
 	}
 
-	private async _freeze(): Promise<void> {
+	private _freeze(): void {
 		if (this._state === "frozen") return;
 		// Flush any pending writes before freezing
-		await this._vfs.stopAutoFlush();
+		this._vfs.stopAutoFlush();
 		// Serialise the live tree to a compact binary buffer
 		this._frozenBuffer = this._vfs.encodeBinary();
 		// Release the live tree — GC can now collect all InternalNode objects

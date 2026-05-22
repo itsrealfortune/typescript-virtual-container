@@ -246,7 +246,7 @@ export class SftpMimic extends EventEmitter {
 			await this._shell.ensureInitialized();
 		} else {
 			// If using standalone VFS+Users, initialize users now
-			await this._users.initialize();
+			this._users.initialize();
 		}
 
 		this.server = new SshServer(

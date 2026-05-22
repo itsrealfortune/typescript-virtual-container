@@ -21,7 +21,7 @@ const vfsFs = new VirtualFileSystem({
 vfsFs.writeFile("/data/persistent.txt", "This survives restarts");
 console.log("FS mode: wrote /data/persistent.txt");
 
-await vfsFs.flushMirror();
+vfsFs.flushMirror();
 console.log("FS mode: flushed to disk");
 
 // ── Memory mode — manual JSON snapshot ────────────────────────────

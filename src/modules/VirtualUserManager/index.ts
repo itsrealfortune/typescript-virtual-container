@@ -196,7 +196,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * Loads users/sudoers from disk and ensures root account exists.
 	 * Also creates the current system user if not already present.
 	 */
-	public async initialize(): Promise<void> {
+	public initialize(): void {
 		perf.mark("initialize");
 		this._groups.initialize();
 		this._loadFromVfs();
@@ -221,7 +221,7 @@ export class VirtualUserManager extends EventEmitter {
 		}
 
 		if (changed) {
-			await this.persist();
+			this.persist();
 		}
 		this.emit("initialized");
 	}
@@ -232,10 +232,10 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param username Target username.
 	 * @param maxBytes Quota ceiling in bytes.
 	 */
-	public async setQuotaBytes(
+	public setQuotaBytes(
 		username: string,
 		maxBytes: number,
-	): Promise<void> {
+	): void {
 		perf.mark("setQuotaBytes");
 		VirtualUserManager._validateUsername(username);
 		if (!this._users.has(username)) {
@@ -247,7 +247,7 @@ export class VirtualUserManager extends EventEmitter {
 		}
 
 		this._quotas.set(username, Math.floor(maxBytes));
-		await this.persist();
+		this.persist();
 	}
 
 	/**
@@ -255,11 +255,11 @@ export class VirtualUserManager extends EventEmitter {
 	 *
 	 * @param username Target username.
 	 */
-	public async clearQuota(username: string): Promise<void> {
+	public clearQuota(username: string): void {
 		perf.mark("clearQuota");
 		VirtualUserManager._validateUsername(username);
 		this._quotas.delete(username);
-		await this.persist();
+		this.persist();
 	}
 
 	/**
@@ -373,7 +373,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param username New username.
 	 * @param password Initial plaintext password.
 	 */
-	public async addUser(username: string, password: string): Promise<void> {
+	public addUser(username: string, password: string): void {
 		perf.mark("addUser");
 		VirtualUserManager._validateUsername(username);
 		VirtualUserManager._validatePassword(password);
@@ -418,7 +418,7 @@ export class VirtualUserManager extends EventEmitter {
 				gid,
 			);
 		}
-		await this.persist();
+		this.persist();
 		this.emit("user:add", { username });
 	}
 
@@ -513,7 +513,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param username Username to remove.
 	 * @throws When `username` is `"root"` or the user does not exist.
 	 */
-	public async deleteUser(username: string): Promise<void> {
+	public deleteUser(username: string): void {
 		perf.mark("deleteUser");
 		VirtualUserManager._validateUsername(username);
 
@@ -539,7 +539,7 @@ export class VirtualUserManager extends EventEmitter {
 		}
 
 		this.emit("user:delete", { username });
-		await this.persist();
+		this.persist();
 	}
 
 	/**
@@ -559,7 +559,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param username Username to promote.
 	 * @throws When the user does not exist.
 	 */
-	public async addSudoer(username: string): Promise<void> {
+	public addSudoer(username: string): void {
 		perf.mark("addSudoer");
 		VirtualUserManager._validateUsername(username);
 		if (!this._users.has(username)) {
@@ -568,7 +568,7 @@ export class VirtualUserManager extends EventEmitter {
 
 		this._sudoers.add(username);
 		try { this._groups.addMember("sudo", username); } catch { /* best-effort */ }
-		await this.persist();
+		this.persist();
 	}
 
 	/**
@@ -577,7 +577,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param username Username to demote.
 	 * @throws When `username` is `"root"`.
 	 */
-	public async removeSudoer(username: string): Promise<void> {
+	public removeSudoer(username: string): void {
 		perf.mark("removeSudoer");
 		VirtualUserManager._validateUsername(username);
 		if (username === "root") {
@@ -586,7 +586,7 @@ export class VirtualUserManager extends EventEmitter {
 
 		this._sudoers.delete(username);
 		try { this._groups.removeMember("sudo", username); } catch { /* best-effort */ }
-		await this.persist();
+		this.persist();
 	}
 
 	/**
@@ -1598,13 +1598,13 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param warnDays Days before expiration to warn user.
 	 * @param inactiveDays Days after expiration before account is locked.
 	 */
-	public async setPasswordAging(
+	public setPasswordAging(
 		username: string,
 		minDays?: number,
 		maxDays?: number,
 		warnDays?: number,
 		inactiveDays?: number,
-	): Promise<void> {
+	): void {
 		const record = this._users.get(username);
 		if (!record) {
 			throw new Error(`chage: user '${username}' does not exist`);
@@ -1615,7 +1615,7 @@ export class VirtualUserManager extends EventEmitter {
 		if (warnDays !== undefined) record.passwordWarnDays = warnDays;
 		if (inactiveDays !== undefined) record.passwordInactiveDays = inactiveDays;
 
-		await this.persist();
+		this.persist();
 	}
 
 	/**
@@ -1650,14 +1650,14 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param username Target user.
 	 * @param expiryDate Days since epoch when account expires (0 = no expiration).
 	 */
-	public async setAccountExpiry(username: string, expiryDate: number): Promise<void> {
+	public setAccountExpiry(username: string, expiryDate: number): void {
 		const record = this._users.get(username);
 		if (!record) {
 			throw new Error(`chage: user '${username}' does not exist`);
 		}
 
 		record.accountExpiryDate = expiryDate;
-		await this.persist();
+		this.persist();
 	}
 
 	/**
@@ -1665,14 +1665,14 @@ export class VirtualUserManager extends EventEmitter {
 	 *
 	 * @param username Target user.
 	 */
-	public async forcePasswordChange(username: string): Promise<void> {
+	public forcePasswordChange(username: string): void {
 		const record = this._users.get(username);
 		if (!record) {
 			throw new Error(`chage: user '${username}' does not exist`);
 		}
 
 		record.lastPasswordChange = 0;
-		await this.persist();
+		this.persist();
 	}
 
 	/**
@@ -1693,7 +1693,7 @@ export class VirtualUserManager extends EventEmitter {
 	 *
 	 * @param username Target user.
 	 */
-	public async lockAccount(username: string): Promise<void> {
+	public lockAccount(username: string): void {
 		const record = this._users.get(username);
 		if (!record) {
 			throw new Error(`usermod: user '${username}' does not exist`);
@@ -1701,7 +1701,7 @@ export class VirtualUserManager extends EventEmitter {
 
 		if (!record.passwordHash.startsWith("!")) {
 			record.passwordHash = `!${record.passwordHash}`;
-			await this.persist();
+			this.persist();
 		}
 	}
 
@@ -1710,7 +1710,7 @@ export class VirtualUserManager extends EventEmitter {
 	 *
 	 * @param username Target user.
 	 */
-	public async unlockAccount(username: string): Promise<void> {
+	public unlockAccount(username: string): void {
 		const record = this._users.get(username);
 		if (!record) {
 			throw new Error(`usermod: user '${username}' does not exist`);
@@ -1718,7 +1718,7 @@ export class VirtualUserManager extends EventEmitter {
 
 		if (record.passwordHash.startsWith("!")) {
 			record.passwordHash = record.passwordHash.slice(1);
-			await this.persist();
+			this.persist();
 		}
 	}
 

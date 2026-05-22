@@ -8,23 +8,23 @@
 import { SshClient, VirtualShell, VirtualSshServer } from "../src";
 
 const shell = new VirtualShell("typescript-vm");
-await shell.ensureInitialized();
-await shell.users.setPassword("root", "root");
+shell.ensureInitialized();
+shell.users.setPassword("root", "root");
 
 // ── Create users ──────────────────────────────────────────────────
 console.log("--- Create users ---");
-await shell.users.addUser("alice", "alice123");
-await shell.users.addUser("bob", "bob456");
+shell.users.addUser("alice", "alice123");
+shell.users.addUser("bob", "bob456");
 console.log("Created users: alice, bob");
 
 // ── Remove sudo from bob ──────────────────────────────────────────
 console.log("--- Remove sudo from bob ---");
-await shell.users.removeSudoer("bob");
+shell.users.removeSudoer("bob");
 console.log("Removed sudo from bob");
 
 // ── Set disk quota for bob ────────────────────────────────────────
 console.log("--- Set disk quota for bob ---");
-await shell.users.setQuotaBytes("bob", 5 * 1024 * 1024);
+shell.users.setQuotaBytes("bob", 5 * 1024 * 1024);
 console.log(`Bob's quota: ${shell.users.getQuotaBytes("bob")} bytes`);
 
 // ── Start SSH server ──────────────────────────────────────────────

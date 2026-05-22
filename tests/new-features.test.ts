@@ -9,8 +9,8 @@ const itNetwork = runNetwork ? test : test.skip;
 
 async function setupClient(vmName: string) {
 	const shell = new VirtualShell(vmName, undefined, { mode: "memory" });
-	await shell.ensureInitialized();
-	await shell.users.setPassword("root", "root");
+	shell.ensureInitialized();
+	shell.users.setPassword("root", "root");
 	const ssh = new VirtualSshServer({ port: 0, shell });
 	const port = await ssh.start();
 	const client = new SshClient();

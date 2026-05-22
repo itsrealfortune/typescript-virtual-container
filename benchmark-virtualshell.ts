@@ -51,9 +51,9 @@ function percentile(sorted: number[], p: number): number {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-async function makeShell(tag: string, i = 0): Promise<VirtualShell> {
+function makeShell(tag: string, i = 0): VirtualShell {
 	const shell = new VirtualShell(`${tag}-${i}`, undefined, { mode: "memory" });
-	await shell.ensureInitialized();
+	shell.ensureInitialized();
 	return shell;
 }
 
@@ -109,7 +109,7 @@ interface LatencyRow {
 }
 
 async function benchLatency(): Promise<LatencyRow[]> {
-	const shell = await makeShell("s2-latency");
+	const shell = makeShell("s2-latency");
 	const commands = [
 		"echo hello",
 		"ls /etc",
@@ -151,8 +151,8 @@ interface VfsRow {
 	ms:        number;
 }
 
-async function benchVfs(): Promise<VfsRow[]> {
-	const shell = await makeShell("s3-vfs");
+function benchVfs(): VfsRow[] {
+	const shell = makeShell("s3-vfs");
 	const vfs   = shell.vfs;
 	const rows: VfsRow[] = [];
 
