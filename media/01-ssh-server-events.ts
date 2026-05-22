@@ -1,25 +1,73 @@
 /**
  * Example 01: SSH Server with Events
  *
- * Demonstrates starting an SSH server and listening for authentication
- * and lockout events.
+ * Demonstrates the full SSH server event lifecycle: start, auth events,
+ * connection tracking, lockout, and graceful shutdown.
  */
 
-import { VirtualSshServer } from "typescript-virtual-container";
+import { SshClient, VirtualShell, VirtualSshServer } from "../src";
 
-const ssh = new VirtualSshServer({ port: 2222, hostname: "lab-environment" });
+const shell = new VirtualShell("lab-environment");
+await shell.ensureInitialized();
+
+const ssh = new VirtualSshServer({ port: 0, shell, maxAuthAttempts: 3 });
+
+// ── Register all event listeners ──────────────────────────────────
+ssh.on("start", ({ port }) => {
+	console.log(`[EVENT] Server started on port ${port}`);
+});
+
+ssh.on("stop", () => {
+	console.log("[EVENT] Server stopped");
+});
 
 ssh.on("auth:success", ({ username, remoteAddress }) => {
-  console.log(`[SSH] ${username} from ${remoteAddress}`);
+	console.log(`[EVENT] Auth success: ${username}@${remoteAddress}`);
+});
+
+ssh.on("auth:failure", ({ username, remoteAddress }) => {
+	console.log(`[EVENT] Auth failure: ${username}@${remoteAddress}`);
 });
 
 ssh.on("auth:lockout", ({ ip, until }) => {
-  console.warn(`[SSH] ${ip} locked until ${until}`);
+	console.warn(`[EVENT] Lockout: ${ip} until ${until.toISOString()}`);
 });
 
-await ssh.start();
-
-process.on("SIGINT", () => {
-  ssh.stop();
-  process.exit(0);
+ssh.on("client:connect", ({ remoteAddress }) => {
+	console.log(`[EVENT] Client connected from ${remoteAddress}`);
 });
+
+ssh.on("client:disconnect", ({ user }) => {
+	console.log(`[EVENT] Client disconnected: ${user ?? "unknown"}`);
+});
+
+// ── Start server ──────────────────────────────────────────────────
+const port = await ssh.start();
+console.log(`\nServer ready on port ${port}\n`);
+
+// ── Simulate activity via SshClient ───────────────────────────────
+// SshClient bypasses SSH auth but shares the same VFS/users
+const client = new SshClient(shell, "root");
+
+// Simulate a command execution (triggers command events in HoneyPot if attached)
+const result = await client.exec("echo 'Hello from connected client'");
+console.log(`Command output: ${result.stdout!.trim()}`);
+
+// ── Demonstrate lockout mechanism ─────────────────────────────────
+console.log("\n--- Lockout demo ---");
+const attackerIp = "10.0.0.99";
+
+// Manually simulate 3 failed attempts (normally done by SSH server internally)
+interface RateLimitEntry { attempts: number; lockedUntil: number }
+const attempts = (ssh as unknown as { _authAttempts: Map<string, RateLimitEntry> })._authAttempts;
+attempts.set(attackerIp, { attempts: 3, lockedUntil: Date.now() + 300_000 });
+
+// Emit the lockout event (normally fires automatically when threshold is reached)
+ssh.emit("auth:lockout", { ip: attackerIp, until: new Date(Date.now() + 300_000) });
+
+console.log(`\nAdmin clears lockout for ${attackerIp}...`);
+ssh.clearLockout(attackerIp);
+console.log(`Lockout cleared\n`);
+
+// ── Graceful shutdown ─────────────────────────────────────────────
+ssh.stop();

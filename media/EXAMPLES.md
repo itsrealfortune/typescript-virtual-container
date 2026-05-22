@@ -1,174 +1,50 @@
 # Examples
 
-## Multi-VM network (Baie)
+Run any example with: `bun run examples/<number>-<name>.ts`
 
-Create multiple virtual machines on a shared subnet with NAT gateway:
+---
 
-```typescript
-import { Baie, SshClient } from "typescript-virtual-container";
+## Feature demos
 
-const baie = new Baie("lab", "10.0.1.0/24");
-const web = await baie.createVM("web");
-const db  = await baie.createVM("db");
-const dbClient = new SshClient(db, "root");
+| # | File | What it covers |
+|---|------|---------------|
+| 01 | [`01-ssh-server-events.ts`](../examples/01-ssh-server-events.ts) | Full SSH server event lifecycle: `start`, `stop`, `auth:success`, `auth:failure`, `auth:lockout`, `client:connect`, `client:disconnect`. Demonstrates event registration, command execution through SshClient, simulated lockout, admin override, and graceful shutdown. |
+| 02 | [`02-ssh-sftp-shared-state.ts`](../examples/02-ssh-sftp-shared-state.ts) | SSH and SFTP servers sharing the same VirtualShell instance. Files written via VFS are immediately visible through SFTP, demonstrating shared state without real network transport. |
+| 03 | [`03-multi-user-quotas.ts`](../examples/03-multi-user-quotas.ts) | Multi-user environment: user creation (`addUser`), sudo management (`removeSudoer`), per-user disk quotas (`setQuotaBytes`), file permission enforcement (mode 600 denial), and cross-user access verification. |
+| 04 | [`04-persistent-state.ts`](../examples/04-persistent-state.ts) | Two persistence strategies: **FS mode** with automatic `.vfsb` binary snapshot to disk and `flushMirror()`, and **memory mode** with manual JSON `toSnapshot()` / `fromSnapshot()` round-trip. |
+| 05 | [`05-public-key-auth.ts`](../examples/05-public-key-auth.ts) | Public-key authentication flow: key addition (`addAuthorizedKey`), multi-key support (key rotation), key verification (`getAuthorizedKeys`), and bulk removal (`removeAuthorizedKeys`). Shows the SSH server's key validation pipeline. |
+| 06 | [`06-rate-limiting.ts`](../examples/06-rate-limiting.ts) | Rate limiting lifecycle: configuration (`maxAuthAttempts`, `lockoutDurationMs`), progressive auth failure simulation (3 attempts), automatic lockout event emission, lockout state verification, and admin override via `clearLockout()`. |
+| 07 | [`07-snapshot-test-fixtures.ts`](../examples/07-snapshot-test-fixtures.ts) | VFS snapshot as test fixtures: build a snapshot once, reuse across isolated test environments. Demonstrates fixture isolation (writes don't leak), config file reading, and file listing verification. |
+| 08 | [`08-snapshot-diff.ts`](../examples/08-snapshot-diff.ts) | Snapshot diffing for change detection: capture before/after snapshots, compute diff with `diffSnapshots()`, display added/modified/removed entries, and assert expected changes with `assertDiff()`. |
+| 09 | [`09-symlinks.ts`](../examples/09-symlinks.ts) | Symbolic link operations: create symlinks with `symlink()`, verify with `isSymlink()`, and resolve target paths with `resolveSymlink()`. |
+| 10 | [`10-honeypot-auditing.ts`](../examples/10-honeypot-auditing.ts) | HoneyPot audit logging: attach to shell/VFS/users, track file reads/writes and command execution via SshClient, retrieve statistics (`getStats()`), detect anomalies (`detectAnomalies()`), and inspect recent audit entries (`getRecent()`). |
+| 11 | [`11-concurrent-clients.ts`](../examples/11-concurrent-clients.ts) | Concurrent client operations: 3 users (alice, bob, charlie) running parallel file writes, reads, cross-user file access, directory listings, and command execution via `Promise.all()`. Demonstrates shared VFS consistency under concurrent access. |
 
-// VMs communicate over the virtual switch
-await dbClient.exec("nc -l -p 8080 -v &");
-const webClient = new SshClient(web, "root");
-const r = await webClient.exec("echo 'hello from web' | nc 10.0.1.3 8080");
-console.log(r.stdout); // 'hello from web'
+## New modules (v1.7.1+)
 
-// iptables firewall rules apply to the virtual switch
-await webClient.exec("iptables -A OUTPUT -d 10.0.1.3 -j DROP");
-// web can no longer reach db
-```
+| # | File | What it covers |
+|---|------|---------------|
+| 12 | [`12-file-cache.ts`](../examples/12-file-cache.ts) | **FileCache** — LRU eviction policy, disk I/O simulation (read/write latency), cache hit/miss tracking, file preloading, cache invalidation on write, and cache clearing. |
+| 13 | [`13-process-scheduler.ts`](../examples/13-process-scheduler.ts) | **ProcessScheduler** — nice values (-20 to 19) mapped to CFS priorities (realtime → idle), process registration with priority, CPU time accounting (`recordAndCheckThrottle`), priority boosting (`setProcessNice`), scheduler statistics (run queue, CPU time, throttle/preempt counts), and process lifecycle management. |
+| 14 | [`14-swap-store.ts`](../examples/14-swap-store.ts) | **SwapStore** — eviction threshold on flush, automatic swap-out of large files, O(1) reload from swap files, manual `swapOutFile()`, LRU bulk swap-out (`swapOutLru`), swap statistics, and `clearSwap()`. |
+| 15 | [`15-fd-and-mounts.ts`](../examples/15-fd-and-mounts.ts) | **File descriptors & mounts** — POSIX-like FD operations (`fdOpen`, `fdDup`, `fdDup2`, `fdPath`, `getOpenFds`, `fdClose`, `closeAllFds`); host directory mounting with read-only enforcement, file access through mount points, and `unmount()`. |
 
-## Expose VM ports on the host (VirtualProxy)
+## Real-world scenarios
 
-Forward VM services to the host machine, or use the SOCKS5 proxy to route
-host traffic into the virtual network:
+| # | File | What it covers |
+|---|------|---------------|
+| 16 | [`16-cicd-pipeline.ts`](../examples/16-cicd-pipeline.ts) | **CI/CD pipeline** — 4 isolated build stages (lint → test → build → deploy) each running in its own VM with RAM/CPU caps and process scheduling. Pipeline summary with pass/fail detection via stdout tokens, per-stage resource reporting. |
+| 17 | [`17-saas-platform.ts`](../examples/17-saas-platform.ts) | **Multi-tenant SaaS** — 3 tenants on isolated subnets (Baie instances), per-tenant app + db VMs, user provisioning, resource caps, cross-tenant isolation verification via network reachability tests, and resource usage report. |
+| 18 | [`18-honeypot-threat-detection.ts`](../examples/18-honeypot-threat-detection.ts) | **Security honeypot** — decoy file planting (`/etc/shadow`, credentials, bash history), simulated attacker command execution (cat sensitive files, wget malware, user creation), HoneyPot audit log with file operation tracking, and anomaly detection with severity-rated alerts. |
+| 19 | [`19-container-orchestrator.ts`](../examples/19-container-orchestrator.ts) | **Container orchestrator** — Kubernetes-like cluster with 7 pods across 3 tiers (web, api, db/cache), service DNS records, round-robin load balancers for multi-pod services, network policies via iptables (web→api allowed, web→db blocked), rolling updates, and per-MAC bandwidth accounting. |
 
-```typescript
-import { Baie, VirtualProxy } from "typescript-virtual-container";
+---
 
-const baie = new Baie("demo", "10.0.1.0/24");
-const web = await baie.createVM("web");
-const proxy = new VirtualProxy(baie);
+## Legacy patterns
 
-// Port forwarding: expose VM's port 80 on host:8080
-proxy.exposePort("web", 80, 8080);
-// curl http://localhost:8080 → reaches VM "web" port 80
+The following patterns from earlier documentation are now covered by the full examples above:
 
-// SOCKS5 proxy: route any host traffic into the virtual network
-proxy.startSocksProxy(1080);
-// curl --proxy socks5://localhost:1080 http://10.0.1.2:3000
-```
-
-## Full lab: multi-tier application with firewall
-
-Three-tier web application across three VMs on an isolated virtual network,
-exposed to the host.
-
-```typescript
-import { Baie, VirtualProxy, SshClient } from "typescript-virtual-container";
-
-// 1. Create a virtual datacenter with a /24 subnet
-const lab = new Baie("production", "10.0.1.0/24");
-
-// 2. Boot three VMs — each gets an IP from the subnet
-const web  = await lab.createVM("web");     // 10.0.1.2
-const api  = await lab.createVM("api");     // 10.0.1.3
-const db   = await lab.createVM("db");      // 10.0.1.4
-
-const cWeb = new SshClient(web, "root");
-const cApi = new SshClient(api, "root");
-const cDb  = new SshClient(db, "root");
-
-// 3. Start services inside each VM
-cDb.exec("nc -l -p 5432 -v &");
-cApi.exec("nc -l -p 3000 -v &");
-
-// 4. Verify connectivity — web reaches api via virtual IP
-const test = await cWeb.exec("echo 'GET /users' | nc 10.0.1.3 3000");
-console.log("API reachable from web:", test.exitCode === 0);
-
-// 5. Apply firewall — only web can reach api:3000
-cApi.exec("iptables -A INPUT -s 10.0.1.2 -p tcp --dport 3000 -j ACCEPT");
-cApi.exec("iptables -P INPUT DROP");
-
-// 6. Expose web VM on the host
-const proxy = new VirtualProxy(lab);
-proxy.exposePort("web", 80, 8080);
-console.log("curl http://localhost:8080 → web VM port 80");
-```
-
-Step by step:
-
-| Step | What happens |
-|------|-------------|
-| `new Baie("prod", "10.0.1.0/24")` | Virtual switch with gateway at .1, pool .2–.254 |
-| `createVM("web")` | Boots VirtualShell, IP 10.0.1.2, registered in ARP |
-| `nc -l -p 5432` | TCP listener on port 5432 inside db VM |
-| `nc 10.0.1.3 3000` | TCP connection web→api via VirtualSwitch |
-| `iptables -A INPUT -s 10.0.1.2 -j ACCEPT` | Restrict api ingress to web IP |
-| `proxy.exposePort("web", 80, 8080)` | Bind host:8080 → web VM:80 |
-
-## Hosting platform (multi-tenant isolation)
-
-Multiple Baie instances for isolated tenant networks with SSH, NAT,
-and port forwarding.
-
-```typescript
-import { Baie, VirtualProxy, VirtualSshServer } from "typescript-virtual-container";
-
-async function createTenant(id: string, subnet: string, sshPort: number, httpPort: number) {
-	const baie = new Baie(`tenant-${id}`, subnet);
-	const vm = await baie.createVM("app");
-	const ssh = new VirtualSshServer({ port: 0, shell: vm });
-	await ssh.start();
-	const proxy = new VirtualProxy(baie);
-	proxy.exposePort("app", 22, sshPort);
-	proxy.exposePort("app", 80, httpPort);
-	return { baie, vm, proxy, ssh };
-}
-
-const alice = await createTenant("alice", "10.100.1.0/24", 2201, 8081);
-const bob   = await createTenant("bob",   "10.100.2.0/24", 2202, 8082);
-
-// Tenants cannot reach each other — separate subnets, separate switches
-```
-
-## VPN between Baie instances
-
-Encrypted tunnel connecting two virtual networks:
-
-```typescript
-import { Baie, VirtualVpn } from "typescript-virtual-container";
-
-const paris = new Baie("paris", "10.0.1.0/24");
-const tokyo = new Baie("tokyo", "10.0.2.0/24");
-
-const vpn = new VirtualVpn(paris, tokyo, {
-    key: "shared-secret",
-    latencyMs: 150, // simulate intercontinental latency
-});
-
-// VMs in paris can now reach VMs in tokyo
-// paris VM ping 10.0.2.3 → routed through encrypted tunnel
-```
-
-## Traffic shaping, DNS, load balancer
-
-```typescript
-const baie = new Baie("test", "10.0.1.0/24");
-const sw = baie.switch;
-
-// DNS: reach VMs by hostname
-sw.addDnsRecord("my-app", "10.0.1.5");
-console.log(sw.resolveHostname("my-app")); // "10.0.1.5"
-
-// Traffic shaping: add 200ms latency + 10% packet loss
-sw.setTrafficRule("*", { latencyMs: 200, packetLossPct: 10 });
-
-// Load balancer: round-robin across two VMs
-sw.addLoadBalancer({
-    name: "web-lb",
-    port: 80,
-    targets: [
-        { hostname: "web-1", port: 80, weight: 1 },
-        { hostname: "web-2", port: 80, weight: 1 },
-    ],
-    algorithm: "round-robin",
-});
-
-// Network partition: isolate groups of VMs
-sw.setPartitions([
-    ["02:42:0a:00:01:02", "02:42:0a:00:01:03"], // group A
-    ["02:42:0a:00:01:04", "02:42:0a:00:01:05"], // group B (isolated from A)
-]);
-
-// Bandwidth accounting
-console.log(sw.getBytesSent("02:42:0a:00:01:02"));
-console.log(sw.getBytesReceived("02:42:0a:00:01:02"));
-sw.resetBandwidth();
-```
+- **Multi-VM network (Baie)** → see [`19-container-orchestrator.ts`](../examples/19-container-orchestrator.ts)
+- **Multi-tenant isolation** → see [`17-saas-platform.ts`](../examples/17-saas-platform.ts)
+- **Traffic shaping, DNS, load balancer** → see [`19-container-orchestrator.ts`](../examples/19-container-orchestrator.ts)
+- **VPN between Baie instances** → see `src/modules/VirtualVpn/`
