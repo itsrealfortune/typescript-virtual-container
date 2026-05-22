@@ -318,8 +318,10 @@ async function runBlocks(
 				const allAssign = tokens.every((t) => assignRe.test(t));
 				if (allAssign) {
 					for (const tok of tokens) {
-						const m = tok.match(assignRe) as RegExpMatchArray;
-						ctx.env.vars[m[1] as string] = m[2] as string;
+						const [, key, value] = tok.match(assignRe) ?? [];
+						if (key !== undefined && value !== undefined) {
+							ctx.env.vars[key] = value;
+						}
 					}
 					ctx.env.lastExitCode = 0;
 					continue;
