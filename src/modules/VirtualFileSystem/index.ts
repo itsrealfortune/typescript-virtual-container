@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/style/useNamingConvention: NW ? */
 import * as crypto from "node:crypto";
 import { EventEmitter } from "node:events";
 import * as fsSync from "node:fs";

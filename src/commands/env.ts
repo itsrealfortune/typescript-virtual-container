@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/style/useNamingConvention: ENV VARS */
 import type { ShellModule } from "../types/commands";
 
 /**
