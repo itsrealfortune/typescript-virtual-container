@@ -56,7 +56,8 @@ export const fortuneCommand: ShellModule = {
 	params: [],
 	run: () => {
 		const idx = Math.floor(Math.random() * FORTUNES.length);
-		return { stdout: FORTUNES[idx] as string, exitCode: 0 };
+		const fortune = FORTUNES[idx] ?? "No fortunes today.";
+		return { stdout: fortune, exitCode: 0 };
 	},
 };
 

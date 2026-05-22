@@ -1611,8 +1611,8 @@ class Interpreter {
 	private _execLines(lines: string[], startIdx: number, scope: Scope): number {
 		let i = startIdx;
 		while (i < lines.length) {
-			const raw = lines[i] as string;
-			if (!raw.trim() || raw.trim().startsWith("#")) {
+			const raw = lines[i];
+			if (raw === undefined || !raw.trim() || raw.trim().startsWith("#")) {
 				i++;
 				continue;
 			}
@@ -1660,7 +1660,8 @@ class Interpreter {
 	}
 
 	private _execStatement(lines: string[], idx: number, scope: Scope): number {
-		const raw = lines[idx] as string;
+		const raw = lines[idx];
+		if (raw === undefined) return idx + 1;
 		const line = raw.trim();
 		const indent = this._getIndent(raw);
 
