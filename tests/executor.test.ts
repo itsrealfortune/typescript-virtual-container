@@ -12,15 +12,15 @@ beforeAll(async () => {
 
 describe("runExec", () => {
 	test("runExec writes stdout", async () => {
-		let exitCode = 0;
-		let ended = false;
+		let _exitCode = 0;
+		let _ended = false;
 		const written: string[] = [];
 
 		const stream: ExecStream = {
 			write: (s: string) => { written.push(s); },
 			stderr: { write: (_s: string) => {} },
-			exit: (code: number) => { exitCode = code; },
-			end: () => { ended = true; },
+			exit: (code: number) => { _exitCode = code; },
+			end: () => { _ended = true; },
 		};
 
 		runExec(stream, "echo hello", "root", "test-vm", shell);
@@ -85,7 +85,7 @@ describe("Pipeline executor", () => {
 	});
 
 	test("subshell (cd ...) does not affect parent", async () => {
-		const cwd = shell.vfs.stat("/").type;
+		const _cwd = shell.vfs.stat("/").type;
 		const r = await runCmd(client, "(cd /tmp && pwd)");
 		expect(r.exitCode).toBe(0);
 		expect(r.stdout?.trim()).toBe("/tmp");
@@ -115,18 +115,19 @@ describe("Pipeline executor", () => {
 		expect(r.exitCode).toBe(0);
 	});
 });
+});
 
 describe("runExec (SSH exec channel)", () => {
 	test("runExec writes stdout and exits", async () => {
-		let exitCode: number | undefined;
-		let ended = false;
+		let _exitCode: number | undefined;
+		let _ended = false;
 		const written: string[] = [];
 
 		const stream = {
 			write: (s: string) => { written.push(s); },
 			stderr: { write: (_s: string) => {} },
-			exit: (code: number) => { exitCode = code; },
-			end: () => { ended = true; },
+			exit: (code: number) => { _exitCode = code; },
+			end: () => { _ended = true; },
 		};
 
 		runExec(stream as any, "echo hello", "root", "test-vm", shell);

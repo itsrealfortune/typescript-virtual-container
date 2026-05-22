@@ -135,7 +135,7 @@ describe("IdleManager", () => {
 		shell.vfs.writeFile("/tmp/big.txt", "x".repeat(10_000));
 
 		// biome-ignore lint/suspicious/noExplicitAny: accessing internal VFS node for test verification
-		const node = (shell.vfs as any)._root.children["tmp"].children["big.txt"];
+		const node = (shell.vfs as any)._root.children.tmp.children["big.txt"];
 		expect(node.evicted).toBeUndefined();
 
 		const openPaths = shell.vfs.getOpenPaths();
@@ -157,7 +157,7 @@ describe("IdleManager", () => {
 		expect(openPaths.has("/tmp/open.txt")).toBe(true);
 
 		// biome-ignore lint/suspicious/noExplicitAny: accessing internal VFS node for test verification
-		const node = (shell.vfs as any)._root.children["tmp"].children["open.txt"];
+		const node = (shell.vfs as any)._root.children.tmp.children["open.txt"];
 		shell.vfs.evictUnusedLargeFiles(openPaths);
 		expect(node.evicted).toBeUndefined();
 

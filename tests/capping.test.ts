@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { beforeAll, describe, expect, test } from "bun:test";
 import * as os from "node:os";
 import { VirtualShell } from "../src";
 import { SshClient } from "../src/modules/SSHClient";
