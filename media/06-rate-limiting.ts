@@ -9,7 +9,7 @@
 import { VirtualShell, VirtualSshServer } from "../src";
 
 const shell = new VirtualShell("rate-limited-vm");
-shell.ensureInitialized();
+await shell.ensureInitialized();
 
 const ssh = new VirtualSshServer({
 	port: 0,
