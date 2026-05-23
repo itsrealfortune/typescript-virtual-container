@@ -27,8 +27,8 @@
 | Mode | Entry point | Use case |
 |------|-------------|----------|
 | **SSH/SFTP server** | `VirtualSshServer` / `VirtualSftpServer` | Honeypots, remote testing, training environments |
-| **Web shell** | `builds/fortune-nyx-v1.7.4-web.min.js` (ESM) | Embedded terminals, interactive tutorials, browser demos — run `startxfce4` for a full XFCE desktop |
-| **Standalone CLI** | `builds/fortune-nyx-v1.7.4-directbash-k6.1.0.mjs` (single file) | Local shell, one-liner demos, no install required |
+| **Web shell** | `builds/fortune-nyx-v1.7.5-web.min.js` (ESM) | Embedded terminals, interactive tutorials, browser demos — run `startxfce4` for a full XFCE desktop |
+| **Standalone CLI** | `builds/fortune-nyx-v1.7.5-directbash-k6.1.0.mjs` (single file) | Local shell, one-liner demos, no install required |
 <!-- /BUILD:mode-table -->
 
 All three modes share the same core: a pure in-memory VFS, a real shell interpreter, a virtual package manager, and a typed programmatic API.
@@ -49,22 +49,22 @@ npm install typescript-virtual-container
 <!-- BUILD:curl-start -->
 #### Interactive local shell — persists VFS in .vfs/ in the current directory
 ```bash
-curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.7.4-directbash-k6.1.0.mjs -o fortune-nyx-v1.7.4-directbash-k6.1.0.mjs && node fortune-nyx-v1.7.4-directbash-k6.1.0.mjs
+curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.7.5-directbash-k6.1.0.mjs -o fortune-nyx-v1.7.5-directbash-k6.1.0.mjs && node fortune-nyx-v1.7.5-directbash-k6.1.0.mjs
 ```
 
 #### SSH server with built-in SFTP subsystem (scp / sftp on port 2222)
 ```bash
-curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.7.4-ssh.cjs -o fortune-nyx-v1.7.4-ssh.cjs && node fortune-nyx-v1.7.4-ssh.cjs
+curl -s https://raw.githubusercontent.com/itsrealfortune/typescript-virtual-container/refs/heads/main/builds/fortune-nyx-v1.7.5-ssh.cjs -o fortune-nyx-v1.7.5-ssh.cjs && node fortune-nyx-v1.7.5-ssh.cjs
 ```
 
 #### Custom SSH port
 ```bash
-node fortune-nyx-v1.7.4-ssh.cjs --ssh-port=2022
+node fortune-nyx-v1.7.5-ssh.cjs --ssh-port=2022
 ```
 
 #### SSH disabled (handler only, no server started)
 ```bash
-node fortune-nyx-v1.7.4-ssh.cjs --no-ssh
+node fortune-nyx-v1.7.5-ssh.cjs --no-ssh
 ```
 <!-- /BUILD:curl-start -->
 
@@ -72,16 +72,16 @@ node fortune-nyx-v1.7.4-ssh.cjs --no-ssh
 > The standalone builds are intended for quick demos and testing. For production use, it's recommended to install the package and import the relevant classes directly in your codebase for better performance, stability, and security.
 
 <!-- BUILD:selfStandalone-options -->
-**`fortune-nyx-v1.7.4-directbash-k6.1.0.mjs` options:**
+**`fortune-nyx-v1.7.5-directbash-k6.1.0.mjs` options:**
 
 ```bash
-node fortune-nyx-v1.7.4-directbash-k6.1.0.mjs                          # boot as root
-node fortune-nyx-v1.7.4-directbash-k6.1.0.mjs --user alice             # boot as alice (prompts for password if set)
-node fortune-nyx-v1.7.4-directbash-k6.1.0.mjs --user=alice             # same, inline form
-node fortune-nyx-v1.7.4-directbash-k6.1.0.mjs --hostname=my-box        # custom hostname
-node fortune-nyx-v1.7.4-directbash-k6.1.0.mjs --snapshot=/data/.vfs    # custom VFS snapshot path
-node fortune-nyx-v1.7.4-directbash-k6.1.0.mjs --help                   # show all options
-node fortune-nyx-v1.7.4-directbash-k6.1.0.mjs --version                # print version
+node fortune-nyx-v1.7.5-directbash-k6.1.0.mjs                          # boot as root
+node fortune-nyx-v1.7.5-directbash-k6.1.0.mjs --user alice             # boot as alice (prompts for password if set)
+node fortune-nyx-v1.7.5-directbash-k6.1.0.mjs --user=alice             # same, inline form
+node fortune-nyx-v1.7.5-directbash-k6.1.0.mjs --hostname=my-box        # custom hostname
+node fortune-nyx-v1.7.5-directbash-k6.1.0.mjs --snapshot=/data/.vfs    # custom VFS snapshot path
+node fortune-nyx-v1.7.5-directbash-k6.1.0.mjs --help                   # show all options
+node fortune-nyx-v1.7.5-directbash-k6.1.0.mjs --version                # print version
 ```
 <!-- /BUILD:selfStandalone-options -->
 
@@ -108,13 +108,13 @@ The library can run entirely in the browser. The VFS is persisted in **IndexedDB
 <!-- BUILD:web-table -->
 | Bundle | Format | Entry point | Use case |
 |--------|--------|-------------|----------|
-| `builds/fortune-nyx-v1.7.4-web.min.js` | ESM | `VirtualShell`, `VirtualFileSystem`, `SshClient`, `DesktopManager`, … | Embedded terminals, browser demos |
+| `builds/fortune-nyx-v1.7.5-web.min.js` | ESM | `VirtualShell`, `VirtualFileSystem`, `SshClient`, `DesktopManager`, … | Embedded terminals, browser demos |
 <!-- /BUILD:web-table -->
 
 **Build the browser bundle:**
 
 ```bash
-bun run web-build       # → builds/fortune-nyx-v1.7.4-web.min.js
+bun run web-build       # → builds/fortune-nyx-v1.7.5-web.min.js
 bun run build-all       # rebuild everything (library + standalone + demo + docs)
 ```
 
@@ -122,7 +122,7 @@ bun run build-all       # rebuild everything (library + standalone + demo + docs
 
 ```html
 <script type="module">
-  import { VirtualShell, VirtualFileSystem, SshClient } from "./builds/fortune-nyx-v1.7.4-web.min.js";
+  import { VirtualShell, VirtualFileSystem, SshClient } from "./builds/fortune-nyx-v1.7.5-web.min.js";
 
   const shell = new VirtualShell("web-vm", undefined, { mode: "memory" });
   await shell.ensureInitialized();
