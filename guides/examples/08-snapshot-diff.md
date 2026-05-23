@@ -28,8 +28,7 @@ The diff should show three added entries and one modified entry, with no deletio
 ## Modules Used
 
 ```ts
-import { assertDiff, diffSnapshots } from "../src";
-import VirtualFileSystem from "../src/modules/VirtualFileSystem";
+import { assertDiff, diffSnapshots, VirtualFileSystem } from "../src";
 ```
 
 - **`diffSnapshots`** — the pure function that compares two `VfsSnapshot` objects and returns a `DiffResult`. It is a standalone utility, not a method on `VirtualFileSystem`, because it operates entirely on snapshot data (plain objects) without needing a live VFS instance. This means you can compute diffs in contexts where no VFS is available — for example, in a CI pipeline script loading snapshots from JSON files.

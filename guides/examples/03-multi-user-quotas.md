@@ -14,12 +14,14 @@ The concrete scenario: a team of developers (Alice and Bob) share a Linux VM. Al
 ## Modules Used
 
 ```ts
-import { SshClient, VirtualShell } from "../src";
+import { SshClient, VirtualShell, VirtualSshServer } from "../src";
 ```
 
 - **`VirtualShell`** — the top-level orchestrator that manages a virtual Linux environment. Its `.users` property returns a `UserManager` instance, which is the gateway for all user-related operations: creation, modification, privilege toggling, quota management, and key storage. The shell also owns the `VirtualFileSystem` that enforces permission checks during file I/O.
 
-- **`SshClient`** — a simulated SSH session bound to a specific user identity. Each `SshClient` stores a reference to the shell and a username. Every method call (`.exec()`, `.cat()`) resolves the user's UID from the `UserManager`, then passes it to the VFS layer so permissions are evaluated against the correct identity. This is not a real SSH client — it does not open sockets or perform key exchange. It is a thin wrapper that translates user-bound API calls into VFS operations with the correct UID attached.
+- **`SshClient`** — a simulated SSH client connecting over TCP to a `VirtualSshServer`. Each `SshClient` is constructed without arguments, then connected via `.connect({ host, port, username, password })`. Every method call (`.exec()`, `.cat()`) sends a command over the SSH session, which the server executes within the shell under the authenticated user's UID.
+
+- **`VirtualSshServer`** — a lightweight virtual SSH server that binds to a TCP port and proxies SSH connections into a `VirtualShell`. It handles authentication (password, public key) and session management, and translates client commands into VFS operations with the correct UID attached.
 
 ## Step-by-Step Walkthrough
 
@@ -32,11 +34,17 @@ await shell.ensureInitialized();
 
 `new VirtualShell("typescript-vm")` creates a new virtual environment with a fresh, empty filesystem, a root user, and a default user database. The string "typescript-vm" is an identifier used internally (e.g., for container naming or logging). `ensureInitialized()` is async because it performs any one-time setup required — creating the root home directory, setting up the VFS root node, and establishing the base user record for root. Until this promise resolves, operations on `shell.users` or the VFS may throw.
 
+A root password must be set to enable SSH authentication as root:
+
+```ts
+shell.users.setPassword("root", "root");
+```
+
 ### 2. User Creation
 
 ```ts
-await shell.users.addUser("alice", "alice123");
-await shell.users.addUser("bob", "bob456");
+shell.users.addUser("alice", "alice123");
+shell.users.addUser("bob", "bob456");
 console.log("Created users: alice, bob");
 ```
 
@@ -53,7 +61,7 @@ Both Alice and Bob start with `sudo: true` by default. The password is stored as
 ### 3. Privilege Adjustment
 
 ```ts
-await shell.users.removeSudoer("bob");
+shell.users.removeSudoer("bob");
 console.log("Removed sudo from bob");
 ```
 
@@ -62,7 +70,7 @@ This flips Bob's `sudo` field from `true` to `false`. There is a corresponding `
 ### 4. Quota Configuration
 
 ```ts
-await shell.users.setQuotaBytes("bob", 5 * 1024 * 1024);
+shell.users.setQuotaBytes("bob", 5 * 1024 * 1024);
 console.log(`Bob's quota: ${shell.users.getQuotaBytes("bob")} bytes`);
 ```
 
@@ -71,29 +79,40 @@ console.log(`Bob's quota: ${shell.users.getQuotaBytes("bob")} bytes`);
 - The sum is recomputed on every write — no cached running total, so it is always accurate but may be O(n) in the number of files.
 - The return value of `setQuotaBytes()` is `void`; it always succeeds. Errors only surface at write time.
 
-### 5. Alice Writes a Private File
+### 5. Start the SSH Server
 
 ```ts
-const alice = new SshClient(shell, "alice");
+const ssh = new VirtualSshServer({ port: 0, shell });
+const port = await ssh.start();
+```
+
+`VirtualSshServer` wraps the shell with an SSH server that listens on a TCP port. Port `0` tells the OS to assign an available port. The returned `port` value is used by `SshClient` instances to connect.
+
+### 6. Alice Writes a Private File
+
+```ts
+const alice = new SshClient();
+await alice.connect({ host: "localhost", port, username: "alice", password: "alice123" });
 await alice.exec("echo 'secret=yes' > /home/alice/private.conf && chmod 600 /home/alice/private.conf");
 console.log("Alice wrote /home/alice/private.conf (mode 600)");
 ```
 
-`new SshClient(shell, "alice")` creates a client bound to Alice's UID. Internally, it looks up Alice's `UserRecord` via `shell.users.getUser("alice")` and stores the UID (let's say 1000) and GID (1000). All subsequent I/O operations from this client carry that identity.
+`new SshClient()` creates an unconnected client. `.connect({ host, port, username, password })` opens an SSH session to the `VirtualSshServer`, authenticating as Alice. All subsequent operations from this client carry her UID.
 
 The compound `exec` command does two things:
 1. `echo 'secret=yes' > /home/alice/private.conf` — writes the string to a new file. The VFS creates a `VfsEntry` with owner UID=1000, GID=1000, mode=`644` (the default for new files), and content `"secret=yes\n"`.
 2. `chmod 600 /home/alice/private.conf` — changes the file's mode to `600` (octal; binary `110 000 000`). This means owner-read (`0o400`) + owner-write (`0o200`), and zero bits for group and other. After this, only Alice (UID 1000) can read or write the file. The VFS's `chmod` implementation simply updates the `mode` field on the `VfsEntry` — no stat or actual disk I/O occurs.
 
-### 6. Bob Attempts to Read Alice's File
+### 7. Bob Attempts to Read Alice's File
 
 ```ts
-const bob = new SshClient(shell, "bob");
+const bob = new SshClient();
+await bob.connect({ host: "localhost", port, username: "bob", password: "bob456" });
 const r = await bob.cat("/home/alice/private.conf");
 console.log(`Bob's cat result: exit ${r.exitCode}${r.stderr ? ` — "${r.stderr.trim()}"` : ""}`);
 ```
 
-Bob's `SshClient` is bound to his UID (1001). When `cat()` is called, the VFS's `readFile()` method:
+Bob's `SshClient` connects as Bob (UID 1001). When `cat()` is called, the VFS's `readFile()` method:
 
 1. Resolves the path `/home/alice/private.conf` to a `VfsEntry`. The path is normalized to remove any `..` or `.` components and looked up in the `Map<string, VfsEntry>`.
 2. Checks permissions: the entry's mode is `600`. The requesting UID is 1001, but the entry's owner UID is 1000. The VFS checks the "other" permission bits first: `mode & 0o004` — that is bit 2 (read for others). `600` in octal is `0o300` in hex, binary `110 000 000`. Bits 2-0 (other) are `000`. Read denied. (It would then check group bits — also `000` — then owner bits — `110`, which would pass, but only for the matching UID.)
@@ -101,7 +120,7 @@ Bob's `SshClient` is bound to his UID (1001). When `cat()` is called, the VFS's 
 
 The `console.log` shows the rejection. Note that Bob never learns anything about the file — not its size, not its existence as a readable entity. The VFS does not leak metadata on permission errors.
 
-### 7. Alice Reads Her Own File
+### 8. Alice Reads Her Own File
 
 ```ts
 const r2 = await alice.cat("/home/alice/private.conf");
@@ -110,17 +129,29 @@ console.log(`Alice's cat result: exit ${r2.exitCode} — "${r2.stdout!.trim()}"`
 
 Alice's UID (1000) matches the file owner UID (1000). The VFS checks owner-read bit (`mode & 0o400`, which is `true` for `600`). The read succeeds, returning `{ exitCode: 0, stdout: "secret=yes", stderr: null }`. The output confirms that Alice's permissions work correctly.
 
+### 9. Cleanup
+
+```ts
+alice.disconnect();
+bob.disconnect();
+ssh.stop();
+```
+
+Both SSH sessions are terminated and the server is shut down. The shell and its VFS remain in memory.
+
 ## Module Interactions
 
 The three key modules — `VirtualShell`, `UserManager` (accessed as `shell.users`), and `VirtualFileSystem` — interact as follows:
 
 1. **`VirtualShell`** acts as a registry. It holds references to both `UserManager` and `VFS`. It does not duplicate data — the user records live exclusively in `UserManager`, files live exclusively in `VFS`.
 
-2. **`SshClient`** bridges identity to I/O. It queries `UserManager` at construction time to resolve the username to a UID/GID. Each file operation it performs prepends that UID to the VFS call. The VFS never resolves usernames internally — it works entirely with numeric UIDs.
+2. **`VirtualSshServer`** accepts TCP connections, authenticates users against `UserManager`, and creates SSH sessions backed by the shell. Each session maps to the authenticated user's UID.
 
-3. **Quota enforcement** crosses module boundaries. The VFS does not store quota limits; it reads them from `UserManager` during write operations. This separation of concerns means quota logic lives with user management, while the enforcement hook lives with the filesystem.
+3. **`SshClient`** connects to `VirtualSshServer` over TCP. After authentication, each command it executes runs within the shell under the connected user's UID. The VFS never resolves usernames internally — it works entirely with numeric UIDs.
 
-4. **Permission enforcement** happens inside `VfsEntry`. The entry stores `uid`, `gid`, and `mode`. The VFS's `readFile`/`writeFile` methods extract these fields and compare them against the caller's UID. No user manager call is needed for basic permission checks.
+4. **Quota enforcement** crosses module boundaries. The VFS does not store quota limits; it reads them from `UserManager` during write operations. This separation of concerns means quota logic lives with user management, while the enforcement hook lives with the filesystem.
+
+5. **Permission enforcement** happens inside `VfsEntry`. The entry stores `uid`, `gid`, and `mode`. The VFS's `readFile`/`writeFile` methods extract these fields and compare them against the caller's UID. No user manager call is needed for basic permission checks.
 
 ## Under the Hood
 
@@ -169,11 +200,17 @@ This is O(n) in the number of files but simple and correct. Production implement
 ## Expected Output
 
 ```text
+--- Create users ---
 Created users: alice, bob
+--- Remove sudo from bob ---
 Removed sudo from bob
+--- Set disk quota for bob ---
 Bob's quota: 5242880 bytes
+--- Alice writes private file ---
 Alice wrote /home/alice/private.conf (mode 600)
+--- Bob tries to read Alice's file ---
 Bob's cat result: exit 1 — "cat: /home/alice/private.conf: Permission denied"
+--- Alice can read her own file ---
 Alice's cat result: exit 0 — "secret=yes"
 ```
 

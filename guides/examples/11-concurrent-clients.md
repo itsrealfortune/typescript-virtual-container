@@ -11,11 +11,12 @@ Multi-user systems like shared hosting environments, CI/CD runners, and classroo
 ## Modules Used
 
 ```ts
-import { SshClient, VirtualShell } from "../src";
+import { SshClient, VirtualShell, VirtualSshServer } from "../src";
 ```
 
-- **`VirtualShell`**: The shared shell environment that all clients connect to. It holds the single `VirtualFileSystem` instance and `UserManager` — the source of truth for all file state.
-- **`SshClient`**: A simulated SSH session bound to a specific user. Each client authenticates as a different user, but they all share the same underlying `VirtualShell` and thus the same VFS. File writes from any client are immediately visible to all others.
+- **`VirtualShell`**: The virtual machine environment that owns the filesystem and user database. Because all clients share the same shell and thus the same VFS, writes from any client are immediately visible to all others.
+- **`SshClient`**: A simulated SSH client connecting to a `VirtualSshServer`. Each client authenticates as a different user, but they all share the same underlying `VirtualShell` and thus the same VFS. File writes from any client are immediately visible to all others.
+- **`VirtualSshServer`**: A lightweight virtual SSH server that binds to a TCP port and proxies SSH connections into a `VirtualShell`, handling authentication and session management.
 
 ## Step-by-Step Walkthrough
 
@@ -31,24 +32,37 @@ Creates a single `VirtualShell` with hostname `"typescript-vm"` and bootstraps i
 ### Step 2 — Create three users
 
 ```ts
-await shell.users.addUser("alice", "alice123");
-await shell.users.addUser("bob", "bob456");
-await shell.users.addUser("charlie", "charlie789");
+shell.users.addUser("alice", "alice123");
+shell.users.addUser("bob", "bob456");
+shell.users.addUser("charlie", "charlie789");
+shell.users.setPassword("root", "root");
 ```
 
-Each user is registered in the virtual user database with a username and password. The `addUser()` method creates a home directory at `/home/<username>` with appropriate permissions. This mimics the `useradd` Linux command. All three users exist in the same user manager, which means they share the same UID namespace and filesystem realm.
+Each user is registered in the virtual user database with a username and password. The `addUser()` method creates a home directory at `/home/<username>` with appropriate permissions. This mimics the `useradd` Linux command. All three users exist in the same user manager, which means they share the same UID namespace and filesystem realm. A root password is also set for the SSH server.
 
-### Step 3 — Create per-user SSH clients
+### Step 3 — Start the SSH server
 
 ```ts
-const client1 = new SshClient(shell, "alice");
-const client2 = new SshClient(shell, "bob");
-const client3 = new SshClient(shell, "charlie");
+const ssh = new VirtualSshServer({ port: 0, shell });
+const port = await ssh.start();
 ```
 
-Each `SshClient` wraps the same `shell` but authenticates as a different user. Internally, the client stores a reference to the shell and the username. Every operation (`exec`, `writeFile`, `cat`, `ls`) is executed under that user's identity — the shell applies permission checks based on the user's UID and group membership.
+`VirtualSshServer` wraps the shell and listens on a dynamically assigned TCP port. All clients connect to this single server.
 
-### Step 4 — Concurrent file writes
+### Step 4 — Create per-user SSH clients
+
+```ts
+const client1 = new SshClient();
+await client1.connect({ host: "localhost", port, username: "alice", password: "alice123" });
+const client2 = new SshClient();
+await client2.connect({ host: "localhost", port, username: "bob", password: "bob456" });
+const client3 = new SshClient();
+await client3.connect({ host: "localhost", port, username: "charlie", password: "charlie789" });
+```
+
+Each `SshClient` connects to the same SSH server but authenticates as a different user. Internally, the server resolves each connection to the shell and applies permission checks based on the authenticated user's UID and group membership.
+
+### Step 5 — Concurrent file writes
 
 ```ts
 const [r1, r2, r3] = await Promise.all([
@@ -62,7 +76,7 @@ const [r1, r2, r3] = await Promise.all([
 
 Under the hood, each `writeFile()` call goes through the same VFS instance. The VFS serializes writes internally (via a mutex or synchronous operations), so there is no corruption or interleaving. Each file is created atomically. The exit codes verify success: `exitCode === 0` means the write completed without errors.
 
-### Step 5 — Concurrent reads
+### Step 6 — Concurrent reads
 
 ```ts
 const [read1, read2, read3] = await Promise.all([
@@ -74,7 +88,7 @@ const [read1, read2, read3] = await Promise.all([
 
 Each client reads their own file concurrently. Because reads are non-mutating, the VFS can serve all three in parallel without locking conflicts. Each `cat()` returns an `ExecResult` object with a `stdout` property containing the file content. The `.trim()` call removes any trailing newline from the shell output.
 
-### Step 6 — Cross-user file access
+### Step 7 — Cross-user file access
 
 ```ts
 const bobReadsAlice = await client2.cat("/tmp/alice.txt");
@@ -82,7 +96,7 @@ const bobReadsAlice = await client2.cat("/tmp/alice.txt");
 
 Bob reads Alice's file from `/tmp/`. Since `/tmp/` is world-readable in the virtual environment, this succeeds. The output shows `exitCode 0` and the first 30 characters of the content (truncated via `.slice(0, 30)`). In a more restrictive setup, Alice could set permissions to `600` (owner-only) to block this access — the VFS supports standard Unix permission bits.
 
-### Step 7 — Concurrent directory listing
+### Step 8 — Concurrent directory listing
 
 ```ts
 const [ls1, ls2, ls3] = await Promise.all([
@@ -94,7 +108,7 @@ const [ls1, ls2, ls3] = await Promise.all([
 
 All three clients list the contents of `/tmp/` simultaneously. Since all three files were written to the same shared directory, every client sees exactly the same listing — the VFS is a single consistent state. The `.split("\n").length` count should show 3 entries for all clients.
 
-### Step 8 — Concurrent command execution
+### Step 9 — Concurrent command execution
 
 ```ts
 const commands = [
@@ -108,6 +122,46 @@ const results = await Promise.all(commands);
 ```
 
 Five commands run in parallel — a mix of echo greetings, `hostname`, and `whoami`. Each command runs in its own shell context under the respective user's identity. `whoami` returns the username of the client that issued it (Bob), proving that user identity is correctly scoped to the `SshClient` instance even under concurrent execution.
+
+### Step 10 — Cleanup
+
+```ts
+client1.disconnect();
+client2.disconnect();
+client3.disconnect();
+ssh.stop();
+```
+
+All SSH sessions and the server are shut down.
+
+## Expected Output
+
+```
+--- Concurrent file writes ---
+Alice write: exit 0
+Bob write:   exit 0
+Charlie write: exit 0
+
+--- Concurrent reads ---
+Alice's file: "Alice's data -- written at <timestamp>"
+Bob's file:   "Bob's data -- written at <timestamp>"
+Charlie's file: "Charlie's data -- written at <timestamp>"
+
+--- Cross-user file sharing ---
+Bob reads Alice's file: exit 0 -- "Alice's data -- written at <t..."
+
+--- Concurrent directory listing ---
+Alice sees: 3 entries
+Bob sees:   3 entries
+Charlie sees: 3 entries
+
+--- Concurrent command execution ---
+  -> "hello from alice" (exit 0)
+  -> "hello from bob" (exit 0)
+  -> "hello from charlie" (exit 0)
+  -> "typescript-vm" (exit 0)
+  -> "bob" (exit 0)
+```
 
 ## Module Interactions
 
@@ -151,12 +205,6 @@ Running 5 concurrent commands...
   → "bob" (exit 0)
 
 ✅ All concurrent operations completed
-```
-
-Run with:
-
-```bash
-bun run examples/11-concurrent-clients.ts
 ```
 
 Timestamps in the output will vary, but the structure and exit codes are deterministic.

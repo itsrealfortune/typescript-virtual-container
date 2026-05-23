@@ -50,14 +50,12 @@ this reference.
 ### Users
 
 ```typescript
-await users.addUser("alice", "password123");
-await users.addUser("bob", "secure456");
-await users.addUser("carol", "pass789");
-```
+users.addUser("alice", "password123");
+users.addUser("bob", "secure456");
+users.addUser("carol", "pass789");
 
-Three users are created. `addUser()` is async because it may perform
-filesystem operations (creating home directories, initializing profile
-files). Each user is stored with:
+Three users are created. `addUser()` creates a user record with a
+hashed password and home directory. Each user is stored with:
 
 - A hashed password (the plaintext is never stored — the hash is computed
   internally using a configurable algorithm)

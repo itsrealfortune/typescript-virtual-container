@@ -39,7 +39,7 @@ Creates a fresh virtual environment named `"secure-vm"`. The name is a label for
 ### 2. User Creation with Password Fallback
 
 ```ts
-await shell.users.addUser("alice", "fallback-password");
+shell.users.addUser("alice", "fallback-password");
 console.log("Created user 'alice' with password fallback");
 ```
 

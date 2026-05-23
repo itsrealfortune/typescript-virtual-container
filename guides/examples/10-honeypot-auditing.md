@@ -12,12 +12,13 @@ Security auditing is essential for detecting unauthorized access, data exfiltrat
 ## Modules Used
 
 ```ts
-import { HoneyPot, VirtualShell, SshClient } from "../src";
+import { HoneyPot, SshClient, VirtualShell, VirtualSshServer } from "../src";
 ```
 
 - **`HoneyPot`**: The auditing engine. It attaches to multiple subsystems, intercepts events, stores them in a bounded ring buffer, computes aggregate statistics, and runs heuristic anomaly detection.
 - **`VirtualShell`**: The simulated Linux shell environment. It owns the VFS and user manager. The HoneyPot attaches to the shell itself (to capture command execution), the VFS (to capture file I/O), and the user manager (to capture auth events).
-- **`SshClient`**: Simulates an SSH session by wrapping the shell with a user context. Every SSH command flows through the shell and VFS, which means HoneyPot sees it all transparently.
+- **`SshClient`**: A simulated SSH client connecting to a `VirtualSshServer`. Creates an unconnected client via `new SshClient()`, then connects via `.connect({ host, port, username, password })`.
+- **`VirtualSshServer`**: A lightweight virtual SSH server that binds to a TCP port and proxies connections into a `VirtualShell`, handling authentication and session management.
 
 ## Step-by-Step Walkthrough
 
@@ -28,7 +29,11 @@ const shell = new VirtualShell("typescript-vm");
 await shell.ensureInitialized();
 ```
 
-`VirtualShell` is the central orchestration object. Its constructor takes a hostname (`"typescript-vm"`). Calling `ensureInitialized()` is async — it bootstraps the virtual environment: creates the root filesystem, sets up `/etc/`, `/tmp/`, `/home/`, and initializes the user database with a default `root` user.
+`VirtualShell` is the central orchestration object. Its constructor takes a hostname (`"typescript-vm"`). Calling `ensureInitialized()` is async — it bootstraps the virtual environment: creates the root filesystem, sets up `/etc/`, `/tmp/`, `/home/`, and initializes the user database with a default `root` user. A root password is then set to enable SSH authentication:
+
+```ts
+shell.users.setPassword("root", "root");
+```
 
 ### Step 2 — Create and attach the HoneyPot
 
@@ -47,13 +52,23 @@ The constructor accepts a single parameter: `maxEntries` (5000). This is the max
 
 The attachment is transparent: the subsystems continue to work normally, but every operation now flows through the HoneyPot's event listeners. There is no performance overhead beyond the in-memory log append and counter increment.
 
-### Step 3 — Simulate activity via SSH client
+### Step 3 — Start the SSH server
 
 ```ts
-const client = new SshClient(shell, "root");
+const ssh = new VirtualSshServer({ port: 0, shell });
+const port = await ssh.start();
 ```
 
-An `SshClient` is created as `root` user. Every `exec()` call simulates a full SSH command lifecycle: authentication, shell session dispatch, command execution, and output capture.
+`VirtualSshServer` wraps the shell with an SSH server that listens on a TCP port. Port `0` tells the OS to assign an available port. The returned `port` is used by `SshClient` to connect.
+
+### Step 4 — Simulate activity via SSH client
+
+```ts
+const client = new SshClient();
+await client.connect({ host: "localhost", port, username: "root", password: "root" });
+```
+
+An `SshClient` is created and connected as `root` user. Every `exec()` call simulates a full SSH command lifecycle: authentication, shell session dispatch, command execution, and output capture.
 
 ```ts
 await client.exec("echo 'secret data' > /etc/secrets.txt");
@@ -67,7 +82,7 @@ Three file operations generate a mix of file writes (the `echo ... >` redirect),
 - The `cat /etc/secrets.txt` triggers a **file read** event for the same file.
 - The `ls -la /tmp` triggers a **file read** event for the `/tmp` directory.
 
-### Step 4 — Multiple rapid commands
+### Step 5 — Multiple rapid commands
 
 ```ts
 for (let i = 0; i < 5; i++) {
@@ -77,7 +92,7 @@ for (let i = 0; i < 5; i++) {
 
 Five quick successive echo commands demonstrate burst behavior. In a real honeypot, a high velocity of commands in a short window is a red flag — it can indicate an automated attack script rather than interactive human use. The anomaly detector specifically looks for this pattern.
 
-### Step 5 — Read audit statistics
+### Step 6 — Read audit statistics
 
 ```ts
 const stats = hp.getStats();
@@ -95,7 +110,7 @@ console.log(`  File writes: ${stats.fileWrites}`);
 
 These counters are monotonically increasing since the HoneyPot was attached. They never reset unless you discard the entire HoneyPot instance.
 
-### Step 6 — Detect anomalies
+### Step 7 — Detect anomalies
 
 ```ts
 const anomalies = hp.detectAnomalies();
@@ -110,13 +125,22 @@ This method scans the buffered event log using heuristic rules. Possible anomaly
 
 Each anomaly carries a `type` (categorizing the detection rule), a `severity` string (`"low"`, `"medium"`, `"high"`), and a human-readable `message`.
 
-### Step 7 — View recent log entries
+### Step 8 — View recent log entries
 
 ```ts
 const recent = hp.getRecent(3);
 ```
 
-`getRecent(n)` returns the `n` most recent audit entries from the ring buffer. Each entry contains a `type` field (e.g., `"command"`, `"file_read"`, `"file_write"`), a `source` (the component that emitted it), a `timestamp`, and optional `data` with contextual information (command string, file path, etc.). This is useful for live tailing or forensic snapshotting without dumping the entire buffer.
+`getRecent(n)` returns the `n` most recent audit entries from the ring buffer.
+
+### Step 9 — Cleanup
+
+```ts
+client.disconnect();
+ssh.stop();
+```
+
+The SSH session and server are shut down cleanly.
 
 ## Module Interactions
 
@@ -132,20 +156,22 @@ The ring buffer is implemented as a fixed-size array with a head pointer. On eac
 ## Expected Output
 
 ```
-HoneyPot attached to shell, VFS and users
+--- Attach HoneyPot ---
 
-Audit statistics:
-  Commands: 8
-  File reads: 3
-  File writes: 1
+--- Simulate activity ---
 
-Anomalies detected:
-  [HIGH] rapid_commands: 5 commands in 0.012s
+--- Audit statistics ---
+Commands: 8
+File reads: 3
+File writes: 1
 
-Recent audit entries:
-  [command] SshClient
-  [command] SshClient
-  [command] SshClient
+--- Anomalies ---
+[HIGH] rapid_commands: 5 commands in 0.012s
+
+--- Recent log entries ---
+[command] SshClient
+[command] SshClient
+[command] SshClient
 ```
 
 Run with:

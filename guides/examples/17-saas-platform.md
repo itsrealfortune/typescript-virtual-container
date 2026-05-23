@@ -76,15 +76,16 @@ Resource caps are per-VM and per-tenant: the app VM gets 100 MB RAM and 2 vCPUs,
 
 ```ts
   for (const username of config.users) {
-    await appVM.users.addUser(username, "password123");
-    await dbVM.users.addUser(username, "password123");
+    appVM.users.addUser(username, "password123");
+    dbVM.users.addUser(username, "password123");
   }
 ```
 
 Each user is created on **both** the app and db VMs with the same password. `addUser()` registers the user in the virtual user database, creates a home directory at `/home/<username>`, and assigns a primary group matching the username. Having the same users on both VMs means an authenticated user can access both tiers without re-authentication.
 
 ```ts
-  const appClient = new SshClient(appVM, "root");
+  const appClient = new SshClient();
+  await appClient.connect({ host: "localhost", port: appPort, username: "root", password: "root" });
   await appClient.exec(
     "mkdir -p /app/config /app/logs /app/data && " +
     `echo '{"tenant":"${config.id}","env":"production"}' > /app/config/app.json && ` +
@@ -95,7 +96,8 @@ Each user is created on **both** the app and db VMs with the same password. `add
 The application environment is set up via SSH commands: create standard directories (`/app/config`, `/app/logs`, `/app/data`), write a JSON config file identifying the tenant, and log initialization. The config file is tenant-specific — `acme-corp` writes `{"tenant":"acme-corp","env":"production"}` — making it easy to verify which tenant owns which VFS state.
 
 ```ts
-  const dbClient = new SshClient(dbVM, "root");
+  const dbClient = new SshClient();
+  await dbClient.connect({ host: "localhost", port: dbPort, username: "root", password: "root" });
   await dbClient.exec(
     "mkdir -p /var/lib/db /var/log/db && " +
     `echo 'CREATE DATABASE ${config.id.replace(/-/g, "_")};' > /var/lib/db/init.sql && ` +
@@ -130,7 +132,8 @@ for (let i = 0; i < tenants.length; i++) {
     const t1 = tenants[i]!;
     const t2 = tenants[j]!;
 
-    const appClient = new SshClient(t1.appVM, "root");
+    const appClient = new SshClient();
+    await appClient.connect({ host: "localhost", port: t1.appPort, username: "root", password: "root" });
     const result = await appClient.exec(`nc -z -w 1 ${t2.baie.switch.gateway} 5432 2>&1 || echo "unreachable"`);
 
     const isolated = result.stdout!.includes("unreachable") || result.exitCode !== 0;

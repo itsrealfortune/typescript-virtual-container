@@ -12,11 +12,12 @@ Container orchestrators like Kubernetes manage clusters of compute nodes, schedu
 ## Modules Used
 
 ```ts
-import { Baie, SshClient, type VirtualShell } from "../src";
+import { Baie, SshClient, VirtualSshServer, type VirtualShell } from "../src";
 ```
 
 - **`Baie`**: The cluster network namespace. Created with CIDR `172.16.0.0/16` — a large private range that can accommodate hundreds of pods. All pods are attached to this single `Baie`'s switch.
-- **`SshClient`**: Used for executing commands inside pods: writing container image info, simulating port listeners, applying iptables rules, and testing connectivity with `nc`.
+- **`SshClient`**: A virtual SSH client connecting to a `VirtualSshServer`. Used here for executing commands inside pods: writing container image info, simulating port listeners, applying iptables rules, and testing connectivity with `nc`.
+- **`VirtualSshServer`**: A lightweight virtual SSH server that binds to a TCP port and proxies connections into a `VirtualShell`. Each pod gets its own SSH server.
 - **`VirtualShell`**: The pod type. Each pod is a `VirtualShell` instance with resource caps and its own VFS, user manager, and process scheduler.
 
 ## Step-by-Step Walkthrough
@@ -56,7 +57,11 @@ for (const spec of podSpecs) {
   vm.vfs.setRamCap(256 * 1024 * 1024);
   vm.users.setCpuCapCores(1);
 
-  const client = new SshClient(vm, "root");
+  vm.users.setPassword("root", "root");
+  const sshServer = new VirtualSshServer({ port: 0, shell: vm });
+  const sshPort = await sshServer.start();
+  const client = new SshClient();
+  await client.connect({ host: "localhost", port: sshPort, username: "root", password: "root" });
   await client.exec(`mkdir -p /app && echo '${spec.image}' > /app/image`);
   for (const port of spec.ports) {
     await client.exec(`echo "Listening on port ${port}" > /app/port-${port}`);
@@ -110,11 +115,13 @@ Each service gets a DNS record (mapping the service name to the cluster IP) and 
 
 ```ts
 // Only web pods can reach api pods
-const webClient = new SshClient(pods[0]!.vm, "root");
+const webClient = new SshClient();
+await webClient.connect({ host: "localhost", port: pods[0]!.sshPort, username: "root", password: "root" });
 await webClient.exec("iptables -A OUTPUT -d 172.16.0.0/16 -j ACCEPT");
 
 // DB only accepts connections from api pods
-const dbClient = new SshClient(pods.find((p) => p.name === "db-1")!.vm, "root");
+const dbClient = new SshClient();
+await dbClient.connect({ host: "localhost", port: pods.find((p) => p.name === "db-1")!.sshPort, username: "root", password: "root" });
 await dbClient.exec("iptables -A INPUT -s 172.16.0.4 -p tcp --dport 5432 -j ACCEPT");
 await dbClient.exec("iptables -A INPUT -s 172.16.0.5 -p tcp --dport 5432 -j ACCEPT");
 await dbClient.exec("iptables -P INPUT DROP");

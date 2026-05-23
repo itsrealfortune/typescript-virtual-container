@@ -76,10 +76,10 @@ A boolean check returning `true` if the swap subsystem is active. Useful for gua
 ### Step 5 — Flush triggers eviction
 
 ```ts
-vfs.flushMirror().then(() => {
+vfs.flushMirror();
 ```
 
-`flushMirror()` is asynchronous — it persists the current VFS state to disk. During this process, the VFS examines each file against `evictionThresholdBytes`. Files exceeding the threshold are **swapped out**: their content is written to individual swap files on the real filesystem, and the in-memory storage is freed. After flush:
+`flushMirror()` persists the current VFS state to disk. During this process, the VFS examines each file against `evictionThresholdBytes`. Files exceeding the threshold are **swapped out**: their content is written to individual swap files on the real filesystem, and the in-memory storage is freed. After flush:
 
 - `/small.txt` remains in RAM (below threshold).
 - `/medium.txt` is swapped out — freed from RAM.

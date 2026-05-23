@@ -21,12 +21,10 @@ The concrete scenario: a web application with a configuration directory and a pu
 
 ```ts
 import type { VfsSnapshot } from "../src";
-import VirtualFileSystem from "../src/modules/VirtualFileSystem";
+import { VirtualFileSystem } from "../src";
 ```
 
-- **`VfsSnapshot`** (type-only import) — the type definition for a serialized filesystem state. Importing with `type` means it is erased at runtime; it exists only for TypeScript type checking. This import tells the reader that `buildFixture()` returns a `VfsSnapshot`, which is a plain object with no methods.
-
-- **`VirtualFileSystem`** — imported directly for access to the constructor and the static factory `fromSnapshot()`. We do not need the barrel import (`../src`) because we use `VirtualFileSystem` directly, not through `VirtualShell`.
+- **`VirtualFileSystem`** — imported from the library barrel. We need the constructor and the static factory `fromSnapshot()`.
 
 ## Step-by-Step Walkthrough
 

@@ -51,7 +51,7 @@ The VFS is an instance of `VirtualFileSystem` (defined in `src/modules/VirtualFi
 
 ```ts
 shell.vfs.writeFile("/shared/hello.txt", "Written via SSH");
-console.log("File written via VFS: /shared/hello.txt");
+console.log("VFS wrote /shared/hello.txt");
 ```
 
 This call simulates what would happen internally if a user ran `echo "Written via SSH" > /shared/hello.txt` over an SSH session. Let us trace exactly what happens inside `VirtualFileSystem.writeFile()` (line 1313 of the VFS source):
@@ -150,7 +150,7 @@ The output confirms `"Written via SSH"` — the same content written in step 2. 
 
 ```ts
 shell.vfs.writeFile("/shared/sftp-upload.txt", "Uploaded via SFTP");
-console.log("File written via SFTP: /shared/sftp-upload.txt");
+console.log("VFS wrote /shared/sftp-upload.txt");
 ```
 
 In a real SFTP scenario, a client would connect to the SFTP server on its port and upload a file. The `SftpMimic` would handle that via the `sftp.on("WRITE", ...)` handler (line 599), which receives data chunks and assembles them into a buffer, then on `CLOSE` (line 635), writes the buffer to the VFS via `getVfs().writeFile(entry.path, entry.buffer)`.
@@ -261,22 +261,30 @@ The sort is alphabetical (JavaScript's default `Array.prototype.sort()` with no 
 When you run `bun run examples/02-ssh-sftp-shared-state.ts`, you will see:
 
 ```
-File written via VFS: /shared/hello.txt
+--- Write file via VFS ---
+VFS wrote /shared/hello.txt
+--- Start SFTP server ---
 SFTP server started on port 0
+--- Verify shared state ---
 File content via shared VFS: "Written via SSH"
-File written via SFTP: /shared/sftp-upload.txt
+VFS wrote /shared/sftp-upload.txt
 Files in /shared: hello.txt, sftp-upload.txt
+--- Stop server ---
 SFTP server stopped
 ```
 
 Line-by-line explanation:
 
-1. **`File written via VFS: /shared/hello.txt`** — confirms that the `writeFile` call in step 2 completed without throwing. The file now exists in the VFS tree.
-2. **`SFTP server started on port 0`** — the `SftpMimic` instance bound to a TCP port (port 0 means the configured port was used; if the OS assigned a different port, the output might differ).
-3. **`File content via shared VFS: "Written via SSH"`** — the `readFile` call in step 4 retrieved the content written in step 2, proving cross-operation visibility.
-4. **`File written via SFTP: /shared/sftp-upload.txt`** — confirms the second `writeFile` call completed.
-5. **`Files in /shared: hello.txt, sftp-upload.txt`** — the `list` call returns both filenames in alphabetical order. The order is `hello.txt` before `sftp-upload.txt` because `h` < `s` in Unicode.
-6. **`SFTP server stopped`** — the `sftp.stop()` call completed without error.
+1. **`--- Write file via VFS ---`** — Section header printed before the first write operation.
+2. **`VFS wrote /shared/hello.txt`** — confirms that the `writeFile` call completed without throwing. The file now exists in the VFS tree.
+3. **`--- Start SFTP server ---`** — Section header printed before starting the SFTP server.
+4. **`SFTP server started on port 0`** — the `SftpMimic` instance bound to a TCP port (port 0 means the configured port was used; if the OS assigned a different port, the output will show that port).
+5. **`--- Verify shared state ---`** — Section header for the verification block.
+6. **`File content via shared VFS: "Written via SSH"`** — the `readFile` call retrieved the content written earlier, proving cross-operation visibility.
+7. **`VFS wrote /shared/sftp-upload.txt`** — confirms the second `writeFile` call completed.
+8. **`Files in /shared: hello.txt, sftp-upload.txt`** — the `list` call returns both filenames in alphabetical order. The order is `hello.txt` before `sftp-upload.txt` because `h` < `s` in Unicode.
+9. **`--- Stop server ---`** — Section header for cleanup.
+10. **`SFTP server stopped`** — the `sftp.stop()` call completed without error.
 
 ## Key Concepts
 

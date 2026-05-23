@@ -12,11 +12,12 @@ Continuous Integration and Deployment pipelines automate the lifecycle of softwa
 ## Modules Used
 
 ```ts
-import { Baie, SshClient } from "../src";
+import { Baie, SshClient, VirtualSshServer } from "../src";
 ```
 
 - **`Baie`**: The network namespace that owns a subnet (`10.100.0.0/24`) and manages VM creation. Each `Baie` acts like a virtual data center network — it creates a `VirtualSwitch` internally, allocates IPs, and tracks all VMs by name.
-- **`SshClient`**: A virtual SSH session bound to a specific VM and user. Used here to execute pipeline commands (echo, mkdir, dd, cat) inside each stage's VM. The `exec()` method returns a result with `exitCode` and `stdout`.
+- **`SshClient`**: A virtual SSH client connecting to a `VirtualSshServer`. Each client connects to a different VM's SSH server to execute pipeline commands.
+- **`VirtualSshServer`**: A lightweight virtual SSH server that binds to a TCP port and proxies connections into a `VirtualShell`. Each VM gets its own SSH server.
 
 ## Step-by-Step Walkthrough
 
@@ -39,50 +40,78 @@ const deployVM = await baie.createVM("deploy");
 
 `createVM(name)` provisions a `VirtualShell` instance with a VFS, user manager, process scheduler, and virtual network interface. Each VM is automatically attached to the `Baie`'s switch and assigned an IP from the subnet. The `name` is used as the VM's hostname and DNS record. These are fully isolated environments — no filesystem or process overlap between them.
 
-### Step 3 — Create SSH clients
+### Step 3 — Start SSH servers
+
+```ts
+const sshLint = new VirtualSshServer({ port: 0, shell: lintVM });
+const sshTest = new VirtualSshServer({ port: 0, shell: testVM });
+const sshBuild = new VirtualSshServer({ port: 0, shell: buildVM });
+const sshDeploy = new VirtualSshServer({ port: 0, shell: deployVM });
+const [portLint, portTest, portBuild, portDeploy] = await Promise.all([
+  sshLint.start(), sshTest.start(), sshBuild.start(), sshDeploy.start(),
+]);
+```
+
+Each VM gets its own `VirtualSshServer` listening on a dynamic port. The ports are used by `SshClient` instances to connect.
+
+### Step 4 — Create SSH clients
 
 ```ts
 const clients = {
-  lint: new SshClient(lintVM, "root"),
-  test: new SshClient(testVM, "root"),
-  build: new SshClient(buildVM, "root"),
-  deploy: new SshClient(deployVM, "root"),
+  lint: new SshClient(),
+  test: new SshClient(),
+  build: new SshClient(),
+  deploy: new SshClient(),
 };
+await Promise.all([
+  clients.lint.connect({ host: "localhost", port: portLint, username: "root", password: "root" }),
+  clients.test.connect({ host: "localhost", port: portTest, username: "root", password: "root" }),
+  clients.build.connect({ host: "localhost", port: portBuild, username: "root", password: "root" }),
+  clients.deploy.connect({ host: "localhost", port: portDeploy, username: "root", password: "root" }),
+]);
 ```
 
-Each `SshClient` wraps a VM shell and authenticates as `"root"` (the default admin user with full permissions). The client is the conduit for executing commands inside the VM. Because each VM is a separate `VirtualShell`, clients cannot cross boundaries — `clients.lint.exec()` runs only in the lint VM.
+Each `SshClient` is created unconnected, then connected to the appropriate VM's SSH server. Because each VM is a separate `VirtualShell`, clients cannot cross boundaries — `clients.lint.exec()` runs only in the lint VM.
 
-### Step 4 — Set resource caps on all VMs
+### Step 5 — Set resource caps on all VMs
 
 ```ts
 for (const [name, vm] of Object.entries({ lint: lintVM, test: testVM, build: buildVM, deploy: deployVM })) {
   vm.vfs.setRamCap(50 * 1024 * 1024); // 50 MB per VM
   vm.users.setCpuCapCores(1); // 1 vCPU per VM
+  vm.users.setPassword("root", "root");
   vm.users.enableScheduler({ baseTimesliceMs: 50 });
-  console.log(`✅ ${name} VM: 50MB RAM, 1 vCPU, scheduler enabled`);
+  console.log(`${name} VM: 50MB RAM, 1 vCPU, scheduler enabled`);
 }
 ```
 
 Each VM gets the same resource profile:
 - **RAM cap:** `setRamCap(50 MB)` limits total filesystem-backed memory (affects swap and cache behavior, not raw JavaScript heap).
 - **CPU cap:** `setCpuCapCores(1)` limits the VM to 1 virtual core. This affects the process scheduler's concurrency — only one process runs per timeslice.
+- **Root password:** `setPassword("root", "root")` enables SSH authentication for the root user.
+
+### Step 6 — Stage 1: Lint
+
+```ts
+const lintResult = await clients.lint.exec("echo 'Running ESLint...' && echo 'No errors found' && echo 'lint-passed'");
+console.log("  Lint exit code:", lintResult.exitCode);
+```
+
+The lint stage runs inside the `lint` VM. The command simulates running ESLint — printing status messages and writing a result status file. In a real pipeline, this would be `eslint src/`.
 - **Scheduler:** `enableScheduler({ baseTimesliceMs: 50 })` activates the Completely Fair Scheduler (CFS) with 50ms base timeslices. The scheduler manages process time-sharing within the VM.
 
 These caps simulate how CI runners use cgroups to prevent a single job from consuming all host resources.
 
-### Step 5 — Stage 1: Lint
+### Step 6 — Stage 1: Lint
 
 ```ts
-console.log("\n📋 Stage 1: Linting...");
-const lintResult = await clients.lint.exec(
-  "echo 'Running ESLint...' && echo 'No errors found' && echo 'lint-passed' > /tmp/lint-status && echo 'lint-passed'"
-);
-console.log("  Lint exit code:", lintResult.exitCode);
+const lintResult = await clients.lint.exec("echo 'Running ESLint...' && echo 'No errors found' && echo 'lint-passed'");
+console.log(`Lint exit code: ${lintResult.exitCode}`);
 ```
 
 The lint stage simulates running ESLint: echoes messages, writes a status file (`/tmp/lint-status`) with the result, and prints `"lint-passed"` as the **last line** of stdout. The `&&` chaining means if any command fails (non-zero exit), the pipeline would halt here. The `exec()` method returns an object: `{ exitCode: number, stdout?: string, stderr?: string }`. The exit code `0` indicates the command chain succeeded.
 
-### Step 6 — Stage 2: Test
+### Step 7 — Stage 2: Test
 
 ```ts
 const testResult = await clients.test.exec(
@@ -95,7 +124,7 @@ const testResult = await clients.test.exec(
 
 The test stage creates a test results directory, writes a summary file (42 tests, 0 failures), and sets the stage status. The last line `"tests-passed"` will be used later in the summary report. In a real pipeline, this would run `jest` or `pytest` and collect JUnit XML output.
 
-### Step 7 — Stage 3: Build
+### Step 8 — Stage 3: Build
 
 ```ts
 const buildResult = await clients.build.exec(
@@ -109,7 +138,7 @@ const buildResult = await clients.build.exec(
 
 The build stage simulates compilation: creates a build output directory, writes a `package.json` artifact, generates a 100 KB binary (`dd if=/dev/zero of=... bs=1024 count=100`), and records success. The `dd` command simulates generating a real binary artifact — the `2>/dev/null` suppresses the summary output that `dd` prints to stderr.
 
-### Step 8 — Stage 4: Deploy
+### Step 9 — Stage 4: Deploy
 
 ```ts
 const deployFs = deployVM.vfs;
@@ -129,7 +158,7 @@ const deployResult = await clients.deploy.exec(
 
 The deploy stage demonstrates a hybrid approach: the config file is written directly to the deploy VM's VFS (using `vfs.writeFile`), then a command reads it back and reports completion. In a real pipeline, this stage would run `kubectl apply` or `rsync` to push built artifacts. Writing the config file programmatically (rather than via shell echo) shows that pipeline logic can mix direct VFS manipulation with command execution. The `cat /etc/deploy-config.json` command outputs the JSON config to prove the file is readable inside the VM.
 
-### Step 9 — Pipeline Summary
+### Step 10 — Pipeline Summary
 
 ```ts
 const stages = [
@@ -157,7 +186,7 @@ console.log(`\n${allPassed ? "✅ Pipeline PASSED" : "❌ Pipeline FAILED"}`);
 
 Each stage is printed with its pass/fail icon and the last line of output. The consolidated verdict is displayed at the bottom.
 
-### Step 10 — Resource Usage Report
+### Step 11 — Resource Usage Report
 
 ```ts
 for (const [name, vm] of Object.entries({ lint: lintVM, test: testVM, build: buildVM, deploy: deployVM })) {
@@ -168,6 +197,21 @@ for (const [name, vm] of Object.entries({ lint: lintVM, test: testVM, build: bui
 ```
 
 After the pipeline completes, each VM reports its process count and scheduler statistics. `listProcesses()` returns all processes that were registered and are still tracked. `getSchedulerStats()` returns an object with `scheduleCount` (how many times the scheduler ran), `totalTimeslices`, and other metrics. If the scheduler was never enabled on a VM, this returns `null`. The output shows that each VM ran commands and the scheduler was active.
+
+### Step 12 — Cleanup
+
+```ts
+clients.lint.disconnect();
+clients.test.disconnect();
+clients.build.disconnect();
+clients.deploy.disconnect();
+sshLint.stop();
+sshTest.stop();
+sshBuild.stop();
+sshDeploy.stop();
+```
+
+All SSH connections and servers are shut down cleanly.
 
 ## Module Interactions
 
@@ -189,40 +233,39 @@ The `&&` chaining in the command strings means the shell stops at the first non-
 When running `bun run examples/16-cicd-pipeline.ts`:
 
 ```
-🚀 Starting CI/CD Pipeline Simulation
+--- Pipeline start ---
+  lint VM: 50MB RAM, 1 vCPU, scheduler enabled
+  test VM: 50MB RAM, 1 vCPU, scheduler enabled
+  build VM: 50MB RAM, 1 vCPU, scheduler enabled
+  deploy VM: 50MB RAM, 1 vCPU, scheduler enabled
 
-✅ lint VM: 50MB RAM, 1 vCPU, scheduler enabled
-✅ test VM: 50MB RAM, 1 vCPU, scheduler enabled
-✅ build VM: 50MB RAM, 1 vCPU, scheduler enabled
-✅ deploy VM: 50MB RAM, 1 vCPU, scheduler enabled
-
-📋 Stage 1: Linting...
+--- Stage 1: Lint ---
   Lint exit code: 0
 
-🧪 Stage 2: Running tests...
+--- Stage 2: Test ---
   Test exit code: 0
 
-🔨 Stage 3: Building application...
+--- Stage 3: Build ---
   Build exit code: 0
 
-🚀 Stage 4: Deploying to production...
+--- Stage 4: Deploy ---
   Deploy exit code: 0
 
 ==================================================
-📊 Pipeline Summary
+Pipeline Summary
 ==================================================
-  ✅ Lint: lint-passed
-  ✅ Tests: tests-passed
-  ✅ Build: build-passed
-  ✅ Deploy: deploy-passed
+  PASS Lint: lint-passed
+  PASS Tests: tests-passed
+  PASS Build: build-passed
+  PASS Deploy: deploy-passed
 
-✅ Pipeline PASSED
+Pipeline PASSED
   lint: 4 processes, scheduler: 4 schedules
   test: 4 processes, scheduler: 4 schedules
   build: 5 processes, scheduler: 5 schedules
   deploy: 4 processes, scheduler: 4 schedules
 
-🏁 Pipeline complete
+--- Pipeline complete ---
 ```
 
 Process counts may vary slightly depending on how the shell parser registers internal processes. The key invariant is that every stage reports `passed` and the pipeline verdict is `PASSED`.
