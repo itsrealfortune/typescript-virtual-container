@@ -19,6 +19,7 @@
  */
 
 import * as fsSync from "node:fs";
+import { dirname } from "node:path";
 
 /**
  * Journal operation type codes used in VFS write-ahead log entries.
@@ -159,8 +160,9 @@ export function appendJournalEntry(journalPath: string, entry: JournalEntry): vo
 			fsSync.closeSync(fd);
 		}
 	} else {
-		if(!fsSync.existsSync(".vfs")) {
-			fsSync.mkdirSync(".vfs");
+		const journalDir = dirname(journalPath);
+		if (!fsSync.existsSync(journalDir)) {
+			fsSync.mkdirSync(journalDir, { recursive: true });
 		}
 		fsSync.writeFileSync(journalPath, buf);
 	}
