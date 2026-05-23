@@ -9,7 +9,7 @@
 import { VirtualShell } from "../src";
 
 const shell = new VirtualShell("idle-demo");
-shell.ensureInitialized();
+await shell.ensureInitialized();
 
 // ── Enable idle management ────────────────────────────────────────
 console.log("--- Enabling idle management ---");

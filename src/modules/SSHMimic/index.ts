@@ -157,12 +157,12 @@ class SshMimic extends EventEmitter {
 	 *
 	 * @returns Promise resolved with bound listening port.
 	 */
-	public start(): Promise<number> {
+	public async start(): Promise<number> {
 		perf.mark("start");
 		const shell = this._shell;
 		const privateKey = loadOrCreateHostKey();
 
-		shell.ensureInitialized();
+		await shell.ensureInitialized();
 
 		this.server = new SshServer(
 			{

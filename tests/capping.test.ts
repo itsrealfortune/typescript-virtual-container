@@ -76,11 +76,11 @@ describe("RAM capping — enforcement", () => {
 		expect(shell.vfs.getRamCap()).toBeNull();
 	});
 
-	test("writeFile throws ENOMEM when cap is below current usage", () => {
+	test("writeFile throws ENOMEM when cap is below current usage", async () => {
 		const shell = new VirtualShell("vfs-api-enforce", undefined, undefined, {
 			ramCapBytes: 56 * 1024,
 		});
-		shell.ensureInitialized();
+		await shell.ensureInitialized();
 		expect(() => {
 			shell.vfs.writeFile("/tmp/big", "A".repeat(8192));
 		}).toThrow(/ENOMEM/);

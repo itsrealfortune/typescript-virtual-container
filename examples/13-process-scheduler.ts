@@ -9,7 +9,7 @@
 import { VirtualShell } from "../src";
 
 const shell = new VirtualShell("scheduler-demo");
-shell.ensureInitialized();
+await shell.ensureInitialized();
 
 // ── Enable scheduler ────────────────────────────────────────────────
 console.log("--- Enable scheduler ---");

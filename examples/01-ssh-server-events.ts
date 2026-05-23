@@ -13,7 +13,7 @@ import { SshMimic as VirtualSshServer } from "../src/modules/SSHMimic/index";
 import { VirtualShell } from "../src/modules/VirtualShell/index";
 
 const shell = new VirtualShell("lab-environment");
-shell.ensureInitialized();
+await shell.ensureInitialized();
 shell.users.setPassword("root", "root");
 
 const ssh = new VirtualSshServer({ port: 2222, shell });
