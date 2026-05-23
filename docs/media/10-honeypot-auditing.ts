@@ -1,6 +1,6 @@
 /**
  * 10 - Security Auditing with HoneyPot
- * 
+ *
  * Demonstrates attaching HoneyPot to virtual components to log events,
  * track statistics, and detect anomalies.
  */
@@ -25,7 +25,12 @@ const port = await ssh.start();
 console.log("\n--- Simulate activity ---");
 
 const client = new SshClient();
-await client.connect({ host: "localhost", port, username: "root", password: "root" });
+await client.connect({
+	host: "localhost",
+	port,
+	username: "root",
+	password: "root",
+});
 await client.exec("echo 'secret data' > /etc/secrets.txt");
 await client.exec("cat /etc/secrets.txt");
 await client.exec("ls -la /tmp");
