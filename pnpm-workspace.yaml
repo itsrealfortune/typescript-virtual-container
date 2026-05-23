@@ -1,0 +1,6 @@
+ignoredBuiltDependencies:
+  - cpu-features
+onlyBuiltDependencies:
+  - esbuild
+  - roxify
+  - ssh2
