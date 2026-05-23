@@ -124,7 +124,10 @@ bun run build-all       # rebuild everything (library + standalone + demo + docs
 <script type="module">
   import { VirtualShell, VirtualFileSystem, SshClient } from "./builds/fortune-nyx-v1.7.5-web.min.js";
 
-  const shell = new VirtualShell("web-vm", undefined, { mode: "memory" });
+  // Wait for IndexedDB VFS to finish loading (required before any VFS ops)
+  await globalThis.__fsReady__;
+
+  const shell = new VirtualShell("web-vm");
   await shell.ensureInitialized();
 
   const client = new SshClient(shell, "root");
