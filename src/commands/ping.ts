@@ -1,5 +1,5 @@
-import type { ShellModule } from "../types/commands";
-import { parseArgs } from "./command-helpers";
+import type {ShellModule} from "../types/commands";
+import {parseArgs} from "./command-helpers";
 
 const isBrowser =
 	typeof process === "undefined" ||
@@ -8,21 +8,21 @@ const isBrowser =
 /** Lazily import execSync — avoids static import that breaks browser polyfills. */
 async function execPing(
 	count: number,
-	host: string,
-): Promise<{ stdout: string } | { stderr: string } | null> {
+	host: string
+): Promise<{stdout: string} | {stderr: string} | null> {
 	try {
-		const { execSync } = await import("node:child_process");
+		const {execSync} = await import("node:child_process");
 		const output = execSync(`ping -c ${count} ${host}`, {
 			timeout: 30000,
 			encoding: "utf8",
 			stdio: ["ignore", "pipe", "pipe"],
 		});
-		return { stdout: output as string };
+		return {stdout: output as string};
 	} catch (err: unknown) {
 		const stderrMsg =
-			err instanceof Error ? (err as Error & { stderr?: string }).stderr : "";
+			err instanceof Error ? (err as Error & {stderr?: string}).stderr : "";
 		if (stderrMsg) {
-			return { stderr: stderrMsg };
+			return {stderr: stderrMsg};
 		}
 		return null;
 	}
@@ -39,8 +39,8 @@ export const pingCommand: ShellModule = {
 	description: "Send ICMP ECHO_REQUEST to network hosts",
 	category: "network",
 	params: ["[-c <count>] <host>"],
-	run: async ({ args, shell }) => {
-		const { flagsWithValues, positionals } = parseArgs(args, {
+	run: async ({args, shell}) => {
+		const {flagsWithValues, positionals} = parseArgs(args, {
 			flagsWithValue: ["-c", "-i", "-W"],
 		});
 		const host = positionals[0] ?? "localhost";
@@ -53,7 +53,7 @@ export const pingCommand: ShellModule = {
 		if (!isBrowser) {
 			const result = await execPing(count, host);
 			if (result) {
-				return { ...result, exitCode: "stdout" in result ? 0 : 1 };
+				return {...result, exitCode: "stdout" in result ? 0 : 1};
 			}
 		}
 
@@ -71,7 +71,7 @@ export const pingCommand: ShellModule = {
 			} else {
 				received++;
 				lines.push(
-					`64 bytes from ${host}: icmp_seq=${i} ttl=64 time=${latency.toFixed(3)} ms`,
+					`64 bytes from ${host}: icmp_seq=${i} ttl=64 time=${latency.toFixed(3)} ms`
 				);
 			}
 		}
@@ -79,8 +79,8 @@ export const pingCommand: ShellModule = {
 		const lossPct = ((lost / transmitted) * 100).toFixed(0);
 		lines.push(`--- ${host} ping statistics ---`);
 		lines.push(
-			`${transmitted} packets transmitted, ${received} received, ${lossPct}% packet loss`,
+			`${transmitted} packets transmitted, ${received} received, ${lossPct}% packet loss`
 		);
-		return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
+		return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
 	},
 };

@@ -1,4 +1,4 @@
-import type { ShellModule } from "../types/commands";
+import type {ShellModule} from "../types/commands";
 
 /**
  * Locate a command in PATH.
@@ -10,13 +10,13 @@ export const whichCommand: ShellModule = {
 	description: "Locate a command in PATH",
 	category: "shell",
 	params: ["<command...>"],
-	run: ({ args, shell, env }) => {
+	run: ({args, shell, env}) => {
 		if (args.length === 0) {
-			return { stderr: "which: missing argument", exitCode: 1 };
+			return {stderr: "which: missing argument", exitCode: 1};
 		}
 
 		const pathDirs = (env?.vars?.PATH ?? "/usr/local/bin:/usr/bin:/bin").split(
-			":",
+			":"
 		);
 		const lines: string[] = [];
 		let anyMissing = false;
@@ -40,8 +40,8 @@ export const whichCommand: ShellModule = {
 		}
 
 		if (lines.length === 0) {
-			return { exitCode: 1 };
+			return {exitCode: 1};
 		}
-		return { stdout: lines.join("\n"), exitCode: anyMissing ? 1 : 0 };
+		return {stdout: lines.join("\n"), exitCode: anyMissing ? 1 : 0};
 	},
 };

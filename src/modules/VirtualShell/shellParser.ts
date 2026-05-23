@@ -7,7 +7,7 @@ import type {
 	Statement,
 	Subshell,
 } from "../../types/pipeline";
-import { tokenizeCommand } from "../../utils/tokenize";
+import {tokenizeCommand} from "../../utils/tokenize";
 
 // ── Public API ───────────────────────────────────────────────────────────────
 
@@ -25,14 +25,14 @@ import { tokenizeCommand } from "../../utils/tokenize";
 export function parseScript(rawInput: string): Script {
 	const trimmed = rawInput.trim();
 	if (!trimmed) {
-		return { statements: [], isValid: true };
+		return {statements: [], isValid: true};
 	}
 
 	try {
 		const statements = parseStatements(trimmed);
-		return { statements, isValid: true };
+		return {statements, isValid: true};
 	} catch (e) {
-		return { statements: [], isValid: false, error: (e as Error).message };
+		return {statements: [], isValid: false, error: (e as Error).message};
 	}
 }
 
@@ -47,13 +47,13 @@ export function parseScript(rawInput: string): Script {
 export function parseShellPipeline(rawInput: string): Pipeline {
 	const trimmed = rawInput.trim();
 	if (!trimmed) {
-		return { commands: [], isValid: true };
+		return {commands: [], isValid: true};
 	}
 	try {
 		const commands = parsePipeline(trimmed);
-		return { commands, isValid: true };
+		return {commands, isValid: true};
 	} catch (e) {
-		return { commands: [], isValid: false, error: (e as Error).message };
+		return {commands: [], isValid: false, error: (e as Error).message};
 	}
 }
 
@@ -75,7 +75,7 @@ function parseStatements(input: string): Statement[] {
 
 		if (text.startsWith("(") && text.endsWith(")")) {
 			const inner = text.slice(1, -1).trim();
-			stmt.subshell = { statements: parseStatements(inner) } satisfies Subshell;
+			stmt.subshell = {statements: parseStatements(inner)} satisfies Subshell;
 		} else if (text.startsWith("{") && text.endsWith("}")) {
 			const inner = text.slice(1, -1).trim();
 			stmt.group = {
@@ -83,7 +83,7 @@ function parseStatements(input: string): Statement[] {
 			} satisfies CommandGroup;
 		} else {
 			const commands = parsePipeline(text);
-			stmt.pipeline = { commands, isValid: true };
+			stmt.pipeline = {commands, isValid: true};
 		}
 
 		statements.push(stmt);
@@ -108,7 +108,7 @@ function splitByLogicalOps(input: string): Segment[] {
 
 	const flush = (op?: LogicalOp, background?: boolean) => {
 		if (current.trim()) {
-			segments.push({ text: current, op, background });
+			segments.push({text: current, op, background});
 		}
 		current = "";
 	};
@@ -254,7 +254,7 @@ function splitByPipe(input: string): string[] {
 function parseCommandWithRedirections(token: string): PipelineCommand {
 	const parts = tokenizeCommand(token);
 	if (parts.length === 0) {
-		return { name: "", args: [] };
+		return {name: "", args: []};
 	}
 
 	const cmdParts: string[] = [];

@@ -1,6 +1,6 @@
-import type { ShellModule } from "../types/commands";
-import { ifFlag } from "./command-helpers";
-import { checkFilePermission, resolveReadablePath } from "./helpers";
+import type {ShellModule} from "../types/commands";
+import {ifFlag} from "./command-helpers";
+import {checkFilePermission, resolveReadablePath} from "./helpers";
 
 /**
  * Concatenate and print files to stdout.
@@ -12,17 +12,17 @@ export const catCommand: ShellModule = {
 	description: "Concatenate and print files",
 	category: "files",
 	params: ["[-n] [-b] <file...>"],
-	run: ({ authUser, shell, cwd, args, stdin, uid, gid }) => {
+	run: ({authUser, shell, cwd, args, stdin, uid, gid}) => {
 		const numberAll = ifFlag(args, ["-n", "--number"]);
 		const numberNonBlank = ifFlag(args, ["-b", "--number-nonblank"]);
 		const fileArgs = args.filter((a) => !a.startsWith("-"));
 
 		if (fileArgs.length === 0 && stdin !== undefined) {
-			return { stdout: stdin, exitCode: 0 };
+			return {stdout: stdin, exitCode: 0};
 		}
 
 		if (fileArgs.length === 0) {
-			return { stderr: "cat: missing file operand", exitCode: 1 };
+			return {stderr: "cat: missing file operand", exitCode: 1};
 		}
 
 		const parts: string[] = [];
@@ -35,7 +35,7 @@ export const catCommand: ShellModule = {
 		const combined = parts.join("");
 
 		if (!(numberAll || numberNonBlank)) {
-			return { stdout: combined, exitCode: 0 };
+			return {stdout: combined, exitCode: 0};
 		}
 
 		let lineNum = 1;
@@ -49,6 +49,6 @@ export const catCommand: ShellModule = {
 			})
 			.join("\n");
 
-		return { stdout: numbered, exitCode: 0 };
+		return {stdout: numbered, exitCode: 0};
 	},
 };

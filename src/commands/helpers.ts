@@ -6,8 +6,8 @@
  */
 import * as path from "node:path";
 import type VirtualFileSystem from "../modules/VirtualFileSystem";
-import type { VirtualPackageManager } from "../modules/VirtualPackageManager";
-import type { VirtualShell } from "../modules/VirtualShell";
+import type {VirtualPackageManager} from "../modules/VirtualPackageManager";
+import type {VirtualShell} from "../modules/VirtualShell";
 
 const PROTECTED_PREFIXES = ["/.virtual-env-js/.auth", "/etc/htpasswd"] as const;
 
@@ -24,7 +24,7 @@ const PROTECTED_PREFIXES = ["/.virtual-env-js/.auth", "/etc/htpasswd"] as const;
 export function resolvePath(
 	cwd: string,
 	inputPath: string,
-	homeDir?: string,
+	homeDir?: string
 ): string {
 	if (!inputPath || inputPath.trim() === "") {
 		return cwd;
@@ -44,7 +44,7 @@ function isProtectedPath(targetPath: string): boolean {
 		: path.posix.normalize(`/${targetPath}`);
 
 	return PROTECTED_PREFIXES.some(
-		(prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`),
+		(prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`)
 	);
 }
 
@@ -58,7 +58,7 @@ function isProtectedPath(targetPath: string): boolean {
 export function assertPathAccess(
 	authUser: string,
 	targetPath: string,
-	operation: string,
+	operation: string
 ): void {
 	if (authUser === "root") {
 		return;
@@ -86,8 +86,8 @@ export function stripUrlFilename(url: string): string {
 function levenshtein(a: string, b: string): number {
 	const alen = a.length;
 	const blen = b.length;
-	const dp: number[][] = Array.from({ length: alen + 1 }, () =>
-		new Array(blen + 1).fill(0),
+	const dp: number[][] = Array.from({length: alen + 1}, () =>
+		new Array(blen + 1).fill(0)
 	);
 
 	for (let i = 0; i <= alen; i++) {
@@ -107,7 +107,7 @@ function levenshtein(a: string, b: string): number {
 			row[j] = Math.min(
 				(prevRow[j] as number) + 1,
 				(row[j - 1] as number) + 1,
-				(prevRow[j - 1] as number) + cost,
+				(prevRow[j - 1] as number) + cost
 			);
 		}
 	}
@@ -129,7 +129,7 @@ function levenshtein(a: string, b: string): number {
 export function resolveReadablePath(
 	vfs: VirtualFileSystem,
 	cwd: string,
-	inputPath: string,
+	inputPath: string
 ): string {
 	const exactPath = resolvePath(cwd, inputPath);
 	if (vfs.exists(exactPath)) {
@@ -141,14 +141,14 @@ export function resolveReadablePath(
 	const siblings = vfs.list(parent);
 
 	const caseInsensitive = siblings.filter(
-		(name) => name.toLowerCase() === fileName.toLowerCase(),
+		(name) => name.toLowerCase() === fileName.toLowerCase()
 	);
 	if (caseInsensitive.length === 1) {
 		return path.posix.join(parent, caseInsensitive[0] as string);
 	}
 
 	const near = siblings.filter(
-		(name) => levenshtein(name.toLowerCase(), fileName.toLowerCase()) <= 1,
+		(name) => levenshtein(name.toLowerCase(), fileName.toLowerCase()) <= 1
 	);
 	if (near.length === 1) {
 		return path.posix.join(parent, near[0] as string);
@@ -164,7 +164,7 @@ export function resolveReadablePath(
  * @returns The VirtualPackageManager, or undefined if none is configured
  */
 export function getPackageManager(
-	shell: VirtualShell,
+	shell: VirtualShell
 ): VirtualPackageManager | undefined {
 	return shell.packageManager;
 }
@@ -182,10 +182,10 @@ export function getPackageManager(
  */
 export function checkFilePermission(
 	vfs: VirtualFileSystem,
-	users: { getUid: (u: string) => number; getGid: (u: string) => number },
+	users: {getUid: (u: string) => number; getGid: (u: string) => number},
 	authUser: string,
 	filePath: string,
-	want: number,
+	want: number
 ): void {
 	if (authUser === "root") {
 		return;

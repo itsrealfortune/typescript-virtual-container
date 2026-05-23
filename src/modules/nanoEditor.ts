@@ -18,8 +18,8 @@
  * nano.handleInput(Buffer.from("a")); // type 'a'
  * ```
  */
-import type { ShellStream } from "../types/streams";
-import type { TerminalSize } from "./shellRuntime";
+import type {ShellStream} from "../types/streams";
+import type {TerminalSize} from "./shellRuntime";
 
 // ── ANSI helpers ─────────────────────────────────────────────────────────────
 
@@ -616,7 +616,7 @@ export class NanoEditor {
 	private _moveCursor(dRow: number): void {
 		this._cursorRow = Math.max(
 			0,
-			Math.min(this._lines.length - 1, this._cursorRow + dRow),
+			Math.min(this._lines.length - 1, this._cursorRow + dRow)
 		);
 		this._cursorCol = Math.min(this._cursorCol, this._currentLine().length);
 		const prevScrollTop = this._scrollTop;
@@ -675,7 +675,7 @@ export class NanoEditor {
 		const editRows = this._editAreaRows();
 		this._cursorRow = Math.max(
 			0,
-			Math.min(this._lines.length - 1, this._cursorRow + dir * editRows),
+			Math.min(this._lines.length - 1, this._cursorRow + dir * editRows)
 		);
 		this._cursorCol = Math.min(this._cursorCol, this._currentLine().length);
 		this._clampScroll();
@@ -831,7 +831,7 @@ export class NanoEditor {
 		this._lines.splice(this._cursorRow, 0, ...lines);
 		this._cursorRow = Math.min(
 			this._cursorRow + lines.length - 1,
-			this._lines.length - 1,
+			this._lines.length - 1
 		);
 		this._modified = true;
 		this._clampScroll();
@@ -905,7 +905,7 @@ export class NanoEditor {
 			this._enterSearch();
 			return;
 		}
-		const { query, caseSensitive } = this._searchState;
+		const {query, caseSensitive} = this._searchState;
 		const q = caseSensitive ? query : query.toLowerCase();
 
 		let startRow = this._searchState.row;
@@ -959,7 +959,7 @@ export class NanoEditor {
 		if (this._modified) {
 			this._mode = "exit-confirm";
 			this._renderStatusBar(
-				'Save modified buffer? (Answering "No" will DISCARD changes.) Y N',
+				'Save modified buffer? (Answering "No" will DISCARD changes.) Y N'
 			);
 			return;
 		}
@@ -1132,12 +1132,9 @@ export class NanoEditor {
 		const mid = NanoEditor._pad(
 			title +
 				" ".repeat(
-					Math.max(
-						0,
-						Math.floor((this.cols - title.length - right.length) / 2),
-					),
+					Math.max(0, Math.floor((this.cols - title.length - right.length) / 2))
 				),
-			this.cols - right.length,
+			this.cols - right.length
 		);
 		const full = NanoEditor._pad(mid + right, this.cols);
 		buf.push(ansi.cup(1, 1));

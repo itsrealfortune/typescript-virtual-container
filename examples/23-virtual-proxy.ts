@@ -5,7 +5,7 @@
  * list and remove port forwards, and manage port lifecycle.
  */
 
-import { Baie, VirtualProxy } from "../src";
+import {Baie, VirtualProxy} from "../src";
 
 const baie = new Baie("proxy-demo", "10.0.0.0/24");
 

@@ -1,6 +1,6 @@
-import type { ShellModule } from "../types/commands";
-import { ifFlag, parseArgs } from "./command-helpers";
-import { assertPathAccess, resolvePath, stripUrlFilename } from "./helpers";
+import type {ShellModule} from "../types/commands";
+import {ifFlag, parseArgs} from "./command-helpers";
+import {assertPathAccess, resolvePath, stripUrlFilename} from "./helpers";
 
 /**
  * Download files from the web (fetch-based implementation).
@@ -12,8 +12,8 @@ export const wgetCommand: ShellModule = {
 	description: "File downloader (pure fetch)",
 	category: "network",
 	params: ["[options] <url>"],
-	run: async ({ authUser, cwd, args, shell, uid, gid }) => {
-		const { flagsWithValues, positionals } = parseArgs(args, {
+	run: async ({authUser, cwd, args, shell, uid, gid}) => {
+		const {flagsWithValues, positionals} = parseArgs(args, {
 			flagsWithValue: [
 				"-O",
 				"--output-document",
@@ -110,7 +110,7 @@ export const wgetCommand: ShellModule = {
 				"tcp",
 				undefined,
 				parsedUrl.hostname,
-				dstPort,
+				dstPort
 			);
 			if (fwAction === "DROP" || fwAction === "REJECT") {
 				return {
@@ -119,31 +119,31 @@ export const wgetCommand: ShellModule = {
 				};
 			}
 			response = await fetch(url, {
-				headers: { "User-Agent": "Wget/1.21.3 (Fortune GNU/Linux)" },
+				headers: {"User-Agent": "Wget/1.21.3 (Fortune GNU/Linux)"},
 			});
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
 			stderrLines.push(`wget: unable to resolve host: ${msg}`);
-			return { stderr: stderrLines.join("\n"), exitCode: 4 };
+			return {stderr: stderrLines.join("\n"), exitCode: 4};
 		}
 
 		if (!response.ok) {
 			stderrLines.push(`ERROR ${response.status}: ${response.statusText}`);
-			return { stderr: stderrLines.join("\n"), exitCode: 8 };
+			return {stderr: stderrLines.join("\n"), exitCode: 8};
 		}
 
 		let body: string;
 		try {
 			body = await response.text();
 		} catch {
-			return { stderr: "wget: failed to read response", exitCode: 1 };
+			return {stderr: "wget: failed to read response", exitCode: 1};
 		}
 
 		if (!quiet) {
 			const ct =
 				response.headers.get("content-type") ?? "application/octet-stream";
 			stderrLines.push(
-				`HTTP request sent, awaiting response... ${response.status} ${response.statusText}`,
+				`HTTP request sent, awaiting response... ${response.status} ${response.statusText}`
 			);
 			stderrLines.push(`Length: ${body.length} [${ct}]`);
 		}
@@ -161,12 +161,12 @@ export const wgetCommand: ShellModule = {
 			shell.vfs.writeFile(targetPath, body, {}, uid, gid);
 			if (!quiet) {
 				stderrLines.push(
-					`Saving to: '${targetPath}'\n${targetPath}            100%[==================>]  ${body.length} B`,
+					`Saving to: '${targetPath}'\n${targetPath}            100%[==================>]  ${body.length} B`
 				);
 			}
-			return { stderr: stderrLines.join("\n") || undefined, exitCode: 0 };
+			return {stderr: stderrLines.join("\n") || undefined, exitCode: 0};
 		}
 
-		return { stdout: body, exitCode: 0 };
+		return {stdout: body, exitCode: 0};
 	},
 };

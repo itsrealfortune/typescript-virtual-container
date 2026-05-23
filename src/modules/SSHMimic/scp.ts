@@ -18,9 +18,9 @@
  * Acknowledgement byte: \0 = ok, \1 = warning, \2 = error.
  */
 
-import { basename } from "node:path";
-import type { VirtualShell } from "../VirtualShell";
-import { resolvePath } from "../shellRuntime";
+import {basename} from "node:path";
+import type {VirtualShell} from "../VirtualShell";
+import {resolvePath} from "../shellRuntime";
 
 // ── Stream type ───────────────────────────────────────────────────────────────
 // ssh2 ServerChannel is a Duplex; we need both read and write + exit/stderr.
@@ -33,7 +33,7 @@ interface ScpStream {
 	write(data: Buffer | string): boolean;
 	on(event: "data", listener: (chunk: Buffer) => void): this;
 	on(event: "end" | "close", listener: () => void): this;
-	stderr: { write(data: string | Buffer): void };
+	stderr: {write(data: string | Buffer): void};
 	exit(code: number): void;
 	end(): void;
 }
@@ -84,13 +84,13 @@ export function runScpSink(
 	destArg: string,
 	authUser: string,
 	shell: VirtualShell,
-	recursive: boolean,
+	recursive: boolean
 ): void {
 	// Buffered reader that handles arbitrary chunk boundaries
 	let buf = Buffer.alloc(0);
 	const dirStack: string[] = [resolvePath("/", destArg)];
 	let state: "cmd" | "data" = "cmd";
-	let pendingFile: { name: string; size: number; dest: string } | null = null;
+	let pendingFile: {name: string; size: number; dest: string} | null = null;
 	let bytesRead = 0;
 	const fileChunks: Buffer[] = [];
 	let finished = false;
@@ -150,7 +150,7 @@ export function runScpSink(
 
 			// type === "C"
 			const destPath = `${currentDir()}/${name}`;
-			pendingFile = { name, size, dest: destPath };
+			pendingFile = {name, size, dest: destPath};
 			bytesRead = 0;
 			fileChunks.length = 0;
 			state = "data";
@@ -244,7 +244,7 @@ export function runScpSource(
 	stream: ScpStream,
 	srcArg: string,
 	shell: VirtualShell,
-	recursive: boolean,
+	recursive: boolean
 ): void {
 	const srcPath = resolvePath("/", srcArg);
 
@@ -255,9 +255,9 @@ export function runScpSource(
 
 	// Collect all entries to send
 	type Entry =
-		| { kind: "file"; path: string; name: string }
-		| { kind: "dir-open"; name: string }
-		| { kind: "dir-close" };
+		| {kind: "file"; path: string; name: string}
+		| {kind: "dir-open"; name: string}
+		| {kind: "dir-close"};
 
 	const entries: Entry[] = [];
 
@@ -268,13 +268,13 @@ export function runScpSource(
 				// skip directories silently like real scp
 				return;
 			}
-			entries.push({ kind: "dir-open", name });
+			entries.push({kind: "dir-open", name});
 			for (const child of shell.vfs.list(p)) {
 				collect(`${p}/${child}`, child);
 			}
-			entries.push({ kind: "dir-close" });
+			entries.push({kind: "dir-close"});
 		} else {
-			entries.push({ kind: "file", path: p, name });
+			entries.push({kind: "file", path: p, name});
 		}
 	}
 
@@ -381,9 +381,9 @@ export function handleScp(
 	stream: ScpStream,
 	rawArgs: string[],
 	authUser: string,
-	shell: VirtualShell,
+	shell: VirtualShell
 ): void {
-	const { sink, source, recursive, target } = parseArgs(rawArgs);
+	const {sink, source, recursive, target} = parseArgs(rawArgs);
 
 	if (!(sink || source)) {
 		scpError(stream, "missing -t or -f flag");

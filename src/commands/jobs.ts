@@ -1,9 +1,9 @@
-import type { VirtualProcess } from "../modules/VirtualUserManager";
-import type { ShellModule } from "../types/commands";
+import type {VirtualProcess} from "../modules/VirtualUserManager";
+import type {ShellModule} from "../types/commands";
 
 function parseJobspec(
 	arg: string | undefined,
-	procs: VirtualProcess[],
+	procs: VirtualProcess[]
 ): VirtualProcess | undefined {
 	if (!arg) {
 		// Default to most recent background job
@@ -18,10 +18,10 @@ export const jobsCommand: ShellModule = {
 	description: "List active jobs",
 	category: "shell",
 	params: [],
-	run: ({ shell }) => {
+	run: ({shell}) => {
 		const procs = shell.users.listProcesses();
 		if (procs.length === 0) {
-			return { stdout: "", exitCode: 0 };
+			return {stdout: "", exitCode: 0};
 		}
 
 		const lines = procs.map((p, i) => {
@@ -35,7 +35,7 @@ export const jobsCommand: ShellModule = {
 			return `${label}  ${String(p.pid).padStart(5)} ${status.padEnd(8)} ${p.argv.join(" ")}`;
 		});
 
-		return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
+		return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
 	},
 };
 
@@ -44,14 +44,14 @@ export const bgCommand: ShellModule = {
 	description: "Resume a suspended job in the background",
 	category: "shell",
 	params: ["[%jobspec]"],
-	run: ({ args, shell }) => {
+	run: ({args, shell}) => {
 		const procs = shell.users.listProcesses();
 		const proc = parseJobspec(args[0], procs);
 		if (!proc) {
-			return { stderr: `bg: ${args[0] ?? "%1"}: no such job`, exitCode: 1 };
+			return {stderr: `bg: ${args[0] ?? "%1"}: no such job`, exitCode: 1};
 		}
 		if (proc.status === "done") {
-			return { stderr: `bg: ${args[0]}: job has finished`, exitCode: 1 };
+			return {stderr: `bg: ${args[0]}: job has finished`, exitCode: 1};
 		}
 		proc.status = "running";
 		return {
@@ -66,16 +66,16 @@ export const fgCommand: ShellModule = {
 	description: "Resume a suspended job in the foreground",
 	category: "shell",
 	params: ["[%jobspec]"],
-	run: ({ args, shell }) => {
+	run: ({args, shell}) => {
 		const procs = shell.users.listProcesses();
 		const proc = parseJobspec(args[0], procs);
 		if (!proc) {
-			return { stderr: `fg: ${args[0] ?? "%1"}: no such job`, exitCode: 1 };
+			return {stderr: `fg: ${args[0] ?? "%1"}: no such job`, exitCode: 1};
 		}
 		if (proc.status === "done") {
-			return { stderr: `fg: ${args[0]}: job has finished`, exitCode: 1 };
+			return {stderr: `fg: ${args[0]}: job has finished`, exitCode: 1};
 		}
 		proc.status = "running";
-		return { stdout: `${proc.argv.join(" ")}\n`, exitCode: 0 };
+		return {stdout: `${proc.argv.join(" ")}\n`, exitCode: 0};
 	},
 };

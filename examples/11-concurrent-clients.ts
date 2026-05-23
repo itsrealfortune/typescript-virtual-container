@@ -6,7 +6,7 @@
  * race conditions, and concurrent file operations.
  */
 
-import { SshClient, VirtualShell, VirtualSshServer } from "../src";
+import {SshClient, VirtualShell, VirtualSshServer} from "../src";
 
 const shell = new VirtualShell("typescript-vm");
 await shell.ensureInitialized();
@@ -16,7 +16,7 @@ shell.users.addUser("alice", "alice123");
 shell.users.addUser("bob", "bob456");
 shell.users.addUser("charlie", "charlie789");
 
-const ssh = new VirtualSshServer({ port: 0, shell });
+const ssh = new VirtualSshServer({port: 0, shell});
 const port = await ssh.start();
 
 const client1 = new SshClient();
@@ -50,12 +50,12 @@ console.log("--- Concurrent file writes ---");
 const [r1, r2, r3] = await Promise.all([
 	client1.writeFile(
 		"/tmp/alice.txt",
-		`Alice's data -- written at ${Date.now()}`,
+		`Alice's data -- written at ${Date.now()}`
 	),
 	client2.writeFile("/tmp/bob.txt", `Bob's data -- written at ${Date.now()}`),
 	client3.writeFile(
 		"/tmp/charlie.txt",
-		`Charlie's data -- written at ${Date.now()}`,
+		`Charlie's data -- written at ${Date.now()}`
 	),
 ]);
 
@@ -81,7 +81,7 @@ console.log("\n--- Cross-user file sharing ---");
 
 const bobReadsAlice = await client2.cat("/tmp/alice.txt");
 console.log(
-	`Bob reads Alice's file: exit ${bobReadsAlice.exitCode} -- "${bobReadsAlice.stdout!.trim().slice(0, 30)}..."`,
+	`Bob reads Alice's file: exit ${bobReadsAlice.exitCode} -- "${bobReadsAlice.stdout!.trim().slice(0, 30)}..."`
 );
 
 // ── Concurrent directory listing ───────────────────────────────────

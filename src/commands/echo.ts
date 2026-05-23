@@ -1,6 +1,6 @@
-import type { ShellModule } from "../types/commands";
-import { parseArgs } from "./command-helpers";
-import { expandSync } from "../utils/expand";
+import type {ShellModule} from "../types/commands";
+import {parseArgs} from "./command-helpers";
+import {expandSync} from "../utils/expand";
 
 /**
  * Expand escape sequences for `echo -e`.
@@ -17,7 +17,7 @@ function expandEscapes(text: string): string {
 		.replace(/\\f/g, "\x0C")
 		.replace(/\\v/g, "\x0B")
 		.replace(/\\0(\d{1,3})/g, (_, oct) =>
-			String.fromCharCode(Number.parseInt(oct, 8)),
+			String.fromCharCode(Number.parseInt(oct, 8))
 		);
 }
 
@@ -31,8 +31,8 @@ export const echoCommand: ShellModule = {
 	description: "Display text",
 	category: "shell",
 	params: ["[-n] [-e] [text...]"],
-	run: ({ args, stdin, env }) => {
-		const { flags, positionals } = parseArgs(args, {
+	run: ({args, stdin, env}) => {
+		const {flags, positionals} = parseArgs(args, {
 			flags: ["-n", "-e", "-E"],
 		});
 		const noNewline = flags.has("-n");
@@ -46,7 +46,7 @@ export const echoCommand: ShellModule = {
 		const expanded = expandSync(
 			rawText,
 			env?.vars ?? {},
-			env?.lastExitCode ?? 0,
+			env?.lastExitCode ?? 0
 		);
 		const text = escapes ? expandEscapes(expanded) : expanded;
 

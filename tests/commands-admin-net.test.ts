@@ -1,6 +1,6 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { SshClient, type VirtualShell } from "../src";
-import { createTestEnv, runCmd } from "./test-helper";
+import {afterAll, beforeAll, describe, expect, test} from "bun:test";
+import {SshClient, type VirtualShell} from "../src";
+import {createTestEnv, runCmd} from "./test-helper";
 
 // Skip network-dependent tests by default. Run with:
 //   SSH_MIMIC_RUN_NETWORK_TESTS=1 bun test tests/commands-admin-net.test.ts
@@ -56,7 +56,7 @@ describe("useradd command", () => {
 	test("useradd with comment", async () => {
 		const r = await runCmd(
 			client,
-			"useradd -c 'Test User' -m testuser2 || echo 'created'",
+			"useradd -c 'Test User' -m testuser2 || echo 'created'"
 		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
@@ -64,7 +64,7 @@ describe("useradd command", () => {
 	test("useradd with specific uid", async () => {
 		const r = await runCmd(
 			client,
-			"useradd -u 2000 -m testuser3 || echo 'created'",
+			"useradd -u 2000 -m testuser3 || echo 'created'"
 		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
@@ -105,7 +105,7 @@ describe("deluser command", () => {
 		await runCmd(client, "useradd -m delhome 2>/dev/null || true");
 		const r = await runCmd(
 			client,
-			"deluser --remove-home delhome 2>&1 || echo 'deleted'",
+			"deluser --remove-home delhome 2>&1 || echo 'deleted'"
 		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
@@ -184,7 +184,7 @@ describeNetwork("curl command", () => {
 	test("curl basic request", async () => {
 		const r = await runCmd(
 			client,
-			"curl http://example.com 2>/dev/null | head -c 10 || echo 'response'",
+			"curl http://example.com 2>/dev/null | head -c 10 || echo 'response'"
 		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
@@ -192,7 +192,7 @@ describeNetwork("curl command", () => {
 	test("curl localhost", async () => {
 		const r = await runCmd(
 			client,
-			"curl -s http://localhost:8080 2>/dev/null || echo 'no server'",
+			"curl -s http://localhost:8080 2>/dev/null || echo 'no server'"
 		);
 		expect(r.exitCode).toBe(0);
 	});
@@ -200,7 +200,7 @@ describeNetwork("curl command", () => {
 	test("curl invalid URL", async () => {
 		const r = await runCmd(
 			client,
-			"curl http://invalid.example.test 2>&1 | grep -i error || echo 'error'",
+			"curl http://invalid.example.test 2>&1 | grep -i error || echo 'error'"
 		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
@@ -208,7 +208,7 @@ describeNetwork("curl command", () => {
 	test("curl -o saves to file", async () => {
 		const r = await runCmd(
 			client,
-			"curl -s -o /tmp/curlout.html http://example.com 2>/dev/null || echo 'done'",
+			"curl -s -o /tmp/curlout.html http://example.com 2>/dev/null || echo 'done'"
 		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
@@ -226,7 +226,7 @@ describeNetwork("curl command", () => {
 	test("curl -I head request", async () => {
 		const r = await runCmd(
 			client,
-			"curl -I http://example.com 2>/dev/null | head -1 || echo 'header'",
+			"curl -I http://example.com 2>/dev/null | head -1 || echo 'header'"
 		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
@@ -234,7 +234,7 @@ describeNetwork("curl command", () => {
 	test("curl with headers", async () => {
 		const r = await runCmd(
 			client,
-			"curl -H 'User-Agent: test' http://example.com 2>/dev/null | head -c 5 || echo 'data'",
+			"curl -H 'User-Agent: test' http://example.com 2>/dev/null | head -c 5 || echo 'data'"
 		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
@@ -246,7 +246,7 @@ describeNetwork("wget command", () => {
 	test("wget basic download", async () => {
 		const r = await runCmd(
 			client,
-			"wget -q http://example.com -O /tmp/wget.html 2>/dev/null || echo 'done'",
+			"wget -q http://example.com -O /tmp/wget.html 2>/dev/null || echo 'done'"
 		);
 		expect(r.exitCode).toBe(0);
 	});
@@ -254,7 +254,7 @@ describeNetwork("wget command", () => {
 	test("wget -q quiet mode", async () => {
 		const r = await runCmd(
 			client,
-			"wget -q http://example.com -O /tmp/wgetq.html 2>/dev/null || echo 'done'",
+			"wget -q http://example.com -O /tmp/wgetq.html 2>/dev/null || echo 'done'"
 		);
 		expect(r.exitCode).toBe(0);
 	});
@@ -262,7 +262,7 @@ describeNetwork("wget command", () => {
 	test("wget --spider check url", async () => {
 		const r = await runCmd(
 			client,
-			"wget --spider http://example.com 2>/dev/null || echo 'checked'",
+			"wget --spider http://example.com 2>/dev/null || echo 'checked'"
 		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
@@ -285,7 +285,7 @@ describeNetwork("ping command", () => {
 	test("ping invalid host", async () => {
 		const r = await runCmd(
 			client,
-			"ping -c 1 invalid.test 2>&1 || echo 'error'",
+			"ping -c 1 invalid.test 2>&1 || echo 'error'"
 		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
@@ -309,7 +309,7 @@ describe("network info commands", () => {
 	test("host lookup", async () => {
 		const r = await runCmd(
 			client,
-			"host localhost 2>/dev/null || echo 'no DNS'",
+			"host localhost 2>/dev/null || echo 'no DNS'"
 		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
@@ -317,7 +317,7 @@ describe("network info commands", () => {
 	test("nslookup query", async () => {
 		const r = await runCmd(
 			client,
-			"nslookup localhost 2>/dev/null || echo 'no DNS'",
+			"nslookup localhost 2>/dev/null || echo 'no DNS'"
 		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
@@ -329,7 +329,7 @@ describe("adduser command", () => {
 	test("adduser creates user", async () => {
 		const r = await runCmd(
 			client,
-			"adduser -m -s /bin/bash newuser || echo 'created'",
+			"adduser -m -s /bin/bash newuser || echo 'created'"
 		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
@@ -353,7 +353,7 @@ describe("dpkg command", () => {
 	test("dpkg -s check package", async () => {
 		const r = await runCmd(
 			client,
-			"dpkg -s bash 2>/dev/null || echo 'not found'",
+			"dpkg -s bash 2>/dev/null || echo 'not found'"
 		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
@@ -380,7 +380,7 @@ describe("apt command", () => {
 	test("apt search package", async () => {
 		const r = await runCmd(
 			client,
-			"apt search bash 2>&1 | grep -i bash || echo 'searched'",
+			"apt search bash 2>&1 | grep -i bash || echo 'searched'"
 		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
@@ -397,7 +397,7 @@ describe("npm command", () => {
 	test("npm list global", async () => {
 		const r = await runCmd(
 			client,
-			"npm list -g 2>/dev/null || npm list -g --depth 0 2>/dev/null || echo 'packages'",
+			"npm list -g 2>/dev/null || npm list -g --depth 0 2>/dev/null || echo 'packages'"
 		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
@@ -509,7 +509,7 @@ describe("man command", () => {
 	test("man ls shows manual", async () => {
 		const r = await runCmd(
 			client,
-			"man ls 2>/dev/null | head -5 || echo 'no man'",
+			"man ls 2>/dev/null | head -5 || echo 'no man'"
 		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
@@ -585,7 +585,7 @@ describe("exit command", () => {
 		shell.vfs.writeFile("/tmp/chown-test2.txt", "data", {}, 0, 0);
 		const r = await runCmd(
 			client,
-			"chown nonexistentuser /tmp/chown-test2.txt",
+			"chown nonexistentuser /tmp/chown-test2.txt"
 		);
 		expect(r.exitCode).toBe(1);
 	});
@@ -644,7 +644,7 @@ describe("exit command", () => {
 	test("iptables with protocol and ports", async () => {
 		const r = await runCmd(
 			client,
-			"iptables -A INPUT -p tcp --dport 80 -j ACCEPT",
+			"iptables -A INPUT -p tcp --dport 80 -j ACCEPT"
 		);
 		expect(r.exitCode).toBe(0);
 	});

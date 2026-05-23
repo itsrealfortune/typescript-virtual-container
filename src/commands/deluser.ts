@@ -1,5 +1,5 @@
-import type { VirtualShell } from "../modules/VirtualShell";
-import type { CommandResult, ShellModule } from "../types/commands";
+import type {VirtualShell} from "../modules/VirtualShell";
+import type {CommandResult, ShellModule} from "../types/commands";
 
 /**
  * Delete a user. Root-only.
@@ -18,9 +18,9 @@ export const deluserCommand: ShellModule = {
 	description: "Delete a user",
 	category: "users",
 	params: ["[-f] <username>"],
-	run: ({ authUser, args, shell }) => {
+	run: ({authUser, args, shell}) => {
 		if (authUser !== "root") {
-			return { stderr: "deluser: permission denied\n", exitCode: 1 };
+			return {stderr: "deluser: permission denied\n", exitCode: 1};
 		}
 
 		const force =
@@ -60,8 +60,8 @@ export const deluserCommand: ShellModule = {
 		// Interactive confirmation
 		const onPassword = (
 			input: string,
-			sh: VirtualShell,
-		): Promise<{ result: CommandResult | null; nextPrompt?: string }> => {
+			sh: VirtualShell
+		): Promise<{result: CommandResult | null; nextPrompt?: string}> => {
 			if (input.trim() !== username) {
 				return Promise.resolve({
 					result: {

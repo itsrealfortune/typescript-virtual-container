@@ -3,22 +3,22 @@ import type {
 	CommandResult,
 	ShellModule,
 } from "../types/commands";
-import { adduserCommand } from "./adduser";
-import { aliasCommand, unaliasCommand } from "./alias";
-import { aptCacheCommand, aptCommand } from "./apt";
-import { awkCommand } from "./awk";
-import { base64Command } from "./base64";
-import { basenameCommand, dirnameCommand } from "./basename";
-import { bcCommand } from "./bc";
-import { bunzip2Command, bzip2Command } from "./bzip2";
-import { catCommand } from "./cat";
-import { cdCommand } from "./cd";
-import { chageCommand } from "./chage";
-import { chgrpCommand } from "./chgrp";
-import { chmodCommand } from "./chmod";
-import { chownCommand } from "./chown";
-import { clearCommand } from "./clear";
-import { conntrackCommand } from "./conntrack";
+import {adduserCommand} from "./adduser";
+import {aliasCommand, unaliasCommand} from "./alias";
+import {aptCacheCommand, aptCommand} from "./apt";
+import {awkCommand} from "./awk";
+import {base64Command} from "./base64";
+import {basenameCommand, dirnameCommand} from "./basename";
+import {bcCommand} from "./bc";
+import {bunzip2Command, bzip2Command} from "./bzip2";
+import {catCommand} from "./cat";
+import {cdCommand} from "./cd";
+import {chageCommand} from "./chage";
+import {chgrpCommand} from "./chgrp";
+import {chmodCommand} from "./chmod";
+import {chownCommand} from "./chown";
+import {clearCommand} from "./clear";
+import {conntrackCommand} from "./conntrack";
 import {
 	columnCommand,
 	mktempCommand,
@@ -30,25 +30,25 @@ import {
 	timeoutCommand,
 	waitCommand,
 } from "./coreutils";
-import { cpCommand } from "./cp";
-import { curlCommand } from "./curl";
-import { cutCommand } from "./cut";
-import { dateCommand } from "./date";
-import { ddCommand } from "./dd";
-import { declareCommand } from "./declare";
-import { deluserCommand } from "./deluser";
-import { dfCommand } from "./df";
-import { diffCommand } from "./diff";
-import { dpkgCommand, dpkgQueryCommand } from "./dpkg";
-import { duCommand } from "./du";
-import { echoCommand } from "./echo";
-import { envCommand } from "./env";
-import { exitCommand } from "./exit";
-import { exportCommand } from "./export";
-import { exprCommand } from "./expr";
-import { fileCommand } from "./file";
-import { findCommand } from "./find";
-import { freeCommand } from "./free";
+import {cpCommand} from "./cp";
+import {curlCommand} from "./curl";
+import {cutCommand} from "./cut";
+import {dateCommand} from "./date";
+import {ddCommand} from "./dd";
+import {declareCommand} from "./declare";
+import {deluserCommand} from "./deluser";
+import {dfCommand} from "./df";
+import {diffCommand} from "./diff";
+import {dpkgCommand, dpkgQueryCommand} from "./dpkg";
+import {duCommand} from "./du";
+import {echoCommand} from "./echo";
+import {envCommand} from "./env";
+import {exitCommand} from "./exit";
+import {exportCommand} from "./export";
+import {exprCommand} from "./expr";
+import {fileCommand} from "./file";
+import {findCommand} from "./find";
+import {freeCommand} from "./free";
 import {
 	cmatrixCommand,
 	cowsayCommand,
@@ -57,30 +57,30 @@ import {
 	slCommand,
 	yesCommand,
 } from "./fun";
-import { getentCommand } from "./getent";
-import { gpasswdCommand } from "./gpasswd";
-import { grepCommand } from "./grep";
-import { groupaddCommand } from "./groupadd";
-import { groupdelCommand } from "./groupdel";
-import { groupsCommand } from "./groups";
-import { gunzipCommand, gzipCommand } from "./gzip";
-import { headCommand } from "./head";
-import { createHelpCommand } from "./help";
-import { historyCommand } from "./history";
-import { hostnameCommand } from "./hostname";
-import { htopCommand } from "./htop";
-import { idCommand } from "./id";
-import { ifconfigCommand } from "./ifconfig";
-import { ipCommand } from "./ip";
-import { iptablesCommand } from "./iptables";
-import { bgCommand, fgCommand, jobsCommand } from "./jobs";
-import { killCommand } from "./kill";
-import { dmesgCommand, lastCommand } from "./last";
-import { lnCommand, readlinkCommand } from "./ln";
-import { lsCommand } from "./ls";
-import { lsbReleaseCommand } from "./lsb-release";
-import { lsofCommand } from "./lsof";
-import { manCommand } from "./man";
+import {getentCommand} from "./getent";
+import {gpasswdCommand} from "./gpasswd";
+import {grepCommand} from "./grep";
+import {groupaddCommand} from "./groupadd";
+import {groupdelCommand} from "./groupdel";
+import {groupsCommand} from "./groups";
+import {gunzipCommand, gzipCommand} from "./gzip";
+import {headCommand} from "./head";
+import {createHelpCommand} from "./help";
+import {historyCommand} from "./history";
+import {hostnameCommand} from "./hostname";
+import {htopCommand} from "./htop";
+import {idCommand} from "./id";
+import {ifconfigCommand} from "./ifconfig";
+import {ipCommand} from "./ip";
+import {iptablesCommand} from "./iptables";
+import {bgCommand, fgCommand, jobsCommand} from "./jobs";
+import {killCommand} from "./kill";
+import {dmesgCommand, lastCommand} from "./last";
+import {lnCommand, readlinkCommand} from "./ln";
+import {lsCommand} from "./ls";
+import {lsbReleaseCommand} from "./lsb-release";
+import {lsofCommand} from "./lsof";
+import {manCommand} from "./man";
 import {
 	expandCommand,
 	fmtCommand,
@@ -90,79 +90,79 @@ import {
 	sha256sumCommand,
 	stringsCommand,
 } from "./miscutils";
-import { mkdirCommand } from "./mkdir";
-import { mkfifoCommand, mknodCommand } from "./mknod";
-import { mousepadCommand } from "./mousepad";
-import { mvCommand } from "./mv";
-import { nanoCommand } from "./nano";
-import { neofetchCommand } from "./neofetch";
-import { ncCommand } from "./netcat";
-import { newgrpCommand } from "./newgrp";
-import { niceCommand } from "./nice";
-import { nodeCommand } from "./node";
-import { nohupCommand } from "./nohup";
-import { npmCommand, npxCommand } from "./npm";
-import { pacmanCommand } from "./pacman";
-import { passwdCommand } from "./passwd";
-import { perlCommand } from "./perl";
-import { pingCommand } from "./ping";
-import { printfCommand } from "./printf";
-import { pgrepCommand, pkillCommand } from "./procUtils";
-import { psCommand } from "./ps";
-import { pwdCommand } from "./pwd";
-import { python3Command } from "./python";
-import { readCommand } from "./read";
-import { rmCommand } from "./rm";
-import { sedCommand } from "./sed";
-import { seqCommand } from "./seq";
-import { setCommand } from "./set";
-import { shCommand } from "./sh";
-import { returnCommand, shiftCommand, trapCommand } from "./shift";
-import { sleepCommand } from "./sleep";
-import { sortCommand } from "./sort";
-import { sourceCommand } from "./source";
-import { ssCommand } from "./ss";
-import { startxfce4Command } from "./startxfce4";
-import { statCommand } from "./stat";
-import { straceCommand } from "./strace";
-import { suCommand } from "./su";
-import { sudoCommand } from "./sudo";
-import { swapCommand } from "./swap";
-import { sysctlCommand } from "./sysctl";
-import { lscpuCommand, lspciCommand, lsusbCommand } from "./sysinfo";
-import { tailCommand } from "./tail";
-import { tarCommand } from "./tar";
-import { tcCommand } from "./tc";
-import { teeCommand } from "./tee";
-import { testCommand } from "./test";
+import {mkdirCommand} from "./mkdir";
+import {mkfifoCommand, mknodCommand} from "./mknod";
+import {mousepadCommand} from "./mousepad";
+import {mvCommand} from "./mv";
+import {nanoCommand} from "./nano";
+import {neofetchCommand} from "./neofetch";
+import {ncCommand} from "./netcat";
+import {newgrpCommand} from "./newgrp";
+import {niceCommand} from "./nice";
+import {nodeCommand} from "./node";
+import {nohupCommand} from "./nohup";
+import {npmCommand, npxCommand} from "./npm";
+import {pacmanCommand} from "./pacman";
+import {passwdCommand} from "./passwd";
+import {perlCommand} from "./perl";
+import {pingCommand} from "./ping";
+import {printfCommand} from "./printf";
+import {pgrepCommand, pkillCommand} from "./procUtils";
+import {psCommand} from "./ps";
+import {pwdCommand} from "./pwd";
+import {python3Command} from "./python";
+import {readCommand} from "./read";
+import {rmCommand} from "./rm";
+import {sedCommand} from "./sed";
+import {seqCommand} from "./seq";
+import {setCommand} from "./set";
+import {shCommand} from "./sh";
+import {returnCommand, shiftCommand, trapCommand} from "./shift";
+import {sleepCommand} from "./sleep";
+import {sortCommand} from "./sort";
+import {sourceCommand} from "./source";
+import {ssCommand} from "./ss";
+import {startxfce4Command} from "./startxfce4";
+import {statCommand} from "./stat";
+import {straceCommand} from "./strace";
+import {suCommand} from "./su";
+import {sudoCommand} from "./sudo";
+import {swapCommand} from "./swap";
+import {sysctlCommand} from "./sysctl";
+import {lscpuCommand, lspciCommand, lsusbCommand} from "./sysinfo";
+import {tailCommand} from "./tail";
+import {tarCommand} from "./tar";
+import {tcCommand} from "./tc";
+import {teeCommand} from "./tee";
+import {testCommand} from "./test";
 import {
 	commCommand,
 	csplitCommand,
 	joinCommand,
 	splitCommand,
 } from "./textutils";
-import { topCommand } from "./top";
-import { touchCommand } from "./touch";
-import { sttyCommand, tputCommand } from "./tput";
-import { trCommand } from "./tr";
-import { tracerouteCommand } from "./traceroute";
-import { treeCommand } from "./tree";
-import { falseCommand, trueCommand } from "./true";
-import { typeCommand } from "./type";
-import { unameCommand } from "./uname";
-import { uniqCommand } from "./uniq";
-import { unsetCommand } from "./unset";
-import { uptimeCommand } from "./uptime";
-import { usermodCommand } from "./usermod";
-import { wCommand } from "./w";
-import { wcCommand } from "./wc";
-import { wgetCommand } from "./wget";
-import { whichCommand } from "./which";
-import { whoCommand } from "./who";
-import { whoamiCommand } from "./whoami";
-import { xargsCommand } from "./xargs";
-import { thunarCommand } from "./xfceDesktop";
-import { unzipCommand, zipCommand } from "./zip";
+import {topCommand} from "./top";
+import {touchCommand} from "./touch";
+import {sttyCommand, tputCommand} from "./tput";
+import {trCommand} from "./tr";
+import {tracerouteCommand} from "./traceroute";
+import {treeCommand} from "./tree";
+import {falseCommand, trueCommand} from "./true";
+import {typeCommand} from "./type";
+import {unameCommand} from "./uname";
+import {uniqCommand} from "./uniq";
+import {unsetCommand} from "./unset";
+import {uptimeCommand} from "./uptime";
+import {usermodCommand} from "./usermod";
+import {wCommand} from "./w";
+import {wcCommand} from "./wc";
+import {wgetCommand} from "./wget";
+import {whichCommand} from "./which";
+import {whoCommand} from "./who";
+import {whoamiCommand} from "./whoami";
+import {xargsCommand} from "./xargs";
+import {thunarCommand} from "./xfceDesktop";
+import {unzipCommand, zipCommand} from "./zip";
 
 const BASE_COMMANDS: ShellModule[] = [
 	// Navigation
@@ -416,9 +416,9 @@ export function registerCommand(module: ShellModule): void {
 export function createCustomCommand(
 	name: string,
 	params: string[],
-	run: (ctx: CommandContext) => CommandResult | Promise<CommandResult>,
+	run: (ctx: CommandContext) => CommandResult | Promise<CommandResult>
 ): ShellModule {
-	return { name, params, run };
+	return {name, params, run};
 }
 
 /**

@@ -1,5 +1,5 @@
-import { beforeAll, describe, expect, test } from "bun:test";
-import type { SshClient, VirtualShell } from "../src";
+import {beforeAll, describe, expect, test} from "bun:test";
+import type {SshClient, VirtualShell} from "../src";
 import {
 	createTestEnv,
 	createTestFile,
@@ -206,7 +206,7 @@ describe("mkdir command", () => {
 		await runCmd(client, "mkdir /tmp/dup-unique");
 		const r = await runCmd(
 			client,
-			"mkdir /tmp/dup-unique 2>&1 || echo 'error'",
+			"mkdir /tmp/dup-unique 2>&1 || echo 'error'"
 		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
@@ -376,7 +376,7 @@ describe("grep command", () => {
 		const r = await runCmd(client, "grep -i hello /tmp/grep-case.txt");
 		expect(r.exitCode).toBe(0);
 		expect(
-			r.stdout?.split("\n").filter((l) => l).length,
+			r.stdout?.split("\n").filter((l) => l).length
 		).toBeGreaterThanOrEqual(3);
 	});
 
@@ -555,7 +555,7 @@ describe("uniq command", () => {
 		createTestFile(
 			shell,
 			"/tmp/uniq-test3.txt",
-			"apple\napple\nbanana\nbanana\napple",
+			"apple\napple\nbanana\nbanana\napple"
 		);
 		const r = await runCmd(client, "uniq /tmp/uniq-test3.txt || echo 'uniq'");
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
@@ -717,7 +717,7 @@ describe("dd command", () => {
 		createTestFile(shell, "/tmp/dd_bs.txt", "abcdefghij");
 		const r = await runCmd(
 			client,
-			"dd if=/tmp/dd_bs.txt of=/tmp/dd_bs_out.txt bs=5 count=1",
+			"dd if=/tmp/dd_bs.txt of=/tmp/dd_bs_out.txt bs=5 count=1"
 		);
 		expect(r.exitCode).toBe(0);
 		expect(readTestFile(shell, "/tmp/dd_bs_out.txt")).toBe("abcde");

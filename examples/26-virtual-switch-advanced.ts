@@ -5,7 +5,7 @@
  * shaping, load balancing, and network partitions for isolation.
  */
 
-import { VirtualShell, VirtualSwitch } from "../src";
+import {VirtualShell, VirtualSwitch} from "../src";
 
 const net = new VirtualSwitch("10.0.0.0/24");
 
@@ -39,10 +39,10 @@ for (const record of net.listDnsRecords()) {
 }
 
 console.log(
-	`\n  app.example.com resolves to: ${net.resolveDns("app.example.com")}`,
+	`\n  app.example.com resolves to: ${net.resolveDns("app.example.com")}`
 );
 console.log(
-	`  db.example.com resolves to: ${net.resolveDns("db.example.com")}`,
+	`  db.example.com resolves to: ${net.resolveDns("db.example.com")}`
 );
 
 // ── Traffic shaping (latency + jitter) ────────────────────────────
@@ -66,7 +66,7 @@ net.addQdiscRule(port1.mac, {
 console.log(`  qdisc: eth0 on ${port1.mac} (loss: 5%, latency: 100ms)`);
 for (const rule of net.getQdiscRules(port1.mac)) {
 	console.log(
-		`    ${rule.interface}: ${rule.type} loss=${rule.packetLossPct}% latency=${rule.latencyMs}ms`,
+		`    ${rule.interface}: ${rule.type} loss=${rule.packetLossPct}% latency=${rule.latencyMs}ms`
 	);
 }
 
@@ -77,8 +77,8 @@ net.addLoadBalancer({
 	port: 80,
 	algorithm: "round-robin",
 	targets: [
-		{ hostname: "app-1", port: 80, weight: 1 },
-		{ hostname: "app-2", port: 80, weight: 2 },
+		{hostname: "app-1", port: 80, weight: 1},
+		{hostname: "app-2", port: 80, weight: 2},
 	],
 });
 
@@ -86,7 +86,7 @@ for (let i = 0; i < 3; i++) {
 	const resolved = net.resolveLoadBalancer(80);
 	if (resolved) {
 		console.log(
-			`  Request ${i + 1}: routed to ${resolved.hostname} (${resolved.ip})`,
+			`  Request ${i + 1}: routed to ${resolved.hostname} (${resolved.ip})`
 		);
 	}
 }

@@ -9,18 +9,14 @@
  *  - spawnNanoEditorProcess() — start a nano subprocess
  *  - spawnHtopProcess()       — start an htop subprocess
  */
-import { type ChildProcessWithoutNullStreams, spawn } from "node:child_process";
-import type { ShellStream } from "../types/streams";
-import {
-	shellQuote,
-	type TerminalSize,
-	withTerminalSize,
-} from "./shellRuntime";
+import {type ChildProcessWithoutNullStreams, spawn} from "node:child_process";
+import type {ShellStream} from "../types/streams";
+import {shellQuote, type TerminalSize, withTerminalSize} from "./shellRuntime";
 
 function spawnScriptProcess(
 	command: string,
 	terminalSize: TerminalSize,
-	stream: ShellStream,
+	stream: ShellStream
 ): ChildProcessWithoutNullStreams {
 	const formatted = withTerminalSize(command, terminalSize);
 	const proc = spawn("script", ["-qfec", formatted, "/dev/null"], {
@@ -46,12 +42,12 @@ function spawnScriptProcess(
 export function spawnNanoEditorProcess(
 	tempPath: string,
 	terminalSize: TerminalSize,
-	stream: ShellStream,
+	stream: ShellStream
 ): ChildProcessWithoutNullStreams {
 	return spawnScriptProcess(
 		`nano -- ${shellQuote(tempPath)}`,
 		terminalSize,
-		stream,
+		stream
 	);
 }
 
@@ -59,11 +55,11 @@ export function spawnNanoEditorProcess(
 export function spawnHtopProcess(
 	pidList: string,
 	terminalSize: TerminalSize,
-	stream: ShellStream,
+	stream: ShellStream
 ): ChildProcessWithoutNullStreams {
 	return spawnScriptProcess(
 		`htop -p ${shellQuote(pidList)}`,
 		terminalSize,
-		stream,
+		stream
 	);
 }

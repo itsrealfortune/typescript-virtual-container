@@ -3,10 +3,10 @@ import type {
 	CommandResult,
 	ShellModule,
 } from "../types/commands";
-import { evalArith, expandAsync, expandBraces } from "../utils/expand";
-import { ifFlag } from "./command-helpers";
-import { resolvePath } from "./helpers";
-import { runCommand } from "./runtime";
+import {evalArith, expandAsync, expandBraces} from "../utils/expand";
+import {ifFlag} from "./command-helpers";
+import {resolvePath} from "./helpers";
+import {runCommand} from "./runtime";
 
 /** Alias for clarity inside sh.ts */
 type ShellContext = CommandContext;
@@ -15,13 +15,13 @@ type ShellContext = CommandContext;
 // Rebuilt per-line inside parseBlocks would recompile on every script line — hoisted here instead.
 const _funcNamePat = "[^\\s(){}]+";
 const RE_FUNC_INLINE = new RegExp(
-	`^(?:function\\s+)?(${_funcNamePat})\\s*\\(\\s*\\)\\s*\\{(.+)\\}\\s*$`,
+	`^(?:function\\s+)?(${_funcNamePat})\\s*\\(\\s*\\)\\s*\\{(.+)\\}\\s*$`
 );
 const RE_FUNC_MULTI = new RegExp(
-	`^(?:function\\s+)?(${_funcNamePat})\\s*\\(\\s*\\)\\s*\\{?\\s*$`,
+	`^(?:function\\s+)?(${_funcNamePat})\\s*\\(\\s*\\)\\s*\\{?\\s*$`
 );
 const RE_FUNC_KW_ONLY = new RegExp(
-	`^function\\s+(${_funcNamePat})\\s*\\{?\\s*$`,
+	`^function\\s+(${_funcNamePat})\\s*\\{?\\s*$`
 );
 
 /**
@@ -32,7 +32,7 @@ function expandVars(
 	line: string,
 	env: Record<string, string>,
 	lastExit: number,
-	ctx: ShellContext,
+	ctx: ShellContext
 ): Promise<string> {
 	return expandAsync(line, env, lastExit, (sub) =>
 		runCommand(
@@ -43,8 +43,8 @@ function expandVars(
 			ctx.cwd,
 			ctx.shell,
 			undefined,
-			ctx.env,
-		).then((r) => r.stdout ?? ""),
+			ctx.env
+		).then((r) => r.stdout ?? "")
 	);
 }
 
@@ -53,21 +53,21 @@ type Block =
 			type: "if";
 			cond: string;
 			then_: string[];
-			elif: Array<{ cond: string; body: string[] }>;
+			elif: Array<{cond: string; body: string[]}>;
 			else_: string[];
 	  }
-	| { type: "for"; var: string; list: string; body: string[] }
-	| { type: "while"; cond: string; body: string[] }
-	| { type: "until"; cond: string; body: string[] }
-	| { type: "func"; name: string; body: string[] }
-	| { type: "arith"; expr: string }
+	| {type: "for"; var: string; list: string; body: string[]}
+	| {type: "while"; cond: string; body: string[]}
+	| {type: "until"; cond: string; body: string[]}
+	| {type: "func"; name: string; body: string[]}
+	| {type: "arith"; expr: string}
 	| {
 			type: "case";
 			expr: string;
-			patterns: Array<{ pattern: string; body: string[] }>;
+			patterns: Array<{pattern: string; body: string[]}>;
 	  }
-	| { type: "array"; name: string; elements: string[] }
-	| { type: "cmd"; line: string };
+	| {type: "array"; name: string; elements: string[]}
+	| {type: "cmd"; line: string};
 
 /** Very small shell interpreter: supports if/elif/else/fi, for/do/done, while/do/done */
 function parseBlocks(lines: string[]): Block[] {
@@ -95,9 +95,9 @@ function parseBlocks(lines: string[]): Block[] {
 					...(funcMatchInline[2] as string)
 						.split(";")
 						.map((s: string) => s.trim())
-						.filter(Boolean),
+						.filter(Boolean)
 				);
-				blocks.push({ type: "func", name: funcName, body });
+				blocks.push({type: "func", name: funcName, body});
 				i++;
 				continue;
 			}
@@ -114,14 +114,14 @@ function parseBlocks(lines: string[]): Block[] {
 				i++;
 			}
 			i++; // skip closing }
-			blocks.push({ type: "func", name: funcName, body });
+			blocks.push({type: "func", name: funcName, body});
 			continue;
 		}
 
 		// (( expr )) arithmetic statement
 		const arithMatch = line.match(/^\(\(\s*(.+?)\s*\)\)$/);
 		if (arithMatch) {
-			blocks.push({ type: "arith", expr: arithMatch[1] as string });
+			blocks.push({type: "arith", expr: arithMatch[1] as string});
 			i++;
 			continue;
 		}
@@ -132,7 +132,7 @@ function parseBlocks(lines: string[]): Block[] {
 				.replace(/;\s*then\s*$/, "")
 				.trim();
 			const thenLines: string[] = [];
-			const elifBlocks: Array<{ cond: string; body: string[] }> = [];
+			const elifBlocks: Array<{cond: string; body: string[]}> = [];
 			const elseLines: string[] = [];
 			let section: "then" | "elif" | "else" = "then";
 			let elifCond = "";
@@ -145,7 +145,7 @@ function parseBlocks(lines: string[]): Block[] {
 						.replace(/^elif\s+/, "")
 						.replace(/;\s*then\s*$/, "")
 						.trim();
-					elifBlocks.push({ cond: elifCond, body: [] });
+					elifBlocks.push({cond: elifCond, body: []});
 				} else if (l === "else") {
 					section = "else";
 				} else if (l !== "then") {
@@ -185,7 +185,7 @@ function parseBlocks(lines: string[]): Block[] {
 					body,
 				});
 			} else {
-				blocks.push({ type: "cmd", line });
+				blocks.push({type: "cmd", line});
 			}
 		} else if (line.startsWith("while ")) {
 			const cond = line
@@ -201,7 +201,7 @@ function parseBlocks(lines: string[]): Block[] {
 				}
 				i++;
 			}
-			blocks.push({ type: "while", cond, body });
+			blocks.push({type: "while", cond, body});
 		} else if (line.startsWith("until ")) {
 			const cond = line
 				.replace(/^until\s+/, "")
@@ -216,7 +216,7 @@ function parseBlocks(lines: string[]): Block[] {
 				}
 				i++;
 			}
-			blocks.push({ type: "until", cond, body });
+			blocks.push({type: "until", cond, body});
 		} else if (/^[A-Za-z_][A-Za-z0-9_]*=\s*\(/.test(line)) {
 			// Array assignment: arr=(elem1 elem2 ...)
 			const arrMatch = line.match(/^([A-Za-z_][A-Za-z0-9_]*)=\s*\(([^)]*)\)$/);
@@ -231,7 +231,7 @@ function parseBlocks(lines: string[]): Block[] {
 					elements: elems,
 				});
 			} else {
-				blocks.push({ type: "cmd", line });
+				blocks.push({type: "cmd", line});
 			}
 		} else if (
 			(line.startsWith("case ") && line.endsWith(" in")) ||
@@ -241,7 +241,7 @@ function parseBlocks(lines: string[]): Block[] {
 				.replace(/^case\s+/, "")
 				.replace(/\s+in$/, "")
 				.trim();
-			const patterns: Array<{ pattern: string; body: string[] }> = [];
+			const patterns: Array<{pattern: string; body: string[]}> = [];
 			i++;
 			while (i < lines.length && lines[i]?.trim() !== "esac") {
 				const pl = (lines[i] as string).trim();
@@ -271,14 +271,14 @@ function parseBlocks(lines: string[]): Block[] {
 					if (lines[i]?.trim() === ";;") {
 						i++; // skip ;;
 					}
-					patterns.push({ pattern: pat, body });
+					patterns.push({pattern: pat, body});
 				} else {
 					i++;
 				}
 			}
-			blocks.push({ type: "case", expr: caseExpr, patterns });
+			blocks.push({type: "case", expr: caseExpr, patterns});
 		} else {
-			blocks.push({ type: "cmd", line });
+			blocks.push({type: "cmd", line});
 		}
 		i++;
 	}
@@ -287,13 +287,13 @@ function parseBlocks(lines: string[]): Block[] {
 
 async function evalCondition(
 	cond: string,
-	ctx: CommandContext,
+	ctx: CommandContext
 ): Promise<boolean> {
 	const expanded = await expandVars(
 		cond,
 		ctx.env.vars,
 		ctx.env.lastExitCode,
-		ctx,
+		ctx
 	);
 	// test -f / test -d / [ ... ]
 	const testMatch = expanded.match(/^\[?\s*(.+?)\s*\]?$/);
@@ -368,16 +368,16 @@ async function evalCondition(
 		ctx.cwd,
 		ctx.shell,
 		undefined,
-		ctx.env,
+		ctx.env
 	);
 	return (r.exitCode ?? 0) === 0;
 }
 
 async function runBlocks(
 	blocks: Block[],
-	ctx: CommandContext,
+	ctx: CommandContext
 ): Promise<CommandResult> {
-	let lastResult: CommandResult = { exitCode: 0 };
+	let lastResult: CommandResult = {exitCode: 0};
 	let output = "";
 	let traceOutput = "";
 
@@ -387,7 +387,7 @@ async function runBlocks(
 				block.line,
 				ctx.env.vars,
 				ctx.env.lastExitCode,
-				ctx,
+				ctx
 			);
 			if (ctx.env.vars.__xtrace) {
 				traceOutput += `+ ${expanded}\n`;
@@ -417,7 +417,7 @@ async function runBlocks(
 				if (funcBody) {
 					// Set positional params $1 $2 ... from remaining args
 					const funcArgs = expanded.trim().split(/\s+/).slice(1);
-					const savedVars = { ...ctx.env.vars };
+					const savedVars = {...ctx.env.vars};
 					funcArgs.forEach((a, i) => {
 						ctx.env.vars[String(i + 1)] = a;
 					});
@@ -428,7 +428,7 @@ async function runBlocks(
 					for (let pi = 1; pi <= funcArgs.length; pi++) {
 						delete ctx.env.vars[String(pi)];
 					}
-					Object.assign(ctx.env.vars, { ...savedVars, ...ctx.env.vars });
+					Object.assign(ctx.env.vars, {...savedVars, ...ctx.env.vars});
 					return funcResult;
 				}
 				return runCommand(
@@ -439,7 +439,7 @@ async function runBlocks(
 					ctx.cwd,
 					ctx.shell,
 					undefined,
-					ctx.env,
+					ctx.env
 				);
 			})();
 			ctx.env.lastExitCode = r.exitCode ?? 0;
@@ -447,10 +447,10 @@ async function runBlocks(
 				output += `${r.stdout}\n`;
 			}
 			if (r.stderr) {
-				return { ...r, stdout: output.trim() };
+				return {...r, stdout: output.trim()};
 			}
 			if (ctx.env.vars.__errexit && (r.exitCode ?? 0) !== 0) {
-				return { ...r, stdout: output.trim() };
+				return {...r, stdout: output.trim()};
 			}
 			lastResult = r;
 		} else if (block.type === "if") {
@@ -490,17 +490,17 @@ async function runBlocks(
 			if (incMatch) {
 				const val = Number.parseInt(
 					ctx.env.vars[incMatch[1] as string] ?? "0",
-					10,
+					10
 				);
 				ctx.env.vars[incMatch[1] as string] = String(
-					incMatch[2] === "++" ? val + 1 : val - 1,
+					incMatch[2] === "++" ? val + 1 : val - 1
 				);
 			} else {
 				const assignMatch = expr.match(/^(\w+)\s*([+\-*/])=\s*(.+)$/);
 				if (assignMatch) {
 					const lhs = Number.parseInt(
 						ctx.env.vars[assignMatch[1] as string] ?? "0",
-						10,
+						10
 					);
 					const rhs = Number.parseInt(assignMatch[3] as string, 10);
 					const ops: Record<string, number> = {
@@ -510,7 +510,7 @@ async function runBlocks(
 						"/": Math.floor(lhs / rhs),
 					};
 					ctx.env.vars[assignMatch[1] as string] = String(
-						ops[assignMatch[2] as string] ?? lhs,
+						ops[assignMatch[2] as string] ?? lhs
 					);
 				} else {
 					const value = evalArith(expr, ctx.env.vars);
@@ -524,7 +524,7 @@ async function runBlocks(
 				block.list,
 				ctx.env.vars,
 				ctx.env.lastExitCode,
-				ctx,
+				ctx
 			);
 			// Apply brace expansion to each token in the list
 			const items = listExpanded.trim().split(/\s+/).flatMap(expandBraces);
@@ -573,7 +573,7 @@ async function runBlocks(
 				block.expr,
 				ctx.env.vars,
 				ctx.env.lastExitCode,
-				ctx,
+				ctx
 			);
 			for (const pat of block.patterns) {
 				const alts = pat.pattern.split("|").map((p) => p.trim());
@@ -583,7 +583,7 @@ async function runBlocks(
 					}
 					if (p.includes("*") || p.includes("?")) {
 						const re = new RegExp(
-							`^${p.replace(/\./g, "\\.").replace(/\*/g, ".*").replace(/\?/g, ".")}$`,
+							`^${p.replace(/\./g, "\\.").replace(/\*/g, ".*").replace(/\?/g, ".")}$`
 						);
 						return re.test(expanded);
 					}
@@ -609,7 +609,7 @@ async function runBlocks(
 			stderr: traceStderr || lastResult.stderr,
 		};
 	}
-	return { ...lastResult, stdout: finalStdout };
+	return {...lastResult, stdout: finalStdout};
 }
 
 /**
@@ -719,13 +719,13 @@ export const shCommand: ShellModule = {
 	category: "shell",
 	params: ["-c <script>", "[<file>]"],
 	run: (ctx: CommandContext) => {
-		const { args, shell, cwd } = ctx;
+		const {args, shell, cwd} = ctx;
 
 		// sh -c "inline script"
 		if (ifFlag(args, "-c")) {
 			const script = args[args.indexOf("-c") + 1] ?? "";
 			if (!script) {
-				return { stderr: "sh: -c requires a script", exitCode: 1 };
+				return {stderr: "sh: -c requires a script", exitCode: 1};
 			}
 			const lines = splitShScript(script);
 			const blocks = parseBlocks(lines);

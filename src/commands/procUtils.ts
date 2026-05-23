@@ -1,4 +1,4 @@
-import type { ShellModule } from "../types/commands";
+import type {ShellModule} from "../types/commands";
 
 /**
  * List process IDs matching a pattern
@@ -10,11 +10,11 @@ export const pgrepCommand: ShellModule = {
 	description: "List process IDs matching a pattern",
 	category: "system",
 	params: ["[-f] <pattern>"],
-	run: ({ activeSessions, args }) => {
+	run: ({activeSessions, args}) => {
 		const useFull = args.includes("-f");
 		const pattern = args.find((a) => !a.startsWith("-"));
 		if (!pattern) {
-			return { stderr: "pgrep: missing pattern\n", exitCode: 1 };
+			return {stderr: "pgrep: missing pattern\n", exitCode: 1};
 		}
 		try {
 			const re = new RegExp(pattern);
@@ -32,11 +32,11 @@ export const pgrepCommand: ShellModule = {
 				}
 			}
 			if (results.length === 0) {
-				return { exitCode: 1 };
+				return {exitCode: 1};
 			}
-			return { stdout: `${results.join("\n")}\n`, exitCode: 0 };
+			return {stdout: `${results.join("\n")}\n`, exitCode: 0};
 		} catch {
-			return { stderr: "pgrep: invalid pattern\n", exitCode: 2 };
+			return {stderr: "pgrep: invalid pattern\n", exitCode: 2};
 		}
 	},
 };
@@ -51,11 +51,11 @@ export const pkillCommand: ShellModule = {
 	description: "Kill processes matching a pattern",
 	category: "system",
 	params: ["[-f] <pattern>"],
-	run: ({ activeSessions, shell, args }) => {
+	run: ({activeSessions, shell, args}) => {
 		const useFull = args.includes("-f");
 		const pattern = args.find((a) => !a.startsWith("-"));
 		if (!pattern) {
-			return { stderr: "pkill: missing pattern\n", exitCode: 1 };
+			return {stderr: "pkill: missing pattern\n", exitCode: 1};
 		}
 		try {
 			const re = new RegExp(pattern);
@@ -70,11 +70,11 @@ export const pkillCommand: ShellModule = {
 				}
 			}
 			if (killed === 0) {
-				return { exitCode: 1 };
+				return {exitCode: 1};
 			}
-			return { stdout: `killed ${killed} process(es)\n`, exitCode: 0 };
+			return {stdout: `killed ${killed} process(es)\n`, exitCode: 0};
 		} catch {
-			return { stderr: "pkill: invalid pattern\n", exitCode: 2 };
+			return {stderr: "pkill: invalid pattern\n", exitCode: 2};
 		}
 	},
 };

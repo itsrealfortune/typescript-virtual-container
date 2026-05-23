@@ -6,7 +6,7 @@
  * and showing how the SSH server validates them.
  */
 
-import { VirtualShell } from "../src";
+import {VirtualShell} from "../src";
 
 const shell = new VirtualShell("secure-vm");
 await shell.ensureInitialized();

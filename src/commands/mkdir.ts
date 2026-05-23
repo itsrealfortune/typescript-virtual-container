@@ -1,7 +1,7 @@
 import * as path from "node:path";
-import type { ShellModule } from "../types/commands";
-import { getArg } from "./command-helpers";
-import { checkFilePermission, resolvePath } from "./helpers";
+import type {ShellModule} from "../types/commands";
+import {getArg} from "./command-helpers";
+import {checkFilePermission, resolvePath} from "./helpers";
 
 /**
  * Create one or more directories.
@@ -13,15 +13,15 @@ export const mkdirCommand: ShellModule = {
 	description: "Make directories",
 	category: "files",
 	params: ["<dir>"],
-	run: ({ authUser, shell, cwd, args, uid, gid }) => {
+	run: ({authUser, shell, cwd, args, uid, gid}) => {
 		if (args.length === 0) {
-			return { stderr: "mkdir: missing operand", exitCode: 1 };
+			return {stderr: "mkdir: missing operand", exitCode: 1};
 		}
 
 		for (let index = 0; index < args.length; index++) {
 			const dir = getArg(args, index);
 			if (!dir) {
-				return { stderr: "mkdir: missing operand", exitCode: 1 };
+				return {stderr: "mkdir: missing operand", exitCode: 1};
 			}
 			const target = resolvePath(cwd, dir);
 			checkFilePermission(
@@ -29,10 +29,10 @@ export const mkdirCommand: ShellModule = {
 				shell.users,
 				authUser,
 				path.posix.dirname(target),
-				2,
+				2
 			);
 			shell.vfs.mkdir(target, 0o755, uid, gid);
 		}
-		return { exitCode: 0 };
+		return {exitCode: 0};
 	},
 };

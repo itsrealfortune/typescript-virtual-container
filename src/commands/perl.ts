@@ -1,4 +1,4 @@
-import type { ShellModule } from "../types/commands";
+import type {ShellModule} from "../types/commands";
 
 /**
  * Perl interpreter stub — supports -e one-liners with print, say, basic regex, and -p/-n/-i.
@@ -9,7 +9,7 @@ export const perlCommand: ShellModule = {
 	description: "Practical Extraction and Report Language",
 	category: "scripting",
 	params: ["[-e <expr>] [-p] [-n] [-i] [file]"],
-	run: ({ args, stdin }) => {
+	run: ({args, stdin}) => {
 		const eIdx = args.indexOf("-e");
 		const code = eIdx === -1 ? undefined : args[eIdx + 1];
 		const printLoop = args.includes("-p");
@@ -40,7 +40,7 @@ export const perlCommand: ShellModule = {
 
 				// s/pat/rep/[g] substitution on $_
 				const sMatch = processed.match(
-					/^s([^a-zA-Z0-9])(.*?)\1(.*?)\1([gi]*)$/,
+					/^s([^a-zA-Z0-9])(.*?)\1(.*?)\1([gi]*)$/
 				);
 				if (sMatch) {
 					const flags = sMatch[4] ?? "";
@@ -53,7 +53,7 @@ export const perlCommand: ShellModule = {
 									: "i"
 								: flags.includes("g")
 									? "g"
-									: "",
+									: ""
 						);
 						line = line.replace(re, sMatch[3] as string);
 					} catch {
@@ -67,7 +67,7 @@ export const perlCommand: ShellModule = {
 
 				// print / say
 				const printM = processed.match(
-					/^(?:print|say)\s+(?:STDOUT\s+)?(?:"([^"]*)"|'([^']*)'|(.+))(?:\s*;)?$/,
+					/^(?:print|say)\s+(?:STDOUT\s+)?(?:"([^"]*)"|'([^']*)'|(.+))(?:\s*;)?$/
 				);
 				if (printM) {
 					const val = (printM[1] ?? printM[2] ?? printM[3] ?? "")
@@ -87,7 +87,7 @@ export const perlCommand: ShellModule = {
 		} else {
 			// Single expression
 			const printM = code.match(
-				/^(?:print|say)\s+(?:STDOUT\s+)?(?:"([^"]*)"|'([^']*)'|(.*))(?:\s*;)?$/,
+				/^(?:print|say)\s+(?:STDOUT\s+)?(?:"([^"]*)"|'([^']*)'|(.*))(?:\s*;)?$/
 			);
 			if (printM) {
 				const val = (printM[1] ?? printM[2] ?? printM[3] ?? "")

@@ -5,7 +5,7 @@
  * and host directory mounting into the VFS.
  */
 
-import { VirtualFileSystem } from "../src";
+import {VirtualFileSystem} from "../src";
 
 const vfs = new VirtualFileSystem();
 
@@ -50,7 +50,7 @@ console.log("All FDs closed");
 // ── Mount points ────────────────────────────────────────────────────
 console.log("\n--- Mount points ---");
 
-vfs.mount("/mnt/host", "/tmp", { readOnly: true });
+vfs.mount("/mnt/host", "/tmp", {readOnly: true});
 console.log("Mount points:", vfs.getMounts());
 
 const entries = vfs.list("/mnt/host");
@@ -61,7 +61,7 @@ try {
 } catch (err: unknown) {
 	console.log(
 		"Write to read-only mount failed (expected):",
-		(err as Error).message,
+		(err as Error).message
 	);
 }
 

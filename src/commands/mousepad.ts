@@ -30,6 +30,6 @@ export const mousepadCommand: ShellModule = {
 				: `${ctx.cwd}/${ctx.args[0]}`
 			: "/root/untitled.txt";
 		dm.createEditorWindow(path);
-		return { exitCode: 0 };
+		return {exitCode: 0};
 	},
 };

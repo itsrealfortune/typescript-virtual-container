@@ -1,5 +1,5 @@
-import { describe, expect, test } from "bun:test";
-import { Baie, VirtualNetworkManager } from "../src";
+import {describe, expect, test} from "bun:test";
+import {Baie, VirtualNetworkManager} from "../src";
 
 // Skip slow network tests by default. Run with:
 //   SSH_MIMIC_RUN_NETWORK_TESTS=1 bun test tests/network-upgrades.test.ts
@@ -34,7 +34,7 @@ describe("VirtualNetworkManager - Multiple Interfaces", () => {
 				ipv4: "192.168.1.2",
 				ipv4Mask: 24,
 				ipv6: "fe80::1",
-			}),
+			})
 		).toBe(false);
 	});
 
@@ -100,7 +100,7 @@ describe("VirtualNetworkManager - Advanced Routing", () => {
 		const net = new VirtualNetworkManager();
 		const id = net.addRoutingTable("custom");
 		expect(
-			net.addRouteToTable("10.10.0.0", "10.0.0.1", "255.255.255.0", "eth0", id),
+			net.addRouteToTable("10.10.0.0", "10.0.0.1", "255.255.255.0", "eth0", id)
 		).toBe(true);
 		const table = net.getRoutingTable(id);
 		expect(table?.routes.length).toBe(1);
@@ -132,7 +132,7 @@ describe("VirtualNetworkManager - Advanced Routing", () => {
 
 	test("formatIpRule shows policy rules", () => {
 		const net = new VirtualNetworkManager();
-		net.addPolicyRule({ from: "10.0.0.0/8", table: 100, action: "lookup" });
+		net.addPolicyRule({from: "10.0.0.0/8", table: 100, action: "lookup"});
 		const output = net.formatIpRule();
 		expect(output).toContain("from 10.0.0.0/8");
 		expect(output).toContain("lookup");
@@ -278,7 +278,7 @@ describe("VirtualSwitch - Qdisc Rules", () => {
 
 	test("removeQdiscRule without interface removes all", () => {
 		const baie = new Baie("qdisc3", "10.0.1.0/24");
-		baie.switch.addQdiscRule("test-mac", { interface: "eth0", type: "netem" });
+		baie.switch.addQdiscRule("test-mac", {interface: "eth0", type: "netem"});
 		baie.switch.removeQdiscRule("test-mac");
 		expect(baie.switch.getQdiscRules("test-mac").length).toBe(0);
 	});

@@ -13,8 +13,8 @@
  * - sticky (0o1000): only owner can delete files in directory
  */
 
-import type { InternalDirectoryNode } from "./internalTypes";
-import { getNodeNormalized, normalizePath } from "./path";
+import type {InternalDirectoryNode} from "./internalTypes";
+import {getNodeNormalized, normalizePath} from "./path";
 
 /** Permission check flags */
 export const R_OK = 4;
@@ -35,7 +35,7 @@ export function enforceAccess(
 	targetPath: string,
 	uid: number,
 	gid: number,
-	want: number,
+	want: number
 ): void {
 	const normalized = normalizePath(targetPath);
 	const node = getNodeNormalized(root, normalized);
@@ -74,7 +74,7 @@ export function enforcePathTraversal(
 	root: InternalDirectoryNode,
 	targetPath: string,
 	uid: number,
-	gid: number,
+	gid: number
 ): void {
 	const normalized = normalizePath(targetPath);
 	if (normalized === "/") {
@@ -113,7 +113,7 @@ export function enforceDelete(
 	dirPath: string,
 	name: string,
 	uid: number,
-	gid: number,
+	gid: number
 ): void {
 	const normalized = normalizePath(dirPath);
 	const dir = getNodeNormalized(root, normalized) as InternalDirectoryNode;
@@ -127,7 +127,7 @@ export function enforceDelete(
 		const target = dir.children[name];
 		if (target && target.uid !== uid) {
 			throw new Error(
-				`EACCES: permission denied: cannot delete '${name}' (sticky bit)`,
+				`EACCES: permission denied: cannot delete '${name}' (sticky bit)`
 			);
 		}
 	}
@@ -154,7 +154,7 @@ export function enforceChown(uid: number): void {
 export function enforceChmod(
 	root: InternalDirectoryNode,
 	targetPath: string,
-	uid: number,
+	uid: number
 ): void {
 	const normalized = normalizePath(targetPath);
 	const node = getNodeNormalized(root, normalized);
@@ -173,7 +173,7 @@ export function enforceChmod(
 export function resolveEffectiveUid(
 	root: InternalDirectoryNode,
 	targetPath: string,
-	originalUid: number,
+	originalUid: number
 ): number {
 	const normalized = normalizePath(targetPath);
 	const node = getNodeNormalized(root, normalized);
@@ -196,7 +196,7 @@ export function resolveEffectiveUid(
 export function resolveEffectiveGid(
 	root: InternalDirectoryNode,
 	targetPath: string,
-	originalGid: number,
+	originalGid: number
 ): number {
 	const normalized = normalizePath(targetPath);
 	const node = getNodeNormalized(root, normalized);
@@ -221,7 +221,7 @@ export function isExecutable(
 	root: InternalDirectoryNode,
 	targetPath: string,
 	uid: number,
-	gid: number,
+	gid: number
 ): boolean {
 	const normalized = normalizePath(targetPath);
 	try {

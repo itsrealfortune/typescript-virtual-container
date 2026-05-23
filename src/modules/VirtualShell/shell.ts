@@ -1,5 +1,5 @@
 import path from "node:path";
-import type { ShellProperties, VirtualShell } from ".";
+import type {ShellProperties, VirtualShell} from ".";
 import {
 	applyUserSwitch,
 	getCommandNames,
@@ -7,8 +7,8 @@ import {
 	runCommand,
 	userHome,
 } from "../../commands";
-import type { CommandResult, ShellEnv } from "../../types/commands";
-import type { ShellStream } from "../../types/streams";
+import type {CommandResult, ShellEnv} from "../../types/commands";
+import type {ShellStream} from "../../types/streams";
 import {
 	listPathCompletions,
 	loadHistory,
@@ -16,16 +16,16 @@ import {
 	saveHistory,
 	writeLastLogin,
 } from "../../utils/shellSession";
-import { NanoEditor } from "../nanoEditor";
-import { PacmanGame } from "../pacmanGame";
-import { spawnHtopProcess } from "../shellInteractive";
+import {NanoEditor} from "../nanoEditor";
+import {PacmanGame} from "../pacmanGame";
+import {spawnHtopProcess} from "../shellInteractive";
 import {
 	getVisibleHtopPidList,
 	type TerminalSize,
 	toTtyLines,
 } from "../shellRuntime";
-import { buildLoginBanner } from "../SSHMimic/loginBanner";
-import { buildPrompt } from "../SSHMimic/prompt";
+import {buildLoginBanner} from "../SSHMimic/loginBanner";
+import {buildPrompt} from "../SSHMimic/prompt";
 
 interface NanoSession {
 	kind: "nano";
@@ -53,7 +53,7 @@ interface PendingSudo {
 	mode?: "sudo" | "passwd" | "confirm";
 	onPassword?: (
 		input: string,
-		shell: VirtualShell,
+		shell: VirtualShell
 	) => Promise<{
 		result: CommandResult | null;
 		nextPrompt?: string;
@@ -91,7 +91,7 @@ export function startShell(
 	sessionId: string | null,
 	remoteAddress: string,
 	terminalSize: TerminalSize,
-	shell: VirtualShell,
+	shell: VirtualShell
 ): void {
 	let lineBuffer = "";
 	let cursorPos = 0;
@@ -113,7 +113,7 @@ export function startShell(
 			shellEnv.vars.__TTY = sess.tty;
 		}
 	}
-	const sessionStack: Array<{ authUser: string; cwd: string }> = [];
+	const sessionStack: Array<{authUser: string; cwd: string}> = [];
 	let nanoSession: NanoSession | HtopSession | PacmanSession | null = null;
 	let pendingSudo: PendingSudo | null = null;
 	const buildCurrentPrompt = (): string => {
@@ -126,7 +126,7 @@ export function startShell(
 	};
 	const commandNames = Array.from(new Set(getCommandNames())).sort();
 	console.log(
-		`[${sessionId}] Shell started for user '${authUser}' at ${remoteAddress}`,
+		`[${sessionId}] Shell started for user '${authUser}' at ${remoteAddress}`
 	);
 
 	// Source login/rc files before first prompt.
@@ -156,7 +156,7 @@ export function startShell(
 						cwd,
 						shell,
 						undefined,
-						shellEnv,
+						shellEnv
 					);
 					if (r.stdout) {
 						stream.write(r.stdout.replace(/\n/g, "\r\n"));
@@ -197,7 +197,7 @@ export function startShell(
 		mode?: "sudo" | "passwd" | "confirm";
 		onPassword?: (
 			input: string,
-			shell: VirtualShell,
+			shell: VirtualShell
 		) => Promise<{
 			result: CommandResult | null;
 			nextPrompt?: string;
@@ -244,7 +244,7 @@ export function startShell(
 			hostname,
 			"shell",
 			runCwd,
-			shell,
+			shell
 		);
 
 		stream.write("\r\n");
@@ -252,7 +252,7 @@ export function startShell(
 		if (result.openEditor) {
 			startNanoEditor(
 				result.openEditor.targetPath,
-				result.openEditor.initialContent,
+				result.openEditor.initialContent
 			);
 			return;
 		}
@@ -280,7 +280,7 @@ export function startShell(
 		}
 
 		if (result.switchUser) {
-			sessionStack.push({ authUser, cwd });
+			sessionStack.push({authUser, cwd});
 			authUser = result.switchUser;
 			cwd = result.nextCwd ?? userHome(authUser);
 			shell.users.updateSession(sessionId, authUser, remoteAddress);
@@ -297,7 +297,7 @@ export function startShell(
 
 	function finishInteractiveSession(
 		savedContent?: string,
-		targetPath?: string,
+		targetPath?: string
 	): void {
 		if (savedContent !== undefined && targetPath) {
 			const uid = shell.users.getUid(authUser);
@@ -321,7 +321,7 @@ export function startShell(
 			authUser,
 			"nano",
 			["nano", targetPath],
-			shellEnv.vars.__TTY ?? "?",
+			shellEnv.vars.__TTY ?? "?"
 		);
 		const editor = new NanoEditor({
 			stream,
@@ -337,7 +337,7 @@ export function startShell(
 			},
 		});
 
-		nanoSession = { kind: "nano", targetPath, editor };
+		nanoSession = {kind: "nano", targetPath, editor};
 		editor.start();
 	}
 
@@ -352,7 +352,7 @@ export function startShell(
 			authUser,
 			"htop",
 			["htop"],
-			shellEnv.vars.__TTY ?? "?",
+			shellEnv.vars.__TTY ?? "?"
 		);
 		const monitor = spawnHtopProcess(pidList, terminalSize, stream);
 
@@ -365,7 +365,7 @@ export function startShell(
 			finishInteractiveSession();
 		});
 
-		nanoSession = { kind: "htop", process: monitor };
+		nanoSession = {kind: "htop", process: monitor};
 	}
 
 	function startPacman(): void {
@@ -373,7 +373,7 @@ export function startShell(
 			authUser,
 			"pacman",
 			["pacman"],
-			shellEnv.vars.__TTY ?? "?",
+			shellEnv.vars.__TTY ?? "?"
 		);
 		const game = new PacmanGame({
 			stream,
@@ -390,7 +390,7 @@ export function startShell(
 				renderLine();
 			},
 		});
-		nanoSession = { kind: "pacman", game };
+		nanoSession = {kind: "pacman", game};
 		game.start();
 	}
 
@@ -408,8 +408,8 @@ export function startShell(
 
 	function getTokenRange(
 		line: string,
-		cursor: number,
-	): { start: number; end: number } {
+		cursor: number
+	): {start: number; end: number} {
 		let start = cursor;
 		while (start > 0 && !/\s/.test(line.charAt(start - 1))) {
 			start -= 1;
@@ -420,11 +420,11 @@ export function startShell(
 			end += 1;
 		}
 
-		return { start, end };
+		return {start, end};
 	}
 
 	function handleTabCompletion(): void {
-		const { start, end } = getTokenRange(lineBuffer, cursorPos);
+		const {start, end} = getTokenRange(lineBuffer, cursorPos);
 		const token = lineBuffer.slice(start, cursorPos);
 
 		if (token.length === 0) {
@@ -437,7 +437,7 @@ export function startShell(
 			: [];
 		const pathCandidates = listPathCompletions(shell.vfs, cwd, token);
 		const candidates = Array.from(
-			new Set([...commandCandidates, ...pathCandidates]),
+			new Set([...commandCandidates, ...pathCandidates])
 		).sort();
 
 		if (candidates.length === 0) {
@@ -528,7 +528,7 @@ export function startShell(
 								cwd,
 								shell,
 								stdin,
-								shellEnv,
+								shellEnv
 							);
 							if (result.stdout) {
 								stream.write(`${toTtyLines(result.stdout)}\r\n`);
@@ -578,9 +578,9 @@ export function startShell(
 
 						// ── Generic onPassword handler (passwd / confirm modes) ────
 						if (pendingSudo.onPassword) {
-							const { result, nextPrompt } = await pendingSudo.onPassword(
+							const {result, nextPrompt} = await pendingSudo.onPassword(
 								typed,
-								shell,
+								shell
 							);
 							stream.write("\r\n");
 							if (result === null) {
@@ -604,7 +604,7 @@ export function startShell(
 						// ── Default sudo mode — verify current user's password ─────
 						const valid = shell.users.verifyPassword(
 							pendingSudo.username,
-							typed,
+							typed
 						);
 						await finishSudoPrompt(valid);
 						return;
@@ -829,7 +829,7 @@ export function startShell(
 
 					// Heredoc detection: cmd << DELIM
 					const heredocMatch = line.match(
-						/^(.*?)\s*<<-?\s*['"`]?([A-Za-z_][A-Za-z0-9_]*)['"`]?\s*$/,
+						/^(.*?)\s*<<-?\s*['"`]?([A-Za-z_][A-Za-z0-9_]*)['"`]?\s*$/
 					);
 					if (heredocMatch && line.length > 0) {
 						pendingHeredoc = {
@@ -850,7 +850,7 @@ export function startShell(
 							cwd,
 							shell,
 							undefined,
-							shellEnv,
+							shellEnv
 						);
 
 						pushHistory(line);
@@ -858,7 +858,7 @@ export function startShell(
 						if (result.openEditor) {
 							startNanoEditor(
 								result.openEditor.targetPath,
-								result.openEditor.initialContent,
+								result.openEditor.initialContent
 							);
 							return;
 						}
@@ -914,7 +914,7 @@ export function startShell(
 						}
 
 						if (result.switchUser) {
-							sessionStack.push({ authUser, cwd });
+							sessionStack.push({authUser, cwd});
 							authUser = result.switchUser;
 							cwd = result.nextCwd ?? userHome(authUser);
 							shellEnv.vars.PWD = cwd;

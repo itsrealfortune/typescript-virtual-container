@@ -18,7 +18,7 @@
  *   $((expr))     arithmetic (integer)
  */
 
-import { globToRegex } from "./glob";
+import {globToRegex} from "./glob";
 
 // Memoized shell-pattern → RegExp for ${VAR//pat/rep} etc. forms.
 // Key encodes anchor/greedy options to keep separate caches per form.
@@ -27,7 +27,7 @@ function shellPatToRegex(
 	pat: string,
 	anchor: "none" | "prefix" | "suffix",
 	greedy: boolean,
-	global = false,
+	global = false
 ): RegExp {
 	const key = `${anchor}:${greedy ? "g" : "s"}:${global ? "G" : ""}:${pat}`;
 	let re = _shellPatCache.get(key);
@@ -48,7 +48,7 @@ function shellPatToRegex(
 // ─── arithmetic evaluator ────────────────────────────────────────────────────
 
 type ArithToken =
-	| { type: "number"; value: number }
+	| {type: "number"; value: number}
 	| {
 			type:
 				| "plus"
@@ -63,7 +63,7 @@ type ArithToken =
 
 function tokenizeArith(
 	expr: string,
-	env: Record<string, string>,
+	env: Record<string, string>
 ): ArithToken[] {
 	const tokens: ArithToken[] = [];
 	let i = 0;
@@ -74,42 +74,42 @@ function tokenizeArith(
 			continue;
 		}
 		if (ch === "+") {
-			tokens.push({ type: "plus" });
+			tokens.push({type: "plus"});
 			i++;
 			continue;
 		}
 		if (ch === "-") {
-			tokens.push({ type: "minus" });
+			tokens.push({type: "minus"});
 			i++;
 			continue;
 		}
 		if (ch === "*") {
 			if (expr[i + 1] === "*") {
-				tokens.push({ type: "pow" });
+				tokens.push({type: "pow"});
 				i += 2;
 				continue;
 			}
-			tokens.push({ type: "mul" });
+			tokens.push({type: "mul"});
 			i++;
 			continue;
 		}
 		if (ch === "/") {
-			tokens.push({ type: "div" });
+			tokens.push({type: "div"});
 			i++;
 			continue;
 		}
 		if (ch === "%") {
-			tokens.push({ type: "mod" });
+			tokens.push({type: "mod"});
 			i++;
 			continue;
 		}
 		if (ch === "(") {
-			tokens.push({ type: "lparen" });
+			tokens.push({type: "lparen"});
 			i++;
 			continue;
 		}
 		if (ch === ")") {
-			tokens.push({ type: "rparen" });
+			tokens.push({type: "rparen"});
 			i++;
 			continue;
 		}
@@ -118,7 +118,7 @@ function tokenizeArith(
 			while (j < expr.length && /\d/.test(expr.charAt(j))) {
 				j++;
 			}
-			tokens.push({ type: "number", value: Number(expr.slice(i, j)) });
+			tokens.push({type: "number", value: Number(expr.slice(i, j))});
 			i = j;
 			continue;
 		}
@@ -263,7 +263,7 @@ export function evalArith(expr: string, env: Record<string, string>): number {
  */
 function outsideSingleQuotes(
 	input: string,
-	replacer: (chunk: string) => string,
+	replacer: (chunk: string) => string
 ): string {
 	// Fast path: no single quotes → apply replacer to whole string, no allocation
 	if (!input.includes("'")) {
@@ -394,7 +394,7 @@ export function expandBraces(token: string): string[] {
 						const output: string[] = [];
 						for (const part of parts) {
 							output.push(
-								...expandBracesInternal(`${prefix}${part}${suffix}`, depth + 1),
+								...expandBracesInternal(`${prefix}${part}${suffix}`, depth + 1)
 							);
 							if (output.length > MaxBraceExpansions) {
 								return [value];
@@ -414,7 +414,7 @@ export function expandBraces(token: string): string[] {
 
 function expandArithmeticChunks(
 	input: string,
-	env: Record<string, string>,
+	env: Record<string, string>
 ): string {
 	if (!input.includes("$((")) {
 		return input;
@@ -473,7 +473,7 @@ export function expandSync(
 	input: string,
 	env: Record<string, string>,
 	lastExit = 0,
-	home?: string,
+	home?: string
 ): string {
 	// Fast path: nothing to expand (no $ and no ~ and no single quotes)
 	if (!(input.includes("$") || input.includes("~") || input.includes("'"))) {
@@ -488,7 +488,7 @@ export function expandSync(
 		// Tilde expansion — only at start of token or after `:` or whitespace
 		s = s.replace(
 			/(^|[\s:])~(\/|$)/g,
-			(_, pre, post) => `${pre}${homePath}${post}`,
+			(_, pre, post) => `${pre}${homePath}${post}`
 		);
 
 		// $? $$ $# $RANDOM $LINENO
@@ -496,7 +496,7 @@ export function expandSync(
 		s = s.replace(/\$\$/g, "1");
 		s = s.replace(/\$#/g, "0");
 		s = s.replace(/\$RANDOM\b/g, () =>
-			String(Math.floor(Math.random() * 32768)),
+			String(Math.floor(Math.random() * 32768))
 		);
 		s = s.replace(/\$LINENO\b/g, "1");
 
@@ -506,13 +506,13 @@ export function expandSync(
 		// ${arr[@]} and ${arr[*]} — all array elements
 		s = s.replace(
 			/\$\{([A-Za-z_][A-Za-z0-9_]*)[@*]\}/g,
-			(_, name) => env[name] ?? "",
+			(_, name) => env[name] ?? ""
 		);
 
 		// ${arr[N]} — single array element
 		s = s.replace(
 			/\$\{([A-Za-z_][A-Za-z0-9_]*)\[(\d+)\]\}/g,
-			(_, name, idx) => env[`${name}[${idx}]`] ?? "",
+			(_, name, idx) => env[`${name}[${idx}]`] ?? ""
 		);
 
 		// ${#arr[@]} — array length
@@ -528,12 +528,12 @@ export function expandSync(
 
 		// ${#VAR} — string length
 		s = s.replace(/\$\{#([A-Za-z_][A-Za-z0-9_]*)\}/g, (_, name) =>
-			String((env[name] ?? "").length),
+			String((env[name] ?? "").length)
 		);
 
 		// ${VAR:-default}
 		s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*):-([^}]*)\}/g, (_, name, def) =>
-			env[name] !== undefined && env[name] !== "" ? (env[name] as string) : def,
+			env[name] !== undefined && env[name] !== "" ? (env[name] as string) : def
 		);
 
 		// ${VAR:=default} — also assigns to env
@@ -544,14 +544,13 @@ export function expandSync(
 					env[name] = def;
 				}
 				return env[name] as string;
-			},
+			}
 		);
 
 		// ${VAR:+alternate}
 		s = s.replace(
 			/\$\{([A-Za-z_][A-Za-z0-9_]*):\+([^}]*)\}/g,
-			(_, name, alt) =>
-				env[name] !== undefined && env[name] !== "" ? alt : "",
+			(_, name, alt) => (env[name] !== undefined && env[name] !== "" ? alt : "")
 		);
 
 		// ${VAR:offset:len} and ${VAR:offset}
@@ -565,7 +564,7 @@ export function expandSync(
 				return len === undefined
 					? val.slice(start)
 					: val.slice(start, start + Number.parseInt(len, 10));
-			},
+			}
 		);
 
 		// ${VAR//pattern/replace} — replace all
@@ -578,7 +577,7 @@ export function expandSync(
 				} catch {
 					return val;
 				}
-			},
+			}
 		);
 
 		// ${VAR/pattern/replace} — replace first
@@ -591,39 +590,39 @@ export function expandSync(
 				} catch {
 					return val;
 				}
-			},
+			}
 		);
 
 		// ${VAR##pattern} — strip longest prefix
 		s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)##([^}]+)\}/g, (_, name, pat) =>
-			(env[name] ?? "").replace(shellPatToRegex(pat, "prefix", true), ""),
+			(env[name] ?? "").replace(shellPatToRegex(pat, "prefix", true), "")
 		);
 
 		// ${VAR#pattern} — strip shortest prefix
 		s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)#([^}]+)\}/g, (_, name, pat) =>
-			(env[name] ?? "").replace(shellPatToRegex(pat, "prefix", false), ""),
+			(env[name] ?? "").replace(shellPatToRegex(pat, "prefix", false), "")
 		);
 
 		// ${VAR%%pattern} — strip longest suffix
 		s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)%%([^}]+)\}/g, (_, name, pat) =>
-			(env[name] ?? "").replace(shellPatToRegex(pat, "suffix", true), ""),
+			(env[name] ?? "").replace(shellPatToRegex(pat, "suffix", true), "")
 		);
 
 		// ${VAR%pattern} — strip shortest suffix
 		s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)%([^}]+)\}/g, (_, name, pat) =>
-			(env[name] ?? "").replace(shellPatToRegex(pat, "suffix", false), ""),
+			(env[name] ?? "").replace(shellPatToRegex(pat, "suffix", false), "")
 		);
 
 		// ${VAR}
 		s = s.replace(
 			/\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g,
-			(_, name) => env[name] ?? "",
+			(_, name) => env[name] ?? ""
 		);
 
 		// $VAR and positional params $1 $2 ...
 		s = s.replace(
 			/\$([A-Za-z_][A-Za-z0-9_]*|\d+)/g,
-			(_, name) => env[name] ?? "",
+			(_, name) => env[name] ?? ""
 		);
 
 		return s;
@@ -647,7 +646,7 @@ export async function expandAsync(
 	input: string,
 	env: Record<string, string>,
 	lastExit: number,
-	runCmd: (cmd: string) => Promise<string>,
+	runCmd: (cmd: string) => Promise<string>
 ): Promise<string> {
 	const depthKey = "__shellExpandDepth";
 	const maxDepth = 8;
@@ -733,7 +732,7 @@ export async function expandAsync(
 interface GlobVfs {
 	list: (p: string) => string[];
 	exists: (p: string) => boolean;
-	stat: (p: string) => { type: string };
+	stat: (p: string) => {type: string};
 	statType?: (p: string) => string | null;
 }
 
@@ -760,7 +759,7 @@ function nodeType(vfs: GlobVfs, p: string): string | null {
 export function expandGlob(
 	pattern: string,
 	cwd: string,
-	vfs: GlobVfs,
+	vfs: GlobVfs
 ): string[] {
 	// No glob chars → return as-is
 	if (!(pattern.includes("*") || pattern.includes("?"))) {

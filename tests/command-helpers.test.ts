@@ -1,5 +1,5 @@
-import { describe, expect, test } from "bun:test";
-import { getArg, getFlag, ifFlag } from "../src/commands/command-helpers";
+import {describe, expect, test} from "bun:test";
+import {getArg, getFlag, ifFlag} from "../src/commands/command-helpers";
 
 describe("command-helpers", () => {
 	test("ifFlag detects plain and inline flag forms", () => {
@@ -53,7 +53,7 @@ describe("command-helpers", () => {
 
 	test("getArg skips bool and value flags", () => {
 		const args = ["-i", "-u", "root", "sh", "-c", "whoami"];
-		const options = { flags: ["-i"], flagsWithValue: ["-u"] };
+		const options = {flags: ["-i"], flagsWithValue: ["-u"]};
 
 		expect(getArg(args, 0, options)).toBe("sh");
 		expect(getArg(args, 1, options)).toBe("-c");
@@ -63,7 +63,7 @@ describe("command-helpers", () => {
 
 	test("getArg with no flags", () => {
 		const args = ["file1", "file2", "file3"];
-		const options = { flags: [], flagsWithValue: [] };
+		const options = {flags: [], flagsWithValue: []};
 
 		expect(getArg(args, 0, options)).toBe("file1");
 		expect(getArg(args, 1, options)).toBe("file2");
@@ -72,21 +72,21 @@ describe("command-helpers", () => {
 
 	test("getArg empty args", () => {
 		const args: string[] = [];
-		const options = { flags: ["-n"] };
+		const options = {flags: ["-n"]};
 
 		expect(getArg(args, 0, options)).toBeUndefined();
 	});
 
 	test("getArg skips values for flagsWithValue", () => {
 		const args = ["-d", ":", "-f", "1", "input.txt"];
-		const options = { flagsWithValue: ["-d", "-f"] };
+		const options = {flagsWithValue: ["-d", "-f"]};
 
 		expect(getArg(args, 0, options)).toBe("input.txt");
 	});
 
 	test("getArg keeps tokens after -- as positional", () => {
 		const args = ["-n", "--", "-n", "hello"];
-		const options = { flags: ["-n"] };
+		const options = {flags: ["-n"]};
 
 		expect(getArg(args, 0, options)).toBe("-n");
 		expect(getArg(args, 1, options)).toBe("hello");
@@ -94,7 +94,7 @@ describe("command-helpers", () => {
 
 	test("getArg -- blocks all flag processing", () => {
 		const args = ["-a", "--", "-a", "-b", "-c"];
-		const options = { flags: ["-a", "-b", "-c"] };
+		const options = {flags: ["-a", "-b", "-c"]};
 
 		expect(getArg(args, 0, options)).toBe("-a");
 		expect(getArg(args, 1, options)).toBe("-b");
@@ -103,7 +103,7 @@ describe("command-helpers", () => {
 
 	test("getArg with mixed flags and positionals", () => {
 		const args = ["-v", "file1", "-o", "output.txt", "file2"];
-		const options = { flags: ["-v"], flagsWithValue: ["-o"] };
+		const options = {flags: ["-v"], flagsWithValue: ["-o"]};
 
 		expect(getArg(args, 0, options)).toBe("file1");
 		expect(getArg(args, 1, options)).toBe("file2");

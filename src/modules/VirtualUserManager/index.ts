@@ -5,11 +5,11 @@ import {
 	scryptSync,
 	timingSafeEqual,
 } from "node:crypto";
-import { EventEmitter } from "node:events";
+import {EventEmitter} from "node:events";
 import * as path from "node:path";
-import { type PerfLogger, createPerfLogger } from "../../utils/perfLogger";
+import {type PerfLogger, createPerfLogger} from "../../utils/perfLogger";
 import type VirtualFileSystem from "../VirtualFileSystem";
-import { VirtualGroupManager, type VirtualGroupRecord } from "./groups";
+import {VirtualGroupManager, type VirtualGroupRecord} from "./groups";
 import {
 	type ProcessPriority,
 	ProcessScheduler,
@@ -175,7 +175,7 @@ export class VirtualUserManager extends EventEmitter {
 	/** Login failure tracking: username → { count, lastTime, sourceIp }. */
 	private _loginFailures = new Map<
 		string,
-		{ count: number; lastTime: number; sourceIp: string }
+		{count: number; lastTime: number; sourceIp: string}
 	>();
 	/** Max login failures before account is locked. */
 	private readonly _maxLoginFailures = 5;
@@ -198,7 +198,7 @@ export class VirtualUserManager extends EventEmitter {
 		private readonly _vfs: VirtualFileSystem,
 		// private readonly defaultRootPassword: string = process.env
 		// .SSH_MIMIC_ROOT_PASSWORD || "root",
-		private readonly _autoSudoForNewUsers: boolean = false,
+		private readonly _autoSudoForNewUsers: boolean = false
 	) {
 		super();
 		perf.mark("constructor");
@@ -230,7 +230,7 @@ export class VirtualUserManager extends EventEmitter {
 			this._vfs.mkdir(homePath, 0o755);
 			this._vfs.writeFile(
 				`${homePath}/README.txt`,
-				"Welcome to the virtual environment, root",
+				"Welcome to the virtual environment, root"
 			);
 		}
 
@@ -312,7 +312,7 @@ export class VirtualUserManager extends EventEmitter {
 	public assertWriteWithinQuota(
 		username: string,
 		targetPath: string,
-		nextContent: string | Buffer,
+		nextContent: string | Buffer
 	): void {
 		perf.mark("assertWriteWithinQuota");
 		const quota = this._quotas.get(username);
@@ -322,7 +322,7 @@ export class VirtualUserManager extends EventEmitter {
 
 		const normalizedPath = normalizeVfsPath(targetPath);
 		const homePath = normalizeVfsPath(
-			username === "root" ? "/root" : `/home/${username}`,
+			username === "root" ? "/root" : `/home/${username}`
 		);
 		const inUserHome =
 			normalizedPath === homePath || normalizedPath.startsWith(`${homePath}/`);
@@ -346,7 +346,7 @@ export class VirtualUserManager extends EventEmitter {
 
 		if (projectedUsage > quota) {
 			throw new Error(
-				`quota exceeded for '${username}': ${projectedUsage}/${quota} bytes`,
+				`quota exceeded for '${username}': ${projectedUsage}/${quota} bytes`
 			);
 		}
 	}
@@ -440,11 +440,11 @@ export class VirtualUserManager extends EventEmitter {
 				`Welcome to the virtual environment, ${username}`,
 				{},
 				uid,
-				gid,
+				gid
 			);
 		}
 		this.persist();
-		this.emit("user:add", { username });
+		this.emit("user:add", {username});
 	}
 
 	/**
@@ -511,11 +511,11 @@ export class VirtualUserManager extends EventEmitter {
 				`Welcome to the virtual environment, ${username}`,
 				{},
 				uid,
-				gid,
+				gid
 			);
 		}
 		void this.persist();
-		this.emit("user:add", { username });
+		this.emit("user:add", {username});
 	}
 
 	/**
@@ -593,7 +593,7 @@ export class VirtualUserManager extends EventEmitter {
 			}
 		}
 
-		this.emit("user:delete", { username });
+		this.emit("user:delete", {username});
 		this.persist();
 	}
 
@@ -664,7 +664,7 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public registerSession(
 		username: string,
-		remoteAddress: string,
+		remoteAddress: string
 	): VirtualActiveSession {
 		perf.mark("registerSession");
 		const session: VirtualActiveSession = {
@@ -721,7 +721,7 @@ export class VirtualUserManager extends EventEmitter {
 	public updateSession(
 		sessionId: string | null | undefined,
 		username: string,
-		remoteAddress: string,
+		remoteAddress: string
 	): void {
 		perf.mark("updateSession");
 		if (!sessionId) {
@@ -750,7 +750,7 @@ export class VirtualUserManager extends EventEmitter {
 	public listActiveSessions(): VirtualActiveSession[] {
 		perf.mark("listActiveSessions");
 		return Array.from(this._activeSessions.values()).sort((left, right) =>
-			left.startedAt.localeCompare(right.startedAt),
+			left.startedAt.localeCompare(right.startedAt)
 		);
 	}
 
@@ -828,7 +828,7 @@ export class VirtualUserManager extends EventEmitter {
 		tty: string,
 		abortController?: AbortController,
 		ppid = 1,
-		nice = 0,
+		nice = 0
 	): number {
 		const pid = this._nextPid++;
 		const priority = ProcessScheduler.niceToPriority(nice);
@@ -893,7 +893,7 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public listProcesses(): VirtualProcess[] {
 		return Array.from(this._activeProcesses.values()).sort(
-			(a, b) => a.pid - b.pid,
+			(a, b) => a.pid - b.pid
 		);
 	}
 
@@ -1164,7 +1164,7 @@ export class VirtualUserManager extends EventEmitter {
 
 		proc.nice = nice;
 		proc.priority = ProcessScheduler.niceToPriority(nice);
-		this.emit("process:nice", { pid, nice, priority: proc.priority });
+		this.emit("process:nice", {pid, nice, priority: proc.priority});
 		return true;
 	}
 
@@ -1216,7 +1216,7 @@ export class VirtualUserManager extends EventEmitter {
 		}
 
 		const runningCount = this.listProcesses().filter(
-			(p) => p.status === "running",
+			(p) => p.status === "running"
 		).length;
 		return this._scheduler.shouldThrottle(pid, proc.nice, runningCount);
 	}
@@ -1397,7 +1397,7 @@ export class VirtualUserManager extends EventEmitter {
 					record.passwordWarnDays,
 					record.passwordInactiveDays,
 					record.accountExpiryDate,
-				].join(":"),
+				].join(":")
 			)
 			.join("\n");
 		const sudoersContent = Array.from(this._sudoers.values()).sort().join("\n");
@@ -1411,19 +1411,19 @@ export class VirtualUserManager extends EventEmitter {
 			this._writeIfChanged(
 				this._usersPath,
 				authContent.length > 0 ? `${authContent}\n` : "",
-				0o600,
+				0o600
 			) || changed;
 		changed =
 			this._writeIfChanged(
 				this._sudoersPath,
 				sudoersContent.length > 0 ? `${sudoersContent}\n` : "",
-				0o600,
+				0o600
 			) || changed;
 		changed =
 			this._writeIfChanged(
 				this._quotasPath,
 				quotasContent.length > 0 ? `${quotasContent}\n` : "",
-				0o600,
+				0o600
 			) || changed;
 
 		if (changed) {
@@ -1434,7 +1434,7 @@ export class VirtualUserManager extends EventEmitter {
 	private _writeIfChanged(
 		targetPath: string,
 		content: string,
-		mode: number,
+		mode: number
 	): boolean {
 		if (this._vfs.exists(targetPath)) {
 			const existing = this._vfs.readFile(targetPath);
@@ -1444,7 +1444,7 @@ export class VirtualUserManager extends EventEmitter {
 			}
 		}
 
-		this._vfs.writeFile(targetPath, content, { mode });
+		this._vfs.writeFile(targetPath, content, {mode});
 		return true;
 	}
 
@@ -1452,7 +1452,7 @@ export class VirtualUserManager extends EventEmitter {
 		username: string,
 		password: string,
 		uid?: number,
-		gid?: number,
+		gid?: number
 	): VirtualUserRecord {
 		const assignedUid = uid ?? (username === "root" ? 0 : this._nextUid++);
 		const assignedGid = gid ?? (username === "root" ? 0 : this._nextGid++);
@@ -1569,7 +1569,7 @@ export class VirtualUserManager extends EventEmitter {
 	}
 	private readonly _authorizedKeys = new Map<
 		string,
-		Array<{ algo: string; data: Buffer }>
+		Array<{algo: string; data: Buffer}>
 	>();
 
 	/**
@@ -1582,9 +1582,9 @@ export class VirtualUserManager extends EventEmitter {
 	public addAuthorizedKey(username: string, algo: string, data: Buffer): void {
 		perf.mark("addAuthorizedKey");
 		const keys = this._authorizedKeys.get(username) ?? [];
-		keys.push({ algo, data });
+		keys.push({algo, data});
 		this._authorizedKeys.set(username, keys);
-		this.emit("key:add", { username, algo });
+		this.emit("key:add", {username, algo});
 	}
 
 	/**
@@ -1594,7 +1594,7 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public removeAuthorizedKeys(username: string): void {
 		this._authorizedKeys.delete(username);
-		this.emit("key:remove", { username });
+		this.emit("key:remove", {username});
 	}
 
 	/**
@@ -1605,8 +1605,8 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns The operation result.
 	 */
 	public getAuthorizedKeys(
-		username: string,
-	): Array<{ algo: string; data: Buffer }> {
+		username: string
+	): Array<{algo: string; data: Buffer}> {
 		return this._authorizedKeys.get(username) ?? [];
 	}
 
@@ -1747,7 +1747,7 @@ export class VirtualUserManager extends EventEmitter {
 		minDays?: number,
 		maxDays?: number,
 		warnDays?: number,
-		inactiveDays?: number,
+		inactiveDays?: number
 	): void {
 		const record = this._users.get(username);
 		if (!record) {
@@ -1966,7 +1966,7 @@ export class VirtualUserManager extends EventEmitter {
 
 		const lines = systemAccounts.map(
 			(a) =>
-				`${a.name}:${a.hash}:${a.lastChange}:${a.min}:${a.max}:${a.warn}:::`,
+				`${a.name}:${a.hash}:${a.lastChange}:${a.min}:${a.max}:${a.warn}:::`
 		);
 
 		for (const record of this._users.values()) {
@@ -1977,7 +1977,7 @@ export class VirtualUserManager extends EventEmitter {
 				? "!"
 				: record.passwordHash;
 			lines.push(
-				`${record.username}:${hash}:${record.lastPasswordChange}:${record.minPasswordAge}:${record.maxPasswordAge}:${record.passwordWarnDays}:${record.passwordInactiveDays}:${record.accountExpiryDate}:`,
+				`${record.username}:${hash}:${record.lastPasswordChange}:${record.minPasswordAge}:${record.maxPasswordAge}:${record.passwordWarnDays}:${record.passwordInactiveDays}:${record.accountExpiryDate}:`
 			);
 		}
 
@@ -2048,7 +2048,7 @@ export class VirtualUserManager extends EventEmitter {
 			existing.lastTime = now;
 			existing.sourceIp = sourceIp;
 		} else {
-			this._loginFailures.set(username, { count: 1, lastTime: now, sourceIp });
+			this._loginFailures.set(username, {count: 1, lastTime: now, sourceIp});
 		}
 	}
 
@@ -2111,7 +2111,7 @@ function normalizeVfsPath(targetPath: string): string {
 }
 
 // Re-export scheduler types for external consumers
-export { ProcessScheduler } from "./processScheduler";
+export {ProcessScheduler} from "./processScheduler";
 export type {
 	ProcessPriority,
 	SchedulerAction,

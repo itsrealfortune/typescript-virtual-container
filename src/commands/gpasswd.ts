@@ -1,4 +1,4 @@
-import type { ShellModule } from "../types/commands";
+import type {ShellModule} from "../types/commands";
 
 /**
  * Administer /etc/group — add or remove users from groups.
@@ -10,9 +10,9 @@ export const gpasswdCommand: ShellModule = {
 	description: "Administer /etc/group",
 	category: "users",
 	params: ["[-a|-d] -G group user"],
-	run: ({ authUser, shell, args }) => {
+	run: ({authUser, shell, args}) => {
 		if (authUser !== "root") {
-			return { stderr: "gpasswd: permission denied\n", exitCode: 1 };
+			return {stderr: "gpasswd: permission denied\n", exitCode: 1};
 		}
 
 		let action: "add" | "delete" | undefined;
@@ -33,7 +33,7 @@ export const gpasswdCommand: ShellModule = {
 		}
 
 		if (!(action && groupName && username)) {
-			return { stderr: "Usage: gpasswd -a|-d -G group user\n", exitCode: 1 };
+			return {stderr: "Usage: gpasswd -a|-d -G group user\n", exitCode: 1};
 		}
 
 		const users = shell.users.listUsers();
@@ -66,7 +66,7 @@ export const gpasswdCommand: ShellModule = {
 			};
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
-			return { stderr: `${msg}\n`, exitCode: 1 };
+			return {stderr: `${msg}\n`, exitCode: 1};
 		}
 	},
 };

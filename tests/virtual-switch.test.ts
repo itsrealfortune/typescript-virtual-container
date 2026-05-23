@@ -1,5 +1,5 @@
-import { describe, expect, test } from "bun:test";
-import { Baie, VirtualProxy, VirtualVpn } from "../src";
+import {describe, expect, test} from "bun:test";
+import {Baie, VirtualProxy, VirtualVpn} from "../src";
 
 describe("Baie", () => {
 	test("createVM assigns IP from subnet", async () => {
@@ -100,8 +100,8 @@ describe("VirtualSwitch", () => {
 			name: "web",
 			port: 80,
 			targets: [
-				{ hostname: "web1", port: 80, weight: 1 },
-				{ hostname: "web2", port: 80, weight: 1 },
+				{hostname: "web1", port: 80, weight: 1},
+				{hostname: "web2", port: 80, weight: 1},
 			],
 			algorithm: "round-robin",
 		});
@@ -125,7 +125,7 @@ describe("VirtualSwitch", () => {
 		sw.addLoadBalancer({
 			name: "x",
 			port: 80,
-			targets: [{ hostname: "a", port: 80, weight: 1 }],
+			targets: [{hostname: "a", port: 80, weight: 1}],
 			algorithm: "round-robin",
 		});
 		sw.removeLoadBalancer("x");
@@ -134,7 +134,7 @@ describe("VirtualSwitch", () => {
 
 	test("traffic shaping: packetLossPct drops packets", () => {
 		const baie = new Baie("ts", "10.0.1.0/24");
-		baie.switch.setTrafficRule("*", { vms: ["*"], packetLossPct: 100 });
+		baie.switch.setTrafficRule("*", {vms: ["*"], packetLossPct: 100});
 		// 100% loss means every "routed" packet is dropped
 		baie.switch.removeTrafficRule("*");
 	});
@@ -187,7 +187,7 @@ describe("VirtualVpn", () => {
 	test("addPeer is callable", () => {
 		const a = new Baie("a", "10.0.1.0/24");
 		const b = new Baie("b", "10.0.2.0/24");
-		const vpn = new VirtualVpn(a, b, { key: "k" });
+		const vpn = new VirtualVpn(a, b, {key: "k"});
 		expect(() => vpn.addPeer({} as never)).not.toThrow();
 	});
 });

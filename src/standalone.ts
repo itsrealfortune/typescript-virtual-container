@@ -1,5 +1,5 @@
-import { VirtualSftpServer, VirtualShell, VirtualSshServer } from ".";
-import { getFlag, getOptionInt } from "./utils/argv";
+import {VirtualSftpServer, VirtualShell, VirtualSshServer} from ".";
+import {getFlag, getOptionInt} from "./utils/argv";
 
 // ── CLI argument parsing ──────────────────────────────────────────────────────
 
@@ -44,14 +44,14 @@ virtualShell.on("gc:run", (stats: import(".").GcStats) => {
 	const shells = total - baselineRss;
 	console.debug(
 		`[GC periodic] terminated=${stats.terminatedProcesses} staleCpu=${stats.staleCpuEntries} evicted=${stats.evictedFiles} forcedGc=${stats.forcedGc} | ` +
-			`mem: shells=${Math.round(shells / 1024 / 1024)} MB total=${Math.round(total / 1024 / 1024)} MB`,
+			`mem: shells=${Math.round(shells / 1024 / 1024)} MB total=${Math.round(total / 1024 / 1024)} MB`
 	);
 });
 
 // Trigger GC immediately when an SSH session disconnects
 virtualShell.users.on(
 	"session:unregister",
-	(data: { sessionId: string; username: string; tty: string }) => {
+	(data: {sessionId: string; username: string; tty: string}) => {
 		const killed = virtualShell.users.killProcessesByTty(data.tty);
 		const gcStats = virtualShell.runGc();
 		const total = process.memoryUsage().rss;
@@ -60,16 +60,16 @@ virtualShell.users.on(
 			`[GC] session=${data.sessionId.slice(0, 8)}… user=${data.username} tty=${data.tty} | ` +
 				`killed=${killed} procs | ` +
 				`gc: terminated=${gcStats?.terminatedProcesses} staleCpu=${gcStats?.staleCpuEntries} evicted=${gcStats?.evictedFiles} forcedGc=${gcStats?.forcedGc} | ` +
-				`mem: shells=${Math.round(shells / 1024 / 1024)} MB total=${Math.round(total / 1024 / 1024)} MB`,
+				`mem: shells=${Math.round(shells / 1024 / 1024)} MB total=${Math.round(total / 1024 / 1024)} MB`
 		);
-	},
+	}
 );
 
 // ── Servers ───────────────────────────────────────────────────────────────────
 
 // SFTP subsystem handler — no standalone server, reused by the SSH server
 // so that `scp` and `sftp` clients work directly on the SSH port.
-const sftpHandler = new VirtualSftpServer({ shell: virtualShell });
+const sftpHandler = new VirtualSftpServer({shell: virtualShell});
 
 if (!noSsh) {
 	new VirtualSshServer({
@@ -122,7 +122,7 @@ process.on("uncaughtException", (error) => {
 process.on("unhandledRejection", (error, promise) => {
 	console.debug(
 		" Oh Lord! We forgot to handle a promise rejection here: ",
-		promise,
+		promise
 	);
 	console.debug(" The error was: ", error);
 });
@@ -134,6 +134,6 @@ setInterval(() => {
 	console.debug(
 		`Memory: total=${Math.round(total / 1024 / 1024)} MB | ` +
 			`shells=${Math.round(shells / 1024 / 1024)} MB | ` +
-			`runtime=${Math.round(runtime / 1024 / 1024)} MB`,
+			`runtime=${Math.round(runtime / 1024 / 1024)} MB`
 	);
 }, 1000);

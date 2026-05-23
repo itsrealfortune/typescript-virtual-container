@@ -1,4 +1,4 @@
-import type { ShellModule } from "../types/commands";
+import type {ShellModule} from "../types/commands";
 
 /**
  * Netcat network utility
@@ -11,12 +11,12 @@ export const ncCommand: ShellModule = {
 	description: "Netcat network utility",
 	category: "net",
 	params: ["[-l] [-p port] [-v]"],
-	run: async ({ args }) => {
+	run: async ({args}) => {
 		let mod: typeof import("node:net");
 		try {
 			mod = (await import("node:net")) as typeof import("node:net");
 		} catch {
-			return { stderr: "nc: not available in this environment\n", exitCode: 1 };
+			return {stderr: "nc: not available in this environment\n", exitCode: 1};
 		}
 		const net = mod;
 
@@ -37,17 +37,17 @@ export const ncCommand: ShellModule = {
 					});
 					socket.on("end", () => {
 						server.close();
-						resolve({ stdout: data, exitCode: 0 });
+						resolve({stdout: data, exitCode: 0});
 					});
 				});
 				server.listen(port, () => {
 					if (verbose) {
-						resolve({ stdout: `Listening on port ${port}...\n`, exitCode: 0 });
+						resolve({stdout: `Listening on port ${port}...\n`, exitCode: 0});
 					}
 				});
 				setTimeout(() => {
 					server.close();
-					resolve({ exitCode: 0 });
+					resolve({exitCode: 0});
 				}, 5000);
 			});
 		}
@@ -57,7 +57,7 @@ export const ncCommand: ShellModule = {
 		const portNum = nonFlag[1] ? Number.parseInt(nonFlag[1], 10) : Number.NaN;
 		if (host && !Number.isNaN(portNum)) {
 			return new Promise((resolve) => {
-				const socket = net.createConnection({ host, port: portNum }, () => {
+				const socket = net.createConnection({host, port: portNum}, () => {
 					if (verbose) {
 						resolve({
 							stdout: `Connected to ${host}:${portNum}\n`,
@@ -66,7 +66,7 @@ export const ncCommand: ShellModule = {
 					}
 					setTimeout(() => {
 						socket.end();
-						resolve({ exitCode: 0 });
+						resolve({exitCode: 0});
 					}, 3000);
 				});
 				socket.on("error", () => {
@@ -77,7 +77,7 @@ export const ncCommand: ShellModule = {
 				});
 				setTimeout(() => {
 					socket.destroy();
-					resolve({ exitCode: 1 });
+					resolve({exitCode: 1});
 				}, 5000);
 			});
 		}

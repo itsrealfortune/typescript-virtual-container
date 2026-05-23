@@ -1,5 +1,5 @@
-import type { ShellModule } from "../types/commands";
-import { ifFlag } from "./command-helpers";
+import type {ShellModule} from "../types/commands";
+import {ifFlag} from "./command-helpers";
 
 /**
  * Encode or decode base64 data.
@@ -11,7 +11,7 @@ export const base64Command: ShellModule = {
 	description: "Encode/decode base64",
 	category: "text",
 	params: ["[-d] [file]"],
-	run: ({ args, stdin }) => {
+	run: ({args, stdin}) => {
 		const decode = ifFlag(args, ["-d", "--decode"]);
 		const input = stdin ?? "";
 		if (decode) {
@@ -21,9 +21,9 @@ export const base64Command: ShellModule = {
 					exitCode: 0,
 				};
 			} catch {
-				return { stderr: "base64: invalid input", exitCode: 1 };
+				return {stderr: "base64: invalid input", exitCode: 1};
 			}
 		}
-		return { stdout: Buffer.from(input).toString("base64"), exitCode: 0 };
+		return {stdout: Buffer.from(input).toString("base64"), exitCode: 0};
 	},
 };

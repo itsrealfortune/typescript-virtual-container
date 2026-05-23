@@ -1,4 +1,4 @@
-import type { ShellModule } from "../types/commands";
+import type {ShellModule} from "../types/commands";
 
 /**
  * Display or set shell variables and options.
@@ -10,13 +10,13 @@ export const setCommand: ShellModule = {
 	description: "Display or set shell variables",
 	category: "shell",
 	params: ["[VAR=value]"],
-	run: ({ args, env }) => {
+	run: ({args, env}) => {
 		if (args.length === 0) {
 			const out = Object.entries(env.vars)
 				.filter(([k]) => !k.startsWith("__"))
 				.map(([k, v]) => `${k}=${v}`)
 				.join("\n");
-			return { stdout: out, exitCode: 0 };
+			return {stdout: out, exitCode: 0};
 		}
 		for (const arg of args) {
 			const flagMatch = arg.match(/^([+-])([a-zA-Z]+)$/);
@@ -45,6 +45,6 @@ export const setCommand: ShellModule = {
 				env.vars[arg.slice(0, eq)] = arg.slice(eq + 1);
 			}
 		}
-		return { exitCode: 0 };
+		return {exitCode: 0};
 	},
 };

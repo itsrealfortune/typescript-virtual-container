@@ -1,26 +1,26 @@
 import * as path from "node:path";
-import { basename } from "node:path";
-import { stdin, stdout } from "node:process";
-import { createInterface, type Interface } from "node:readline";
+import {basename} from "node:path";
+import {stdin, stdout} from "node:process";
+import {createInterface, type Interface} from "node:readline";
 
-import { getCommandNames } from "./commands/registry";
+import {getCommandNames} from "./commands/registry";
 import {
 	applyUserSwitch,
 	makeDefaultEnv,
 	runCommand,
 	userHome,
 } from "./commands/runtime";
-import { NanoEditor } from "./modules/nanoEditor";
-import { PacmanGame } from "./modules/pacmanGame";
-import { buildLoginBanner } from "./modules/SSHMimic/loginBanner";
-import { buildPrompt } from "./modules/SSHMimic/prompt";
-import { VirtualShell } from "./modules/VirtualShell";
+import {NanoEditor} from "./modules/nanoEditor";
+import {PacmanGame} from "./modules/pacmanGame";
+import {buildLoginBanner} from "./modules/SSHMimic/loginBanner";
+import {buildPrompt} from "./modules/SSHMimic/prompt";
+import {VirtualShell} from "./modules/VirtualShell";
 import type {
 	CommandResult,
 	PasswordChallenge,
 	SudoChallenge,
 } from "./types/commands";
-import { getFlag, getOptionString } from "./utils/argv";
+import {getFlag, getOptionString} from "./utils/argv";
 import {
 	listPathCompletions,
 	loadHistory,
@@ -75,7 +75,7 @@ function readUserArg(): string {
 const hostname = getOptionString(
 	argv,
 	"--hostname",
-	process.env.SSH_MIMIC_HOSTNAME ?? "typescript-vm",
+	process.env.SSH_MIMIC_HOSTNAME ?? "typescript-vm"
 );
 const snapshotPath = getOptionString(argv, "--snapshot", ".vfs");
 const initialUser = readUserArg();
@@ -96,13 +96,13 @@ function flushVfs(): void {
 
 // ── Tab completion ────────────────────────────────────────────────────────────
 
-function makeCompleter(getState: () => { cwd: string }) {
+function makeCompleter(getState: () => {cwd: string}) {
 	const commandNames = Array.from(new Set(getCommandNames())).sort();
 	return (
 		line: string,
-		cb: (err: null, result: [string[], string]) => void,
+		cb: (err: null, result: [string[], string]) => void
 	): void => {
-		const { cwd } = getState();
+		const {cwd} = getState();
 		const token = line.split(/\s+/).at(-1) ?? "";
 		const isFirstToken = line.trimStart() === token;
 		const cmdHits = isFirstToken
@@ -173,8 +173,8 @@ function applySessionState(
 	authUserState: string,
 	cwdState: string,
 	result: CommandResult,
-	shellEnvState: ReturnType<typeof makeDefaultEnv>,
-): { authUser: string; cwd: string } {
+	shellEnvState: ReturnType<typeof makeDefaultEnv>
+): {authUser: string; cwd: string} {
 	let authUser = authUserState;
 	let cwd = cwdState;
 	if (result.switchUser) {
@@ -188,7 +188,7 @@ function applySessionState(
 		cwd = result.nextCwd;
 		shellEnvState.vars.PWD = cwd;
 	}
-	return { authUser, cwd };
+	return {authUser, cwd};
 }
 
 // ── Demo command ──────────────────────────────────────────────────────────────
@@ -206,7 +206,7 @@ async function runReadlineShell(): Promise<void> {
 	const selectedUser = initialUser.trim() || "root";
 	if (virtualShell.users.getPasswordHash(selectedUser) === null) {
 		process.stderr.write(
-			`self-standalone: user '${selectedUser}' does not exist\n`,
+			`self-standalone: user '${selectedUser}' does not exist\n`
 		);
 		process.exit(1);
 	}
@@ -225,11 +225,11 @@ async function runReadlineShell(): Promise<void> {
 	let authUser = selectedUser;
 	let cwd = userHome(authUser);
 	shellEnv.vars.PWD = cwd;
-	const sessionStack: Array<{ authUser: string; cwd: string }> = [];
+	const sessionStack: Array<{authUser: string; cwd: string}> = [];
 	const remoteAddress = "localhost";
 
 	// Terminal size — updated on SIGWINCH
-	const terminalSize = { cols: stdout.columns ?? 80, rows: stdout.rows ?? 24 };
+	const terminalSize = {cols: stdout.columns ?? 80, rows: stdout.rows ?? 24};
 	process.on("SIGWINCH", () => {
 		terminalSize.cols = stdout.columns ?? terminalSize.cols;
 		terminalSize.rows = stdout.rows ?? terminalSize.rows;
@@ -241,7 +241,7 @@ async function runReadlineShell(): Promise<void> {
 		input: stdin,
 		output: stdout,
 		terminal: true,
-		completer: makeCompleter(() => ({ cwd })),
+		completer: makeCompleter(() => ({cwd})),
 	});
 
 	// Inject history into readline's internal history array.
@@ -256,7 +256,7 @@ async function runReadlineShell(): Promise<void> {
 	{
 		const rlRecord2 = rl as unknown as Record<string, unknown>;
 		const ttyWrite = rlRecord2._ttyWrite as
-			| ((s: string, key: { ctrl?: boolean; name?: string } | null) => void)
+			| ((s: string, key: {ctrl?: boolean; name?: string} | null) => void)
 			| undefined;
 		if (ttyWrite === undefined) {
 			return;
@@ -264,7 +264,7 @@ async function runReadlineShell(): Promise<void> {
 		const orig = ttyWrite.bind(rl);
 		rlRecord2._ttyWrite = (
 			s: string,
-			key: { ctrl?: boolean; name?: string } | null,
+			key: {ctrl?: boolean; name?: string} | null
 		) => {
 			const line = rlRecord2.line as string;
 			if (
@@ -298,7 +298,7 @@ async function runReadlineShell(): Promise<void> {
 
 	function startNanoEditor(
 		targetPath: string,
-		initialContent: string,
+		initialContent: string
 	): Promise<void> {
 		return new Promise<void>((resolve) => {
 			const stream: import("./types/streams").ShellStream = {
@@ -310,13 +310,13 @@ async function runReadlineShell(): Promise<void> {
 				on: () => undefined,
 			};
 
-			const snapSize = { cols: stdout.columns ?? 80, rows: stdout.rows ?? 24 };
+			const snapSize = {cols: stdout.columns ?? 80, rows: stdout.rows ?? 24};
 
 			// Steal all stdin listeners from readline so it gets no bytes during nano.
 			// Store them to restore later — this is safer than rl.pause()/resume()
 			// which leaves readline's internal state machine in a broken position.
 			const stdinListeners = stdin.listeners("data") as ((
-				chunk: Buffer,
+				chunk: Buffer
 			) => void)[];
 			for (const l of stdinListeners) {
 				stdin.off("data", l);
@@ -414,11 +414,11 @@ async function runReadlineShell(): Promise<void> {
 				on: () => undefined,
 			};
 
-			const snapSize = { cols: stdout.columns ?? 80, rows: stdout.rows ?? 24 };
+			const snapSize = {cols: stdout.columns ?? 80, rows: stdout.rows ?? 24};
 
 			// Steal stdin listeners from readline so game gets raw input
 			const stdinListeners = stdin.listeners("data") as ((
-				chunk: Buffer,
+				chunk: Buffer
 			) => void)[];
 			for (const l of stdinListeners) {
 				stdin.off("data", l);
@@ -501,7 +501,7 @@ async function runReadlineShell(): Promise<void> {
 		}
 
 		if (!challenge.commandLine) {
-			sessionStack.push({ authUser, cwd });
+			sessionStack.push({authUser, cwd});
 			authUser = challenge.targetUser;
 			cwd = userHome(authUser);
 			shellEnv.vars.PWD = cwd;
@@ -518,13 +518,13 @@ async function runReadlineShell(): Promise<void> {
 			runCwd,
 			virtualShell,
 			undefined,
-			shellEnv,
+			shellEnv
 		);
 		await handleCommandResult(nestedResult);
 	}
 
 	async function handlePasswordChallenge(
-		challenge: PasswordChallenge,
+		challenge: PasswordChallenge
 	): Promise<void> {
 		const first = await askHiddenQuestion(rl, challenge.prompt);
 		if (challenge.confirmPrompt) {
@@ -551,11 +551,11 @@ async function runReadlineShell(): Promise<void> {
 			case "deluser":
 				virtualShell.users.deleteUser(challenge.targetUsername);
 				stdout.write(
-					`Removing user '${challenge.targetUsername}' ...\ndeluser: done.\n`,
+					`Removing user '${challenge.targetUsername}' ...\ndeluser: done.\n`
 				);
 				break;
 			case "su":
-				sessionStack.push({ authUser, cwd });
+				sessionStack.push({authUser, cwd});
 				authUser = challenge.targetUsername;
 				cwd = userHome(authUser);
 				shellEnv.vars.USER = authUser;
@@ -572,7 +572,7 @@ async function runReadlineShell(): Promise<void> {
 		if (result.openEditor) {
 			await startNanoEditor(
 				result.openEditor.targetPath,
-				result.openEditor.initialContent,
+				result.openEditor.initialContent
 			);
 			prompt();
 			return;
@@ -601,18 +601,18 @@ async function runReadlineShell(): Promise<void> {
 
 		if (result.stdout) {
 			stdout.write(
-				result.stdout.endsWith("\n") ? result.stdout : `${result.stdout}\n`,
+				result.stdout.endsWith("\n") ? result.stdout : `${result.stdout}\n`
 			);
 		}
 
 		if (result.stderr) {
 			process.stderr.write(
-				result.stderr.endsWith("\n") ? result.stderr : `${result.stderr}\n`,
+				result.stderr.endsWith("\n") ? result.stderr : `${result.stderr}\n`
 			);
 		}
 
 		if (result.switchUser) {
-			sessionStack.push({ authUser, cwd });
+			sessionStack.push({authUser, cwd});
 		}
 		const updated = applySessionState(authUser, cwd, result, shellEnv);
 		authUser = updated.authUser;
@@ -654,7 +654,7 @@ async function runReadlineShell(): Promise<void> {
 			cwdLabel,
 			undefined,
 			undefined,
-			true,
+			true
 		);
 	};
 
@@ -685,8 +685,8 @@ async function runReadlineShell(): Promise<void> {
 		buildLoginBanner(
 			hostname,
 			virtualShell.properties,
-			readLastLogin(virtualShell.vfs, authUser),
-		),
+			readLastLogin(virtualShell.vfs, authUser)
+		)
 	);
 	writeLastLogin(virtualShell.vfs, authUser, remoteAddress);
 
@@ -713,7 +713,7 @@ async function runReadlineShell(): Promise<void> {
 					cwd,
 					virtualShell,
 					undefined,
-					shellEnv,
+					shellEnv
 				);
 				if (r.stdout) {
 					stdout.write(r.stdout);
@@ -764,7 +764,7 @@ async function runReadlineShell(): Promise<void> {
 			cwd,
 			virtualShell,
 			undefined,
-			shellEnv,
+			shellEnv
 		);
 		await handleCommandResult(result);
 		flushVfs();
@@ -776,7 +776,7 @@ async function runReadlineShell(): Promise<void> {
 
 	rl.on("SIGINT", () => {
 		stdout.write("^C\n");
-		rl.write("", { ctrl: true, name: "u" });
+		rl.write("", {ctrl: true, name: "u"});
 		prompt();
 	});
 

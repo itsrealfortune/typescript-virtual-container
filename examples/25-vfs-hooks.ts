@@ -5,7 +5,7 @@
  * dynamic file generation and beforeRead/beforeWrite hooks.
  */
 
-import { VirtualFileSystem } from "../src";
+import {VirtualFileSystem} from "../src";
 
 const vfs = new VirtualFileSystem();
 
@@ -76,5 +76,5 @@ console.log(vfs.readFile("/etc/os-release"));
 console.log("\n--- Stats of resolved files ---");
 const cpuStat = vfs.stat("/proc/cpuinfo");
 console.log(
-	`  /proc/cpuinfo: type=${cpuStat.type}, size=${cpuStat.type === "file" ? cpuStat.size : "N/A"}`,
+	`  /proc/cpuinfo: type=${cpuStat.type}, size=${cpuStat.type === "file" ? cpuStat.size : "N/A"}`
 );

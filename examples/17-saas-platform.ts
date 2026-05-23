@@ -5,7 +5,7 @@
  * user accounts, and resource caps for each customer.
  */
 
-import { Baie, SshClient, type VirtualShell, VirtualSshServer } from "../src";
+import {Baie, SshClient, type VirtualShell, VirtualSshServer} from "../src";
 
 interface Tenant {
 	id: string;
@@ -30,7 +30,7 @@ const tenantConfigs = [
 		subnet: "10.10.1.0/24",
 		users: ["admin", "developer", "analyst"],
 	},
-	{ id: "globex-inc", subnet: "10.10.2.0/24", users: ["admin", "engineer"] },
+	{id: "globex-inc", subnet: "10.10.2.0/24", users: ["admin", "engineer"]},
 	{
 		id: "initech",
 		subnet: "10.10.3.0/24",
@@ -58,8 +58,8 @@ for (const config of tenantConfigs) {
 		dbVM.users.addUser(username, "password123");
 	}
 
-	const appSsh = new VirtualSshServer({ port: 0, shell: appVM });
-	const dbSsh = new VirtualSshServer({ port: 0, shell: dbVM });
+	const appSsh = new VirtualSshServer({port: 0, shell: appVM});
+	const dbSsh = new VirtualSshServer({port: 0, shell: dbVM});
 	const [appPort, dbPort] = await Promise.all([appSsh.start(), dbSsh.start()]);
 
 	const appClient = new SshClient();
@@ -72,7 +72,7 @@ for (const config of tenantConfigs) {
 	await appClient.exec(
 		"mkdir -p /app/config /app/logs /app/data && " +
 			`echo '{"tenant":"${config.id}","env":"production"}' > /app/config/app.json && ` +
-			"echo 'App initialized' > /app/logs/init.log",
+			"echo 'App initialized' > /app/logs/init.log"
 	);
 	appClient.disconnect();
 
@@ -86,7 +86,7 @@ for (const config of tenantConfigs) {
 	await dbClient.exec(
 		"mkdir -p /var/lib/db /var/log/db && " +
 			`echo 'CREATE DATABASE ${config.id.replace(/-/g, "_")};' > /var/lib/db/init.sql && ` +
-			"echo 'Database initialized' > /var/log/db/init.log",
+			"echo 'Database initialized' > /var/log/db/init.log"
 	);
 	dbClient.disconnect();
 
@@ -102,7 +102,7 @@ for (const config of tenantConfigs) {
 		users: config.users,
 	});
 	console.log(
-		`  ${config.id}: ${config.users.length} users, app+db VMs, app SSH ${appPort}, db SSH ${dbPort}`,
+		`  ${config.id}: ${config.users.length} users, app+db VMs, app SSH ${appPort}, db SSH ${dbPort}`
 	);
 }
 
@@ -126,14 +126,14 @@ for (let i = 0; i < tenants.length; i++) {
 			password: "root",
 		});
 		const result = await appClient.exec(
-			`nc -z -w 1 ${t2.baie.switch.gateway} 5432 2>&1 || echo "unreachable"`,
+			`nc -z -w 1 ${t2.baie.switch.gateway} 5432 2>&1 || echo "unreachable"`
 		);
 		appClient.disconnect();
 
 		const isolated =
 			result.stdout!.includes("unreachable") || result.exitCode !== 0;
 		console.log(
-			`  ${t1.id} -> ${t2.id}: ${isolated ? "isolated" : "connected"}`,
+			`  ${t1.id} -> ${t2.id}: ${isolated ? "isolated" : "connected"}`
 		);
 	}
 }
@@ -157,7 +157,7 @@ for (const tenant of tenants) {
 	}
 	if (appCache) {
 		console.log(
-			`    Cache: ${appCache.entries} entries, ${appCache.hitRate.toFixed(0)}% hit rate`,
+			`    Cache: ${appCache.entries} entries, ${appCache.hitRate.toFixed(0)}% hit rate`
 		);
 	}
 }

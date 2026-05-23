@@ -5,8 +5,8 @@
  * helpers for interactive shell sessions.
  */
 import * as path from "node:path";
-import { resolvePath } from "../commands/helpers";
-import { userHome } from "../commands/runtime";
+import {resolvePath} from "../commands/helpers";
+import {userHome} from "../commands/runtime";
 import type VirtualFileSystem from "../modules/VirtualFileSystem";
 
 // ── History ───────────────────────────────────────────────────────────────────
@@ -20,7 +20,7 @@ import type VirtualFileSystem from "../modules/VirtualFileSystem";
  */
 export function loadHistory(
 	vfs: VirtualFileSystem,
-	authUser: string,
+	authUser: string
 ): string[] {
 	const historyPath = `${userHome(authUser)}/.bash_history`;
 	if (!vfs.exists(historyPath)) {
@@ -44,7 +44,7 @@ export function loadHistory(
 export function saveHistory(
 	vfs: VirtualFileSystem,
 	authUser: string,
-	history: string[],
+	history: string[]
 ): void {
 	const data = history.length > 0 ? `${history.join("\n")}\n` : "";
 	vfs.writeFile(`${userHome(authUser)}/.bash_history`, data);
@@ -68,7 +68,7 @@ export interface LastLogin {
  */
 export function readLastLogin(
 	vfs: VirtualFileSystem,
-	authUser: string,
+	authUser: string
 ): LastLogin | null {
 	const p =
 		authUser === "root" ? "/root/.lastlog.json" : `/home/${authUser}/.lastlog`;
@@ -84,7 +84,7 @@ export function readLastLogin(
 		if (typeof obj.from !== "string" || typeof obj.timestamp !== "number") {
 			return null;
 		}
-		return { from: obj.from, at: new Date(obj.timestamp).toISOString() };
+		return {from: obj.from, at: new Date(obj.timestamp).toISOString()};
 	} catch {
 		return null;
 	}
@@ -99,11 +99,11 @@ export function readLastLogin(
 export function writeLastLogin(
 	vfs: VirtualFileSystem,
 	authUser: string,
-	from: string,
+	from: string
 ): void {
 	const p =
 		authUser === "root" ? "/root/.lastlog.json" : `/home/${authUser}/.lastlog`;
-	vfs.writeFile(p, JSON.stringify({ at: new Date().toISOString(), from }));
+	vfs.writeFile(p, JSON.stringify({at: new Date().toISOString(), from}));
 }
 
 // ── Path completion ───────────────────────────────────────────────────────────
@@ -120,7 +120,7 @@ export function writeLastLogin(
 export function listPathCompletions(
 	vfs: VirtualFileSystem,
 	cwd: string,
-	prefix: string,
+	prefix: string
 ): string[] {
 	const slashIndex = prefix.lastIndexOf("/");
 	const dirPart = slashIndex >= 0 ? prefix.slice(0, slashIndex + 1) : "";

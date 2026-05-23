@@ -1,5 +1,5 @@
-import type { ShellModule } from "../types/commands";
-import { ifFlag } from "./command-helpers";
+import type {ShellModule} from "../types/commands";
+import {ifFlag} from "./command-helpers";
 
 /**
  * Report process status with various formatting options.
@@ -11,7 +11,7 @@ export const psCommand: ShellModule = {
 	description: "Report process status",
 	category: "system",
 	params: ["[-a] [-u] [-x] [aux]"],
-	run: ({ authUser, shell, args }) => {
+	run: ({authUser, shell, args}) => {
 		const sessions = shell.users.listActiveSessions();
 		const procs = shell.users.listProcesses();
 		const showUser =
@@ -36,7 +36,7 @@ export const psCommand: ShellModule = {
 				const vsz = Math.floor(Math.random() * 20000 + 5000);
 				const rss = Math.floor(Math.random() * 5000 + 1000);
 				rows.push(
-					`${user} ${String(sessionPids.get(s.id)).padStart(6)}   0  20  0.0  ${mem.padStart(4)} ${String(vsz).padStart(6)} ${String(rss).padStart(5)} ${s.tty.padEnd(8)} Ss   00:00   0:00 bash`,
+					`${user} ${String(sessionPids.get(s.id)).padStart(6)}   0  20  0.0  ${mem.padStart(4)} ${String(vsz).padStart(6)} ${String(rss).padStart(5)} ${s.tty.padEnd(8)} Ss   00:00   0:00 bash`
 				);
 			}
 			for (const p of procs) {
@@ -50,13 +50,13 @@ export const psCommand: ShellModule = {
 				const nice = p.nice ?? 0;
 				const priority = 20 - nice; // Linux-style priority display
 				rows.push(
-					`${user} ${String(p.pid).padStart(6)} ${String(nice).padStart(3)} ${String(priority).padStart(3)}  0.1  ${mem.padStart(4)} ${String(vsz).padStart(6)} ${String(rss).padStart(5)} ${p.tty.padEnd(8)} S    00:00   0:00 ${p.command}`,
+					`${user} ${String(p.pid).padStart(6)} ${String(nice).padStart(3)} ${String(priority).padStart(3)}  0.1  ${mem.padStart(4)} ${String(vsz).padStart(6)} ${String(rss).padStart(5)} ${p.tty.padEnd(8)} S    00:00   0:00 ${p.command}`
 				);
 			}
 			rows.push(
-				`root       ${String(nextPid).padStart(6)}   0  20  0.0   0.0      0      0 ?        S    00:00   0:00 ps`,
+				`root       ${String(nextPid).padStart(6)}   0  20  0.0   0.0      0      0 ?        S    00:00   0:00 ps`
 			);
-			return { stdout: rows.join("\n"), exitCode: 0 };
+			return {stdout: rows.join("\n"), exitCode: 0};
 		}
 
 		const header = "  PID TTY          TIME CMD";
@@ -66,7 +66,7 @@ export const psCommand: ShellModule = {
 				continue;
 			}
 			rows.push(
-				`${String(sessionPids.get(s.id)).padStart(5)} ${s.tty.padEnd(12)} 00:00:00 ${s.username === authUser ? "bash" : `bash (${s.username})`}`,
+				`${String(sessionPids.get(s.id)).padStart(5)} ${s.tty.padEnd(12)} 00:00:00 ${s.username === authUser ? "bash" : `bash (${s.username})`}`
 			);
 		}
 		for (const p of procs) {
@@ -74,10 +74,10 @@ export const psCommand: ShellModule = {
 				continue;
 			}
 			rows.push(
-				`${String(p.pid).padStart(5)} ${p.tty.padEnd(12)} 00:00:00 ${p.command}`,
+				`${String(p.pid).padStart(5)} ${p.tty.padEnd(12)} 00:00:00 ${p.command}`
 			);
 		}
 		rows.push(`${String(nextPid).padStart(5)} pts/0        00:00:00 ps`);
-		return { stdout: rows.join("\n"), exitCode: 0 };
+		return {stdout: rows.join("\n"), exitCode: 0};
 	},
 };

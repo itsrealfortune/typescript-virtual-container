@@ -15,7 +15,7 @@
  * ```
  */
 import type VirtualFileSystem from "../VirtualFileSystem";
-import type { VirtualUserManager } from "../VirtualUserManager";
+import type {VirtualUserManager} from "../VirtualUserManager";
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
@@ -157,7 +157,7 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 				content: '#!/bin/sh\nexec builtin python3 "$@"\n',
 				mode: 0o755,
 			},
-			{ path: "/usr/lib/python3.11/.keep", content: "" },
+			{path: "/usr/lib/python3.11/.keep", content: ""},
 		],
 	},
 	{
@@ -167,7 +167,7 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		description: "Minimal subset of the Python language (version 3)",
 		shortDesc: "minimal subset of Python language",
 		installedSizeKb: 196,
-		files: [{ path: "/usr/lib/python3-minimal/.keep", content: "" }],
+		files: [{path: "/usr/lib/python3-minimal/.keep", content: ""}],
 	},
 	{
 		name: "nodejs",
@@ -436,7 +436,7 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		shortDesc: "pager program",
 		installedSizeKb: 328,
 		files: [
-			{ path: "/usr/bin/less", content: '#!/bin/sh\ncat "$@"\n', mode: 0o755 },
+			{path: "/usr/bin/less", content: '#!/bin/sh\ncat "$@"\n', mode: 0o755},
 		],
 	},
 	{
@@ -508,9 +508,9 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		shortDesc: "common CA certificates",
 		installedSizeKb: 388,
 		files: [
-			{ path: "/etc/ssl/certs/.keep", content: "" },
-			{ path: "/etc/ssl/private/.keep", content: "" },
-			{ path: "/usr/share/ca-certificates/.keep", content: "" },
+			{path: "/etc/ssl/certs/.keep", content: ""},
+			{path: "/etc/ssl/private/.keep", content: ""},
+			{path: "/usr/share/ca-certificates/.keep", content: ""},
 		],
 		onInstall: (vfs) => {
 			if (!vfs.exists("/etc/ssl")) {
@@ -529,7 +529,7 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		shortDesc: "locale data",
 		installedSizeKb: 16484,
 		files: [
-			{ path: "/etc/locale.gen", content: "en_US.UTF-8 UTF-8\n" },
+			{path: "/etc/locale.gen", content: "en_US.UTF-8 UTF-8\n"},
 			{
 				path: "/etc/default/locale",
 				content: "LANG=en_US.UTF-8\nLANGUAGE=en_US:en\n",
@@ -610,11 +610,11 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 
 // O(1) name lookup — built once at module load, avoids O(n) linear scan per command
 const _REGISTRY_MAP = new Map<string, PackageDefinition>(
-	PACKAGE_REGISTRY.map((p) => [p.name.toLowerCase(), p]),
+	PACKAGE_REGISTRY.map((p) => [p.name.toLowerCase(), p])
 );
 // Pre-sorted for listAvailable() — avoids O(n log n) sort on every apt list/search
 const _REGISTRY_SORTED = PACKAGE_REGISTRY.slice().sort((a, b) =>
-	a.name.localeCompare(b.name),
+	a.name.localeCompare(b.name)
 );
 
 /**
@@ -647,7 +647,7 @@ export class VirtualPackageManager {
 	 */
 	constructor(
 		private readonly _vfs: VirtualFileSystem,
-		private readonly _users: VirtualUserManager,
+		private readonly _users: VirtualUserManager
 	) {}
 
 	/** Ensure dpkg/status is parsed. Called lazily on first package operation. */
@@ -718,7 +718,7 @@ export class VirtualPackageManager {
 					`Description: ${pkg.description}`,
 					`X-Installed-At: ${pkg.installedAt}`,
 					`X-Files: ${pkg.files.join("|")}`,
-				].join("\n"),
+				].join("\n")
 			);
 		}
 		this._vfs.writeFile(this._registryPath, `${blocks.join("\n\n")}\n`);
@@ -787,7 +787,7 @@ export class VirtualPackageManager {
 	public listInstalled(): InstalledPackage[] {
 		this._ensureLoaded();
 		return [...this._installed.values()].sort((a, b) =>
-			a.name.localeCompare(b.name),
+			a.name.localeCompare(b.name)
 		);
 	}
 
@@ -829,8 +829,8 @@ export class VirtualPackageManager {
 	 */
 	public install(
 		names: string[],
-		opts: { quiet?: boolean } = {},
-	): { output: string; exitCode: number } {
+		opts: {quiet?: boolean} = {}
+	): {output: string; exitCode: number} {
 		this._ensureLoaded();
 		const lines: string[] = [];
 		const toInstall: PackageDefinition[] = [];
@@ -880,7 +880,7 @@ export class VirtualPackageManager {
 
 		const totalKb = toInstall.reduce(
 			(acc, p) => acc + (p.installedSizeKb ?? 0),
-			0,
+			0
 		);
 
 		if (!opts.quiet) {
@@ -893,7 +893,7 @@ export class VirtualPackageManager {
 				`0 upgraded, ${toInstall.length} newly installed, 0 to remove and 0 not upgraded.`,
 				`Need to get 0 B/${totalKb} kB of archives.`,
 				`After this operation, ${totalKb} kB of additional disk space will be used.`,
-				"",
+				""
 			);
 		}
 
@@ -901,10 +901,10 @@ export class VirtualPackageManager {
 			if (!opts.quiet) {
 				lines.push(`Selecting previously unselected package ${def.name}.`);
 				lines.push(
-					"(Reading database ... 12345 files and directories currently installed.)",
+					"(Reading database ... 12345 files and directories currently installed.)"
 				);
 				lines.push(
-					`Preparing to unpack .../archives/${def.name}_${def.version}_amd64.deb ...`,
+					`Preparing to unpack .../archives/${def.name}_${def.version}_amd64.deb ...`
 				);
 				lines.push(`Unpacking ${def.name} (${def.version}) ...`);
 			}
@@ -915,7 +915,7 @@ export class VirtualPackageManager {
 				if (dir && !this._vfs.exists(dir)) {
 					this._vfs.mkdir(dir, 0o755);
 				}
-				this._vfs.writeFile(f.path, f.content, { mode: f.mode ?? 0o644 });
+				this._vfs.writeFile(f.path, f.content, {mode: f.mode ?? 0o644});
 			}
 
 			// Run install hook
@@ -943,7 +943,7 @@ export class VirtualPackageManager {
 
 		this._aptLog(
 			"install",
-			toInstall.map((p) => p.name),
+			toInstall.map((p) => p.name)
 		);
 		this._persist();
 
@@ -951,7 +951,7 @@ export class VirtualPackageManager {
 			lines.push("Processing triggers for man-db (2.11.2-2) ...");
 		}
 
-		return { output: lines.join("\n"), exitCode: 0 };
+		return {output: lines.join("\n"), exitCode: 0};
 	}
 
 	/**
@@ -969,8 +969,8 @@ export class VirtualPackageManager {
 	 */
 	public remove(
 		names: string[],
-		opts: { purge?: boolean; quiet?: boolean } = {},
-	): { output: string; exitCode: number } {
+		opts: {purge?: boolean; quiet?: boolean} = {}
+	): {output: string; exitCode: number} {
 		this._ensureLoaded();
 		const lines: string[] = [];
 		const toRemove: InstalledPackage[] = [];
@@ -985,7 +985,7 @@ export class VirtualPackageManager {
 		}
 
 		if (toRemove.length === 0) {
-			return { output: lines.join("\n") || "Nothing to remove.", exitCode: 0 };
+			return {output: lines.join("\n") || "Nothing to remove.", exitCode: 0};
 		}
 
 		if (!opts.quiet) {
@@ -994,7 +994,7 @@ export class VirtualPackageManager {
 				"Building dependency tree... Done",
 				"The following packages will be REMOVED:",
 				`  ${toRemove.map((p) => p.name).join(" ")}`,
-				`0 upgraded, 0 newly installed, ${toRemove.length} to remove and 0 not upgraded.`,
+				`0 upgraded, 0 newly installed, ${toRemove.length} to remove and 0 not upgraded.`
 			);
 		}
 
@@ -1030,11 +1030,11 @@ export class VirtualPackageManager {
 
 		this._aptLog(
 			"remove",
-			toRemove.map((p) => p.name),
+			toRemove.map((p) => p.name)
 		);
 		this._persist();
 
-		return { output: lines.join("\n"), exitCode: 0 };
+		return {output: lines.join("\n"), exitCode: 0};
 	}
 
 	/**
@@ -1050,7 +1050,7 @@ export class VirtualPackageManager {
 			(p) =>
 				p.name.includes(t) ||
 				p.description.toLowerCase().includes(t) ||
-				(p.shortDesc ?? "").toLowerCase().includes(t),
+				(p.shortDesc ?? "").toLowerCase().includes(t)
 		).sort((a, b) => a.name.localeCompare(b.name));
 	}
 

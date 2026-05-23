@@ -5,7 +5,7 @@
  * adding routes, configuring firewall rules, and inspecting conntrack.
  */
 
-import { VirtualShell } from "../src";
+import {VirtualShell} from "../src";
 
 const shell = new VirtualShell("network-demo");
 await shell.ensureInitialized();
@@ -61,7 +61,7 @@ console.log(net.formatIpRoute());
 console.log("--- Policy routing ---");
 net.addRoutingTable("custom");
 net.addRouteToTable("10.0.0.0/8", "10.0.0.1", "255.0.0.0", "eth0", 1);
-net.addPolicyRule({ from: "10.0.0.0/8", table: 1, action: "lookup" });
+net.addPolicyRule({from: "10.0.0.0/8", table: 1, action: "lookup"});
 console.log(net.formatIpRule());
 
 // ── Firewall ──────────────────────────────────────────────────────
@@ -101,11 +101,11 @@ const checks: Array<{
 	dst: string;
 	port: number;
 }> = [
-	{ proto: "tcp", dst: "10.0.0.1", port: 22 },
-	{ proto: "tcp", dst: "10.0.0.1", port: 8080 },
-	{ proto: "tcp", dst: "10.0.0.1", port: 443 },
+	{proto: "tcp", dst: "10.0.0.1", port: 22},
+	{proto: "tcp", dst: "10.0.0.1", port: 8080},
+	{proto: "tcp", dst: "10.0.0.1", port: 443},
 ];
-for (const { proto, dst, port } of checks) {
+for (const {proto, dst, port} of checks) {
 	const result = net.checkFirewall("INPUT", proto, "10.0.0.2", dst, port);
 	console.log(`  ${proto} ${dst}:${port} → ${result}`);
 }

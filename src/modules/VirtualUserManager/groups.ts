@@ -64,7 +64,7 @@ export class VirtualGroupManager {
 			this._nextGid = gid + 1;
 		}
 
-		const record: VirtualGroupRecord = { name, gid: assignedGid, members: [] };
+		const record: VirtualGroupRecord = {name, gid: assignedGid, members: []};
 		this._groups.set(name, record);
 		void this._persist();
 		return record;
@@ -233,7 +233,7 @@ export class VirtualGroupManager {
 	public isMemberOf(
 		username: string,
 		groupName: string,
-		primaryGid: number,
+		primaryGid: number
 	): boolean {
 		const group = this._groups.get(groupName);
 		if (!group) {
@@ -254,7 +254,7 @@ export class VirtualGroupManager {
 	 */
 	public listGroups(): VirtualGroupRecord[] {
 		return Array.from(this._groups.values()).sort((a, b) =>
-			a.name.localeCompare(b.name),
+			a.name.localeCompare(b.name)
 		);
 	}
 
@@ -279,7 +279,7 @@ export class VirtualGroupManager {
 		this._vfs.writeFile(
 			this._groupsPath,
 			content.length > 0 ? `${content}\n` : "",
-			{ mode: 0o644 },
+			{mode: 0o644}
 		);
 	}
 
@@ -319,7 +319,7 @@ export class VirtualGroupManager {
 			const members = membersStr
 				? membersStr.split(",").filter((m) => m.length > 0)
 				: [];
-			this._groups.set(name, { name, gid, members });
+			this._groups.set(name, {name, gid, members});
 
 			if (gid >= this._nextGid) {
 				this._nextGid = gid + 1;
@@ -332,50 +332,50 @@ export class VirtualGroupManager {
 	 * These are created only if not already present from the VFS.
 	 */
 	private _ensureSystemGroups(): void {
-		const systemGroups: Array<{ name: string; gid: number }> = [
-			{ name: "root", gid: 0 },
-			{ name: "daemon", gid: 1 },
-			{ name: "bin", gid: 2 },
-			{ name: "sys", gid: 3 },
-			{ name: "adm", gid: 4 },
-			{ name: "tty", gid: 5 },
-			{ name: "disk", gid: 6 },
-			{ name: "lp", gid: 7 },
-			{ name: "mail", gid: 8 },
-			{ name: "news", gid: 9 },
-			{ name: "uucp", gid: 10 },
-			{ name: "man", gid: 12 },
-			{ name: "proxy", gid: 13 },
-			{ name: "kmem", gid: 15 },
-			{ name: "dialout", gid: 20 },
-			{ name: "fax", gid: 21 },
-			{ name: "voice", gid: 22 },
-			{ name: "cdrom", gid: 24 },
-			{ name: "floppy", gid: 25 },
-			{ name: "tape", gid: 26 },
-			{ name: "sudo", gid: 27 },
-			{ name: "audio", gid: 29 },
-			{ name: "dip", gid: 30 },
-			{ name: "www-data", gid: 33 },
-			{ name: "backup", gid: 34 },
-			{ name: "operator", gid: 37 },
-			{ name: "list", gid: 38 },
-			{ name: "irc", gid: 39 },
-			{ name: "src", gid: 40 },
-			{ name: "shadow", gid: 42 },
-			{ name: "utmp", gid: 43 },
-			{ name: "video", gid: 44 },
-			{ name: "sasl", gid: 45 },
-			{ name: "plugdev", gid: 46 },
-			{ name: "staff", gid: 50 },
-			{ name: "games", gid: 60 },
-			{ name: "users", gid: 100 },
-			{ name: "nogroup", gid: 65534 },
+		const systemGroups: Array<{name: string; gid: number}> = [
+			{name: "root", gid: 0},
+			{name: "daemon", gid: 1},
+			{name: "bin", gid: 2},
+			{name: "sys", gid: 3},
+			{name: "adm", gid: 4},
+			{name: "tty", gid: 5},
+			{name: "disk", gid: 6},
+			{name: "lp", gid: 7},
+			{name: "mail", gid: 8},
+			{name: "news", gid: 9},
+			{name: "uucp", gid: 10},
+			{name: "man", gid: 12},
+			{name: "proxy", gid: 13},
+			{name: "kmem", gid: 15},
+			{name: "dialout", gid: 20},
+			{name: "fax", gid: 21},
+			{name: "voice", gid: 22},
+			{name: "cdrom", gid: 24},
+			{name: "floppy", gid: 25},
+			{name: "tape", gid: 26},
+			{name: "sudo", gid: 27},
+			{name: "audio", gid: 29},
+			{name: "dip", gid: 30},
+			{name: "www-data", gid: 33},
+			{name: "backup", gid: 34},
+			{name: "operator", gid: 37},
+			{name: "list", gid: 38},
+			{name: "irc", gid: 39},
+			{name: "src", gid: 40},
+			{name: "shadow", gid: 42},
+			{name: "utmp", gid: 43},
+			{name: "video", gid: 44},
+			{name: "sasl", gid: 45},
+			{name: "plugdev", gid: 46},
+			{name: "staff", gid: 50},
+			{name: "games", gid: 60},
+			{name: "users", gid: 100},
+			{name: "nogroup", gid: 65534},
 		];
 
-		for (const { name, gid } of systemGroups) {
+		for (const {name, gid} of systemGroups) {
 			if (!this._groups.has(name)) {
-				this._groups.set(name, { name, gid, members: [] });
+				this._groups.set(name, {name, gid, members: []});
 				if (gid >= this._nextGid) {
 					this._nextGid = gid + 1;
 				}

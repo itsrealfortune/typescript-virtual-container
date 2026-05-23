@@ -9,8 +9,8 @@
  *  - PacmanGame        — main game class
  *  - PacmanGameOptions — constructor options interface
  */
-import type { ShellStream } from "../types/streams";
-import type { TerminalSize } from "./shellRuntime";
+import type {ShellStream} from "../types/streams";
+import type {TerminalSize} from "./shellRuntime";
 
 // ── ANSI ─────────────────────────────────────────────────────────────────────
 
@@ -492,7 +492,7 @@ export class PacmanGame {
 				this._globalModeTick = 0;
 				this._modeIdx = Math.min(
 					this._modeIdx + 1,
-					this._modeSchedule.length - 1,
+					this._modeSchedule.length - 1
 				);
 				this._globalMode = this._modeIdx % 2 === 0 ? "scatter" : "chase";
 				// Sync all active ghosts to new global mode + force reverse (original behavior)
@@ -506,7 +506,7 @@ export class PacmanGame {
 		}
 
 		// Snapshot ghost positions before move (for cross-collision detection)
-		const prevGhostPos = this._ghosts.map((g) => ({ r: g.r, c: g.c }));
+		const prevGhostPos = this._ghosts.map((g) => ({r: g.r, c: g.c}));
 		const prevPacR = this._pacR;
 		const prevPacC = this._pacC;
 
@@ -753,9 +753,9 @@ export class PacmanGame {
 	// ── Collision ─────────────────────────────────────────────────────────────
 
 	private _checkCollisions(
-		prevGhostPos: { r: number; c: number }[],
+		prevGhostPos: {r: number; c: number}[],
 		prevPacR: number,
-		prevPacC: number,
+		prevPacC: number
 	): void {
 		for (let i = 0; i < this._ghosts.length; i++) {
 			const g = this._ghost(i);

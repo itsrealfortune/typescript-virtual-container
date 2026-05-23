@@ -1,6 +1,6 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { VirtualShell, VirtualSshServer } from "../src";
-import { SshClient } from "../src/modules/SSHClient";
+import {afterAll, beforeAll, describe, expect, test} from "bun:test";
+import {VirtualShell, VirtualSshServer} from "../src";
+import {SshClient} from "../src/modules/SSHClient";
 
 // Skip slow network tests by default. Run with:
 //   SSH_MIMIC_RUN_NETWORK_TESTS=1 bun test tests/new-features.test.ts
@@ -8,10 +8,10 @@ const runNetwork = Boolean(process.env.SSH_MIMIC_RUN_NETWORK_TESTS);
 const itNetwork = runNetwork ? test : test.skip;
 
 async function setupClient(vmName: string) {
-	const shell = new VirtualShell(vmName, undefined, { mode: "memory" });
+	const shell = new VirtualShell(vmName, undefined, {mode: "memory"});
 	await shell.ensureInitialized();
 	shell.users.setPassword("root", "root");
-	const ssh = new VirtualSshServer({ port: 0, shell });
+	const ssh = new VirtualSshServer({port: 0, shell});
 	const port = await ssh.start();
 	const client = new SshClient();
 	await client.connect({
@@ -20,7 +20,7 @@ async function setupClient(vmName: string) {
 		username: "root",
 		password: "root",
 	});
-	return { shell, client, ssh };
+	return {shell, client, ssh};
 }
 
 // ─── shared shell ─────────────────────────────────────────────────────────────
@@ -557,7 +557,7 @@ describe("Bug fixes", () => {
 	test("[ -f path ] returns 0 for existing file", async () => {
 		await client.exec("touch /tmp/testfile-bf");
 		const r = await client.exec(
-			"[ -f /tmp/testfile-bf ] && echo yes || echo no",
+			"[ -f /tmp/testfile-bf ] && echo yes || echo no"
 		);
 		expect(r.stdout?.trim()).toBe("yes");
 	});
@@ -569,7 +569,7 @@ describe("Bug fixes", () => {
 
 	test("[ -f path ] returns 1 for non-existent file", async () => {
 		const r = await client.exec(
-			"[ -f /tmp/doesnotexist-bf999 ] && echo yes || echo no",
+			"[ -f /tmp/doesnotexist-bf999 ] && echo yes || echo no"
 		);
 		expect(r.stdout?.trim()).toBe("no");
 	});
@@ -625,7 +625,7 @@ describe("Bug fixes", () => {
 
 	test("sh -c for loop with $(cmd)", async () => {
 		const r = await client.exec(
-			"sh -c 'for x in a b; do echo $(echo $x); done'",
+			"sh -c 'for x in a b; do echo $(echo $x); done'"
 		);
 		expect(r.stdout?.trim()).toBe("a\nb");
 	});
@@ -694,7 +694,7 @@ describe("/proc/self and /proc/<pid>", () => {
 	});
 });
 
-import { assertDiff, diffSnapshots, formatDiff } from "../src";
+import {assertDiff, diffSnapshots, formatDiff} from "../src";
 
 describe("VFS snapshot diff tooling", () => {
 	test("diffSnapshots returns clean diff for identical snapshots", () => {
@@ -710,7 +710,7 @@ describe("VFS snapshot diff tooling", () => {
 		const before = shell.vfs.toSnapshot();
 		await client.exec("echo test > /tmp/diff-test-nf.txt");
 		const after = shell.vfs.toSnapshot();
-		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
+		const diff = diffSnapshots(before, after, {ignore: ["/proc"]});
 		const paths = diff.added.map((e) => e.path);
 		expect(paths).toContain("/tmp/diff-test-nf.txt");
 		expect(diff.clean).toBe(false);
@@ -720,7 +720,7 @@ describe("VFS snapshot diff tooling", () => {
 		const before = shell.vfs.toSnapshot();
 		shell.vfs.mkdir("/tmp/diff-newdir-nf", 0o755);
 		const after = shell.vfs.toSnapshot();
-		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
+		const diff = diffSnapshots(before, after, {ignore: ["/proc"]});
 		const paths = diff.added.map((e) => e.path);
 		expect(paths).toContain("/tmp/diff-newdir-nf");
 	});
@@ -730,7 +730,7 @@ describe("VFS snapshot diff tooling", () => {
 		const before = shell.vfs.toSnapshot();
 		shell.vfs.writeFile("/tmp/modtest-nf.txt", "after");
 		const after = shell.vfs.toSnapshot();
-		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
+		const diff = diffSnapshots(before, after, {ignore: ["/proc"]});
 		const mod = diff.modified.find((e) => e.path === "/tmp/modtest-nf.txt");
 		expect(mod).toBeDefined();
 		expect(mod?.before).toBe("before");
@@ -742,7 +742,7 @@ describe("VFS snapshot diff tooling", () => {
 		const before = shell.vfs.toSnapshot();
 		shell.vfs.remove("/tmp/toremove-nf.txt");
 		const after = shell.vfs.toSnapshot();
-		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
+		const diff = diffSnapshots(before, after, {ignore: ["/proc"]});
 		const paths = diff.removed.map((e) => e.path);
 		expect(paths).toContain("/tmp/toremove-nf.txt");
 	});
@@ -752,7 +752,7 @@ describe("VFS snapshot diff tooling", () => {
 		const before = shell.vfs.toSnapshot();
 		shell.vfs.writeFile("/proc/uptime", "1000.00 900.00\n");
 		const after = shell.vfs.toSnapshot();
-		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
+		const diff = diffSnapshots(before, after, {ignore: ["/proc"]});
 		expect(diff.modified.map((e) => e.path)).not.toContain("/proc/uptime");
 	});
 
@@ -766,7 +766,7 @@ describe("VFS snapshot diff tooling", () => {
 		const before = shell.vfs.toSnapshot();
 		shell.vfs.writeFile("/tmp/format-test-nf.txt", "x");
 		const after = shell.vfs.toSnapshot();
-		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
+		const diff = diffSnapshots(before, after, {ignore: ["/proc"]});
 		const formatted = formatDiff(diff);
 		expect(formatted).toContain("added");
 	});
@@ -777,19 +777,19 @@ describe("VFS snapshot diff tooling", () => {
 		shell.vfs.writeFile("/tmp/assert-new-nf.txt", "new");
 		shell.vfs.remove("/tmp/assert-test-nf.txt");
 		const after = shell.vfs.toSnapshot();
-		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
+		const diff = diffSnapshots(before, after, {ignore: ["/proc"]});
 		expect(() =>
 			assertDiff(diff, {
 				added: ["/tmp/assert-new-nf.txt"],
 				removed: ["/tmp/assert-test-nf.txt"],
-			}),
+			})
 		).not.toThrow();
 	});
 
 	test("assertDiff throws when expected path is missing", () => {
 		const snap = shell.vfs.toSnapshot();
 		const diff = diffSnapshots(snap, snap);
-		expect(() => assertDiff(diff, { added: ["/nonexistent"] })).toThrow();
+		expect(() => assertDiff(diff, {added: ["/nonexistent"]})).toThrow();
 	});
 });
 
@@ -893,7 +893,7 @@ describe("node enhanced REPL", () => {
 	test("node require path works", async () => {
 		shell.vfs.writeFile(
 			"/tmp/path-nf.js",
-			"const p = require('path'); console.log(p.join('a', 'b'))",
+			"const p = require('path'); console.log(p.join('a', 'b'))"
 		);
 		const r = await client.exec("node /tmp/path-nf.js");
 		expect(r.stdout?.trim()).toBe("a/b");
@@ -902,7 +902,7 @@ describe("node enhanced REPL", () => {
 	test("node require fs throws gracefully", async () => {
 		shell.vfs.writeFile(
 			"/tmp/fs-nf.js",
-			"try { require('fs') } catch(e) { console.log('blocked') }",
+			"try { require('fs') } catch(e) { console.log('blocked') }"
 		);
 		const r = await client.exec("node /tmp/fs-nf.js");
 		expect(r.stdout?.trim()).toBe("blocked");
@@ -968,14 +968,14 @@ describe("python3 enhanced interpreter", () => {
 
 	test("class with __init__ and methods", async () => {
 		const r = await py(
-			"class Dog:\n    def __init__(self, name):\n        self.name = name\n    def bark(self):\n        return f'Woof! I am {self.name}'\nd = Dog('Rex')\nprint(d.bark())",
+			"class Dog:\n    def __init__(self, name):\n        self.name = name\n    def bark(self):\n        return f'Woof! I am {self.name}'\nd = Dog('Rex')\nprint(d.bark())"
 		);
 		expect(r.stdout?.trim()).toBe("Woof! I am Rex");
 	});
 
 	test("import math and use functions", async () => {
 		const r = await py(
-			"import math\nprint(math.floor(3.9))\nprint(round(math.sqrt(16), 0))",
+			"import math\nprint(math.floor(3.9))\nprint(round(math.sqrt(16), 0))"
 		);
 		expect(r.stdout).toContain("3");
 		expect(r.stdout).toContain("4");
@@ -994,7 +994,7 @@ describe("python3 enhanced interpreter", () => {
 
 	test("import json dumps/loads", async () => {
 		const r = await py(
-			"import json\nd={'x':1}\nprint(json.dumps(d))\nprint(json.loads('{\"a\":2}')['a'])",
+			"import json\nd={'x':1}\nprint(json.dumps(d))\nprint(json.loads('{\"a\":2}')['a'])"
 		);
 		expect(r.stdout).toContain('"x"');
 		expect(r.stdout).toContain("2");
@@ -1002,7 +1002,7 @@ describe("python3 enhanced interpreter", () => {
 
 	test("try/except handles errors", async () => {
 		const r = await py(
-			"try:\n    x = 1/0\nexcept ZeroDivisionError:\n    print('caught')",
+			"try:\n    x = 1/0\nexcept ZeroDivisionError:\n    print('caught')"
 		);
 		expect(r.stdout?.trim()).toBe("caught");
 	});
@@ -1014,7 +1014,7 @@ describe("python3 enhanced interpreter", () => {
 
 	test("sorted() and reversed()", async () => {
 		const r = await py(
-			"print(sorted([3,1,2]))\nprint(list(reversed([1,2,3])))",
+			"print(sorted([3,1,2]))\nprint(list(reversed([1,2,3])))"
 		);
 		expect(r.stdout).toContain("[1, 2, 3]");
 		expect(r.stdout).toContain("[3, 2, 1]");

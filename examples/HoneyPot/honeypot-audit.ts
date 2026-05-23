@@ -19,7 +19,7 @@ async function demonstrateHoneypot() {
 
 	// Initialize the virtual environment
 	const shell = new VirtualShell("security-lab");
-	const ssh = new VirtualSshServer({ port: 2222, shell });
+	const ssh = new VirtualSshServer({port: 2222, shell});
 	await ssh.start();
 
 	const users = shell.getUsers()!;
@@ -104,7 +104,7 @@ async function demonstrateHoneypot() {
 	if (authFailures.length > 0) {
 		authFailures.forEach((entry) => {
 			console.log(
-				`  • User "${entry.details.username}" from ${entry.details.remoteAddress}`,
+				`  • User "${entry.details.username}" from ${entry.details.remoteAddress}`
 			);
 		});
 	} else {
@@ -183,7 +183,7 @@ async function demonstrateHoneypot() {
 	ssh.stop();
 
 	console.log(
-		"✅ Example completed! HoneyPot auditing demonstration finished.\n",
+		"✅ Example completed! HoneyPot auditing demonstration finished.\n"
 	);
 }
 

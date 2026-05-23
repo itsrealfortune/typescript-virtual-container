@@ -1,5 +1,5 @@
-import type { ShellModule } from "../types/commands";
-import { userHome } from "./runtime";
+import type {ShellModule} from "../types/commands";
+import {userHome} from "./runtime";
 
 /**
  * Show who is logged on and what they are doing.
@@ -11,7 +11,7 @@ export const wCommand: ShellModule = {
 	description: "Show who is logged on and what they are doing",
 	category: "system",
 	params: ["[user]"],
-	run: ({ shell, authUser }) => {
+	run: ({shell, authUser}) => {
 		const now = new Date();
 		const upSecs = Math.floor(performance.now() / 1000);
 		const upMins = Math.floor(upSecs / 60);
@@ -37,7 +37,7 @@ export const wCommand: ShellModule = {
 		}
 
 		const header = ` ${timeStr} up ${uptimeStr},  1 user,  load average: 0.${Math.floor(
-			Math.random() * 30,
+			Math.random() * 30
 		)
 			.toString()
 			.padStart(2, "0")}, 0.${Math.floor(Math.random() * 15)
@@ -50,6 +50,6 @@ export const wCommand: ShellModule = {
 		const idle = "0.00s";
 		const row = `${authUser.padEnd(8)} pts/0    browser          ${loginTime}   ${idle}  0.01s  0.00s -bash`;
 
-		return { stdout: [header, colHeader, row].join("\n"), exitCode: 0 };
+		return {stdout: [header, colHeader, row].join("\n"), exitCode: 0};
 	},
 };

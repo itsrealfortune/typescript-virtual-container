@@ -7,8 +7,8 @@ import type {
 	RoutingTable,
 	PolicyRule,
 } from "./types";
-import { randomMac } from "./types";
-export { randomMac } from "./types";
+import {randomMac} from "./types";
+export {randomMac} from "./types";
 export type {
 	FirewallRule,
 	VirtualArpEntry,
@@ -95,9 +95,9 @@ export class VirtualNetworkManager {
 	private _conntrackMax = 65536;
 
 	private _routingTables: RoutingTable[] = [
-		{ id: 254, name: "main", routes: [] },
-		{ id: 253, name: "default", routes: [] },
-		{ id: 252, name: "local", routes: [] },
+		{id: 254, name: "main", routes: []},
+		{id: 253, name: "default", routes: []},
+		{id: 252, name: "local", routes: []},
 	];
 
 	private _policyRules: PolicyRule[] = [];
@@ -120,7 +120,7 @@ export class VirtualNetworkManager {
 		if (this._interfaces.some((i) => i.name === iface.name)) {
 			return false;
 		}
-		this._interfaces.push({ ...iface, state: "DOWN" });
+		this._interfaces.push({...iface, state: "DOWN"});
 		return true;
 	}
 
@@ -140,7 +140,7 @@ export class VirtualNetworkManager {
 
 	public setInterfaceType(
 		name: string,
-		type: VirtualInterface["type"],
+		type: VirtualInterface["type"]
 	): boolean {
 		const iface = this._interfaces.find((i) => i.name === name);
 		if (!iface) {
@@ -173,7 +173,7 @@ export class VirtualNetworkManager {
 		gateway: string,
 		netmask: string,
 		device: string,
-		metric?: number,
+		metric?: number
 	): void {
 		this._routes.push({
 			destination: dest,
@@ -197,7 +197,7 @@ export class VirtualNetworkManager {
 
 	public addRoutingTable(name: string): number {
 		const id = this._nextTableId++;
-		this._routingTables.push({ id, name, routes: [] });
+		this._routingTables.push({id, name, routes: []});
 		return id;
 	}
 
@@ -214,7 +214,7 @@ export class VirtualNetworkManager {
 		gateway: string,
 		netmask: string,
 		device: string,
-		tableId: number,
+		tableId: number
 	): boolean {
 		const table = this._routingTables.find((t) => t.id === tableId);
 		if (!table) {
@@ -235,7 +235,7 @@ export class VirtualNetworkManager {
 			this._policyRules.length > 0
 				? Math.max(...this._policyRules.map((r) => r.priority)) + 1000
 				: 1000;
-		this._policyRules.push({ ...rule, priority });
+		this._policyRules.push({...rule, priority});
 		return priority;
 	}
 
@@ -254,7 +254,7 @@ export class VirtualNetworkManager {
 
 	public setInterfaceState(
 		name: string,
-		state: "UP" | "DOWN" | "UNKNOWN",
+		state: "UP" | "DOWN" | "UNKNOWN"
 	): boolean {
 		const iface = this._interfaces.find((i) => i.name === name);
 		if (!iface) {
@@ -303,13 +303,13 @@ export class VirtualNetworkManager {
 						: "BROADCAST,MULTICAST,UP,LOWER_UP"
 					: "DOWN";
 			lines.push(
-				`${idx}: ${iface.name}: <${flags}> mtu ${iface.mtu} qdisc mq state ${iface.state === "UP" ? "UNKNOWN" : "DOWN"} group default qlen 1000`,
+				`${idx}: ${iface.name}: <${flags}> mtu ${iface.mtu} qdisc mq state ${iface.state === "UP" ? "UNKNOWN" : "DOWN"} group default qlen 1000`
 			);
 			lines.push(
-				`    link/${VirtualNetworkManager._linkType(iface.type)} ${iface.mac} brd ff:ff:ff:ff:ff:ff`,
+				`    link/${VirtualNetworkManager._linkType(iface.type)} ${iface.mac} brd ff:ff:ff:ff:ff:ff`
 			);
 			lines.push(
-				`    inet ${iface.ipv4}/${iface.ipv4Mask} scope global ${iface.name}`,
+				`    inet ${iface.ipv4}/${iface.ipv4Mask} scope global ${iface.name}`
 			);
 			lines.push("       valid_lft forever preferred_lft forever");
 			lines.push(`    inet6 ${iface.ipv6}/64 scope link`);
@@ -322,16 +322,16 @@ export class VirtualNetworkManager {
 	public formatIpRoute(): string {
 		const lines: string[] = [];
 		const sorted = [...this._routes].sort(
-			(a, b) => (a.metric ?? 0) - (b.metric ?? 0),
+			(a, b) => (a.metric ?? 0) - (b.metric ?? 0)
 		);
 		for (const r of sorted) {
 			if (r.destination === "default") {
 				lines.push(
-					`default via ${r.gateway} dev ${r.device}${r.metric ? ` metric ${r.metric}` : ""}`,
+					`default via ${r.gateway} dev ${r.device}${r.metric ? ` metric ${r.metric}` : ""}`
 				);
 			} else {
 				lines.push(
-					`${r.destination}/${VirtualNetworkManager._maskToCidr(r.netmask)} dev ${r.device}${r.metric ? ` metric ${r.metric}` : ""}${r.scope ? ` scope ${r.scope}` : ""}${r.proto ? ` proto ${r.proto}` : ""}`,
+					`${r.destination}/${VirtualNetworkManager._maskToCidr(r.netmask)} dev ${r.device}${r.metric ? ` metric ${r.metric}` : ""}${r.scope ? ` scope ${r.scope}` : ""}${r.proto ? ` proto ${r.proto}` : ""}`
 				);
 			}
 		}
@@ -407,10 +407,10 @@ export class VirtualNetworkManager {
 				extra += ` ${iface.duplex}-duplex`;
 			}
 			lines.push(
-				`${idx}: ${iface.name}: <${flags}> mtu ${iface.mtu} qdisc mq state ${iface.state === "UP" ? "UNKNOWN" : "DOWN"} mode DEFAULT group default qlen 1000`,
+				`${idx}: ${iface.name}: <${flags}> mtu ${iface.mtu} qdisc mq state ${iface.state === "UP" ? "UNKNOWN" : "DOWN"} mode DEFAULT group default qlen 1000`
 			);
 			lines.push(
-				`    link/${VirtualNetworkManager._linkType(iface.type)} ${iface.mac} brd ff:ff:ff:ff:ff:ff${extra}`,
+				`    link/${VirtualNetworkManager._linkType(iface.type)} ${iface.mac} brd ff:ff:ff:ff:ff:ff${extra}`
 			);
 			idx++;
 		}
@@ -449,7 +449,7 @@ export class VirtualNetworkManager {
 					(Number.parseInt(oct, 10)
 						? Number.parseInt(oct, 10).toString(2).split("1").length - 1
 						: 0),
-				0,
+				0
 			);
 	}
 
@@ -491,7 +491,7 @@ export class VirtualNetworkManager {
 		protocol: "tcp" | "udp" | "icmp" | "all",
 		source?: string,
 		destination?: string,
-		destPort?: number,
+		destPort?: number
 	): "ACCEPT" | "DROP" | "REJECT" {
 		for (const rule of this._firewallRules) {
 			if (rule.chain !== chain) {
@@ -532,7 +532,7 @@ export class VirtualNetworkManager {
 			"POSTROUTING",
 		] as const) {
 			lines.push(
-				`Chain ${chain} (policy ${this._policies[chain] ?? "ACCEPT"})`,
+				`Chain ${chain} (policy ${this._policies[chain] ?? "ACCEPT"})`
 			);
 			lines.push("target     prot opt source               destination");
 			for (const rule of this._firewallRules) {
@@ -576,7 +576,7 @@ export class VirtualNetworkManager {
 			| "packetsReceived"
 			| "bytesSent"
 			| "bytesReceived"
-		>,
+		>
 	): ConntrackEntry | null {
 		if (this._conntrack.length >= this._conntrackMax) {
 			this._evictOldestConntrack();
@@ -601,7 +601,7 @@ export class VirtualNetworkManager {
 		protocol: "tcp" | "udp" | "icmp",
 		srcPort?: number,
 		dstPort?: number,
-		bytes?: number,
+		bytes?: number
 	): void {
 		const entry = this._findConntrack(srcIp, dstIp, protocol, srcPort, dstPort);
 		if (entry) {
@@ -617,7 +617,7 @@ export class VirtualNetworkManager {
 				srcIp,
 				protocol,
 				dstPort,
-				srcPort,
+				srcPort
 			);
 			if (reverse) {
 				reverse.packetsReceived++;
@@ -657,7 +657,7 @@ export class VirtualNetworkManager {
 		dstIp: string,
 		protocol: "tcp" | "udp" | "icmp",
 		srcPort?: number,
-		dstPort?: number,
+		dstPort?: number
 	): ConntrackEntry | undefined {
 		return this._conntrack.find(
 			(e) =>
@@ -665,7 +665,7 @@ export class VirtualNetworkManager {
 				e.dstIp === dstIp &&
 				e.protocol === protocol &&
 				(e.srcPort === srcPort || e.srcPort === undefined) &&
-				(e.dstPort === dstPort || e.dstPort === undefined),
+				(e.dstPort === dstPort || e.dstPort === undefined)
 		);
 	}
 
@@ -696,30 +696,30 @@ export class VirtualNetworkManager {
 				continue;
 			}
 			if (rule.action === "blackhole") {
-				return { route: null, table: -1 };
+				return {route: null, table: -1};
 			}
 			if (rule.action === "unreachable") {
-				return { route: null, table: -2 };
+				return {route: null, table: -2};
 			}
 			if (rule.action === "prohibit") {
-				return { route: null, table: -3 };
+				return {route: null, table: -3};
 			}
 			if (rule.action === "lookup") {
 				const table = this._routingTables.find((t) => t.id === rule.table);
 				if (table) {
 					const route = table.routes.find((r) =>
-						this._ipMatchesDestination(dstIp, r),
+						this._ipMatchesDestination(dstIp, r)
 					);
 					if (route) {
-						return { route, table: rule.table };
+						return {route, table: rule.table};
 					}
 				}
 			}
 		}
 		const route = this._routes.find((r) =>
-			this._ipMatchesDestination(dstIp, r),
+			this._ipMatchesDestination(dstIp, r)
 		);
-		return { route: route ?? null, table: 254 };
+		return {route: route ?? null, table: 254};
 	}
 
 	private static _ipMatchesRule(ip: string, pattern: string): boolean {

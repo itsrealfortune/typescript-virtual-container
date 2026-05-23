@@ -1,4 +1,4 @@
-import { createCipheriv, createDecipheriv, createHash } from "node:crypto";
+import {createCipheriv, createDecipheriv, createHash} from "node:crypto";
 
 export function deriveKey(secret: string): Buffer {
 	return createHash("sha256").update(secret).digest();

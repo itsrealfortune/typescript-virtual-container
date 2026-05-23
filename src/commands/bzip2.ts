@@ -1,6 +1,6 @@
-import { gunzipSync, gzipSync } from "fflate";
-import type { ShellModule } from "../types/commands";
-import { resolvePath } from "./helpers";
+import {gunzipSync, gzipSync} from "fflate";
+import type {ShellModule} from "../types/commands";
+import {resolvePath} from "./helpers";
 
 // BZ2 magic bytes: "BZh" — we store gzip data after this marker so our tools
 // can round-trip. Real bzip2 files won't be decompressable this way, but files
@@ -32,12 +32,12 @@ export const bzip2Command: ShellModule = {
 	description: "Compress files using Burrows-Wheeler algorithm",
 	category: "archive",
 	params: ["[-k] [-d] <file>"],
-	run: ({ shell, cwd, args, uid, gid }) => {
+	run: ({shell, cwd, args, uid, gid}) => {
 		const keepOrig = args.includes("-k") || args.includes("--keep");
 		const decompress = args.includes("-d") || args.includes("--decompress");
 		const file = args.find((a) => !a.startsWith("-"));
 		if (!file) {
-			return { stderr: "bzip2: no file specified", exitCode: 1 };
+			return {stderr: "bzip2: no file specified", exitCode: 1};
 		}
 
 		const p = resolvePath(cwd, file);
@@ -58,14 +58,14 @@ export const bzip2Command: ShellModule = {
 			const raw = shell.vfs.readFileRaw(p);
 			const result = vfsBunzip2(raw);
 			if (!result) {
-				return { stderr: `bzip2: ${file}: data integrity error`, exitCode: 2 };
+				return {stderr: `bzip2: ${file}: data integrity error`, exitCode: 2};
 			}
 			const dest = p.slice(0, -4);
 			shell.vfs.writeFile(dest, result, {}, uid, gid);
 			if (!keepOrig) {
-				shell.vfs.remove(p, { recursive: false }, uid, gid);
+				shell.vfs.remove(p, {recursive: false}, uid, gid);
 			}
-			return { exitCode: 0 };
+			return {exitCode: 0};
 		}
 
 		if (file.endsWith(".bz2")) {
@@ -77,9 +77,9 @@ export const bzip2Command: ShellModule = {
 		const raw = shell.vfs.readFileRaw(p);
 		shell.vfs.writeFile(`${p}.bz2`, vfsBzip2(raw), {}, uid, gid);
 		if (!keepOrig) {
-			shell.vfs.remove(p, { recursive: false }, uid, gid);
+			shell.vfs.remove(p, {recursive: false}, uid, gid);
 		}
-		return { exitCode: 0 };
+		return {exitCode: 0};
 	},
 };
 
@@ -93,11 +93,11 @@ export const bunzip2Command: ShellModule = {
 	category: "archive",
 	aliases: ["bzcat"],
 	params: ["[-k] <file>"],
-	run: ({ shell, cwd, args, uid, gid }) => {
+	run: ({shell, cwd, args, uid, gid}) => {
 		const keepOrig = args.includes("-k") || args.includes("--keep");
 		const file = args.find((a) => !a.startsWith("-"));
 		if (!file) {
-			return { stderr: "bunzip2: no file specified", exitCode: 1 };
+			return {stderr: "bunzip2: no file specified", exitCode: 1};
 		}
 		const p = resolvePath(cwd, file);
 		if (!shell.vfs.exists(p)) {
@@ -115,13 +115,13 @@ export const bunzip2Command: ShellModule = {
 		const raw = shell.vfs.readFileRaw(p);
 		const result = vfsBunzip2(raw);
 		if (!result) {
-			return { stderr: `bunzip2: ${file}: data integrity error`, exitCode: 2 };
+			return {stderr: `bunzip2: ${file}: data integrity error`, exitCode: 2};
 		}
 		const dest = p.slice(0, -4);
 		shell.vfs.writeFile(dest, result, {}, uid, gid);
 		if (!keepOrig) {
-			shell.vfs.remove(p, { recursive: false }, uid, gid);
+			shell.vfs.remove(p, {recursive: false}, uid, gid);
 		}
-		return { exitCode: 0 };
+		return {exitCode: 0};
 	},
 };

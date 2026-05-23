@@ -1,5 +1,5 @@
-import { beforeAll, describe, expect, test } from "bun:test";
-import type { SshClient, VirtualShell } from "../src";
+import {beforeAll, describe, expect, test} from "bun:test";
+import type {SshClient, VirtualShell} from "../src";
 import {
 	createTestDir,
 	createTestEnv,
@@ -218,7 +218,7 @@ describe("tar command", () => {
 		await runCmd(client, "mkdir -p /tmp/extracted");
 		const r = await runCmd(
 			client,
-			"tar -xf /tmp/extract.tar -C /tmp/extracted",
+			"tar -xf /tmp/extract.tar -C /tmp/extracted"
 		);
 		expect(r.exitCode).toBe(0);
 	});
@@ -238,7 +238,7 @@ describe("gzip command", () => {
 		createTestFile(shell, "/tmp/gzipme2.txt", "a".repeat(1000));
 		const r = await runCmd(
 			client,
-			"gzip /tmp/gzipme2.txt || echo 'compressed'",
+			"gzip /tmp/gzipme2.txt || echo 'compressed'"
 		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
@@ -247,7 +247,7 @@ describe("gzip command", () => {
 		createTestFile(shell, "/tmp/gzipkeep2.txt", "data");
 		const r = await runCmd(
 			client,
-			"gzip -c /tmp/gzipkeep2.txt > /tmp/gzipkeep.gz || echo 'done'",
+			"gzip -c /tmp/gzipkeep2.txt > /tmp/gzipkeep.gz || echo 'done'"
 		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
@@ -257,7 +257,7 @@ describe("gzip command", () => {
 		await runCmd(client, "gzip /tmp/togzip2.txt || echo 'done'");
 		const r = await runCmd(
 			client,
-			"gzip -d /tmp/togzip2.txt.gz || echo 'done'",
+			"gzip -d /tmp/togzip2.txt.gz || echo 'done'"
 		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
@@ -356,7 +356,7 @@ describe("ln command", () => {
 		createTestFile(shell, "/tmp/lntodir/file.txt", "test");
 		const r = await runCmd(
 			client,
-			"ln -s /tmp/lntodir/file.txt /tmp/lntodir/link",
+			"ln -s /tmp/lntodir/file.txt /tmp/lntodir/link"
 		);
 		expect(r.exitCode).toBe(0);
 	});
@@ -365,11 +365,11 @@ describe("ln command", () => {
 		createTestFile(shell, "/tmp/lndup2.txt", "dup");
 		await runCmd(
 			client,
-			"ln -s /tmp/lndup2.txt /tmp/lndup-link2.txt 2>/dev/null || true",
+			"ln -s /tmp/lndup2.txt /tmp/lndup-link2.txt 2>/dev/null || true"
 		);
 		const r = await runCmd(
 			client,
-			"ln -s /tmp/lndup2.txt /tmp/lndup-link2.txt 2>&1 || echo 'error'",
+			"ln -s /tmp/lndup2.txt /tmp/lndup-link2.txt 2>&1 || echo 'error'"
 		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
@@ -393,7 +393,7 @@ describe("file command", () => {
 		createTestFile(shell, "/tmp/filelink-target2.txt", "target");
 		await runCmd(
 			client,
-			"ln -s /tmp/filelink-target2.txt /tmp/filelink2 2>/dev/null || true",
+			"ln -s /tmp/filelink-target2.txt /tmp/filelink2 2>/dev/null || true"
 		);
 		const r = await runCmd(client, "file /tmp/filelink2 || echo 'link'");
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
@@ -499,7 +499,7 @@ describe("lsb-release command", () => {
 		createTestFile(shell, "/tmp/readlink_target.txt", "data");
 		await runCmd(
 			client,
-			"ln -s /tmp/readlink_target.txt /tmp/readlink_link.txt",
+			"ln -s /tmp/readlink_target.txt /tmp/readlink_link.txt"
 		);
 		const r = await runCmd(client, "readlink /tmp/readlink_link.txt");
 		expect(r.exitCode).toBe(0);

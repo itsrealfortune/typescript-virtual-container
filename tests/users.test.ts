@@ -1,6 +1,6 @@
-import { describe, expect, test } from "bun:test";
+import {describe, expect, test} from "bun:test";
 import VirtualFileSystem from "../src/modules/VirtualFileSystem";
-import { VirtualUserManager } from "../src/modules/VirtualUserManager";
+import {VirtualUserManager} from "../src/modules/VirtualUserManager";
 
 function makeVfs() {
 	return new VirtualFileSystem();
@@ -50,7 +50,7 @@ describe("VirtualUserManager quotas", () => {
 			users.assertWriteWithinQuota(
 				"alice",
 				"/home/alice/note.txt",
-				"this exceeds the configured quota",
+				"this exceeds the configured quota"
 			);
 		}).toThrow("quota exceeded for 'alice'");
 	});
@@ -79,7 +79,7 @@ describe("VirtualUserManager quotas", () => {
 			users.assertWriteWithinQuota(
 				"charlie",
 				"/home/charlie/file.txt",
-				"long-content",
+				"long-content"
 			);
 		}).not.toThrow();
 	});

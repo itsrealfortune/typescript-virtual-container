@@ -1,6 +1,6 @@
-import type { ShellModule } from "../types/commands";
-import { getFlag } from "./command-helpers";
-import { assertPathAccess, resolvePath } from "./helpers";
+import type {ShellModule} from "../types/commands";
+import {getFlag} from "./command-helpers";
+import {assertPathAccess, resolvePath} from "./helpers";
 
 /**
  * Output the first part of files or stdin (head).
@@ -12,7 +12,7 @@ export const headCommand: ShellModule = {
 	description: "Output first lines",
 	category: "text",
 	params: ["[-n <lines>] [file...]"],
-	run: ({ authUser, shell, cwd, args, stdin }) => {
+	run: ({authUser, shell, cwd, args, stdin}) => {
 		const nArg = getFlag(args, ["-n"]);
 		// Support both -n N and -N shorthand (head -2, head -10)
 		const shortN = args.find((a) => /^-\d+$/.test(a));
@@ -23,7 +23,7 @@ export const headCommand: ShellModule = {
 					? Number.parseInt(shortN.slice(1), 10)
 					: 10;
 		const positionals = args.filter(
-			(a) => !a.startsWith("-") && a !== nArg && a !== String(n),
+			(a) => !a.startsWith("-") && a !== nArg && a !== String(n)
 		);
 
 		const take = (content: string) => {
@@ -39,7 +39,7 @@ export const headCommand: ShellModule = {
 		};
 
 		if (positionals.length === 0) {
-			return { stdout: take(stdin ?? ""), exitCode: 0 };
+			return {stdout: take(stdin ?? ""), exitCode: 0};
 		}
 
 		const results: string[] = [];
@@ -55,6 +55,6 @@ export const headCommand: ShellModule = {
 				};
 			}
 		}
-		return { stdout: results.join("\n"), exitCode: 0 };
+		return {stdout: results.join("\n"), exitCode: 0};
 	},
 };

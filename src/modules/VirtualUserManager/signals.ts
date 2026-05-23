@@ -17,12 +17,12 @@
 
 export const SIGNALS: Record<
 	number,
-	{ name: string; description: string; defaultAction: string }
+	{name: string; description: string; defaultAction: string}
 > = {
-	1: { name: "SIGHUP", description: "Hangup", defaultAction: "terminate" },
-	2: { name: "SIGINT", description: "Interrupt", defaultAction: "terminate" },
-	3: { name: "SIGQUIT", description: "Quit", defaultAction: "core" },
-	9: { name: "SIGKILL", description: "Kill", defaultAction: "terminate" },
+	1: {name: "SIGHUP", description: "Hangup", defaultAction: "terminate"},
+	2: {name: "SIGINT", description: "Interrupt", defaultAction: "terminate"},
+	3: {name: "SIGQUIT", description: "Quit", defaultAction: "core"},
+	9: {name: "SIGKILL", description: "Kill", defaultAction: "terminate"},
 	15: {
 		name: "SIGTERM",
 		description: "Termination",
@@ -33,8 +33,8 @@ export const SIGNALS: Record<
 		description: "Child status changed",
 		defaultAction: "ignore",
 	},
-	18: { name: "SIGCONT", description: "Continue", defaultAction: "continue" },
-	19: { name: "SIGSTOP", description: "Stop", defaultAction: "stop" },
+	18: {name: "SIGCONT", description: "Continue", defaultAction: "continue"},
+	19: {name: "SIGSTOP", description: "Stop", defaultAction: "stop"},
 	28: {
 		name: "SIGWINCH",
 		description: "Window size changed",

@@ -1,6 +1,6 @@
 import * as path from "node:path";
-import type { ShellModule } from "../types/commands";
-import { checkFilePermission, resolvePath } from "./helpers";
+import type {ShellModule} from "../types/commands";
+import {checkFilePermission, resolvePath} from "./helpers";
 
 /**
  * Move or rename files and directories.
@@ -12,12 +12,12 @@ export const mvCommand: ShellModule = {
 	description: "Move or rename files",
 	category: "files",
 	params: ["<source> <dest>"],
-	run: ({ authUser, shell, cwd, args }) => {
+	run: ({authUser, shell, cwd, args}) => {
 		const positionals = args.filter((a) => !a.startsWith("-"));
 		const [srcArg, destArg] = positionals;
 
 		if (!(srcArg && destArg)) {
-			return { stderr: "mv: missing operand", exitCode: 1 };
+			return {stderr: "mv: missing operand", exitCode: 1};
 		}
 
 		const srcPath = resolvePath(cwd, srcArg);
@@ -32,7 +32,7 @@ export const mvCommand: ShellModule = {
 				shell.users,
 				authUser,
 				path.posix.dirname(destPath),
-				2,
+				2
 			);
 
 			if (!shell.vfs.exists(srcPath)) {
@@ -50,10 +50,10 @@ export const mvCommand: ShellModule = {
 					: destPath;
 
 			shell.vfs.move(srcPath, finalDest, uid, gid);
-			return { exitCode: 0 };
+			return {exitCode: 0};
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
-			return { stderr: `mv: ${msg}`, exitCode: 1 };
+			return {stderr: `mv: ${msg}`, exitCode: 1};
 		}
 	},
 };

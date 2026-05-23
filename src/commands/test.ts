@@ -1,7 +1,7 @@
-import type { VirtualShell } from "../modules/VirtualShell";
-import type { ShellModule } from "../types/commands";
-import type { VfsFileNode } from "../types/vfs";
-import { resolvePath } from "./helpers";
+import type {VirtualShell} from "../modules/VirtualShell";
+import type {ShellModule} from "../types/commands";
+import type {VfsFileNode} from "../types/vfs";
+import {resolvePath} from "./helpers";
 
 /**
  * Evaluate a POSIX test expression.
@@ -138,12 +138,12 @@ export const testCommand: ShellModule = {
 	description: "Evaluate conditional expression",
 	category: "shell",
 	params: ["<expression>"],
-	run: ({ args, shell, cwd }) => {
+	run: ({args, shell, cwd}) => {
 		try {
 			const result = evalTest([...args], shell, cwd);
-			return { exitCode: result ? 0 : 1 };
+			return {exitCode: result ? 0 : 1};
 		} catch {
-			return { stderr: "test: malformed expression", exitCode: 2 };
+			return {stderr: "test: malformed expression", exitCode: 2};
 		}
 	},
 };

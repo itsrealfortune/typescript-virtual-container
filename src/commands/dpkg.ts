@@ -1,6 +1,6 @@
-import type { ShellModule } from "../types/commands";
-import { ifFlag, parseArgs } from "./command-helpers";
-import { getPackageManager } from "./helpers";
+import type {ShellModule} from "../types/commands";
+import {ifFlag, parseArgs} from "./command-helpers";
+import {getPackageManager} from "./helpers";
 
 /**
  * dpkg compatibility command (query/remove/list) backed by the virtual package manager.
@@ -12,10 +12,10 @@ export const dpkgCommand: ShellModule = {
 	description: "Fortune GNU/Linux package manager low-level tool",
 	category: "package",
 	params: ["[-l] [-s pkg] [-L pkg] [-i pkg] [--remove pkg]"],
-	run: ({ args, authUser, shell }) => {
+	run: ({args, authUser, shell}) => {
 		const pm = getPackageManager(shell);
 		if (!pm) {
-			return { stderr: "dpkg: package manager not initialised", exitCode: 1 };
+			return {stderr: "dpkg: package manager not initialised", exitCode: 1};
 		}
 
 		const listFlag = ifFlag(args, ["-l", "--list"]);
@@ -24,7 +24,7 @@ export const dpkgCommand: ShellModule = {
 		const removeFlag = ifFlag(args, ["-r", "--remove"]);
 		const purgeFlag = ifFlag(args, ["-P", "--purge"]);
 
-		const { positionals } = parseArgs(args, {
+		const {positionals} = parseArgs(args, {
 			flags: [
 				"-l",
 				"--list",
@@ -71,13 +71,13 @@ export const dpkgCommand: ShellModule = {
 				return `ii  ${name} ${ver} ${arch} ${desc}`;
 			});
 
-			return { stdout: [...header, ...rows].join("\n"), exitCode: 0 };
+			return {stdout: [...header, ...rows].join("\n"), exitCode: 0};
 		}
 
 		if (statusFlag) {
 			const pkgName = positionals[0];
 			if (!pkgName) {
-				return { stderr: "dpkg: -s needs a package name", exitCode: 1 };
+				return {stderr: "dpkg: -s needs a package name", exitCode: 1};
 			}
 			const info = pm.show(pkgName);
 			if (!info) {
@@ -86,13 +86,13 @@ export const dpkgCommand: ShellModule = {
 					exitCode: 1,
 				};
 			}
-			return { stdout: info, exitCode: 0 };
+			return {stdout: info, exitCode: 0};
 		}
 
 		if (listFilesFlag) {
 			const pkgName = positionals[0];
 			if (!pkgName) {
-				return { stderr: "dpkg: -L needs a package name", exitCode: 1 };
+				return {stderr: "dpkg: -L needs a package name", exitCode: 1};
 			}
 			const installed = pm.listInstalled().find((p) => p.name === pkgName);
 			if (!installed) {
@@ -102,9 +102,9 @@ export const dpkgCommand: ShellModule = {
 				};
 			}
 			if (installed.files.length === 0) {
-				return { stdout: "/.keep", exitCode: 0 };
+				return {stdout: "/.keep", exitCode: 0};
 			}
-			return { stdout: installed.files.join("\n"), exitCode: 0 };
+			return {stdout: installed.files.join("\n"), exitCode: 0};
 		}
 
 		if (removeFlag || purgeFlag) {
@@ -116,10 +116,10 @@ export const dpkgCommand: ShellModule = {
 				};
 			}
 			if (positionals.length === 0) {
-				return { stderr: "dpkg: error: need an action option", exitCode: 2 };
+				return {stderr: "dpkg: error: need an action option", exitCode: 2};
 			}
-			const { output, exitCode } = pm.remove(positionals, { purge: purgeFlag });
-			return { stdout: output || undefined, exitCode };
+			const {output, exitCode} = pm.remove(positionals, {purge: purgeFlag});
+			return {stdout: output || undefined, exitCode};
 		}
 
 		// Default: show help
@@ -144,7 +144,7 @@ export const dpkgQueryCommand: ShellModule = {
 	description: "Show information about installed packages",
 	category: "package",
 	params: ["-W [pkg] | -l [pattern]"],
-	run: ({ args, shell }) => {
+	run: ({args, shell}) => {
 		const pm = getPackageManager(shell);
 		if (!pm) {
 			return {
@@ -155,7 +155,7 @@ export const dpkgQueryCommand: ShellModule = {
 
 		const listFlag = ifFlag(args, ["-l"]);
 		const showFlag = ifFlag(args, ["-W", "--show"]);
-		const { positionals } = parseArgs(args, {
+		const {positionals} = parseArgs(args, {
 			flags: ["-l", "-W", "--show"],
 		});
 
@@ -184,6 +184,6 @@ export const dpkgQueryCommand: ShellModule = {
 			};
 		}
 
-		return { stderr: "dpkg-query: need a flag (-l, -W)", exitCode: 1 };
+		return {stderr: "dpkg-query: need a flag (-l, -W)", exitCode: 1};
 	},
 };

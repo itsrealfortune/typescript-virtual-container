@@ -1,6 +1,6 @@
-import type { ShellModule } from "../types/commands";
-import { getFlag } from "./command-helpers";
-import { assertPathAccess, resolvePath } from "./helpers";
+import type {ShellModule} from "../types/commands";
+import {getFlag} from "./command-helpers";
+import {assertPathAccess, resolvePath} from "./helpers";
 
 /**
  * Output the last part of files or stdin.
@@ -12,7 +12,7 @@ export const tailCommand: ShellModule = {
 	description: "Output last lines",
 	category: "text",
 	params: ["[-n <lines>] [file...]"],
-	run: ({ authUser, shell, cwd, args, stdin }) => {
+	run: ({authUser, shell, cwd, args, stdin}) => {
 		const nArg = getFlag(args, ["-n"]);
 		const shortN = args.find((a) => /^-\d+$/.test(a));
 		const n =
@@ -22,7 +22,7 @@ export const tailCommand: ShellModule = {
 					? Number.parseInt(shortN.slice(1), 10)
 					: 10;
 		const positionals = args.filter(
-			(a) => !a.startsWith("-") && a !== nArg && a !== String(n),
+			(a) => !a.startsWith("-") && a !== nArg && a !== String(n)
 		);
 
 		const take = (content: string) => {
@@ -35,7 +35,7 @@ export const tailCommand: ShellModule = {
 		};
 
 		if (positionals.length === 0) {
-			return { stdout: take(stdin ?? ""), exitCode: 0 };
+			return {stdout: take(stdin ?? ""), exitCode: 0};
 		}
 
 		const results: string[] = [];
@@ -51,6 +51,6 @@ export const tailCommand: ShellModule = {
 				};
 			}
 		}
-		return { stdout: results.join("\n"), exitCode: 0 };
+		return {stdout: results.join("\n"), exitCode: 0};
 	},
 };

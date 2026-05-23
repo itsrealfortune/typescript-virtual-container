@@ -17,6 +17,6 @@ export const thunarCommand: ShellModule = {
 		}
 		const path = ctx.args[0] || ctx.env.vars.HOME || "/root";
 		dm.createThunarWindow(path);
-		return { exitCode: 0 };
+		return {exitCode: 0};
 	},
 };

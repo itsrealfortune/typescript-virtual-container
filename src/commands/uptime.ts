@@ -1,5 +1,5 @@
-import type { ShellModule } from "../types/commands";
-import { ifFlag } from "./command-helpers";
+import type {ShellModule} from "../types/commands";
+import {ifFlag} from "./command-helpers";
 
 /**
  * Tell how long the system has been running.
@@ -11,7 +11,7 @@ export const uptimeCommand: ShellModule = {
 	description: "Tell how long the system has been running",
 	category: "system",
 	params: ["[-p] [-s]"],
-	run: ({ args, shell }) => {
+	run: ({args, shell}) => {
 		const pretty = ifFlag(args, ["-p"]);
 		const since = ifFlag(args, ["-s"]);
 
@@ -39,7 +39,7 @@ export const uptimeCommand: ShellModule = {
 				parts.push(`${hours} hour${hours > 1 ? "s" : ""}`);
 			}
 			parts.push(`${mins} minute${mins === 1 ? "" : "s"}`);
-			return { stdout: `up ${parts.join(", ")}`, exitCode: 0 };
+			return {stdout: `up ${parts.join(", ")}`, exitCode: 0};
 		}
 
 		const timeStr = new Date().toTimeString().slice(0, 8);

@@ -5,7 +5,7 @@
  * and network policies across a virtual cluster.
  */
 
-import { Baie, SshClient, VirtualSshServer, type VirtualShell } from "../src";
+import {Baie, SshClient, VirtualSshServer, type VirtualShell} from "../src";
 
 interface Pod {
 	name: string;
@@ -34,13 +34,13 @@ const cluster = new Baie("k8s-cluster", "172.16.0.0/16");
 console.log("\n--- Deploy pods ---");
 
 const podSpecs = [
-	{ name: "web-1", image: "nginx:1.25", ports: [80] },
-	{ name: "web-2", image: "nginx:1.25", ports: [80] },
-	{ name: "web-3", image: "nginx:1.25", ports: [80] },
-	{ name: "api-1", image: "node:20-alpine", ports: [3000] },
-	{ name: "api-2", image: "node:20-alpine", ports: [3000] },
-	{ name: "db-1", image: "postgres:16", ports: [5432] },
-	{ name: "cache-1", image: "redis:7", ports: [6379] },
+	{name: "web-1", image: "nginx:1.25", ports: [80]},
+	{name: "web-2", image: "nginx:1.25", ports: [80]},
+	{name: "web-3", image: "nginx:1.25", ports: [80]},
+	{name: "api-1", image: "node:20-alpine", ports: [3000]},
+	{name: "api-2", image: "node:20-alpine", ports: [3000]},
+	{name: "db-1", image: "postgres:16", ports: [5432]},
+	{name: "cache-1", image: "redis:7", ports: [6379]},
 ];
 
 const pods: Pod[] = [];
@@ -51,7 +51,7 @@ for (const spec of podSpecs) {
 	vm.users.setCpuCapCores(1);
 	vm.users.setPassword("root", "root");
 
-	const ssh = new VirtualSshServer({ port: 0, shell: vm });
+	const ssh = new VirtualSshServer({port: 0, shell: vm});
 	const port = await ssh.start();
 
 	const client = new SshClient();
@@ -126,7 +126,7 @@ for (const svc of services) {
 			algorithm: "round-robin",
 		});
 		console.log(
-			`  ${svc.name}: ${svc.pods.length} pods, round-robin LB on port ${svc.port}`,
+			`  ${svc.name}: ${svc.pods.length} pods, round-robin LB on port ${svc.port}`
 		);
 	} else {
 		console.log(`  ${svc.name}: 1 pod on port ${svc.port}`);
@@ -141,10 +141,10 @@ await webClient.exec("iptables -A OUTPUT -d 172.16.0.0/16 -j ACCEPT");
 
 const dbClient = pods.find((p) => p.name === "db-1")!.client;
 await dbClient.exec(
-	"iptables -A INPUT -s 172.16.0.4 -p tcp --dport 5432 -j ACCEPT",
+	"iptables -A INPUT -s 172.16.0.4 -p tcp --dport 5432 -j ACCEPT"
 );
 await dbClient.exec(
-	"iptables -A INPUT -s 172.16.0.5 -p tcp --dport 5432 -j ACCEPT",
+	"iptables -A INPUT -s 172.16.0.5 -p tcp --dport 5432 -j ACCEPT"
 );
 await dbClient.exec("iptables -P INPUT DROP");
 
@@ -157,17 +157,17 @@ console.log("  external -> db: denied (default)");
 console.log("\n--- Verify connectivity ---");
 
 const webToApi = await webClient.exec(
-	"echo 'test' | nc -w 1 172.16.0.4 3000 2>&1 || echo 'connection-refused'",
+	"echo 'test' | nc -w 1 172.16.0.4 3000 2>&1 || echo 'connection-refused'"
 );
 console.log(
-	`  web-1 -> api-1: ${webToApi.exitCode === 0 ? "connected" : "refused"}`,
+	`  web-1 -> api-1: ${webToApi.exitCode === 0 ? "connected" : "refused"}`
 );
 
 const webToDb = await webClient.exec(
-	"nc -z -w 1 172.16.0.6 5432 2>&1 || echo 'unreachable'",
+	"nc -z -w 1 172.16.0.6 5432 2>&1 || echo 'unreachable'"
 );
 console.log(
-	`  web-1 -> db-1: ${(webToDb.stdout ?? "").includes("unreachable") ? "blocked" : "open"}`,
+	`  web-1 -> db-1: ${(webToDb.stdout ?? "").includes("unreachable") ? "blocked" : "open"}`
 );
 
 // ── Rolling update ────────────────────────────────────────────────
@@ -193,14 +193,14 @@ console.log(`\n  Pods: ${pods.length} total`);
 for (const pod of pods) {
 	const status = pod.ready ? "Running" : "NotReady";
 	console.log(
-		`    ${pod.name}: ${pod.image} [${pod.ports.join(", ")}] - ${status}`,
+		`    ${pod.name}: ${pod.image} [${pod.ports.join(", ")}] - ${status}`
 	);
 }
 
 console.log(`\n  Services: ${services.length}`);
 for (const svc of services) {
 	console.log(
-		`    ${svc.name}: ${svc.pods.length} pods, port ${svc.port}->${svc.targetPort}`,
+		`    ${svc.name}: ${svc.pods.length} pods, port ${svc.port}->${svc.targetPort}`
 	);
 }
 
@@ -211,7 +211,7 @@ for (const [mac] of cluster.switch.getPorts()) {
 	totalReceived += cluster.switch.getBytesReceived(mac);
 }
 console.log(
-	`\n  Network bandwidth: ${totalSent} bytes sent, ${totalReceived} bytes received`,
+	`\n  Network bandwidth: ${totalSent} bytes sent, ${totalReceived} bytes received`
 );
 
 let _totalRam = 0;
@@ -220,7 +220,7 @@ for (const pod of pods) {
 	_totalRam += procs.length * 10;
 }
 console.log(
-	`  Total processes: ${pods.reduce((sum, p) => sum + p.vm.users.listProcesses().length, 0)}`,
+	`  Total processes: ${pods.reduce((sum, p) => sum + p.vm.users.listProcesses().length, 0)}`
 );
 
 console.log("\n--- Cluster running ---");

@@ -116,10 +116,10 @@ console.log(`  web to db:3306 = ${routeWebToDb.action}`);
 console.log(`  db to web:80  = ${routeDbToWeb.action}`);
 
 console.log(
-	`  web check MySQL = ${web.network.checkFirewall("INPUT", "tcp", "10.0.100.10", "10.0.100.20", 3306)}`,
+	`  web check MySQL = ${web.network.checkFirewall("INPUT", "tcp", "10.0.100.10", "10.0.100.20", 3306)}`
 );
 console.log(
-	`  db check MySQL  = ${db.network.checkFirewall("INPUT", "tcp", "10.0.100.20", "10.0.100.20", 3306)}`,
+	`  db check MySQL  = ${db.network.checkFirewall("INPUT", "tcp", "10.0.100.20", "10.0.100.20", 3306)}`
 );
 
 // ── Users, groups, sudo, password policies ─────────────────────────
@@ -144,7 +144,7 @@ web.users.setPasswordAging("developer", 1, 90, 7, 30);
 const aging = web.users.getPasswordAging("developer");
 if (aging) {
 	console.log(
-		`  developer password: minAge=${aging.minAge}d maxAge=${aging.maxAge}d warn=${aging.warnDays}d`,
+		`  developer password: minAge=${aging.minAge}d maxAge=${aging.maxAge}d warn=${aging.warnDays}d`
 	);
 }
 console.log(`  developer expired: ${web.users.isPasswordExpired("developer")}`);
@@ -154,10 +154,10 @@ console.log("\n--- Authorized keys ---");
 web.users.addAuthorizedKey(
 	"admin",
 	"ssh-ed25519",
-	Buffer.from("AAAAC3NzaC1lZDI1NTE5AAAAI..."),
+	Buffer.from("AAAAC3NzaC1lZDI1NTE5AAAAI...")
 );
 console.log(
-	`  admin authorized keys: ${web.users.getAuthorizedKeys("admin").length}`,
+	`  admin authorized keys: ${web.users.getAuthorizedKeys("admin").length}`
 );
 
 // ── Sessions and login tracking ───────────────────────────────────
@@ -172,7 +172,7 @@ web.users.recordLoginFailure("developer", "10.0.99.99");
 web.users.recordLoginFailure("developer", "10.0.99.99");
 console.log(`  developer failures: ${web.users.getLoginFailures("developer")}`);
 console.log(
-	`  developer locked: ${web.users.isAccountLockedByFailures("developer")}`,
+	`  developer locked: ${web.users.isAccountLockedByFailures("developer")}`
 );
 web.users.resetLoginFailures("developer");
 
@@ -181,16 +181,16 @@ console.log("\n--- Account locking ---");
 console.log(`  deploy locked: ${web.users.isAccountLocked("deploy")}`);
 web.users.lockAccount("deploy");
 console.log(
-	`  deploy locked after lock: ${web.users.isAccountLocked("deploy")}`,
+	`  deploy locked after lock: ${web.users.isAccountLocked("deploy")}`
 );
 web.users.unlockAccount("deploy");
 
 web.users.setAccountExpiry(
 	"developer",
-	Math.floor(Date.now() / 1000) + 30 * 86400,
+	Math.floor(Date.now() / 1000) + 30 * 86400
 );
 console.log(
-	`  developer password expired: ${web.users.isPasswordExpired("developer")}`,
+	`  developer password expired: ${web.users.isPasswordExpired("developer")}`
 );
 
 // ── Quotas ────────────────────────────────────────────────────────
@@ -203,7 +203,7 @@ console.log(`  developer usage: ${web.users.getUsageBytes("developer")} bytes`);
 console.log("\n--- Package management ---");
 web.packageManager.load();
 console.log(
-	`  available packages: ${VirtualPackageManager.listAvailable().length}`,
+	`  available packages: ${VirtualPackageManager.listAvailable().length}`
 );
 
 const nginxPkg = VirtualPackageManager.findInRegistry("nginx");
@@ -224,7 +224,7 @@ web.vfs.mkdir("/var/log", 0o755);
 
 web.vfs.writeFile(
 	"/etc/nginx/nginx.conf",
-	"worker_processes auto;\nevents {}\nhttp {\n    include /etc/nginx/sites-enabled/*;\n}\n",
+	"worker_processes auto;\nevents {}\nhttp {\n    include /etc/nginx/sites-enabled/*;\n}\n"
 );
 web.vfs.writeFile("/var/www/index.html", "<h1>Hello from web-01</h1>");
 web.vfs.writeFile("/var/log/access.log", "");
@@ -234,7 +234,7 @@ console.log(`  nginx.conf: ${conf.split("\n").length} lines`);
 
 const wwwStat = web.vfs.stat("/var/www/index.html");
 console.log(
-	`  index.html: type=${wwwStat.type}, size=${wwwStat.type === "file" ? wwwStat.size : "N/A"}`,
+	`  index.html: type=${wwwStat.type}, size=${wwwStat.type === "file" ? wwwStat.size : "N/A"}`
 );
 
 // ── Content resolvers and VFS hooks ───────────────────────────────
@@ -268,19 +268,19 @@ const pid1 = web.users.registerProcess(
 	"admin",
 	"nginx",
 	["-g", "daemon off;"],
-	"/dev/pts/0",
+	"/dev/pts/0"
 );
 const pid2 = web.users.registerProcess(
 	"developer",
 	"node",
 	["app.js"],
-	"/dev/pts/1",
+	"/dev/pts/1"
 );
 const pid3 = web.users.registerProcess(
 	"developer",
 	"tail",
 	["-f", "/var/log/access.log"],
-	"/dev/pts/1",
+	"/dev/pts/1"
 );
 
 console.log(`  processes: ${web.users.listProcesses().length}`);
@@ -297,7 +297,7 @@ web.users.unregisterProcess(pid2);
 const stats = web.users.getSchedulerStats();
 if (stats) {
 	console.log(
-		`  scheduler: ${stats.runQueueLength} queued, ${stats.scheduleCount} context switches`,
+		`  scheduler: ${stats.runQueueLength} queued, ${stats.scheduleCount} context switches`
 	);
 }
 
@@ -326,14 +326,14 @@ net.addLoadBalancer({
 	name: "web-lb",
 	port: 80,
 	algorithm: "round-robin",
-	targets: [{ hostname: "web-01", port: 80, weight: 1 }],
+	targets: [{hostname: "web-01", port: 80, weight: 1}],
 });
 
 for (let i = 0; i < 3; i++) {
 	const target = net.resolveLoadBalancer(80);
 	if (target) {
 		console.log(
-			`  request ${i + 1} to ${target.hostname} (${target.ip}:${target.port})`,
+			`  request ${i + 1} to ${target.hostname} (${target.ip}:${target.port})`
 		);
 	}
 }
@@ -350,7 +350,7 @@ console.log("\n--- Port forwarding ---");
 const proxy = new VirtualProxy({
 	getVM: (name: string) => (name === "web-01" ? web : undefined),
 	switch: net,
-	listVMs: () => [{ hostname: "web-01", ip: "10.0.100.10", shell: web }],
+	listVMs: () => [{hostname: "web-01", ip: "10.0.100.10", shell: web}],
 });
 
 proxy.exposePort("web-01", 80, 35801);
@@ -368,7 +368,7 @@ console.log("  forwards stopped");
 
 // ── Idle management and GC ────────────────────────────────────────
 console.log("\n--- Idle management ---");
-web.enableIdleManagement({ gcIntervalMs: 60000 });
+web.enableIdleManagement({gcIntervalMs: 60000});
 console.log(`  idle state: ${web.idleState}`);
 console.log(`  idle ms: ${web.idleMs}`);
 
@@ -376,7 +376,7 @@ web.pingIdle();
 const gc = web.runGc();
 if (gc) {
 	console.log(
-		`  GC: ${gc.terminatedProcesses} terminated, ${gc.evictedFiles} evicted, forced=${gc.forcedGc}`,
+		`  GC: ${gc.terminatedProcesses} terminated, ${gc.evictedFiles} evicted, forced=${gc.forcedGc}`
 	);
 }
 
@@ -386,20 +386,20 @@ console.log("  idle manager stopped");
 // ── System files generation ───────────────────────────────────────
 console.log("\n--- System files ---");
 console.log(
-	`  shadow entries: ${web.users.generateShadowFile().split("\n").length}`,
+	`  shadow entries: ${web.users.generateShadowFile().split("\n").length}`
 );
 console.log(
-	`  group entries:  ${web.users.generateGroupFile().split("\n").length}`,
+	`  group entries:  ${web.users.generateGroupFile().split("\n").length}`
 );
 
 // ── Traffic statistics ────────────────────────────────────────────
 console.log("\n--- Traffic statistics ---");
 console.log(
-	`  ${webPort.mac} sent:     ${net.getBytesSent(webPort.mac)} bytes`,
+	`  ${webPort.mac} sent:     ${net.getBytesSent(webPort.mac)} bytes`
 );
 console.log(`  ${dbPort.mac} sent:     ${net.getBytesSent(dbPort.mac)} bytes`);
 console.log(
-	`  ${webPort.mac} received: ${net.getBytesReceived(webPort.mac)} bytes`,
+	`  ${webPort.mac} received: ${net.getBytesReceived(webPort.mac)} bytes`
 );
 
 // ── Cleanup ───────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
-import type { ShellModule } from "../types/commands";
-import { resolvePath } from "./helpers";
+import type {ShellModule} from "../types/commands";
+import {resolvePath} from "./helpers";
 
 /**
  * Convert and copy a file
@@ -11,7 +11,7 @@ export const ddCommand: ShellModule = {
 	description: "Convert and copy a file",
 	category: "files",
 	params: ["if=<file> of=<file> [bs=1024] [count=N]"],
-	run: ({ shell, cwd, args, uid, gid }) => {
+	run: ({shell, cwd, args, uid, gid}) => {
 		const kv: Record<string, string> = {};
 		for (const arg of args) {
 			const eqIdx = arg.indexOf("=");
@@ -24,7 +24,7 @@ export const ddCommand: ShellModule = {
 		const ofPath = kv.of ? resolvePath(cwd, kv.of) : undefined;
 
 		if (!(ifPath && ofPath)) {
-			return { stderr: "dd: missing 'if' or 'of' operand\n", exitCode: 1 };
+			return {stderr: "dd: missing 'if' or 'of' operand\n", exitCode: 1};
 		}
 
 		if (!shell.vfs.exists(ifPath)) {

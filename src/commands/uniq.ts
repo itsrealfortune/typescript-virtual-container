@@ -1,5 +1,5 @@
-import type { ShellModule } from "../types/commands";
-import { ifFlag } from "./command-helpers";
+import type {ShellModule} from "../types/commands";
+import {ifFlag} from "./command-helpers";
 
 /**
  * Report or filter out repeated consecutive lines.
@@ -11,7 +11,7 @@ export const uniqCommand: ShellModule = {
 	description: "Report or filter out repeated lines",
 	category: "text",
 	params: ["[-c] [-d] [-u] [file]"],
-	run: ({ args, stdin }) => {
+	run: ({args, stdin}) => {
 		const count = ifFlag(args, ["-c"]);
 		const dupOnly = ifFlag(args, ["-d"]);
 		const uniqOnly = ifFlag(args, ["-u"]);
@@ -36,6 +36,6 @@ export const uniqCommand: ShellModule = {
 			out.push(count ? `${String(n).padStart(4)} ${line}` : line);
 			i = j;
 		}
-		return { stdout: out.join("\n"), exitCode: 0 };
+		return {stdout: out.join("\n"), exitCode: 0};
 	},
 };

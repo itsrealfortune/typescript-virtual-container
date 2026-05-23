@@ -1,4 +1,4 @@
-import type { ShellModule } from "../types/commands";
+import type {ShellModule} from "../types/commands";
 
 // ── yes ───────────────────────────────────────────────────────────────────────
 
@@ -12,10 +12,10 @@ export const yesCommand: ShellModule = {
 	description: "Output a string repeatedly until killed",
 	category: "misc",
 	params: ["[string]"],
-	run: ({ args }) => {
+	run: ({args}) => {
 		const word = args.length ? args.join(" ") : "y";
 		// Output 200 lines (simulate before Ctrl+C which isn't supported in virtual shell)
-		return { stdout: new Array(200).fill(word).join("\n"), exitCode: 0 };
+		return {stdout: new Array(200).fill(word).join("\n"), exitCode: 0};
 	},
 };
 
@@ -57,7 +57,7 @@ export const fortuneCommand: ShellModule = {
 	run: () => {
 		const idx = Math.floor(Math.random() * FORTUNES.length);
 		const fortune = FORTUNES[idx] ?? "No fortunes today.";
-		return { stdout: fortune, exitCode: 0 };
+		return {stdout: fortune, exitCode: 0};
 	},
 };
 
@@ -104,9 +104,9 @@ export const cowsayCommand: ShellModule = {
 	description: "Generate ASCII cow with message",
 	category: "misc",
 	params: ["[message]"],
-	run: ({ args, stdin }) => {
+	run: ({args, stdin}) => {
 		const msg = args.length ? args.join(" ") : (stdin?.trim() ?? "Moo.");
-		return { stdout: cowsay(msg), exitCode: 0 };
+		return {stdout: cowsay(msg), exitCode: 0};
 	},
 };
 
@@ -120,7 +120,7 @@ export const cowthinkCommand: ShellModule = {
 	description: "Generate ASCII cow thinking",
 	category: "misc",
 	params: ["[message]"],
-	run: ({ args, stdin }) => {
+	run: ({args, stdin}) => {
 		const msg = args.length ? args.join(" ") : (stdin?.trim() ?? "Hmm...");
 		return {
 			stdout: cowsay(msg)

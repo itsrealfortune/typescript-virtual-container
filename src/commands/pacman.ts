@@ -1,4 +1,4 @@
-import type { ShellModule } from "../types/commands";
+import type {ShellModule} from "../types/commands";
 
 /**
  * Play ASCII Pac-Man in the terminal (myman-wip-2009-10-30 maze graphics).
@@ -12,6 +12,6 @@ export const pacmanCommand: ShellModule = {
 	category: "misc",
 	params: [],
 	run: () => {
-		return { openPacman: true, exitCode: 0 };
+		return {openPacman: true, exitCode: 0};
 	},
 };

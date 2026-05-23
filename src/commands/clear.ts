@@ -1,4 +1,4 @@
-import type { ShellModule } from "../types/commands";
+import type {ShellModule} from "../types/commands";
 
 /**
  * Clear the terminal screen.
@@ -11,5 +11,5 @@ export const clearCommand: ShellModule = {
 	category: "shell",
 	params: [],
 	// clearScreen flag triggers \x1b[2J\x1b[H in the shell layer
-	run: () => ({ clearScreen: true, stdout: "", exitCode: 0 }),
+	run: () => ({clearScreen: true, stdout: "", exitCode: 0}),
 };

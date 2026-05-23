@@ -4,7 +4,7 @@ import type {
 	RoutingTable,
 	PolicyRule,
 } from "../VirtualNetworkManager/types";
-import type { VirtualShell } from "../VirtualShell";
+import type {VirtualShell} from "../VirtualShell";
 
 export type MacAddress = string;
 
@@ -76,4 +76,4 @@ export interface LoadBalancerRule {
 	algorithm: "round-robin" | "least-connections";
 }
 
-export type { ConntrackEntry, RoutingTable, PolicyRule, VirtualRoute };
+export type {ConntrackEntry, RoutingTable, PolicyRule, VirtualRoute};

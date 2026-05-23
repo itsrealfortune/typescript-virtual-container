@@ -1,4 +1,4 @@
-import type { ShellModule } from "../types/commands";
+import type {ShellModule} from "../types/commands";
 
 /**
  * Configure traffic control queuing disciplines.
@@ -10,7 +10,7 @@ export const tcCommand: ShellModule = {
 	description: "Show / manipulate traffic control settings",
 	category: "network",
 	params: ["<object> <command> [dev <device>] [qdisc <type>] [options]"],
-	run: ({ args, shell }) => {
+	run: ({args, shell}) => {
 		const net = shell.network;
 		const obj = args[0]?.toLowerCase();
 		const cmd = args[1]?.toLowerCase();
@@ -36,7 +36,7 @@ export const tcCommand: ShellModule = {
 					lines.push(`qdisc noqueue 0: dev ${iface.name} root refcnt 2`);
 					lines.push(` qdisc netem 1: dev ${iface.name} parent 1:1 limit 1000`);
 				}
-				return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
+				return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
 			}
 
 			if (cmd === "add") {
@@ -89,18 +89,18 @@ export const tcCommand: ShellModule = {
 			if (cmd === "del" || cmd === "delete") {
 				const devIdx = args.indexOf("dev");
 				const dev = devIdx === -1 ? "eth0" : args[devIdx + 1];
-				return { stdout: `Deleted qdisc from ${dev}\n`, exitCode: 0 };
+				return {stdout: `Deleted qdisc from ${dev}\n`, exitCode: 0};
 			}
 
 			if (cmd === "change" || cmd === "replace") {
 				const devIdx = args.indexOf("dev");
 				const dev = devIdx === -1 ? "eth0" : args[devIdx + 1];
-				return { stdout: `Changed qdisc on ${dev}\n`, exitCode: 0 };
+				return {stdout: `Changed qdisc on ${dev}\n`, exitCode: 0};
 			}
 		}
 
 		if (obj === "class" || obj === "filter" || obj === "action") {
-			return { exitCode: 0 };
+			return {exitCode: 0};
 		}
 
 		return {

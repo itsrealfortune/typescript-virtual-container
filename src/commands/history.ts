@@ -1,4 +1,4 @@
-import type { ShellModule } from "../types/commands";
+import type {ShellModule} from "../types/commands";
 
 /**
  * Display persisted command history for the session (from VFS).
@@ -10,11 +10,11 @@ export const historyCommand: ShellModule = {
 	description: "Display command history",
 	category: "shell",
 	params: ["[n]"],
-	run: ({ args, shell, authUser }) => {
+	run: ({args, shell, authUser}) => {
 		// History is persisted in the VFS by the interactive shell
 		const histPath = `/home/${authUser}/.bash_history`;
 		if (!shell.vfs.exists(histPath)) {
-			return { stdout: "", exitCode: 0 };
+			return {stdout: "", exitCode: 0};
 		}
 
 		const raw = shell.vfs.readFile(histPath);
@@ -26,9 +26,9 @@ export const historyCommand: ShellModule = {
 
 		const offset = lines.length - slice.length + 1;
 		const numbered = slice.map(
-			(line, i) => `${String(offset + i).padStart(5)}  ${line}`,
+			(line, i) => `${String(offset + i).padStart(5)}  ${line}`
 		);
 
-		return { stdout: numbered.join("\n"), exitCode: 0 };
+		return {stdout: numbered.join("\n"), exitCode: 0};
 	},
 };

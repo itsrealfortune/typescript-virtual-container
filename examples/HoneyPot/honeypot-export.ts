@@ -46,7 +46,7 @@ async function generateAuditReport() {
 
 	// Setup
 	const shell = new VirtualShell("audit-lab");
-	const ssh = new VirtualSshServer({ port: 2222, shell });
+	const ssh = new VirtualSshServer({port: 2222, shell});
 	await ssh.start();
 
 	const users = shell.getUsers()!;
@@ -73,7 +73,7 @@ async function generateAuditReport() {
 	await analyst.mkdir("/data/reports", true);
 	await analyst.writeFile(
 		"/data/reports/analysis.txt",
-		"Security analysis report",
+		"Security analysis report"
 	);
 	await analyst.ls("/data/reports");
 
@@ -163,7 +163,7 @@ async function generateAuditReport() {
 	console.log(`  • Total users: ${report.summary.totalUsers}`);
 	console.log(`  • Commands executed: ${report.summary.totalCommands}`);
 	console.log(
-		`  • Failed auth attempts: ${report.summary.failedAuthAttempts}\n`,
+		`  • Failed auth attempts: ${report.summary.failedAuthAttempts}\n`
 	);
 
 	// Display anomalies if any
@@ -207,8 +207,8 @@ async function generateAuditReport() {
 				anomalies: report.anomalies,
 			},
 			null,
-			2,
-		),
+			2
+		)
 	);
 	console.log(`✅ Stats export to: ${statsPath}\n`);
 
@@ -260,7 +260,7 @@ async function generateAuditReport() {
 
 	console.log("✅ Audit report generation complete!");
 	console.log(
-		"💡 Tip: Open the generated .json files to view full audit trails.\n",
+		"💡 Tip: Open the generated .json files to view full audit trails.\n"
 	);
 }
 

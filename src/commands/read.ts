@@ -1,5 +1,5 @@
-import type { ShellModule } from "../types/commands";
-import { ifFlag } from "./command-helpers";
+import type {ShellModule} from "../types/commands";
+import {ifFlag} from "./command-helpers";
 
 /**
  * Read a line from stdin into one or more variables.
@@ -11,9 +11,9 @@ export const readCommand: ShellModule = {
 	description: "Read a line from stdin into variables",
 	category: "shell",
 	params: ["[-r] [-p prompt] <var...>"],
-	run: ({ args, stdin, env }) => {
+	run: ({args, stdin, env}) => {
 		const varNames = args.filter(
-			(a, i) => a !== "-r" && a !== "-p" && args[i - 1] !== "-p",
+			(a, i) => a !== "-r" && a !== "-p" && args[i - 1] !== "-p"
 		);
 
 		// In non-interactive context, read from stdin pipe
@@ -21,11 +21,11 @@ export const readCommand: ShellModule = {
 		const line = ifFlag(args, ["-r"])
 			? input
 			: input.replace(/\\(?:\r?\n|.)/g, (m) =>
-					m[1] === "\n" || m[1] === "\r" ? "" : (m[1] as string),
+					m[1] === "\n" || m[1] === "\r" ? "" : (m[1] as string)
 				);
 
 		if (!env) {
-			return { exitCode: 0 };
+			return {exitCode: 0};
 		}
 
 		if (varNames.length === 0) {
@@ -42,6 +42,6 @@ export const readCommand: ShellModule = {
 			}
 		}
 
-		return { exitCode: 0 };
+		return {exitCode: 0};
 	},
 };

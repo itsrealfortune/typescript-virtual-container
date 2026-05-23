@@ -1,16 +1,16 @@
-import { VirtualShell, VirtualSshServer } from "../src";
-import { SshClient } from "../src/modules/SSHClient";
+import {VirtualShell, VirtualSshServer} from "../src";
+import {SshClient} from "../src/modules/SSHClient";
 
 /**
  * Test helper: creates a fresh shell, starts SSH server, and connects via real SSH.
  */
 export async function createTestEnv(vmName = "test-shell") {
-	const shell = new VirtualShell(vmName, undefined, { mode: "memory" });
+	const shell = new VirtualShell(vmName, undefined, {mode: "memory"});
 	await shell.ensureInitialized();
 
 	shell.users.setPassword("root", "root");
 
-	const ssh = new VirtualSshServer({ port: 0, shell });
+	const ssh = new VirtualSshServer({port: 0, shell});
 	const port = await ssh.start();
 
 	const client = new SshClient();
@@ -21,7 +21,7 @@ export async function createTestEnv(vmName = "test-shell") {
 		password: "root",
 	});
 
-	return { shell, client, ssh, port };
+	return {shell, client, ssh, port};
 }
 
 /**
@@ -29,10 +29,10 @@ export async function createTestEnv(vmName = "test-shell") {
  * Starts an SSH server and connects via real SSH protocol.
  */
 export async function createTestEnvWithSsh(vmName = "test-shell") {
-	const shell = new VirtualShell(vmName, undefined, { mode: "memory" });
+	const shell = new VirtualShell(vmName, undefined, {mode: "memory"});
 	await shell.ensureInitialized();
 
-	const ssh = new VirtualSshServer({ port: 0, shell });
+	const ssh = new VirtualSshServer({port: 0, shell});
 	const port = await ssh.start();
 
 	const client = new SshClient();
@@ -43,7 +43,7 @@ export async function createTestEnvWithSsh(vmName = "test-shell") {
 		password: "",
 	});
 
-	return { shell, client, ssh, port };
+	return {shell, client, ssh, port};
 }
 
 /**
@@ -64,7 +64,7 @@ export function runCmd(client: InstanceType<typeof SshClient>, cmd: string) {
  */
 export function runPipedCmd(
 	client: InstanceType<typeof SshClient>,
-	cmd: string,
+	cmd: string
 ) {
 	return client.exec(cmd);
 }
@@ -78,7 +78,7 @@ export function runPipedCmd(
 export function createTestFile(
 	shell: VirtualShell,
 	path: string,
-	content: string,
+	content: string
 ) {
 	shell.vfs.writeFile(path, content);
 }

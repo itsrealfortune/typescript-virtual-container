@@ -1,34 +1,26 @@
-import { EventEmitter } from "node:events";
-import {
-	createCustomCommand,
-	registerCommand,
-	runCommand,
-} from "../../commands";
-import type { CommandContext, CommandResult } from "../../types/commands";
-import type { ShellStream } from "../../types/streams";
-import type { VfsNodeStats } from "../../types/vfs";
-import { type PerfLogger, createPerfLogger } from "../../utils/perfLogger";
-import type { DesktopManager } from "../desktopManager";
-import {
-	bootstrapLinuxRootfs,
-	refreshProc,
-	syncEtcPasswd,
-} from "../linuxRootfs";
+import {EventEmitter} from "node:events";
+import {createCustomCommand, registerCommand, runCommand} from "../../commands";
+import type {CommandContext, CommandResult} from "../../types/commands";
+import type {ShellStream} from "../../types/streams";
+import type {VfsNodeStats} from "../../types/vfs";
+import {type PerfLogger, createPerfLogger} from "../../utils/perfLogger";
+import type {DesktopManager} from "../desktopManager";
+import {bootstrapLinuxRootfs, refreshProc, syncEtcPasswd} from "../linuxRootfs";
 import {
 	type SysctlState,
 	defaultSysctlState,
 	resolveSysctlPath,
 } from "../sysctl";
-import VirtualFileSystem, { type VfsOptions } from "../VirtualFileSystem";
-import { VirtualNetworkManager } from "../VirtualNetworkManager";
-import { VirtualPackageManager } from "../VirtualPackageManager";
-import { VirtualUserManager } from "../VirtualUserManager";
+import VirtualFileSystem, {type VfsOptions} from "../VirtualFileSystem";
+import {VirtualNetworkManager} from "../VirtualNetworkManager";
+import {VirtualPackageManager} from "../VirtualPackageManager";
+import {VirtualUserManager} from "../VirtualUserManager";
 import {
 	type GcStats,
 	IdleManager,
 	type IdleManagerOptions,
 } from "./idleManager";
-import { startShell } from "./shell";
+import {startShell} from "./shell";
 
 /**
  * Virtual machine identity strings surfaced by system-info commands
@@ -72,7 +64,7 @@ export interface VirtualShellVfsLike {
 	exists(targetPath: string): boolean;
 	stat(targetPath: string): VfsNodeStats;
 	list(targetPath: string): string[];
-	remove(targetPath: string, options?: { recursive?: boolean }): void;
+	remove(targetPath: string, options?: {recursive?: boolean}): void;
 	chmod?(targetPath: string, mode: number): void;
 	symlink?(targetPath: string, linkPath: string): void;
 	getUsageBytes?(targetPath?: string): number;
@@ -186,8 +178,8 @@ export interface VirtualShellResourceCaps {
 }
 
 function hasVfsInstance(
-	obj: unknown,
-): obj is { vfsInstance: VirtualShellVfsLike } {
+	obj: unknown
+): obj is {vfsInstance: VirtualShellVfsLike} {
 	return (
 		typeof obj === "object" &&
 		obj !== null &&
@@ -300,7 +292,7 @@ class VirtualShell extends EventEmitter {
 			| VfsOptions
 			| VirtualShellVfsLike
 			| VirtualShellVfsOptions,
-		resourceCaps?: VirtualShellResourceCaps,
+		resourceCaps?: VirtualShellResourceCaps
 	) {
 		super();
 		perf.mark("constructor");
@@ -317,7 +309,7 @@ class VirtualShell extends EventEmitter {
 				vfsOptionsOrInstance.vfsInstance as unknown as VirtualFileSystem;
 		} else {
 			this.vfs = new VirtualFileSystem(
-				(vfsOptionsOrInstance as VfsOptions) ?? {},
+				(vfsOptionsOrInstance as VfsOptions) ?? {}
 			);
 		}
 		this.users = new VirtualUserManager(this.vfs, resolveAutoSudoForNewUsers());
@@ -347,7 +339,7 @@ class VirtualShell extends EventEmitter {
 				startTime,
 				[],
 				network,
-				caps,
+				caps
 			);
 
 			// Register read hook: refresh /proc dynamically on every access
@@ -359,7 +351,7 @@ class VirtualShell extends EventEmitter {
 					startTime,
 					users.listActiveSessions(),
 					network,
-					caps,
+					caps
 				);
 			});
 
@@ -382,7 +374,7 @@ class VirtualShell extends EventEmitter {
 				const resolved = resolveSysctlPath(sysctl, normalizedPath);
 				if (resolved) {
 					resolved.set(
-						typeof content === "string" ? content.trim() : String(content),
+						typeof content === "string" ? content.trim() : String(content)
 					);
 				}
 				// Apply RAM/CPU caps in real-time when sysctl values change
@@ -430,7 +422,7 @@ class VirtualShell extends EventEmitter {
 	addCommand(
 		name: string,
 		params: string[],
-		callback: (ctx: CommandContext) => CommandResult | Promise<CommandResult>,
+		callback: (ctx: CommandContext) => CommandResult | Promise<CommandResult>
 	): void {
 		const normalized = name.trim().toLowerCase();
 		if (normalized.length === 0 || /\s/.test(normalized)) {
@@ -457,7 +449,7 @@ class VirtualShell extends EventEmitter {
 	executeCommand(
 		rawInput: string,
 		authUser: string,
-		cwd: string,
+		cwd: string
 	): CommandResult | Promise<CommandResult> {
 		perf.mark("executeCommand");
 		this._idle?.ping();
@@ -467,9 +459,9 @@ class VirtualShell extends EventEmitter {
 			this.hostname,
 			"shell",
 			cwd,
-			this,
+			this
 		);
-		this.emit("command", { command: rawInput, user: authUser, cwd });
+		this.emit("command", {command: rawInput, user: authUser, cwd});
 		return result;
 	}
 
@@ -492,12 +484,12 @@ class VirtualShell extends EventEmitter {
 		authUser: string,
 		sessionId: string | null,
 		remoteAddress: string,
-		terminalSize: { cols: number; rows: number },
+		terminalSize: {cols: number; rows: number}
 	): void {
 		perf.mark("startInteractiveSession");
 		this._idle?.ping();
 		// Interactive shell logic
-		this.emit("session:start", { user: authUser, sessionId, remoteAddress });
+		this.emit("session:start", {user: authUser, sessionId, remoteAddress});
 		startShell(
 			this.properties,
 			stream,
@@ -506,7 +498,7 @@ class VirtualShell extends EventEmitter {
 			sessionId,
 			remoteAddress,
 			terminalSize,
-			this,
+			this
 		);
 		// Refresh /proc/<pid> and /proc/self after session is registered
 		this.refreshProcSessions();
@@ -530,7 +522,7 @@ class VirtualShell extends EventEmitter {
 			this.startTime,
 			this.users.listActiveSessions(),
 			this.network,
-			this.resourceCaps,
+			this.resourceCaps
 		);
 	}
 
@@ -555,7 +547,7 @@ class VirtualShell extends EventEmitter {
 	public mount(
 		vPath: string,
 		hostPath: string,
-		options: { readOnly?: boolean } = {},
+		options: {readOnly?: boolean} = {}
 	): void {
 		this.vfs.mount(vPath, hostPath, options);
 	}
@@ -593,7 +585,7 @@ class VirtualShell extends EventEmitter {
 			this.startTime,
 			this.users.listActiveSessions(),
 			this.network,
-			this.resourceCaps,
+			this.resourceCaps
 		);
 	}
 
@@ -646,7 +638,7 @@ class VirtualShell extends EventEmitter {
 	public writeFileAsUser(
 		authUser: string,
 		targetPath: string,
-		content: string | Buffer,
+		content: string | Buffer
 	): void {
 		perf.mark("writeFileAsUser");
 		this.users.assertWriteWithinQuota(authUser, targetPath, content);
@@ -724,4 +716,4 @@ class VirtualShell extends EventEmitter {
 	}
 }
 
-export { VirtualShell };
+export {VirtualShell};

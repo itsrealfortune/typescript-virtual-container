@@ -5,7 +5,7 @@
  * to individual swap files on disk for O(1) reload.
  */
 
-import { VirtualFileSystem } from "../src";
+import {VirtualFileSystem} from "../src";
 
 const testDir = `${process.cwd()}/.vfs-swap-demo`;
 

@@ -1,10 +1,10 @@
 /// <reference types="bun" />
-import { describe, expect, test } from "bun:test";
-import type { FileEntryWithStats, SFTPWrapper } from "ssh2";
-import { Client } from "ssh2";
-import { SftpMimic } from "../src/modules/SSHMimic/sftp";
+import {describe, expect, test} from "bun:test";
+import type {FileEntryWithStats, SFTPWrapper} from "ssh2";
+import {Client} from "ssh2";
+import {SftpMimic} from "../src/modules/SSHMimic/sftp";
 import VirtualFileSystem from "../src/modules/VirtualFileSystem";
-import { VirtualUserManager } from "../src/modules/VirtualUserManager";
+import {VirtualUserManager} from "../src/modules/VirtualUserManager";
 
 // Skip by default (slow — requires SSH server). Run with:
 //   SSH_MIMIC_RUN_SFTP_TESTS=1 bun test tests/sftp.test.ts
@@ -13,8 +13,8 @@ const it = runSftpTests ? test : test.skip;
 const describeSftp = runSftpTests ? describe : describe.skip;
 
 function connectSftp(
-	port: number,
-): Promise<{ client: Client; sftp: SFTPWrapper }> {
+	port: number
+): Promise<{client: Client; sftp: SFTPWrapper}> {
 	return new Promise((resolve, reject) => {
 		const client = new Client();
 		client.on("ready", () => {
@@ -24,7 +24,7 @@ function connectSftp(
 					reject(err);
 					return;
 				}
-				resolve({ client, sftp });
+				resolve({client, sftp});
 			});
 		});
 		client.on("error", reject);
@@ -41,8 +41,8 @@ function connectSftp(
 function connectSftpWithUser(
 	port: number,
 	username: string,
-	password: string,
-): Promise<{ client: Client; sftp: SFTPWrapper }> {
+	password: string
+): Promise<{client: Client; sftp: SFTPWrapper}> {
 	return new Promise((resolve, reject) => {
 		const client = new Client();
 		client.on("ready", () => {
@@ -52,7 +52,7 @@ function connectSftpWithUser(
 					reject(err);
 					return;
 				}
-				resolve({ client, sftp });
+				resolve({client, sftp});
 			});
 		});
 		client.on("error", reject);
@@ -88,7 +88,7 @@ describeSftp("SftpMimic", () => {
 		const port = await server.start();
 
 		try {
-			const { client, sftp } = await connectSftp(port);
+			const {client, sftp} = await connectSftp(port);
 
 			const list = await new Promise<FileEntryWithStats[]>(
 				(resolve, reject) => {
@@ -100,9 +100,9 @@ describeSftp("SftpMimic", () => {
 								return;
 							}
 							resolve(list || []);
-						},
+						}
 					);
-				},
+				}
 			);
 
 			expect(list.map((entry) => entry.filename)).toContain("TEST.txt");
@@ -117,7 +117,7 @@ describeSftp("SftpMimic", () => {
 							return;
 						}
 						resolve((data || Buffer.alloc(0)).toString("utf8"));
-					},
+					}
 				);
 			});
 
@@ -148,7 +148,7 @@ describeSftp("SftpMimic", () => {
 		const port = await server.start();
 
 		try {
-			const { client, sftp } = await connectSftp(port);
+			const {client, sftp} = await connectSftp(port);
 
 			// /etc/passwd is outside /root — should be rejected
 			const traversalAttempt = await new Promise<Error | null>((resolve) => {
@@ -171,9 +171,9 @@ describeSftp("SftpMimic", () => {
 								return;
 							}
 							resolve(list || []);
-						},
+						}
 					);
-				},
+				}
 			);
 			expect(homeAccess).toBeDefined();
 
@@ -213,10 +213,10 @@ describeSftp("SftpMimic", () => {
 		const port = await server.start();
 
 		try {
-			const { client, sftp } = await connectSftpWithUser(
+			const {client, sftp} = await connectSftpWithUser(
 				port,
 				"alice",
-				"alice-pass",
+				"alice-pass"
 			);
 
 			const list = await new Promise<FileEntryWithStats[]>(
@@ -229,9 +229,9 @@ describeSftp("SftpMimic", () => {
 								return;
 							}
 							resolve(list || []);
-						},
+						}
 					);
-				},
+				}
 			);
 
 			expect(list.map((e) => e.filename)).toContain("hello.txt");
@@ -284,7 +284,7 @@ describeSftp("SftpMimic", () => {
 		const port = await server.start();
 
 		try {
-			const { client, sftp } = await connectSftp(port);
+			const {client, sftp} = await connectSftp(port);
 
 			await new Promise<void>((resolve, reject) => {
 				sftp.writeFile(
@@ -296,7 +296,7 @@ describeSftp("SftpMimic", () => {
 							return;
 						}
 						resolve();
-					},
+					}
 				);
 			});
 
@@ -310,7 +310,7 @@ describeSftp("SftpMimic", () => {
 							return;
 						}
 						resolve((data || Buffer.alloc(0)).toString("utf8"));
-					},
+					}
 				);
 			});
 

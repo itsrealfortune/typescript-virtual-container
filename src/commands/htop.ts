@@ -1,5 +1,5 @@
 import * as os from "node:os";
-import type { ShellModule } from "../types/commands";
+import type {ShellModule} from "../types/commands";
 
 const C = {
 	reset: "\x1b[0m",
@@ -60,7 +60,7 @@ export const htopCommand: ShellModule = {
 	description: "Interactive system monitor",
 	category: "system",
 	params: ["[-d delay]", "[-p pid]"],
-	run: ({ shell, authUser }) => {
+	run: ({shell, authUser}) => {
 		// Render ANSI snapshot in all modes — real htop child_process unavailable in-process
 		const hostTotalMem = os.totalmem();
 		const hostFreeMem = os.freemem();
@@ -104,20 +104,20 @@ export const htopCommand: ShellModule = {
 			const load = cpuLoads[i] as number;
 			const pct = (load * 100).toFixed(1).padStart(5);
 			lines.push(
-				`${C.bold}${C.cyan}${String(i + 1).padStart(3)}${C.reset}[${bar(load, barWidth)}${C.reset}] ${pct}%`,
+				`${C.bold}${C.cyan}${String(i + 1).padStart(3)}${C.reset}[${bar(load, barWidth)}${C.reset}] ${pct}%`
 			);
 		}
 		if (cpuCount > 4) {
 			lines.push(
-				`${C.dim}    ... ${cpuCount - 4} more CPU(s) not shown${C.reset}`,
+				`${C.dim}    ... ${cpuCount - 4} more CPU(s) not shown${C.reset}`
 			);
 		}
 
 		lines.push(
-			`${C.bold}${C.cyan}Mem${C.reset}[${bar(memRatio, barWidth)}${C.reset}] ${fmtBytes(usedMem)}/${fmtBytes(totalMem)}`,
+			`${C.bold}${C.cyan}Mem${C.reset}[${bar(memRatio, barWidth)}${C.reset}] ${fmtBytes(usedMem)}/${fmtBytes(totalMem)}`
 		);
 		lines.push(
-			`${C.bold}${C.cyan}Swp${C.reset}[${bar(swapRatio, barWidth)}${C.reset}] ${fmtBytes(swapUsed)}/${fmtBytes(swapTotal)}`,
+			`${C.bold}${C.cyan}Swp${C.reset}[${bar(swapRatio, barWidth)}${C.reset}] ${fmtBytes(swapUsed)}/${fmtBytes(swapTotal)}`
 		);
 
 		lines.push("");
@@ -132,7 +132,7 @@ export const htopCommand: ShellModule = {
 		lines.push(
 			`${C.bold}Tasks:${C.reset} ${C.green}${taskCount}${C.reset} total  ` +
 				`${C.bold}Load average:${C.reset} ${load1} ${load5} ${load15}  ` +
-				`${C.bold}Uptime:${C.reset} ${fmtUptime(uptimeMs)}`,
+				`${C.bold}Uptime:${C.reset} ${fmtUptime(uptimeMs)}`
 		);
 		lines.push("");
 
@@ -145,8 +145,8 @@ export const htopCommand: ShellModule = {
 
 		// Kernel / system processes
 		const sysProcs = [
-			{ pid: 1, user: "root", cmd: "systemd", cpu: 0.0, mem: 0.1 },
-			{ pid: 2, user: "root", cmd: "kthreadd", cpu: 0.0, mem: 0.0 },
+			{pid: 1, user: "root", cmd: "systemd", cpu: 0.0, mem: 0.1},
+			{pid: 2, user: "root", cmd: "kthreadd", cpu: 0.0, mem: 0.0},
 			{
 				pid: 9,
 				user: "root",
@@ -154,7 +154,7 @@ export const htopCommand: ShellModule = {
 				cpu: Math.random() * 0.2,
 				mem: 0.0,
 			},
-			{ pid: 127, user: "root", cmd: "sshd", cpu: 0.0, mem: 0.2 },
+			{pid: 127, user: "root", cmd: "sshd", cpu: 0.0, mem: 0.2},
 		];
 
 		// Active sessions (bash processes)
@@ -189,13 +189,13 @@ export const htopCommand: ShellModule = {
 
 		for (const p of procs) {
 			const virt = fmtBytes(
-				Math.floor(Math.random() * 200 * 1024 * 1024 + 10 * 1024 * 1024),
+				Math.floor(Math.random() * 200 * 1024 * 1024 + 10 * 1024 * 1024)
 			);
 			const res = fmtBytes(
-				Math.floor(Math.random() * 20 * 1024 * 1024 + 1024 * 1024),
+				Math.floor(Math.random() * 20 * 1024 * 1024 + 1024 * 1024)
 			);
 			const shr = fmtBytes(
-				Math.floor(Math.random() * 5 * 1024 * 1024 + 512 * 1024),
+				Math.floor(Math.random() * 5 * 1024 * 1024 + 512 * 1024)
 			);
 			const cpuPct = p.cpu.toFixed(1).padStart(5);
 			const memPct = p.mem.toFixed(1).padStart(5);
@@ -213,7 +213,7 @@ export const htopCommand: ShellModule = {
 					`${virt.padStart(6)} ${res.padStart(6)} ${shr.padStart(5)} ` +
 					`S ${cpuPct} ${memPct} ` +
 					`${time.padStart(9)}  ` +
-					`${cmdColor}${p.cmd}${C.reset}`,
+					`${cmdColor}${p.cmd}${C.reset}`
 			);
 		}
 
@@ -222,9 +222,9 @@ export const htopCommand: ShellModule = {
 		// ── Footer ─────────────────────────────────────────────────────────────
 		lines.push(
 			`${C.dim}${now} — htop snapshot (non-interactive mode)  ` +
-				`press ${C.reset}${C.bold}q${C.reset}${C.dim} to quit in interactive mode${C.reset}`,
+				`press ${C.reset}${C.bold}q${C.reset}${C.dim} to quit in interactive mode${C.reset}`
 		);
 
-		return { stdout: lines.join("\n"), exitCode: 0 };
+		return {stdout: lines.join("\n"), exitCode: 0};
 	},
 };

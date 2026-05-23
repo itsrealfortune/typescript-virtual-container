@@ -78,7 +78,7 @@ export interface SysctlState {
  */
 export function defaultSysctlState(
 	hostname: string,
-	kernel: string,
+	kernel: string
 ): SysctlState {
 	return {
 		kernel: {
@@ -150,16 +150,16 @@ export function defaultSysctlState(
  */
 export function resolveSysctlPath(
 	state: SysctlState,
-	sysPath: string,
-): { value: string | number; set: (v: string) => void } | null {
+	sysPath: string
+): {value: string | number; set: (v: string) => void} | null {
 	const parts = sysPath.replace("/proc/sys/", "").split("/");
 
 	// Dynamic property accessor: checks `key in obj`, returns value + setter.
 	// Avoids `as unknown as Record<string, unknown>` casts by using a typed helper.
 	const access = <T extends object>(
 		obj: T,
-		key: string,
-	): { value: string | number; set: (v: string) => void } | null => {
+		key: string
+	): {value: string | number; set: (v: string) => void} | null => {
 		if (!(key in obj)) {
 			return null;
 		}

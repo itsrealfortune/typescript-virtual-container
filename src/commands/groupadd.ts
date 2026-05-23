@@ -1,4 +1,4 @@
-import type { ShellModule } from "../types/commands";
+import type {ShellModule} from "../types/commands";
 
 /**
  * Create a new group.
@@ -10,9 +10,9 @@ export const groupaddCommand: ShellModule = {
 	description: "Create a new group",
 	category: "users",
 	params: ["[-g GID] <group>"],
-	run: ({ authUser, shell, args }) => {
+	run: ({authUser, shell, args}) => {
 		if (authUser !== "root") {
-			return { stderr: "groupadd: permission denied\n", exitCode: 1 };
+			return {stderr: "groupadd: permission denied\n", exitCode: 1};
 		}
 
 		let gid: number | undefined;
@@ -26,7 +26,7 @@ export const groupaddCommand: ShellModule = {
 				}
 				gid = Number.parseInt(val, 10);
 				if (Number.isNaN(gid) || gid < 0) {
-					return { stderr: `groupadd: invalid GID '${val}'\n`, exitCode: 1 };
+					return {stderr: `groupadd: invalid GID '${val}'\n`, exitCode: 1};
 				}
 				i++;
 			} else if (!groupName) {
@@ -35,7 +35,7 @@ export const groupaddCommand: ShellModule = {
 		}
 
 		if (!groupName) {
-			return { stderr: "Usage: groupadd [-g GID] <group>\n", exitCode: 1 };
+			return {stderr: "Usage: groupadd [-g GID] <group>\n", exitCode: 1};
 		}
 
 		try {
@@ -46,7 +46,7 @@ export const groupaddCommand: ShellModule = {
 			};
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
-			return { stderr: `${msg}\n`, exitCode: 1 };
+			return {stderr: `${msg}\n`, exitCode: 1};
 		}
 	},
 };

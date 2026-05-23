@@ -5,19 +5,19 @@
  * across multiple isolated "test" environments.
  */
 
-import type { VfsSnapshot } from "../src";
-import { VirtualFileSystem } from "../src";
+import type {VfsSnapshot} from "../src";
+import {VirtualFileSystem} from "../src";
 
 function buildFixture(): VfsSnapshot {
 	const vfs = new VirtualFileSystem();
 	vfs.mkdir("/app/config");
 	vfs.writeFile(
 		"/app/config/settings.json",
-		JSON.stringify({ env: "test", db: "localhost" }),
+		JSON.stringify({env: "test", db: "localhost"})
 	);
 	vfs.writeFile(
 		"/app/config/routes.json",
-		JSON.stringify({ "/": "index", "/api": "api" }),
+		JSON.stringify({"/": "index", "/api": "api"})
 	);
 	vfs.writeFile("/app/public/index.html", "<h1>Hello</h1>");
 	return vfs.toSnapshot();
@@ -25,7 +25,7 @@ function buildFixture(): VfsSnapshot {
 
 const FIXTURE = buildFixture();
 console.log(
-	`Fixture built: ${Object.keys(FIXTURE.root.children ?? {}).length} top-level entries`,
+	`Fixture built: ${Object.keys(FIXTURE.root.children ?? {}).length} top-level entries`
 );
 
 // ── Test 1: reads config file ─────────────────────────────────────
@@ -34,10 +34,10 @@ console.log("\n--- Test 1: reads config file ---");
 	const vfs = VirtualFileSystem.fromSnapshot(FIXTURE);
 	const content = JSON.parse(vfs.readFile("/app/config/settings.json"));
 	console.log(
-		`  env: ${content.env} (expected: test) ${content.env === "test" ? "(ok)" : "(fail)"}`,
+		`  env: ${content.env} (expected: test) ${content.env === "test" ? "(ok)" : "(fail)"}`
 	);
 	console.log(
-		`  db: ${content.db} (expected: localhost) ${content.db === "localhost" ? "(ok)" : "(fail)"}`,
+		`  db: ${content.db} (expected: localhost) ${content.db === "localhost" ? "(ok)" : "(fail)"}`
 	);
 }
 
@@ -47,13 +47,13 @@ console.log("\n--- Test 2: isolated writes don't affect fixture ---");
 	const vfs1 = VirtualFileSystem.fromSnapshot(FIXTURE);
 	vfs1.writeFile(
 		"/app/config/settings.json",
-		JSON.stringify({ env: "modified" }),
+		JSON.stringify({env: "modified"})
 	);
 
 	const vfs2 = VirtualFileSystem.fromSnapshot(FIXTURE);
 	const content = JSON.parse(vfs2.readFile("/app/config/settings.json"));
 	console.log(
-		`  fixture still has env=test: ${content.env === "test" ? "(ok)" : "(fail)"}`,
+		`  fixture still has env=test: ${content.env === "test" ? "(ok)" : "(fail)"}`
 	);
 }
 

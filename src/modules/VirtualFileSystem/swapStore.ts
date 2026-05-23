@@ -17,7 +17,7 @@
 
 import * as fsSync from "node:fs";
 import * as path from "node:path";
-import { createHash } from "node:crypto";
+import {createHash} from "node:crypto";
 
 /** Metadata for a swapped-out file. */
 interface SwapEntry {
@@ -75,7 +75,7 @@ export class SwapStore {
 	 */
 	public initialize(): void {
 		if (!fsSync.existsSync(this._swapDir)) {
-			fsSync.mkdirSync(this._swapDir, { recursive: true });
+			fsSync.mkdirSync(this._swapDir, {recursive: true});
 		}
 		this._loadExistingEntries();
 	}

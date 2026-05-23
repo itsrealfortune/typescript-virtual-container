@@ -1,5 +1,5 @@
-import type { ShellModule } from "../types/commands";
-import { assertPathAccess, resolvePath } from "./helpers";
+import type {ShellModule} from "../types/commands";
+import {assertPathAccess, resolvePath} from "./helpers";
 
 /**
  * Change group ownership.
@@ -11,10 +11,10 @@ export const chgrpCommand: ShellModule = {
 	description: "Change group ownership",
 	category: "files",
 	params: ["<group> <file>"],
-	run: ({ authUser, shell, cwd, args }) => {
+	run: ({authUser, shell, cwd, args}) => {
 		const [groupArg, fileArg] = args;
 		if (!(groupArg && fileArg)) {
-			return { stderr: "chgrp: missing operand", exitCode: 1 };
+			return {stderr: "chgrp: missing operand", exitCode: 1};
 		}
 
 		if (authUser !== "root") {
@@ -36,22 +36,22 @@ export const chgrpCommand: ShellModule = {
 
 			const gid = resolveGroup(shell, groupArg);
 			if (gid === null) {
-				return { stderr: `chgrp: invalid group: ${groupArg}`, exitCode: 1 };
+				return {stderr: `chgrp: invalid group: ${groupArg}`, exitCode: 1};
 			}
 
 			const current = shell.vfs.getOwner(filePath);
 			shell.vfs.chown(filePath, current.uid, gid);
-			return { exitCode: 0 };
+			return {exitCode: 0};
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
-			return { stderr: `chgrp: ${msg}`, exitCode: 1 };
+			return {stderr: `chgrp: ${msg}`, exitCode: 1};
 		}
 	},
 };
 
 function resolveGroup(
-	shell: { users: { getGidByName: (n: string) => number | null } },
-	name: string,
+	shell: {users: {getGidByName: (n: string) => number | null}},
+	name: string
 ): number | null {
 	const gid = shell.users.getGidByName(name);
 	if (gid !== null) {

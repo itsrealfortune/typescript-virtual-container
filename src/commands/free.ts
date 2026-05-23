@@ -1,6 +1,6 @@
 import * as os from "node:os";
-import type { ShellModule } from "../types/commands";
-import { ifFlag } from "./command-helpers";
+import type {ShellModule} from "../types/commands";
+import {ifFlag} from "./command-helpers";
 
 /**
  * Display memory usage information (human / MB / GB options).
@@ -12,7 +12,7 @@ export const freeCommand: ShellModule = {
 	description: "Display amount of free and used memory",
 	category: "system",
 	params: ["[-h] [-m] [-g]"],
-	run: ({ args, shell }) => {
+	run: ({args, shell}) => {
 		const human = ifFlag(args, ["-h", "--human"]);
 		const mb = ifFlag(args, ["-m"]);
 		const gb = ifFlag(args, ["-g"]);
@@ -56,6 +56,6 @@ export const freeCommand: ShellModule = {
 		const memRow = `Mem:  ${fmt(osTotalB).padStart(12)} ${fmt(usedB).padStart(11)} ${fmt(osFreeB).padStart(11)} ${fmt(sharedB).padStart(11)} ${fmt(buffersB).padStart(11)} ${fmt(availableB).padStart(11)}`;
 		const swapRow = `Swap: ${fmt(swapB).padStart(12)} ${fmt(0).padStart(11)} ${fmt(swapB).padStart(11)}`;
 
-		return { stdout: [header, memRow, swapRow].join("\n"), exitCode: 0 };
+		return {stdout: [header, memRow, swapRow].join("\n"), exitCode: 0};
 	},
 };

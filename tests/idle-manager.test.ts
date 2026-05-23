@@ -1,8 +1,8 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import {afterAll, beforeAll, describe, expect, test} from "bun:test";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { VirtualShell } from "../src/modules/VirtualShell";
-import { IdleManager } from "../src/modules/VirtualShell/idleManager";
+import {VirtualShell} from "../src/modules/VirtualShell";
+import {IdleManager} from "../src/modules/VirtualShell/idleManager";
 
 function makeShell() {
 	return new VirtualShell("test-vm");
@@ -15,7 +15,7 @@ beforeAll(() => {
 });
 
 afterAll(() => {
-	fs.rmSync(tmpDir, { recursive: true, force: true });
+	fs.rmSync(tmpDir, {recursive: true, force: true});
 });
 
 function makeShellWithFsVfs() {
@@ -109,7 +109,7 @@ describe("IdleManager", () => {
 		shell.users.markProcessDone(pid);
 		expect(shell.users.getProcess(pid)?.status).toBe("done");
 
-		const idle = new IdleManager(shell, { gcIntervalMs: 0 });
+		const idle = new IdleManager(shell, {gcIntervalMs: 0});
 		const stats = idle.runGc();
 
 		expect(stats.terminatedProcesses).toBeGreaterThanOrEqual(1);
@@ -123,11 +123,11 @@ describe("IdleManager", () => {
 			"root",
 			"sleep",
 			["sleep", "60"],
-			"pts/0",
+			"pts/0"
 		);
 		expect(shell.users.getProcess(pid)?.status).toBe("running");
 
-		const idle = new IdleManager(shell, { gcIntervalMs: 0 });
+		const idle = new IdleManager(shell, {gcIntervalMs: 0});
 		const stats = idle.runGc();
 
 		expect(stats.terminatedProcesses).toBe(0);
@@ -137,7 +137,7 @@ describe("IdleManager", () => {
 	test("runGc returns full stats shape", async () => {
 		const shell = makeShell();
 		await shell.ensureInitialized();
-		const idle = new IdleManager(shell, { gcIntervalMs: 0 });
+		const idle = new IdleManager(shell, {gcIntervalMs: 0});
 
 		const stats = idle.runGc();
 		expect(stats).toHaveProperty("terminatedProcesses");
@@ -188,7 +188,7 @@ describe("IdleManager", () => {
 	test("gc:run event emitted with stats", async () => {
 		const shell = makeShell();
 		await shell.ensureInitialized();
-		const idle = new IdleManager(shell, { gcIntervalMs: 0 });
+		const idle = new IdleManager(shell, {gcIntervalMs: 0});
 
 		const events: unknown[] = [];
 		idle.on("gc:run", (stats) => events.push(stats));
@@ -196,7 +196,7 @@ describe("IdleManager", () => {
 		idle.runGc();
 
 		expect(events.length).toBe(1);
-		const stats = events[0] as { terminatedProcesses: number };
+		const stats = events[0] as {terminatedProcesses: number};
 		expect(typeof stats.terminatedProcesses).toBe("number");
 	});
 
@@ -206,7 +206,7 @@ describe("IdleManager", () => {
 		const pid = shell.users.registerProcess("root", "test", ["test"], "pts/0");
 		shell.users.markProcessDone(pid);
 
-		const idle = new IdleManager(shell, { gcIntervalMs: 15 });
+		const idle = new IdleManager(shell, {gcIntervalMs: 15});
 		const gcEvents: unknown[] = [];
 		idle.on("gc:run", (stats) => gcEvents.push(stats));
 

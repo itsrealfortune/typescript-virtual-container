@@ -1,5 +1,5 @@
-import type { ShellModule } from "../types/commands";
-import { resolvePath } from "./helpers";
+import type {ShellModule} from "../types/commands";
+import {resolvePath} from "./helpers";
 
 /**
  * Compress files using gzip — renames file to `<file>.gz`, removes original.
@@ -10,7 +10,7 @@ export const gzipCommand: ShellModule = {
 	description: "Compress files",
 	category: "archive",
 	params: ["[-k] [-d] <file>"],
-	run: ({ shell, cwd, args, authUser }) => {
+	run: ({shell, cwd, args, authUser}) => {
 		if (!shell.packageManager.isInstalled("gzip")) {
 			return {
 				stderr:
@@ -22,7 +22,7 @@ export const gzipCommand: ShellModule = {
 		const decompress = args.includes("-d");
 		const file = args.find((a) => !a.startsWith("-"));
 		if (!file) {
-			return { stderr: "gzip: no file specified\n", exitCode: 1 };
+			return {stderr: "gzip: no file specified\n", exitCode: 1};
 		}
 
 		const p = resolvePath(cwd, file);
@@ -47,9 +47,9 @@ export const gzipCommand: ShellModule = {
 			const dest = p.slice(0, -3);
 			shell.vfs.writeFile(dest, content, {}, uid, gid);
 			if (!keepOrig) {
-				shell.vfs.remove(p, { recursive: false }, uid, gid);
+				shell.vfs.remove(p, {recursive: false}, uid, gid);
 			}
-			return { exitCode: 0 };
+			return {exitCode: 0};
 		}
 
 		if (!shell.vfs.exists(p)) {
@@ -67,11 +67,11 @@ export const gzipCommand: ShellModule = {
 
 		const rawContent = shell.vfs.readFileRaw(p);
 		const gzPath = `${p}.gz`;
-		shell.vfs.writeFile(gzPath, rawContent, { compress: true }, uid, gid);
+		shell.vfs.writeFile(gzPath, rawContent, {compress: true}, uid, gid);
 		if (!keepOrig) {
-			shell.vfs.remove(p, { recursive: false }, uid, gid);
+			shell.vfs.remove(p, {recursive: false}, uid, gid);
 		}
-		return { exitCode: 0 };
+		return {exitCode: 0};
 	},
 };
 
@@ -85,11 +85,11 @@ export const gunzipCommand: ShellModule = {
 	category: "archive",
 	aliases: ["zcat"],
 	params: ["[-k] <file>"],
-	run: ({ shell, cwd, args, authUser }) => {
+	run: ({shell, cwd, args, authUser}) => {
 		const keepOrig = args.includes("-k") || args.includes("--keep");
 		const file = args.find((a) => !a.startsWith("-"));
 		if (!file) {
-			return { stderr: "gunzip: no file specified\n", exitCode: 1 };
+			return {stderr: "gunzip: no file specified\n", exitCode: 1};
 		}
 
 		const p = resolvePath(cwd, file);
@@ -113,8 +113,8 @@ export const gunzipCommand: ShellModule = {
 		const dest = p.slice(0, -3);
 		shell.vfs.writeFile(dest, content, {}, uid, gid);
 		if (!keepOrig) {
-			shell.vfs.remove(p, { recursive: false }, uid, gid);
+			shell.vfs.remove(p, {recursive: false}, uid, gid);
 		}
-		return { exitCode: 0 };
+		return {exitCode: 0};
 	},
 };

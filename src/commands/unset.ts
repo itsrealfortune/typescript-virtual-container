@@ -1,4 +1,4 @@
-import type { ShellModule } from "../types/commands";
+import type {ShellModule} from "../types/commands";
 
 /**
  * Remove shell variable from the environment.
@@ -10,10 +10,10 @@ export const unsetCommand: ShellModule = {
 	description: "Remove shell variable",
 	category: "shell",
 	params: ["<VAR>"],
-	run: ({ args, env }) => {
+	run: ({args, env}) => {
 		for (const name of args) {
 			delete env.vars[name];
 		}
-		return { exitCode: 0 };
+		return {exitCode: 0};
 	},
 };

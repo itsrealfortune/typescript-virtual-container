@@ -1,6 +1,6 @@
 import * as path from "node:path";
-import type { ShellModule } from "../types/commands";
-import { assertPathAccess, resolvePath } from "./helpers";
+import type {ShellModule} from "../types/commands";
+import {assertPathAccess, resolvePath} from "./helpers";
 
 /**
  * Simple text editor for editing files.
@@ -12,10 +12,10 @@ export const nanoCommand: ShellModule = {
 	description: "Text editor",
 	category: "files",
 	params: ["<file>"],
-	run: ({ authUser, shell, cwd, args }) => {
+	run: ({authUser, shell, cwd, args}) => {
 		const fileArg = args[0];
 		if (!fileArg) {
-			return { stderr: "nano: missing file operand", exitCode: 1 };
+			return {stderr: "nano: missing file operand", exitCode: 1};
 		}
 
 		const targetPath = resolvePath(cwd, fileArg);

@@ -8,13 +8,13 @@
  * @module honeypot
  */
 
-import type { EventEmitter } from "node:events";
-import { type PerfLogger, createPerfLogger } from "../../utils/perfLogger";
-import type { SshMimic } from "../SSHMimic";
-import type { SftpMimic } from "../SSHMimic/sftp";
+import type {EventEmitter} from "node:events";
+import {type PerfLogger, createPerfLogger} from "../../utils/perfLogger";
+import type {SshMimic} from "../SSHMimic";
+import type {SftpMimic} from "../SSHMimic/sftp";
 import type VirtualFileSystem from "../VirtualFileSystem";
-import type { VirtualShell } from "../VirtualShell";
-import type { VirtualUserManager } from "../VirtualUserManager";
+import type {VirtualShell} from "../VirtualShell";
+import type {VirtualUserManager} from "../VirtualUserManager";
 
 /**
  * Audit log entry recorded for each event.
@@ -133,7 +133,7 @@ export class HoneyPot {
 		vfs: VirtualFileSystem,
 		users: VirtualUserManager,
 		ssh?: SshMimic,
-		sftp?: SftpMimic,
+		sftp?: SftpMimic
 	): void {
 		perf.mark("attach");
 		this._shell = shell;
@@ -164,7 +164,7 @@ export class HoneyPot {
 			(data: Record<string, unknown>) => {
 				this._stats.sessionStarts++;
 				this._log("VirtualShell", "session:start", data);
-			},
+			}
 		);
 
 		(shell as EventEmitter).on("shell:freeze", () => {
@@ -206,7 +206,7 @@ export class HoneyPot {
 			(data: Record<string, unknown>) => {
 				this._stats.snapshotsRestored++;
 				this._log("VirtualFileSystem", "snapshot:restore", data);
-			},
+			}
 		);
 
 		(vfs as EventEmitter).on(
@@ -214,7 +214,7 @@ export class HoneyPot {
 			(data: Record<string, unknown>) => {
 				this._stats.snapshotsImported++;
 				this._log("VirtualFileSystem", "snapshot:import", data);
-			},
+			}
 		);
 
 		(vfs as EventEmitter).on("mount", (data: Record<string, unknown>) => {
@@ -234,7 +234,7 @@ export class HoneyPot {
 				this._stats.symlinksCreated++;
 				this._shell?.pingIdle();
 				this._log("VirtualFileSystem", "symlink:create", data);
-			},
+			}
 		);
 
 		(vfs as EventEmitter).on("node:remove", (data: Record<string, unknown>) => {
@@ -260,14 +260,14 @@ export class HoneyPot {
 			(data: Record<string, unknown>) => {
 				this._stats.userDeleted++;
 				this._log("VirtualUserManager", "user:delete", data);
-			},
+			}
 		);
 
 		(users as EventEmitter).on(
 			"session:register",
 			(data: Record<string, unknown>) => {
 				this._log("VirtualUserManager", "session:register", data);
-			},
+			}
 		);
 
 		(users as EventEmitter).on(
@@ -275,7 +275,7 @@ export class HoneyPot {
 			(data: Record<string, unknown>) => {
 				this._stats.sessionEnds++;
 				this._log("VirtualUserManager", "session:unregister", data);
-			},
+			}
 		);
 
 		(users as EventEmitter).on("key:add", (data: Record<string, unknown>) => {
@@ -288,7 +288,7 @@ export class HoneyPot {
 			(data: Record<string, unknown>) => {
 				this._stats.keysRemoved++;
 				this._log("VirtualUserManager", "key:remove", data);
-			},
+			}
 		);
 	}
 
@@ -308,7 +308,7 @@ export class HoneyPot {
 				this._stats.authAttempts++;
 				this._stats.authSuccesses++;
 				this._log("SshMimic", "auth:success", data);
-			},
+			}
 		);
 
 		(ssh as EventEmitter).on(
@@ -317,7 +317,7 @@ export class HoneyPot {
 				this._stats.authAttempts++;
 				this._stats.authFailures++;
 				this._log("SshMimic", "auth:failure", data);
-			},
+			}
 		);
 
 		(ssh as EventEmitter).on(
@@ -325,7 +325,7 @@ export class HoneyPot {
 			(data: Record<string, unknown>) => {
 				this._stats.authLockouts++;
 				this._log("SshMimic", "auth:lockout", data);
-			},
+			}
 		);
 
 		(ssh as EventEmitter).on("client:connect", () => {
@@ -338,7 +338,7 @@ export class HoneyPot {
 			(data: Record<string, unknown>) => {
 				this._stats.clientDisconnects++;
 				this._log("SshMimic", "client:disconnect", data);
-			},
+			}
 		);
 	}
 
@@ -358,7 +358,7 @@ export class HoneyPot {
 				this._stats.authAttempts++;
 				this._stats.authSuccesses++;
 				this._log("SftpMimic", "auth:success", data);
-			},
+			}
 		);
 
 		(sftp as EventEmitter).on(
@@ -367,7 +367,7 @@ export class HoneyPot {
 				this._stats.authAttempts++;
 				this._stats.authFailures++;
 				this._log("SftpMimic", "auth:failure", data);
-			},
+			}
 		);
 
 		(sftp as EventEmitter).on("client:connect", () => {
@@ -380,7 +380,7 @@ export class HoneyPot {
 			(data: Record<string, unknown>) => {
 				this._stats.clientDisconnects++;
 				this._log("SftpMimic", "client:disconnect", data);
-			},
+			}
 		);
 	}
 
@@ -395,7 +395,7 @@ export class HoneyPot {
 	private _log(
 		source: string,
 		type: string,
-		details: Record<string, unknown>,
+		details: Record<string, unknown>
 	): void {
 		const entry: AuditLogEntry = {
 			timestamp: new Date().toISOString(),
@@ -426,7 +426,7 @@ export class HoneyPot {
 		perf.mark("getAuditLog");
 		return this._auditLog.filter(
 			(entry) =>
-				(!type || entry.type === type) && (!source || entry.source === source),
+				(!type || entry.type === type) && (!source || entry.source === source)
 		);
 	}
 
@@ -437,7 +437,7 @@ export class HoneyPot {
 	 */
 	public getStats(): Readonly<HoneyPotStats> {
 		perf.mark("getStats");
-		return Object.freeze({ ...this._stats });
+		return Object.freeze({...this._stats});
 	}
 
 	/**

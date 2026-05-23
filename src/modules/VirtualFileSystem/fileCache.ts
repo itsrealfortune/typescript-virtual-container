@@ -128,7 +128,7 @@ export class FileCache {
 	 */
 	async get(
 		path: string,
-		diskReadFn: () => Buffer | Promise<Buffer>,
+		diskReadFn: () => Buffer | Promise<Buffer>
 	): Promise<Buffer> {
 		const entry = this._cache.get(path);
 		if (entry) {
@@ -197,7 +197,7 @@ export class FileCache {
 	async set(
 		path: string,
 		content: Buffer,
-		diskWriteFn?: (data: Buffer) => void | Promise<void>,
+		diskWriteFn?: (data: Buffer) => void | Promise<void>
 	): Promise<void> {
 		// Simulate disk write latency
 		if (this._simulateDiskIo && diskWriteFn) {
@@ -222,7 +222,7 @@ export class FileCache {
 	setSync(
 		path: string,
 		content: Buffer,
-		diskWriteFn?: (data: Buffer) => void,
+		diskWriteFn?: (data: Buffer) => void
 	): void {
 		// Simulate disk write latency (synchronous)
 		if (this._simulateDiskIo && diskWriteFn) {
@@ -308,7 +308,7 @@ export class FileCache {
 	 * @returns Current disk I/O simulation parameters.
 	 */
 	getDiskIoParams(): DiskIoParams {
-		return { ...this._diskIo };
+		return {...this._diskIo};
 	}
 
 	/**

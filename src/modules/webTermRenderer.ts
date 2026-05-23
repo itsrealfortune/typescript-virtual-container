@@ -25,7 +25,7 @@ const DEFAULT_CELL: Cell = {
 };
 
 function makeCell(partial?: Partial<Cell>): Cell {
-	return { ...DEFAULT_CELL, ...partial };
+	return {...DEFAULT_CELL, ...partial};
 }
 
 /**
@@ -76,7 +76,7 @@ export class WebTermRenderer {
 		const row = this._screen[r];
 		if (row === undefined) {
 			throw new Error(
-				`WebTermRenderer: row ${r} out of range (0..${this._rows - 1})`,
+				`WebTermRenderer: row ${r} out of range (0..${this._rows - 1})`
 			);
 		}
 		return row;
@@ -279,8 +279,8 @@ export class WebTermRenderer {
 				for (let r = this._curRow + 1; r < this._rows; r++) {
 					const row = this._screen[r];
 					if (row !== undefined) {
-						this._screen[r] = Array.from({ length: this._cols }, () =>
-							makeCell(),
+						this._screen[r] = Array.from({length: this._cols}, () =>
+							makeCell()
 						);
 					}
 				}
@@ -288,8 +288,8 @@ export class WebTermRenderer {
 				for (let r = 0; r < this._curRow; r++) {
 					const row = this._screen[r];
 					if (row !== undefined) {
-						this._screen[r] = Array.from({ length: this._cols }, () =>
-							makeCell(),
+						this._screen[r] = Array.from({length: this._cols}, () =>
+							makeCell()
 						);
 					}
 				}
@@ -374,7 +374,7 @@ export class WebTermRenderer {
 		if (this._scrollback.length > 1000) {
 			this._scrollback.shift();
 		}
-		this._screen.push(Array.from({ length: this._cols }, () => makeCell()));
+		this._screen.push(Array.from({length: this._cols}, () => makeCell()));
 		// curRow stays at rows-1 (bottom)
 	}
 
@@ -399,8 +399,8 @@ export class WebTermRenderer {
 	}
 
 	private _makeScreen(rows = this._rows, cols = this._cols): Cell[][] {
-		return Array.from({ length: rows }, () =>
-			Array.from({ length: cols }, () => makeCell()),
+		return Array.from({length: rows}, () =>
+			Array.from({length: cols}, () => makeCell())
 		);
 	}
 
@@ -437,7 +437,7 @@ export class WebTermRenderer {
 					const curFg = bg === "transparent" ? "#000" : bg;
 					const boldPart = cell.bold ? "font-weight:bold;" : "";
 					parts.push(
-						`<span style="color:${curFg};background:#ccc;${boldPart}">${escHtml(cell.ch)}</span>`,
+						`<span style="color:${curFg};background:#ccc;${boldPart}">${escHtml(cell.ch)}</span>`
 					);
 				} else {
 					const style = `color:${fg};background:${bg};${cell.bold ? "font-weight:bold;" : ""}`;

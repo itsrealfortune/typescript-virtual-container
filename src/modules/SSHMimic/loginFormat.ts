@@ -3,8 +3,8 @@
  * e.g. "Mon Jan 02 15:04:05 2024"
  */
 export function formatLoginDate(date: Date): string {
-	const weekday = date.toLocaleString("en-US", { weekday: "short" });
-	const month = date.toLocaleString("en-US", { month: "short" });
+	const weekday = date.toLocaleString("en-US", {weekday: "short"});
+	const month = date.toLocaleString("en-US", {month: "short"});
 	const day = date.getDate().toString().padStart(2, "0");
 	const hh = date.getHours().toString().padStart(2, "0");
 	const mm = date.getMinutes().toString().padStart(2, "0");

@@ -326,7 +326,7 @@ function internName(s: string): string {
  * @returns New root directory node with shared file/stub references.
  */
 export function forkDirTree(
-	base: InternalDirectoryNode,
+	base: InternalDirectoryNode
 ): InternalDirectoryNode {
 	const children = Object.create(null) as Record<string, InternalNode>;
 	for (const name of Object.keys(base.children)) {

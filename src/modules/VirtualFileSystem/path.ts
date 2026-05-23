@@ -1,5 +1,5 @@
 import * as path from "node:path";
-import type { InternalDirectoryNode, InternalNode } from "./internalTypes";
+import type {InternalDirectoryNode, InternalNode} from "./internalTypes";
 
 /**
  * Normalizes a VFS path by resolving `.` and `..` segments and removing trailing slash.
@@ -13,7 +13,7 @@ export function normalizePath(rawPath: string): string {
 	}
 
 	const normalized = path.posix.normalize(
-		rawPath.startsWith("/") ? rawPath : `/${rawPath}`,
+		rawPath.startsWith("/") ? rawPath : `/${rawPath}`
 	);
 	return normalized === "" ? "/" : normalized;
 }
@@ -27,7 +27,7 @@ export function normalizePath(rawPath: string): string {
  */
 export function getNode(
 	root: InternalDirectoryNode,
-	targetPath: string,
+	targetPath: string
 ): InternalNode {
 	const normalized = normalizePath(targetPath);
 	return getNodeNormalized(root, normalized);
@@ -39,7 +39,7 @@ export function getNode(
  */
 export function getNodeNormalized(
 	root: InternalDirectoryNode,
-	normalized: string,
+	normalized: string
 ): InternalNode {
 	if (normalized === "/") {
 		return root;
@@ -84,8 +84,8 @@ export function getParentDirectory(
 	root: InternalDirectoryNode,
 	targetPath: string,
 	createIfMissing: boolean,
-	createPath: (pathToCreate: string) => void,
-): { parent: InternalDirectoryNode; name: string } {
+	createPath: (pathToCreate: string) => void
+): {parent: InternalDirectoryNode; name: string} {
 	const normalized = normalizePath(targetPath);
 	if (normalized === "/") {
 		throw new Error("Root path has no parent directory.");
@@ -107,5 +107,5 @@ export function getParentDirectory(
 		throw new Error(`Parent path '${parentPath}' is not a directory.`);
 	}
 
-	return { parent: parentNode, name };
+	return {parent: parentNode, name};
 }

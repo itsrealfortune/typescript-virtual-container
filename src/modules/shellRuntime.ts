@@ -13,7 +13,7 @@
  *  - collectChildPids() — recursively collect all child PIDs of a process
  *  - getVisibleHtopPidList() — build a formatted PID list for htop display
  */
-import { readFile } from "node:fs/promises";
+import {readFile} from "node:fs/promises";
 import * as path from "node:path";
 
 /** Terminal dimensions (columns × rows). */
@@ -38,7 +38,7 @@ export function toTtyLines(text: string): string {
 /** Wraps a command to run with a specific terminal size via stty. */
 export function withTerminalSize(
 	command: string,
-	terminalSize: TerminalSize,
+	terminalSize: TerminalSize
 ): string {
 	const cols =
 		Number.isFinite(terminalSize.cols) && terminalSize.cols > 0
@@ -66,7 +66,7 @@ export async function collectChildPids(parentPid: number): Promise<number[]> {
 	try {
 		const childrenRaw = await readFile(
 			`/proc/${parentPid}/task/${parentPid}/children`,
-			"utf8",
+			"utf8"
 		);
 		const directChildren = childrenRaw
 			.trim()
@@ -76,7 +76,7 @@ export async function collectChildPids(parentPid: number): Promise<number[]> {
 			.filter((pid) => Number.isInteger(pid) && pid > 0);
 
 		const nested = await Promise.all(
-			directChildren.map((pid) => collectChildPids(pid)),
+			directChildren.map((pid) => collectChildPids(pid))
 		);
 		return [...directChildren, ...nested.flat()];
 	} catch {
@@ -86,7 +86,7 @@ export async function collectChildPids(parentPid: number): Promise<number[]> {
 
 /** Returns a comma-separated PID list visible in htop, or null if none. */
 export async function getVisibleHtopPidList(
-	rootPid = process.pid,
+	rootPid = process.pid
 ): Promise<string | null> {
 	const descendants = await collectChildPids(rootPid);
 	const unique = Array.from(new Set(descendants)).sort((a, b) => a - b);

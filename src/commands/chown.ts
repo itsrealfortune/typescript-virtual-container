@@ -1,5 +1,5 @@
-import type { ShellModule } from "../types/commands";
-import { assertPathAccess, resolvePath } from "./helpers";
+import type {ShellModule} from "../types/commands";
+import {assertPathAccess, resolvePath} from "./helpers";
 
 /**
  * Change file owner and group.
@@ -11,10 +11,10 @@ export const chownCommand: ShellModule = {
 	description: "Change file owner and group",
 	category: "files",
 	params: ["<owner>[:<group>] <file>"],
-	run: ({ authUser, shell, cwd, args, uid }) => {
+	run: ({authUser, shell, cwd, args, uid}) => {
 		const [ownerArg, fileArg] = args;
 		if (!(ownerArg && fileArg)) {
-			return { stderr: "chown: missing operand", exitCode: 1 };
+			return {stderr: "chown: missing operand", exitCode: 1};
 		}
 
 		if (authUser !== "root") {
@@ -42,7 +42,7 @@ export const chownCommand: ShellModule = {
 				// Just a user name
 				uidTarget = resolveUser(shell, ownerArg);
 				if (uidTarget === null) {
-					return { stderr: `chown: invalid user: ${ownerArg}`, exitCode: 1 };
+					return {stderr: `chown: invalid user: ${ownerArg}`, exitCode: 1};
 				}
 			} else {
 				const userPart = ownerArg.slice(0, colonIdx);
@@ -50,7 +50,7 @@ export const chownCommand: ShellModule = {
 				if (userPart) {
 					uidTarget = resolveUser(shell, userPart);
 					if (uidTarget === null) {
-						return { stderr: `chown: invalid user: ${userPart}`, exitCode: 1 };
+						return {stderr: `chown: invalid user: ${userPart}`, exitCode: 1};
 					}
 				}
 				if (groupPart) {
@@ -69,21 +69,21 @@ export const chownCommand: ShellModule = {
 				filePath,
 				uidTarget ?? current.uid,
 				gid ?? current.gid,
-				uid,
+				uid
 			);
-			return { exitCode: 0 };
+			return {exitCode: 0};
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
-			return { stderr: `chown: ${msg}`, exitCode: 1 };
+			return {stderr: `chown: ${msg}`, exitCode: 1};
 		}
 	},
 };
 
 function resolveUser(
 	shell: {
-		users: { getUid: (u: string) => number; listUsers: () => string[] };
+		users: {getUid: (u: string) => number; listUsers: () => string[]};
 	},
-	name: string,
+	name: string
 ): number | null {
 	const users = shell.users.listUsers();
 	if (users.includes(name)) {
@@ -97,8 +97,8 @@ function resolveUser(
 }
 
 function resolveGroup(
-	shell: { users: { getGidByName: (n: string) => number | null } },
-	name: string,
+	shell: {users: {getGidByName: (n: string) => number | null}},
+	name: string
 ): number | null {
 	const gid = shell.users.getGidByName(name);
 	if (gid !== null) {

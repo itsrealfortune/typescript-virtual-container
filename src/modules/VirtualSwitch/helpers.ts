@@ -1,4 +1,4 @@
-import type { MacAddress } from "./types";
+import type {MacAddress} from "./types";
 
 let _macCounter = 1;
 
@@ -17,13 +17,13 @@ export function ipToInt(ip: string): number {
 
 export function intToIp(n: number): string {
 	return [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join(
-		".",
+		"."
 	);
 }
 
-export function cidrRange(cidr: string): { network: number; mask: number } {
+export function cidrRange(cidr: string): {network: number; mask: number} {
 	const [ip = "10.0.1.0", bits = "24"] = cidr.split("/");
 	const mask = ~(2 ** (32 - Number.parseInt(bits, 10)) - 1);
 	const network = ipToInt(ip) & mask;
-	return { network, mask };
+	return {network, mask};
 }

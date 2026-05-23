@@ -21,16 +21,16 @@ function toFlagList(flags: string | string[]): string[] {
 
 function matchFlagToken(
 	token: string,
-	flag: string,
-): { matched: boolean; inlineValue: string | null } {
+	flag: string
+): {matched: boolean; inlineValue: string | null} {
 	if (token === flag) {
-		return { matched: true, inlineValue: null };
+		return {matched: true, inlineValue: null};
 	}
 
 	// --flag=value style
 	const prefix = `${flag}=`;
 	if (token.startsWith(prefix)) {
-		return { matched: true, inlineValue: token.slice(prefix.length) };
+		return {matched: true, inlineValue: token.slice(prefix.length)};
 	}
 
 	// Short flag inline value: -f2, -d: (single char flag like -f, -d, -n)
@@ -42,15 +42,15 @@ function matchFlagToken(
 		token.startsWith(flag) &&
 		token.length > flag.length
 	) {
-		return { matched: true, inlineValue: token.slice(flag.length) };
+		return {matched: true, inlineValue: token.slice(flag.length)};
 	}
 
-	return { matched: false, inlineValue: null };
+	return {matched: false, inlineValue: null};
 }
 
 function collectPositionals(
 	args: string[],
-	options: ArgParseOptions = {},
+	options: ArgParseOptions = {}
 ): string[] {
 	const boolFlags = new Set(options.flags ?? []);
 	const valueFlags = new Set(options.flagsWithValue ?? []);
@@ -73,7 +73,7 @@ function collectPositionals(
 		let consumed = false;
 
 		for (const flag of boolFlags) {
-			const { matched } = matchFlagToken(arg, flag);
+			const {matched} = matchFlagToken(arg, flag);
 			if (matched) {
 				consumed = true;
 				break;
@@ -157,7 +157,7 @@ export function ifFlag(args: string[], flags: string | string[]): boolean {
  */
 export function getFlag(
 	args: string[],
-	flags: string | string[],
+	flags: string | string[]
 ): string | true | undefined {
 	const allFlags = toFlagList(flags);
 
@@ -207,7 +207,7 @@ export function getFlag(
 export function getArg(
 	args: string[],
 	index: number,
-	options: ArgParseOptions = {},
+	options: ArgParseOptions = {}
 ): string | undefined {
 	const positionals = collectPositionals(args, options);
 	return positionals[index];
@@ -239,7 +239,7 @@ export function getArg(
  */
 export function parseArgs(
 	args: string[],
-	options: { flags?: string[]; flagsWithValue?: string[] } = {},
+	options: {flags?: string[]; flagsWithValue?: string[]} = {}
 ): {
 	flags: Set<string>;
 	flagsWithValues: Map<string, string>;
@@ -282,7 +282,7 @@ export function parseArgs(
 		}
 
 		const inlineFlag = Array.from(valueFlags).find((flag) =>
-			arg.startsWith(`${flag}=`),
+			arg.startsWith(`${flag}=`)
 		);
 		if (inlineFlag) {
 			flagsWithValues.set(inlineFlag, arg.slice(inlineFlag.length + 1));
@@ -292,5 +292,5 @@ export function parseArgs(
 		positionals.push(arg);
 	}
 
-	return { flags, flagsWithValues, positionals };
+	return {flags, flagsWithValues, positionals};
 }

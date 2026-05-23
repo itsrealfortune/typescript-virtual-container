@@ -6,7 +6,7 @@
  * priority changes, CPU accounting, and scheduler statistics.
  */
 
-import { VirtualShell } from "../src";
+import {VirtualShell} from "../src";
 
 const shell = new VirtualShell("scheduler-demo");
 await shell.ensureInitialized();
@@ -37,7 +37,7 @@ for (const nice of niceValues) {
 		"pts/0",
 		undefined,
 		1,
-		nice,
+		nice
 	);
 	const priority = shell.users.getProcessPriority(pid);
 	shell.users.unregisterProcess(pid);
@@ -48,14 +48,14 @@ for (const nice of niceValues) {
 console.log("\n--- Process registration ---");
 
 const processes = [
-	{ name: "nginx", nice: -10, cmd: ["nginx", "-g", "daemon off;"] },
-	{ name: "node", nice: 0, cmd: ["node", "server.js"] },
+	{name: "nginx", nice: -10, cmd: ["nginx", "-g", "daemon off;"]},
+	{name: "node", nice: 0, cmd: ["node", "server.js"]},
 	{
 		name: "backup",
 		nice: 15,
 		cmd: ["tar", "-czf", "/backup/full.tar.gz", "/"],
 	},
-	{ name: "cron", nice: 19, cmd: ["cron", "-f"] },
+	{name: "cron", nice: 19, cmd: ["cron", "-f"]},
 ];
 
 const pids: number[] = [];
@@ -67,11 +67,11 @@ for (const proc of processes) {
 		"pts/0",
 		undefined,
 		1,
-		proc.nice,
+		proc.nice
 	);
 	pids.push(pid);
 	console.log(
-		`  PID ${pid}: ${proc.name} (nice ${proc.nice}, priority: ${shell.users.getProcessPriority(pid)})`,
+		`  PID ${pid}: ${proc.name} (nice ${proc.nice}, priority: ${shell.users.getProcessPriority(pid)})`
 	);
 }
 
@@ -90,12 +90,12 @@ console.log("\n--- Priority boosting ---");
 
 const backupPid = pids.find((pid) => shell.users.getProcessNice(pid) === 15)!;
 console.log(
-	`  Before: PID ${backupPid} nice=${shell.users.getProcessNice(backupPid)}, priority=${shell.users.getProcessPriority(backupPid)}`,
+	`  Before: PID ${backupPid} nice=${shell.users.getProcessNice(backupPid)}, priority=${shell.users.getProcessPriority(backupPid)}`
 );
 
 shell.users.setProcessNice(backupPid, -5);
 console.log(
-	`  After:  PID ${backupPid} nice=${shell.users.getProcessNice(backupPid)}, priority=${shell.users.getProcessPriority(backupPid)}`,
+	`  After:  PID ${backupPid} nice=${shell.users.getProcessNice(backupPid)}, priority=${shell.users.getProcessPriority(backupPid)}`
 );
 
 // ── Scheduler statistics ───────────────────────────────────────────

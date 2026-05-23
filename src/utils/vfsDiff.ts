@@ -66,7 +66,7 @@ export interface VfsDiff {
 function flattenSnapshot(
 	node: VfsSnapshotNode,
 	prefix: string,
-	out: Map<string, VfsSnapshotNode>,
+	out: Map<string, VfsSnapshotNode>
 ): void {
 	const path = prefix === "" ? "/" : prefix;
 	out.set(path, node);
@@ -101,13 +101,13 @@ export function diffSnapshots(
 	options: {
 		/** Glob-style path prefixes to ignore (e.g. `["/proc", "/var/log"]`). */
 		ignore?: string[];
-	} = {},
+	} = {}
 ): VfsDiff {
 	const ignorePrefixes = options.ignore ?? [];
 
 	const shouldIgnore = (path: string): boolean =>
 		ignorePrefixes.some(
-			(prefix) => path === prefix || path.startsWith(`${prefix}/`),
+			(prefix) => path === prefix || path.startsWith(`${prefix}/`)
 		);
 
 	const beforeMap = new Map<string, VfsSnapshotNode>();
@@ -126,7 +126,7 @@ export function diffSnapshots(
 			continue;
 		}
 		if (!beforeMap.has(path)) {
-			added.push({ path, type: node.type });
+			added.push({path, type: node.type});
 		}
 	}
 
@@ -136,7 +136,7 @@ export function diffSnapshots(
 			continue;
 		}
 		if (!afterMap.has(path)) {
-			removed.push({ path, type: node.type });
+			removed.push({path, type: node.type});
 		}
 	}
 
@@ -197,13 +197,13 @@ export function formatDiff(
 		showContent?: boolean;
 		/** Max chars of content to show per change. Default: 120. */
 		maxContentChars?: number;
-	} = {},
+	} = {}
 ): string {
 	if (diff.clean) {
 		return "(no changes)";
 	}
 
-	const { showContent = false, maxContentChars = 120 } = options;
+	const {showContent = false, maxContentChars = 120} = options;
 	const lines: string[] = [];
 
 	for (const entry of diff.added) {
@@ -220,10 +220,10 @@ export function formatDiff(
 			const before = entry.before.slice(0, maxContentChars);
 			const after = entry.after.slice(0, maxContentChars);
 			lines.push(
-				`  before: ${JSON.stringify(before)}${entry.before.length > maxContentChars ? "…" : ""}`,
+				`  before: ${JSON.stringify(before)}${entry.before.length > maxContentChars ? "…" : ""}`
 			);
 			lines.push(
-				`  after:  ${JSON.stringify(after)}${entry.after.length > maxContentChars ? "…" : ""}`,
+				`  after:  ${JSON.stringify(after)}${entry.after.length > maxContentChars ? "…" : ""}`
 			);
 		}
 	}
@@ -254,7 +254,7 @@ export function assertDiff(
 		added?: string[];
 		removed?: string[];
 		modified?: string[];
-	},
+	}
 ): void {
 	const addedPaths = diff.added.map((e) => e.path);
 	const removedPaths = diff.removed.map((e) => e.path);
@@ -263,7 +263,7 @@ export function assertDiff(
 	for (const path of expect.added ?? []) {
 		if (!addedPaths.includes(path)) {
 			throw new Error(
-				`assertDiff: expected "${path}" to be added, but it was not.\nAdded: ${JSON.stringify(addedPaths)}`,
+				`assertDiff: expected "${path}" to be added, but it was not.\nAdded: ${JSON.stringify(addedPaths)}`
 			);
 		}
 	}
@@ -271,7 +271,7 @@ export function assertDiff(
 	for (const path of expect.removed ?? []) {
 		if (!removedPaths.includes(path)) {
 			throw new Error(
-				`assertDiff: expected "${path}" to be removed, but it was not.\nRemoved: ${JSON.stringify(removedPaths)}`,
+				`assertDiff: expected "${path}" to be removed, but it was not.\nRemoved: ${JSON.stringify(removedPaths)}`
 			);
 		}
 	}
@@ -279,7 +279,7 @@ export function assertDiff(
 	for (const path of expect.modified ?? []) {
 		if (!modifiedPaths.includes(path)) {
 			throw new Error(
-				`assertDiff: expected "${path}" to be modified, but it was not.\nModified: ${JSON.stringify(modifiedPaths)}`,
+				`assertDiff: expected "${path}" to be modified, but it was not.\nModified: ${JSON.stringify(modifiedPaths)}`
 			);
 		}
 	}

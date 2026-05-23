@@ -13,9 +13,9 @@
  *   - f-strings, multi-line scripts, assignments, for/while loops, if/elif/else
  *   - functions (def), return, class basics
  */
-import type { ShellModule } from "../types/commands";
-import { ifFlag } from "./command-helpers";
-import { resolvePath } from "./helpers";
+import type {ShellModule} from "../types/commands";
+import {ifFlag} from "./command-helpers";
+import {resolvePath} from "./helpers";
 
 const VERSION = "Python 3.11.2";
 const VERSION_INFO = "3.11.2 (default, Mar 13 2023, 12:18:29) [GCC 12.2.0]";
@@ -66,13 +66,13 @@ interface PyNone {
 	__pytype__: "none";
 }
 
-const NONE: PyNone = { __pytype__: "none" };
+const NONE: PyNone = {__pytype__: "none"};
 
 function pyDict(entries: [string, PyVal][] = []): PyDict {
-	return { __pytype__: "dict", data: new Map(entries) };
+	return {__pytype__: "dict", data: new Map(entries)};
 }
 function pyRange(start: number, stop: number, step = 1): PyRange {
-	return { __pytype__: "range", start, stop, step };
+	return {__pytype__: "range", start, stop, step};
 }
 
 function isPyDict(v: PyVal): v is PyDict {
@@ -292,7 +292,7 @@ function pyTypeName(v: PyVal): string {
 class PyError {
 	constructor(
 		public type: string,
-		public message: string,
+		public message: string
 	) {}
 	toString() {
 		return `${this.type}: ${this.message}`;
@@ -354,9 +354,9 @@ function makeOsModule(cwd: string): PyDict {
 		["name", "posix"],
 	]);
 	// We'll handle method calls in callMethod
-	(os as unknown as { _cwd: string })._cwd = cwd;
-	(path as unknown as { _cwd: string })._cwd = cwd;
-	(os as unknown as { path: PyDict }).path = path;
+	(os as unknown as {_cwd: string})._cwd = cwd;
+	(path as unknown as {_cwd: string})._cwd = cwd;
+	(os as unknown as {path: PyDict}).path = path;
 	return os;
 }
 
@@ -370,7 +370,7 @@ function makeSysModule(): PyDict {
 					["major", 3],
 					["minor", 11],
 					["micro", 2],
-				].map(([k, v]) => [k as string, v as number]),
+				].map(([k, v]) => [k as string, v as number])
 			),
 		],
 		["platform", "linux"],
@@ -606,12 +606,12 @@ class Interpreter {
 			}
 			// List comprehension
 			const compMatch = inner.match(
-				/^(.+?)\s+for\s+(\w+)\s+in\s+(.+?)(?:\s+if\s+(.+))?$/,
+				/^(.+?)\s+for\s+(\w+)\s+in\s+(.+?)(?:\s+if\s+(.+))?$/
 			);
 			if (compMatch) {
 				const [, itemExpr, varName, iterExpr, condExpr] = compMatch;
 				const iterable = pyIter(
-					this.pyEval((iterExpr as string).trim(), scope),
+					this.pyEval((iterExpr as string).trim(), scope)
 				);
 				const result: PyVal[] = [];
 				for (const item of iterable) {
@@ -717,7 +717,7 @@ class Interpreter {
 		// Uses a depth-aware scanner to find the rightmost dot at depth 0
 		const dotResult = this._findDotAccess(expr);
 		if (dotResult) {
-			const { objExpr, attr, callPart } = dotResult;
+			const {objExpr, attr, callPart} = dotResult;
 			const obj = this.pyEval(objExpr, scope);
 			if (callPart !== undefined) {
 				const argsInner = callPart.slice(1, -1);
@@ -777,8 +777,8 @@ class Interpreter {
 	 * Returns {objExpr, attr, callPart} or null if not a dot-access expression.
 	 */
 	private _findDotAccess(
-		expr: string,
-	): { objExpr: string; attr: string; callPart: string | undefined } | null {
+		expr: string
+	): {objExpr: string; attr: string; callPart: string | undefined} | null {
 		// Scan right to left for a dot at depth 0 (not inside strings/brackets)
 		let depth = 0;
 		let inStr = false;
@@ -821,7 +821,7 @@ class Interpreter {
 			if (/^-?\d+$/.test(objExpr)) {
 				continue;
 			}
-			return { objExpr, attr: attrMatch[1] as string, callPart: attrMatch[2] };
+			return {objExpr, attr: attrMatch[1] as string, callPart: attrMatch[2]};
 		}
 		return null;
 	}
@@ -829,7 +829,7 @@ class Interpreter {
 	private _tryBinaryOp(
 		expr: string,
 		ops: string[],
-		scope: Scope,
+		scope: Scope
 	): PyVal | undefined {
 		let depth = 0;
 		let inStr = false;
@@ -892,7 +892,7 @@ class Interpreter {
 		op: string,
 		leftExpr: string,
 		rightExpr: string,
-		scope: Scope,
+		scope: Scope
 	): PyVal {
 		if (op === "and") {
 			const l = this.pyEval(leftExpr, scope);
@@ -942,7 +942,7 @@ class Interpreter {
 				if ((right as number) === 0) {
 					throw new PyError(
 						"ZeroDivisionError",
-						"integer division or modulo by zero",
+						"integer division or modulo by zero"
 					);
 				}
 				return Math.floor((left as number) / (right as number));
@@ -951,13 +951,13 @@ class Interpreter {
 				if (typeof left === "string") {
 					return Interpreter._pyStringFormat(
 						left,
-						Array.isArray(right) ? right : [right],
+						Array.isArray(right) ? right : [right]
 					);
 				}
 				if ((right as number) === 0) {
 					throw new PyError(
 						"ZeroDivisionError",
-						"integer division or modulo by zero",
+						"integer division or modulo by zero"
 					);
 				}
 				return (left as number) % (right as number);
@@ -1055,8 +1055,8 @@ class Interpreter {
 				return obj.data.get(attr) as PyVal;
 			}
 			// Special dict attributes
-			if (attr === "path" && (obj as unknown as { path: PyVal }).path) {
-				return (obj as unknown as { path: PyVal }).path;
+			if (attr === "path" && (obj as unknown as {path: PyVal}).path) {
+				return (obj as unknown as {path: PyVal}).path;
 			}
 			return NONE;
 		}
@@ -1066,7 +1066,7 @@ class Interpreter {
 		if (typeof obj === "string") {
 			// String attributes
 			const strMethods: Record<string, PyVal> = {
-				__class__: { __pytype__: "class", name: "str" } as unknown as PyClass,
+				__class__: {__pytype__: "class", name: "str"} as unknown as PyClass,
 			};
 			return strMethods[attr] ?? NONE;
 		}
@@ -1154,7 +1154,7 @@ class Interpreter {
 				case "swapcase":
 					return [...obj]
 						.map((c) =>
-							c === c.toUpperCase() ? c.toLowerCase() : c.toUpperCase(),
+							c === c.toUpperCase() ? c.toLowerCase() : c.toUpperCase()
 						)
 						.join("");
 				default:
@@ -1202,7 +1202,7 @@ class Interpreter {
 					obj.sort((a, b) =>
 						typeof a === "number" && typeof b === "number"
 							? a - b
-							: pyStr(a).localeCompare(pyStr(b)),
+							: pyStr(a).localeCompare(pyStr(b))
 					);
 					return NONE;
 				case "reverse":
@@ -1398,7 +1398,7 @@ class Interpreter {
 
 		throw new PyError(
 			"AttributeError",
-			`'${pyTypeName(obj)}' object has no attribute '${method}'`,
+			`'${pyTypeName(obj)}' object has no attribute '${method}'`
 		);
 	}
 
@@ -1431,7 +1431,7 @@ class Interpreter {
 		}
 		if (isPyDict(v)) {
 			return Object.fromEntries(
-				[...v.data.entries()].map(([k, val]) => [k, this._pyToJs(val)]),
+				[...v.data.entries()].map(([k, val]) => [k, this._pyToJs(val)])
 			);
 		}
 		if (Array.isArray(v)) {
@@ -1461,7 +1461,7 @@ class Interpreter {
 				Object.entries(v as Record<string, unknown>).map(([k, val]) => [
 					k,
 					this._jsToPy(val),
-				]),
+				])
 			);
 		}
 		return NONE;
@@ -1532,7 +1532,7 @@ class Interpreter {
 					? []
 					: [...new Set(pyIter(args[0] ?? []).map(pyRepr))].map((s) => {
 							const v = pyIter(args[0] ?? []).find(
-								(item) => pyRepr(item) === s,
+								(item) => pyRepr(item) === s
 							);
 							return v ?? NONE;
 						});
@@ -1596,7 +1596,7 @@ class Interpreter {
 				}
 				throw new PyError(
 					"TypeError",
-					`object of type '${pyTypeName(v)}' has no len()`,
+					`object of type '${pyTypeName(v)}' has no len()`
 				);
 			}
 			case "range": {
@@ -1615,20 +1615,20 @@ class Interpreter {
 			case "zip": {
 				const iters = args.map(pyIter);
 				const len = Math.min(...iters.map((it) => it.length));
-				return Array.from({ length: len }, (_, i) =>
-					iters.map((it) => it[i] ?? NONE),
+				return Array.from({length: len}, (_, i) =>
+					iters.map((it) => it[i] ?? NONE)
 				);
 			}
 			case "map": {
 				const fn: PyVal = args[0] ?? NONE;
 				return pyIter(args[1] ?? []).map((v) =>
-					isPyFunc(fn) ? this._callFunc(fn, [v], scope) : NONE,
+					isPyFunc(fn) ? this._callFunc(fn, [v], scope) : NONE
 				);
 			}
 			case "filter": {
 				const fn: PyVal = args[0] ?? NONE;
 				return pyIter(args[1] ?? []).filter((v) =>
-					isPyFunc(fn) ? pyBool(this._callFunc(fn, [v], scope)) : pyBool(v),
+					isPyFunc(fn) ? pyBool(this._callFunc(fn, [v], scope)) : pyBool(v)
 				);
 			}
 			case "reduce": {
@@ -1673,7 +1673,7 @@ class Interpreter {
 			case "sum":
 				return pyIter(args[0] ?? []).reduce(
 					(acc, v) => (acc as number) + (v as number),
-					(args[1] ?? 0) as number,
+					(args[1] ?? 0) as number
 				);
 			case "max": {
 				const items = args.length === 1 ? pyIter(args[0] ?? []) : args;
@@ -1719,7 +1719,7 @@ class Interpreter {
 			case "open":
 				throw new PyError(
 					"PermissionError",
-					"open() not available in virtual runtime",
+					"open() not available in virtual runtime"
 				);
 			case "repr":
 				return pyRepr(args[0] ?? NONE);
@@ -1850,7 +1850,7 @@ class Interpreter {
 	}
 
 	private _instantiate(cls: PyClass, args: PyVal[]): PyInstance {
-		const inst: PyInstance = { __pytype__: "instance", cls, attrs: new Map() };
+		const inst: PyInstance = {__pytype__: "instance", cls, attrs: new Map()};
 		const init = cls.methods.get("__init__");
 		if (init) {
 			this._callMethod(inst, "__init__", args);
@@ -1907,7 +1907,7 @@ class Interpreter {
 	private _collectBlock(
 		lines: string[],
 		startIdx: number,
-		baseIndent: number,
+		baseIndent: number
 	): string[] {
 		const block: string[] = [];
 		for (let i = startIdx; i < lines.length; i++) {
@@ -1949,7 +1949,7 @@ class Interpreter {
 		const retMatch = line.match(/^return(?:\s+(.+))?$/);
 		if (retMatch) {
 			throw new ReturnSignal(
-				retMatch[1] ? this.pyEval(retMatch[1], scope) : NONE,
+				retMatch[1] ? this.pyEval(retMatch[1], scope) : NONE
 			);
 		}
 
@@ -1960,7 +1960,7 @@ class Interpreter {
 				const ex = this.pyEval(raiseMatch[1], scope);
 				throw new PyError(
 					typeof ex === "string" ? ex : pyTypeName(ex),
-					pyStr(ex),
+					pyStr(ex)
 				);
 			}
 			throw new PyError("RuntimeError", "");
@@ -1972,7 +1972,7 @@ class Interpreter {
 			if (!pyBool(this.pyEval(assertMatch[1] as string, scope))) {
 				throw new PyError(
 					"AssertionError",
-					assertMatch[2] ? pyStr(this.pyEval(assertMatch[2], scope)) : "",
+					assertMatch[2] ? pyStr(this.pyEval(assertMatch[2], scope)) : ""
 				);
 			}
 			return idx + 1;
@@ -2091,7 +2091,7 @@ class Interpreter {
 						for (const [k, v] of scope) {
 							s.set(k, v);
 						}
-					}) ?? scope,
+					}) ?? scope
 				);
 				// Update scope from block (assignments)
 				this._runBlockInScope(body, scope);
@@ -2224,7 +2224,7 @@ class Interpreter {
 		if (line === "try:") {
 			const tryBody = this._collectBlock(lines, idx + 1, indent);
 			let j = idx + 1 + tryBody.length;
-			const exceptClauses: Array<{ exc: string | null; body: string[] }> = [];
+			const exceptClauses: Array<{exc: string | null; body: string[]}> = [];
 			let finallyBody: string[] = [];
 			let elseBody: string[] = [];
 
@@ -2236,12 +2236,12 @@ class Interpreter {
 				}
 				if (elt.startsWith("except")) {
 					const excMatch = elt.match(
-						/^except(?:\s+(\w+)(?:\s+as\s+(\w+))?)?\s*:$/,
+						/^except(?:\s+(\w+)(?:\s+as\s+(\w+))?)?\s*:$/
 					);
 					const excName = excMatch?.[1] ?? null;
 					const excAlias = excMatch?.[2];
 					const excBody = this._collectBlock(lines, j + 1, indent);
-					exceptClauses.push({ exc: excName, body: excBody });
+					exceptClauses.push({exc: excName, body: excBody});
 					if (excAlias) {
 						scope.set(excAlias, "");
 					}
@@ -2301,7 +2301,7 @@ class Interpreter {
 
 		// Augmented assignments: +=, -=, *=, /=, //=, %= **=
 		const augMatch = line.match(
-			/^([A-Za-z_][A-Za-z0-9_]*)\s*(\+=|-=|\*=|\/\/=|\/=|%=|\*\*=|&=|\|=)\s*(.+)$/,
+			/^([A-Za-z_][A-Za-z0-9_]*)\s*(\+=|-=|\*=|\/\/=|\/=|%=|\*\*=|&=|\|=)\s*(.+)$/
 		);
 		if (augMatch) {
 			const [, name, op, rhsExpr] = augMatch;
@@ -2342,7 +2342,7 @@ class Interpreter {
 
 		// Subscript assignment: obj[key] = val
 		const subAssignMatch = line.match(
-			/^([A-Za-z_][A-Za-z0-9_]*)\[(.+)\]\s*=\s*(.+)$/,
+			/^([A-Za-z_][A-Za-z0-9_]*)\[(.+)\]\s*=\s*(.+)$/
 		);
 		if (subAssignMatch) {
 			const [, name, key, valExpr] = subAssignMatch;
@@ -2359,7 +2359,7 @@ class Interpreter {
 
 		// Attribute assignment: obj.attr = val
 		const attrAssignMatch = line.match(
-			/^([A-Za-z_][A-Za-z0-9_.]+)\s*=\s*(.+)$/,
+			/^([A-Za-z_][A-Za-z0-9_.]+)\s*=\s*(.+)$/
 		);
 		if (attrAssignMatch) {
 			const dotIdx = (attrAssignMatch[1] as string).lastIndexOf(".");
@@ -2379,7 +2379,7 @@ class Interpreter {
 
 		// Tuple / multi-assignment: a, b = expr
 		const multiAssignMatch = line.match(
-			/^([A-Za-z_][A-Za-z0-9_,\s]*),\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$/,
+			/^([A-Za-z_][A-Za-z0-9_,\s]*),\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$/
 		);
 		if (multiAssignMatch) {
 			const rhs = this.pyEval(multiAssignMatch[3] as string, scope);
@@ -2393,7 +2393,7 @@ class Interpreter {
 
 		// Simple assignment: name = expr  (or name: type = expr)
 		const assignMatch = line.match(
-			/^([A-Za-z_][A-Za-z0-9_]*)\s*(?::[^=]+)?\s*=\s*(.+)$/,
+			/^([A-Za-z_][A-Za-z0-9_]*)\s*(?::[^=]+)?\s*=\s*(.+)$/
 		);
 		if (assignMatch) {
 			const [, name, rhs] = assignMatch;
@@ -2417,7 +2417,7 @@ class Interpreter {
 		this._execLines(body, 0, scope);
 	}
 
-	run(code: string): { stdout: string; stderr: string; exitCode: number } {
+	run(code: string): {stdout: string; stderr: string; exitCode: number} {
 		const scope = makeRootScope(this.cwd);
 		try {
 			this.execScript(code, scope);
@@ -2451,7 +2451,7 @@ class Interpreter {
 				exitCode: 1,
 			};
 		}
-		return { stdout: this.getOutput(), stderr: this.getStderr(), exitCode: 0 };
+		return {stdout: this.getOutput(), stderr: this.getStderr(), exitCode: 0};
 	}
 }
 
@@ -2477,7 +2477,7 @@ export const python3Command: ShellModule = {
 	description: "Python 3 interpreter (virtual)",
 	category: "system",
 	params: ["[--version] [-c <code>] [-V] [file]"],
-	run: ({ args, shell, cwd }) => {
+	run: ({args, shell, cwd}) => {
 		// Require explicit installation via `apt install python3`
 		if (!shell.packageManager.isInstalled("python3")) {
 			return {
@@ -2487,10 +2487,10 @@ export const python3Command: ShellModule = {
 			};
 		}
 		if (ifFlag(args, ["--version", "-V"])) {
-			return { stdout: `${VERSION}\n`, exitCode: 0 };
+			return {stdout: `${VERSION}\n`, exitCode: 0};
 		}
 		if (ifFlag(args, ["--version-full"])) {
-			return { stdout: `${VERSION_INFO}\n`, exitCode: 0 };
+			return {stdout: `${VERSION_INFO}\n`, exitCode: 0};
 		}
 
 		const cIdx = args.indexOf("-c");
@@ -2505,7 +2505,7 @@ export const python3Command: ShellModule = {
 			// Handle \n as actual newlines
 			const normalised = code.replace(/\\n/g, "\n").replace(/\\t/g, "\t");
 			const interp = new Interpreter(cwd);
-			const { stdout, stderr, exitCode } = interp.run(normalised);
+			const {stdout, stderr, exitCode} = interp.run(normalised);
 			return {
 				stdout: stdout || undefined,
 				stderr: stderr || undefined,
@@ -2524,7 +2524,7 @@ export const python3Command: ShellModule = {
 			}
 			const code = shell.vfs.readFile(filePath);
 			const interp = new Interpreter(cwd);
-			const { stdout, stderr, exitCode } = interp.run(code);
+			const {stdout, stderr, exitCode} = interp.run(code);
 			return {
 				stdout: stdout || undefined,
 				stderr: stderr || undefined,

@@ -1,4 +1,4 @@
-import type { ShellModule } from "../types/commands";
+import type {ShellModule} from "../types/commands";
 
 /**
  * Delete a group.
@@ -10,14 +10,14 @@ export const groupdelCommand: ShellModule = {
 	description: "Delete a group",
 	category: "users",
 	params: ["<group>"],
-	run: ({ authUser, shell, args }) => {
+	run: ({authUser, shell, args}) => {
 		if (authUser !== "root") {
-			return { stderr: "groupdel: permission denied\n", exitCode: 1 };
+			return {stderr: "groupdel: permission denied\n", exitCode: 1};
 		}
 
 		const groupName = args[0];
 		if (!groupName) {
-			return { stderr: "Usage: groupdel <group>\n", exitCode: 1 };
+			return {stderr: "Usage: groupdel <group>\n", exitCode: 1};
 		}
 
 		try {
@@ -28,7 +28,7 @@ export const groupdelCommand: ShellModule = {
 			};
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
-			return { stderr: `${msg}\n`, exitCode: 1 };
+			return {stderr: `${msg}\n`, exitCode: 1};
 		}
 	},
 };

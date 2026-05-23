@@ -1,5 +1,5 @@
-import type { ShellModule } from "../types/commands";
-import { resolvePath } from "./helpers";
+import type {ShellModule} from "../types/commands";
+import {resolvePath} from "./helpers";
 
 /**
  * Display file or filesystem status.
@@ -10,12 +10,12 @@ export const statCommand: ShellModule = {
 	description: "Display file status",
 	category: "files",
 	params: ["[-c <format>] <file>"],
-	run: ({ shell, cwd, args }) => {
+	run: ({shell, cwd, args}) => {
 		const fmtIdx = args.findIndex((a) => a === "-c" || a === "--format");
 		const fmt = fmtIdx === -1 ? undefined : args[fmtIdx + 1];
 		const file = args.find((a) => !a.startsWith("-") && a !== fmt);
 		if (!file) {
-			return { stderr: "stat: missing operand\n", exitCode: 1 };
+			return {stderr: "stat: missing operand\n", exitCode: 1};
 		}
 
 		const p = resolvePath(cwd, file);
@@ -41,7 +41,7 @@ export const statCommand: ShellModule = {
 		};
 		const octal = st.mode.toString(8).padStart(4, "0");
 		const modeStr = modePerm(st.mode);
-		const size = "size" in st ? (st as { size: number }).size : 0;
+		const size = "size" in st ? (st as {size: number}).size : 0;
 		const ts = (d: Date) =>
 			d
 				.toISOString()
@@ -57,15 +57,15 @@ export const statCommand: ShellModule = {
 				.replace("%A", modeStr)
 				.replace(
 					"%F",
-					isSymlink ? "symbolic link" : isDir ? "directory" : "regular file",
+					isSymlink ? "symbolic link" : isDir ? "directory" : "regular file"
 				)
 				.replace("%y", ts(st.updatedAt))
 				.replace("%z", ts(st.updatedAt));
-			return { stdout: `${out}\n`, exitCode: 0 };
+			return {stdout: `${out}\n`, exitCode: 0};
 		}
 
-		const statUid = "uid" in st ? (st as { uid: number }).uid : 0;
-		const statGid = "gid" in st ? (st as { gid: number }).gid : 0;
+		const statUid = "uid" in st ? (st as {uid: number}).uid : 0;
+		const statGid = "gid" in st ? (st as {gid: number}).gid : 0;
 		const out = [
 			`  File: ${file}${isSymlink ? ` -> ${shell.vfs.resolveSymlink(p)}` : ""}`,
 			`  Size: ${size}${"\t".repeat(3)}${isSymlink ? "symbolic link" : isDir ? "directory" : "regular file"}`,
@@ -73,6 +73,6 @@ export const statCommand: ShellModule = {
 			`Modify: ${ts(st.updatedAt)}`,
 			`Change: ${ts(st.updatedAt)}`,
 		].join("\n");
-		return { stdout: `${out}\n`, exitCode: 0 };
+		return {stdout: `${out}\n`, exitCode: 0};
 	},
 };

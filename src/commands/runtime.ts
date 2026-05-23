@@ -1,10 +1,10 @@
-import { executeStatements } from "../modules/SSHMimic/executor";
-import type { VirtualShell } from "../modules/VirtualShell";
-import { parseScript } from "../modules/VirtualShell/shellParser";
-import type { CommandMode, CommandResult, ShellEnv } from "../types/commands";
-import { expandAsync, expandBraces, expandGlob } from "../utils/expand";
-import { tokenizeCommand } from "../utils/tokenize";
-import { resolveModule } from "./registry";
+import {executeStatements} from "../modules/SSHMimic/executor";
+import type {VirtualShell} from "../modules/VirtualShell";
+import {parseScript} from "../modules/VirtualShell/shellParser";
+import type {CommandMode, CommandResult, ShellEnv} from "../types/commands";
+import {expandAsync, expandBraces, expandGlob} from "../utils/expand";
+import {tokenizeCommand} from "../utils/tokenize";
+import {resolveModule} from "./registry";
 
 // Module-level compiled regexes — avoids recompilation on every runCommand call
 const ASSIGN_RE = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/;
@@ -31,7 +31,7 @@ export async function applyUserSwitch(
 	hostname: string,
 	cwd: string,
 	shellEnv: ShellEnv,
-	shell: VirtualShell,
+	shell: VirtualShell
 ): Promise<void> {
 	shellEnv.vars.USER = newUser;
 	shellEnv.vars.LOGNAME = newUser;
@@ -55,7 +55,7 @@ export async function applyUserSwitch(
 				cwd,
 				shell,
 				undefined,
-				shellEnv,
+				shellEnv
 			);
 		} catch {
 			/* ignore */
@@ -96,7 +96,7 @@ function resolveVfsBinary(
 	name: string,
 	env: ShellEnv,
 	shell: VirtualShell,
-	authUser: string,
+	authUser: string
 ): string | null {
 	if (name.startsWith("/")) {
 		if (!shell.vfs.exists(name)) {
@@ -167,7 +167,7 @@ function runVfsStub(
 	cwd: string,
 	shell: VirtualShell,
 	env: ShellEnv,
-	stdin: string | undefined,
+	stdin: string | undefined
 ): CommandResult | Promise<CommandResult> {
 	const stubContent = shell.vfs.readFile(vfsBinary);
 	const builtinMatch = stubContent.match(/exec\s+builtin\s+(\S+)/);
@@ -215,7 +215,7 @@ function runVfsStub(
 			env,
 		});
 	}
-	return { stderr: `${cmdName}: command not found`, exitCode: 127 };
+	return {stderr: `${cmdName}: command not found`, exitCode: 127};
 }
 let _callDepth = 0;
 
@@ -250,7 +250,7 @@ export function runCommandDirect(
 	stdin: string | undefined,
 	env: ShellEnv,
 	background = false,
-	abortController?: AbortController,
+	abortController?: AbortController
 ): CommandResult | Promise<CommandResult> {
 	// Anti-loop guard: track call depth via env to avoid infinite recursion
 	_callDepth++;
@@ -275,13 +275,13 @@ export function runCommandDirect(
 				env.vars.__TTY ?? "?",
 				abortController,
 				ppid,
-				Number.isNaN(nice) ? 0 : nice,
+				Number.isNaN(nice) ? 0 : nice
 			)
 		: -1;
 	const startTime = Date.now();
 	try {
 		if (background && abortController?.signal.aborted) {
-			return { stderr: "", exitCode: 130 };
+			return {stderr: "", exitCode: 130};
 		}
 		const inner = _runCommandDirectInner(
 			name,
@@ -292,16 +292,16 @@ export function runCommandDirect(
 			cwd,
 			shell,
 			stdin,
-			env,
+			env
 		);
 		if (abortController) {
 			const killed = new Promise<CommandResult>((resolve) => {
 				abortController.signal.addEventListener(
 					"abort",
 					() => {
-						resolve({ stderr: "", exitCode: 130 });
+						resolve({stderr: "", exitCode: 130});
 					},
-					{ once: true },
+					{once: true}
 				);
 			});
 			return Promise.race([inner, killed]);
@@ -330,7 +330,7 @@ async function _runCommandDirectInner(
 	cwd: string,
 	shell: VirtualShell,
 	stdin: string | undefined,
-	env: ShellEnv,
+	env: ShellEnv
 ): Promise<CommandResult> {
 	const assignRe = ASSIGN_RE;
 	const invocation = [name, ...args];
@@ -355,7 +355,7 @@ async function _runCommandDirectInner(
 			}
 		}
 		if (remaining.length === 0) {
-			return { exitCode: 0 };
+			return {exitCode: 0};
 		}
 		try {
 			const result = await runCommandDirect(
@@ -367,7 +367,7 @@ async function _runCommandDirectInner(
 				cwd,
 				shell,
 				stdin,
-				env,
+				env
 			);
 			return result;
 		} finally {
@@ -386,7 +386,7 @@ async function _runCommandDirectInner(
 	if (funcBody) {
 		const shMod = resolveModule("sh");
 		if (!shMod) {
-			return { stderr: `${name}: sh not available`, exitCode: 127 };
+			return {stderr: `${name}: sh not available`, exitCode: 127};
 		}
 		const savedPositional: Record<string, string | undefined> = {};
 		args.forEach((a, i) => {
@@ -433,7 +433,7 @@ async function _runCommandDirectInner(
 			cwd,
 			shell,
 			stdin,
-			env,
+			env
 		);
 	}
 
@@ -452,10 +452,10 @@ async function _runCommandDirectInner(
 				cwd,
 				shell,
 				env,
-				stdin,
+				stdin
 			);
 		}
-		return { stderr: `${name}: command not found`, exitCode: 127 };
+		return {stderr: `${name}: command not found`, exitCode: 127};
 	}
 
 	try {
@@ -508,11 +508,11 @@ export async function runCommand(
 	cwd: string,
 	shell: VirtualShell,
 	stdin?: string,
-	env?: ShellEnv,
+	env?: ShellEnv
 ): Promise<CommandResult> {
 	const trimmed = rawInput.trim();
 	if (trimmed.length === 0) {
-		return { exitCode: 0 };
+		return {exitCode: 0};
 	}
 
 	const shellEnv: ShellEnv = env ?? makeDefaultEnv(authUser, hostname);
@@ -555,11 +555,11 @@ export async function runCommand(
 						cwd,
 						shell,
 						stdin,
-						shellEnv,
+						shellEnv
 					);
 				}
 			}
-			return { stderr: `${trimmed}: event not found`, exitCode: 1 };
+			return {stderr: `${trimmed}: event not found`, exitCode: 1};
 		}
 
 		const rawTokens = tokenizeCommand(trimmed);
@@ -609,7 +609,7 @@ export async function runCommand(
 			}
 			const script = parseScript(aliasExpanded);
 			if (!script.isValid) {
-				return { stderr: script.error || "Syntax error", exitCode: 1 };
+				return {stderr: script.error || "Syntax error", exitCode: 1};
 			}
 			try {
 				return await executeStatements(
@@ -619,7 +619,7 @@ export async function runCommand(
 					mode,
 					cwd,
 					shell,
-					shellEnv,
+					shellEnv
 				);
 			} catch (error: unknown) {
 				return {
@@ -642,13 +642,13 @@ export async function runCommand(
 					cwd,
 					shell,
 					undefined,
-					shellEnv,
-				).then((r) => r.stdout ?? ""),
+					shellEnv
+				).then((r) => r.stdout ?? "")
 		);
 
 		const parts = tokenizeCommand(expanded.trim());
 		if (parts.length === 0) {
-			return { exitCode: 0 };
+			return {exitCode: 0};
 		}
 		const assignRe = ASSIGN_RE;
 		if (assignRe.test(parts[0] as string)) {
@@ -661,7 +661,7 @@ export async function runCommand(
 				cwd,
 				shell,
 				stdin,
-				shellEnv,
+				shellEnv
 			);
 		}
 		const commandName = parts[0]?.toLowerCase() ?? "";
@@ -682,7 +682,7 @@ export async function runCommand(
 				commandName,
 				shellEnv,
 				shell,
-				authUser,
+				authUser
 			);
 			if (vfsBinary) {
 				return runVfsStub(
@@ -696,10 +696,10 @@ export async function runCommand(
 					cwd,
 					shell,
 					shellEnv,
-					stdin,
+					stdin
 				);
 			}
-			return { stderr: `${commandName}: command not found`, exitCode: 127 };
+			return {stderr: `${commandName}: command not found`, exitCode: 127};
 		}
 
 		try {

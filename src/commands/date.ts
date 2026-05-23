@@ -1,4 +1,4 @@
-import type { ShellModule } from "../types/commands";
+import type {ShellModule} from "../types/commands";
 
 /**
  * Print the current date/time or a formatted representation.
@@ -10,7 +10,7 @@ export const dateCommand: ShellModule = {
 	description: "Print current date and time",
 	category: "system",
 	params: ["[+format]"],
-	run: ({ args }) => {
+	run: ({args}) => {
 		const now = new Date();
 		const fmt = args[0];
 		if (fmt?.startsWith("+")) {
@@ -23,8 +23,8 @@ export const dateCommand: ShellModule = {
 				.replace("%M", String(now.getMinutes()).padStart(2, "0"))
 				.replace("%S", String(now.getSeconds()).padStart(2, "0"))
 				.replace("%s", String(Math.floor(now.getTime() / 1000)));
-			return { stdout: f, exitCode: 0 };
+			return {stdout: f, exitCode: 0};
 		}
-		return { stdout: now.toString(), exitCode: 0 };
+		return {stdout: now.toString(), exitCode: 0};
 	},
 };

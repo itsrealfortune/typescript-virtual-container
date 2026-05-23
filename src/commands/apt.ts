@@ -1,7 +1,7 @@
-import { VirtualPackageManager } from "../modules/VirtualPackageManager";
-import type { ShellModule } from "../types/commands";
-import { ifFlag } from "./command-helpers";
-import { getPackageManager } from "./helpers";
+import {VirtualPackageManager} from "../modules/VirtualPackageManager";
+import type {ShellModule} from "../types/commands";
+import {ifFlag} from "./command-helpers";
+import {getPackageManager} from "./helpers";
 
 /**
  * APT package manager front-end (simulated).
@@ -14,10 +14,10 @@ export const aptCommand: ShellModule = {
 	description: "Package manager",
 	category: "package",
 	params: ["<install|remove|update|upgrade|search|show|list> [pkg...]"],
-	run: ({ args, shell, authUser }) => {
+	run: ({args, shell, authUser}) => {
 		const pm = getPackageManager(shell);
 		if (!pm) {
-			return { stderr: "apt: package manager not initialised", exitCode: 1 };
+			return {stderr: "apt: package manager not initialised", exitCode: 1};
 		}
 
 		const sub = args[0]?.toLowerCase();
@@ -40,22 +40,22 @@ export const aptCommand: ShellModule = {
 		switch (sub) {
 			case "install": {
 				if (pkgs.length === 0) {
-					return { stderr: "apt: no packages specified", exitCode: 1 };
+					return {stderr: "apt: no packages specified", exitCode: 1};
 				}
-				const { output, exitCode } = pm.install(pkgs, { quiet });
-				return { stdout: output || undefined, exitCode };
+				const {output, exitCode} = pm.install(pkgs, {quiet});
+				return {stdout: output || undefined, exitCode};
 			}
 
 			case "remove":
 			case "purge": {
 				if (pkgs.length === 0) {
-					return { stderr: "apt: no packages specified", exitCode: 1 };
+					return {stderr: "apt: no packages specified", exitCode: 1};
 				}
-				const { output, exitCode } = pm.remove(pkgs, {
+				const {output, exitCode} = pm.remove(pkgs, {
 					purge: sub === "purge" || purge,
 					quiet,
 				});
-				return { stdout: output || undefined, exitCode };
+				return {stdout: output || undefined, exitCode};
 			}
 
 			case "update": {
@@ -88,7 +88,7 @@ export const aptCommand: ShellModule = {
 			case "search": {
 				const term = pkgs[0];
 				if (!term) {
-					return { stderr: "apt: search requires a term", exitCode: 1 };
+					return {stderr: "apt: search requires a term", exitCode: 1};
 				}
 				const results = VirtualPackageManager.search(term);
 				if (results.length === 0) {
@@ -99,7 +99,7 @@ export const aptCommand: ShellModule = {
 				}
 				const lines = results.map(
 					(p) =>
-						`${p.name}/${p.section ?? "misc"} ${p.version} amd64\n  ${p.shortDesc ?? p.description}`,
+						`${p.name}/${p.section ?? "misc"} ${p.version} amd64\n  ${p.shortDesc ?? p.description}`
 				);
 				return {
 					stdout: `Sorting... Done\nFull Text Search... Done\n${lines.join("\n")}`,
@@ -110,7 +110,7 @@ export const aptCommand: ShellModule = {
 			case "show": {
 				const name = pkgs[0];
 				if (!name) {
-					return { stderr: "apt: show requires a package name", exitCode: 1 };
+					return {stderr: "apt: show requires a package name", exitCode: 1};
 				}
 				const info = pm.show(name);
 				if (!info) {
@@ -119,7 +119,7 @@ export const aptCommand: ShellModule = {
 						exitCode: 100,
 					};
 				}
-				return { stdout: info, exitCode: 0 };
+				return {stdout: info, exitCode: 0};
 			}
 
 			case "list": {
@@ -134,7 +134,7 @@ export const aptCommand: ShellModule = {
 					}
 					const lines = pkgList.map(
 						(p) =>
-							`${p.name}/${p.section} ${p.version} ${p.architecture} [installed]`,
+							`${p.name}/${p.section} ${p.version} ${p.architecture} [installed]`
 					);
 					return {
 						stdout: `Listing... Done\n${lines.join("\n")}`,
@@ -144,9 +144,9 @@ export const aptCommand: ShellModule = {
 				// all available
 				const all = VirtualPackageManager.listAvailable();
 				const lines = all.map(
-					(p) => `${p.name}/${p.section ?? "misc"} ${p.version} amd64`,
+					(p) => `${p.name}/${p.section ?? "misc"} ${p.version} amd64`
 				);
-				return { stdout: `Listing... Done\n${lines.join("\n")}`, exitCode: 0 };
+				return {stdout: `Listing... Done\n${lines.join("\n")}`, exitCode: 0};
 			}
 
 			default: {
@@ -181,7 +181,7 @@ export const aptCacheCommand: ShellModule = {
 	description: "Query the package cache",
 	category: "package",
 	params: ["<search|show|policy> [pkg]"],
-	run: ({ args, shell }) => {
+	run: ({args, shell}) => {
 		const pm = getPackageManager(shell);
 		if (!pm) {
 			return {
@@ -196,7 +196,7 @@ export const aptCacheCommand: ShellModule = {
 		switch (sub) {
 			case "search": {
 				if (!pkgName) {
-					return { stderr: "Need a search term", exitCode: 1 };
+					return {stderr: "Need a search term", exitCode: 1};
 				}
 				const results = VirtualPackageManager.search(pkgName);
 				return {
@@ -209,16 +209,16 @@ export const aptCacheCommand: ShellModule = {
 			}
 			case "show": {
 				if (!pkgName) {
-					return { stderr: "Need a package name", exitCode: 1 };
+					return {stderr: "Need a package name", exitCode: 1};
 				}
 				const info = pm.show(pkgName);
 				return info
-					? { stdout: info, exitCode: 0 }
-					: { stderr: `N: Unable to locate package ${pkgName}`, exitCode: 100 };
+					? {stdout: info, exitCode: 0}
+					: {stderr: `N: Unable to locate package ${pkgName}`, exitCode: 100};
 			}
 			case "policy": {
 				if (!pkgName) {
-					return { stderr: "Need a package name", exitCode: 1 };
+					return {stderr: "Need a package name", exitCode: 1};
 				}
 				const def = VirtualPackageManager.findInRegistry(pkgName);
 				if (!def) {

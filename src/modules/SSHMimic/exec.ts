@@ -4,9 +4,9 @@
  * Routes non-interactive SSH exec requests to the VirtualShell command runner.
  * Used by `ssh user@host "command"` and SCP protocol.
  */
-import { makeDefaultEnv, runCommand, userHome } from "../../commands";
-import type { ExecStream } from "../../types/streams";
-import type { VirtualShell } from "../VirtualShell";
+import {makeDefaultEnv, runCommand, userHome} from "../../commands";
+import type {ExecStream} from "../../types/streams";
+import type {VirtualShell} from "../VirtualShell";
 
 function toTtyLines(text: string): string {
 	return text
@@ -29,7 +29,7 @@ export function runExec(
 	cmd: string,
 	authUser: string,
 	hostname: string,
-	shell: VirtualShell,
+	shell: VirtualShell
 ): void {
 	runCommand(
 		cmd,
@@ -39,7 +39,7 @@ export function runExec(
 		userHome(authUser),
 		shell,
 		undefined,
-		makeDefaultEnv(authUser, hostname),
+		makeDefaultEnv(authUser, hostname)
 	)
 		.then((result) => {
 			if (result.stdout) {

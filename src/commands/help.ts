@@ -1,5 +1,5 @@
-import type { ShellModule } from "../types/commands";
-import { getCommandModulesPublic } from "./registry";
+import type {ShellModule} from "../types/commands";
+import {getCommandModulesPublic} from "./registry";
 
 // ─── category config ──────────────────────────────────────────────────────────
 
@@ -100,7 +100,7 @@ function renderDetail(mod: ShellModule): string {
 	const lines: string[] = [];
 
 	lines.push(
-		`${BOLD}${mod.name}${RESET} — ${mod.description ?? "no description"}`,
+		`${BOLD}${mod.name}${RESET} — ${mod.description ?? "no description"}`
 	);
 
 	if (mod.aliases?.length) {
@@ -138,13 +138,13 @@ export function createHelpCommand(): ShellModule {
 		description: "List all commands, or show usage for a specific command",
 		category: "shell",
 		params: ["[command]"],
-		run: ({ args }) => {
+		run: ({args}) => {
 			const modules = getCommandModulesPublic();
 
 			if (args[0]) {
 				const target = args[0].toLowerCase();
 				const mod = modules.find(
-					(m) => m.name === target || m.aliases?.includes(target),
+					(m) => m.name === target || m.aliases?.includes(target)
 				);
 				if (!mod) {
 					return {
@@ -152,10 +152,10 @@ export function createHelpCommand(): ShellModule {
 						exitCode: 1,
 					};
 				}
-				return { stdout: renderDetail(mod), exitCode: 0 };
+				return {stdout: renderDetail(mod), exitCode: 0};
 			}
 
-			return { stdout: renderFull(modules), exitCode: 0 };
+			return {stdout: renderFull(modules), exitCode: 0};
 		},
 	};
 }

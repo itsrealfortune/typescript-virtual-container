@@ -1,15 +1,15 @@
-import { EventEmitter } from "node:events";
+import {EventEmitter} from "node:events";
 import * as path from "node:path";
-import type { AuthenticationType, KeyboardAuthContext } from "ssh2";
-import { Server as SshServer } from "ssh2";
-import { userHome } from "../../commands";
-import type { VfsNodeStats } from "../../types/vfs";
-import type { PerfLogger } from "../../utils/perfLogger";
-import { createPerfLogger } from "../../utils/perfLogger";
+import type {AuthenticationType, KeyboardAuthContext} from "ssh2";
+import {Server as SshServer} from "ssh2";
+import {userHome} from "../../commands";
+import type {VfsNodeStats} from "../../types/vfs";
+import type {PerfLogger} from "../../utils/perfLogger";
+import {createPerfLogger} from "../../utils/perfLogger";
 import type VirtualFileSystem from "../VirtualFileSystem";
-import { VirtualShell } from "../VirtualShell";
-import type { VirtualUserManager } from "../VirtualUserManager";
-import { loadOrCreateHostKey } from "./hostKey";
+import {VirtualShell} from "../VirtualShell";
+import type {VirtualUserManager} from "../VirtualUserManager";
+import {loadOrCreateHostKey} from "./hostKey";
 // ── Dev-mode logger — silent in production ────────────────────────────────────
 const DEV = Boolean(process.env.DEV_MODE);
 const devLog = DEV ? console.log.bind(console) : () => {};
@@ -72,7 +72,7 @@ interface SftpAttributes {
 interface SftpServerStream {
 	on(
 		event: "OPEN",
-		listener: (reqid: number, filename: string, flags: number) => void,
+		listener: (reqid: number, filename: string, flags: number) => void
 	): this;
 	on(
 		event: "READ",
@@ -80,8 +80,8 @@ interface SftpServerStream {
 			reqid: number,
 			handle: Buffer,
 			offset: number,
-			length: number,
-		) => void,
+			length: number
+		) => void
 	): this;
 	on(
 		event: "WRITE",
@@ -89,8 +89,8 @@ interface SftpServerStream {
 			reqid: number,
 			handle: Buffer,
 			offset: number,
-			data: Buffer,
-		) => void,
+			data: Buffer
+		) => void
 	): this;
 	on(event: "FSTAT", listener: (reqid: number, handle: Buffer) => void): this;
 	on(event: "CLOSE", listener: (reqid: number, handle: Buffer) => void): this;
@@ -103,16 +103,16 @@ interface SftpServerStream {
 		listener: (
 			reqid: number,
 			handle: Buffer,
-			attrs: Partial<SftpAttributes>,
-		) => void,
+			attrs: Partial<SftpAttributes>
+		) => void
 	): this;
 	on(
 		event: "SETSTAT",
 		listener: (
 			reqid: number,
 			path: string,
-			attrs: Partial<SftpAttributes>,
-		) => void,
+			attrs: Partial<SftpAttributes>
+		) => void
 	): this;
 	on(event: "REALPATH", listener: (reqid: number, path: string) => void): this;
 	on(event: "MKDIR", listener: (reqid: number, path: string) => void): this;
@@ -120,7 +120,7 @@ interface SftpServerStream {
 	on(event: "REMOVE", listener: (reqid: number, path: string) => void): this;
 	on(
 		event: "RENAME",
-		listener: (reqid: number, oldPath: string, newPath: string) => void,
+		listener: (reqid: number, oldPath: string, newPath: string) => void
 	): this;
 	on(event: "READLINK", listener: (reqid: number) => void): this;
 	on(event: "SYMLINK", listener: (reqid: number) => void): this;
@@ -138,7 +138,7 @@ interface SftpServerStream {
 			filename: string;
 			longname: string;
 			attrs: SftpAttributes;
-		}>,
+		}>
 	): void;
 }
 
@@ -235,7 +235,7 @@ export class SftpMimic extends EventEmitter {
 	public async start(): Promise<number> {
 		if (this.port === undefined) {
 			throw new Error(
-				"SftpMimic: cannot start — no port configured (this instance is a subsystem handler only)",
+				"SftpMimic: cannot start — no port configured (this instance is a subsystem handler only)"
 			);
 		}
 		perf.mark("start");
@@ -274,7 +274,7 @@ export class SftpMimic extends EventEmitter {
 					authUser = username;
 					sessionId = this.getUsers().registerSession(
 						authUser,
-						remoteAddress,
+						remoteAddress
 					).id;
 
 					const homeRoot = "/home";
@@ -292,17 +292,17 @@ export class SftpMimic extends EventEmitter {
 							`Welcome to ${this._hostname}`,
 							{},
 							uid,
-							gid,
+							gid
 						);
 					}
 				};
 
 				client.on("authentication", (ctx) => {
 					const candidateUser = ctx.username || "root";
-					remoteAddress = (ctx as { ip?: string }).ip ?? remoteAddress;
+					remoteAddress = (ctx as {ip?: string}).ip ?? remoteAddress;
 
 					devLog(
-						`[SFTP] Auth attempt: user=${candidateUser}, method=${ctx.method}, ip=${remoteAddress}`,
+						`[SFTP] Auth attempt: user=${candidateUser}, method=${ctx.method}, ip=${remoteAddress}`
 					);
 
 					if (ctx.method === "password") {
@@ -310,7 +310,7 @@ export class SftpMimic extends EventEmitter {
 						if (!this.getUsers().hasPassword(candidateUser)) {
 							this.getUsers().ensureUser(candidateUser);
 							acceptSession(candidateUser);
-							this.emit("auth:success", { username: authUser, remoteAddress });
+							this.emit("auth:success", {username: authUser, remoteAddress});
 							ctx.accept();
 							return;
 						}
@@ -327,7 +327,7 @@ export class SftpMimic extends EventEmitter {
 						}
 
 						acceptSession(candidateUser);
-						this.emit("auth:success", { username: authUser, remoteAddress });
+						this.emit("auth:success", {username: authUser, remoteAddress});
 						ctx.accept();
 						return;
 					}
@@ -338,12 +338,12 @@ export class SftpMimic extends EventEmitter {
 						if (!this.getUsers().hasPassword(candidateUser)) {
 							this.getUsers().ensureUser(candidateUser);
 							acceptSession(candidateUser);
-							this.emit("auth:success", { username: authUser, remoteAddress });
+							this.emit("auth:success", {username: authUser, remoteAddress});
 							keyboardCtx.accept();
 							return;
 						}
 						keyboardCtx.prompt(
-							[{ prompt: "Password: ", echo: false }],
+							[{prompt: "Password: ", echo: false}],
 							(answers) => {
 								const password = answers[0] ?? "";
 								if (!this.getUsers().verifyPassword(candidateUser, password)) {
@@ -361,7 +361,7 @@ export class SftpMimic extends EventEmitter {
 									remoteAddress,
 								});
 								keyboardCtx.accept();
-							},
+							}
 						);
 						return;
 					}
@@ -371,7 +371,7 @@ export class SftpMimic extends EventEmitter {
 
 				client.on("close", () => {
 					this.getUsers().unregisterSession(sessionId);
-					this.emit("client:disconnect", { user: authUser });
+					this.emit("client:disconnect", {user: authUser});
 					sessionId = null;
 				});
 
@@ -390,7 +390,7 @@ export class SftpMimic extends EventEmitter {
 						});
 					});
 				});
-			},
+			}
 		);
 
 		return new Promise<number>((resolve, reject) => {
@@ -402,7 +402,7 @@ export class SftpMimic extends EventEmitter {
 						? address.port
 						: this.port;
 				devLog(`SFTP Mimic listening on port ${actualPort}`);
-				this.emit("start", { port: actualPort });
+				this.emit("start", {port: actualPort});
 				resolve(actualPort as number);
 			});
 		});
@@ -432,7 +432,7 @@ export class SftpMimic extends EventEmitter {
 	 */
 	private static _resolveRequestPath(
 		requestPath: string,
-		authUser: string,
+		authUser: string
 	): string {
 		const homePath = userHome(authUser);
 
@@ -459,7 +459,7 @@ export class SftpMimic extends EventEmitter {
 	 */
 	private static _isPathWithinHome(
 		targetPath: string,
-		authUser: string,
+		authUser: string
 	): boolean {
 		const homePath = userHome(authUser);
 		const normalized = path.posix.normalize(targetPath);
@@ -525,7 +525,7 @@ export class SftpMimic extends EventEmitter {
 			// Security: Confine to home directory
 			if (!SftpMimic._isPathWithinHome(targetPath, authUser)) {
 				devWarn(
-					`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${targetPath}`,
+					`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${targetPath}`
 				);
 				sftp.status(reqid, SFTP_STATUS_CODE.PERMISSION_DENIED);
 				return;
@@ -596,7 +596,7 @@ export class SftpMimic extends EventEmitter {
 
 				const chunk = entry.buffer.subarray(offset, offset + length);
 				sftp.data(reqid, chunk);
-			},
+			}
 		);
 
 		sftp.on(
@@ -617,7 +617,7 @@ export class SftpMimic extends EventEmitter {
 
 				data.copy(entry.buffer, offset);
 				sftp.status(reqid, SFTP_STATUS_CODE.OK);
-			},
+			}
 		);
 
 		sftp.on("FSTAT", (reqid: number, handle: Buffer) => {
@@ -664,7 +664,7 @@ export class SftpMimic extends EventEmitter {
 			// Security: Confine to home directory
 			if (!SftpMimic._isPathWithinHome(targetPath, authUser)) {
 				devWarn(
-					`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${targetPath}`,
+					`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${targetPath}`
 				);
 				sftp.status(reqid, SFTP_STATUS_CODE.PERMISSION_DENIED);
 				return;
@@ -708,7 +708,7 @@ export class SftpMimic extends EventEmitter {
 			const stats = getVfs().stat(filePath);
 			const attrs = SftpMimic._createAttrs(stats);
 			const longname = `${stats.type === "directory" ? "d" : "-"}${(stats.mode & 0o777).toString(8)} ${filename}`;
-			return sftp.name(reqid, [{ filename, longname, attrs }]);
+			return sftp.name(reqid, [{filename, longname, attrs}]);
 		});
 
 		sftp.on("STAT", (reqid: number, requestPath: string) => {
@@ -717,7 +717,7 @@ export class SftpMimic extends EventEmitter {
 			// Security: Confine to home directory
 			if (!SftpMimic._isPathWithinHome(targetPath, authUser)) {
 				devWarn(
-					`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${targetPath}`,
+					`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${targetPath}`
 				);
 				sftp.status(reqid, SFTP_STATUS_CODE.PERMISSION_DENIED);
 				return;
@@ -737,7 +737,7 @@ export class SftpMimic extends EventEmitter {
 			// Security: Confine to home directory
 			if (!SftpMimic._isPathWithinHome(targetPath, authUser)) {
 				devWarn(
-					`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${targetPath}`,
+					`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${targetPath}`
 				);
 				sftp.status(reqid, SFTP_STATUS_CODE.PERMISSION_DENIED);
 				return;
@@ -753,7 +753,7 @@ export class SftpMimic extends EventEmitter {
 
 		sftp.on(
 			"FSETSTAT",
-			(reqid: number, handle: Buffer, attrs: { mode?: number }) => {
+			(reqid: number, handle: Buffer, attrs: {mode?: number}) => {
 				const entry = this._getHandle(handle);
 				if (!entry) {
 					sftp.status(reqid, SFTP_STATUS_CODE.FAILURE);
@@ -768,18 +768,18 @@ export class SftpMimic extends EventEmitter {
 				} catch {
 					sftp.status(reqid, SFTP_STATUS_CODE.FAILURE);
 				}
-			},
+			}
 		);
 
 		sftp.on(
 			"SETSTAT",
-			(reqid: number, requestPath: string, attrs: { mode?: number }) => {
+			(reqid: number, requestPath: string, attrs: {mode?: number}) => {
 				const targetPath = SftpMimic._resolveRequestPath(requestPath, authUser);
 
 				// Security: Confine to home directory
 				if (!SftpMimic._isPathWithinHome(targetPath, authUser)) {
 					devWarn(
-						`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${targetPath}`,
+						`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${targetPath}`
 					);
 					sftp.status(reqid, SFTP_STATUS_CODE.PERMISSION_DENIED);
 					return;
@@ -793,7 +793,7 @@ export class SftpMimic extends EventEmitter {
 				} catch {
 					sftp.status(reqid, SFTP_STATUS_CODE.FAILURE);
 				}
-			},
+			}
 		);
 
 		sftp.on("REALPATH", (reqid: number, requestPath: string) => {
@@ -802,7 +802,7 @@ export class SftpMimic extends EventEmitter {
 			// Security: Confine to home directory
 			if (!SftpMimic._isPathWithinHome(normalized, authUser)) {
 				devWarn(
-					`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${normalized}`,
+					`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${normalized}`
 				);
 				sftp.status(reqid, SFTP_STATUS_CODE.PERMISSION_DENIED);
 				return;
@@ -830,7 +830,7 @@ export class SftpMimic extends EventEmitter {
 			// Security: Confine to home directory
 			if (!SftpMimic._isPathWithinHome(targetPath, authUser)) {
 				devWarn(
-					`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${targetPath}`,
+					`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${targetPath}`
 				);
 				sftp.status(reqid, SFTP_STATUS_CODE.PERMISSION_DENIED);
 				return;
@@ -850,14 +850,14 @@ export class SftpMimic extends EventEmitter {
 			// Security: Confine to home directory
 			if (!SftpMimic._isPathWithinHome(targetPath, authUser)) {
 				devWarn(
-					`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${targetPath}`,
+					`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${targetPath}`
 				);
 				sftp.status(reqid, SFTP_STATUS_CODE.PERMISSION_DENIED);
 				return;
 			}
 
 			try {
-				getVfs().remove(targetPath, { recursive: false });
+				getVfs().remove(targetPath, {recursive: false});
 				sftp.status(reqid, SFTP_STATUS_CODE.OK);
 			} catch {
 				sftp.status(reqid, SFTP_STATUS_CODE.FAILURE);
@@ -870,14 +870,14 @@ export class SftpMimic extends EventEmitter {
 			// Security: Confine to home directory
 			if (!SftpMimic._isPathWithinHome(targetPath, authUser)) {
 				devWarn(
-					`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${targetPath}`,
+					`[SFTP] Path traversal attempt blocked: user=${authUser}, path=${targetPath}`
 				);
 				sftp.status(reqid, SFTP_STATUS_CODE.PERMISSION_DENIED);
 				return;
 			}
 
 			try {
-				getVfs().remove(targetPath, { recursive: false });
+				getVfs().remove(targetPath, {recursive: false});
 				sftp.status(reqid, SFTP_STATUS_CODE.OK);
 			} catch {
 				sftp.status(reqid, SFTP_STATUS_CODE.FAILURE);
@@ -896,7 +896,7 @@ export class SftpMimic extends EventEmitter {
 				)
 			) {
 				devWarn(
-					`[SFTP] Path traversal attempt blocked: user=${authUser}, from=${fromPath}, to=${toPath}`,
+					`[SFTP] Path traversal attempt blocked: user=${authUser}, from=${fromPath}, to=${toPath}`
 				);
 				sftp.status(reqid, SFTP_STATUS_CODE.PERMISSION_DENIED);
 				return;

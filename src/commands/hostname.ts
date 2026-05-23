@@ -1,4 +1,4 @@
-import type { ShellModule } from "../types/commands";
+import type {ShellModule} from "../types/commands";
 
 /**
  * Print the configured hostname for the virtual shell.
@@ -10,5 +10,5 @@ export const hostnameCommand: ShellModule = {
 	description: "Print hostname",
 	category: "system",
 	params: [],
-	run: ({ hostname }) => ({ stdout: hostname, exitCode: 0 }),
+	run: ({hostname}) => ({stdout: hostname, exitCode: 0}),
 };

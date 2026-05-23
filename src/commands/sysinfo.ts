@@ -1,5 +1,5 @@
 import * as os from "node:os";
-import type { ShellModule } from "../types/commands";
+import type {ShellModule} from "../types/commands";
 
 /**
  * Display CPU architecture information
@@ -11,7 +11,7 @@ export const lscpuCommand: ShellModule = {
 	description: "Display CPU architecture information",
 	category: "system",
 	params: [],
-	run: ({ shell }) => {
+	run: ({shell}) => {
 		const hostCpus = os.cpus();
 		const cpuCap = shell.resourceCaps?.cpuCapCores;
 		const cpus =
@@ -32,7 +32,7 @@ export const lscpuCommand: ShellModule = {
 			"Socket(s):           1",
 			"Vendor ID:           GenuineIntel",
 		];
-		return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
+		return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
 	},
 };
 
@@ -52,7 +52,7 @@ export const lsusbCommand: ShellModule = {
 			"Bus 001 Device 002: ID 80ee:0021 VirtualBox USB Tablet",
 			"Bus 002 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub",
 		];
-		return { stdout: `${devices.join("\n")}\n`, exitCode: 0 };
+		return {stdout: `${devices.join("\n")}\n`, exitCode: 0};
 	},
 };
 
@@ -75,6 +75,6 @@ export const lspciCommand: ShellModule = {
 			"00:03.0 Ethernet controller: Intel Corporation 82540EM Gigabit Ethernet Controller",
 			"00:04.0 SATA controller: Intel Corporation 82801IR/IO (ICH9R) SATA Controller",
 		];
-		return { stdout: `${devices.join("\n")}\n`, exitCode: 0 };
+		return {stdout: `${devices.join("\n")}\n`, exitCode: 0};
 	},
 };

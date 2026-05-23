@@ -1,5 +1,5 @@
-import type { ShellModule } from "../types/commands";
-import { resolveModule } from "./registry";
+import type {ShellModule} from "../types/commands";
+import {resolveModule} from "./registry";
 
 /**
  * Describe how a command name would be interpreted (builtin, function, or file).
@@ -11,13 +11,13 @@ export const typeCommand: ShellModule = {
 	description: "Describe how a command would be interpreted",
 	category: "shell",
 	params: ["<command...>"],
-	run: ({ args, shell, env }) => {
+	run: ({args, shell, env}) => {
 		if (args.length === 0) {
-			return { stderr: "type: missing argument", exitCode: 1 };
+			return {stderr: "type: missing argument", exitCode: 1};
 		}
 
 		const pathDirs = (env?.vars?.PATH ?? "/usr/local/bin:/usr/bin:/bin").split(
-			":",
+			":"
 		);
 		const lines: string[] = [];
 		let exitCode = 0;
@@ -44,6 +44,6 @@ export const typeCommand: ShellModule = {
 			}
 		}
 
-		return { stdout: lines.join("\n"), exitCode };
+		return {stdout: lines.join("\n"), exitCode};
 	},
 };

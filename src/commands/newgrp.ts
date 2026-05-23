@@ -1,4 +1,4 @@
-import type { ShellModule } from "../types/commands";
+import type {ShellModule} from "../types/commands";
 
 /**
  * Switch primary group for current session.
@@ -10,7 +10,7 @@ export const newgrpCommand: ShellModule = {
 	description: "Switch primary group for current session",
 	category: "users",
 	params: ["[group]"],
-	run: ({ authUser, shell, args }) => {
+	run: ({authUser, shell, args}) => {
 		const groupName = args[0];
 
 		if (!groupName) {

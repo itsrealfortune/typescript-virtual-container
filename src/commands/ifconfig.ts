@@ -1,4 +1,4 @@
-import type { ShellModule } from "../types/commands";
+import type {ShellModule} from "../types/commands";
 
 /**
  * Configure network interface parameters (legacy command, use 'ip' instead).
@@ -13,14 +13,14 @@ export const ifconfigCommand: ShellModule = {
 	params: [
 		"[interface] [up|down] [inet <address>] [netmask <mask>] [mtu <size>]",
 	],
-	run: ({ args, shell }) => {
+	run: ({args, shell}) => {
 		const net = shell.network;
 		const ifaceName = args.find(
 			(a) =>
 				!(
 					a.startsWith("-") ||
 					["up", "down", "inet", "netmask", "mtu", "add", "del"].includes(a)
-				),
+				)
 		);
 
 		if (args.includes("-a") || (!ifaceName && args.length === 0)) {
@@ -38,12 +38,12 @@ export const ifconfigCommand: ShellModule = {
 
 			if (args.includes("up")) {
 				net.setInterfaceState(ifaceName, "UP");
-				return { exitCode: 0 };
+				return {exitCode: 0};
 			}
 
 			if (args.includes("down")) {
 				net.setInterfaceState(ifaceName, "DOWN");
-				return { exitCode: 0 };
+				return {exitCode: 0};
 			}
 
 			const inetIdx = args.indexOf("inet");
@@ -57,7 +57,7 @@ export const ifconfigCommand: ShellModule = {
 				if (addr) {
 					net.setInterfaceIp(ifaceName, addr, mask);
 				}
-				return { exitCode: 0 };
+				return {exitCode: 0};
 			}
 
 			const mtuIdx = args.indexOf("mtu");
@@ -66,7 +66,7 @@ export const ifconfigCommand: ShellModule = {
 				if (!Number.isNaN(mtu)) {
 					net.setInterfaceMtu(ifaceName, mtu);
 				}
-				return { exitCode: 0 };
+				return {exitCode: 0};
 			}
 
 			return _showInterface(iface);
@@ -77,8 +77,8 @@ export const ifconfigCommand: ShellModule = {
 };
 
 function _showAllInterfaces(
-	net: import("../modules/VirtualNetworkManager").VirtualNetworkManager,
-): { stdout: string; exitCode: number } {
+	net: import("../modules/VirtualNetworkManager").VirtualNetworkManager
+): {stdout: string; exitCode: number} {
 	const ifaces = net.getInterfaces();
 	const lines: string[] = [];
 
@@ -87,17 +87,17 @@ function _showAllInterfaces(
 		lines.push("");
 	}
 
-	return { stdout: lines.join("\n"), exitCode: 0 };
+	return {stdout: lines.join("\n"), exitCode: 0};
 }
 
 function _showInterface(
-	iface: import("../modules/VirtualNetworkManager/types").VirtualInterface,
-): { stdout: string; exitCode: number } {
-	return { stdout: `${_formatInterface(iface)}\n`, exitCode: 0 };
+	iface: import("../modules/VirtualNetworkManager/types").VirtualInterface
+): {stdout: string; exitCode: number} {
+	return {stdout: `${_formatInterface(iface)}\n`, exitCode: 0};
 }
 
 function _formatInterface(
-	iface: import("../modules/VirtualNetworkManager/types").VirtualInterface,
+	iface: import("../modules/VirtualNetworkManager/types").VirtualInterface
 ): string {
 	const flags = _getFlags(iface);
 	const lines: string[] = [];
@@ -110,7 +110,7 @@ function _formatInterface(
 	}
 
 	lines.push(
-		`        inet ${iface.ipv4}  netmask ${_cidrToMask(iface.ipv4Mask)}  broadcast ${_getBroadcast(iface.ipv4, iface.ipv4Mask)}`,
+		`        inet ${iface.ipv4}  netmask ${_cidrToMask(iface.ipv4Mask)}  broadcast ${_getBroadcast(iface.ipv4, iface.ipv4Mask)}`
 	);
 	lines.push(`        inet6 ${iface.ipv6}  prefixlen 64  scopeid 0x0 <link>`);
 
@@ -120,19 +120,19 @@ function _formatInterface(
 	const txPackets = Math.floor(txBytes / 64);
 
 	lines.push(
-		`        RX packets ${rxPackets}  bytes ${rxBytes} (${_formatBytes(rxBytes)})`,
+		`        RX packets ${rxPackets}  bytes ${rxBytes} (${_formatBytes(rxBytes)})`
 	);
 	lines.push("        RX errors 0  dropped 0  overruns 0  frame 0");
 	lines.push(
-		`        TX packets ${txPackets}  bytes ${txBytes} (${_formatBytes(txBytes)})`,
+		`        TX packets ${txPackets}  bytes ${txBytes} (${_formatBytes(txBytes)})`
 	);
 	lines.push(
-		"        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0",
+		"        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0"
 	);
 
 	if (iface.speed) {
 		lines.push(
-			`        Speed: ${iface.speed}Mb/s  Duplex: ${iface.duplex ?? "full"}`,
+			`        Speed: ${iface.speed}Mb/s  Duplex: ${iface.duplex ?? "full"}`
 		);
 	}
 
@@ -140,7 +140,7 @@ function _formatInterface(
 }
 
 function _getFlags(
-	iface: import("../modules/VirtualNetworkManager/types").VirtualInterface,
+	iface: import("../modules/VirtualNetworkManager/types").VirtualInterface
 ): number {
 	let flags = 0x1000;
 	if (iface.state === "UP") {
@@ -174,7 +174,7 @@ function _maskToCidr(mask: string): number {
 				(Number.parseInt(oct, 10)
 					? Number.parseInt(oct, 10).toString(2).split("1").length - 1
 					: 0),
-			0,
+			0
 		);
 }
 

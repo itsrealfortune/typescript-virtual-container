@@ -1,6 +1,6 @@
-import type { ShellModule } from "../types/commands";
-import { ifFlag } from "./command-helpers";
-import { resolvePath } from "./helpers";
+import type {ShellModule} from "../types/commands";
+import {ifFlag} from "./command-helpers";
+import {resolvePath} from "./helpers";
 
 /**
  * Read stdin and write to stdout and files simultaneously.
@@ -12,7 +12,7 @@ export const teeCommand: ShellModule = {
 	description: "Read stdin, write to stdout and files",
 	category: "text",
 	params: ["[-a] <file...>"],
-	run: ({ shell, cwd, args, stdin, uid, gid }) => {
+	run: ({shell, cwd, args, stdin, uid, gid}) => {
 		const append = ifFlag(args, ["-a"]);
 		const files = args.filter((a) => !a.startsWith("-"));
 		const input = stdin ?? "";
@@ -31,6 +31,6 @@ export const teeCommand: ShellModule = {
 				shell.vfs.writeFile(p, input, {}, uid, gid);
 			}
 		}
-		return { stdout: input, exitCode: 0 };
+		return {stdout: input, exitCode: 0};
 	},
 };

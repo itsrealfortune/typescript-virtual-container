@@ -1,8 +1,8 @@
-import { createHash } from "node:crypto";
+import {createHash} from "node:crypto";
 import * as path from "node:path";
-import type { ShellModule } from "../types/commands";
-import { parseArgs } from "./command-helpers";
-import { resolvePath } from "./helpers";
+import type {ShellModule} from "../types/commands";
+import {parseArgs} from "./command-helpers";
+import {resolvePath} from "./helpers";
 
 /**
  * Resolve symlinks and print absolute path
@@ -14,10 +14,10 @@ export const realpathCommand: ShellModule = {
 	description: "Resolve symlinks and print absolute path",
 	category: "files",
 	params: ["<path>"],
-	run: ({ shell, cwd, args }) => {
+	run: ({shell, cwd, args}) => {
 		const target = args.find((a) => !a.startsWith("-"));
 		if (!target) {
-			return { stderr: "realpath: missing operand\n", exitCode: 1 };
+			return {stderr: "realpath: missing operand\n", exitCode: 1};
 		}
 		const p = resolvePath(cwd, target);
 		if (!shell.vfs.exists(p)) {
@@ -27,7 +27,7 @@ export const realpathCommand: ShellModule = {
 			};
 		}
 		const resolved = shell.vfs.isSymlink(p) ? shell.vfs.resolveSymlink(p) : p;
-		return { stdout: `${path.posix.normalize(resolved)}\n`, exitCode: 0 };
+		return {stdout: `${path.posix.normalize(resolved)}\n`, exitCode: 0};
 	},
 };
 
@@ -41,10 +41,10 @@ export const md5sumCommand: ShellModule = {
 	description: "Compute MD5 hash of a file",
 	category: "text",
 	params: ["<file>"],
-	run: ({ shell, cwd, args }) => {
+	run: ({shell, cwd, args}) => {
 		const fileArg = args.find((a) => !a.startsWith("-"));
 		if (!fileArg) {
-			return { stderr: "md5sum: missing file operand\n", exitCode: 1 };
+			return {stderr: "md5sum: missing file operand\n", exitCode: 1};
 		}
 		const p = resolvePath(cwd, fileArg);
 		if (!shell.vfs.exists(p)) {
@@ -55,7 +55,7 @@ export const md5sumCommand: ShellModule = {
 		}
 		const content = shell.vfs.readFile(p);
 		const hash = createHash("md5").update(content).digest("hex");
-		return { stdout: `${hash}  ${fileArg}\n`, exitCode: 0 };
+		return {stdout: `${hash}  ${fileArg}\n`, exitCode: 0};
 	},
 };
 
@@ -69,10 +69,10 @@ export const sha256sumCommand: ShellModule = {
 	description: "Compute SHA256 hash of a file",
 	category: "text",
 	params: ["<file>"],
-	run: ({ shell, cwd, args }) => {
+	run: ({shell, cwd, args}) => {
 		const fileArg = args.find((a) => !a.startsWith("-"));
 		if (!fileArg) {
-			return { stderr: "sha256sum: missing file operand\n", exitCode: 1 };
+			return {stderr: "sha256sum: missing file operand\n", exitCode: 1};
 		}
 		const p = resolvePath(cwd, fileArg);
 		if (!shell.vfs.exists(p)) {
@@ -83,7 +83,7 @@ export const sha256sumCommand: ShellModule = {
 		}
 		const content = shell.vfs.readFile(p);
 		const hash = createHash("sha256").update(content).digest("hex");
-		return { stdout: `${hash}  ${fileArg}\n`, exitCode: 0 };
+		return {stdout: `${hash}  ${fileArg}\n`, exitCode: 0};
 	},
 };
 
@@ -97,10 +97,10 @@ export const stringsCommand: ShellModule = {
 	description: "Find printable strings in a file",
 	category: "text",
 	params: ["<file>"],
-	run: ({ shell, cwd, args }) => {
+	run: ({shell, cwd, args}) => {
 		const fileArg = args.find((a) => !a.startsWith("-"));
 		if (!fileArg) {
-			return { stderr: "strings: missing file operand\n", exitCode: 1 };
+			return {stderr: "strings: missing file operand\n", exitCode: 1};
 		}
 		const p = resolvePath(cwd, fileArg);
 		if (!shell.vfs.exists(p)) {
@@ -126,7 +126,7 @@ export const stringsCommand: ShellModule = {
 		if (current.length >= 4) {
 			results.push(current);
 		}
-		return { stdout: `${results.join("\n")}\n`, exitCode: 0 };
+		return {stdout: `${results.join("\n")}\n`, exitCode: 0};
 	},
 };
 
@@ -140,8 +140,8 @@ export const foldCommand: ShellModule = {
 	description: "Wrap lines to a specified width",
 	category: "text",
 	params: ["[-w width] <file>"],
-	run: ({ shell, cwd, args, stdin }) => {
-		const { flagsWithValues, positionals } = parseArgs(args, {
+	run: ({shell, cwd, args, stdin}) => {
+		const {flagsWithValues, positionals} = parseArgs(args, {
 			flagsWithValue: ["-w"],
 		});
 		const width = Number.parseInt(flagsWithValues.get("-w") || "80", 10);
@@ -162,7 +162,7 @@ export const foldCommand: ShellModule = {
 		}
 
 		if (!input) {
-			return { exitCode: 0 };
+			return {exitCode: 0};
 		}
 
 		const lines = input.split("\n");
@@ -176,7 +176,7 @@ export const foldCommand: ShellModule = {
 			}
 			return parts.join("\n");
 		});
-		return { stdout: folded.join("\n"), exitCode: 0 };
+		return {stdout: folded.join("\n"), exitCode: 0};
 	},
 };
 
@@ -190,13 +190,13 @@ export const expandCommand: ShellModule = {
 	description: "Convert tabs to spaces",
 	category: "text",
 	params: ["[-t tabs] <file>"],
-	run: ({ shell, cwd, args, stdin }) => {
-		const { flagsWithValues, positionals } = parseArgs(args, {
+	run: ({shell, cwd, args, stdin}) => {
+		const {flagsWithValues, positionals} = parseArgs(args, {
 			flagsWithValue: ["-t", "--tabs"],
 		});
 		const tabstop = Number.parseInt(
 			flagsWithValues.get("-t") || flagsWithValues.get("--tabs") || "8",
-			10,
+			10
 		);
 		const fileArg = positionals[0];
 
@@ -215,11 +215,11 @@ export const expandCommand: ShellModule = {
 		}
 
 		if (!input) {
-			return { exitCode: 0 };
+			return {exitCode: 0};
 		}
 
 		const expanded = input.replace(/\t/g, " ".repeat(tabstop));
-		return { stdout: expanded, exitCode: 0 };
+		return {stdout: expanded, exitCode: 0};
 	},
 };
 
@@ -233,8 +233,8 @@ export const fmtCommand: ShellModule = {
 	description: "Simple text formatter",
 	category: "text",
 	params: ["[-w width] <file>"],
-	run: ({ shell, cwd, args, stdin }) => {
-		const { flagsWithValues, positionals } = parseArgs(args, {
+	run: ({shell, cwd, args, stdin}) => {
+		const {flagsWithValues, positionals} = parseArgs(args, {
 			flagsWithValue: ["-w"],
 		});
 		const width = Number.parseInt(flagsWithValues.get("-w") || "75", 10);
@@ -255,7 +255,7 @@ export const fmtCommand: ShellModule = {
 		}
 
 		if (!input) {
-			return { exitCode: 0 };
+			return {exitCode: 0};
 		}
 
 		const words = input.replace(/\n/g, " ").split(/\s+/).filter(Boolean);
@@ -274,6 +274,6 @@ export const fmtCommand: ShellModule = {
 		if (current) {
 			lines.push(current);
 		}
-		return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
+		return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
 	},
 };

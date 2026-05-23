@@ -12,8 +12,8 @@
  */
 
 import * as net from "node:net";
-import type { VirtualShell } from "./VirtualShell";
-import type { VirtualSwitch } from "./VirtualSwitch";
+import type {VirtualShell} from "./VirtualShell";
+import type {VirtualSwitch} from "./VirtualSwitch";
 
 /** A port forwarding rule. */
 interface ForwardRule {
@@ -40,7 +40,7 @@ export class VirtualProxy {
 	private readonly _baie: {
 		getVM: (name: string) => VirtualShell | undefined;
 		switch: VirtualSwitch;
-		listVMs: () => Array<{ hostname: string; ip: string; shell: VirtualShell }>;
+		listVMs: () => Array<{hostname: string; ip: string; shell: VirtualShell}>;
 	};
 	private _forwards: ForwardRule[] = [];
 	private _socksServer: net.Server | null = null;
@@ -48,7 +48,7 @@ export class VirtualProxy {
 	constructor(baie: {
 		getVM: (name: string) => VirtualShell | undefined;
 		switch: VirtualSwitch;
-		listVMs: () => Array<{ hostname: string; ip: string; shell: VirtualShell }>;
+		listVMs: () => Array<{hostname: string; ip: string; shell: VirtualShell}>;
 	}) {
 		this._baie = baie;
 	}
@@ -93,7 +93,7 @@ export class VirtualProxy {
 		});
 
 		server.listen(hostPort, "127.0.0.1", () => {
-			this._forwards.push({ vmName, vmPort, hostPort, server });
+			this._forwards.push({vmName, vmPort, hostPort, server});
 		});
 	}
 

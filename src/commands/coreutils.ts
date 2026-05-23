@@ -1,5 +1,5 @@
-import type { ShellModule } from "../types/commands";
-import { resolvePath } from "./helpers";
+import type {ShellModule} from "../types/commands";
+import {resolvePath} from "./helpers";
 
 /**
  * timeout — run command with time limit (simulated: just runs the command)
@@ -11,12 +11,12 @@ export const timeoutCommand: ShellModule = {
 	description: "Run command with time limit",
 	category: "shell",
 	params: ["<duration>", "<command>", "[args...]"],
-	run: async ({ args, authUser, hostname, mode, cwd, shell, env, stdin }) => {
+	run: async ({args, authUser, hostname, mode, cwd, shell, env, stdin}) => {
 		// First arg is duration (ignored in simulation), rest is the command
 		if (args.length < 2) {
-			return { stderr: "timeout: missing operand", exitCode: 1 };
+			return {stderr: "timeout: missing operand", exitCode: 1};
 		}
-		const { runCommand } = await import("./runtime");
+		const {runCommand} = await import("./runtime");
 		const cmd = args.slice(1).join(" ");
 		return runCommand(cmd, authUser, hostname, mode, cwd, shell, stdin, env);
 	},
@@ -32,7 +32,7 @@ export const mktempCommand: ShellModule = {
 	description: "Create a temporary file or directory",
 	category: "shell",
 	params: ["[-d]", "[TEMPLATE]"],
-	run: ({ args, shell, authUser }) => {
+	run: ({args, shell, authUser}) => {
 		const isDir = args.includes("-d");
 		const templateArg =
 			args.find((a) => !a.startsWith("-")) ?? "tmp.XXXXXXXXXX";
@@ -58,7 +58,7 @@ export const mktempCommand: ShellModule = {
 				exitCode: 1,
 			};
 		}
-		return { stdout: path, exitCode: 0 };
+		return {stdout: path, exitCode: 0};
 	},
 };
 
@@ -72,10 +72,10 @@ export const nprocCommand: ShellModule = {
 	description: "Print number of processing units",
 	category: "system",
 	params: ["[--all]"],
-	run: ({ shell }) => {
+	run: ({shell}) => {
 		const cap = shell.resourceCaps?.cpuCapCores;
 		const count = cap !== undefined && cap > 0 ? cap : 4;
-		return { stdout: `${count}`, exitCode: 0 };
+		return {stdout: `${count}`, exitCode: 0};
 	},
 };
 
@@ -89,7 +89,7 @@ export const waitCommand: ShellModule = {
 	description: "Wait for background jobs to finish",
 	category: "shell",
 	params: ["[job_id...]"],
-	run: () => ({ exitCode: 0 }),
+	run: () => ({exitCode: 0}),
 };
 
 /**
@@ -102,14 +102,14 @@ export const shufCommand: ShellModule = {
 	description: "Shuffle lines of input randomly",
 	category: "text",
 	params: ["[-n count]", "[-i lo-hi]", "[file]"],
-	run: ({ args, stdin, shell, cwd }) => {
+	run: ({args, stdin, shell, cwd}) => {
 		// -i lo-hi: generate range
 		const iIdx = args.indexOf("-i");
 		if (iIdx !== -1) {
 			const range = args[iIdx + 1] ?? "";
 			const m = range.match(/^(-?\d+)-(-?\d+)$/);
 			if (!m) {
-				return { stderr: "shuf: invalid range", exitCode: 1 };
+				return {stderr: "shuf: invalid range", exitCode: 1};
 			}
 			const lo = Number.parseInt(m[1] as string, 10);
 			const hi = Number.parseInt(m[2] as string, 10);
@@ -124,7 +124,7 @@ export const shufCommand: ShellModule = {
 			const nIdx = args.indexOf("-n");
 			const count =
 				nIdx === -1 ? nums.length : Number.parseInt(args[nIdx + 1] ?? "0", 10);
-			return { stdout: nums.slice(0, count).join("\n"), exitCode: 0 };
+			return {stdout: nums.slice(0, count).join("\n"), exitCode: 0};
 		}
 
 		// file or stdin
@@ -148,7 +148,7 @@ export const shufCommand: ShellModule = {
 		const nIdx = args.indexOf("-n");
 		const count =
 			nIdx === -1 ? lines.length : Number.parseInt(args[nIdx + 1] ?? "0", 10);
-		return { stdout: lines.slice(0, count).join("\n"), exitCode: 0 };
+		return {stdout: lines.slice(0, count).join("\n"), exitCode: 0};
 	},
 };
 
@@ -162,7 +162,7 @@ export const pasteCommand: ShellModule = {
 	description: "Merge lines of files",
 	category: "text",
 	params: ["[-d delimiter]", "file..."],
-	run: ({ args, stdin, shell, cwd }) => {
+	run: ({args, stdin, shell, cwd}) => {
 		let delim = "\t";
 		const files: string[] = [];
 		let i = 0;
@@ -194,7 +194,7 @@ export const pasteCommand: ShellModule = {
 		for (let row = 0; row < maxLen; row++) {
 			out.push(sources.map((s) => s[row] ?? "").join(delim));
 		}
-		return { stdout: out.join("\n"), exitCode: 0 };
+		return {stdout: out.join("\n"), exitCode: 0};
 	},
 };
 
@@ -208,7 +208,7 @@ export const tacCommand: ShellModule = {
 	description: "Concatenate files in reverse line order",
 	category: "text",
 	params: ["[file...]"],
-	run: ({ args, stdin, shell, cwd }) => {
+	run: ({args, stdin, shell, cwd}) => {
 		let input = "";
 		if (args.length === 0 || (args.length === 1 && args[0] === "-")) {
 			input = stdin ?? "";
@@ -229,7 +229,7 @@ export const tacCommand: ShellModule = {
 		if (lines[lines.length - 1] === "") {
 			lines.pop();
 		}
-		return { stdout: lines.reverse().join("\n"), exitCode: 0 };
+		return {stdout: lines.reverse().join("\n"), exitCode: 0};
 	},
 };
 
@@ -243,7 +243,7 @@ export const nlCommand: ShellModule = {
 	description: "Number lines of files",
 	category: "text",
 	params: ["[-ba] [-nrz] [file]"],
-	run: ({ args, stdin, shell, cwd }) => {
+	run: ({args, stdin, shell, cwd}) => {
 		const fileArg = args.find((a) => !a.startsWith("-"));
 		let input = stdin ?? "";
 		if (fileArg) {
@@ -267,7 +267,7 @@ export const nlCommand: ShellModule = {
 			}
 			return `${String(n++).padStart(6)}\t${l}`;
 		});
-		return { stdout: out.join("\n"), exitCode: 0 };
+		return {stdout: out.join("\n"), exitCode: 0};
 	},
 };
 
@@ -281,12 +281,12 @@ export const columnCommand: ShellModule = {
 	description: "Columnate lists",
 	category: "text",
 	params: ["[-t]", "[-s sep]", "[file]"],
-	run: ({ args, stdin, shell, cwd }) => {
+	run: ({args, stdin, shell, cwd}) => {
 		const tableMode = args.includes("-t");
 		const sIdx = args.indexOf("-s");
 		const sep = sIdx === -1 ? /\s+/ : (args[sIdx + 1] ?? "\t");
 		const fileArg = args.find(
-			(a) => !a.startsWith("-") && a !== args[sIdx + 1],
+			(a) => !a.startsWith("-") && a !== args[sIdx + 1]
 		);
 		let input = stdin ?? "";
 		if (fileArg) {
@@ -303,7 +303,7 @@ export const columnCommand: ShellModule = {
 
 		if (tableMode) {
 			const rows = lines.map((l) =>
-				typeof sep === "string" ? l.split(sep) : l.split(sep),
+				typeof sep === "string" ? l.split(sep) : l.split(sep)
 			);
 			const colWidths: number[] = [];
 			for (const row of rows) {
@@ -315,12 +315,12 @@ export const columnCommand: ShellModule = {
 				row
 					.map((cell, ci) => cell.padEnd(colWidths[ci] ?? 0))
 					.join("  ")
-					.trimEnd(),
+					.trimEnd()
 			);
-			return { stdout: out.join("\n"), exitCode: 0 };
+			return {stdout: out.join("\n"), exitCode: 0};
 		}
 
 		// Default: fill columns (simple: just output as-is)
-		return { stdout: lines.join("\n"), exitCode: 0 };
+		return {stdout: lines.join("\n"), exitCode: 0};
 	},
 };

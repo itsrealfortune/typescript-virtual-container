@@ -1,5 +1,5 @@
-import type { ShellModule } from "../types/commands";
-import { ifFlag } from "./command-helpers";
+import type {ShellModule} from "../types/commands";
+import {ifFlag} from "./command-helpers";
 /**
  * Manage shell aliases (list / set / remove).
  * @category shell
@@ -10,9 +10,9 @@ export const aliasCommand: ShellModule = {
 	description: "Define or display aliases",
 	category: "shell",
 	params: ["[name[=value] ...]"],
-	run: ({ args, env }) => {
+	run: ({args, env}) => {
 		if (!env) {
-			return { exitCode: 0 };
+			return {exitCode: 0};
 		}
 
 		// Aliases stored in env.vars under prefix __alias_
@@ -20,7 +20,7 @@ export const aliasCommand: ShellModule = {
 			const aliases = Object.entries(env.vars)
 				.filter(([k]) => k.startsWith("__alias_"))
 				.map(([k, v]) => `alias ${k.slice("__alias_".length)}='${v}'`);
-			return { stdout: aliases.join("\n") || "", exitCode: 0 };
+			return {stdout: aliases.join("\n") || "", exitCode: 0};
 		}
 
 		const lines: string[] = [];
@@ -32,7 +32,7 @@ export const aliasCommand: ShellModule = {
 				if (val) {
 					lines.push(`alias ${arg}='${val}'`);
 				} else {
-					return { stderr: `alias: ${arg}: not found`, exitCode: 1 };
+					return {stderr: `alias: ${arg}: not found`, exitCode: 1};
 				}
 			} else {
 				// Set alias
@@ -42,7 +42,7 @@ export const aliasCommand: ShellModule = {
 			}
 		}
 
-		return { stdout: lines.join("\n") || undefined, exitCode: 0 };
+		return {stdout: lines.join("\n") || undefined, exitCode: 0};
 	},
 };
 
@@ -56,9 +56,9 @@ export const unaliasCommand: ShellModule = {
 	description: "Remove alias definitions",
 	category: "shell",
 	params: ["<name...> | -a"],
-	run: ({ args, env }) => {
+	run: ({args, env}) => {
 		if (!env) {
-			return { exitCode: 0 };
+			return {exitCode: 0};
 		}
 
 		if (ifFlag(args, ["-a"])) {
@@ -67,12 +67,12 @@ export const unaliasCommand: ShellModule = {
 					delete env.vars[k];
 				}
 			}
-			return { exitCode: 0 };
+			return {exitCode: 0};
 		}
 
 		for (const name of args) {
 			delete env.vars[`__alias_${name}`];
 		}
-		return { exitCode: 0 };
+		return {exitCode: 0};
 	},
 };

@@ -19,7 +19,7 @@ export function getFlag(argv: string[], name: string): boolean {
 export function getOptionString(
 	argv: string[],
 	name: string,
-	fallback: string,
+	fallback: string
 ): string {
 	const prefix = `${name}=`;
 	for (let i = 0; i < argv.length; i++) {
@@ -46,7 +46,7 @@ export function getOptionString(
 export function getOptionInt(
 	argv: string[],
 	name: string,
-	fallback: number,
+	fallback: number
 ): number {
 	const prefix = `${name}=`;
 	for (let i = 0; i < argv.length; i++) {

@@ -1,4 +1,4 @@
-import type { ShellModule } from "../types/commands";
+import type {ShellModule} from "../types/commands";
 
 /**
  * Trace the route packets take to a network host.
@@ -11,7 +11,7 @@ export const tracerouteCommand: ShellModule = {
 	category: "network",
 	aliases: ["tracepath", "tracert"],
 	params: ["[options] <host>"],
-	run: ({ args, shell }) => {
+	run: ({args, shell}) => {
 		const net = shell.network;
 		const host = args.find((a) => !a.startsWith("-"));
 
@@ -28,7 +28,7 @@ export const tracerouteCommand: ShellModule = {
 
 		const lines: string[] = [];
 		lines.push(
-			`traceroute to ${host} (${_resolveHost(host, shell)}), ${maxTtl} hops max, 60 byte packets`,
+			`traceroute to ${host} (${_resolveHost(host, shell)}), ${maxTtl} hops max, 60 byte packets`
 		);
 
 		const hopPath = _generateHopPath(host, net);
@@ -58,7 +58,7 @@ export const tracerouteCommand: ShellModule = {
 			}
 		}
 
-		return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
+		return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
 	},
 };
 
@@ -73,7 +73,7 @@ interface Hop {
 
 function _generateHopPath(
 	host: string,
-	net: import("../modules/VirtualNetworkManager").VirtualNetworkManager,
+	net: import("../modules/VirtualNetworkManager").VirtualNetworkManager
 ): Hop[] {
 	const resolved = _resolveHostSimple(host);
 	const hops: Hop[] = [];
@@ -83,14 +83,14 @@ function _generateHopPath(
 		"10.0.0.1";
 
 	const intermediateHops = [
-		{ ip: gateway, hostname: "gateway.local", baseLatency: 1, jitter: 0.5 },
+		{ip: gateway, hostname: "gateway.local", baseLatency: 1, jitter: 0.5},
 		{
 			ip: "192.168.1.1",
 			hostname: "isp-router-1.isp.net",
 			baseLatency: 5,
 			jitter: 2,
 		},
-		{ ip: "10.10.0.1", hostname: "core-1.isp.net", baseLatency: 10, jitter: 3 },
+		{ip: "10.10.0.1", hostname: "core-1.isp.net", baseLatency: 10, jitter: 3},
 		{
 			ip: "172.16.0.1",
 			hostname: "peer-exchange.net",
@@ -129,7 +129,7 @@ function _generateHopPath(
 
 function _resolveHost(
 	host: string,
-	_shell: import("../modules/VirtualShell").VirtualShell,
+	_shell: import("../modules/VirtualShell").VirtualShell
 ): string {
 	if (host === "localhost" || host === "127.0.0.1") {
 		return "127.0.0.1";
@@ -163,7 +163,7 @@ function _hashString(str: string): number {
 function _parseIntArg(
 	args: string[],
 	flag: string,
-	defaultVal: number,
+	defaultVal: number
 ): number {
 	const idx = args.indexOf(flag);
 	if (idx === -1) {

@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/suspicious/noControlCharactersInRegex: binary magic bytes detection */
-import type { ShellModule } from "../types/commands";
-import { resolvePath } from "./helpers";
+import type {ShellModule} from "../types/commands";
+import {resolvePath} from "./helpers";
 
 const MAGIC: [RegExp | ((s: string) => boolean), string][] = [
 	[(s) => s.startsWith("\x7fELF"), "ELF 64-bit LSB executable, x86-64"],
@@ -32,9 +32,9 @@ export const fileCommand: ShellModule = {
 	description: "Determine file type",
 	category: "files",
 	params: ["<file>..."],
-	run: ({ args, cwd, shell }) => {
+	run: ({args, cwd, shell}) => {
 		if (!args.length) {
-			return { stderr: "file: missing operand", exitCode: 1 };
+			return {stderr: "file: missing operand", exitCode: 1};
 		}
 		const lines: string[] = [];
 		let exitCode = 0;
@@ -64,6 +64,6 @@ export const fileCommand: ShellModule = {
 			}
 			lines.push(`${arg}: ${type}`);
 		}
-		return { stdout: lines.join("\n"), exitCode };
+		return {stdout: lines.join("\n"), exitCode};
 	},
 };

@@ -1,5 +1,5 @@
-import type { ShellModule } from "../types/commands";
-import { assertPathAccess, resolvePath } from "./helpers";
+import type {ShellModule} from "../types/commands";
+import {assertPathAccess, resolvePath} from "./helpers";
 
 /**
  * AWK pattern scanning — supports BEGIN/END, /regex/, NR/NF conditions, field ops,
@@ -13,7 +13,7 @@ export const awkCommand: ShellModule = {
 	description: "Pattern scanning and processing language",
 	category: "text",
 	params: ["[-F sep] [-v var=val] '<program>' [file]"],
-	run: ({ authUser, args, stdin, cwd, shell }) => {
+	run: ({authUser, args, stdin, cwd, shell}) => {
 		// Parse flags
 		let sep = " ";
 		const initVars: Record<string, string> = {};
@@ -50,7 +50,7 @@ export const awkCommand: ShellModule = {
 		const prog = positionals[0];
 		const fileArg = positionals[1];
 		if (!prog) {
-			return { stderr: "awk: no program", exitCode: 1 };
+			return {stderr: "awk: no program", exitCode: 1};
 		}
 
 		let input = stdin ?? "";
@@ -101,7 +101,7 @@ export const awkCommand: ShellModule = {
 			vars: AWKVars,
 			fields: string[],
 			nr: number,
-			nf: number,
+			nf: number
 		): string | number {
 			expr = expr.trim();
 			if (expr === "") {
@@ -154,7 +154,7 @@ export const awkCommand: ShellModule = {
 			const lenM = expr.match(/^length\s*\(([^)]*)\)$/);
 			if (lenM) {
 				return strVal(
-					evalExpr((lenM[1] as string).trim(), vars, fields, nr, nf),
+					evalExpr((lenM[1] as string).trim(), vars, fields, nr, nf)
 				).length;
 			}
 
@@ -162,7 +162,7 @@ export const awkCommand: ShellModule = {
 			if (substrM) {
 				const parts2 = splitCSV(substrM[1] as string);
 				const s = strVal(
-					evalExpr(parts2[0]?.trim() ?? "", vars, fields, nr, nf),
+					evalExpr(parts2[0]?.trim() ?? "", vars, fields, nr, nf)
 				);
 				const start =
 					numVal(evalExpr(parts2[1]?.trim() ?? "1", vars, fields, nr, nf)) - 1;
@@ -179,10 +179,10 @@ export const awkCommand: ShellModule = {
 			if (indexM) {
 				const parts2 = splitCSV(indexM[1] as string);
 				const s = strVal(
-					evalExpr(parts2[0]?.trim() ?? "", vars, fields, nr, nf),
+					evalExpr(parts2[0]?.trim() ?? "", vars, fields, nr, nf)
 				);
 				const t = strVal(
-					evalExpr(parts2[1]?.trim() ?? "", vars, fields, nr, nf),
+					evalExpr(parts2[1]?.trim() ?? "", vars, fields, nr, nf)
 				);
 				return s.indexOf(t) + 1;
 			}
@@ -190,21 +190,21 @@ export const awkCommand: ShellModule = {
 			const tolowerM = expr.match(/^tolower\s*\((.+)\)$/);
 			if (tolowerM) {
 				return strVal(
-					evalExpr((tolowerM[1] as string).trim(), vars, fields, nr, nf),
+					evalExpr((tolowerM[1] as string).trim(), vars, fields, nr, nf)
 				).toLowerCase();
 			}
 
 			const toupperM = expr.match(/^toupper\s*\((.+)\)$/);
 			if (toupperM) {
 				return strVal(
-					evalExpr((toupperM[1] as string).trim(), vars, fields, nr, nf),
+					evalExpr((toupperM[1] as string).trim(), vars, fields, nr, nf)
 				).toUpperCase();
 			}
 
 			const matchM = expr.match(/^match\s*\((.+),\s*\/(.+)\/\)$/);
 			if (matchM) {
 				const s = strVal(
-					evalExpr((matchM[1] as string).trim(), vars, fields, nr, nf),
+					evalExpr((matchM[1] as string).trim(), vars, fields, nr, nf)
 				);
 				try {
 					const m = s.match(new RegExp(matchM[2] as string));
@@ -229,7 +229,7 @@ export const awkCommand: ShellModule = {
 					vars,
 					fields,
 					nr,
-					nf,
+					nf
 				);
 				return numVal(cond) !== 0 || (typeof cond === "string" && cond !== "")
 					? evalExpr((ternM[2] as string).trim(), vars, fields, nr, nf)
@@ -238,7 +238,7 @@ export const awkCommand: ShellModule = {
 
 			// String concatenation (space between two quoted/var exprs)
 			const concatM = expr.match(
-				/^((?:"[^"]*"|[A-Za-z_$][A-Za-z0-9_$]*|\d+))\s+((?:"[^"]*"|[A-Za-z_$][A-Za-z0-9_$]*|\d+))$/,
+				/^((?:"[^"]*"|[A-Za-z_$][A-Za-z0-9_$]*|\d+))\s+((?:"[^"]*"|[A-Za-z_$][A-Za-z0-9_$]*|\d+))$/
 			);
 			if (concatM) {
 				return (
@@ -254,10 +254,10 @@ export const awkCommand: ShellModule = {
 					.replace(/\bNF\b/g, String(nf))
 					.replace(/\$NF\b/g, String(nf > 0 ? numVal(fields[nf - 1]) : 0))
 					.replace(/\$(\d+)/g, (_, n) =>
-						String(numVal(fields[Number.parseInt(n, 10) - 1])),
+						String(numVal(fields[Number.parseInt(n, 10) - 1]))
 					)
 					.replace(/\b([A-Za-z_][A-Za-z0-9_]*)\b/g, (_, v) =>
-						String(numVal(vars[v])),
+						String(numVal(vars[v]))
 					);
 				// biome-ignore lint/nursery/noImpliedEval: awk expression evaluator needs dynamic code execution
 				const result = Function(`"use strict"; return (${subst});`)();
@@ -299,7 +299,7 @@ export const awkCommand: ShellModule = {
 			fields: string[],
 			nr: number,
 			nf: number,
-			out: string[],
+			out: string[]
 		): "next" | "exit" | "ok" {
 			stmt = stmt.trim();
 			if (!stmt || stmt.startsWith("#")) {
@@ -330,7 +330,7 @@ export const awkCommand: ShellModule = {
 				out.push(
 					parts2
 						.map((p) => strVal(evalExpr(p.trim(), vars, fields, nr, nf)))
-						.join("\t"),
+						.join("\t")
 				);
 				return "ok";
 			}
@@ -350,7 +350,7 @@ export const awkCommand: ShellModule = {
 				const rest2 = stmt.slice(subM[0].length).replace(/^\s*,\s*/, "");
 				const parts2 = splitCSV(rest2.replace(/\)\s*$/, ""));
 				const rep = strVal(
-					evalExpr(parts2[0]?.trim() ?? '""', vars, fields, nr, nf),
+					evalExpr(parts2[0]?.trim() ?? '""', vars, fields, nr, nf)
 				);
 				// target: if 3rd arg is $N, modify field; else modify $0
 				const target = parts2[1]?.trim();
@@ -378,7 +378,7 @@ export const awkCommand: ShellModule = {
 			if (splitM) {
 				const parts2 = splitCSV(splitM[1] as string);
 				const s = strVal(
-					evalExpr(parts2[0]?.trim() ?? "", vars, fields, nr, nf),
+					evalExpr(parts2[0]?.trim() ?? "", vars, fields, nr, nf)
 				);
 				const arrName = parts2[1]?.trim() ?? "arr";
 				const fs2 = parts2[2]
@@ -402,12 +402,12 @@ export const awkCommand: ShellModule = {
 
 			// var += / -= / *= / /= / %= expr
 			const assignOpM = stmt.match(
-				/^([A-Za-z_][A-Za-z0-9_[\]]*)\s*(\+=|-=|\*=|\/=|%=)\s*(.+)$/,
+				/^([A-Za-z_][A-Za-z0-9_[\]]*)\s*(\+=|-=|\*=|\/=|%=)\s*(.+)$/
 			);
 			if (assignOpM) {
 				const cur = numVal(vars[assignOpM[1] as string]);
 				const rhs = numVal(
-					evalExpr(assignOpM[3] as string, vars, fields, nr, nf),
+					evalExpr(assignOpM[3] as string, vars, fields, nr, nf)
 				);
 				const op2 = assignOpM[2] as string;
 				let res = cur;
@@ -434,7 +434,7 @@ export const awkCommand: ShellModule = {
 					vars,
 					fields,
 					nr,
-					nf,
+					nf
 				);
 				return "ok";
 			}
@@ -449,11 +449,11 @@ export const awkCommand: ShellModule = {
 			vars: AWKVars,
 			fields: string[],
 			nr: number,
-			nf: number,
+			nf: number
 		): string {
 			const parts2 = splitCSV(fmtStr);
 			const fmt = strVal(
-				evalExpr(parts2[0]?.trim() ?? '""', vars, fields, nr, nf),
+				evalExpr(parts2[0]?.trim() ?? '""', vars, fields, nr, nf)
 			);
 			const fmtArgs = parts2
 				.slice(1)
@@ -474,7 +474,7 @@ export const awkCommand: ShellModule = {
 						result = numVal(val2).toFixed(
 							spec?.includes(".")
 								? Number.parseInt(spec.split(".")[1] ?? "6", 10)
-								: 6,
+								: 6
 						);
 					} else if (type2 === "s" || type2 === "q") {
 						result = strVal(val2);
@@ -493,7 +493,7 @@ export const awkCommand: ShellModule = {
 						result = result.padEnd(-width);
 					}
 					return result;
-				},
+				}
 			);
 		}
 
@@ -526,7 +526,7 @@ export const awkCommand: ShellModule = {
 
 				if (progTrim[j] !== "{") {
 					if (pat) {
-						clauses.push({ pattern: pat, action: "print $0" });
+						clauses.push({pattern: pat, action: "print $0"});
 					}
 					break;
 				}
@@ -549,7 +549,7 @@ export const awkCommand: ShellModule = {
 					action += c;
 					j++;
 				}
-				clauses.push({ pattern: pat, action: action.trim() });
+				clauses.push({pattern: pat, action: action.trim()});
 			}
 		}
 
@@ -572,14 +572,14 @@ export const awkCommand: ShellModule = {
 		const beginClauses = clauses.filter((c) => c.pattern === "BEGIN");
 		const endClauses = clauses.filter((c) => c.pattern === "END");
 		const mainClauses = clauses.filter(
-			(c) => c.pattern !== "BEGIN" && c.pattern !== "END",
+			(c) => c.pattern !== "BEGIN" && c.pattern !== "END"
 		);
 
 		function runAction(
 			action: string,
 			fields: string[],
 			nr: number,
-			nf: number,
+			nf: number
 		): "next" | "exit" | "ok" {
 			// Split action into statements by ; or newline (not inside strings/parens)
 			const stmts = splitStmts(action);
@@ -640,7 +640,7 @@ export const awkCommand: ShellModule = {
 			line: string,
 			fields: string[],
 			nr: number,
-			nf: number,
+			nf: number
 		): boolean {
 			if (!pattern) {
 				return true;
@@ -665,10 +665,10 @@ export const awkCommand: ShellModule = {
 			const cmpM = pattern.match(/^(.+?)\s*([=!<>]=?|==)\s*(.+)$/);
 			if (cmpM) {
 				const lhs = numVal(
-					evalExpr((cmpM[1] as string).trim(), vars, fields, nr, nf),
+					evalExpr((cmpM[1] as string).trim(), vars, fields, nr, nf)
 				);
 				const rhs = numVal(
-					evalExpr((cmpM[3] as string).trim(), vars, fields, nr, nf),
+					evalExpr((cmpM[3] as string).trim(), vars, fields, nr, nf)
 				);
 				switch (cmpM[2]) {
 					case "==":

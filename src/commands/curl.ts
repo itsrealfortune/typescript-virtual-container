@@ -1,6 +1,6 @@
-import type { ShellModule } from "../types/commands";
-import { ifFlag, parseArgs } from "./command-helpers";
-import { assertPathAccess, resolvePath } from "./helpers";
+import type {ShellModule} from "../types/commands";
+import {ifFlag, parseArgs} from "./command-helpers";
+import {assertPathAccess, resolvePath} from "./helpers";
 
 /**
  * HTTP client wrapper using `fetch()` semantics (virtual curl).
@@ -12,8 +12,8 @@ export const curlCommand: ShellModule = {
 	description: "Transfer data from or to a server (pure fetch)",
 	category: "network",
 	params: ["[options] <url>"],
-	run: async ({ authUser, cwd, args, shell, uid, gid }) => {
-		const { flagsWithValues, positionals } = parseArgs(args, {
+	run: async ({authUser, cwd, args, shell, uid, gid}) => {
+		const {flagsWithValues, positionals} = parseArgs(args, {
 			flagsWithValue: [
 				"-o",
 				"--output",
@@ -47,7 +47,7 @@ export const curlCommand: ShellModule = {
 
 		const url = positionals.find((a) => !a.startsWith("-"));
 		if (!url) {
-			return { stderr: "curl: no URL specified", exitCode: 1 };
+			return {stderr: "curl: no URL specified", exitCode: 1};
 		}
 
 		const outputPath =
@@ -94,7 +94,7 @@ export const curlCommand: ShellModule = {
 			stderrLines.push(`* Trying ${url}...`, "* Connected");
 			stderrLines.push(
 				`> ${finalMethod} / HTTP/1.1`,
-				`> Host: ${new URL(url).host}`,
+				`> Host: ${new URL(url).host}`
 			);
 		}
 
@@ -115,7 +115,7 @@ export const curlCommand: ShellModule = {
 				"tcp",
 				undefined,
 				parsedUrl.hostname,
-				dstPort,
+				dstPort
 			);
 			if (fwAction === "DROP" || fwAction === "REJECT") {
 				return {
@@ -141,14 +141,14 @@ export const curlCommand: ShellModule = {
 			for (const [k, v] of response.headers.entries()) {
 				lines.push(`${k}: ${v}`);
 			}
-			return { stdout: `${lines.join("\r\n")}\r\n`, exitCode: 0 };
+			return {stdout: `${lines.join("\r\n")}\r\n`, exitCode: 0};
 		}
 
 		let body: string;
 		try {
 			body = await response.text();
 		} catch {
-			return { stderr: "curl: failed to read response body", exitCode: 1 };
+			return {stderr: "curl: failed to read response body", exitCode: 1};
 		}
 
 		if (outputPath) {
@@ -157,7 +157,7 @@ export const curlCommand: ShellModule = {
 			shell.vfs.writeFile(target, body, {}, uid, gid);
 			if (!silent) {
 				stderrLines.push(
-					`  % Total    % Received\n100 ${body.length}  100 ${body.length}`,
+					`  % Total    % Received\n100 ${body.length}  100 ${body.length}`
 				);
 			}
 			return {

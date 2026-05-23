@@ -1,5 +1,5 @@
-import type { ShellModule } from "../types/commands";
-import { ifFlag } from "./command-helpers";
+import type {ShellModule} from "../types/commands";
+import {ifFlag} from "./command-helpers";
 
 function unescapeTrSet(s: string): string {
 	return s
@@ -42,7 +42,7 @@ export const trCommand: ShellModule = {
 	description: "Translate or delete characters",
 	category: "text",
 	params: ["[-d] [-s] <set1> [set2]"],
-	run: ({ args, stdin }) => {
+	run: ({args, stdin}) => {
 		const del = ifFlag(args, ["-d"]);
 		const squeeze = ifFlag(args, ["-s"]);
 		const positionals = args.filter((a) => !a.startsWith("-"));
@@ -60,7 +60,7 @@ export const trCommand: ShellModule = {
 			for (let i = 0; i < set1chars.length; i++) {
 				map.set(
 					set1chars[i] as string,
-					set2chars[i] ?? set2chars[set2chars.length - 1] ?? "",
+					set2chars[i] ?? set2chars[set2chars.length - 1] ?? ""
 				);
 			}
 			input = [...input].map((c) => map.get(c) ?? c).join("");
@@ -72,6 +72,6 @@ export const trCommand: ShellModule = {
 			input = input.replace(/(.)\1+/g, (_, c) => (squeezeSet.has(c) ? c : _));
 		}
 
-		return { stdout: input, exitCode: 0 };
+		return {stdout: input, exitCode: 0};
 	},
 };

@@ -1,7 +1,7 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { VirtualShell, VirtualSshServer, SshClient } from "../src";
-import { runExec } from "../src/modules/SSHMimic/exec";
-import type { ExecStream } from "../src/types/streams";
+import {afterAll, beforeAll, describe, expect, test} from "bun:test";
+import {VirtualShell, VirtualSshServer, SshClient} from "../src";
+import {runExec} from "../src/modules/SSHMimic/exec";
+import type {ExecStream} from "../src/types/streams";
 
 let shell: VirtualShell;
 let ssh: VirtualSshServer;
@@ -12,7 +12,7 @@ beforeAll(async () => {
 	shell = new VirtualShell("exec-test");
 	await shell.ensureInitialized();
 	shell.users.setPassword("root", "root");
-	ssh = new VirtualSshServer({ port: 0, shell });
+	ssh = new VirtualSshServer({port: 0, shell});
 	port = await ssh.start();
 	client = new SshClient();
 	await client.connect({
@@ -36,7 +36,7 @@ describe("runExec", () => {
 			write: (s: string) => {
 				written.push(s);
 			},
-			stderr: { write: () => {} },
+			stderr: {write: () => {}},
 			exit: () => {},
 			end: () => {},
 		};

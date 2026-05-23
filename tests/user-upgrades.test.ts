@@ -1,7 +1,7 @@
-import { describe, expect, test } from "bun:test";
+import {describe, expect, test} from "bun:test";
 import VirtualFileSystem from "../src/modules/VirtualFileSystem";
-import { VirtualUserManager } from "../src/modules/VirtualUserManager";
-import { VirtualGroupManager } from "../src/modules/VirtualUserManager/groups";
+import {VirtualUserManager} from "../src/modules/VirtualUserManager";
+import {VirtualGroupManager} from "../src/modules/VirtualUserManager/groups";
 
 function makeVfs() {
 	return new VirtualFileSystem();
@@ -354,7 +354,7 @@ describe("Password aging", () => {
 		const users = new VirtualUserManager(vfs);
 		users.initialize();
 		expect(() => users.setPasswordAging("nobody", 0, 90)).toThrow(
-			"does not exist",
+			"does not exist"
 		);
 	});
 });

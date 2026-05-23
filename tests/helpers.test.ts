@@ -1,22 +1,22 @@
-import { describe, expect, test } from "bun:test";
-import { assertPathAccess } from "../src/commands/helpers";
+import {describe, expect, test} from "bun:test";
+import {assertPathAccess} from "../src/commands/helpers";
 
 describe("assertPathAccess", () => {
 	test("blocks non-root access to auth store", () => {
 		expect(() => assertPathAccess("alice", "/etc/htpasswd", "cat")).toThrow(
-			"cat: permission denied: /etc/htpasswd",
+			"cat: permission denied: /etc/htpasswd"
 		);
 	});
 
 	test("allows root access to auth store", () => {
 		expect(() =>
-			assertPathAccess("root", "/etc/htpasswd", "cat"),
+			assertPathAccess("root", "/etc/htpasswd", "cat")
 		).not.toThrow();
 	});
 
 	test("allows non-root access outside protected paths", () => {
 		expect(() =>
-			assertPathAccess("alice", "/home/alice/README.txt", "cat"),
+			assertPathAccess("alice", "/home/alice/README.txt", "cat")
 		).not.toThrow();
 	});
 
@@ -49,19 +49,19 @@ describe("assertPathAccess", () => {
 
 	test("different commands have proper error messages", () => {
 		expect(() => assertPathAccess("alice", "/etc/htpasswd", "grep")).toThrow(
-			"grep: permission denied: /etc/htpasswd",
+			"grep: permission denied: /etc/htpasswd"
 		);
 	});
 
 	test("different commands (ls) have proper error messages", () => {
 		expect(() => assertPathAccess("alice", "/etc/htpasswd", "ls")).toThrow(
-			"ls: permission denied: /etc/htpasswd",
+			"ls: permission denied: /etc/htpasswd"
 		);
 	});
 
 	test("root access to home directories", () => {
 		expect(() =>
-			assertPathAccess("root", "/home/alice/private.txt", "cat"),
+			assertPathAccess("root", "/home/alice/private.txt", "cat")
 		).not.toThrow();
 	});
 
@@ -75,7 +75,7 @@ describe("assertPathAccess", () => {
 
 	test("blocks specific protected paths only", () => {
 		expect(() =>
-			assertPathAccess("alice", "/etc/public.txt", "cat"),
+			assertPathAccess("alice", "/etc/public.txt", "cat")
 		).not.toThrow();
 	});
 });

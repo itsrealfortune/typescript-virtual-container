@@ -11,7 +11,7 @@ export function expandPs1(
 	user: string,
 	host: string,
 	cwd: string,
-	readlineMode = false,
+	readlineMode = false
 ): string {
 	const home = user === "root" ? "/root" : `/home/${user}`;
 	const withTilde =
@@ -58,7 +58,7 @@ export function buildPrompt(
 	cwdName: string,
 	ps1?: string,
 	fullCwd?: string,
-	readlineMode = false,
+	readlineMode = false
 ): string {
 	if (ps1) {
 		return expandPs1(ps1, user, host, fullCwd ?? cwdName, readlineMode);

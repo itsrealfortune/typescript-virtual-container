@@ -13,10 +13,10 @@
  * await client.disconnect();
  * ```
  */
-import type { ClientChannel, ConnectConfig } from "ssh2";
-import { Client } from "ssh2";
-import type { CommandResult } from "../../types/commands";
-import { type PerfLogger, createPerfLogger } from "../../utils/perfLogger";
+import type {ClientChannel, ConnectConfig} from "ssh2";
+import {Client} from "ssh2";
+import type {CommandResult} from "../../types/commands";
+import {type PerfLogger, createPerfLogger} from "../../utils/perfLogger";
 
 const perf: PerfLogger = createPerfLogger("SshClient");
 
@@ -119,7 +119,7 @@ export class SshClient {
 					command,
 					(err: Error | undefined, stream: ClientChannel) => {
 						if (err) {
-							resolve({ stderr: err.message, exitCode: 1 });
+							resolve({stderr: err.message, exitCode: 1});
 							return;
 						}
 
@@ -168,7 +168,7 @@ export class SshClient {
 						stream.stderr?.on("data", (data: Buffer) => {
 							stderr += data.toString();
 						});
-					},
+					}
 				);
 			});
 		}
@@ -183,7 +183,7 @@ export class SshClient {
 				prefixedCommand,
 				(err: Error | undefined, stream: ClientChannel) => {
 					if (err) {
-						resolve({ stderr: err.message, exitCode: 1 });
+						resolve({stderr: err.message, exitCode: 1});
 						return;
 					}
 
@@ -208,7 +208,7 @@ export class SshClient {
 					stream.stderr?.on("data", (data: Buffer) => {
 						stderr += data.toString();
 					});
-				},
+				}
 			);
 		});
 	}

@@ -1,4 +1,4 @@
-import type { ShellModule } from "../types/commands";
+import type {ShellModule} from "../types/commands";
 
 /**
  * Always return success (exit code 0).
@@ -10,7 +10,7 @@ export const trueCommand: ShellModule = {
 	description: "Return success exit code",
 	category: "shell",
 	params: [],
-	run: () => ({ exitCode: 0 }),
+	run: () => ({exitCode: 0}),
 };
 
 /**
@@ -23,5 +23,5 @@ export const falseCommand: ShellModule = {
 	description: "Return failure exit code",
 	category: "shell",
 	params: [],
-	run: () => ({ exitCode: 1 }),
+	run: () => ({exitCode: 1}),
 };

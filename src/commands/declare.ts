@@ -1,5 +1,5 @@
-import type { ShellModule } from "../types/commands";
-import { ifFlag } from "./command-helpers";
+import type {ShellModule} from "../types/commands";
+import {ifFlag} from "./command-helpers";
 
 /**
  * Declare variables and give them attributes (integer, readonly, export, array).
@@ -12,9 +12,9 @@ export const declareCommand: ShellModule = {
 	description: "Declare variables and give them attributes",
 	category: "shell",
 	params: ["[-i] [-r] [-x] [-a] [name[=value]...]"],
-	run: ({ args, env }) => {
+	run: ({args, env}) => {
 		if (!env) {
-			return { exitCode: 0 };
+			return {exitCode: 0};
 		}
 
 		const integer = ifFlag(args, ["-i"]);
@@ -22,9 +22,9 @@ export const declareCommand: ShellModule = {
 
 		if (printAll) {
 			const lines = Object.entries(env.vars).map(
-				([k, v]) => `declare -- ${k}="${v}"`,
+				([k, v]) => `declare -- ${k}="${v}"`
 			);
-			return { stdout: lines.join("\n"), exitCode: 0 };
+			return {stdout: lines.join("\n"), exitCode: 0};
 		}
 
 		const assignments = args.filter((a) => !a.startsWith("-"));
@@ -46,6 +46,6 @@ export const declareCommand: ShellModule = {
 			}
 		}
 
-		return { exitCode: 0 };
+		return {exitCode: 0};
 	},
 };

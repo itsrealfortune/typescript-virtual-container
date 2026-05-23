@@ -8,8 +8,8 @@
  * Public API:
  *  - ThunarManager — class managing file browser state and DOM rendering
  */
-import type { VirtualShell } from "../modules/VirtualShell";
-import type { DesktopWindow, ThunarContent } from "./desktopManager";
+import type {VirtualShell} from "../modules/VirtualShell";
+import type {DesktopWindow, ThunarContent} from "./desktopManager";
 
 function copyPath(path: string): void {
 	navigator.clipboard.writeText(path).catch(() => {
@@ -59,7 +59,7 @@ export class ThunarManager {
 	 */
 	constructor(
 		private _host: ThunarHost,
-		container: HTMLElement,
+		container: HTMLElement
 	) {
 		this._container = container;
 		this._setupEvents(container);
@@ -69,7 +69,7 @@ export class ThunarManager {
 		// Double-click on Thunar entries
 		container.addEventListener("dblclick", (e) => {
 			const entry = (e.target as HTMLElement).closest(
-				".thunar-entry",
+				".thunar-entry"
 			) as HTMLElement | null;
 			if (!entry) {
 				return;
@@ -87,7 +87,7 @@ export class ThunarManager {
 					w.content.path = path;
 					w.title = `Thunar: ${path}`;
 					const wEl = container.querySelector(
-						`.desktop-window[data-win-id="${w.id}"] .win-content`,
+						`.desktop-window[data-win-id="${w.id}"] .win-content`
 					) as HTMLElement | null;
 					if (wEl) {
 						wEl.removeAttribute("data-thunar-path");
@@ -103,7 +103,7 @@ export class ThunarManager {
 		// Context menu on Thunar entries and empty space
 		container.addEventListener("contextmenu", (e) => {
 			const winEl = (e.target as HTMLElement).closest(
-				".desktop-window",
+				".desktop-window"
 			) as HTMLElement | null;
 			const winId = winEl?.getAttribute("data-win-id") ?? null;
 			const w = winId ? this._host.windows.find((ww) => ww.id === winId) : null;
@@ -112,7 +112,7 @@ export class ThunarManager {
 				e.preventDefault();
 				e.stopPropagation();
 				const entry = (e.target as HTMLElement).closest(
-					".thunar-entry",
+					".thunar-entry"
 				) as HTMLElement | null;
 				if (entry) {
 					const path = entry.getAttribute("data-path");
@@ -148,13 +148,13 @@ export class ThunarManager {
 										action: () => {
 											if (type === "directory") {
 												const w2 = this._host.windows.find(
-													(ww) => ww.id === winId,
+													(ww) => ww.id === winId
 												);
 												if (w2 && w2.content.type === "thunar") {
 													w2.content.path = path;
 													w2.title = `Thunar: ${path}`;
 													const wEl = container.querySelector(
-														`.desktop-window[data-win-id="${w2.id}"] .win-content`,
+														`.desktop-window[data-win-id="${w2.id}"] .win-content`
 													) as HTMLElement | null;
 													if (wEl) {
 														wEl.removeAttribute("data-thunar-path");
@@ -182,7 +182,7 @@ export class ThunarManager {
 										danger: true,
 										action: () => this._moveToTrash(path, winId),
 									},
-								],
+								]
 					);
 				} else {
 					const thunarPath = w.content.path;
@@ -208,7 +208,7 @@ export class ThunarManager {
 		// Thunar pathbar click → inline edit
 		container.addEventListener("click", (e) => {
 			const pathbar = (e.target as HTMLElement).closest(
-				".thunar-pathbar",
+				".thunar-pathbar"
 			) as HTMLElement | null;
 			if (!pathbar || pathbar.querySelector("input")) {
 				return;
@@ -235,7 +235,7 @@ export class ThunarManager {
 				thunarContent.path = targetPath;
 				w.title = `Thunar: ${targetPath}`;
 				const contentArea = winEl.querySelector(
-					".win-content",
+					".win-content"
 				) as HTMLElement | null;
 				if (contentArea) {
 					contentArea.removeAttribute("data-thunar-path");
@@ -266,7 +266,7 @@ export class ThunarManager {
 
 		container.addEventListener("dragstart", (e) => {
 			const entry = (e.target as HTMLElement).closest(
-				".thunar-entry",
+				".thunar-entry"
 			) as HTMLElement | null;
 			if (!entry) {
 				return;
@@ -285,7 +285,7 @@ export class ThunarManager {
 
 		container.addEventListener("dragover", (e) => {
 			const entry = (e.target as HTMLElement).closest(
-				".thunar-entry",
+				".thunar-entry"
 			) as HTMLElement | null;
 			if (entry && entry.getAttribute("data-type") === "directory") {
 				e.preventDefault();
@@ -294,7 +294,7 @@ export class ThunarManager {
 
 		container.addEventListener("dragenter", (e) => {
 			const entry = (e.target as HTMLElement).closest(
-				".thunar-entry",
+				".thunar-entry"
 			) as HTMLElement | null;
 			if (entry && entry.getAttribute("data-type") === "directory") {
 				entry.classList.add("drag-over");
@@ -303,7 +303,7 @@ export class ThunarManager {
 
 		container.addEventListener("dragleave", (e) => {
 			const entry = (e.target as HTMLElement).closest(
-				".thunar-entry",
+				".thunar-entry"
 			) as HTMLElement | null;
 			if (entry) {
 				entry.classList.remove("drag-over");
@@ -318,7 +318,7 @@ export class ThunarManager {
 			}
 
 			const entry = (e.target as HTMLElement).closest(
-				".thunar-entry",
+				".thunar-entry"
 			) as HTMLElement | null;
 			if (!entry) {
 				return;
@@ -348,7 +348,7 @@ export class ThunarManager {
 					this._host.shell.vfs.remove(srcPath);
 				}
 				const srcWinEl = (e.target as HTMLElement).closest(
-					".desktop-window",
+					".desktop-window"
 				) as HTMLElement | null;
 				const srcWinId = srcWinEl?.getAttribute("data-win-id");
 				if (srcWinId) {
@@ -436,7 +436,7 @@ export class ThunarManager {
 			return;
 		}
 		const wEl = this._container.querySelector(
-			`.desktop-window[data-win-id="${winId}"] .win-content`,
+			`.desktop-window[data-win-id="${winId}"] .win-content`
 		) as HTMLElement | null;
 		if (wEl) {
 			wEl.removeAttribute("data-thunar-path");
@@ -458,7 +458,7 @@ export class ThunarManager {
 			this._host.shell.vfs.remove(path);
 		} catch {
 			try {
-				this._host.shell.vfs.remove(path, { recursive: true });
+				this._host.shell.vfs.remove(path, {recursive: true});
 			} catch {
 				/* ignore */
 			}
@@ -481,7 +481,7 @@ export class ThunarManager {
 
 	private _trashDelete(path: string, winId: string | null): void {
 		try {
-			this._host.shell.vfs.remove(path, { recursive: true });
+			this._host.shell.vfs.remove(path, {recursive: true});
 		} catch {
 			/* ignore */
 		}

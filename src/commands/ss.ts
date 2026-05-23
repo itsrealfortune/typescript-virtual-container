@@ -1,4 +1,4 @@
-import type { ShellModule } from "../types/commands";
+import type {ShellModule} from "../types/commands";
 
 /**
  * Show network connections, routing tables, and interface statistics.
@@ -11,7 +11,7 @@ export const ssCommand: ShellModule = {
 	category: "network",
 	aliases: ["netstat"],
 	params: ["[options] [FILTER]"],
-	run: ({ args, shell }) => {
+	run: ({args, shell}) => {
 		const net = shell.network;
 		const showTcp =
 			args.includes("-t") || args.includes("--tcp") || args.length === 0;
@@ -37,7 +37,7 @@ export const ssCommand: ShellModule = {
 
 		if (showTcp || showAll) {
 			lines.push(
-				"State      Recv-Q Send-Q Local Address:Port               Peer Address:Port",
+				"State      Recv-Q Send-Q Local Address:Port               Peer Address:Port"
 			);
 			const connections = _getSimulatedConnections("tcp", showNumeric);
 			for (const conn of connections) {
@@ -62,7 +62,7 @@ export const ssCommand: ShellModule = {
 				lines.push("");
 			}
 			lines.push(
-				"State      Recv-Q Send-Q Local Address:Port               Peer Address:Port",
+				"State      Recv-Q Send-Q Local Address:Port               Peer Address:Port"
 			);
 			const connections = _getSimulatedConnections("udp", showNumeric);
 			for (const conn of connections) {
@@ -75,11 +75,11 @@ export const ssCommand: ShellModule = {
 
 		if (lines.length === 0) {
 			lines.push(
-				"State      Recv-Q Send-Q Local Address:Port               Peer Address:Port",
+				"State      Recv-Q Send-Q Local Address:Port               Peer Address:Port"
 			);
 		}
 
-		return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
+		return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
 	},
 };
 
@@ -95,7 +95,7 @@ interface SimulatedConnection {
 
 function _getSimulatedConnections(
 	protocol: string,
-	_numeric: boolean,
+	_numeric: boolean
 ): SimulatedConnection[] {
 	const connections: SimulatedConnection[] = [
 		{
@@ -172,8 +172,8 @@ function _getSimulatedConnections(
 }
 
 function _showSummary(
-	net: import("../modules/VirtualNetworkManager").VirtualNetworkManager,
-): { stdout: string; exitCode: number } {
+	net: import("../modules/VirtualNetworkManager").VirtualNetworkManager
+): {stdout: string; exitCode: number} {
 	const conntrackCount = net.getConntrackCount();
 	const conntrackMax = net.getConntrackMax();
 	const ifaces = net.getInterfaces();
@@ -189,15 +189,15 @@ function _showSummary(
 		`Conntrack entries: ${conntrackCount}/${conntrackMax}`,
 	];
 
-	return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
+	return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
 }
 
 function _showConntrack(
-	net: import("../modules/VirtualNetworkManager").VirtualNetworkManager,
-): { stdout: string; exitCode: number } {
+	net: import("../modules/VirtualNetworkManager").VirtualNetworkManager
+): {stdout: string; exitCode: number} {
 	const entries = net.getConntrack();
 	if (entries.length === 0) {
-		return { stdout: "ipv4     conntrack v0.1.0 (0 entries)\n", exitCode: 0 };
+		return {stdout: "ipv4     conntrack v0.1.0 (0 entries)\n", exitCode: 0};
 	}
 
 	const lines = [
@@ -207,7 +207,7 @@ function _showConntrack(
 		`entries: ${entries.length}  max: ${net.getConntrackMax()}`,
 	];
 
-	return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
+	return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
 }
 
 function _getSimulatedConnectionCount(protocol?: string): number {

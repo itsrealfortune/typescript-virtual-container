@@ -1,6 +1,6 @@
-import type { ShellModule } from "../types/commands";
-import { ifFlag } from "./command-helpers";
-import { resolvePath } from "./helpers";
+import type {ShellModule} from "../types/commands";
+import {ifFlag} from "./command-helpers";
+import {resolvePath} from "./helpers";
 
 /**
  * Stream editor — supports s/pat/rep/[gI], d, p, q, =, addresses (N, /re/, N,M, /re/,/re/, $).
@@ -12,7 +12,7 @@ export const sedCommand: ShellModule = {
 	description: "Stream editor for filtering and transforming text",
 	category: "text",
 	params: ["[-n] [-e <expr>] [file]"],
-	run: ({ shell, cwd, args, stdin, uid, gid }) => {
+	run: ({shell, cwd, args, stdin, uid, gid}) => {
 		const inPlace = ifFlag(args, ["-i"]);
 		const suppressAuto = ifFlag(args, ["-n"]);
 
@@ -47,7 +47,7 @@ export const sedCommand: ShellModule = {
 		// If only one positional collected as expr and no file yet, check for file after
 		// Re-parse: first non-flag that follows all -e is the file
 		if (exprs.length === 0) {
-			return { stderr: "sed: no expression", exitCode: 1 };
+			return {stderr: "sed: no expression", exitCode: 1};
 		}
 
 		// Re-check: if exprs[0] was set from positional, remaining positionals are files
@@ -87,9 +87,9 @@ export const sedCommand: ShellModule = {
 
 		// Parse each expression into instructions
 		type Addr =
-			| { type: "line"; n: number }
-			| { type: "last" }
-			| { type: "regex"; re: RegExp };
+			| {type: "line"; n: number}
+			| {type: "last"}
+			| {type: "regex"; re: RegExp};
 		type Instr =
 			| {
 					op: "s";
@@ -100,23 +100,23 @@ export const sedCommand: ShellModule = {
 					global: boolean;
 					print: boolean;
 			  }
-			| { op: "d"; addr1?: Addr; addr2?: Addr }
-			| { op: "p"; addr1?: Addr; addr2?: Addr }
-			| { op: "q"; addr1?: Addr }
-			| { op: "="; addr1?: Addr; addr2?: Addr };
+			| {op: "d"; addr1?: Addr; addr2?: Addr}
+			| {op: "p"; addr1?: Addr; addr2?: Addr}
+			| {op: "q"; addr1?: Addr}
+			| {op: "="; addr1?: Addr; addr2?: Addr};
 
 		function parseAddr(s: string): [Addr | undefined, string] {
 			if (!s) {
 				return [undefined, s];
 			}
 			if (s[0] === "$") {
-				return [{ type: "last" }, s.slice(1)];
+				return [{type: "last"}, s.slice(1)];
 			}
 			if (/^\d/.test(s)) {
 				const m = s.match(/^(\d+)(.*)/s);
 				if (m) {
 					return [
-						{ type: "line", n: Number.parseInt(m[1] as string, 10) },
+						{type: "line", n: Number.parseInt(m[1] as string, 10)},
 						m[2] as string,
 					];
 				}
@@ -126,7 +126,7 @@ export const sedCommand: ShellModule = {
 				if (end !== -1) {
 					try {
 						const re = new RegExp(s.slice(1, end));
-						return [{ type: "regex", re }, s.slice(end + 1)];
+						return [{type: "regex", re}, s.slice(end + 1)];
 					} catch {
 						/* bad regex */
 					}
@@ -165,11 +165,11 @@ export const sedCommand: ShellModule = {
 					// s/from/to/flags
 					const delim = rest[1] ?? "/";
 					const sRe = new RegExp(
-						`^s${re(delim)}((?:[^${re(delim)}\\\\]|\\\\.)*)${re(delim)}((?:[^${re(delim)}\\\\]|\\\\.)*)${re(delim)}([gGiIp]*)$`,
+						`^s${re(delim)}((?:[^${re(delim)}\\\\]|\\\\.)*)${re(delim)}((?:[^${re(delim)}\\\\]|\\\\.)*)${re(delim)}([gGiIp]*)$`
 					);
 					const m = rest.match(sRe);
 					if (!m) {
-						instrs.push({ op: "d", addr1, addr2 });
+						instrs.push({op: "d", addr1, addr2});
 						continue;
 					} // bad expr, skip
 					const flags = m[3] ?? "";
@@ -177,7 +177,7 @@ export const sedCommand: ShellModule = {
 					try {
 						from = new RegExp(
 							m[1] as string,
-							flags.includes("i") || flags.includes("I") ? "i" : "",
+							flags.includes("i") || flags.includes("I") ? "i" : ""
 						);
 					} catch {
 						continue;
@@ -192,13 +192,13 @@ export const sedCommand: ShellModule = {
 						print: flags.includes("p"),
 					});
 				} else if (op === "d") {
-					instrs.push({ op: "d", addr1, addr2 });
+					instrs.push({op: "d", addr1, addr2});
 				} else if (op === "p") {
-					instrs.push({ op: "p", addr1, addr2 });
+					instrs.push({op: "p", addr1, addr2});
 				} else if (op === "q") {
-					instrs.push({ op: "q", addr1 });
+					instrs.push({op: "q", addr1});
 				} else if (op === "=") {
-					instrs.push({ op: "=", addr1, addr2 });
+					instrs.push({op: "=", addr1, addr2});
 				}
 			}
 			return instrs;
@@ -219,7 +219,7 @@ export const sedCommand: ShellModule = {
 		function matchesAddr(
 			addr: Addr | undefined,
 			lineNo: number,
-			line: string,
+			line: string
 		): boolean {
 			if (!addr) {
 				return true;
@@ -234,12 +234,12 @@ export const sedCommand: ShellModule = {
 		}
 
 		function inRange(
-			instr: Instr & { addr1?: Addr; addr2?: Addr },
+			instr: Instr & {addr1?: Addr; addr2?: Addr},
 			lineNo: number,
 			line: string,
-			rangeActive: Map<Instr, boolean>,
+			rangeActive: Map<Instr, boolean>
 		): boolean {
-			const { addr1, addr2 } = instr;
+			const {addr1, addr2} = instr;
 			if (!addr1) {
 				return true;
 			}
@@ -274,10 +274,10 @@ export const sedCommand: ShellModule = {
 			for (const instr of allInstrs) {
 				if (
 					!inRange(
-						instr as Instr & { addr1?: Addr; addr2?: Addr },
+						instr as Instr & {addr1?: Addr; addr2?: Addr},
 						lineNo,
 						line,
-						rangeActive,
+						rangeActive
 					)
 				) {
 					continue;
@@ -300,9 +300,9 @@ export const sedCommand: ShellModule = {
 						? line.replace(
 								new RegExp(
 									instr.from.source,
-									instr.from.flags.includes("i") ? "gi" : "g",
+									instr.from.flags.includes("i") ? "gi" : "g"
 								),
-								instr.to,
+								instr.to
 							)
 						: line.replace(instr.from, instr.to);
 					if (replaced !== line) {
@@ -324,9 +324,9 @@ export const sedCommand: ShellModule = {
 		if (inPlace && fileArg) {
 			const p = resolvePath(cwd, fileArg);
 			shell.vfs.writeFile(p, result, {}, uid, gid);
-			return { exitCode: 0 };
+			return {exitCode: 0};
 		}
 
-		return { stdout: result, exitCode: 0 };
+		return {stdout: result, exitCode: 0};
 	},
 };
