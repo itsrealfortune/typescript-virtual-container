@@ -17,9 +17,11 @@ function expandTrSet(s: string): string[] {
 		// Range: a-z, A-Z, 0-9
 		if (i + 2 < unescaped.length && unescaped[i + 1] === "-") {
 			const from = unescaped.charCodeAt(i);
-			const to   = unescaped.charCodeAt(i + 2);
+			const to = unescaped.charCodeAt(i + 2);
 			if (from <= to) {
-				for (let c = from; c <= to; c++) { chars.push(String.fromCharCode(c)); }
+				for (let c = from; c <= to; c++) {
+					chars.push(String.fromCharCode(c));
+				}
 				i += 3;
 				continue;
 			}
@@ -41,7 +43,7 @@ export const trCommand: ShellModule = {
 	category: "text",
 	params: ["[-d] [-s] <set1> [set2]"],
 	run: ({ args, stdin }) => {
-		const del     = ifFlag(args, ["-d"]);
+		const del = ifFlag(args, ["-d"]);
 		const squeeze = ifFlag(args, ["-s"]);
 		const positionals = args.filter((a) => !a.startsWith("-"));
 		const set1chars = expandTrSet(positionals[0] ?? "");
@@ -67,7 +69,7 @@ export const trCommand: ShellModule = {
 		if (squeeze && set2chars.length > 0) {
 			// Squeeze repeated characters in set2
 			const squeezeSet = new Set(set2chars);
-			input = input.replace(/(.)\1+/g, (_, c) => squeezeSet.has(c) ? c : _);
+			input = input.replace(/(.)\1+/g, (_, c) => (squeezeSet.has(c) ? c : _));
 		}
 
 		return { stdout: input, exitCode: 0 };

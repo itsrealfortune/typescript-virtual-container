@@ -14,9 +14,15 @@ type ShellContext = CommandContext;
 // Module-level compiled regexes for function definition matching.
 // Rebuilt per-line inside parseBlocks would recompile on every script line — hoisted here instead.
 const _funcNamePat = "[^\\s(){}]+";
-const RE_FUNC_INLINE = new RegExp(`^(?:function\\s+)?(${_funcNamePat})\\s*\\(\\s*\\)\\s*\\{(.+)\\}\\s*$`);
-const RE_FUNC_MULTI  = new RegExp(`^(?:function\\s+)?(${_funcNamePat})\\s*\\(\\s*\\)\\s*\\{?\\s*$`);
-const RE_FUNC_KW_ONLY = new RegExp(`^function\\s+(${_funcNamePat})\\s*\\{?\\s*$`);
+const RE_FUNC_INLINE = new RegExp(
+	`^(?:function\\s+)?(${_funcNamePat})\\s*\\(\\s*\\)\\s*\\{(.+)\\}\\s*$`,
+);
+const RE_FUNC_MULTI = new RegExp(
+	`^(?:function\\s+)?(${_funcNamePat})\\s*\\(\\s*\\)\\s*\\{?\\s*$`,
+);
+const RE_FUNC_KW_ONLY = new RegExp(
+	`^function\\s+(${_funcNamePat})\\s*\\{?\\s*$`,
+);
 
 /**
  * Expand all shell forms including $(cmd) substitution.
@@ -55,7 +61,11 @@ type Block =
 	| { type: "until"; cond: string; body: string[] }
 	| { type: "func"; name: string; body: string[] }
 	| { type: "arith"; expr: string }
-	| { type: "case"; expr: string; patterns: Array<{ pattern: string; body: string[] }> }
+	| {
+			type: "case";
+			expr: string;
+			patterns: Array<{ pattern: string; body: string[] }>;
+	  }
 	| { type: "array"; name: string; elements: string[] }
 	| { type: "cmd"; line: string };
 
@@ -73,24 +83,34 @@ function parseBlocks(lines: string[]): Block[] {
 		// Function definition: name() { or function name { or name() { body }
 		// Shell allows any non-whitespace identifier as function name (incl. ':')
 		const funcMatchInline = line.match(RE_FUNC_INLINE);
-		const funcMatch = funcMatchInline ?? (
-			line.match(RE_FUNC_MULTI) ||
-			line.match(RE_FUNC_KW_ONLY)
-		);
+		const funcMatch =
+			funcMatchInline ??
+			(line.match(RE_FUNC_MULTI) || line.match(RE_FUNC_KW_ONLY));
 		if (funcMatch) {
 			const funcName = funcMatch[1] as string;
 			const body: string[] = [];
 			// Inline: name() { cmd; } — single-line form
 			if (funcMatchInline) {
-				body.push(...(funcMatchInline[2] as string).split(";").map((s: string) => s.trim()).filter(Boolean));
+				body.push(
+					...(funcMatchInline[2] as string)
+						.split(";")
+						.map((s: string) => s.trim())
+						.filter(Boolean),
+				);
 				blocks.push({ type: "func", name: funcName, body });
 				i++;
 				continue;
 			}
 			i++;
-			while (i < lines.length && lines[i]?.trim() !== "}" && i < lines.length + 1) {
+			while (
+				i < lines.length &&
+				lines[i]?.trim() !== "}" &&
+				i < lines.length + 1
+			) {
 				const l = (lines[i] as string).trim().replace(/^do\s+/, "");
-				if (l && l !== "{") { body.push(l); }
+				if (l && l !== "{") {
+					body.push(l);
+				}
 				i++;
 			}
 			i++; // skip closing }
@@ -129,11 +149,13 @@ function parseBlocks(lines: string[]): Block[] {
 				} else if (l === "else") {
 					section = "else";
 				} else if (l !== "then") {
-					if (section === "then") { thenLines.push(l); }
-					else if (section === "elif" && elifBlocks.length > 0) {
+					if (section === "then") {
+						thenLines.push(l);
+					} else if (section === "elif" && elifBlocks.length > 0) {
 						elifBlocks[elifBlocks.length - 1]?.body.push(l);
+					} else {
+						elseLines.push(l);
 					}
-					else { elseLines.push(l); }
 				}
 				i++;
 			}
@@ -151,10 +173,17 @@ function parseBlocks(lines: string[]): Block[] {
 				i++;
 				while (i < lines.length && lines[i]?.trim() !== "done") {
 					const l = (lines[i] as string).trim().replace(/^do\s+/, "");
-					if (l && l !== "do") { body.push(l); }
+					if (l && l !== "do") {
+						body.push(l);
+					}
 					i++;
 				}
-				blocks.push({ type: "for", var: m[1] as string, list: m[2] as string, body });
+				blocks.push({
+					type: "for",
+					var: m[1] as string,
+					list: m[2] as string,
+					body,
+				});
 			} else {
 				blocks.push({ type: "cmd", line });
 			}
@@ -167,7 +196,9 @@ function parseBlocks(lines: string[]): Block[] {
 			i++;
 			while (i < lines.length && lines[i]?.trim() !== "done") {
 				const l = (lines[i] as string).trim().replace(/^do\s+/, "");
-				if (l && l !== "do") { body.push(l); }
+				if (l && l !== "do") {
+					body.push(l);
+				}
 				i++;
 			}
 			blocks.push({ type: "while", cond, body });
@@ -180,7 +211,9 @@ function parseBlocks(lines: string[]): Block[] {
 			i++;
 			while (i < lines.length && lines[i]?.trim() !== "done") {
 				const l = (lines[i] as string).trim().replace(/^do\s+/, "");
-				if (l && l !== "do") { body.push(l); }
+				if (l && l !== "do") {
+					body.push(l);
+				}
 				i++;
 			}
 			blocks.push({ type: "until", cond, body });
@@ -188,18 +221,34 @@ function parseBlocks(lines: string[]): Block[] {
 			// Array assignment: arr=(elem1 elem2 ...)
 			const arrMatch = line.match(/^([A-Za-z_][A-Za-z0-9_]*)=\s*\(([^)]*)\)$/);
 			if (arrMatch) {
-				const elems = (arrMatch[2] as string).trim().split(/\s+/).filter(Boolean);
-				blocks.push({ type: "array", name: arrMatch[1] as string, elements: elems });
+				const elems = (arrMatch[2] as string)
+					.trim()
+					.split(/\s+/)
+					.filter(Boolean);
+				blocks.push({
+					type: "array",
+					name: arrMatch[1] as string,
+					elements: elems,
+				});
 			} else {
 				blocks.push({ type: "cmd", line });
 			}
-		} else if (line.startsWith("case ") && line.endsWith(" in") || line.match(/^case\s+.+\s+in$/)) {
-			const caseExpr = line.replace(/^case\s+/, "").replace(/\s+in$/, "").trim();
+		} else if (
+			(line.startsWith("case ") && line.endsWith(" in")) ||
+			line.match(/^case\s+.+\s+in$/)
+		) {
+			const caseExpr = line
+				.replace(/^case\s+/, "")
+				.replace(/\s+in$/, "")
+				.trim();
 			const patterns: Array<{ pattern: string; body: string[] }> = [];
 			i++;
 			while (i < lines.length && lines[i]?.trim() !== "esac") {
 				const pl = (lines[i] as string).trim();
-				if (!pl || pl === "esac") { i++; continue; }
+				if (!pl || pl === "esac") {
+					i++;
+					continue;
+				}
 				// pattern) or pattern1|pattern2)
 				const patMatch = pl.match(/^(.+?)\)\s*(.*)$/);
 				if (patMatch) {
@@ -211,12 +260,17 @@ function parseBlocks(lines: string[]): Block[] {
 					i++;
 					while (i < lines.length) {
 						const bl = (lines[i] as string).trim();
-						if (bl === ";;" || bl === "esac") { break; }
-						if (bl) { body.push(bl); }
+						if (bl === ";;" || bl === "esac") {
+							break;
+						}
+						if (bl) {
+							body.push(bl);
+						}
 						i++;
 					}
-					if (lines[i]?.trim() === ";;") { i++; // skip ;;
-}
+					if (lines[i]?.trim() === ";;") {
+						i++; // skip ;;
+					}
 					patterns.push({ pattern: pat, body });
 				} else {
 					i++;
@@ -258,16 +312,26 @@ async function evalCondition(
 					ctx.shell.vfs.exists(p) && ctx.shell.vfs.stat(p).type === "directory"
 				);
 			}
-			if (flag === "e") { return ctx.shell.vfs.exists(p); }
-			if (flag === "z") { return (arg ?? "").length === 0; }
-			if (flag === "n") { return (arg ?? "").length > 0; }
+			if (flag === "e") {
+				return ctx.shell.vfs.exists(p);
+			}
+			if (flag === "z") {
+				return (arg ?? "").length === 0;
+			}
+			if (flag === "n") {
+				return (arg ?? "").length > 0;
+			}
 		}
 		// string comparison
 		const cmpMatch = expr.match(/^"?([^"]*)"?\s*(==|!=|=|<|>)\s*"?([^"]*)"?$/);
 		if (cmpMatch) {
 			const [, a, op, b] = cmpMatch;
-			if (op === "==" || op === "=") { return a === b; }
-			if (op === "!=") { return a !== b; }
+			if (op === "==" || op === "=") {
+				return a === b;
+			}
+			if (op === "!=") {
+				return a !== b;
+			}
 		}
 		// numeric
 		const numMatch = expr.match(/^(\S+)\s+(-eq|-ne|-lt|-le|-gt|-ge)\s+(\S+)$/);
@@ -275,12 +339,24 @@ async function evalCondition(
 			const [, a, op, b] = numMatch;
 			const na = Number(a);
 			const nb = Number(b);
-			if (op === "-eq") { return na === nb; }
-			if (op === "-ne") { return na !== nb; }
-			if (op === "-lt") { return na < nb; }
-			if (op === "-le") { return na <= nb; }
-			if (op === "-gt") { return na > nb; }
-			if (op === "-ge") { return na >= nb; }
+			if (op === "-eq") {
+				return na === nb;
+			}
+			if (op === "-ne") {
+				return na !== nb;
+			}
+			if (op === "-lt") {
+				return na < nb;
+			}
+			if (op === "-le") {
+				return na <= nb;
+			}
+			if (op === "-gt") {
+				return na > nb;
+			}
+			if (op === "-ge") {
+				return na >= nb;
+			}
 		}
 	}
 	// fallback: run command and check exit code
@@ -313,7 +389,9 @@ async function runBlocks(
 				ctx.env.lastExitCode,
 				ctx,
 			);
-			if (ctx.env.vars.__xtrace) { traceOutput += `+ ${expanded}\n`; }
+			if (ctx.env.vars.__xtrace) {
+				traceOutput += `+ ${expanded}\n`;
+			}
 
 			// Bare VAR=val assignment(s) — handle before dispatching to runCommand
 			const assignRe = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)/;
@@ -340,12 +418,16 @@ async function runBlocks(
 					// Set positional params $1 $2 ... from remaining args
 					const funcArgs = expanded.trim().split(/\s+/).slice(1);
 					const savedVars = { ...ctx.env.vars };
-					funcArgs.forEach((a, i) => { ctx.env.vars[String(i + 1)] = a; });
+					funcArgs.forEach((a, i) => {
+						ctx.env.vars[String(i + 1)] = a;
+					});
 					ctx.env.vars["0"] = cmdName;
 					const funcLines = funcBody.split("\n");
 					const funcResult = await runBlocks(parseBlocks(funcLines), ctx);
 					// Restore positional params
-					for (let pi = 1; pi <= funcArgs.length; pi++) { delete ctx.env.vars[String(pi)]; }
+					for (let pi = 1; pi <= funcArgs.length; pi++) {
+						delete ctx.env.vars[String(pi)];
+					}
 					Object.assign(ctx.env.vars, { ...savedVars, ...ctx.env.vars });
 					return funcResult;
 				}
@@ -361,28 +443,40 @@ async function runBlocks(
 				);
 			})();
 			ctx.env.lastExitCode = r.exitCode ?? 0;
-			if (r.stdout) { output += `${r.stdout}\n`; }
-			if (r.stderr) { return { ...r, stdout: output.trim() }; }
-			if (ctx.env.vars.__errexit && (r.exitCode ?? 0) !== 0) { return { ...r, stdout: output.trim() }; }
+			if (r.stdout) {
+				output += `${r.stdout}\n`;
+			}
+			if (r.stderr) {
+				return { ...r, stdout: output.trim() };
+			}
+			if (ctx.env.vars.__errexit && (r.exitCode ?? 0) !== 0) {
+				return { ...r, stdout: output.trim() };
+			}
 			lastResult = r;
 		} else if (block.type === "if") {
 			let ran = false;
 			if (await evalCondition(block.cond, ctx)) {
 				const sub = await runBlocks(parseBlocks(block.then_), ctx);
-				if (sub.stdout) { output += `${sub.stdout}\n`; }
+				if (sub.stdout) {
+					output += `${sub.stdout}\n`;
+				}
 				ran = true;
 			} else {
 				for (const elif of block.elif) {
 					if (await evalCondition(elif.cond, ctx)) {
 						const sub = await runBlocks(parseBlocks(elif.body), ctx);
-						if (sub.stdout) { output += `${sub.stdout}\n`; }
+						if (sub.stdout) {
+							output += `${sub.stdout}\n`;
+						}
 						ran = true;
 						break;
 					}
 				}
 				if (!ran && block.else_.length > 0) {
 					const sub = await runBlocks(parseBlocks(block.else_), ctx);
-					if (sub.stdout) { output += `${sub.stdout}\n`; }
+					if (sub.stdout) {
+						output += `${sub.stdout}\n`;
+					}
 				}
 			}
 		} else if (block.type === "func") {
@@ -394,15 +488,30 @@ async function runBlocks(
 			// Handle i++ / i-- / i+=N / i-=N
 			const incMatch = expr.match(/^(\w+)\s*(\+\+|--)$/);
 			if (incMatch) {
-				const val = Number.parseInt(ctx.env.vars[incMatch[1] as string] ?? "0", 10);
-				ctx.env.vars[incMatch[1] as string] = String(incMatch[2] === "++" ? val + 1 : val - 1);
+				const val = Number.parseInt(
+					ctx.env.vars[incMatch[1] as string] ?? "0",
+					10,
+				);
+				ctx.env.vars[incMatch[1] as string] = String(
+					incMatch[2] === "++" ? val + 1 : val - 1,
+				);
 			} else {
 				const assignMatch = expr.match(/^(\w+)\s*([+\-*/])=\s*(.+)$/);
 				if (assignMatch) {
-					const lhs = Number.parseInt(ctx.env.vars[assignMatch[1] as string] ?? "0", 10);
+					const lhs = Number.parseInt(
+						ctx.env.vars[assignMatch[1] as string] ?? "0",
+						10,
+					);
 					const rhs = Number.parseInt(assignMatch[3] as string, 10);
-					const ops: Record<string, number> = { "+": lhs + rhs, "-": lhs - rhs, "*": lhs * rhs, "/": Math.floor(lhs / rhs) };
-					ctx.env.vars[assignMatch[1] as string] = String(ops[assignMatch[2] as string] ?? lhs);
+					const ops: Record<string, number> = {
+						"+": lhs + rhs,
+						"-": lhs - rhs,
+						"*": lhs * rhs,
+						"/": Math.floor(lhs / rhs),
+					};
+					ctx.env.vars[assignMatch[1] as string] = String(
+						ops[assignMatch[2] as string] ?? lhs,
+					);
 				} else {
 					const value = evalArith(expr, ctx.env.vars);
 					if (!Number.isNaN(value)) {
@@ -422,44 +531,69 @@ async function runBlocks(
 			for (const item of items) {
 				ctx.env.vars[block.var] = item;
 				const sub = await runBlocks(parseBlocks(block.body), ctx);
-				if (sub.stdout) { output += `${sub.stdout}\n`; }
-				if (sub.closeSession) { return sub; }
+				if (sub.stdout) {
+					output += `${sub.stdout}\n`;
+				}
+				if (sub.closeSession) {
+					return sub;
+				}
 			}
 		} else if (block.type === "while") {
 			let iterations = 0;
 			while (iterations < 1000 && (await evalCondition(block.cond, ctx))) {
 				const sub = await runBlocks(parseBlocks(block.body), ctx);
-				if (sub.stdout) { output += `${sub.stdout}\n`; }
-				if (sub.closeSession) { return sub; }
+				if (sub.stdout) {
+					output += `${sub.stdout}\n`;
+				}
+				if (sub.closeSession) {
+					return sub;
+				}
 				iterations++;
 			}
 		} else if (block.type === "until") {
 			let iterations = 0;
 			while (iterations < 1000 && !(await evalCondition(block.cond, ctx))) {
 				const sub = await runBlocks(parseBlocks(block.body), ctx);
-				if (sub.stdout) { output += `${sub.stdout}\n`; }
-				if (sub.closeSession) { return sub; }
+				if (sub.stdout) {
+					output += `${sub.stdout}\n`;
+				}
+				if (sub.closeSession) {
+					return sub;
+				}
 				iterations++;
 			}
 		} else if (block.type === "array") {
 			// Store array: arr[0]=e0, arr[1]=e1, ..., arr=space-joined (for ${arr[@]})
-			block.elements.forEach((el, idx) => { ctx.env.vars[`${block.name}[${idx}]`] = el; });
+			block.elements.forEach((el, idx) => {
+				ctx.env.vars[`${block.name}[${idx}]`] = el;
+			});
 			ctx.env.vars[block.name] = block.elements.join(" ");
 		} else if (block.type === "case") {
-			const expanded = await expandVars(block.expr, ctx.env.vars, ctx.env.lastExitCode, ctx);
+			const expanded = await expandVars(
+				block.expr,
+				ctx.env.vars,
+				ctx.env.lastExitCode,
+				ctx,
+			);
 			for (const pat of block.patterns) {
 				const alts = pat.pattern.split("|").map((p) => p.trim());
 				const matched = alts.some((p) => {
-					if (p === "*") { return true; }
+					if (p === "*") {
+						return true;
+					}
 					if (p.includes("*") || p.includes("?")) {
-						const re = new RegExp(`^${p.replace(/\./g, "\\.").replace(/\*/g, ".*").replace(/\?/g, ".")}$`);
+						const re = new RegExp(
+							`^${p.replace(/\./g, "\\.").replace(/\*/g, ".*").replace(/\?/g, ".")}$`,
+						);
 						return re.test(expanded);
 					}
 					return p === expanded;
 				});
 				if (matched) {
 					const sub = await runBlocks(parseBlocks(pat.body), ctx);
-					if (sub.stdout) { output += `${sub.stdout}\n`; }
+					if (sub.stdout) {
+						output += `${sub.stdout}\n`;
+					}
 					break;
 				}
 			}
@@ -467,8 +601,13 @@ async function runBlocks(
 	}
 	const finalStdout = output.trim() || lastResult.stdout;
 	if (traceOutput) {
-		const traceStderr = (lastResult.stderr ? `${lastResult.stderr}\n` : "") + traceOutput.trim();
-		return { ...lastResult, stdout: finalStdout, stderr: traceStderr || lastResult.stderr };
+		const traceStderr =
+			(lastResult.stderr ? `${lastResult.stderr}\n` : "") + traceOutput.trim();
+		return {
+			...lastResult,
+			stdout: finalStdout,
+			stderr: traceStderr || lastResult.stderr,
+		};
 	}
 	return { ...lastResult, stdout: finalStdout };
 }
@@ -495,9 +634,24 @@ function splitShScript(script: string): string[] {
 	while (i < script.length) {
 		const ch = script[i] as string;
 		if (!(inSingleQ || inDoubleQ)) {
-			if (ch === "'") { inSingleQ = true; current += ch; i++; continue; }
-			if (ch === '"') { inDoubleQ = true; current += ch; i++; continue; }
-			if (ch === "{") { depth++; current += ch; i++; continue; }
+			if (ch === "'") {
+				inSingleQ = true;
+				current += ch;
+				i++;
+				continue;
+			}
+			if (ch === '"') {
+				inDoubleQ = true;
+				current += ch;
+				i++;
+				continue;
+			}
+			if (ch === "{") {
+				depth++;
+				current += ch;
+				i++;
+				continue;
+			}
 			if (ch === "}") {
 				depth--;
 				current += ch;
@@ -505,21 +659,35 @@ function splitShScript(script: string): string[] {
 				// At depth 0, closing } ends the function body line
 				if (depth === 0) {
 					const t = current.trim();
-					if (t) { lines.push(t); }
+					if (t) {
+						lines.push(t);
+					}
 					current = "";
 					// Skip trailing ; or whitespace
-					while (i < script.length && (script[i] === ";" || script[i] === " ")) { i++; }
+					while (
+						i < script.length &&
+						(script[i] === ";" || script[i] === " ")
+					) {
+						i++;
+					}
 				}
 				continue;
 			}
 			// Backslash-newline continuation: join lines
-		if (!inSingleQ && ch === '\\' && i + 1 < script.length && script[i + 1] === '\n') {
-			i += 2; // skip \ and \n
-			continue;
-		}
-		if (depth === 0 && (ch === ";" || ch === "\n")) {
+			if (
+				!inSingleQ &&
+				ch === "\\" &&
+				i + 1 < script.length &&
+				script[i + 1] === "\n"
+			) {
+				i += 2; // skip \ and \n
+				continue;
+			}
+			if (depth === 0 && (ch === ";" || ch === "\n")) {
 				const t = current.trim();
-				if (t && !t.startsWith("#")) { lines.push(t); }
+				if (t && !t.startsWith("#")) {
+					lines.push(t);
+				}
 				current = "";
 				i++;
 				continue;
@@ -533,7 +701,9 @@ function splitShScript(script: string): string[] {
 		i++;
 	}
 	const t = current.trim();
-	if (t && !t.startsWith("#")) { lines.push(t); }
+	if (t && !t.startsWith("#")) {
+		lines.push(t);
+	}
 	return lines;
 }
 
@@ -554,7 +724,9 @@ export const shCommand: ShellModule = {
 		// sh -c "inline script"
 		if (ifFlag(args, "-c")) {
 			const script = args[args.indexOf("-c") + 1] ?? "";
-			if (!script) { return { stderr: "sh: -c requires a script", exitCode: 1 }; }
+			if (!script) {
+				return { stderr: "sh: -c requires a script", exitCode: 1 };
+			}
 			const lines = splitShScript(script);
 			const blocks = parseBlocks(lines);
 			return runBlocks(blocks, ctx);

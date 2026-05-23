@@ -12,7 +12,7 @@ export const curlCommand: ShellModule = {
 	description: "Transfer data from or to a server (pure fetch)",
 	category: "network",
 	params: ["[options] <url>"],
-	run:  async ({ authUser, cwd, args, shell, uid, gid }) => {
+	run: async ({ authUser, cwd, args, shell, uid, gid }) => {
 		const { flagsWithValues, positionals } = parseArgs(args, {
 			flagsWithValue: [
 				"-o",
@@ -46,7 +46,9 @@ export const curlCommand: ShellModule = {
 		}
 
 		const url = positionals.find((a) => !a.startsWith("-"));
-		if (!url) { return { stderr: "curl: no URL specified", exitCode: 1 }; }
+		if (!url) {
+			return { stderr: "curl: no URL specified", exitCode: 1 };
+		}
 
 		const outputPath =
 			flagsWithValues.get("-o") ?? flagsWithValues.get("--output") ?? null;
@@ -98,12 +100,28 @@ export const curlCommand: ShellModule = {
 
 		let response: Response;
 		try {
-			const urlWithHttp = url.startsWith("http://") || url.startsWith("https://") ? url : `http://${url}`;
+			const urlWithHttp =
+				url.startsWith("http://") || url.startsWith("https://")
+					? url
+					: `http://${url}`;
 			const parsedUrl = new URL(urlWithHttp);
-			const dstPort = parsedUrl.port ? Number.parseInt(parsedUrl.port, 10) : (parsedUrl.protocol === "https:" ? 443 : 80);
-			const fwAction = shell.network.checkFirewall("OUTPUT", "tcp", undefined, parsedUrl.hostname, dstPort);
+			const dstPort = parsedUrl.port
+				? Number.parseInt(parsedUrl.port, 10)
+				: parsedUrl.protocol === "https:"
+					? 443
+					: 80;
+			const fwAction = shell.network.checkFirewall(
+				"OUTPUT",
+				"tcp",
+				undefined,
+				parsedUrl.hostname,
+				dstPort,
+			);
 			if (fwAction === "DROP" || fwAction === "REJECT") {
-				return { stderr: `curl: (7) Failed to connect to ${parsedUrl.hostname} port ${dstPort}: Connection refused`, exitCode: 7 };
+				return {
+					stderr: `curl: (7) Failed to connect to ${parsedUrl.hostname} port ${dstPort}: Connection refused`,
+					exitCode: 7,
+				};
 			}
 			response = await fetch(urlWithHttp, fetchOpts);
 		} catch (err) {
@@ -120,7 +138,9 @@ export const curlCommand: ShellModule = {
 
 		if (headOnly) {
 			const lines = [`HTTP/1.1 ${response.status} ${response.statusText}`];
-			for (const [k, v] of response.headers.entries()) { lines.push(`${k}: ${v}`); }
+			for (const [k, v] of response.headers.entries()) {
+				lines.push(`${k}: ${v}`);
+			}
 			return { stdout: `${lines.join("\r\n")}\r\n`, exitCode: 0 };
 		}
 

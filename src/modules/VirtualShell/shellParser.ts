@@ -24,7 +24,9 @@ import { tokenizeCommand } from "../../utils/tokenize";
  */
 export function parseScript(rawInput: string): Script {
 	const trimmed = rawInput.trim();
-	if (!trimmed) { return { statements: [], isValid: true }; }
+	if (!trimmed) {
+		return { statements: [], isValid: true };
+	}
 
 	try {
 		const statements = parseStatements(trimmed);
@@ -44,7 +46,9 @@ export function parseScript(rawInput: string): Script {
  */
 export function parseShellPipeline(rawInput: string): Pipeline {
 	const trimmed = rawInput.trim();
-	if (!trimmed) { return { commands: [], isValid: true }; }
+	if (!trimmed) {
+		return { commands: [], isValid: true };
+	}
 	try {
 		const commands = parsePipeline(trimmed);
 		return { commands, isValid: true };
@@ -62,15 +66,21 @@ function parseStatements(input: string): Statement[] {
 	for (const seg of segments) {
 		const text = seg.text.trim();
 		const stmt: Statement = {};
-		if (seg.op) { stmt.op = seg.op; }
-		if (seg.background) { stmt.background = true; }
+		if (seg.op) {
+			stmt.op = seg.op;
+		}
+		if (seg.background) {
+			stmt.background = true;
+		}
 
 		if (text.startsWith("(") && text.endsWith(")")) {
 			const inner = text.slice(1, -1).trim();
 			stmt.subshell = { statements: parseStatements(inner) } satisfies Subshell;
 		} else if (text.startsWith("{") && text.endsWith("}")) {
 			const inner = text.slice(1, -1).trim();
-			stmt.group = { statements: parseStatements(inner) } satisfies CommandGroup;
+			stmt.group = {
+				statements: parseStatements(inner),
+			} satisfies CommandGroup;
 		} else {
 			const commands = parsePipeline(text);
 			stmt.pipeline = { commands, isValid: true };
@@ -97,7 +107,9 @@ function splitByLogicalOps(input: string): Segment[] {
 	let i = 0;
 
 	const flush = (op?: LogicalOp, background?: boolean) => {
-		if (current.trim()) { segments.push({ text: current, op, background }); }
+		if (current.trim()) {
+			segments.push({ text: current, op, background });
+		}
 		current = "";
 	};
 
@@ -161,7 +173,11 @@ function splitByLogicalOps(input: string): Segment[] {
 			}
 			// 2>&1 — the & is part of a redirection target, not a background op
 			const trimmed = current.trimEnd();
-			if (trimmed.endsWith(">") || trimmed.endsWith("2>") || trimmed.endsWith(">>")) {
+			if (
+				trimmed.endsWith(">") ||
+				trimmed.endsWith("2>") ||
+				trimmed.endsWith(">>")
+			) {
 				current += ch;
 				i++;
 				continue;
@@ -229,13 +245,17 @@ function splitByPipe(input: string): string[] {
 	if (!tail && tokens.length > 0) {
 		throw new Error("Syntax error near unexpected token '|'");
 	}
-	if (tail) { tokens.push(tail); }
+	if (tail) {
+		tokens.push(tail);
+	}
 	return tokens;
 }
 
 function parseCommandWithRedirections(token: string): PipelineCommand {
 	const parts = tokenizeCommand(token);
-	if (parts.length === 0) { return { name: "", args: [] }; }
+	if (parts.length === 0) {
+		return { name: "", args: [] };
+	}
 
 	const cmdParts: string[] = [];
 	let inputFile: string | undefined;
@@ -309,11 +329,17 @@ function parseCommandWithRedirections(token: string): PipelineCommand {
 	}
 
 	const rawName = cmdParts[0] ?? "";
-	const name = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/.test(rawName) ? rawName : rawName.toLowerCase();
+	const name = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/.test(rawName)
+		? rawName
+		: rawName.toLowerCase();
 	return {
-		name, args: cmdParts.slice(1),
-		inputFile, outputFile, appendOutput,
-		stderrFile, stderrAppend, stderrToStdout,
+		name,
+		args: cmdParts.slice(1),
+		inputFile,
+		outputFile,
+		appendOutput,
+		stderrFile,
+		stderrAppend,
+		stderrToStdout,
 	};
 }
-

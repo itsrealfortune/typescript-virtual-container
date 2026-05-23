@@ -164,12 +164,24 @@ class ExitSignal {
 }
 
 function formatValue(v: unknown): string {
-	if (v === null) { return "null"; }
-	if (v === undefined) { return "undefined"; }
-	if (typeof v === "string") { return v; }
-	if (typeof v === "function") { return `[Function: ${v.name || "(anonymous)"}]`; }
-	if (Array.isArray(v)) { return `[ ${v.map(formatValue).join(", ")} ]`; }
-	if (v instanceof Error) { return `${v.name}: ${v.message}`; }
+	if (v === null) {
+		return "null";
+	}
+	if (v === undefined) {
+		return "undefined";
+	}
+	if (typeof v === "string") {
+		return v;
+	}
+	if (typeof v === "function") {
+		return `[Function: ${v.name || "(anonymous)"}]`;
+	}
+	if (Array.isArray(v)) {
+		return `[ ${v.map(formatValue).join(", ")} ]`;
+	}
+	if (v instanceof Error) {
+		return `${v.name}: ${v.message}`;
+	}
 	if (typeof v === "object") {
 		try {
 			const entries = Object.entries(v as Record<string, unknown>)
@@ -229,10 +241,23 @@ function runJsFile(code: string): {
 	// If the code is a single expression (no semicolons, no newlines, no statements),
 	// wrap it to capture the return value like a REPL would
 	const trimmed = code.trim();
-	const isExpression =
-		!((((((((((trimmed.includes("\n") ||trimmed.startsWith("const ") ) ||trimmed.startsWith("let ") ) ||trimmed.startsWith("var ") ) ||trimmed.startsWith("function ") ) ||trimmed.startsWith("class ") ) ||trimmed.startsWith("if ") ) ||trimmed.startsWith("for ") ) ||trimmed.startsWith("while ") ) ||trimmed.startsWith("import ") ) ||trimmed.startsWith("//"));
+	const isExpression = !(
+		trimmed.includes("\n") ||
+		trimmed.startsWith("const ") ||
+		trimmed.startsWith("let ") ||
+		trimmed.startsWith("var ") ||
+		trimmed.startsWith("function ") ||
+		trimmed.startsWith("class ") ||
+		trimmed.startsWith("if ") ||
+		trimmed.startsWith("for ") ||
+		trimmed.startsWith("while ") ||
+		trimmed.startsWith("import ") ||
+		trimmed.startsWith("//")
+	);
 
-	if (isExpression) { return runJs(trimmed); }
+	if (isExpression) {
+		return runJs(trimmed);
+	}
 
 	// Multi-line: wrap in IIFE
 	return runJs(`(async () => { ${code} })()`);

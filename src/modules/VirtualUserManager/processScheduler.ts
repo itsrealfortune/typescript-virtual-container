@@ -15,13 +15,13 @@ import type { VirtualProcess } from "./index";
  * Maps to Linux-compatible nice values (-20 to 19).
  */
 export type ProcessPriority =
-	| "idle"       // 19
-	| "very_low"   // 15
-	| "low"        // 10
-	| "normal"     // 0 (default)
-	| "high"       // -10
-	| "very_high"  // -15
-	| "realtime";  // -20
+	| "idle" // 19
+	| "very_low" // 15
+	| "low" // 10
+	| "normal" // 0 (default)
+	| "high" // -10
+	| "very_high" // -15
+	| "realtime"; // -20
 
 /**
  * Nice value to priority weight mapping.
@@ -29,14 +29,46 @@ export type ProcessPriority =
  * Based on Linux CFS weight formula: 1024 / 1.25^(nice)
  */
 const NICE_WEIGHTS: Record<number, number> = {
-	"-20": 88761, "-19": 71755, "-18": 56483, "-17": 46273, "-16": 36291,
-	"-15": 29154, "-14": 23254, "-13": 18705, "-12": 14949, "-11": 11916,
-	"-10": 9548,  "-9": 7620,   "-8": 6100,   "-7": 4904,   "-6": 3906,
-	"-5": 3121,   "-4": 2501,   "-3": 1991,   "-2": 1586,   "-1": 1277,
-	"0": 1024,    "1": 820,     "2": 655,     "3": 526,     "4": 423,
-	"5": 335,     "6": 272,     "7": 215,     "8": 172,     "9": 137,
-	"10": 110,    "11": 87,     "12": 70,     "13": 56,     "14": 45,
-	"15": 36,     "16": 29,     "17": 23,     "18": 18,     "19": 15,
+	"-20": 88761,
+	"-19": 71755,
+	"-18": 56483,
+	"-17": 46273,
+	"-16": 36291,
+	"-15": 29154,
+	"-14": 23254,
+	"-13": 18705,
+	"-12": 14949,
+	"-11": 11916,
+	"-10": 9548,
+	"-9": 7620,
+	"-8": 6100,
+	"-7": 4904,
+	"-6": 3906,
+	"-5": 3121,
+	"-4": 2501,
+	"-3": 1991,
+	"-2": 1586,
+	"-1": 1277,
+	"0": 1024,
+	"1": 820,
+	"2": 655,
+	"3": 526,
+	"4": 423,
+	"5": 335,
+	"6": 272,
+	"7": 215,
+	"8": 172,
+	"9": 137,
+	"10": 110,
+	"11": 87,
+	"12": 70,
+	"13": 56,
+	"14": 45,
+	"15": 36,
+	"16": 29,
+	"17": 23,
+	"18": 18,
+	"19": 15,
 };
 
 /** Priority name to nice value mapping. */
@@ -141,7 +173,10 @@ export class ProcessScheduler {
 		const normalWeight = 1024;
 		const ratio = weight / normalWeight;
 		const timeslice = this._baseTimesliceMs * ratio;
-		return Math.max(this._minTimesliceMs, Math.min(this._maxTimesliceMs, timeslice));
+		return Math.max(
+			this._minTimesliceMs,
+			Math.min(this._maxTimesliceMs, timeslice),
+		);
 	}
 
 	/**
@@ -169,7 +204,9 @@ export class ProcessScheduler {
 	 */
 	static niceToPriority(nice: number): ProcessPriority {
 		for (const [name, value] of Object.entries(PRIORITY_TO_NICE)) {
-			if (value === nice) { return name as ProcessPriority; }
+			if (value === nice) {
+				return name as ProcessPriority;
+			}
 		}
 		// Find closest
 		let closest: ProcessPriority = "normal";
@@ -220,8 +257,14 @@ export class ProcessScheduler {
 	 * @param totalRunningProcesses - Total number of running processes.
 	 * @returns True if the process should be throttled.
 	 */
-	shouldThrottle(pid: number, nice: number, totalRunningProcesses: number): boolean {
-		if (!this._enforceFairShare || totalRunningProcesses <= 1) { return false; }
+	shouldThrottle(
+		pid: number,
+		nice: number,
+		totalRunningProcesses: number,
+	): boolean {
+		if (!this._enforceFairShare || totalRunningProcesses <= 1) {
+			return false;
+		}
 
 		const now = Date.now();
 		const windowElapsed = now - this._windowStart;
@@ -255,7 +298,10 @@ export class ProcessScheduler {
 	 * @param totalRunningProcesses - Total number of running processes.
 	 * @returns Scheduling recommendation.
 	 */
-	schedule(process: VirtualProcess, totalRunningProcesses: number): SchedulerAction {
+	schedule(
+		process: VirtualProcess,
+		totalRunningProcesses: number,
+	): SchedulerAction {
 		const nice = (process as VirtualProcess & { nice?: number }).nice ?? 0;
 		const timeslice = this.calculateTimeslice(nice);
 
@@ -293,9 +339,10 @@ export class ProcessScheduler {
 			runQueueLength: this._processCpuTime.size,
 			throttleCount: this._throttleCount,
 			preemptCount: this._preemptCount,
-			avgTimesliceMs: this._scheduleCount > 0
-				? this._totalCpuTimeMs / this._scheduleCount
-				: 0,
+			avgTimesliceMs:
+				this._scheduleCount > 0
+					? this._totalCpuTimeMs / this._scheduleCount
+					: 0,
 			windowStart: this._windowStart,
 			processCpuTime: new Map(this._processCpuTime),
 		};

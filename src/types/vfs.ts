@@ -103,7 +103,10 @@ export interface VfsSnapshotDirectoryNode extends VfsSnapshotBaseNode {
 }
 
 /** Union of serialized snapshot node variants. */
-export type VfsSnapshotNode = VfsSnapshotFileNode | VfsSnapshotDeviceNode | VfsSnapshotDirectoryNode;
+export type VfsSnapshotNode =
+	| VfsSnapshotFileNode
+	| VfsSnapshotDeviceNode
+	| VfsSnapshotDirectoryNode;
 
 /** Top-level serialized filesystem snapshot. */
 export interface VfsSnapshot {
@@ -122,7 +125,7 @@ export interface MountOptions {
 
 /** Describes an active mount point. */
 export interface MountPoint {
-	vPath:    string;
+	vPath: string;
 	hostPath: string;
 	readOnly: boolean;
 }

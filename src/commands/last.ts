@@ -19,11 +19,21 @@ export const lastCommand: ShellModule = {
 			try {
 				const log = JSON.parse(shell.vfs.readFile(logPath));
 				const d = new Date(log.at);
-				const ds = `${d.toDateString().slice(0, 3)} ${d.toLocaleString("en-US", {
-					month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false,
-				}).replace(",", "")}`;
-				lines.push(`${target.padEnd(10)} pts/0        ${(log.from ?? "browser").padEnd(16)} ${ds}   still logged in`);
-			} catch { /* log entry may be corrupt */ }
+				const ds = `${d.toDateString().slice(0, 3)} ${d
+					.toLocaleString("en-US", {
+						month: "short",
+						day: "2-digit",
+						hour: "2-digit",
+						minute: "2-digit",
+						hour12: false,
+					})
+					.replace(",", "")}`;
+				lines.push(
+					`${target.padEnd(10)} pts/0        ${(log.from ?? "browser").padEnd(16)} ${ds}   still logged in`,
+				);
+			} catch {
+				/* log entry may be corrupt */
+			}
 		}
 		lines.push("");
 		lines.push(`wtmp begins ${new Date().toDateString()}`);
@@ -42,7 +52,9 @@ export const dmesgCommand: ShellModule = {
 	category: "system",
 	params: ["[-n n]"],
 	run: ({ args }) => {
-		const n = args.includes("-n") ? Number.parseInt(args[args.indexOf("-n") + 1] ?? "20", 10) : 20;
+		const n = args.includes("-n")
+			? Number.parseInt(args[args.indexOf("-n") + 1] ?? "20", 10)
+			: 20;
 		const msgs = [
 			"[    0.000000] Booting Linux on physical CPU 0x0",
 			"[    0.000000] Linux version 6.1.0-fortune (gcc (Fortune 13.3.0-nyx1) 13.3.0)",

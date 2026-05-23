@@ -105,12 +105,12 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		files: [
 			{
 				path: "/usr/bin/vim",
-				content: "#!/bin/sh\nexec builtin nano \"$@\"\n",
+				content: '#!/bin/sh\nexec builtin nano "$@"\n',
 				mode: 0o755,
 			},
 			{
 				path: "/usr/bin/vi",
-				content: "#!/bin/sh\nexec builtin nano \"$@\"\n",
+				content: '#!/bin/sh\nexec builtin nano "$@"\n',
 				mode: 0o755,
 			},
 			{
@@ -154,7 +154,7 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 			},
 			{
 				path: "/usr/bin/python3.11",
-				content: "#!/bin/sh\nexec builtin python3 \"$@\"\n",
+				content: '#!/bin/sh\nexec builtin python3 "$@"\n',
 				mode: 0o755,
 			},
 			{ path: "/usr/lib/python3.11/.keep", content: "" },
@@ -184,7 +184,7 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 			},
 			{
 				path: "/usr/bin/nodejs",
-				content: "#!/bin/sh\nexec builtin node \"$@\"\n",
+				content: '#!/bin/sh\nexec builtin node "$@"\n',
 				mode: 0o755,
 			},
 			{
@@ -513,8 +513,12 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 			{ path: "/usr/share/ca-certificates/.keep", content: "" },
 		],
 		onInstall: (vfs) => {
-			if (!vfs.exists("/etc/ssl")) { vfs.mkdir("/etc/ssl", 0o755); }
-			if (!vfs.exists("/etc/ssl/certs")) { vfs.mkdir("/etc/ssl/certs", 0o755); }
+			if (!vfs.exists("/etc/ssl")) {
+				vfs.mkdir("/etc/ssl", 0o755);
+			}
+			if (!vfs.exists("/etc/ssl/certs")) {
+				vfs.mkdir("/etc/ssl/certs", 0o755);
+			}
 		},
 	},
 	{
@@ -571,7 +575,8 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 				mode: 0o755,
 			},
 		],
-	},{
+	},
+	{
 		name: "gzip",
 		version: "1.12-2",
 		section: "utils",
@@ -584,8 +589,9 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 				content: "#!/bin/sh\necho 'gzip: virtual stub'\n",
 				mode: 0o755,
 			},
-		]
-	}, {
+		],
+	},
+	{
 		name: "neofetch",
 		version: "7.1.0-1",
 		section: "utils",
@@ -599,7 +605,7 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 				mode: 0o755,
 			},
 		],
-	}
+	},
 ];
 
 // O(1) name lookup — built once at module load, avoids O(n) linear scan per command
@@ -607,7 +613,9 @@ const _REGISTRY_MAP = new Map<string, PackageDefinition>(
 	PACKAGE_REGISTRY.map((p) => [p.name.toLowerCase(), p]),
 );
 // Pre-sorted for listAvailable() — avoids O(n log n) sort on every apt list/search
-const _REGISTRY_SORTED = PACKAGE_REGISTRY.slice().sort((a, b) => a.name.localeCompare(b.name));
+const _REGISTRY_SORTED = PACKAGE_REGISTRY.slice().sort((a, b) =>
+	a.name.localeCompare(b.name),
+);
 
 /**
  * Pure-TypeScript APT/dpkg package manager backed by a built-in registry.
@@ -644,7 +652,9 @@ export class VirtualPackageManager {
 
 	/** Ensure dpkg/status is parsed. Called lazily on first package operation. */
 	private _ensureLoaded(): void {
-		if (this._loaded) { return; }
+		if (this._loaded) {
+			return;
+		}
 		this._loaded = true;
 		this._parseStatus();
 	}
@@ -659,16 +669,24 @@ export class VirtualPackageManager {
 	}
 
 	private _parseStatus(): void {
-		if (!this._vfs.exists(this._registryPath)) { return; }
+		if (!this._vfs.exists(this._registryPath)) {
+			return;
+		}
 		const status = this._vfs.readFile(this._registryPath);
-		if (!status.trim()) { return; }
+		if (!status.trim()) {
+			return;
+		}
 
 		const blocks = status.split(/\n\n+/);
 		for (const block of blocks) {
-			if (!block.trim()) { continue; }
+			if (!block.trim()) {
+				continue;
+			}
 			const fields = VirtualPackageManager._parseFields(block);
 			const name = fields.Package;
-			if (!name) { continue; }
+			if (!name) {
+				continue;
+			}
 			this._installed.set(name, {
 				name,
 				version: fields.Version ?? "unknown",
@@ -710,7 +728,9 @@ export class VirtualPackageManager {
 		const result: Record<string, string> = {};
 		for (const line of block.split("\n")) {
 			const idx = line.indexOf(": ");
-			if (idx === -1) { continue; }
+			if (idx === -1) {
+				continue;
+			}
 			result[line.slice(0, idx)] = line.slice(idx + 2);
 		}
 		return result;
@@ -818,21 +838,29 @@ export class VirtualPackageManager {
 
 		// Resolve + deduplicate including deps
 		const resolve = (name: string, seen = new Set<string>()): void => {
-			if (seen.has(name)) { return; }
+			if (seen.has(name)) {
+				return;
+			}
 			seen.add(name);
-			if (this.isInstalled(name)) { return; }
+			if (this.isInstalled(name)) {
+				return;
+			}
 			const def = VirtualPackageManager.findInRegistry(name);
 			if (!def) {
 				notFound.push(name);
 				return;
 			}
-			for (const dep of def.depends ?? []) { resolve(dep, seen); }
+			for (const dep of def.depends ?? []) {
+				resolve(dep, seen);
+			}
 			if (!toInstall.find((p) => p.name === def.name)) {
 				toInstall.push(def);
 			}
 		};
 
-		for (const n of names) { resolve(n); }
+		for (const n of names) {
+			resolve(n);
+		}
 
 		if (notFound.length > 0) {
 			return {
@@ -884,7 +912,9 @@ export class VirtualPackageManager {
 			// Write files
 			for (const f of def.files ?? []) {
 				const dir = f.path.slice(0, f.path.lastIndexOf("/"));
-				if (dir && !this._vfs.exists(dir)) { this._vfs.mkdir(dir, 0o755); }
+				if (dir && !this._vfs.exists(dir)) {
+					this._vfs.mkdir(dir, 0o755);
+				}
 				this._vfs.writeFile(f.path, f.content, { mode: f.mode ?? 0o644 });
 			}
 
@@ -969,7 +999,9 @@ export class VirtualPackageManager {
 		}
 
 		for (const pkg of toRemove) {
-			if (!opts.quiet) { lines.push(`Removing ${pkg.name} (${pkg.version}) ...`); }
+			if (!opts.quiet) {
+				lines.push(`Removing ${pkg.name} (${pkg.version}) ...`);
+			}
 
 			// Remove files (if purge, include config files)
 			for (const filePath of pkg.files) {
@@ -980,8 +1012,12 @@ export class VirtualPackageManager {
 					continue; // keep config unless --purge
 				}
 				try {
-					if (this._vfs.exists(filePath)) { this._vfs.remove(filePath); }
-				} catch { /* best-effort cleanup */ }
+					if (this._vfs.exists(filePath)) {
+						this._vfs.remove(filePath);
+					}
+				} catch {
+					/* best-effort cleanup */
+				}
 			}
 
 			// Run remove hook
@@ -1028,7 +1064,9 @@ export class VirtualPackageManager {
 	public show(name: string): string | null {
 		this._ensureLoaded();
 		const def = VirtualPackageManager.findInRegistry(name);
-		if (!def) { return null; }
+		if (!def) {
+			return null;
+		}
 		const inst = this._installed.get(name);
 		return [
 			`Package: ${def.name}`,

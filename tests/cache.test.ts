@@ -6,7 +6,11 @@ import VirtualFileSystem from "../src/modules/VirtualFileSystem";
 const TEST_DIR = path.join(process.cwd(), ".test-cache");
 
 function cleanup() {
-	try { fsSync.rmSync(TEST_DIR, { recursive: true, force: true }); } catch { /* ignore */ }
+	try {
+		fsSync.rmSync(TEST_DIR, { recursive: true, force: true });
+	} catch {
+		/* ignore */
+	}
 }
 
 function makeVfsWithCache(cacheOptions = {}) {

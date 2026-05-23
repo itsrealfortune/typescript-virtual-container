@@ -18,7 +18,9 @@ export const killCommand: ShellModule = {
 
 		for (let i = 0; i < args.length; i++) {
 			const arg = args[i];
-			if (!arg) { continue; }
+			if (!arg) {
+				continue;
+			}
 			if (arg === "-l") {
 				// List signals
 				const lines = Object.entries(SIGNALS)
@@ -29,7 +31,10 @@ export const killCommand: ShellModule = {
 			if (arg === "-s" && i + 1 < args.length) {
 				const resolved = resolveSignal(args[++i] ?? "");
 				if (resolved === null) {
-					return { stderr: `kill: unknown signal name '${args[i]}'`, exitCode: 1 };
+					return {
+						stderr: `kill: unknown signal name '${args[i]}'`,
+						exitCode: 1,
+					};
 				}
 				signal = resolved;
 			} else if (arg.startsWith("-") && arg !== "-") {
@@ -46,7 +51,9 @@ export const killCommand: ShellModule = {
 			}
 		}
 
-		if (!pidStr) { return { stderr: "kill: no pid specified", exitCode: 1 }; }
+		if (!pidStr) {
+			return { stderr: "kill: no pid specified", exitCode: 1 };
+		}
 		const pid = Number.parseInt(pidStr, 10);
 		if (Number.isNaN(pid)) {
 			return { stderr: `kill: invalid pid: ${pidStr}`, exitCode: 1 };

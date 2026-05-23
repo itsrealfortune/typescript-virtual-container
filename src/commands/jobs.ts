@@ -1,7 +1,10 @@
 import type { VirtualProcess } from "../modules/VirtualUserManager";
 import type { ShellModule } from "../types/commands";
 
-function parseJobspec(arg: string | undefined, procs: VirtualProcess[]): VirtualProcess | undefined {
+function parseJobspec(
+	arg: string | undefined,
+	procs: VirtualProcess[],
+): VirtualProcess | undefined {
 	if (!arg) {
 		// Default to most recent background job
 		return procs.filter((p) => p.status !== "stopped").pop();
@@ -17,11 +20,18 @@ export const jobsCommand: ShellModule = {
 	params: [],
 	run: ({ shell }) => {
 		const procs = shell.users.listProcesses();
-		if (procs.length === 0) { return { stdout: "", exitCode: 0 }; }
+		if (procs.length === 0) {
+			return { stdout: "", exitCode: 0 };
+		}
 
 		const lines = procs.map((p, i) => {
 			const label = `[${i + 1}]`;
-			const status = p.status === "running" ? "running" : p.status === "done" ? "done" : "stopped";
+			const status =
+				p.status === "running"
+					? "running"
+					: p.status === "done"
+						? "done"
+						: "stopped";
 			return `${label}  ${String(p.pid).padStart(5)} ${status.padEnd(8)} ${p.argv.join(" ")}`;
 		});
 
@@ -44,7 +54,10 @@ export const bgCommand: ShellModule = {
 			return { stderr: `bg: ${args[0]}: job has finished`, exitCode: 1 };
 		}
 		proc.status = "running";
-		return { stdout: `[${procs.indexOf(proc) + 1}]  ${proc.pid}  ${proc.argv.join(" ")} &\n`, exitCode: 0 };
+		return {
+			stdout: `[${procs.indexOf(proc) + 1}]  ${proc.pid}  ${proc.argv.join(" ")} &\n`,
+			exitCode: 0,
+		};
 	},
 };
 

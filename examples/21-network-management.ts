@@ -14,9 +14,35 @@ const net = shell.network;
 
 // ── Interfaces ────────────────────────────────────────────────────
 console.log("--- Interfaces ---");
-net.addInterface({ name: "eth0", type: "ether", mac: "02:42:ac:10:00:01", mtu: 1500, ipv4: "10.0.0.1", ipv4Mask: 8, ipv6: "::1", speed: 1000 });
-net.addInterface({ name: "eth1", type: "ether", mac: "02:42:ac:10:00:02", mtu: 1500, ipv4: "192.168.1.1", ipv4Mask: 24, ipv6: "::1", speed: 100 });
-net.addInterface({ name: "lo", type: "loopback", mac: "00:00:00:00:00:00", mtu: 65536, ipv4: "127.0.0.1", ipv4Mask: 8, ipv6: "::1" });
+net.addInterface({
+	name: "eth0",
+	type: "ether",
+	mac: "02:42:ac:10:00:01",
+	mtu: 1500,
+	ipv4: "10.0.0.1",
+	ipv4Mask: 8,
+	ipv6: "::1",
+	speed: 1000,
+});
+net.addInterface({
+	name: "eth1",
+	type: "ether",
+	mac: "02:42:ac:10:00:02",
+	mtu: 1500,
+	ipv4: "192.168.1.1",
+	ipv4Mask: 24,
+	ipv6: "::1",
+	speed: 100,
+});
+net.addInterface({
+	name: "lo",
+	type: "loopback",
+	mac: "00:00:00:00:00:00",
+	mtu: 65536,
+	ipv4: "127.0.0.1",
+	ipv4Mask: 8,
+	ipv6: "::1",
+});
 
 net.setInterfaceState("eth0", "UP");
 net.setInterfaceState("eth1", "UP");
@@ -70,7 +96,11 @@ console.log(net.formatFirewall());
 
 // ── Check firewall ────────────────────────────────────────────────
 console.log("\n--- Firewall checks ---");
-const checks: Array<{ proto: "tcp" | "udp" | "icmp" | "all"; dst: string; port: number }> = [
+const checks: Array<{
+	proto: "tcp" | "udp" | "icmp" | "all";
+	dst: string;
+	port: number;
+}> = [
 	{ proto: "tcp", dst: "10.0.0.1", port: 22 },
 	{ proto: "tcp", dst: "10.0.0.1", port: 8080 },
 	{ proto: "tcp", dst: "10.0.0.1", port: 443 },

@@ -16,14 +16,20 @@ export function getFlag(argv: string[], name: string): boolean {
  * @param fallback - The default value if the option is not found.
  * @returns The option value, or `fallback` if absent.
  */
-export function getOptionString(argv: string[], name: string, fallback: string): string {
+export function getOptionString(
+	argv: string[],
+	name: string,
+	fallback: string,
+): string {
 	const prefix = `${name}=`;
 	for (let i = 0; i < argv.length; i++) {
 		const a = argv[i] as string;
-		if (a.startsWith(prefix)) { return a.slice(prefix.length); }
+		if (a.startsWith(prefix)) {
+			return a.slice(prefix.length);
+		}
 		if (a === name) {
 			const next = argv[i + 1];
-			return (next && !next.startsWith("--")) ? next : fallback;
+			return next && !next.startsWith("--") ? next : fallback;
 		}
 	}
 	return fallback;
@@ -37,11 +43,17 @@ export function getOptionString(argv: string[], name: string, fallback: string):
  * @param fallback - The default value if the option is not found or cannot be parsed.
  * @returns The parsed integer, or `fallback` if absent or unparseable.
  */
-export function getOptionInt(argv: string[], name: string, fallback: number): number {
+export function getOptionInt(
+	argv: string[],
+	name: string,
+	fallback: number,
+): number {
 	const prefix = `${name}=`;
 	for (let i = 0; i < argv.length; i++) {
 		const a = argv[i] as string;
-		if (a.startsWith(prefix)) { return Number.parseInt(a.slice(prefix.length), 10); }
+		if (a.startsWith(prefix)) {
+			return Number.parseInt(a.slice(prefix.length), 10);
+		}
 		if (a === name) {
 			const next = argv[i + 1];
 			return next ? Number.parseInt(next, 10) : fallback;

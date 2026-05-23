@@ -24,21 +24,29 @@ export const usermodCommand: ShellModule = {
 
 		for (let i = 0; i < args.length; i++) {
 			const arg = args[i];
-			if (!arg) { continue; }
+			if (!arg) {
+				continue;
+			}
 
 			if (arg === "-g") {
 				const val = args[i + 1];
-				if (!val) { break; }
+				if (!val) {
+					break;
+				}
 				primaryGroup = val;
 				i++;
 			} else if (arg === "-G") {
 				const val = args[i + 1];
-				if (!val) { break; }
+				if (!val) {
+					break;
+				}
 				supplementaryGroups = val.split(",");
 				i++;
 			} else if (arg === "-aG") {
 				const val = args[i + 1];
-				if (!val) { break; }
+				if (!val) {
+					break;
+				}
 				appendGroups = true;
 				supplementaryGroups = val.split(",");
 				i++;
@@ -52,19 +60,28 @@ export const usermodCommand: ShellModule = {
 		}
 
 		if (!username) {
-			return { stderr: "Usage: usermod [-g group|-G groups|-aG group|-L|-U] <user>\n", exitCode: 1 };
+			return {
+				stderr: "Usage: usermod [-g group|-G groups|-aG group|-L|-U] <user>\n",
+				exitCode: 1,
+			};
 		}
 
 		const users = shell.users.listUsers();
 		if (!users.includes(username)) {
-			return { stderr: `usermod: user '${username}' does not exist\n`, exitCode: 1 };
+			return {
+				stderr: `usermod: user '${username}' does not exist\n`,
+				exitCode: 1,
+			};
 		}
 
 		// Change primary group
 		if (primaryGroup) {
 			const gid = shell.users.getGidByName(primaryGroup);
 			if (gid === null) {
-				return { stderr: `usermod: group '${primaryGroup}' does not exist\n`, exitCode: 1 };
+				return {
+					stderr: `usermod: group '${primaryGroup}' does not exist\n`,
+					exitCode: 1,
+				};
 			}
 			// Note: VirtualUserRecord GID is immutable in current design;
 			// we update via re-creating the record or storing override.
@@ -83,9 +100,14 @@ export const usermodCommand: ShellModule = {
 			}
 			for (const g of supplementaryGroups) {
 				const trimmed = g.trim();
-				if (!trimmed) { continue; }
+				if (!trimmed) {
+					continue;
+				}
 				if (!shell.users.getGroup(trimmed)) {
-					return { stderr: `usermod: group '${trimmed}' does not exist\n`, exitCode: 1 };
+					return {
+						stderr: `usermod: group '${trimmed}' does not exist\n`,
+						exitCode: 1,
+					};
 				}
 				shell.users.addGroupMember(trimmed, username);
 			}
@@ -97,12 +119,18 @@ export const usermodCommand: ShellModule = {
 			if (hash && !hash.startsWith("!")) {
 				// Locking is a password-level operation — not exposed in current API
 				// We simulate by noting it
-				return { stdout: `usermod: lock requested for '${username}' (password lock not yet implemented)\n`, exitCode: 0 };
+				return {
+					stdout: `usermod: lock requested for '${username}' (password lock not yet implemented)\n`,
+					exitCode: 0,
+				};
 			}
 		}
 
 		if (unlock) {
-			return { stdout: `usermod: unlock requested for '${username}'\n`, exitCode: 0 };
+			return {
+				stdout: `usermod: unlock requested for '${username}'\n`,
+				exitCode: 0,
+			};
 		}
 
 		return { stdout: `usermod: user '${username}' modified\n`, exitCode: 0 };

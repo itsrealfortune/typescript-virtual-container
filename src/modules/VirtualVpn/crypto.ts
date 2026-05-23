@@ -11,5 +11,8 @@ export function encrypt(plaintext: string, key: Buffer, iv: Buffer): Buffer {
 
 export function decrypt(ciphertext: Buffer, key: Buffer, iv: Buffer): string {
 	const decipher = createDecipheriv("aes-256-cbc", key, iv);
-	return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString("utf8");
+	return Buffer.concat([
+		decipher.update(ciphertext),
+		decipher.final(),
+	]).toString("utf8");
 }

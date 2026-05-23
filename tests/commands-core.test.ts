@@ -1,6 +1,12 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 import type { SshClient, VirtualShell } from "../src";
-import { createTestEnv, createTestFile, pathExists, readTestFile, runCmd } from "./test-helper";
+import {
+	createTestEnv,
+	createTestFile,
+	pathExists,
+	readTestFile,
+	runCmd,
+} from "./test-helper";
 
 let shell: VirtualShell;
 let client: InstanceType<typeof SshClient>;
@@ -198,7 +204,10 @@ describe("mkdir command", () => {
 
 	test("mkdir duplicate dir fails", async () => {
 		await runCmd(client, "mkdir /tmp/dup-unique");
-		const r = await runCmd(client, "mkdir /tmp/dup-unique 2>&1 || echo 'error'");
+		const r = await runCmd(
+			client,
+			"mkdir /tmp/dup-unique 2>&1 || echo 'error'",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 });
@@ -366,7 +375,9 @@ describe("grep command", () => {
 		createTestFile(shell, "/tmp/grep-case.txt", "HELLO\nhello\nHello");
 		const r = await runCmd(client, "grep -i hello /tmp/grep-case.txt");
 		expect(r.exitCode).toBe(0);
-		expect(r.stdout?.split("\n").filter((l) => l).length).toBeGreaterThanOrEqual(3);
+		expect(
+			r.stdout?.split("\n").filter((l) => l).length,
+		).toBeGreaterThanOrEqual(3);
 	});
 
 	test("grep -v inverts match", async () => {
@@ -541,7 +552,11 @@ describe("sort command", () => {
 
 describe("uniq command", () => {
 	test("uniq removes consecutive duplicates", async () => {
-		createTestFile(shell, "/tmp/uniq-test3.txt", "apple\napple\nbanana\nbanana\napple");
+		createTestFile(
+			shell,
+			"/tmp/uniq-test3.txt",
+			"apple\napple\nbanana\nbanana\napple",
+		);
 		const r = await runCmd(client, "uniq /tmp/uniq-test3.txt || echo 'uniq'");
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
@@ -700,7 +715,10 @@ describe("dd command", () => {
 
 	test("dd with block size and count", async () => {
 		createTestFile(shell, "/tmp/dd_bs.txt", "abcdefghij");
-		const r = await runCmd(client, "dd if=/tmp/dd_bs.txt of=/tmp/dd_bs_out.txt bs=5 count=1");
+		const r = await runCmd(
+			client,
+			"dd if=/tmp/dd_bs.txt of=/tmp/dd_bs_out.txt bs=5 count=1",
+		);
 		expect(r.exitCode).toBe(0);
 		expect(readTestFile(shell, "/tmp/dd_bs_out.txt")).toBe("abcde");
 	});

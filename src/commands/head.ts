@@ -16,9 +16,12 @@ export const headCommand: ShellModule = {
 		const nArg = getFlag(args, ["-n"]);
 		// Support both -n N and -N shorthand (head -2, head -10)
 		const shortN = args.find((a) => /^-\d+$/.test(a));
-		const n = typeof nArg === "string"
-			? Number.parseInt(nArg, 10)
-			: shortN ? Number.parseInt(shortN.slice(1), 10) : 10;
+		const n =
+			typeof nArg === "string"
+				? Number.parseInt(nArg, 10)
+				: shortN
+					? Number.parseInt(shortN.slice(1), 10)
+					: 10;
 		const positionals = args.filter(
 			(a) => !a.startsWith("-") && a !== nArg && a !== String(n),
 		);
@@ -27,7 +30,12 @@ export const headCommand: ShellModule = {
 			const lines = content.split("\n");
 			// Preserve trailing newline
 			const sliced = lines.slice(0, n);
-			return sliced.join("\n") + (content.endsWith("\n") && sliced.length === lines.slice(0, n).length ? "\n" : "");
+			return (
+				sliced.join("\n") +
+				(content.endsWith("\n") && sliced.length === lines.slice(0, n).length
+					? "\n"
+					: "")
+			);
 		};
 
 		if (positionals.length === 0) {

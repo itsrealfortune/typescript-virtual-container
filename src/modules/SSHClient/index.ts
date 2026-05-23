@@ -115,7 +115,73 @@ export class SshClient {
 			const target = cdMatch[2]!.trim();
 			// Don't prefix cd commands - they handle their own directory changes
 			return new Promise<CommandResult>((resolve) => {
-				this._client.exec(command, (err: Error | undefined, stream: ClientChannel) => {
+				this._client.exec(
+					command,
+					(err: Error | undefined, stream: ClientChannel) => {
+						if (err) {
+							resolve({ stderr: err.message, exitCode: 1 });
+							return;
+						}
+
+						let stdout = "";
+						let stderr = "";
+
+						stream.on("close", (code: number | string) => {
+							const exitCode = typeof code === "number" ? code : 0;
+							// Only update cwd if command succeeded
+							if (exitCode === 0) {
+								if (target === "/" || target.startsWith("/")) {
+									this._currentCwd = target;
+								} else if (target === "~" || target.startsWith("~/")) {
+									this._currentCwd = `/root${target === "~" ? "" : target.slice(1)}`;
+								} else if (target === "-") {
+									// Keep current (simplified)
+								} else {
+									// Relative path
+									const base = this._currentCwd === "/" ? "" : this._currentCwd;
+									const parts = `${base}/${target}`.split("/").filter(Boolean);
+									const resolved: string[] = [];
+									for (const part of parts) {
+										if (part === "..") {
+											resolved.pop();
+										} else if (part !== ".") {
+											resolved.push(part);
+										}
+									}
+									this._currentCwd = `/${resolved.join("/")}` || "/";
+								}
+							}
+
+							const result: CommandResult = {
+								stdout: stdout.replace(/\r\n/g, "\n") || undefined,
+								stderr: stderr.replace(/\r\n/g, "\n") || undefined,
+								exitCode,
+							};
+
+							resolve(result);
+						});
+
+						stream.on("data", (data: Buffer) => {
+							stdout += data.toString();
+						});
+
+						stream.stderr?.on("data", (data: Buffer) => {
+							stderr += data.toString();
+						});
+					},
+				);
+			});
+		}
+
+		// Prefix command with cd to maintain cwd state across exec sessions
+		const escapedCwd = this._currentCwd.replace(/'/g, "'\\''");
+		const prefixedCommand =
+			this._currentCwd === "/" ? command : `cd '${escapedCwd}' && ${command}`;
+
+		return new Promise<CommandResult>((resolve) => {
+			this._client.exec(
+				prefixedCommand,
+				(err: Error | undefined, stream: ClientChannel) => {
 					if (err) {
 						resolve({ stderr: err.message, exitCode: 1 });
 						return;
@@ -126,30 +192,6 @@ export class SshClient {
 
 					stream.on("close", (code: number | string) => {
 						const exitCode = typeof code === "number" ? code : 0;
-						// Only update cwd if command succeeded
-						if (exitCode === 0) {
-							if (target === "/" || target.startsWith("/")) {
-								this._currentCwd = target;
-							} else if (target === "~" || target.startsWith("~/")) {
-								this._currentCwd = `/root${target === "~" ? "" : target.slice(1)}`;
-							} else if (target === "-") {
-								// Keep current (simplified)
-							} else {
-								// Relative path
-								const base = this._currentCwd === "/" ? "" : this._currentCwd;
-								const parts = `${base}/${target}`.split("/").filter(Boolean);
-								const resolved: string[] = [];
-								for (const part of parts) {
-									if (part === "..") {
-										resolved.pop();
-									} else if (part !== ".") {
-										resolved.push(part);
-									}
-								}
-								this._currentCwd = `/${resolved.join("/")}` || "/";
-							}
-						}
-
 						const result: CommandResult = {
 							stdout: stdout.replace(/\r\n/g, "\n") || undefined,
 							stderr: stderr.replace(/\r\n/g, "\n") || undefined,
@@ -166,45 +208,8 @@ export class SshClient {
 					stream.stderr?.on("data", (data: Buffer) => {
 						stderr += data.toString();
 					});
-				});
-			});
-		}
-
-		// Prefix command with cd to maintain cwd state across exec sessions
-		const escapedCwd = this._currentCwd.replace(/'/g, "'\\''");
-		const prefixedCommand = this._currentCwd === "/"
-			? command
-			: `cd '${escapedCwd}' && ${command}`;
-
-		return new Promise<CommandResult>((resolve) => {
-			this._client.exec(prefixedCommand, (err: Error | undefined, stream: ClientChannel) => {
-				if (err) {
-					resolve({ stderr: err.message, exitCode: 1 });
-					return;
-				}
-
-				let stdout = "";
-				let stderr = "";
-
-				stream.on("close", (code: number | string) => {
-					const exitCode = typeof code === "number" ? code : 0;
-					const result: CommandResult = {
-						stdout: stdout.replace(/\r\n/g, "\n") || undefined,
-						stderr: stderr.replace(/\r\n/g, "\n") || undefined,
-						exitCode,
-					};
-
-					resolve(result);
-				});
-
-				stream.on("data", (data: Buffer) => {
-					stdout += data.toString();
-				});
-
-				stream.stderr?.on("data", (data: Buffer) => {
-					stderr += data.toString();
-				});
-			});
+				},
+			);
 		});
 	}
 

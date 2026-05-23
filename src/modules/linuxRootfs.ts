@@ -18,17 +18,24 @@
  */
 
 import * as os from "node:os";
-import type { ShellProperties, VirtualShellResourceCaps } from "../modules/VirtualShell";
+import type {
+	ShellProperties,
+	VirtualShellResourceCaps,
+} from "../modules/VirtualShell";
 import VirtualFileSystem from "./VirtualFileSystem";
 import { decodeVfs } from "./VirtualFileSystem/binaryPack";
 import type { VirtualNetworkManager } from "./VirtualNetworkManager";
-import type { VirtualActiveSession, VirtualUserManager } from "./VirtualUserManager";
-
+import type {
+	VirtualActiveSession,
+	VirtualUserManager,
+} from "./VirtualUserManager";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
 function ensureDir(vfs: VirtualFileSystem, path: string, mode = 0o755): void {
-	if (!vfs.exists(path)) { vfs.mkdir(path, mode); }
+	if (!vfs.exists(path)) {
+		vfs.mkdir(path, mode);
+	}
 }
 
 function ensureFile(
@@ -91,7 +98,7 @@ function bootstrapEtc(
 		"/etc/profile",
 		`${[
 			"export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-			"if [ \"$(id -u)\" -eq 0 ]; then",
+			'if [ "$(id -u)" -eq 0 ]; then',
 			"  export PS1='\\[\\e[37m\\][\\[\\e[31;1m\\]\\u\\[\\e[37m\\]@\\[\\e[34;1m\\]\\h\\[\\e[0m\\] \\w]\\[\\e[31;1m\\]\\$\\[\\e[0m\\] '",
 			"else",
 			"  export PS1='\\[\\e[37m\\][\\[\\e[35;1m\\]\\u\\[\\e[37m\\]@\\[\\e[34;1m\\]\\h\\[\\e[0m\\] \\w]\\[\\e[0m\\]\\$ '",
@@ -106,7 +113,9 @@ function bootstrapEtc(
 		"/etc/motd",
 		["", `Welcome to ${props.os}`, `Kernel: ${props.kernel}`, ""].join("\n"),
 	);
-	ensureFile(vfs, "/etc/lsb-release",
+	ensureFile(
+		vfs,
+		"/etc/lsb-release",
 		`${[
 			"DISTRIB_ID=Fortune",
 			"DISTRIB_RELEASE=1.0",
@@ -158,7 +167,11 @@ function bootstrapEtc(
 		].join("\n")}\n`,
 	);
 
-	ensureFile(vfs, "/etc/resolv.conf", "nameserver 1.1.1.1\nnameserver 8.8.8.8\n");
+	ensureFile(
+		vfs,
+		"/etc/resolv.conf",
+		"nameserver 1.1.1.1\nnameserver 8.8.8.8\n",
+	);
 
 	ensureFile(
 		vfs,
@@ -174,7 +187,9 @@ function bootstrapEtc(
 		].join("\n")}\n`,
 	);
 
-	ensureFile(vfs, "/etc/nsswitch.conf",
+	ensureFile(
+		vfs,
+		"/etc/nsswitch.conf",
 		`${[
 			"passwd:         files systemd",
 			"group:          files systemd",
@@ -198,7 +213,9 @@ function bootstrapEtc(
 	ensureDir(vfs, "/etc/systemd/system");
 	ensureDir(vfs, "/etc/systemd/system/multi-user.target.wants");
 	ensureDir(vfs, "/etc/systemd/network");
-	ensureFile(vfs, "/etc/systemd/system.conf",
+	ensureFile(
+		vfs,
+		"/etc/systemd/system.conf",
 		"[Manager]\nDefaultTimeoutStartSec=90s\nDefaultTimeoutStopSec=90s\n",
 	);
 
@@ -238,41 +255,61 @@ function bootstrapEtc(
 
 	// security + pam
 	ensureDir(vfs, "/etc/security");
-	ensureFile(vfs, "/etc/security/limits.conf",
+	ensureFile(
+		vfs,
+		"/etc/security/limits.conf",
 		"# /etc/security/limits.conf\n*  soft  nofile  1024\n*  hard  nofile  65536\n",
 	);
 	ensureFile(vfs, "/etc/security/access.conf", "# /etc/security/access.conf\n");
 
 	ensureDir(vfs, "/etc/pam.d");
-	ensureFile(vfs, "/etc/pam.d/common-auth",
+	ensureFile(
+		vfs,
+		"/etc/pam.d/common-auth",
 		"auth [success=1 default=ignore] pam_unix.so nullok\nauth requisite pam_deny.so\nauth required pam_permit.so\n",
 	);
-	ensureFile(vfs, "/etc/pam.d/common-account",
+	ensureFile(
+		vfs,
+		"/etc/pam.d/common-account",
 		"account [success=1 new_authtok_reqd=done default=ignore] pam_unix.so\naccount requisite pam_deny.so\naccount required pam_permit.so\n",
 	);
-	ensureFile(vfs, "/etc/pam.d/common-password",
+	ensureFile(
+		vfs,
+		"/etc/pam.d/common-password",
 		"password [success=1 default=ignore] pam_unix.so obscure sha512\npassword requisite pam_deny.so\npassword required pam_permit.so\n",
 	);
-	ensureFile(vfs, "/etc/pam.d/common-session",
+	ensureFile(
+		vfs,
+		"/etc/pam.d/common-session",
 		"session [default=1] pam_permit.so\nsession requisite pam_deny.so\nsession required pam_permit.so\nsession optional pam_umask.so\nsession required pam_unix.so\n",
 	);
-	ensureFile(vfs, "/etc/pam.d/sshd",
+	ensureFile(
+		vfs,
+		"/etc/pam.d/sshd",
 		"@include common-auth\n@include common-account\n@include common-session\n",
 	);
-	ensureFile(vfs, "/etc/pam.d/login",
+	ensureFile(
+		vfs,
+		"/etc/pam.d/login",
 		"@include common-auth\n@include common-account\n@include common-session\n",
 	);
-	ensureFile(vfs, "/etc/pam.d/sudo",
+	ensureFile(
+		vfs,
+		"/etc/pam.d/sudo",
 		"@include common-auth\n@include common-account\n@include common-session\n",
 	);
 
 	// sudo
 	ensureDir(vfs, "/etc/sudoers.d");
-	ensureFile(vfs, "/etc/sudoers",
-		"Defaults\tenv_reset\nDefaults\tmail_badpass\nDefaults\tsecure_path=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\"\nroot ALL=(ALL:ALL) ALL\n%sudo ALL=(ALL:ALL) ALL\n",
+	ensureFile(
+		vfs,
+		"/etc/sudoers",
+		'Defaults\tenv_reset\nDefaults\tmail_badpass\nDefaults\tsecure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"\nroot ALL=(ALL:ALL) ALL\n%sudo ALL=(ALL:ALL) ALL\n',
 		0o440,
 	);
-	ensureFile(vfs, "/etc/sudoers.d/README",
+	ensureFile(
+		vfs,
+		"/etc/sudoers.d/README",
 		"# Files in this directory are parsed by sudo, if the file is not a backup.\n",
 		0o440,
 	);
@@ -280,10 +317,14 @@ function bootstrapEtc(
 	// ld
 	ensureFile(vfs, "/etc/ld.so.conf", "include /etc/ld.so.conf.d/*.conf\n");
 	ensureDir(vfs, "/etc/ld.so.conf.d");
-	ensureFile(vfs, "/etc/ld.so.conf.d/x86_64-linux-gnu.conf",
+	ensureFile(
+		vfs,
+		"/etc/ld.so.conf.d/x86_64-linux-gnu.conf",
 		"/lib/x86_64-linux-gnu\n/usr/lib/x86_64-linux-gnu\n",
 	);
-	ensureFile(vfs, "/etc/ld.so.conf.d/fakeroot.conf",
+	ensureFile(
+		vfs,
+		"/etc/ld.so.conf.d/fakeroot.conf",
 		"/usr/lib/x86_64-linux-gnu/libfakeroot\n",
 	);
 
@@ -295,12 +336,16 @@ function bootstrapEtc(
 	ensureFile(vfs, "/etc/localtime", "UTC\n");
 
 	// environment
-	ensureFile(vfs, "/etc/environment",
+	ensureFile(
+		vfs,
+		"/etc/environment",
 		"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\n",
 	);
 
 	// adduser.conf
-	ensureFile(vfs, "/etc/adduser.conf",
+	ensureFile(
+		vfs,
+		"/etc/adduser.conf",
 		`${[
 			"DSHELL=/bin/bash",
 			"DHOME=/home",
@@ -316,14 +361,16 @@ function bootstrapEtc(
 			"FIRST_GID=1000",
 			"LAST_GID=59999",
 			"USERGROUPS=yes",
-			"NAME_REGEX=\"^[a-z][-a-z0-9_]*$\"",
-			"SYS_NAME_REGEX=\"^[a-z_][-a-z0-9_]*$\"",
+			'NAME_REGEX="^[a-z][-a-z0-9_]*$"',
+			'SYS_NAME_REGEX="^[a-z_][-a-z0-9_]*$"',
 		].join("\n")}\n`,
 	);
 
 	// /etc/skel
 	ensureDir(vfs, "/etc/skel");
-	ensureFile(vfs, "/etc/skel/.bashrc",
+	ensureFile(
+		vfs,
+		"/etc/skel/.bashrc",
 		`${[
 			"# ~/.bashrc: executed by bash(1) for non-login shells.",
 			"case $- in",
@@ -341,25 +388,27 @@ function bootstrapEtc(
 		].join("\n")}\n`,
 	);
 	ensureFile(vfs, "/etc/skel/.bash_logout", "# ~/.bash_logout\n");
-	ensureFile(vfs, "/etc/skel/.profile",
-		"# ~/.profile\n[ -n \"$BASH_VERSION\" ] && [ -f \"$HOME/.bashrc\" ] && . \"$HOME/.bashrc\"\n",
+	ensureFile(
+		vfs,
+		"/etc/skel/.profile",
+		'# ~/.profile\n[ -n "$BASH_VERSION" ] && [ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc"\n',
 	);
 
 	// alternatives
 	ensureDir(vfs, "/etc/alternatives");
 	const alternatives: [string, string][] = [
 		["python3", "/usr/bin/python3.12"],
-		["python",  "/usr/bin/python3.12"],
-		["editor",  "/usr/bin/nano"],
-		["vi",      "/usr/bin/nano"],
-		["cc",      "/usr/bin/gcc"],
-		["gcc",     "/usr/bin/gcc-13"],
-		["g++",     "/usr/bin/g++-13"],
-		["java",    "/usr/lib/jvm/java-21-openjdk-amd64/bin/java"],
-		["node",    "/usr/bin/node"],
-		["npm",     "/usr/bin/npm"],
-		["awk",     "/usr/bin/mawk"],
-		["pager",   "/usr/bin/less"],
+		["python", "/usr/bin/python3.12"],
+		["editor", "/usr/bin/nano"],
+		["vi", "/usr/bin/nano"],
+		["cc", "/usr/bin/gcc"],
+		["gcc", "/usr/bin/gcc-13"],
+		["g++", "/usr/bin/g++-13"],
+		["java", "/usr/lib/jvm/java-21-openjdk-amd64/bin/java"],
+		["node", "/usr/bin/node"],
+		["npm", "/usr/bin/npm"],
+		["awk", "/usr/bin/mawk"],
+		["pager", "/usr/bin/less"],
 	];
 	for (const [name, target] of alternatives) {
 		ensureFile(vfs, `/etc/alternatives/${name}`, target);
@@ -368,36 +417,58 @@ function bootstrapEtc(
 	// java
 	ensureDir(vfs, "/etc/java-21-openjdk");
 	ensureDir(vfs, "/etc/java-21-openjdk/security");
-	ensureFile(vfs, "/etc/java-21-openjdk/security/java.security", "# java.security\n");
-	ensureFile(vfs, "/etc/java-21-openjdk/logging.properties", "# logging.properties\n");
+	ensureFile(
+		vfs,
+		"/etc/java-21-openjdk/security/java.security",
+		"# java.security\n",
+	);
+	ensureFile(
+		vfs,
+		"/etc/java-21-openjdk/logging.properties",
+		"# logging.properties\n",
+	);
 
 	// misc
-	ensureFile(vfs, "/etc/bash.bashrc",
-		"# System-wide .bashrc\n[ -z \"$PS1\" ] && return\n",
+	ensureFile(
+		vfs,
+		"/etc/bash.bashrc",
+		'# System-wide .bashrc\n[ -z "$PS1" ] && return\n',
 	);
-	ensureFile(vfs, "/etc/inputrc",
+	ensureFile(
+		vfs,
+		"/etc/inputrc",
 		"# /etc/inputrc\n$include /etc/inputrc.d\nset bell-style none\n",
 	);
 	ensureFile(vfs, "/etc/magic", "# magic\n");
 	ensureFile(vfs, "/etc/magic.mime", "# magic.mime\n");
 	ensureFile(vfs, "/etc/papersize", "a4\n");
 	ensureFile(vfs, "/etc/ucf.conf", "# ucf.conf\n");
-	ensureFile(vfs, "/etc/gai.conf",
+	ensureFile(
+		vfs,
+		"/etc/gai.conf",
 		"# getaddrinfo() configuration\nlabel ::1/128 0\nprecedence ::1/128 50\n",
 	);
-	ensureFile(vfs, "/etc/services",
+	ensureFile(
+		vfs,
+		"/etc/services",
 		"# Network services\nftp   21/tcp\nssh   22/tcp\nsmtp  25/tcp\nhttp  80/tcp\nhttps 443/tcp\n",
 	);
-	ensureFile(vfs, "/etc/protocols",
+	ensureFile(
+		vfs,
+		"/etc/protocols",
 		"# protocols\nip    0   IP\nicmp  1   ICMP\ntcp   6   TCP\nudp   17  UDP\n",
 	);
 
 	ensureDir(vfs, "/etc/profile.d");
-	ensureFile(vfs, "/etc/profile.d/01-locale-fix.sh",
-		"[ -z \"$LANG\" ] && export LANG=en_US.UTF-8\n",
+	ensureFile(
+		vfs,
+		"/etc/profile.d/01-locale-fix.sh",
+		'[ -z "$LANG" ] && export LANG=en_US.UTF-8\n',
 	);
-	ensureFile(vfs, "/etc/profile.d/apps-bin-path.sh",
-		"export PATH=\"$PATH:/snap/bin\"\n",
+	ensureFile(
+		vfs,
+		"/etc/profile.d/apps-bin-path.sh",
+		'export PATH="$PATH:/snap/bin"\n',
 	);
 }
 
@@ -442,14 +513,19 @@ export function syncEtcPasswd(
 
 	let uid = 1000;
 	for (const u of userList) {
-		if (u === "root") { continue; }
+		if (u === "root") {
+			continue;
+		}
 		const realUid = users.getUid(u);
 		const realGid = users.getGid(u);
 		const effectiveUid = realUid > 0 ? realUid : uid;
 		const effectiveGid = realGid > 0 ? realGid : uid;
-		passwdLines.push(`${u}:x:${effectiveUid}:${effectiveGid}::/home/${u}:/bin/bash`);
-		if (realUid === 0) { uid++; // Only increment if UID was auto-assigned
-}
+		passwdLines.push(
+			`${u}:x:${effectiveUid}:${effectiveGid}::/home/${u}:/bin/bash`,
+		);
+		if (realUid === 0) {
+			uid++; // Only increment if UID was auto-assigned
+		}
 	}
 
 	vfs.writeFile("/etc/passwd", `${passwdLines.join("\n")}\n`);
@@ -489,7 +565,9 @@ function writeProcPid(
 	ensureDir(vfs, `${dir}/fdinfo`);
 	ensureDir(vfs, `${dir}/net`);
 
-	const uptimeSec = Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000);
+	const uptimeSec = Math.floor(
+		(Date.now() - new Date(startedAt).getTime()) / 1000,
+	);
 	const comm = cmdline.split(/\s+/)[0] ?? "bash";
 
 	write(vfs, `${dir}/cmdline`, `${cmdline.replace(/\s+/g, "\0")}\0`);
@@ -546,26 +624,28 @@ function writeProcPid(
 		`${dir}/stat`,
 		`${pid} (${comm}) S 1 ${pid} ${pid} 0 -1 4194304 0 0 0 0 ${uptimeSec} 0 0 0 20 0 1 0 0 16777216 4096 18446744073709551615 93824992235520 93824992290000 140737488347024 0 0 0 65536 3686404 1266761467 1 0 0 17 0 0 0 0 0 0\n`,
 	);
-	write(
-		vfs,
-		`${dir}/statm`,
-		"4096 1024 768 231 0 512 0\n",
-	);
+	write(vfs, `${dir}/statm`, "4096 1024 768 231 0 512 0\n");
 	write(
 		vfs,
 		`${dir}/environ`,
-		`${Object.entries(env).map(([k, v]) => `${k}=${v}`).join("\0")}\0`,
+		`${Object.entries(env)
+			.map(([k, v]) => `${k}=${v}`)
+			.join("\0")}\0`,
 	);
 	write(vfs, `${dir}/cwd`, `/home/${username}\0`);
 	write(vfs, `${dir}/exe`, "/bin/bash\0");
-	write(vfs, `${dir}/maps`,
+	write(
+		vfs,
+		`${dir}/maps`,
 		"00400000-004e7000 r-xp 00000000 fd:00 131073  /bin/bash\n" +
-		"006e7000-006e8000 r--p 000e7000 fd:00 131073  /bin/bash\n" +
-		"006e8000-006f1000 rw-p 000e8000 fd:00 131073  /bin/bash\n" +
-		"7fff00000000-7fff00001000 rw-p 00000000 00:00 0   [stack]\n" +
-		"7fff00000000-7fff00001000 r-xp 00000000 00:00 0   [vdso]\n",
+			"006e7000-006e8000 r--p 000e7000 fd:00 131073  /bin/bash\n" +
+			"006e8000-006f1000 rw-p 000e8000 fd:00 131073  /bin/bash\n" +
+			"7fff00000000-7fff00001000 rw-p 00000000 00:00 0   [stack]\n" +
+			"7fff00000000-7fff00001000 r-xp 00000000 00:00 0   [vdso]\n",
 	);
-	write(vfs, `${dir}/limits`,
+	write(
+		vfs,
+		`${dir}/limits`,
 		`${[
 			"Limit                     Soft Limit           Hard Limit           Units",
 			"Max cpu time              unlimited            unlimited            seconds",
@@ -586,7 +666,9 @@ function writeProcPid(
 			"Max realtime timeout      unlimited            unlimited            us",
 		].join("\n")}\n`,
 	);
-	write(vfs, `${dir}/io`,
+	write(
+		vfs,
+		`${dir}/io`,
 		"rchar: 1048576\nwchar: 65536\nsyscr: 512\nsyscw: 64\nread_bytes: 0\nwrite_bytes: 0\ncancelled_write_bytes: 0\n",
 	);
 	write(vfs, `${dir}/oom_score`, "0\n");
@@ -597,7 +679,9 @@ function writeProcPid(
 
 	for (const fd of ["0", "1", "2"]) {
 		ensureFile(vfs, `${dir}/fd/${fd}`, "");
-		ensureFile(vfs, `${dir}/fdinfo/${fd}`,
+		ensureFile(
+			vfs,
+			`${dir}/fdinfo/${fd}`,
 			`pos:\t0\nflags:\t0${fd === "0" ? "2" : fd === "1" ? "1" : "1"}02\nmnt_id:\t13\n`,
 		);
 	}
@@ -669,21 +753,28 @@ export function refreshProc(
 	ensureDir(vfs, "/proc");
 
 	const uptimeSec = Math.floor((Date.now() - shellStartTime) / 1000);
-	const idleSec   = Math.floor(uptimeSec * 0.9);
+	const idleSec = Math.floor(uptimeSec * 0.9);
 	write(vfs, "/proc/uptime", `${uptimeSec}.00 ${idleSec}.00\n`);
 
 	// meminfo — real host values, Linux-compatible format (or capped)
 	const hostTotalMemKb = Math.floor(os.totalmem() / 1024);
-	const hostFreeMemKb  = Math.floor(os.freemem() / 1024);
-	const ramCapKb       = resourceCaps?.ramCapBytes === undefined ? null : Math.floor(resourceCaps.ramCapBytes / 1024);
-	const totalMemKb     = ramCapKb === null ? hostTotalMemKb : Math.min(hostTotalMemKb, ramCapKb);
-	const freeMemKb      = ramCapKb === null ? hostFreeMemKb : Math.floor(totalMemKb * (hostFreeMemKb / hostTotalMemKb));
-	const availMemKb     = Math.floor(freeMemKb * 0.95);
-	const buffersKb      = Math.floor(totalMemKb * 0.03);
-	const cachedKb       = Math.floor(totalMemKb * 0.08);
-	const shmemKb        = Math.floor(totalMemKb * 0.005);
-	const slabKb         = Math.floor(totalMemKb * 0.02);
-	const pageTablesKb   = Math.floor(totalMemKb * 0.001);
+	const hostFreeMemKb = Math.floor(os.freemem() / 1024);
+	const ramCapKb =
+		resourceCaps?.ramCapBytes === undefined
+			? null
+			: Math.floor(resourceCaps.ramCapBytes / 1024);
+	const totalMemKb =
+		ramCapKb === null ? hostTotalMemKb : Math.min(hostTotalMemKb, ramCapKb);
+	const freeMemKb =
+		ramCapKb === null
+			? hostFreeMemKb
+			: Math.floor(totalMemKb * (hostFreeMemKb / hostTotalMemKb));
+	const availMemKb = Math.floor(freeMemKb * 0.95);
+	const buffersKb = Math.floor(totalMemKb * 0.03);
+	const cachedKb = Math.floor(totalMemKb * 0.08);
+	const shmemKb = Math.floor(totalMemKb * 0.005);
+	const slabKb = Math.floor(totalMemKb * 0.02);
+	const pageTablesKb = Math.floor(totalMemKb * 0.001);
 	write(
 		vfs,
 		"/proc/meminfo",
@@ -745,12 +836,17 @@ export function refreshProc(
 
 	// cpuinfo — real host CPU passthrough + x86 feature flags matching Firecracker Xeon (or capped)
 	const hostCpus = os.cpus();
-	const cpuCapCount = resourceCaps?.cpuCapCores === undefined ? hostCpus.length : Math.min(resourceCaps.cpuCapCores, hostCpus.length);
+	const cpuCapCount =
+		resourceCaps?.cpuCapCores === undefined
+			? hostCpus.length
+			: Math.min(resourceCaps.cpuCapCores, hostCpus.length);
 	const cpus = hostCpus.slice(0, cpuCapCount);
 	const cpuLines: string[] = [];
 	for (let i = 0; i < cpus.length; i++) {
 		const c = cpus[i];
-		if (!c) { continue; }
+		if (!c) {
+			continue;
+		}
 		cpuLines.push(
 			`processor\t: ${i}`,
 			"vendor_id\t: GenuineIntel",
@@ -773,7 +869,7 @@ export function refreshProc(
 			"wp\t\t: yes",
 			"flags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology nonstop_tsc cpuid tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault ssbd ibrs ibpb stibp ibrs_enhanced fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat umip avx512_vnni md_clear arch_capabilities",
 			"bugs\t\t: spectre_v1 spectre_v2 spec_store_bypass swapgs taa mmio_stale_data retbleed eibrs_pbrsb bhi ibpb_no_ret spectre_v2_user its",
-			`bogomips\t: ${(c.speed * 2 / 1000).toFixed(2)}`,
+			`bogomips\t: ${((c.speed * 2) / 1000).toFixed(2)}`,
 			"clflush size\t: 64",
 			"cache_alignment\t: 64",
 			"address sizes\t: 46 bits physical, 48 bits virtual",
@@ -791,9 +887,13 @@ export function refreshProc(
 	write(vfs, "/proc/hostname", `${hostname}\n`);
 
 	// loadavg
-	const load     = (Math.random() * 0.3).toFixed(2);
+	const load = (Math.random() * 0.3).toFixed(2);
 	const numProcs = 1 + sessions.length;
-	write(vfs, "/proc/loadavg", `${load} ${load} ${load} ${numProcs}/${numProcs} 1\n`);
+	write(
+		vfs,
+		"/proc/loadavg",
+		`${load} ${load} ${load} ${numProcs}/${numProcs} 1\n`,
+	);
 
 	// /proc/stat — CPU statistics
 	const cpuCount = cpus.length;
@@ -805,12 +905,26 @@ export function refreshProc(
 	const irqJiffies = Math.floor(Number(uptimeSec));
 	const softirqJiffies = Math.floor(uptimeSec * 2);
 	const stealJiffies = Math.floor(uptimeSec * 0);
-	const totalJiffies = userJiffies + niceJiffies + systemJiffies + idleJiffies + iowaitJiffies + irqJiffies + softirqJiffies + stealJiffies;
+	const totalJiffies =
+		userJiffies +
+		niceJiffies +
+		systemJiffies +
+		idleJiffies +
+		iowaitJiffies +
+		irqJiffies +
+		softirqJiffies +
+		stealJiffies;
 	const cpuStats = `cpu  ${userJiffies} ${niceJiffies} ${systemJiffies} ${idleJiffies} ${iowaitJiffies} ${irqJiffies} ${softirqJiffies} ${stealJiffies} 0 0\n`;
-	const perCpuStats = Array.from({ length: cpuCount }, (_, i) =>
-		`cpu${i} ${Math.floor(userJiffies / cpuCount)} ${Math.floor(niceJiffies / cpuCount)} ${Math.floor(systemJiffies / cpuCount)} ${Math.floor(idleJiffies / cpuCount)} ${Math.floor(iowaitJiffies / cpuCount)} ${Math.floor(irqJiffies / cpuCount)} ${Math.floor(softirqJiffies / cpuCount)} ${Math.floor(stealJiffies / cpuCount)} 0 0`,
+	const perCpuStats = Array.from(
+		{ length: cpuCount },
+		(_, i) =>
+			`cpu${i} ${Math.floor(userJiffies / cpuCount)} ${Math.floor(niceJiffies / cpuCount)} ${Math.floor(systemJiffies / cpuCount)} ${Math.floor(idleJiffies / cpuCount)} ${Math.floor(iowaitJiffies / cpuCount)} ${Math.floor(irqJiffies / cpuCount)} ${Math.floor(softirqJiffies / cpuCount)} ${Math.floor(stealJiffies / cpuCount)} 0 0`,
 	).join("\n");
-	write(vfs, "/proc/stat", `${cpuStats}${perCpuStats}\nintr ${Math.floor(totalJiffies * 2)} 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\nctxt ${Math.floor(totalJiffies * 50)}\nbtime ${Math.floor(shellStartTime / 1000)}\nprocesses ${numProcs + 10}\nprocs_running 1\nprocs_blocked 0\n`);
+	write(
+		vfs,
+		"/proc/stat",
+		`${cpuStats}${perCpuStats}\nintr ${Math.floor(totalJiffies * 2)} 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\nctxt ${Math.floor(totalJiffies * 50)}\nbtime ${Math.floor(shellStartTime / 1000)}\nprocesses ${numProcs + 10}\nprocs_running 1\nprocs_blocked 0\n`,
+	);
 
 	// /proc/vmstat — virtual memory stats
 	const pgpgin = Math.floor(totalJiffies * 0.5);
@@ -820,7 +934,9 @@ export function refreshProc(
 	const pgalloc = Math.floor(totalJiffies * 2);
 	const pgfault = pgalloc + Math.floor(totalJiffies * 0.5);
 	const pgmajfault = Math.floor(totalJiffies * 0.01);
-	write(vfs, "/proc/vmstat",
+	write(
+		vfs,
+		"/proc/vmstat",
 		`nr_free_pages ${Math.floor(freeMemKb / 4)}\nnr_zone_inactive_anon 0\nnr_zone_active_anon 0\nnr_zone_inactive_file ${Math.floor(cachedKb / 4)}\nnr_zone_active_file ${Math.floor(buffersKb / 4)}\nnr_zone_unevictable 0\nnr_zone_write_pending 0\nnr_mlock 0\nnr_page_table_pages ${pageTablesKb}\nnr_kernel_stack ${Math.floor(totalMemKb * 0.0005)}\nnr_bounce 0\nnr_zspages 0\nnr_free_cma 0\nnuma_hit ${Math.floor(totalJiffies * 3)}\nnuma_miss 0\nnuma_foreign 0\nnuma_interleave 0\nnuma_local ${Math.floor(totalJiffies * 3)}\nnuma_other 0\nnr_inactive_anon 0\nnr_active_anon 0\nnr_inactive_file ${Math.floor(cachedKb / 4)}\nnr_active_file ${Math.floor(buffersKb / 4)}\nnr_unevictable 0\nnr_slab_reclaimable ${Math.floor(slabKb * 0.6)}\nnr_slab_unreclaimable ${Math.floor(slabKb * 0.4)}\nnr_isolated_anon 0\nnr_isolated_file 0\nworkingset_nodes 0\nworkingset_refault 0\nworkingset_activate 0\nworkingset_restore 0\nworkingset_nodereclaim 0\nnr_anon_pages ${Math.floor(totalMemKb * 0.001)}\nnr_mapped ${Math.floor(cachedKb * 0.4)}\nnr_file_pages ${Math.floor(cachedKb * 0.8)}\nnr_dirty ${Math.floor(totalMemKb * 0.001)}\nnr_writeback 0\nnr_writeback_temp 0\nnr_shmem ${Math.floor(totalMemKb * 0.005)}\nnr_shmem_hugepages 0\nnr_shmem_pmdmapped 0\nnr_file_hugepages 0\nnr_file_pmdmapped 0\nnr_anon_transparent_hugepages 0\nnr_vmscan_write 0\nnr_vmscan_immediate_reclaim 0\nnr_dirtied ${Math.floor(totalJiffies * 2)}\nnr_written ${Math.floor(totalJiffies * 2)}\nnr_throttled_written 0\nnr_kernel_misc_reclaimable 0\nnr_reclaim_pages 0\nnr_zone_active_anon 0\nnr_zone_active_file ${Math.floor(buffersKb / 4)}\npgpgin ${pgpgin}\npgpgout ${pgpgout}\npswpin ${pswpin}\npswpout ${pswpout}\npgalloc_dma 0\npgalloc_dma32 ${Math.floor(pgalloc * 0.3)}\npgalloc_normal ${Math.floor(pgalloc * 0.7)}\npgalloc_movable 0\npgfree ${pgalloc}\npgactivate ${Math.floor(totalJiffies * 0.5)}\npgdeactivate 0\npgfault ${pgfault}\npgmajfault ${pgmajfault}\npglazyfree 0\npgrefill 0\npgsteal_kswapd 0\npgsteal_direct 0\npgscan_kswapd 0\npgscan_direct 0\npgskip_dma 0\npgskip_dma32 0\npgskip_normal 0\npgskip_movable 0\npgmigrate_success 0\npgmigrate_fail 0\ncompact_migrate_scanned 0\ncompact_free_scanned 0\ncompact_isolated 0\ncompact_stall 0\ncompact_fail 0\ncompact_success 0\nhtlb_buddy_alloc_success 0\nhtlb_buddy_alloc_fail 0\nunevictable_pgs_culled 0\nunevictable_pgs_scanned 0\nunevictable_pgs_rescued 0\nunevictable_pgs_mlocked 0\nunevictable_pgs_munlocked 0\nunevictable_pgs_cleared 0\nunevictable_pgs_stranded 0\nswap_ra 0\nswap_ra_hit 0\nnr_hugepages 0\nnr_hugepages_bootmem 0\n\n`,
 	);
 
@@ -830,18 +946,26 @@ export function refreshProc(
 	const someAvg60 = (Math.random() * 0.2 + 0.1).toFixed(2);
 	const someAvg300 = (Math.random() * 0.1 + 0.05).toFixed(2);
 	const someTotal = Math.floor(totalJiffies * 10);
-	write(vfs, "/proc/pressure/cpu",
+	write(
+		vfs,
+		"/proc/pressure/cpu",
 		`some avg10=${someAvg10} avg60=${someAvg60} avg300=${someAvg300} total=${someTotal}\n`,
 	);
-	write(vfs, "/proc/pressure/memory",
+	write(
+		vfs,
+		"/proc/pressure/memory",
 		`some avg10=${(Number(someAvg10) * 0.5).toFixed(2)} avg60=${(Number(someAvg60) * 0.3).toFixed(2)} avg300=${(Number(someAvg300) * 0.2).toFixed(2)} total=${Math.floor(someTotal * 0.3)}\n`,
 	);
-	write(vfs, "/proc/pressure/io",
+	write(
+		vfs,
+		"/proc/pressure/io",
 		`some avg10=${(Number(someAvg10) * 0.7).toFixed(2)} avg60=${(Number(someAvg60) * 0.5).toFixed(2)} avg300=${(Number(someAvg300) * 0.3).toFixed(2)} total=${Math.floor(someTotal * 0.5)}\n`,
 	);
 
 	// /proc/modules
-	write(vfs, "/proc/modules",
+	write(
+		vfs,
+		"/proc/modules",
 		`${[
 			"virtio 163840 10 - Live 0x0000000000000000",
 			"virtio_ring 28672 10 virtio, Live 0x0000000000000000",
@@ -865,12 +989,16 @@ export function refreshProc(
 	);
 
 	// /proc/cmdline — boot args
-	write(vfs, "/proc/cmdline",
+	write(
+		vfs,
+		"/proc/cmdline",
 		"console=ttyS0 reboot=k panic=1 nomodule random.trust_cpu=1 ipv6.disable=1 swiotlb=noforce rdinit=/process_api init_on_free=1\n",
 	);
 
 	// /proc/filesystems — matching real container
-	write(vfs, "/proc/filesystems",
+	write(
+		vfs,
+		"/proc/filesystems",
 		`${[
 			"nodev\tsysfs",
 			"nodev\ttmpfs",
@@ -941,14 +1069,16 @@ export function refreshProc(
 		const arpCache = network.getArpCache();
 
 		const ipToHex = (ip: string) =>
-			ip.split(".")
+			ip
+				.split(".")
 				.reverse()
 				.map((n) => Number.parseInt(n, 10).toString(16).padStart(2, "0"))
 				.join("")
 				.toUpperCase();
 
 		// /proc/net/dev
-		const devHeader = "Inter-|   Receive                                                |  Transmit\n face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed";
+		const devHeader =
+			"Inter-|   Receive                                                |  Transmit\n face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed";
 		const devLines = ifaces.map((iface) => {
 			const name = iface.name.padStart(4);
 			if (iface.name === "lo") {
@@ -968,31 +1098,46 @@ export function refreshProc(
 				r.device,
 				ipToHex(r.destination === "default" ? "0.0.0.0" : r.destination),
 				ipToHex(r.gateway),
-				r.flags === "UG"
-					? "0003"
-					: r.flags === "U"
-						? "0001"
-						: "0000",
-				"0", "0", "100",
+				r.flags === "UG" ? "0003" : r.flags === "U" ? "0001" : "0000",
+				"0",
+				"0",
+				"100",
 				ipToHex(r.netmask),
-				"0", "0", "0",
+				"0",
+				"0",
+				"0",
 			].join("\t"),
 		);
-		write(vfs, "/proc/net/route", `Iface\tDestination\tGateway\tFlags\tRefCnt\tUse\tMetric\tMask\t\tMTU\tWindow\tIRTT\n${routeLines.join("\n")}\n`);
+		write(
+			vfs,
+			"/proc/net/route",
+			`Iface\tDestination\tGateway\tFlags\tRefCnt\tUse\tMetric\tMask\t\tMTU\tWindow\tIRTT\n${routeLines.join("\n")}\n`,
+		);
 
 		// /proc/net/arp
 		const arpLines = arpCache.map(
-			(e) => `${e.ip.padEnd(15)} 0x1         0x2         ${e.mac.padEnd(17)}     *        ${e.device}`,
+			(e) =>
+				`${e.ip.padEnd(15)} 0x1         0x2         ${e.mac.padEnd(17)}     *        ${e.device}`,
 		);
-		write(vfs, "/proc/net/arp", `IP address       HW type     Flags       HW address            Mask     Device\n${arpLines.join("\n")}\n`);
+		write(
+			vfs,
+			"/proc/net/arp",
+			`IP address       HW type     Flags       HW address            Mask     Device\n${arpLines.join("\n")}\n`,
+		);
 	} else {
-		write(vfs, "/proc/net/dev",
+		write(
+			vfs,
+			"/proc/net/dev",
 			"Inter-|   Receive                                                |  Transmit\n face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed\n    lo:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0\n  eth0:  128628    1230    0   19    0     0          0         0 52027469    2045    0    0    0     0       0          0\n",
 		);
-		write(vfs, "/proc/net/route",
+		write(
+			vfs,
+			"/proc/net/route",
 			"Iface\tDestination\tGateway\tFlags\tRefCnt\tUse\tMetric\tMask\t\tMTU\tWindow\tIRTT\neth0\t00000000\t0101A8C0\t0003\t0\t0\t100\t00000000\t0\t0\t0\neth0\t0000A8C0\t00000000\t0001\t0\t0\t100\t00FFFFFF\t0\t0\t0\n",
 		);
-		write(vfs, "/proc/net/arp",
+		write(
+			vfs,
+			"/proc/net/arp",
 			"IP address       HW type     Flags       HW address            Mask     Device\n",
 		);
 	}
@@ -1003,21 +1148,31 @@ export function refreshProc(
 		"   1: 00000000:022D 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 10001 1 0000000000000000 100 0 0 10 0",
 		"   2: 00000000:0A8C 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 10002 1 0000000000000000 100 0 0 10 0",
 	].join("\n");
-	write(vfs, "/proc/net/tcp",
+	write(
+		vfs,
+		"/proc/net/tcp",
 		`  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n${tcpListen}\n`,
 	);
-	write(vfs, "/proc/net/tcp6",
+	write(
+		vfs,
+		"/proc/net/tcp6",
 		"  sl  local_address                         remote_address                        st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n",
 	);
-	write(vfs, "/proc/net/udp",
+	write(
+		vfs,
+		"/proc/net/udp",
 		"  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n",
 	);
 	write(vfs, "/proc/net/fib_trie", "Local:\n  +-- 0.0.0.0/0 3 0 5\n");
-	write(vfs, "/proc/net/unix",
+	write(
+		vfs,
+		"/proc/net/unix",
 		"Num       RefCount Protocol Flags    Type St Inode Path\n" +
-		"0000000000000000: 00000002 00000000 00010000 0001 01 10000 /run/dbus/system_bus_socket\n",
+			"0000000000000000: 00000002 00000000 00010000 0001 01 10000 /run/dbus/system_bus_socket\n",
 	);
-	write(vfs, "/proc/net/sockstat",
+	write(
+		vfs,
+		"/proc/net/sockstat",
 		"sockets: used 11\nTCP: inuse 3 orphan 0 tw 0 alloc 3 mem 1024\nUDP: inuse 0 mem 0\nUDPLITE: inuse 0\nRAW: inuse 0\nFRAG: inuse 0 memory 0\n",
 	);
 
@@ -1036,12 +1191,16 @@ export function refreshProc(
 	);
 
 	// /proc/swaps — no swap (matches real env: SwapTotal 0)
-	write(vfs, "/proc/swaps",
+	write(
+		vfs,
+		"/proc/swaps",
 		"Filename\t\t\t\tType\t\tSize\t\tUsed\t\tPriority\n",
 	);
 
 	// /proc/diskstats — virtio block device I/O counters
-	write(vfs, "/proc/diskstats",
+	write(
+		vfs,
+		"/proc/diskstats",
 		`${[
 			" 254       0 vda 1000 0 8000 500 200 0 1600 100 0 600 600 0 0 0 0",
 			" 254      16 vdb 100 0 800 50 0 0 0 0 0 50 50 0 0 0 0",
@@ -1051,7 +1210,9 @@ export function refreshProc(
 	);
 
 	// /proc/interrupts
-	write(vfs, "/proc/interrupts",
+	write(
+		vfs,
+		"/proc/interrupts",
 		`           CPU0\n  0:         ${Math.floor(uptimeSec * 250)}  IO-APIC   2-edge   timer\n  1:             9  IO-APIC   1-edge   i8042\n NMI:             0  Non-maskable interrupts\n ERR:             0\n MIS:             0\n PIN:             0  Posted-interrupt notification event\n NPI:             0  Nested posted-interrupt event\n PIW:             0  Posted-interrupt wakeup event\n`,
 	);
 
@@ -1066,61 +1227,86 @@ export function refreshProc(
 	ensureDir(vfs, "/proc/sys/fs");
 	ensureDir(vfs, "/proc/sys/fs/inotify");
 
-	write(vfs, "/proc/sys/kernel/hostname",              `${hostname}\n`);
-	write(vfs, "/proc/sys/kernel/ostype",                "Linux\n");
-	write(vfs, "/proc/sys/kernel/osrelease",             `${props.kernel}\n`);
-	write(vfs, "/proc/sys/kernel/pid_max",               "32768\n");
-	write(vfs, "/proc/sys/kernel/threads-max",           "31968\n");
-	write(vfs, "/proc/sys/kernel/randomize_va_space",    "2\n");
-	write(vfs, "/proc/sys/kernel/dmesg_restrict",        "0\n");
-	write(vfs, "/proc/sys/kernel/kptr_restrict",         "0\n");
-	write(vfs, "/proc/sys/kernel/perf_event_paranoid",   "2\n");
-	write(vfs, "/proc/sys/kernel/printk",                "4\t4\t1\t7\n");
-	write(vfs, "/proc/sys/kernel/sysrq",                 "176\n");
-	write(vfs, "/proc/sys/kernel/panic",                 "1\n");
-	write(vfs, "/proc/sys/kernel/panic_on_oops",         "1\n");
-	write(vfs, "/proc/sys/kernel/core_pattern",          "core\n");
-	write(vfs, "/proc/sys/kernel/core_uses_pid",         "0\n");
-	write(vfs, "/proc/sys/kernel/ngroups_max",           "65536\n");
-	write(vfs, "/proc/sys/kernel/cap_last_cap",          "40\n");
+	write(vfs, "/proc/sys/kernel/hostname", `${hostname}\n`);
+	write(vfs, "/proc/sys/kernel/ostype", "Linux\n");
+	write(vfs, "/proc/sys/kernel/osrelease", `${props.kernel}\n`);
+	write(vfs, "/proc/sys/kernel/pid_max", "32768\n");
+	write(vfs, "/proc/sys/kernel/threads-max", "31968\n");
+	write(vfs, "/proc/sys/kernel/randomize_va_space", "2\n");
+	write(vfs, "/proc/sys/kernel/dmesg_restrict", "0\n");
+	write(vfs, "/proc/sys/kernel/kptr_restrict", "0\n");
+	write(vfs, "/proc/sys/kernel/perf_event_paranoid", "2\n");
+	write(vfs, "/proc/sys/kernel/printk", "4\t4\t1\t7\n");
+	write(vfs, "/proc/sys/kernel/sysrq", "176\n");
+	write(vfs, "/proc/sys/kernel/panic", "1\n");
+	write(vfs, "/proc/sys/kernel/panic_on_oops", "1\n");
+	write(vfs, "/proc/sys/kernel/core_pattern", "core\n");
+	write(vfs, "/proc/sys/kernel/core_uses_pid", "0\n");
+	write(vfs, "/proc/sys/kernel/ngroups_max", "65536\n");
+	write(vfs, "/proc/sys/kernel/cap_last_cap", "40\n");
 	write(vfs, "/proc/sys/kernel/unprivileged_userns_clone", "1\n");
-	write(vfs, "/proc/sys/kernel/cpu_cap_cores", `${resourceCaps?.cpuCapCores ?? 0}\n`);
-	write(vfs, "/proc/sys/net/ipv4/ip_forward",          "0\n");
-	write(vfs, "/proc/sys/net/ipv4/tcp_syncookies",      "1\n");
-	write(vfs, "/proc/sys/net/ipv4/tcp_fin_timeout",     "60\n");
-	write(vfs, "/proc/sys/net/ipv4/tcp_keepalive_time",  "7200\n");
-	write(vfs, "/proc/sys/net/ipv4/conf/all/rp_filter",  "2\n");
+	write(
+		vfs,
+		"/proc/sys/kernel/cpu_cap_cores",
+		`${resourceCaps?.cpuCapCores ?? 0}\n`,
+	);
+	write(vfs, "/proc/sys/net/ipv4/ip_forward", "0\n");
+	write(vfs, "/proc/sys/net/ipv4/tcp_syncookies", "1\n");
+	write(vfs, "/proc/sys/net/ipv4/tcp_fin_timeout", "60\n");
+	write(vfs, "/proc/sys/net/ipv4/tcp_keepalive_time", "7200\n");
+	write(vfs, "/proc/sys/net/ipv4/conf/all/rp_filter", "2\n");
 	write(vfs, "/proc/sys/net/ipv6/conf/all/disable_ipv6", "1\n");
-	write(vfs, "/proc/sys/net/core/somaxconn",           "4096\n");
-	write(vfs, "/proc/sys/net/core/rmem_max",            "212992\n");
-	write(vfs, "/proc/sys/net/core/wmem_max",            "212992\n");
-	write(vfs, "/proc/sys/vm/swappiness",                "60\n");
-	write(vfs, "/proc/sys/vm/overcommit_memory",         "0\n");
-	write(vfs, "/proc/sys/vm/overcommit_ratio",          "50\n");
-	write(vfs, "/proc/sys/vm/dirty_ratio",               "20\n");
-	write(vfs, "/proc/sys/vm/dirty_background_ratio",    "10\n");
-	write(vfs, "/proc/sys/vm/min_free_kbytes",           "65536\n");
-	write(vfs, "/proc/sys/vm/vfs_cache_pressure",        "100\n");
-	write(vfs, "/proc/sys/vm/ram_cap_bytes", `${resourceCaps?.ramCapBytes ?? 0}\n`);
-	write(vfs, "/proc/sys/fs/file-max",                  "1048576\n");
-	write(vfs, "/proc/sys/fs/inotify/max_user_watches",  "524288\n");
-	write(vfs, "/proc/sys/fs/inotify/max_user_instances","512\n");
+	write(vfs, "/proc/sys/net/core/somaxconn", "4096\n");
+	write(vfs, "/proc/sys/net/core/rmem_max", "212992\n");
+	write(vfs, "/proc/sys/net/core/wmem_max", "212992\n");
+	write(vfs, "/proc/sys/vm/swappiness", "60\n");
+	write(vfs, "/proc/sys/vm/overcommit_memory", "0\n");
+	write(vfs, "/proc/sys/vm/overcommit_ratio", "50\n");
+	write(vfs, "/proc/sys/vm/dirty_ratio", "20\n");
+	write(vfs, "/proc/sys/vm/dirty_background_ratio", "10\n");
+	write(vfs, "/proc/sys/vm/min_free_kbytes", "65536\n");
+	write(vfs, "/proc/sys/vm/vfs_cache_pressure", "100\n");
+	write(
+		vfs,
+		"/proc/sys/vm/ram_cap_bytes",
+		`${resourceCaps?.ramCapBytes ?? 0}\n`,
+	);
+	write(vfs, "/proc/sys/fs/file-max", "1048576\n");
+	write(vfs, "/proc/sys/fs/inotify/max_user_watches", "524288\n");
+	write(vfs, "/proc/sys/fs/inotify/max_user_instances", "512\n");
 	write(vfs, "/proc/sys/fs/inotify/max_queued_events", "16384\n");
 
 	// /sys/fs/cgroup — update resource caps dynamically
 	const effectiveRamCap = resourceCaps?.ramCapBytes ?? os.totalmem();
-	const effectiveCpuQuota = resourceCaps?.cpuCapCores === undefined ? -1 : resourceCaps.cpuCapCores * 100000;
+	const effectiveCpuQuota =
+		resourceCaps?.cpuCapCores === undefined
+			? -1
+			: resourceCaps.cpuCapCores * 100000;
 	ensureDir(vfs, "/sys/fs/cgroup/memory");
-	write(vfs, "/sys/fs/cgroup/memory/memory.limit_in_bytes", `${effectiveRamCap}\n`);
-	write(vfs, "/sys/fs/cgroup/memory/memory.usage_in_bytes", `${effectiveRamCap - os.freemem()}\n`);
-	write(vfs, "/sys/fs/cgroup/memory/memory.memsw.limit_in_bytes", `${effectiveRamCap}\n`);
+	write(
+		vfs,
+		"/sys/fs/cgroup/memory/memory.limit_in_bytes",
+		`${effectiveRamCap}\n`,
+	);
+	write(
+		vfs,
+		"/sys/fs/cgroup/memory/memory.usage_in_bytes",
+		`${effectiveRamCap - os.freemem()}\n`,
+	);
+	write(
+		vfs,
+		"/sys/fs/cgroup/memory/memory.memsw.limit_in_bytes",
+		`${effectiveRamCap}\n`,
+	);
 	ensureDir(vfs, "/sys/fs/cgroup/cpu");
 	write(vfs, "/sys/fs/cgroup/cpu/cpu.cfs_period_us", "100000\n");
 	write(vfs, "/sys/fs/cgroup/cpu/cpu.cfs_quota_us", `${effectiveCpuQuota}\n`);
 	write(vfs, "/sys/fs/cgroup/cpu/cpu.shares", "1024\n");
 
 	// /proc/cgroups — v1 hierarchy
-	write(vfs, "/proc/cgroups",
+	write(
+		vfs,
+		"/proc/cgroups",
 		`${[
 			"#subsys_name\thierarchy\tnum_cgroups\tenabled",
 			"cpuset\t5\t1\t1",
@@ -1135,26 +1321,37 @@ export function refreshProc(
 	);
 
 	// init process (PID 1)
-	writeProcPid(vfs, 1, "root", "/sbin/init", new Date(shellStartTime).toISOString(), {});
+	writeProcPid(
+		vfs,
+		1,
+		"root",
+		"/sbin/init",
+		new Date(shellStartTime).toISOString(),
+		{},
+	);
 
 	// per-session processes
 	for (const session of sessions) {
 		const pid = ttyToPid(session.tty);
 		writeProcPid(vfs, pid, session.username, "bash", session.startedAt, {
-			USER:     session.username,
-			HOME:     `/home/${session.username}`,
-			TERM:     "xterm-256color",
-			SHELL:    "/bin/bash",
-			LANG:     "en_US.UTF-8",
-			PATH:     "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-			LOGNAME:  session.username,
+			USER: session.username,
+			HOME: `/home/${session.username}`,
+			TERM: "xterm-256color",
+			SHELL: "/bin/bash",
+			LANG: "en_US.UTF-8",
+			PATH: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+			LOGNAME: session.username,
 		});
 	}
 
 	// /proc/self — mirror of most recent session
 	const lastSession = sessions[sessions.length - 1];
 	const selfPid = lastSession === undefined ? 1 : ttyToPid(lastSession.tty);
-	try { vfs.remove("/proc/self"); } catch { /* ignore */ }
+	try {
+		vfs.remove("/proc/self");
+	} catch {
+		/* ignore */
+	}
 
 	const selfSrc = `/proc/${selfPid}`;
 	ensureDir(vfs, "/proc/self");
@@ -1168,22 +1365,35 @@ export function refreshProc(
 			const dstPath = `/proc/self/${entry}`;
 			try {
 				const st = vfs.stat(srcPath);
-				if (st.type === "file") { write(vfs, dstPath, vfs.readFile(srcPath)); }
-			} catch { /* skip */ }
+				if (st.type === "file") {
+					write(vfs, dstPath, vfs.readFile(srcPath));
+				}
+			} catch {
+				/* skip */
+			}
 		}
 	} else {
-		write(vfs, "/proc/self/cmdline",  "bash\0");
-		write(vfs, "/proc/self/comm",     "bash");
-		write(vfs, "/proc/self/status",   "Name:\tbash\nState:\tS (sleeping)\nPid:\t1\nPPid:\t0\n");
-		write(vfs, "/proc/self/environ",  "");
-		write(vfs, "/proc/self/cwd",      "/root\0");
-		write(vfs, "/proc/self/exe",      "/bin/bash\0");
+		write(vfs, "/proc/self/cmdline", "bash\0");
+		write(vfs, "/proc/self/comm", "bash");
+		write(
+			vfs,
+			"/proc/self/status",
+			"Name:\tbash\nState:\tS (sleeping)\nPid:\t1\nPPid:\t0\n",
+		);
+		write(vfs, "/proc/self/environ", "");
+		write(vfs, "/proc/self/cwd", "/root\0");
+		write(vfs, "/proc/self/exe", "/bin/bash\0");
 	}
 }
 
 // ─── /sys ─────────────────────────────────────────────────────────────────────
 
-function bootstrapSys(vfs: VirtualFileSystem, hostname: string, props: ShellProperties, resourceCaps?: VirtualShellResourceCaps): void {
+function bootstrapSys(
+	vfs: VirtualFileSystem,
+	hostname: string,
+	props: ShellProperties,
+	resourceCaps?: VirtualShellResourceCaps,
+): void {
 	ensureDir(vfs, "/sys");
 
 	// No real DMI in Firecracker — /sys/devices/virtual/dmi/id does not exist.
@@ -1195,9 +1405,9 @@ function bootstrapSys(vfs: VirtualFileSystem, hostname: string, props: ShellProp
 	ensureDir(vfs, "/sys/devices/system/cpu");
 	ensureDir(vfs, "/sys/devices/system/cpu/cpu0");
 	ensureFile(vfs, "/sys/devices/system/cpu/cpu0/online", "1\n");
-	ensureFile(vfs, "/sys/devices/system/cpu/online",  "0\n");
+	ensureFile(vfs, "/sys/devices/system/cpu/online", "0\n");
 	ensureFile(vfs, "/sys/devices/system/cpu/possible", "0\n");
-	ensureFile(vfs, "/sys/devices/system/cpu/present",  "0\n");
+	ensureFile(vfs, "/sys/devices/system/cpu/present", "0\n");
 	ensureDir(vfs, "/sys/devices/system/node");
 	ensureDir(vfs, "/sys/devices/system/node/node0");
 	ensureFile(vfs, "/sys/devices/system/node/node0/cpumap", "1\n");
@@ -1205,36 +1415,47 @@ function bootstrapSys(vfs: VirtualFileSystem, hostname: string, props: ShellProp
 	ensureDir(vfs, "/sys/class");
 	ensureDir(vfs, "/sys/class/net");
 	ensureDir(vfs, "/sys/class/net/eth0");
-	ensureFile(vfs, "/sys/class/net/eth0/operstate",  "up\n");
-	ensureFile(vfs, "/sys/class/net/eth0/carrier",    "1\n");
-	ensureFile(vfs, "/sys/class/net/eth0/mtu",        "1500\n");
-	ensureFile(vfs, "/sys/class/net/eth0/speed",      "10000\n");
-	ensureFile(vfs, "/sys/class/net/eth0/duplex",     "full\n");
-	ensureFile(vfs, "/sys/class/net/eth0/address",    "aa:bb:cc:dd:ee:ff\n");
-	ensureFile(vfs, "/sys/class/net/eth0/tx_queue_len","1000\n");
+	ensureFile(vfs, "/sys/class/net/eth0/operstate", "up\n");
+	ensureFile(vfs, "/sys/class/net/eth0/carrier", "1\n");
+	ensureFile(vfs, "/sys/class/net/eth0/mtu", "1500\n");
+	ensureFile(vfs, "/sys/class/net/eth0/speed", "10000\n");
+	ensureFile(vfs, "/sys/class/net/eth0/duplex", "full\n");
+	ensureFile(vfs, "/sys/class/net/eth0/address", "aa:bb:cc:dd:ee:ff\n");
+	ensureFile(vfs, "/sys/class/net/eth0/tx_queue_len", "1000\n");
 
-	const seed    = fnv1a(hostname);
+	const seed = fnv1a(hostname);
 	const macSeed = seed.toString(16).padStart(8, "0");
-	ensureFile(vfs, "/sys/class/net/eth0/address",
-		`52:54:00:${macSeed.slice(0,2)}:${macSeed.slice(2,4)}:${macSeed.slice(4,6)}\n`,
+	ensureFile(
+		vfs,
+		"/sys/class/net/eth0/address",
+		`52:54:00:${macSeed.slice(0, 2)}:${macSeed.slice(2, 4)}:${macSeed.slice(4, 6)}\n`,
 	);
 
 	ensureDir(vfs, "/sys/class/net/lo");
-	ensureFile(vfs, "/sys/class/net/lo/operstate",  "unknown\n");
-	ensureFile(vfs, "/sys/class/net/lo/carrier",    "1\n");
-	ensureFile(vfs, "/sys/class/net/lo/mtu",        "65536\n");
-	ensureFile(vfs, "/sys/class/net/lo/address",    "00:00:00:00:00:00\n");
+	ensureFile(vfs, "/sys/class/net/lo/operstate", "unknown\n");
+	ensureFile(vfs, "/sys/class/net/lo/carrier", "1\n");
+	ensureFile(vfs, "/sys/class/net/lo/mtu", "65536\n");
+	ensureFile(vfs, "/sys/class/net/lo/address", "00:00:00:00:00:00\n");
 
 	ensureDir(vfs, "/sys/class/block");
 	ensureDir(vfs, "/sys/class/block/vda");
-	ensureFile(vfs, "/sys/class/block/vda/size",     "536870912\n");
-	ensureFile(vfs, "/sys/class/block/vda/ro",       "0\n");
-	ensureFile(vfs, "/sys/class/block/vda/removable","0\n");
+	ensureFile(vfs, "/sys/class/block/vda/size", "536870912\n");
+	ensureFile(vfs, "/sys/class/block/vda/ro", "0\n");
+	ensureFile(vfs, "/sys/class/block/vda/removable", "0\n");
 
 	// cgroup fs
 	ensureDir(vfs, "/sys/fs");
 	ensureDir(vfs, "/sys/fs/cgroup");
-	for (const subsys of ["cpu", "cpuacct", "memory", "devices", "blkio", "pids", "freezer", "unified"]) {
+	for (const subsys of [
+		"cpu",
+		"cpuacct",
+		"memory",
+		"devices",
+		"blkio",
+		"pids",
+		"freezer",
+		"unified",
+	]) {
 		ensureDir(vfs, `/sys/fs/cgroup/${subsys}`);
 		if (subsys !== "unified") {
 			ensureFile(vfs, `/sys/fs/cgroup/${subsys}/tasks`, "1\n");
@@ -1243,21 +1464,38 @@ function bootstrapSys(vfs: VirtualFileSystem, hostname: string, props: ShellProp
 		}
 	}
 	const ramCapBytes = resourceCaps?.ramCapBytes ?? os.totalmem();
-	ensureFile(vfs, "/sys/fs/cgroup/memory/memory.limit_in_bytes",     `${ramCapBytes}\n`);
-	ensureFile(vfs, "/sys/fs/cgroup/memory/memory.usage_in_bytes",      `${ramCapBytes - os.freemem()}\n`);
-	ensureFile(vfs, "/sys/fs/cgroup/memory/memory.memsw.limit_in_bytes",`${ramCapBytes}\n`);
-	ensureFile(vfs, "/sys/fs/cgroup/cpu/cpu.cfs_period_us",             "100000\n");
-	ensureFile(vfs, "/sys/fs/cgroup/cpu/cpu.cfs_quota_us",              resourceCaps?.cpuCapCores === undefined ? "-1\n" : `${resourceCaps.cpuCapCores * 100000}\n`);
-	ensureFile(vfs, "/sys/fs/cgroup/cpu/cpu.shares",                    "1024\n");
+	ensureFile(
+		vfs,
+		"/sys/fs/cgroup/memory/memory.limit_in_bytes",
+		`${ramCapBytes}\n`,
+	);
+	ensureFile(
+		vfs,
+		"/sys/fs/cgroup/memory/memory.usage_in_bytes",
+		`${ramCapBytes - os.freemem()}\n`,
+	);
+	ensureFile(
+		vfs,
+		"/sys/fs/cgroup/memory/memory.memsw.limit_in_bytes",
+		`${ramCapBytes}\n`,
+	);
+	ensureFile(vfs, "/sys/fs/cgroup/cpu/cpu.cfs_period_us", "100000\n");
+	ensureFile(
+		vfs,
+		"/sys/fs/cgroup/cpu/cpu.cfs_quota_us",
+		resourceCaps?.cpuCapCores === undefined
+			? "-1\n"
+			: `${resourceCaps.cpuCapCores * 100000}\n`,
+	);
+	ensureFile(vfs, "/sys/fs/cgroup/cpu/cpu.shares", "1024\n");
 
 	ensureDir(vfs, "/sys/kernel");
-	ensureFile(vfs, "/sys/kernel/hostname",  `${hostname}\n`);
+	ensureFile(vfs, "/sys/kernel/hostname", `${hostname}\n`);
 	ensureFile(vfs, "/sys/kernel/osrelease", `${props.kernel}\n`);
-	ensureFile(vfs, "/sys/kernel/ostype",    "Linux\n");
+	ensureFile(vfs, "/sys/kernel/ostype", "Linux\n");
 
 	// security
 	ensureDir(vfs, "/sys/kernel/security");
-
 
 	// Still; we will create virtual dmi
 	ensureDir(vfs, "/sys/devices/virtual");
@@ -1267,20 +1505,20 @@ function bootstrapSys(vfs: VirtualFileSystem, hostname: string, props: ShellProp
 
 	// Full DMI table — deterministic, seeded from hostname
 	const dmi: Record<string, string> = {
-		bios_vendor:      "Virtual BIOS",
-		bios_version:     "1.0",
-		bios_date:        "01/01/2025",
-		sys_vendor:       "Fortune Systems",
-		product_name:     product,
-		product_family:   "VirtualContainer",
-		product_version:  "v1",
-		product_uuid:     `${seed.toString(16).padStart(8, "0")}-0000-0000-0000-000000000000`,
-		product_serial:   `SN-${seed}`,
-		chassis_type:     "3",
-		chassis_vendor:   "Virtual",
-		chassis_version:  "v1",
-		board_name:       "fortune-board",
-		modalias:         `dmi:bvnVirtual:bvr1.0:svnFortune:pn${product}`,
+		bios_vendor: "Virtual BIOS",
+		bios_version: "1.0",
+		bios_date: "01/01/2025",
+		sys_vendor: "Fortune Systems",
+		product_name: product,
+		product_family: "VirtualContainer",
+		product_version: "v1",
+		product_uuid: `${seed.toString(16).padStart(8, "0")}-0000-0000-0000-000000000000`,
+		product_serial: `SN-${seed}`,
+		chassis_type: "3",
+		chassis_vendor: "Virtual",
+		chassis_version: "v1",
+		board_name: "fortune-board",
+		modalias: `dmi:bvnVirtual:bvr1.0:svnFortune:pn${product}`,
 	};
 
 	for (const [k, v] of Object.entries(dmi)) {
@@ -1294,7 +1532,6 @@ function bootstrapSys(vfs: VirtualFileSystem, hostname: string, props: ShellProp
 	ensureFile(vfs, "/sys/kernel/hostname", `${hostname}\n`);
 	ensureFile(vfs, "/sys/kernel/osrelease", `${props.kernel}\n`);
 	ensureFile(vfs, "/sys/kernel/ostype", "Linux\n");
-
 }
 
 // ─── /dev ─────────────────────────────────────────────────────────────────────
@@ -1316,21 +1553,21 @@ function bootstrapDev(vfs: VirtualFileSystem): void {
 	vfs.mknod("/dev/stderr", "stderr", 0o666, 2, 0);
 
 	// character devices — stubs (no special read/write behavior)
-	ensureFile(vfs, "/dev/mem",         "", 0o640);
-	ensureFile(vfs, "/dev/port",        "", 0o640);
-	ensureFile(vfs, "/dev/kmsg",        "", 0o660);
-	ensureFile(vfs, "/dev/hwrng",       "", 0o660);
-	ensureFile(vfs, "/dev/fuse",        "", 0o660);
-	ensureFile(vfs, "/dev/autofs",      "", 0o660);
+	ensureFile(vfs, "/dev/mem", "", 0o640);
+	ensureFile(vfs, "/dev/port", "", 0o640);
+	ensureFile(vfs, "/dev/kmsg", "", 0o660);
+	ensureFile(vfs, "/dev/hwrng", "", 0o660);
+	ensureFile(vfs, "/dev/fuse", "", 0o660);
+	ensureFile(vfs, "/dev/autofs", "", 0o660);
 	ensureFile(vfs, "/dev/userfaultfd", "", 0o660);
 	ensureFile(vfs, "/dev/cpu_dma_latency", "", 0o660);
-	ensureFile(vfs, "/dev/ptp0",        "", 0o660);
+	ensureFile(vfs, "/dev/ptp0", "", 0o660);
 
 	// snapshot (KVM-specific)
-	ensureFile(vfs, "/dev/snapshot",    "", 0o660);
+	ensureFile(vfs, "/dev/snapshot", "", 0o660);
 
 	// terminal devices
-	ensureFile(vfs, "/dev/ttyS0",       "", 0o660);
+	ensureFile(vfs, "/dev/ttyS0", "", 0o660);
 
 	// tty0–63 (like real env)
 	for (let i = 0; i <= 63; i++) {
@@ -1338,12 +1575,12 @@ function bootstrapDev(vfs: VirtualFileSystem): void {
 	}
 
 	// vcs devices
-	ensureFile(vfs, "/dev/vcs",         "", 0o620);
-	ensureFile(vfs, "/dev/vcs1",        "", 0o620);
-	ensureFile(vfs, "/dev/vcsa",        "", 0o620);
-	ensureFile(vfs, "/dev/vcsa1",       "", 0o620);
-	ensureFile(vfs, "/dev/vcsu",        "", 0o620);
-	ensureFile(vfs, "/dev/vcsu1",       "", 0o620);
+	ensureFile(vfs, "/dev/vcs", "", 0o620);
+	ensureFile(vfs, "/dev/vcs1", "", 0o620);
+	ensureFile(vfs, "/dev/vcsa", "", 0o620);
+	ensureFile(vfs, "/dev/vcsa1", "", 0o620);
+	ensureFile(vfs, "/dev/vcsu", "", 0o620);
+	ensureFile(vfs, "/dev/vcsu1", "", 0o620);
 
 	// loop devices (0–7)
 	for (let i = 0; i < 8; i++) {
@@ -1352,10 +1589,10 @@ function bootstrapDev(vfs: VirtualFileSystem): void {
 	ensureDir(vfs, "/dev/loop-control");
 
 	// virtio block devices (vda–vdd matching mounts)
-	ensureFile(vfs, "/dev/vda",  "", 0o660);
-	ensureFile(vfs, "/dev/vdb",  "", 0o660);
-	ensureFile(vfs, "/dev/vdc",  "", 0o660);
-	ensureFile(vfs, "/dev/vdd",  "", 0o660);
+	ensureFile(vfs, "/dev/vda", "", 0o660);
+	ensureFile(vfs, "/dev/vdb", "", 0o660);
+	ensureFile(vfs, "/dev/vdc", "", 0o660);
+	ensureFile(vfs, "/dev/vdd", "", 0o660);
 
 	// network tun
 	ensureDir(vfs, "/dev/net");
@@ -1367,7 +1604,7 @@ function bootstrapDev(vfs: VirtualFileSystem): void {
 	ensureDir(vfs, "/dev/cpu");
 	ensureDir(vfs, "/dev/fd");
 	ensureFile(vfs, "/dev/vga_arbiter", "", 0o660);
-	ensureFile(vfs, "/dev/vsock",       "", 0o660);
+	ensureFile(vfs, "/dev/vsock", "", 0o660);
 }
 
 // ─── /usr ─────────────────────────────────────────────────────────────────────
@@ -1406,54 +1643,161 @@ function bootstrapUsr(vfs: VirtualFileSystem): void {
 
 	// builtins — all bins present in the real container
 	const builtins = [
-		"sh", "bash", "ls", "cat", "echo", "grep", "find", "sort",
-		"head", "tail", "cut", "tr", "sed", "awk", "wc", "tee",
-		"tar", "gzip", "gunzip", "touch", "mkdir", "rm", "mv", "cp",
-		"chmod", "ln", "pwd", "env", "date", "sleep", "id", "whoami",
-		"hostname", "uname", "ps", "kill", "df", "du", "curl", "wget",
-		"nano", "diff", "uniq", "xargs", "base64",
+		"sh",
+		"bash",
+		"ls",
+		"cat",
+		"echo",
+		"grep",
+		"find",
+		"sort",
+		"head",
+		"tail",
+		"cut",
+		"tr",
+		"sed",
+		"awk",
+		"wc",
+		"tee",
+		"tar",
+		"gzip",
+		"gunzip",
+		"touch",
+		"mkdir",
+		"rm",
+		"mv",
+		"cp",
+		"chmod",
+		"ln",
+		"pwd",
+		"env",
+		"date",
+		"sleep",
+		"id",
+		"whoami",
+		"hostname",
+		"uname",
+		"ps",
+		"kill",
+		"df",
+		"du",
+		"curl",
+		"wget",
+		"nano",
+		"diff",
+		"uniq",
+		"xargs",
+		"base64",
 	];
 
 	for (const bin of builtins) {
-		ensureFile(vfs, `/usr/bin/${bin}`, `#!/bin/sh\nexec builtin ${bin} "$@"\n`, 0o755);
+		ensureFile(
+			vfs,
+			`/usr/bin/${bin}`,
+			`#!/bin/sh\nexec builtin ${bin} "$@"\n`,
+			0o755,
+		);
 	}
 
 	// sbin equivalents
 	const sbins = [
-		"nologin", "useradd", "userdel", "groupadd", "groupdel",
-		"adduser", "deluser", "shutdown", "reboot", "halt",
-		"init", "service", "update-alternatives", "update-rc.d",
-		"depmod", "modprobe", "insmod", "rmmod", "lsmod",
-		"ifconfig", "route", "iptables", "ip6tables",
-		"arp", "iwconfig", "ethtool",
-		"fdisk", "parted", "mkfs.ext4", "fsck",
-		"ldconfig", "ldconfig.real",
+		"nologin",
+		"useradd",
+		"userdel",
+		"groupadd",
+		"groupdel",
+		"adduser",
+		"deluser",
+		"shutdown",
+		"reboot",
+		"halt",
+		"init",
+		"service",
+		"update-alternatives",
+		"update-rc.d",
+		"depmod",
+		"modprobe",
+		"insmod",
+		"rmmod",
+		"lsmod",
+		"ifconfig",
+		"route",
+		"iptables",
+		"ip6tables",
+		"arp",
+		"iwconfig",
+		"ethtool",
+		"fdisk",
+		"parted",
+		"mkfs.ext4",
+		"fsck",
+		"ldconfig",
+		"ldconfig.real",
 	];
 	for (const bin of sbins) {
-		ensureFile(vfs, `/usr/sbin/${bin}`, `#!/bin/sh\nexec builtin ${bin} "$@"\n`, 0o755);
+		ensureFile(
+			vfs,
+			`/usr/sbin/${bin}`,
+			`#!/bin/sh\nexec builtin ${bin} "$@"\n`,
+			0o755,
+		);
 	}
 
 	// versioned python symlink stubs
-	ensureFile(vfs, "/usr/bin/python3.12", `#!/bin/sh\nexec python3 "$@"\n`, 0o755);
-	ensureFile(vfs, "/usr/bin/python3",    `#!/bin/sh\nexec python3.12 "$@"\n`, 0o755);
+	ensureFile(
+		vfs,
+		"/usr/bin/python3.12",
+		`#!/bin/sh\nexec python3 "$@"\n`,
+		0o755,
+	);
+	ensureFile(
+		vfs,
+		"/usr/bin/python3",
+		`#!/bin/sh\nexec python3.12 "$@"\n`,
+		0o755,
+	);
 
 	// node version stubs
-	ensureFile(vfs, "/usr/bin/node",  `#!/bin/sh\nexec node "$@"\n`, 0o755);
-	ensureFile(vfs, "/usr/bin/npm",   `#!/bin/sh\nexec npm "$@"\n`, 0o755);
-	ensureFile(vfs, "/usr/bin/npx",   `#!/bin/sh\nexec npx "$@"\n`, 0o755);
+	ensureFile(vfs, "/usr/bin/node", `#!/bin/sh\nexec node "$@"\n`, 0o755);
+	ensureFile(vfs, "/usr/bin/npm", `#!/bin/sh\nexec npm "$@"\n`, 0o755);
+	ensureFile(vfs, "/usr/bin/npx", `#!/bin/sh\nexec npx "$@"\n`, 0o755);
 
 	// java stubs
-	ensureFile(vfs, "/usr/lib/jvm/java-21-openjdk-amd64/bin/java",
-		`#!/bin/sh\nexec java "$@"\n`, 0o755);
-	ensureFile(vfs, "/usr/lib/jvm/java-21-openjdk-amd64/bin/javac",
-		`#!/bin/sh\nexec javac "$@"\n`, 0o755);
+	ensureFile(
+		vfs,
+		"/usr/lib/jvm/java-21-openjdk-amd64/bin/java",
+		`#!/bin/sh\nexec java "$@"\n`,
+		0o755,
+	);
+	ensureFile(
+		vfs,
+		"/usr/lib/jvm/java-21-openjdk-amd64/bin/javac",
+		`#!/bin/sh\nexec javac "$@"\n`,
+		0o755,
+	);
 
 	// /usr/share/common-licenses stubs
-	ensureFile(vfs, "/usr/share/common-licenses/GPL-2",   "GNU General Public License v2\n");
-	ensureFile(vfs, "/usr/share/common-licenses/GPL-3",   "GNU General Public License v3\n");
-	ensureFile(vfs, "/usr/share/common-licenses/LGPL-2.1","GNU Lesser General Public License v2.1\n");
-	ensureFile(vfs, "/usr/share/common-licenses/Apache-2.0","Apache License 2.0\n");
-	ensureFile(vfs, "/usr/share/common-licenses/MIT",     "MIT License\n");
+	ensureFile(
+		vfs,
+		"/usr/share/common-licenses/GPL-2",
+		"GNU General Public License v2\n",
+	);
+	ensureFile(
+		vfs,
+		"/usr/share/common-licenses/GPL-3",
+		"GNU General Public License v3\n",
+	);
+	ensureFile(
+		vfs,
+		"/usr/share/common-licenses/LGPL-2.1",
+		"GNU Lesser General Public License v2.1\n",
+	);
+	ensureFile(
+		vfs,
+		"/usr/share/common-licenses/Apache-2.0",
+		"Apache License 2.0\n",
+	);
+	ensureFile(vfs, "/usr/share/common-licenses/MIT", "MIT License\n");
 }
 
 // ─── /var ─────────────────────────────────────────────────────────────────────
@@ -1771,18 +2115,20 @@ function bootstrapVar(vfs: VirtualFileSystem): void {
 	ensureFile(vfs, "/var/cache/apt/srcpkgcache.bin", "");
 
 	// syslog stubs
-	ensureFile(vfs, "/var/log/syslog",
+	ensureFile(
+		vfs,
+		"/var/log/syslog",
 		`${new Date().toUTCString()} ${""} kernel: Virtual container started\n`,
 	);
-	ensureFile(vfs, "/var/log/auth.log",        "");
-	ensureFile(vfs, "/var/log/kern.log",         "");
-	ensureFile(vfs, "/var/log/dpkg.log",         "");
-	ensureFile(vfs, "/var/log/apt/history.log",  "");
-	ensureFile(vfs, "/var/log/apt/term.log",     "");
-	ensureFile(vfs, "/var/log/faillog",          "");
-	ensureFile(vfs, "/var/log/lastlog",          "");
-	ensureFile(vfs, "/var/log/wtmp",             "");
-	ensureFile(vfs, "/var/log/btmp",             "");
+	ensureFile(vfs, "/var/log/auth.log", "");
+	ensureFile(vfs, "/var/log/kern.log", "");
+	ensureFile(vfs, "/var/log/dpkg.log", "");
+	ensureFile(vfs, "/var/log/apt/history.log", "");
+	ensureFile(vfs, "/var/log/apt/term.log", "");
+	ensureFile(vfs, "/var/log/faillog", "");
+	ensureFile(vfs, "/var/log/lastlog", "");
+	ensureFile(vfs, "/var/log/wtmp", "");
+	ensureFile(vfs, "/var/log/btmp", "");
 	ensureFile(vfs, "/var/log/alternatives.log", "");
 
 	// /run
@@ -1804,11 +2150,17 @@ function bootstrapVar(vfs: VirtualFileSystem): void {
 
 function bootstrapBin(vfs: VirtualFileSystem): void {
 	// Modern Fortune Nyx: /bin and /sbin are symlinks to /usr/bin and /usr/sbin
-	if (!vfs.exists("/bin"))  { vfs.symlink("/usr/bin",  "/bin"); }
-	if (!vfs.exists("/sbin")) { vfs.symlink("/usr/sbin", "/sbin"); }
+	if (!vfs.exists("/bin")) {
+		vfs.symlink("/usr/bin", "/bin");
+	}
+	if (!vfs.exists("/sbin")) {
+		vfs.symlink("/usr/sbin", "/sbin");
+	}
 
 	// /var/run → /run (systemd compat)
-	if (!vfs.exists("/var/run")) { vfs.symlink("/run", "/var/run"); }
+	if (!vfs.exists("/var/run")) {
+		vfs.symlink("/run", "/var/run");
+	}
 
 	ensureDir(vfs, "/lib");
 	ensureDir(vfs, "/lib64");
@@ -1851,13 +2203,11 @@ function bootstrapRoot(vfs: VirtualFileSystem): void {
 			"alias l='ls -CF'",
 		].join("\n")}\n`,
 	);
-	ensureFile(vfs, "/root/.profile",
-		"[ -f ~/.bashrc ] && . ~/.bashrc\n",
-	);
-	ensureFile(vfs, "/root/.bash_logout",
-		"# ~/.bash_logout\n",
-	);
-	ensureFile(vfs, "/root/.config/pip/pip.conf",
+	ensureFile(vfs, "/root/.profile", "[ -f ~/.bashrc ] && . ~/.bashrc\n");
+	ensureFile(vfs, "/root/.bash_logout", "# ~/.bash_logout\n");
+	ensureFile(
+		vfs,
+		"/root/.config/pip/pip.conf",
 		"[global]\nbreak-system-packages = true\n",
 	);
 }
@@ -1874,7 +2224,9 @@ function bootstrapMisc(vfs: VirtualFileSystem, props: ShellProperties): void {
 	// /boot — kernel images, initrd, and bootloader config
 	ensureDir(vfs, "/boot");
 	ensureDir(vfs, "/boot/grub");
-	ensureFile(vfs, "/boot/grub/grub.cfg",
+	ensureFile(
+		vfs,
+		"/boot/grub/grub.cfg",
 		`${[
 			"# GRUB configuration (virtual)",
 			"set default=0",
@@ -1895,7 +2247,9 @@ function bootstrapMisc(vfs: VirtualFileSystem, props: ShellProperties): void {
 # SMP PREEMPT_DYNAMIC, virtio, kvm_guest
 `.padEnd(10240, "x");
 	ensureFile(vfs, `/boot/vmlinuz-${kver}`, vmlinuzContent, 0o644);
-	ensureFile(vfs, `/boot/initrd.img-${kver}`,
+	ensureFile(
+		vfs,
+		`/boot/initrd.img-${kver}`,
 		`${[
 			"#!/bin/sh",
 			"# Fortune GNU/Linux initramfs",
@@ -1906,8 +2260,11 @@ function bootstrapMisc(vfs: VirtualFileSystem, props: ShellProperties): void {
 			"echo 'Loading Fortune GNU/Linux 1.0 Nyx...'",
 			"exec /sbin/init",
 		].join("\n")}\n`,
-	0o644);
-	ensureFile(vfs, `/boot/System.map-${kver}`,
+		0o644,
+	);
+	ensureFile(
+		vfs,
+		`/boot/System.map-${kver}`,
 		`${[
 			"ffffffff81000000 T _stext",
 			"ffffffff81000000 T _text",
@@ -1928,8 +2285,11 @@ function bootstrapMisc(vfs: VirtualFileSystem, props: ShellProperties): void {
 			"ffffffffa0020000 T virtio_net_init",
 			"ffffffffa00f0000 T fortitude_init",
 		].join("\n")}\n`,
-		0o644);
-	ensureFile(vfs, `/boot/config-${kver}`,
+		0o644,
+	);
+	ensureFile(
+		vfs,
+		`/boot/config-${kver}`,
 		`${[
 			"#",
 			"# Linux/x86_64 6.1.0-fortune Kernel Configuration",
@@ -1993,7 +2353,7 @@ function bootstrapMisc(vfs: VirtualFileSystem, props: ShellProperties): void {
 			"#",
 			"CONFIG_SECURITY=y",
 			"CONFIG_SECURITY_NETWORK=y",
-			"CONFIG_LSM=\"lockdown,yama,loadpin,safesetid,integrity\"",
+			'CONFIG_LSM="lockdown,yama,loadpin,safesetid,integrity"',
 			"",
 			"#",
 			"# Virtual file system",
@@ -2005,13 +2365,22 @@ function bootstrapMisc(vfs: VirtualFileSystem, props: ShellProperties): void {
 			"CONFIG_CONFIGFS_FS=y",
 			"CONFIG_DEBUG_FS=y",
 		].join("\n")}\n`,
-		0o644);
+		0o644,
+	);
 
 	const prevKver = "1.0.0+itsrealfortune+0-amd64";
-	if (!vfs.exists("/vmlinuz"))        { vfs.symlink(`/boot/vmlinuz-${kver}`,    "/vmlinuz"); }
-	if (!vfs.exists("/vmlinuz.old"))    { vfs.symlink(`/boot/vmlinuz-${prevKver}`, "/vmlinuz.old"); }
-	if (!vfs.exists("/initrd.img"))     { vfs.symlink(`/boot/initrd.img-${kver}`,"/initrd.img"); }
-	if (!vfs.exists("/initrd.img.old")) { vfs.symlink(`/boot/initrd.img-${prevKver}`,"/initrd.img.old"); }
+	if (!vfs.exists("/vmlinuz")) {
+		vfs.symlink(`/boot/vmlinuz-${kver}`, "/vmlinuz");
+	}
+	if (!vfs.exists("/vmlinuz.old")) {
+		vfs.symlink(`/boot/vmlinuz-${prevKver}`, "/vmlinuz.old");
+	}
+	if (!vfs.exists("/initrd.img")) {
+		vfs.symlink(`/boot/initrd.img-${kver}`, "/initrd.img");
+	}
+	if (!vfs.exists("/initrd.img.old")) {
+		vfs.symlink(`/boot/initrd.img-${prevKver}`, "/initrd.img.old");
+	}
 
 	// /lost+found — ext4 recovery
 	ensureDir(vfs, "/lost+found", 0o700);
@@ -2038,9 +2407,11 @@ export function getStaticRootfsSnapshot(
 	hostname: string,
 	props: ShellProperties,
 ): Buffer {
-	const key    = _staticCacheKey(hostname, props);
+	const key = _staticCacheKey(hostname, props);
 	const cached = _staticRootfsCache.get(key);
-	if (cached) { return cached; }
+	if (cached) {
+		return cached;
+	}
 
 	const tmp = new VirtualFileSystem({ mode: "memory" });
 	bootstrapEtc(tmp, hostname, props);
@@ -2093,7 +2464,15 @@ export function bootstrapLinuxRootfs(
 	}
 
 	bootstrapRoot(vfs);
-	refreshProc(vfs, props, hostname, shellStartTime, sessions, network, resourceCaps);
+	refreshProc(
+		vfs,
+		props,
+		hostname,
+		shellStartTime,
+		sessions,
+		network,
+		resourceCaps,
+	);
 	syncEtcPasswd(vfs, users);
 }
 
@@ -2119,7 +2498,15 @@ export function createLinuxRootfsEngine(
 ) {
 	return {
 		boot(users: VirtualUserManager, sessions: VirtualActiveSession[] = []) {
-			bootstrapLinuxRootfs(vfs, users, hostname, props, startTime, sessions, network);
+			bootstrapLinuxRootfs(
+				vfs,
+				users,
+				hostname,
+				props,
+				startTime,
+				sessions,
+				network,
+			);
 		},
 		tick(sessions: VirtualActiveSession[] = []) {
 			refreshProc(vfs, props, hostname, startTime, sessions, network);

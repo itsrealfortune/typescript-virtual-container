@@ -17,12 +17,17 @@ export const perlCommand: ShellModule = {
 		const hasLoop = printLoop || noAutoprint;
 
 		if (!code) {
-			return { stderr: "perl: no code specified (only -e one-liners supported)", exitCode: 1 };
+			return {
+				stderr: "perl: no code specified (only -e one-liners supported)",
+				exitCode: 1,
+			};
 		}
 
 		const input = stdin ?? "";
 		const lines = input.split("\n");
-		if (lines[lines.length - 1] === "") { lines.pop(); }
+		if (lines[lines.length - 1] === "") {
+			lines.pop();
+		}
 		const out: string[] = [];
 
 		if (hasLoop) {
@@ -34,43 +39,71 @@ export const perlCommand: ShellModule = {
 					.replace(/\$\./g, String(li + 1));
 
 				// s/pat/rep/[g] substitution on $_
-				const sMatch = processed.match(/^s([^a-zA-Z0-9])(.*?)\1(.*?)\1([gi]*)$/);
-					if (sMatch) {
+				const sMatch = processed.match(
+					/^s([^a-zA-Z0-9])(.*?)\1(.*?)\1([gi]*)$/,
+				);
+				if (sMatch) {
 					const flags = sMatch[4] ?? "";
 					try {
-						const re = new RegExp(sMatch[2] as string, flags.includes("i") ? (flags.includes("g") ? "gi" : "i") : flags.includes("g") ? "g" : "");
+						const re = new RegExp(
+							sMatch[2] as string,
+							flags.includes("i")
+								? flags.includes("g")
+									? "gi"
+									: "i"
+								: flags.includes("g")
+									? "g"
+									: "",
+						);
 						line = line.replace(re, sMatch[3] as string);
-					} catch { /* ignore */ }
-					if (printLoop) { out.push(line); }
+					} catch {
+						/* ignore */
+					}
+					if (printLoop) {
+						out.push(line);
+					}
 					continue;
 				}
 
 				// print / say
-				const printM = processed.match(/^(?:print|say)\s+(?:STDOUT\s+)?(?:"([^"]*)"|'([^']*)'|(.+))(?:\s*;)?$/);
+				const printM = processed.match(
+					/^(?:print|say)\s+(?:STDOUT\s+)?(?:"([^"]*)"|'([^']*)'|(.+))(?:\s*;)?$/,
+				);
 				if (printM) {
 					const val = (printM[1] ?? printM[2] ?? printM[3] ?? "")
-						.replace(/\\n/g, "\n").replace(/\\t/g, "\t");
+						.replace(/\\n/g, "\n")
+						.replace(/\\t/g, "\t");
 					out.push(code.startsWith("say") ? val : val.replace(/\n$/, ""));
-					if (printLoop) { out.push(line); }
+					if (printLoop) {
+						out.push(line);
+					}
 					continue;
 				}
 
-				if (printLoop) { out.push(line); }
+				if (printLoop) {
+					out.push(line);
+				}
 			}
 		} else {
 			// Single expression
-			const printM = code.match(/^(?:print|say)\s+(?:STDOUT\s+)?(?:"([^"]*)"|'([^']*)'|(.*))(?:\s*;)?$/);
+			const printM = code.match(
+				/^(?:print|say)\s+(?:STDOUT\s+)?(?:"([^"]*)"|'([^']*)'|(.*))(?:\s*;)?$/,
+			);
 			if (printM) {
 				const val = (printM[1] ?? printM[2] ?? printM[3] ?? "")
-					.replace(/\\n/g, "\n").replace(/\\t/g, "\t");
+					.replace(/\\n/g, "\n")
+					.replace(/\\t/g, "\t");
 				out.push(val);
-			} else if (code.trim() === 'print $]' || code.includes("version")) {
+			} else if (code.trim() === "print $]" || code.includes("version")) {
 				// Version string
 				out.push("5.036001");
 			}
 		}
 
 		const result = out.join("\n");
-		return { stdout: result + (result && !result.endsWith("\n") ? "\n" : ""), exitCode: 0 };
+		return {
+			stdout: result + (result && !result.endsWith("\n") ? "\n" : ""),
+			exitCode: 0,
+		};
 	},
 };

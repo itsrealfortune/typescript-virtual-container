@@ -32,26 +32,38 @@ export const gpasswdCommand: ShellModule = {
 			}
 		}
 
-		if (!((action && groupName ) && username)) {
+		if (!(action && groupName && username)) {
 			return { stderr: "Usage: gpasswd -a|-d -G group user\n", exitCode: 1 };
 		}
 
 		const users = shell.users.listUsers();
 		if (!users.includes(username)) {
-			return { stderr: `gpasswd: user '${username}' does not exist\n`, exitCode: 1 };
+			return {
+				stderr: `gpasswd: user '${username}' does not exist\n`,
+				exitCode: 1,
+			};
 		}
 
 		if (!shell.users.getGroup(groupName)) {
-			return { stderr: `gpasswd: group '${groupName}' does not exist\n`, exitCode: 1 };
+			return {
+				stderr: `gpasswd: group '${groupName}' does not exist\n`,
+				exitCode: 1,
+			};
 		}
 
 		try {
 			if (action === "add") {
 				shell.users.addGroupMember(groupName, username);
-				return { stdout: `gpasswd: added '${username}' to group '${groupName}'\n`, exitCode: 0 };
+				return {
+					stdout: `gpasswd: added '${username}' to group '${groupName}'\n`,
+					exitCode: 0,
+				};
 			}
-				shell.users.removeGroupMember(groupName, username);
-				return { stdout: `gpasswd: removed '${username}' from group '${groupName}'\n`, exitCode: 0 };
+			shell.users.removeGroupMember(groupName, username);
+			return {
+				stdout: `gpasswd: removed '${username}' from group '${groupName}'\n`,
+				exitCode: 0,
+			};
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
 			return { stderr: `${msg}\n`, exitCode: 1 };

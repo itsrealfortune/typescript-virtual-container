@@ -56,7 +56,8 @@ export const npmCommand: ShellModule = {
 			case "exec":
 			case "x":
 				return {
-					stderr: "npm error: script execution is not available in the virtual runtime.\n",
+					stderr:
+						"npm error: script execution is not available in the virtual runtime.\n",
 					exitCode: 1,
 				};
 
@@ -125,7 +126,8 @@ export const npxCommand: ShellModule = {
 		}
 
 		return {
-			stderr: "npx: package execution is not available in the virtual runtime.\n",
+			stderr:
+				"npx: package execution is not available in the virtual runtime.\n",
 			exitCode: 1,
 		};
 	},

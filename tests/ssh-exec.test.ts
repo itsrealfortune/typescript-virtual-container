@@ -21,8 +21,7 @@ describe("SSH exec inline commands", () => {
 			exit(code: number) {
 				exitCode = code;
 			},
-			end() {
-			},
+			end() {},
 		};
 
 		await shell.ensureInitialized();

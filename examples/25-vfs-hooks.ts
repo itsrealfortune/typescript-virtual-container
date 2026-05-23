@@ -75,4 +75,6 @@ console.log(vfs.readFile("/etc/os-release"));
 // ── Stat of dynamically resolved files ────────────────────────────
 console.log("\n--- Stats of resolved files ---");
 const cpuStat = vfs.stat("/proc/cpuinfo");
-console.log(`  /proc/cpuinfo: type=${cpuStat.type}, size=${cpuStat.type === "file" ? cpuStat.size : "N/A"}`);
+console.log(
+	`  /proc/cpuinfo: type=${cpuStat.type}, size=${cpuStat.type === "file" ? cpuStat.size : "N/A"}`,
+);

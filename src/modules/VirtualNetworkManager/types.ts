@@ -75,6 +75,9 @@ export interface PolicyRule {
 }
 
 export function randomMac(): string {
-	const hex = () => Math.floor(Math.random() * 256).toString(16).padStart(2, "0");
+	const hex = () =>
+		Math.floor(Math.random() * 256)
+			.toString(16)
+			.padStart(2, "0");
 	return `02:42:${hex()}:${hex()}:${hex()}:${hex()}`;
 }

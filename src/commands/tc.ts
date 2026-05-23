@@ -16,7 +16,11 @@ export const tcCommand: ShellModule = {
 		const cmd = args[1]?.toLowerCase();
 
 		if (!obj) {
-			return { stderr: "Usage: tc [ OPTIONS ] OBJECT { COMMAND | help }\nOBJECT := { qdisc | class | filter | action }", exitCode: 1 };
+			return {
+				stderr:
+					"Usage: tc [ OPTIONS ] OBJECT { COMMAND | help }\nOBJECT := { qdisc | class | filter | action }",
+				exitCode: 1,
+			};
 		}
 
 		if (obj === "qdisc") {
@@ -26,7 +30,9 @@ export const tcCommand: ShellModule = {
 				const ifaces = net.getInterfaces();
 				const lines: string[] = [];
 				for (const iface of ifaces) {
-					if (dev && iface.name !== dev) { continue; }
+					if (dev && iface.name !== dev) {
+						continue;
+					}
 					lines.push(`qdisc noqueue 0: dev ${iface.name} root refcnt 2`);
 					lines.push(` qdisc netem 1: dev ${iface.name} parent 1:1 limit 1000`);
 				}
@@ -74,7 +80,10 @@ export const tcCommand: ShellModule = {
 					};
 				}
 
-				return { stderr: "tc: unsupported qdisc type. Use netem, tbf, or htb.", exitCode: 1 };
+				return {
+					stderr: "tc: unsupported qdisc type. Use netem, tbf, or htb.",
+					exitCode: 1,
+				};
 			}
 
 			if (cmd === "del" || cmd === "delete") {
@@ -94,7 +103,10 @@ export const tcCommand: ShellModule = {
 			return { exitCode: 0 };
 		}
 
-		return { stderr: `tc: Object "${obj}" is unknown, try "tc help".`, exitCode: 1 };
+		return {
+			stderr: `tc: Object "${obj}" is unknown, try "tc help".`,
+			exitCode: 1,
+		};
 	},
 };
 
@@ -114,14 +126,18 @@ function _parseDuration(args: string[], _startIdx: number): number {
 
 function _parseDurationAfter(args: string[], _startIdx: number): number {
 	const jitterIdx = args.indexOf("jitter");
-	if (jitterIdx === -1) { return 0; }
+	if (jitterIdx === -1) {
+		return 0;
+	}
 	const val = args[jitterIdx + 1];
 	return _parseMs(val ?? "0");
 }
 
 function _parseLoss(args: string[], _startIdx: number): number {
 	const lossIdx = args.indexOf("loss");
-	if (lossIdx === -1) { return 0; }
+	if (lossIdx === -1) {
+		return 0;
+	}
 	for (let i = lossIdx + 1; i < args.length; i++) {
 		const arg = args[i] as string;
 		if (/^\d+(\.\d+)?%$/.test(arg)) {
@@ -133,46 +149,64 @@ function _parseLoss(args: string[], _startIdx: number): number {
 
 function _parseReorder(args: string[], _startIdx: number): number {
 	const reorderIdx = args.indexOf("reorder");
-	if (reorderIdx === -1) { return 0; }
+	if (reorderIdx === -1) {
+		return 0;
+	}
 	const val = args[reorderIdx + 1];
 	return val ? Number.parseFloat(val) : 0;
 }
 
 function _parseDuplicate(args: string[], _startIdx: number): number {
 	const dupIdx = args.indexOf("duplicate");
-	if (dupIdx === -1) { return 0; }
+	if (dupIdx === -1) {
+		return 0;
+	}
 	const val = args[dupIdx + 1];
 	return val ? Number.parseFloat(val) : 0;
 }
 
 function _parseCorrupt(args: string[], _startIdx: number): number {
 	const corruptIdx = args.indexOf("corrupt");
-	if (corruptIdx === -1) { return 0; }
+	if (corruptIdx === -1) {
+		return 0;
+	}
 	const val = args[corruptIdx + 1];
 	return val ? Number.parseFloat(val) : 0;
 }
 
 function _parseRate(args: string[], _startIdx: number): string {
 	const rateIdx = args.indexOf("rate");
-	if (rateIdx === -1) { return "0"; }
+	if (rateIdx === -1) {
+		return "0";
+	}
 	return args[rateIdx + 1] ?? "0";
 }
 
 function _parseBurst(args: string[], _startIdx: number): string {
 	const burstIdx = args.indexOf("burst");
-	if (burstIdx === -1) { return "0"; }
+	if (burstIdx === -1) {
+		return "0";
+	}
 	return args[burstIdx + 1] ?? "0";
 }
 
 function _parseLimit(args: string[], _startIdx: number): string {
 	const limitIdx = args.indexOf("limit");
-	if (limitIdx === -1) { return "0"; }
+	if (limitIdx === -1) {
+		return "0";
+	}
 	return args[limitIdx + 1] ?? "0";
 }
 
 function _parseMs(val: string): number {
-	if (val.endsWith("ms")) { return Number.parseFloat(val); }
-	if (val.endsWith("us")) { return Number.parseFloat(val) / 1000; }
-	if (val.endsWith("s")) { return Number.parseFloat(val) * 1000; }
+	if (val.endsWith("ms")) {
+		return Number.parseFloat(val);
+	}
+	if (val.endsWith("us")) {
+		return Number.parseFloat(val) / 1000;
+	}
+	if (val.endsWith("s")) {
+		return Number.parseFloat(val) * 1000;
+	}
 	return Number.parseFloat(val);
 }

@@ -1,6 +1,10 @@
 import { runCommandDirect } from "../../commands";
 import { resolvePath } from "../../commands/helpers";
-import type { CommandMode, CommandResult, ShellEnv } from "../../types/commands";
+import type {
+	CommandMode,
+	CommandResult,
+	ShellEnv,
+} from "../../types/commands";
 import type {
 	Pipeline,
 	PipelineCommand,
@@ -9,7 +13,6 @@ import type {
 import type { VirtualShell } from "../VirtualShell";
 
 // ── Script executor (handles &&/||/;) ────────────────────────────────────────
-
 
 /**
  * Executes a list of shell statements sequentially, respecting `&&`, `||`, and `;`
@@ -43,7 +46,10 @@ export async function executeStatements(
 
 		// Subshell: execute in isolated context
 		if (stmt.subshell) {
-			const subEnv: ShellEnv = { vars: { ...env.vars }, lastExitCode: env.lastExitCode };
+			const subEnv: ShellEnv = {
+				vars: { ...env.vars },
+				lastExitCode: env.lastExitCode,
+			};
 			last = await executeStatements(
 				stmt.subshell.statements,
 				authUser,
@@ -55,7 +61,9 @@ export async function executeStatements(
 			);
 			// Subshell cwd changes do NOT propagate to parent
 			env.lastExitCode = last.exitCode ?? 0;
-			if (last.stdout) { accumulatedStdout.push(last.stdout); }
+			if (last.stdout) {
+				accumulatedStdout.push(last.stdout);
+			}
 			if (last.closeSession || last.switchUser) {
 				return { ...last, stdout: accumulatedStdout.join("") || last.stdout };
 			}
@@ -78,7 +86,9 @@ export async function executeStatements(
 				currentCwd = last.nextCwd;
 			}
 			env.lastExitCode = last.exitCode ?? 0;
-			if (last.stdout) { accumulatedStdout.push(last.stdout); }
+			if (last.stdout) {
+				accumulatedStdout.push(last.stdout);
+			}
 			if (last.closeSession || last.switchUser) {
 				return { ...last, stdout: accumulatedStdout.join("") || last.stdout };
 			}
@@ -90,7 +100,14 @@ export async function executeStatements(
 		if (stmt.background && stmt.pipeline) {
 			const ac = new AbortController();
 			void executePipeline(
-				stmt.pipeline, authUser, hostname, "background", currentCwd, shell, env, ac,
+				stmt.pipeline,
+				authUser,
+				hostname,
+				"background",
+				currentCwd,
+				shell,
+				env,
+				ac,
 			);
 			last = { exitCode: 0 };
 			env.lastExitCode = 0;
@@ -118,7 +135,9 @@ export async function executeStatements(
 			currentCwd = last.nextCwd;
 		}
 
-		if (last.stdout) { accumulatedStdout.push(last.stdout); }
+		if (last.stdout) {
+			accumulatedStdout.push(last.stdout);
+		}
 
 		if (last.closeSession || last.switchUser) {
 			return {
@@ -132,15 +151,23 @@ export async function executeStatements(
 			// always run next
 		} else if (op === "&&") {
 			if ((last.exitCode ?? 0) !== 0) {
-				while (i < statements.length && statements[i]?.op === "&&") { i++; }
+				while (i < statements.length && statements[i]?.op === "&&") {
+					i++;
+				}
 			}
 		} else if (op === "||" && (last.exitCode ?? 0) === 0) {
-				while (i < statements.length && statements[i]?.op === "||") { i++; }
+			while (i < statements.length && statements[i]?.op === "||") {
+				i++;
 			}
+		}
 		i++;
 	}
 	const merged = accumulatedStdout.join("");
-	return { ...last, stdout: merged || last.stdout, nextCwd: currentCwd === cwd ? undefined : currentCwd };
+	return {
+		...last,
+		stdout: merged || last.stdout,
+		nextCwd: currentCwd === cwd ? undefined : currentCwd,
+	};
 }
 
 // ── Pipeline executor ─────────────────────────────────────────────────────────
@@ -172,7 +199,9 @@ export function executePipeline(
 	if (!pipeline.isValid) {
 		return { stderr: pipeline.error || "Syntax error", exitCode: 1 };
 	}
-	if (pipeline.commands.length === 0) { return { exitCode: 0 }; }
+	if (pipeline.commands.length === 0) {
+		return { exitCode: 0 };
+	}
 
 	const shellEnv: ShellEnv = env ?? { vars: {}, lastExitCode: 0 };
 
@@ -311,7 +340,11 @@ async function executePipelineChain(
 
 		// 2>&1 — merge stderr into stdout
 		const effectiveResult = cmd.stderrToStdout
-			? { ...result, stdout: (result.stdout ?? '') + (result.stderr ?? ''), stderr: undefined }
+			? {
+					...result,
+					stdout: (result.stdout ?? "") + (result.stderr ?? ""),
+					stderr: undefined,
+				}
 			: result;
 
 		// 2>file — redirect stderr to file
@@ -320,9 +353,25 @@ async function executePipelineChain(
 			const uid = shell.users.getUid(authUser);
 			const gid = shell.users.getGid(authUser);
 			try {
-				const ex = (() => { try { return shell.vfs.readFile(sp, uid, gid); } catch { return ''; } })();
-				shell.vfs.writeFile(sp, cmd.stderrAppend ? ex + effectiveResult.stderr : effectiveResult.stderr, {}, uid, gid);
-			} catch { /* best-effort stderr write */ }
+				const ex = (() => {
+					try {
+						return shell.vfs.readFile(sp, uid, gid);
+					} catch {
+						return "";
+					}
+				})();
+				shell.vfs.writeFile(
+					sp,
+					cmd.stderrAppend
+						? ex + effectiveResult.stderr
+						: effectiveResult.stderr,
+					{},
+					uid,
+					gid,
+				);
+			} catch {
+				/* best-effort stderr write */
+			}
 		}
 
 		if (i === commands.length - 1 && cmd.outputFile) {
@@ -354,7 +403,9 @@ async function executePipelineChain(
 		if (effectiveResult.stderr && exitCode !== 0) {
 			return { stderr: effectiveResult.stderr, exitCode };
 		}
-		if (effectiveResult.closeSession || effectiveResult.switchUser) { return effectiveResult; }
+		if (effectiveResult.closeSession || effectiveResult.switchUser) {
+			return effectiveResult;
+		}
 	}
 
 	return { stdout: currentOutput, exitCode };

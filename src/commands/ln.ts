@@ -62,13 +62,21 @@ export const readlinkCommand: ShellModule = {
 	run: ({ shell, cwd, args }) => {
 		const follow = args.includes("-f") || args.includes("-e");
 		const target = args.find((a) => !a.startsWith("-"));
-		if (!target) { return { stderr: "readlink: missing operand\n", exitCode: 1 }; }
+		if (!target) {
+			return { stderr: "readlink: missing operand\n", exitCode: 1 };
+		}
 		const p = resolvePath(cwd, target);
 		if (!shell.vfs.exists(p)) {
-			return { stderr: `readlink: ${target}: No such file or directory\n`, exitCode: 1 };
+			return {
+				stderr: `readlink: ${target}: No such file or directory\n`,
+				exitCode: 1,
+			};
 		}
 		if (!shell.vfs.isSymlink(p)) {
-			return { stderr: `readlink: ${target}: not a symbolic link\n`, exitCode: 1 };
+			return {
+				stderr: `readlink: ${target}: not a symbolic link\n`,
+				exitCode: 1,
+			};
 		}
 		const resolved = shell.vfs.resolveSymlink(follow ? p : p);
 		return { stdout: `${resolved}\n`, exitCode: 0 };

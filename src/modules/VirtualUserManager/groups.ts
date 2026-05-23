@@ -141,7 +141,9 @@ export class VirtualGroupManager {
 	 */
 	public getGroupByGid(gid: number): VirtualGroupRecord | undefined {
 		for (const group of this._groups.values()) {
-			if (group.gid === gid) { return group; }
+			if (group.gid === gid) {
+				return group;
+			}
 		}
 	}
 
@@ -163,7 +165,9 @@ export class VirtualGroupManager {
 	 */
 	public getNameByGid(gid: number): string | null {
 		for (const group of this._groups.values()) {
-			if (group.gid === gid) { return group.name; }
+			if (group.gid === gid) {
+				return group.name;
+			}
 		}
 		return null;
 	}
@@ -226,11 +230,19 @@ export class VirtualGroupManager {
 	 * @param primaryGid User's primary GID (for primary group check).
 	 * @returns True if user is a member (primary or supplementary).
 	 */
-	public isMemberOf(username: string, groupName: string, primaryGid: number): boolean {
+	public isMemberOf(
+		username: string,
+		groupName: string,
+		primaryGid: number,
+	): boolean {
 		const group = this._groups.get(groupName);
-		if (!group) { return false; }
+		if (!group) {
+			return false;
+		}
 		// Check primary group match
-		if (group.gid === primaryGid) { return true; }
+		if (group.gid === primaryGid) {
+			return true;
+		}
 		// Check supplementary membership
 		return group.members.includes(username);
 	}
@@ -241,7 +253,9 @@ export class VirtualGroupManager {
 	 * @returns Array of VirtualGroupRecord sorted by name.
 	 */
 	public listGroups(): VirtualGroupRecord[] {
-		return Array.from(this._groups.values()).sort((a, b) => a.name.localeCompare(b.name));
+		return Array.from(this._groups.values()).sort((a, b) =>
+			a.name.localeCompare(b.name),
+		);
 	}
 
 	/**
@@ -262,7 +276,11 @@ export class VirtualGroupManager {
 	 */
 	private _persist(): void {
 		const content = this.generateGroupFile();
-		this._vfs.writeFile(this._groupsPath, content.length > 0 ? `${content}\n` : "", { mode: 0o644 });
+		this._vfs.writeFile(
+			this._groupsPath,
+			content.length > 0 ? `${content}\n` : "",
+			{ mode: 0o644 },
+		);
 	}
 
 	/**
@@ -289,12 +307,18 @@ export class VirtualGroupManager {
 			}
 
 			const [name, _password, gidStr, membersStr] = parts;
-			if (!(name && gidStr)) { continue; }
+			if (!(name && gidStr)) {
+				continue;
+			}
 
 			const gid = Number.parseInt(gidStr, 10);
-			if (!Number.isFinite(gid) || gid < 0) { continue; }
+			if (!Number.isFinite(gid) || gid < 0) {
+				continue;
+			}
 
-			const members = membersStr ? membersStr.split(",").filter((m) => m.length > 0) : [];
+			const members = membersStr
+				? membersStr.split(",").filter((m) => m.length > 0)
+				: [];
 			this._groups.set(name, { name, gid, members });
 
 			if (gid >= this._nextGid) {

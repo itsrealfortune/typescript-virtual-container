@@ -3,7 +3,13 @@ export {
 	getCommandModulesPublic,
 	getCommandNames,
 	registerCommand,
-	resolveModule
+	resolveModule,
 } from "./registry";
 
-export { applyUserSwitch, makeDefaultEnv, runCommand, runCommandDirect, userHome } from "./runtime";
+export {
+	applyUserSwitch,
+	makeDefaultEnv,
+	runCommand,
+	runCommandDirect,
+	userHome,
+} from "./runtime";

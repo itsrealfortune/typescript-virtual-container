@@ -5,7 +5,12 @@ function makeVfs() {
 	return new VirtualFileSystem();
 }
 
-function createTestDir(vfs: VirtualFileSystem, path: string, uid: number, gid: number) {
+function createTestDir(
+	vfs: VirtualFileSystem,
+	path: string,
+	uid: number,
+	gid: number,
+) {
 	// Create parent path as root if needed, then set ownership
 	const parts = path.split("/").filter(Boolean);
 	let current = "";
@@ -19,7 +24,12 @@ function createTestDir(vfs: VirtualFileSystem, path: string, uid: number, gid: n
 	vfs.chown(path, uid, gid, 0);
 }
 
-function createWritableTestDir(vfs: VirtualFileSystem, path: string, uid: number, gid: number) {
+function createWritableTestDir(
+	vfs: VirtualFileSystem,
+	path: string,
+	uid: number,
+	gid: number,
+) {
 	const parts = path.split("/").filter(Boolean);
 	let current = "";
 	for (const part of parts) {
@@ -44,14 +54,18 @@ describe("VFS permission enforcement", () => {
 		const vfs = makeVfs();
 		createTestDir(vfs, "/root", 0, 0);
 		vfs.writeFile("/root/secret.txt", "secret", { mode: 0o000 }, 0, 0);
-		expect(() => vfs.writeFile("/root/secret.txt", "new", {}, 0, 0)).not.toThrow();
+		expect(() =>
+			vfs.writeFile("/root/secret.txt", "new", {}, 0, 0),
+		).not.toThrow();
 	});
 
 	test("non-root cannot read file without r permission", () => {
 		const vfs = makeVfs();
 		createTestDir(vfs, "/shared", 0, 0);
 		vfs.writeFile("/shared/secret.txt", "secret", { mode: 0o000 }, 0, 0);
-		expect(() => vfs.readFile("/shared/secret.txt", 1001, 1001)).toThrow(/EACCES/);
+		expect(() => vfs.readFile("/shared/secret.txt", 1001, 1001)).toThrow(
+			/EACCES/,
+		);
 	});
 
 	test("non-root can read world-readable file", () => {
@@ -65,7 +79,9 @@ describe("VFS permission enforcement", () => {
 		const vfs = makeVfs();
 		createTestDir(vfs, "/shared", 0, 0);
 		vfs.writeFile("/shared/secret.txt", "secret", { mode: 0o444 }, 0, 0);
-		expect(() => vfs.writeFile("/shared/secret.txt", "new", {}, 1001, 1001)).toThrow(/EACCES/);
+		expect(() =>
+			vfs.writeFile("/shared/secret.txt", "new", {}, 1001, 1001),
+		).toThrow(/EACCES/);
 	});
 
 	test("owner can read file with 0o700 permission", () => {
@@ -73,7 +89,13 @@ describe("VFS permission enforcement", () => {
 		vfs.mkdir("/home", 0o755, 0, 0);
 		vfs.chown("/home", 1001, 1001, 0);
 		vfs.mkdir("/home/alice", 0o755, 1001, 1001);
-		vfs.writeFile("/home/alice/private.txt", "private", { mode: 0o700 }, 1001, 1001);
+		vfs.writeFile(
+			"/home/alice/private.txt",
+			"private",
+			{ mode: 0o700 },
+			1001,
+			1001,
+		);
 		expect(vfs.readFile("/home/alice/private.txt", 1001, 1001)).toBe("private");
 	});
 
@@ -82,8 +104,16 @@ describe("VFS permission enforcement", () => {
 		vfs.mkdir("/home", 0o755, 0, 0);
 		vfs.chown("/home", 1001, 1001, 0);
 		vfs.mkdir("/home/alice", 0o755, 1001, 1001);
-		vfs.writeFile("/home/alice/private.txt", "private", { mode: 0o700 }, 1001, 1001);
-		expect(() => vfs.readFile("/home/alice/private.txt", 1002, 1002)).toThrow(/EACCES/);
+		vfs.writeFile(
+			"/home/alice/private.txt",
+			"private",
+			{ mode: 0o700 },
+			1001,
+			1001,
+		);
+		expect(() => vfs.readFile("/home/alice/private.txt", 1002, 1002)).toThrow(
+			/EACCES/,
+		);
 	});
 
 	test("cannot remove file from sticky dir as other user", () => {
@@ -91,7 +121,9 @@ describe("VFS permission enforcement", () => {
 		createTestDir(vfs, "/tmp", 0, 0);
 		vfs.chmod("/tmp", 0o1777, 0);
 		vfs.writeFile("/tmp/alice-file.txt", "data", { mode: 0o644 }, 1001, 1001);
-		expect(() => vfs.remove("/tmp/alice-file.txt", {}, 1002, 1002)).toThrow(/EACCES/);
+		expect(() => vfs.remove("/tmp/alice-file.txt", {}, 1002, 1002)).toThrow(
+			/EACCES/,
+		);
 	});
 
 	test("owner can remove own file from sticky dir", () => {
@@ -99,14 +131,18 @@ describe("VFS permission enforcement", () => {
 		createTestDir(vfs, "/tmp", 0, 0);
 		vfs.chmod("/tmp", 0o1777, 0);
 		vfs.writeFile("/tmp/alice-file.txt", "data", { mode: 0o644 }, 1001, 1001);
-		expect(() => vfs.remove("/tmp/alice-file.txt", {}, 1001, 1001)).not.toThrow();
+		expect(() =>
+			vfs.remove("/tmp/alice-file.txt", {}, 1001, 1001),
+		).not.toThrow();
 	});
 
 	test("path traversal: blocked by unsearchable parent", () => {
 		const vfs = makeVfs();
 		vfs.mkdir("/restricted", 0o700, 0, 0);
 		vfs.writeFile("/restricted/secret.txt", "secret", { mode: 0o644 }, 0, 0);
-		expect(() => vfs.readFile("/restricted/secret.txt", 1001, 1001)).toThrow(/EACCES/);
+		expect(() => vfs.readFile("/restricted/secret.txt", 1001, 1001)).toThrow(
+			/EACCES/,
+		);
 	});
 
 	test("chown requires root", () => {
@@ -185,7 +221,13 @@ describe("VFS permission enforcement", () => {
 	test("permission denied when mode has no other bits", () => {
 		const vfs = makeVfs();
 		createWritableTestDir(vfs, "/shared", 1001, 1001);
-		vfs.writeFile("/shared/no-other.txt", "secret", { mode: 0o740 }, 1001, 1001);
+		vfs.writeFile(
+			"/shared/no-other.txt",
+			"secret",
+			{ mode: 0o740 },
+			1001,
+			1001,
+		);
 		expect(vfs.checkAccess("/shared/no-other.txt", 1001, 1001, 4)).toBe(true);
 		expect(vfs.checkAccess("/shared/no-other.txt", 1002, 1002, 4)).toBe(false);
 	});
@@ -205,7 +247,9 @@ describe("VFS permission enforcement", () => {
 	test("non-sudo user cannot create file in /root", () => {
 		const vfs = makeVfs();
 		vfs.mkdir("/root", 0o700, 0, 0);
-		expect(() => vfs.writeFile("/root/malicious.txt", "data", {}, 1001, 1001)).toThrow(/EACCES/);
+		expect(() =>
+			vfs.writeFile("/root/malicious.txt", "data", {}, 1001, 1001),
+		).toThrow(/EACCES/);
 	});
 
 	test("non-sudo user cannot read file inside /root", () => {
@@ -219,7 +263,9 @@ describe("VFS permission enforcement", () => {
 		const vfs = makeVfs();
 		vfs.mkdir("/root", 0o700, 0, 0);
 		vfs.writeFile("/root/important.txt", "data", { mode: 0o644 }, 0, 0);
-		expect(() => vfs.remove("/root/important.txt", {}, 1001, 1001)).toThrow(/EACCES/);
+		expect(() => vfs.remove("/root/important.txt", {}, 1001, 1001)).toThrow(
+			/EACCES/,
+		);
 	});
 });
 
@@ -227,40 +273,52 @@ describe("linuxrootfs write protection for non-sudoers", () => {
 	test("non-sudo user cannot write to /etc", () => {
 		const vfs = makeVfs();
 		vfs.mkdir("/etc", 0o755, 0, 0);
-		expect(() => vfs.writeFile("/etc/passwd", "fake", {}, 1001, 1001)).toThrow(/EACCES/);
+		expect(() => vfs.writeFile("/etc/passwd", "fake", {}, 1001, 1001)).toThrow(
+			/EACCES/,
+		);
 	});
 
 	test("non-sudo user cannot write to /usr", () => {
 		const vfs = makeVfs();
 		vfs.mkdir("/usr", 0o755, 0, 0);
 		vfs.mkdir("/usr/bin", 0o755, 0, 0);
-		expect(() => vfs.writeFile("/usr/bin/fake", "binary", {}, 1001, 1001)).toThrow(/EACCES/);
+		expect(() =>
+			vfs.writeFile("/usr/bin/fake", "binary", {}, 1001, 1001),
+		).toThrow(/EACCES/);
 	});
 
 	test("non-sudo user cannot write to /bin", () => {
 		const vfs = makeVfs();
 		vfs.mkdir("/bin", 0o755, 0, 0);
-		expect(() => vfs.writeFile("/bin/backdoor", "script", {}, 1001, 1001)).toThrow(/EACCES/);
+		expect(() =>
+			vfs.writeFile("/bin/backdoor", "script", {}, 1001, 1001),
+		).toThrow(/EACCES/);
 	});
 
 	test("non-sudo user cannot write to /sbin", () => {
 		const vfs = makeVfs();
 		vfs.mkdir("/sbin", 0o755, 0, 0);
-		expect(() => vfs.writeFile("/sbin/init-hack", "script", {}, 1001, 1001)).toThrow(/EACCES/);
+		expect(() =>
+			vfs.writeFile("/sbin/init-hack", "script", {}, 1001, 1001),
+		).toThrow(/EACCES/);
 	});
 
 	test("non-sudo user cannot write to /lib", () => {
 		const vfs = makeVfs();
 		vfs.mkdir("/lib", 0o755, 0, 0);
 		vfs.mkdir("/lib/modules", 0o755, 0, 0);
-		expect(() => vfs.writeFile("/lib/modules/fake.so", "lib", {}, 1001, 1001)).toThrow(/EACCES/);
+		expect(() =>
+			vfs.writeFile("/lib/modules/fake.so", "lib", {}, 1001, 1001),
+		).toThrow(/EACCES/);
 	});
 
 	test("non-sudo user cannot write to /var/log", () => {
 		const vfs = makeVfs();
 		vfs.mkdir("/var", 0o755, 0, 0);
 		vfs.mkdir("/var/log", 0o755, 0, 0);
-		expect(() => vfs.writeFile("/var/log/auth.log", "forged", {}, 1001, 1001)).toThrow(/EACCES/);
+		expect(() =>
+			vfs.writeFile("/var/log/auth.log", "forged", {}, 1001, 1001),
+		).toThrow(/EACCES/);
 	});
 
 	test("non-sudo user cannot create directory in /etc", () => {
@@ -302,13 +360,17 @@ describe("symlink and move permission enforcement", () => {
 	test("non-sudo user cannot create symlink in /root", () => {
 		const vfs = makeVfs();
 		vfs.mkdir("/root", 0o700, 0, 0);
-		expect(() => vfs.symlink("/tmp/target", "/root/evil-link", 1001, 1001)).toThrow(/EACCES/);
+		expect(() =>
+			vfs.symlink("/tmp/target", "/root/evil-link", 1001, 1001),
+		).toThrow(/EACCES/);
 	});
 
 	test("non-sudo user cannot create symlink in /etc", () => {
 		const vfs = makeVfs();
 		vfs.mkdir("/etc", 0o755, 0, 0);
-		expect(() => vfs.symlink("/tmp/target", "/etc/evil-link", 1001, 1001)).toThrow(/EACCES/);
+		expect(() =>
+			vfs.symlink("/tmp/target", "/etc/evil-link", 1001, 1001),
+		).toThrow(/EACCES/);
 	});
 
 	test("non-sudo user cannot move file into /root", () => {
@@ -317,7 +379,9 @@ describe("symlink and move permission enforcement", () => {
 		vfs.mkdir("/tmp", 0o755, 0, 0);
 		vfs.chmod("/tmp", 0o777, 0);
 		vfs.writeFile("/tmp/myfile.txt", "data", { mode: 0o644 }, 1001, 1001);
-		expect(() => vfs.move("/tmp/myfile.txt", "/root/stolen.txt", 1001, 1001)).toThrow(/EACCES/);
+		expect(() =>
+			vfs.move("/tmp/myfile.txt", "/root/stolen.txt", 1001, 1001),
+		).toThrow(/EACCES/);
 	});
 
 	test("non-sudo user cannot move file into /etc", () => {
@@ -326,7 +390,9 @@ describe("symlink and move permission enforcement", () => {
 		vfs.mkdir("/tmp", 0o755, 0, 0);
 		vfs.chmod("/tmp", 0o777, 0);
 		vfs.writeFile("/tmp/myfile.txt", "data", { mode: 0o644 }, 1001, 1001);
-		expect(() => vfs.move("/tmp/myfile.txt", "/etc/fake.conf", 1001, 1001)).toThrow(/EACCES/);
+		expect(() =>
+			vfs.move("/tmp/myfile.txt", "/etc/fake.conf", 1001, 1001),
+		).toThrow(/EACCES/);
 	});
 
 	test("non-sudo user cannot move system file", () => {
@@ -335,7 +401,9 @@ describe("symlink and move permission enforcement", () => {
 		vfs.writeFile("/etc/hosts", "127.0.0.1 localhost", { mode: 0o644 }, 0, 0);
 		vfs.mkdir("/tmp", 0o755, 0, 0);
 		vfs.chmod("/tmp", 0o777, 0);
-		expect(() => vfs.move("/etc/hosts", "/tmp/stolen-hosts", 1001, 1001)).toThrow(/EACCES/);
+		expect(() =>
+			vfs.move("/etc/hosts", "/tmp/stolen-hosts", 1001, 1001),
+		).toThrow(/EACCES/);
 	});
 
 	test("owner can create symlink in own directory", () => {
@@ -343,7 +411,9 @@ describe("symlink and move permission enforcement", () => {
 		vfs.mkdir("/home", 0o755, 0, 0);
 		vfs.chown("/home", 1001, 1001, 0);
 		vfs.mkdir("/home/alice", 0o755, 1001, 1001);
-		expect(() => vfs.symlink("/tmp/target", "/home/alice/link", 1001, 1001)).not.toThrow();
+		expect(() =>
+			vfs.symlink("/tmp/target", "/home/alice/link", 1001, 1001),
+		).not.toThrow();
 	});
 
 	test("owner can move own files", () => {
@@ -352,6 +422,8 @@ describe("symlink and move permission enforcement", () => {
 		vfs.chown("/home", 1001, 1001, 0);
 		vfs.mkdir("/home/alice", 0o755, 1001, 1001);
 		vfs.writeFile("/home/alice/old.txt", "data", { mode: 0o644 }, 1001, 1001);
-		expect(() => vfs.move("/home/alice/old.txt", "/home/alice/new.txt", 1001, 1001)).not.toThrow();
+		expect(() =>
+			vfs.move("/home/alice/old.txt", "/home/alice/new.txt", 1001, 1001),
+		).not.toThrow();
 	});
 });

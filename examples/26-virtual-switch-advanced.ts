@@ -38,16 +38,20 @@ for (const record of net.listDnsRecords()) {
 	console.log(`  ${record.hostname} → ${record.ip}`);
 }
 
-console.log(`\n  app.example.com resolves to: ${net.resolveDns("app.example.com")}`);
-console.log(`  db.example.com resolves to: ${net.resolveDns("db.example.com")}`);
+console.log(
+	`\n  app.example.com resolves to: ${net.resolveDns("app.example.com")}`,
+);
+console.log(
+	`  db.example.com resolves to: ${net.resolveDns("db.example.com")}`,
+);
 
 // ── Traffic shaping (latency + jitter) ────────────────────────────
 console.log("\n--- Traffic shaping (latency) ---");
 net.setTrafficRule(port1.mac, {
 	vms: [port1.mac],
 	maxBandwidthMbps: 100,
-	latencyMs: 50,       // 50ms added latency
-	jitterMs: 10,        // +/-10ms variation
+	latencyMs: 50, // 50ms added latency
+	jitterMs: 10, // +/-10ms variation
 });
 console.log(`  Rule applied to ${port1.mac} (latency: 50ms, jitter: 10ms)`);
 
@@ -61,7 +65,9 @@ net.addQdiscRule(port1.mac, {
 });
 console.log(`  qdisc: eth0 on ${port1.mac} (loss: 5%, latency: 100ms)`);
 for (const rule of net.getQdiscRules(port1.mac)) {
-	console.log(`    ${rule.interface}: ${rule.type} loss=${rule.packetLossPct}% latency=${rule.latencyMs}ms`);
+	console.log(
+		`    ${rule.interface}: ${rule.type} loss=${rule.packetLossPct}% latency=${rule.latencyMs}ms`,
+	);
 }
 
 // ── Load balancing ────────────────────────────────────────────────
@@ -79,15 +85,17 @@ net.addLoadBalancer({
 for (let i = 0; i < 3; i++) {
 	const resolved = net.resolveLoadBalancer(80);
 	if (resolved) {
-		console.log(`  Request ${i + 1}: routed to ${resolved.hostname} (${resolved.ip})`);
+		console.log(
+			`  Request ${i + 1}: routed to ${resolved.hostname} (${resolved.ip})`,
+		);
 	}
 }
 
 // ── Network partitions ────────────────────────────────────────────
 console.log("\n--- Network partitions ---");
 net.setPartitions([
-	["app-1", "app-2"],   // app tier can communicate
-	["db-1"],             // database isolated
+	["app-1", "app-2"], // app tier can communicate
+	["db-1"], // database isolated
 ]);
 console.log("  Partitions: app-tier {app-1, app-2}, database {db-1}");
 console.log("  app-1 can reach app-2: yes (same partition)");

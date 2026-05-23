@@ -22,7 +22,13 @@ export const touchCommand: ShellModule = {
 			if (shell.vfs.exists(target)) {
 				checkFilePermission(shell.vfs, shell.users, authUser, target, 2);
 			} else {
-				checkFilePermission(shell.vfs, shell.users, authUser, path.posix.dirname(target), 2);
+				checkFilePermission(
+					shell.vfs,
+					shell.users,
+					authUser,
+					path.posix.dirname(target),
+					2,
+				);
 				shell.vfs.writeFile(target, "", {}, uid, gid);
 			}
 		}

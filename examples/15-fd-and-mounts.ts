@@ -59,7 +59,10 @@ console.log("Mounted directory entries:", entries);
 try {
 	vfs.writeFile("/mnt/host/new-file.txt", "should fail");
 } catch (err: unknown) {
-	console.log("Write to read-only mount failed (expected):", (err as Error).message);
+	console.log(
+		"Write to read-only mount failed (expected):",
+		(err as Error).message,
+	);
 }
 
 vfs.unmount("/mnt/host");

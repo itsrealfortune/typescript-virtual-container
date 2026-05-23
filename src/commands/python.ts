@@ -35,8 +35,8 @@ type PyVal =
 	| PyInstance
 	| PyNone;
 interface PyDict {
-    __pytype__: "dict";
-    data: Map<string, PyVal> 
+	__pytype__: "dict";
+	data: Map<string, PyVal>;
 }
 interface PyRange {
 	__pytype__: "range";
@@ -63,7 +63,7 @@ interface PyInstance {
 	attrs: Map<string, PyVal>;
 }
 interface PyNone {
-    __pytype__: "none" 
+	__pytype__: "none";
 }
 
 const NONE: PyNone = { __pytype__: "none" };
@@ -127,39 +127,65 @@ function isPyNone(v: PyVal): v is PyNone {
 // ─── repr / str ───────────────────────────────────────────────────────────────
 
 function pyRepr(v: PyVal): string {
-	if (v === null || isPyNone(v)) { return "None"; }
-	if (v === true) { return "True"; }
-	if (v === false) { return "False"; }
+	if (v === null || isPyNone(v)) {
+		return "None";
+	}
+	if (v === true) {
+		return "True";
+	}
+	if (v === false) {
+		return "False";
+	}
 	if (typeof v === "number") {
 		return Number.isInteger(v)
 			? String(v)
 			: v.toPrecision(12).replace(/\.?0+$/, "");
 	}
-	if (typeof v === "string") { return `'${v.replace(/'/g, "\\'")}'`; }
-	if (Array.isArray(v)) { return `[${v.map(pyRepr).join(", ")}]`; }
+	if (typeof v === "string") {
+		return `'${v.replace(/'/g, "\\'")}'`;
+	}
+	if (Array.isArray(v)) {
+		return `[${v.map(pyRepr).join(", ")}]`;
+	}
 	if (isPyDict(v)) {
 		return `{${[...v.data.entries()].map(([k, val]) => `'${k}': ${pyRepr(val)}`).join(", ")}}`;
 	}
 	if (isPyRange(v)) {
 		return `range(${v.start}, ${v.stop}${v.step === 1 ? "" : `, ${v.step}`})`;
 	}
-	if (isPyFunc(v)) { return `<function ${v.name} at 0x...>`; }
-	if (isPyClass(v)) { return `<class '${v.name}'>`; }
-	if (isPyInstance(v)) { return `<${v.cls.name} object at 0x...>`; }
+	if (isPyFunc(v)) {
+		return `<function ${v.name} at 0x...>`;
+	}
+	if (isPyClass(v)) {
+		return `<class '${v.name}'>`;
+	}
+	if (isPyInstance(v)) {
+		return `<${v.cls.name} object at 0x...>`;
+	}
 	return String(v);
 }
 
 function pyStr(v: PyVal): string {
-	if (v === null || isPyNone(v)) { return "None"; }
-	if (v === true) { return "True"; }
-	if (v === false) { return "False"; }
+	if (v === null || isPyNone(v)) {
+		return "None";
+	}
+	if (v === true) {
+		return "True";
+	}
+	if (v === false) {
+		return "False";
+	}
 	if (typeof v === "number") {
 		return Number.isInteger(v)
 			? String(v)
 			: v.toPrecision(12).replace(/\.?0+$/, "");
 	}
-	if (typeof v === "string") { return v; }
-	if (Array.isArray(v)) { return `[${v.map(pyRepr).join(", ")}]`; }
+	if (typeof v === "string") {
+		return v;
+	}
+	if (Array.isArray(v)) {
+		return `[${v.map(pyRepr).join(", ")}]`;
+	}
 	if (isPyDict(v)) {
 		return `{${[...v.data.entries()].map(([k, val]) => `'${k}': ${pyRepr(val)}`).join(", ")}}`;
 	}
@@ -170,18 +196,34 @@ function pyStr(v: PyVal): string {
 }
 
 function pyBool(v: PyVal): boolean {
-	if (v === null || isPyNone(v)) { return false; }
-	if (typeof v === "boolean") { return v; }
-	if (typeof v === "number") { return v !== 0; }
-	if (typeof v === "string") { return v.length > 0; }
-	if (Array.isArray(v)) { return v.length > 0; }
-	if (isPyDict(v)) { return v.data.size > 0; }
-	if (isPyRange(v)) { return pyRangeLength(v) > 0; }
+	if (v === null || isPyNone(v)) {
+		return false;
+	}
+	if (typeof v === "boolean") {
+		return v;
+	}
+	if (typeof v === "number") {
+		return v !== 0;
+	}
+	if (typeof v === "string") {
+		return v.length > 0;
+	}
+	if (Array.isArray(v)) {
+		return v.length > 0;
+	}
+	if (isPyDict(v)) {
+		return v.data.size > 0;
+	}
+	if (isPyRange(v)) {
+		return pyRangeLength(v) > 0;
+	}
 	return true;
 }
 
 function pyRangeLength(r: PyRange): number {
-	if (r.step === 0) { return 0; }
+	if (r.step === 0) {
+		return 0;
+	}
 	const n = Math.ceil((r.stop - r.start) / r.step);
 	return Math.max(0, n);
 }
@@ -190,30 +232,60 @@ function pyRangeItems(r: PyRange): number[] {
 	const items: number[] = [];
 	for (let i = r.start; r.step > 0 ? i < r.stop : i > r.stop; i += r.step) {
 		items.push(i);
-		if (items.length > 10000) { break; }
+		if (items.length > 10000) {
+			break;
+		}
 	}
 	return items;
 }
 
 function pyIter(v: PyVal): PyVal[] {
-	if (Array.isArray(v)) { return v; }
-	if (typeof v === "string") { return [...v]; }
-	if (isPyRange(v)) { return pyRangeItems(v); }
-	if (isPyDict(v)) { return [...v.data.keys()]; }
+	if (Array.isArray(v)) {
+		return v;
+	}
+	if (typeof v === "string") {
+		return [...v];
+	}
+	if (isPyRange(v)) {
+		return pyRangeItems(v);
+	}
+	if (isPyDict(v)) {
+		return [...v.data.keys()];
+	}
 	throw new PyError("TypeError", `'${pyTypeName(v)}' object is not iterable`);
 }
 
 function pyTypeName(v: PyVal): string {
-	if (v === null || isPyNone(v)) { return "NoneType"; }
-	if (typeof v === "boolean") { return "bool"; }
-	if (typeof v === "number") { return Number.isInteger(v) ? "int" : "float"; }
-	if (typeof v === "string") { return "str"; }
-	if (Array.isArray(v)) { return "list"; }
-	if (isPyDict(v)) { return "dict"; }
-	if (isPyRange(v)) { return "range"; }
-	if (isPyFunc(v)) { return "function"; }
-	if (isPyClass(v)) { return "type"; }
-	if (isPyInstance(v)) { return v.cls.name; }
+	if (v === null || isPyNone(v)) {
+		return "NoneType";
+	}
+	if (typeof v === "boolean") {
+		return "bool";
+	}
+	if (typeof v === "number") {
+		return Number.isInteger(v) ? "int" : "float";
+	}
+	if (typeof v === "string") {
+		return "str";
+	}
+	if (Array.isArray(v)) {
+		return "list";
+	}
+	if (isPyDict(v)) {
+		return "dict";
+	}
+	if (isPyRange(v)) {
+		return "range";
+	}
+	if (isPyFunc(v)) {
+		return "function";
+	}
+	if (isPyClass(v)) {
+		return "type";
+	}
+	if (isPyInstance(v)) {
+		return v.cls.name;
+	}
 	return "object";
 }
 
@@ -429,7 +501,9 @@ class Interpreter {
 			const ch = s[i] as string;
 			if (inStr) {
 				cur += ch;
-				if (ch === strChar && s[i - 1] !== "\\") { inStr = false; }
+				if (ch === strChar && s[i - 1] !== "\\") {
+					inStr = false;
+				}
 			} else if (ch === '"' || ch === "'") {
 				inStr = true;
 				strChar = ch;
@@ -447,7 +521,9 @@ class Interpreter {
 				cur += ch;
 			}
 		}
-		if (cur.trim()) { args.push(cur.trim()); }
+		if (cur.trim()) {
+			args.push(cur.trim());
+		}
 		return args;
 	}
 
@@ -455,19 +531,37 @@ class Interpreter {
 
 	pyEval(expr: string, scope: Scope): PyVal {
 		expr = expr.trim();
-		if (!expr) { return NONE; }
+		if (!expr) {
+			return NONE;
+		}
 
 		// None True False literals
-		if (expr === "None") { return NONE; }
-		if (expr === "True") { return true; }
-		if (expr === "False") { return false; }
-		if (expr === "...") { return NONE; }
+		if (expr === "None") {
+			return NONE;
+		}
+		if (expr === "True") {
+			return true;
+		}
+		if (expr === "False") {
+			return false;
+		}
+		if (expr === "...") {
+			return NONE;
+		}
 
 		// Number literals
-		if (/^-?\d+$/.test(expr)) { return Number.parseInt(expr, 10); }
-		if (/^-?\d+\.\d*$/.test(expr)) { return Number.parseFloat(expr); }
-		if (/^0x[0-9a-fA-F]+$/.test(expr)) { return Number.parseInt(expr, 16); }
-		if (/^0o[0-7]+$/.test(expr)) { return Number.parseInt(expr.slice(2), 8); }
+		if (/^-?\d+$/.test(expr)) {
+			return Number.parseInt(expr, 10);
+		}
+		if (/^-?\d+\.\d*$/.test(expr)) {
+			return Number.parseFloat(expr);
+		}
+		if (/^0x[0-9a-fA-F]+$/.test(expr)) {
+			return Number.parseInt(expr, 16);
+		}
+		if (/^0o[0-7]+$/.test(expr)) {
+			return Number.parseInt(expr.slice(2), 8);
+		}
 
 		// String literals (single, double, triple)
 		if (/^('''[\s\S]*'''|"""[\s\S]*""")$/.test(expr)) {
@@ -500,24 +594,32 @@ class Interpreter {
 
 		// Byte strings b"..." — treat as string
 		const bMatch = expr.match(/^b(['"])(.*)\1$/s);
-		if (bMatch) { return bMatch[2] as string; }
+		if (bMatch) {
+			return bMatch[2] as string;
+		}
 
 		// List literal [...]
 		if (expr.startsWith("[") && expr.endsWith("]")) {
 			const inner = expr.slice(1, -1).trim();
-			if (!inner) { return []; }
+			if (!inner) {
+				return [];
+			}
 			// List comprehension
 			const compMatch = inner.match(
 				/^(.+?)\s+for\s+(\w+)\s+in\s+(.+?)(?:\s+if\s+(.+))?$/,
 			);
 			if (compMatch) {
 				const [, itemExpr, varName, iterExpr, condExpr] = compMatch;
-				const iterable = pyIter(this.pyEval((iterExpr as string).trim(), scope));
+				const iterable = pyIter(
+					this.pyEval((iterExpr as string).trim(), scope),
+				);
 				const result: PyVal[] = [];
 				for (const item of iterable) {
 					const inner2 = new Map(scope);
 					inner2.set(varName as string, item);
-					if (condExpr && !pyBool(this.pyEval(condExpr, inner2))) { continue; }
+					if (condExpr && !pyBool(this.pyEval(condExpr, inner2))) {
+						continue;
+					}
 					result.push(this.pyEval((itemExpr as string).trim(), inner2));
 				}
 				return result;
@@ -528,7 +630,9 @@ class Interpreter {
 		// Tuple (...)
 		if (expr.startsWith("(") && expr.endsWith(")")) {
 			const inner = expr.slice(1, -1).trim();
-			if (!inner) { return []; }
+			if (!inner) {
+				return [];
+			}
 			const parts = Interpreter._splitArgs(inner);
 			if (parts.length === 1 && !inner.endsWith(",")) {
 				return this.pyEval(parts[0] as string, scope);
@@ -539,11 +643,15 @@ class Interpreter {
 		// Dict literal {...}
 		if (expr.startsWith("{") && expr.endsWith("}")) {
 			const inner = expr.slice(1, -1).trim();
-			if (!inner) { return pyDict(); }
+			if (!inner) {
+				return pyDict();
+			}
 			const dict = pyDict();
 			for (const entry of Interpreter._splitArgs(inner)) {
 				const colonIdx = entry.indexOf(":");
-				if (colonIdx === -1) { continue; }
+				if (colonIdx === -1) {
+					continue;
+				}
 				const k = pyStr(this.pyEval(entry.slice(0, colonIdx).trim(), scope));
 				const v = this.pyEval(entry.slice(colonIdx + 1).trim(), scope);
 				dict.data.set(k, v);
@@ -553,7 +661,9 @@ class Interpreter {
 
 		// not expr
 		const notMatch = expr.match(/^not\s+(.+)$/);
-		if (notMatch) { return !pyBool(this.pyEval(notMatch[1] as string, scope)); }
+		if (notMatch) {
+			return !pyBool(this.pyEval(notMatch[1] as string, scope));
+		}
 
 		// Binary operators (right-to-left scan at lowest depth)
 		const binaryOps = [
@@ -566,17 +676,23 @@ class Interpreter {
 		];
 		for (const ops of binaryOps) {
 			const result = this._tryBinaryOp(expr, ops, scope);
-			if (result !== undefined) { return result; }
+			if (result !== undefined) {
+				return result;
+			}
 		}
 
 		// Unary minus
 		if (expr.startsWith("-")) {
 			const val = this.pyEval(expr.slice(1), scope);
-			if (typeof val === "number") { return -val; }
+			if (typeof val === "number") {
+				return -val;
+			}
 		}
 
 		// Subscript: expr[key] or expr[start:stop]
-		if (process.env.PY_DEBUG) { console.error("eval:", JSON.stringify(expr)); }
+		if (process.env.PY_DEBUG) {
+			console.error("eval:", JSON.stringify(expr));
+		}
 		if (expr.endsWith("]") && !expr.startsWith("[")) {
 			const bracketStart = Interpreter._findMatchingBracket(expr, "[");
 			if (bracketStart !== -1) {
@@ -591,9 +707,9 @@ class Interpreter {
 		const callMatch = expr.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*\(([\s\S]*)\)$/);
 		if (callMatch) {
 			const [, name, argsStr] = callMatch;
-			const callArgs = (argsStr?.trim() ? Interpreter._splitArgs(argsStr) : []).map(
-				(a) => this.pyEval(a, scope),
-			);
+			const callArgs = (
+				argsStr?.trim() ? Interpreter._splitArgs(argsStr) : []
+			).map((a) => this.pyEval(a, scope));
 			return this._callBuiltin(name as string, callArgs, scope);
 		}
 
@@ -615,7 +731,9 @@ class Interpreter {
 
 		// Variable lookup
 		if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(expr)) {
-			if (scope.has(expr)) { return scope.get(expr) as PyVal; }
+			if (scope.has(expr)) {
+				return scope.get(expr) as PyVal;
+			}
 			// Check parent scopes (for closures)
 			throw new PyError("NameError", `name '${expr}' is not defined`);
 		}
@@ -641,10 +759,14 @@ class Interpreter {
 		const close = open === "[" ? "]" : open === "(" ? ")" : "}";
 		let depth = 0;
 		for (let i = s.length - 1; i >= 0; i--) {
-			if (s[i] === close) { depth++; }
+			if (s[i] === close) {
+				depth++;
+			}
 			if (s[i] === open) {
 				depth--;
-				if (depth === 0) { return i; }
+				if (depth === 0) {
+					return i;
+				}
 			}
 		}
 		return -1;
@@ -664,7 +786,9 @@ class Interpreter {
 		for (let i = expr.length - 1; i > 0; i--) {
 			const ch = expr[i] as string;
 			if (inStr) {
-				if (ch === strChar && expr[i - 1] !== "\\") { inStr = false; }
+				if (ch === strChar && expr[i - 1] !== "\\") {
+					inStr = false;
+				}
 				continue;
 			}
 			if (ch === '"' || ch === "'") {
@@ -680,15 +804,23 @@ class Interpreter {
 				depth--;
 				continue;
 			}
-			if (depth !== 0) { continue; }
-			if (ch !== ".") { continue; }
+			if (depth !== 0) {
+				continue;
+			}
+			if (ch !== ".") {
+				continue;
+			}
 			// Found a dot at depth 0
 			const objExpr = expr.slice(0, i).trim();
 			const rest = expr.slice(i + 1); // "attr" or "attr(args)"
 			const attrMatch = rest.match(/^(\w+)(\([\s\S]*\))?$/);
-			if (!attrMatch) { continue; }
+			if (!attrMatch) {
+				continue;
+			}
 			// Skip float literals like 1.5
-			if (/^-?\d+$/.test(objExpr)) { continue; }
+			if (/^-?\d+$/.test(objExpr)) {
+				continue;
+			}
 			return { objExpr, attr: attrMatch[1] as string, callPart: attrMatch[2] };
 		}
 		return null;
@@ -705,7 +837,9 @@ class Interpreter {
 		for (let i = expr.length - 1; i >= 0; i--) {
 			const ch = expr[i] as string;
 			if (inStr) {
-				if (ch === strChar && expr[i - 1] !== "\\") { inStr = false; }
+				if (ch === strChar && expr[i - 1] !== "\\") {
+					inStr = false;
+				}
 				continue;
 			}
 			if (ch === '"' || ch === "'") {
@@ -721,7 +855,9 @@ class Interpreter {
 				depth--;
 				continue;
 			}
-			if (depth !== 0) { continue; }
+			if (depth !== 0) {
+				continue;
+			}
 
 			for (const op of ops) {
 				if (expr.slice(i, i + op.length) === op) {
@@ -734,12 +870,18 @@ class Interpreter {
 					const after = expr[i + op.length];
 					const wordOp = /^[a-z]/.test(op);
 					if (wordOp) {
-						if (before && /\w/.test(before)) { continue; }
-						if (after && /\w/.test(after)) { continue; }
+						if (before && /\w/.test(before)) {
+							continue;
+						}
+						if (after && /\w/.test(after)) {
+							continue;
+						}
 					}
 					const left = expr.slice(0, i).trim();
 					const right = expr.slice(i + op.length).trim();
-					if (!(left && right)) { continue; }
+					if (!(left && right)) {
+						continue;
+					}
 					return this._applyBinaryOp(op, left, right, scope);
 				}
 			}
@@ -783,7 +925,9 @@ class Interpreter {
 					const arr: PyVal[] = [];
 					const n = right | 0;
 					for (let i = 0; i < n; i++) {
-						for (let j = 0; j < left.length; j++) { arr.push(left[j] as PyVal); }
+						for (let j = 0; j < left.length; j++) {
+							arr.push(left[j] as PyVal);
+						}
 					}
 					return arr;
 				}
@@ -858,7 +1002,9 @@ class Interpreter {
 		if (Array.isArray(container)) {
 			return container.some((v) => pyRepr(v) === pyRepr(item));
 		}
-		if (isPyDict(container)) { return container.data.has(pyStr(item)); }
+		if (isPyDict(container)) {
+			return container.data.has(pyStr(item));
+		}
 		return false;
 	}
 
@@ -872,22 +1018,32 @@ class Interpreter {
 			const stop = parts[1]
 				? (this.pyEval(parts[1], scope) as number)
 				: undefined;
-			if (typeof obj === "string") { return obj.slice(start, stop); }
-			if (Array.isArray(obj)) { return obj.slice(start, stop); }
+			if (typeof obj === "string") {
+				return obj.slice(start, stop);
+			}
+			if (Array.isArray(obj)) {
+				return obj.slice(start, stop);
+			}
 			return NONE;
 		}
 		const k = this.pyEval(key, scope);
 		if (Array.isArray(obj)) {
 			let idx = k as number;
-			if (idx < 0) { idx = obj.length + idx; }
+			if (idx < 0) {
+				idx = obj.length + idx;
+			}
 			return obj[idx] ?? NONE;
 		}
 		if (typeof obj === "string") {
 			let idx = k as number;
-			if (idx < 0) { idx = obj.length + idx; }
+			if (idx < 0) {
+				idx = obj.length + idx;
+			}
 			return obj[idx] ?? NONE;
 		}
-		if (isPyDict(obj)) { return obj.data.get(pyStr(k)) ?? NONE; }
+		if (isPyDict(obj)) {
+			return obj.data.get(pyStr(k)) ?? NONE;
+		}
 		throw new PyError("TypeError", `'${pyTypeName(obj)}' is not subscriptable`);
 	}
 
@@ -895,14 +1051,18 @@ class Interpreter {
 
 	private static _getAttr(obj: PyVal, attr: string, _scope: Scope): PyVal {
 		if (isPyDict(obj)) {
-			if (obj.data.has(attr)) { return obj.data.get(attr) as PyVal; }
+			if (obj.data.has(attr)) {
+				return obj.data.get(attr) as PyVal;
+			}
 			// Special dict attributes
 			if (attr === "path" && (obj as unknown as { path: PyVal }).path) {
 				return (obj as unknown as { path: PyVal }).path;
 			}
 			return NONE;
 		}
-		if (isPyInstance(obj)) { return obj.attrs.get(attr) ?? NONE; }
+		if (isPyInstance(obj)) {
+			return obj.attrs.get(attr) ?? NONE;
+		}
 		if (typeof obj === "string") {
 			// String attributes
 			const strMethods: Record<string, PyVal> = {
@@ -915,11 +1075,7 @@ class Interpreter {
 
 	// ── method calls ──────────────────────────────────────────────────────────
 
-	private _callMethod(
-		obj: PyVal,
-		method: string,
-		args: PyVal[],
-	): PyVal {
+	private _callMethod(obj: PyVal, method: string, args: PyVal[]): PyVal {
 		// String methods
 		if (typeof obj === "string") {
 			switch (method) {
@@ -955,7 +1111,9 @@ class Interpreter {
 					return obj.indexOf(pyStr(args[0] ?? ""));
 				case "index": {
 					const i = obj.indexOf(pyStr(args[0] ?? ""));
-					if (i === -1) { throw new PyError("ValueError", "substring not found"); }
+					if (i === -1) {
+						throw new PyError("ValueError", "substring not found");
+					}
 					return i;
 				}
 				case "count":
@@ -1011,7 +1169,9 @@ class Interpreter {
 					obj.push(args[0] ?? NONE);
 					return NONE;
 				case "extend":
-					for (const v of pyIter(args[0] ?? [])) { obj.push(v); }
+					for (const v of pyIter(args[0] ?? [])) {
+						obj.push(v);
+					}
 					return NONE;
 				case "insert":
 					obj.splice((args[0] as number) ?? 0, 0, args[1] ?? NONE);
@@ -1023,12 +1183,16 @@ class Interpreter {
 				}
 				case "remove": {
 					const i = obj.findIndex((v) => pyRepr(v) === pyRepr(args[0] ?? NONE));
-					if (i !== -1) { obj.splice(i, 1); }
+					if (i !== -1) {
+						obj.splice(i, 1);
+					}
 					return NONE;
 				}
 				case "index": {
 					const i = obj.findIndex((v) => pyRepr(v) === pyRepr(args[0] ?? NONE));
-					if (i === -1) { throw new PyError("ValueError", "is not in list"); }
+					if (i === -1) {
+						throw new PyError("ValueError", "is not in list");
+					}
 					return i;
 				}
 				case "count":
@@ -1067,7 +1231,9 @@ class Interpreter {
 					return obj.data.get(pyStr(args[0] ?? "")) ?? args[1] ?? NONE;
 				case "update": {
 					if (isPyDict(args[0] ?? NONE)) {
-						for (const [k, v] of (args[0] as PyDict).data) { obj.data.set(k, v); }
+						for (const [k, v] of (args[0] as PyDict).data) {
+							obj.data.set(k, v);
+						}
 					}
 					return NONE;
 				}
@@ -1084,7 +1250,9 @@ class Interpreter {
 					return pyDict([...obj.data.entries()]);
 				case "setdefault": {
 					const k = pyStr(args[0] ?? "");
-					if (!obj.data.has(k)) { obj.data.set(k, args[1] ?? NONE); }
+					if (!obj.data.has(k)) {
+						obj.data.set(k, args[1] ?? NONE);
+					}
 					return obj.data.get(k) ?? NONE;
 				}
 				default:
@@ -1237,7 +1405,9 @@ class Interpreter {
 	private static _pyStringFormat(fmt: string, args: PyVal[]): string {
 		let i = 0;
 		return fmt.replace(/%([diouxXeEfFgGcrs%])/g, (_, spec: string) => {
-			if (spec === "%") { return "%"; }
+			if (spec === "%") {
+				return "%";
+			}
 			const val = args[i++];
 			switch (spec) {
 				case "d":
@@ -1256,22 +1426,36 @@ class Interpreter {
 	}
 
 	private _pyToJs(v: PyVal): unknown {
-		if (isPyNone(v)) { return null; }
+		if (isPyNone(v)) {
+			return null;
+		}
 		if (isPyDict(v)) {
 			return Object.fromEntries(
 				[...v.data.entries()].map(([k, val]) => [k, this._pyToJs(val)]),
 			);
 		}
-		if (Array.isArray(v)) { return v.map((i) => this._pyToJs(i)); }
+		if (Array.isArray(v)) {
+			return v.map((i) => this._pyToJs(i));
+		}
 		return v;
 	}
 
 	private _jsToPy(v: unknown): PyVal {
-		if (v === null || v === undefined) { return NONE; }
-		if (typeof v === "boolean") { return v; }
-		if (typeof v === "number") { return v; }
-		if (typeof v === "string") { return v; }
-		if (Array.isArray(v)) { return v.map((i) => this._jsToPy(i)); }
+		if (v === null || v === undefined) {
+			return NONE;
+		}
+		if (typeof v === "boolean") {
+			return v;
+		}
+		if (typeof v === "number") {
+			return v;
+		}
+		if (typeof v === "string") {
+			return v;
+		}
+		if (Array.isArray(v)) {
+			return v.map((i) => this._jsToPy(i));
+		}
 		if (typeof v === "object") {
 			return pyDict(
 				Object.entries(v as Record<string, unknown>).map(([k, val]) => [
@@ -1289,8 +1473,12 @@ class Interpreter {
 		// User-defined functions
 		if (scope.has(name)) {
 			const fn: PyVal = scope.get(name) ?? NONE;
-			if (isPyFunc(fn)) { return this._callFunc(fn, args, scope); }
-			if (isPyClass(fn)) { return this._instantiate(fn as PyClass, args); }
+			if (isPyFunc(fn)) {
+				return this._callFunc(fn, args, scope);
+			}
+			if (isPyClass(fn)) {
+				return this._instantiate(fn as PyClass, args);
+			}
 			return fn;
 		}
 
@@ -1309,7 +1497,9 @@ class Interpreter {
 
 			// Type constructors
 			case "int": {
-				if (args.length === 0) { return 0; }
+				if (args.length === 0) {
+					return 0;
+				}
 				const base = (args[1] as number) ?? 10;
 				const n = Number.parseInt(pyStr(args[0] ?? 0), base);
 				return Number.isNaN(n)
@@ -1319,7 +1509,9 @@ class Interpreter {
 					: n;
 			}
 			case "float": {
-				if (args.length === 0) { return 0.0; }
+				if (args.length === 0) {
+					return 0.0;
+				}
 				const f = Number.parseFloat(pyStr(args[0] ?? 0));
 				return Number.isNaN(f)
 					? (() => {
@@ -1373,7 +1565,9 @@ class Interpreter {
 					? (args[0] as PyDict).data.has(pyStr(args[1] ?? ""))
 					: false;
 			case "getattr": {
-				if (!isPyDict(args[0] ?? NONE)) { return args[2] ?? NONE; }
+				if (!isPyDict(args[0] ?? NONE)) {
+					return args[2] ?? NONE;
+				}
 				return (
 					(args[0] as PyDict).data.get(pyStr(args[1] ?? "")) ?? args[2] ?? NONE
 				);
@@ -1388,17 +1582,27 @@ class Interpreter {
 			// Functional
 			case "len": {
 				const v = args[0] ?? NONE;
-				if (typeof v === "string") { return v.length; }
-				if (Array.isArray(v)) { return v.length; }
-				if (isPyDict(v)) { return v.data.size; }
-				if (isPyRange(v)) { return pyRangeLength(v); }
+				if (typeof v === "string") {
+					return v.length;
+				}
+				if (Array.isArray(v)) {
+					return v.length;
+				}
+				if (isPyDict(v)) {
+					return v.data.size;
+				}
+				if (isPyRange(v)) {
+					return pyRangeLength(v);
+				}
 				throw new PyError(
 					"TypeError",
 					`object of type '${pyTypeName(v)}' has no len()`,
 				);
 			}
 			case "range": {
-				if (args.length === 1) { return pyRange(0, args[0] as number); }
+				if (args.length === 1) {
+					return pyRange(0, args[0] as number);
+				}
 				if (args.length === 2) {
 					return pyRange(args[0] as number, args[1] as number);
 				}
@@ -1430,8 +1634,10 @@ class Interpreter {
 			case "reduce": {
 				const fn: PyVal = args[0] ?? NONE;
 				const items = pyIter(args[1] ?? []);
-				if (items.length === 0) { return args[2] ?? NONE; }
-				let acc: PyVal = args[2] === undefined ? items[0] as PyVal : args[2];
+				if (items.length === 0) {
+					return args[2] ?? NONE;
+				}
+				let acc: PyVal = args[2] === undefined ? (items[0] as PyVal) : args[2];
 				for (const item of args[2] === undefined ? items.slice(1) : items) {
 					acc = isPyFunc(fn)
 						? this._callFunc(fn as PyFunc, [acc, item], scope)
@@ -1541,7 +1747,9 @@ class Interpreter {
 			case "locals":
 				return pyDict([...scope.entries()].map(([k, v]) => [k, v]));
 			case "dir": {
-				if (args.length === 0) { return [...scope.keys()]; }
+				if (args.length === 0) {
+					return [...scope.keys()];
+				}
 				const obj = args[0] ?? NONE;
 				if (typeof obj === "string") {
 					return [
@@ -1634,7 +1842,9 @@ class Interpreter {
 		try {
 			return this._execBlock(fn.body, callScope);
 		} catch (e) {
-			if (e instanceof ReturnSignal) { return e.value; }
+			if (e instanceof ReturnSignal) {
+				return e.value;
+			}
 			throw e;
 		}
 	}
@@ -1642,7 +1852,9 @@ class Interpreter {
 	private _instantiate(cls: PyClass, args: PyVal[]): PyInstance {
 		const inst: PyInstance = { __pytype__: "instance", cls, attrs: new Map() };
 		const init = cls.methods.get("__init__");
-		if (init) { this._callMethod(inst, "__init__", args); }
+		if (init) {
+			this._callMethod(inst, "__init__", args);
+		}
 		return inst;
 	}
 
@@ -1670,7 +1882,9 @@ class Interpreter {
 		try {
 			this._execLines(bodyLines, 0, scope);
 		} catch (e) {
-			if (e instanceof ReturnSignal) { return e.value; }
+			if (e instanceof ReturnSignal) {
+				return e.value;
+			}
 			throw e;
 		}
 		return NONE;
@@ -1679,9 +1893,13 @@ class Interpreter {
 	private static _getIndent(line: string): number {
 		let n = 0;
 		for (const ch of line) {
-			if (ch === " ") { n++; }
-			else if (ch === "\t") { n += 4; }
-			else { break; }
+			if (ch === " ") {
+				n++;
+			} else if (ch === "\t") {
+				n += 4;
+			} else {
+				break;
+			}
 		}
 		return n;
 	}
@@ -1698,7 +1916,9 @@ class Interpreter {
 				block.push("");
 				continue;
 			}
-			if (Interpreter._getIndent(l) <= baseIndent) { break; }
+			if (Interpreter._getIndent(l) <= baseIndent) {
+				break;
+			}
 			block.push(l.slice(baseIndent + 4));
 		}
 		return block;
@@ -1706,12 +1926,16 @@ class Interpreter {
 
 	private _execStatement(lines: string[], idx: number, scope: Scope): number {
 		const raw = lines[idx];
-		if (raw === undefined) { return idx + 1; }
+		if (raw === undefined) {
+			return idx + 1;
+		}
 		const line = raw.trim();
 		const indent = Interpreter._getIndent(raw);
 
 		// pass
-		if (line === "pass") { return idx + 1; }
+		if (line === "pass") {
+			return idx + 1;
+		}
 
 		// break / continue
 		if (line === "break") {
@@ -1769,7 +1993,7 @@ class Interpreter {
 			if (factory) {
 				const mod = factory(this.cwd);
 				this._modules.set(modName as string, mod);
-				scope.set(alias ?? modName as string, mod);
+				scope.set(alias ?? (modName as string), mod);
 			}
 			return idx + 1;
 		}
@@ -1781,9 +2005,13 @@ class Interpreter {
 			if (factory) {
 				const mod = factory(this.cwd);
 				if (imports?.trim() === "*") {
-					for (const [k, v] of mod.data) { scope.set(k, v); }
+					for (const [k, v] of mod.data) {
+						scope.set(k, v);
+					}
 				} else {
-					for (const name of (imports as string).split(",").map((s) => s.trim())) {
+					for (const name of (imports as string)
+						.split(",")
+						.map((s) => s.trim())) {
 						scope.set(name, mod.data.get(name) ?? NONE);
 					}
 				}
@@ -1860,7 +2088,9 @@ class Interpreter {
 				this._execBlock(
 					body,
 					new Map(scope).also?.((s) => {
-						for (const [k, v] of scope) { s.set(k, v); }
+						for (const [k, v] of scope) {
+							s.set(k, v);
+						}
 					}) ?? scope,
 				);
 				// Update scope from block (assignments)
@@ -1871,7 +2101,7 @@ class Interpreter {
 					const l = (lines[j] as string).trim();
 					if (
 						Interpreter._getIndent(lines[j] as string) < indent ||
-						(!(l.startsWith("elif") || l.startsWith("else")))
+						!(l.startsWith("elif") || l.startsWith("else"))
 					) {
 						break;
 					}
@@ -1886,7 +2116,9 @@ class Interpreter {
 			while (j < lines.length) {
 				const el = lines[j] as string;
 				const elt = el.trim();
-				if (Interpreter._getIndent(el) !== indent) { break; }
+				if (Interpreter._getIndent(el) !== indent) {
+					break;
+				}
 
 				const elifMatch = elt.match(/^elif\s+(.+):$/);
 				if (elifMatch) {
@@ -1899,7 +2131,7 @@ class Interpreter {
 							const sl = (lines[j] as string).trim();
 							if (
 								Interpreter._getIndent(lines[j] as string) !== indent ||
-								(!(sl.startsWith("elif") || sl.startsWith("else")))
+								!(sl.startsWith("elif") || sl.startsWith("else"))
 							) {
 								break;
 							}
@@ -1954,11 +2186,15 @@ class Interpreter {
 						broken = true;
 						break;
 					}
-					if (e instanceof ContinueSignal) { continue; }
+					if (e instanceof ContinueSignal) {
+						continue;
+					}
 					throw e;
 				}
 			}
-			if (!broken && elseBody.length) { this._runBlockInScope(elseBody, scope); }
+			if (!broken && elseBody.length) {
+				this._runBlockInScope(elseBody, scope);
+			}
 			return afterIdx;
 		}
 
@@ -1972,8 +2208,12 @@ class Interpreter {
 				try {
 					this._runBlockInScope(body, scope);
 				} catch (e) {
-					if (e instanceof BreakSignal) { break; }
-					if (e instanceof ContinueSignal) { continue; }
+					if (e instanceof BreakSignal) {
+						break;
+					}
+					if (e instanceof ContinueSignal) {
+						continue;
+					}
 					throw e;
 				}
 			}
@@ -1991,7 +2231,9 @@ class Interpreter {
 			while (j < lines.length) {
 				const el = lines[j] as string;
 				const elt = el.trim();
-				if (Interpreter._getIndent(el) !== indent) { break; }
+				if (Interpreter._getIndent(el) !== indent) {
+					break;
+				}
 				if (elt.startsWith("except")) {
 					const excMatch = elt.match(
 						/^except(?:\s+(\w+)(?:\s+as\s+(\w+))?)?\s*:$/,
@@ -2000,7 +2242,9 @@ class Interpreter {
 					const excAlias = excMatch?.[2];
 					const excBody = this._collectBlock(lines, j + 1, indent);
 					exceptClauses.push({ exc: excName, body: excBody });
-					if (excAlias) { scope.set(excAlias, ""); }
+					if (excAlias) {
+						scope.set(excAlias, "");
+					}
 					j += 1 + excBody.length;
 				} else if (elt === "else:") {
 					elseBody = this._collectBlock(lines, j + 1, indent);
@@ -2008,12 +2252,16 @@ class Interpreter {
 				} else if (elt === "finally:") {
 					finallyBody = this._collectBlock(lines, j + 1, indent);
 					j += 1 + finallyBody.length;
-				} else { break; }
+				} else {
+					break;
+				}
 			}
 
 			try {
 				this._runBlockInScope(tryBody, scope);
-				if (elseBody.length) { this._runBlockInScope(elseBody, scope); }
+				if (elseBody.length) {
+					this._runBlockInScope(elseBody, scope);
+				}
 			} catch (e) {
 				if (e instanceof PyError) {
 					let handled = false;
@@ -2028,10 +2276,16 @@ class Interpreter {
 							break;
 						}
 					}
-					if (!handled) { throw e; }
-				} else { throw e; }
+					if (!handled) {
+						throw e;
+					}
+				} else {
+					throw e;
+				}
 			} finally {
-				if (finallyBody.length) { this._runBlockInScope(finallyBody, scope); }
+				if (finallyBody.length) {
+					this._runBlockInScope(finallyBody, scope);
+				}
 			}
 			return j;
 		}
@@ -2095,8 +2349,11 @@ class Interpreter {
 			const obj = scope.get(name as string) ?? NONE;
 			const val: PyVal = this.pyEval(valExpr as string, scope) ?? NONE;
 			const k: PyVal = this.pyEval(key as string, scope) ?? NONE;
-			if (Array.isArray(obj)) { (obj as PyVal[])[k as number] = val; }
-			else if (isPyDict(obj)) { obj.data.set(pyStr(k), val); }
+			if (Array.isArray(obj)) {
+				(obj as PyVal[])[k as number] = val;
+			} else if (isPyDict(obj)) {
+				obj.data.set(pyStr(k), val);
+			}
 			return idx + 1;
 		}
 
@@ -2111,8 +2368,11 @@ class Interpreter {
 				const attr = (attrAssignMatch[1] as string).slice(dotIdx + 1);
 				const val = this.pyEval(attrAssignMatch[2] as string, scope);
 				const obj = this.pyEval(objExpr, scope);
-				if (isPyDict(obj)) { obj.data.set(attr, val); }
-				else if (isPyInstance(obj)) { obj.attrs.set(attr, val); }
+				if (isPyDict(obj)) {
+					obj.data.set(attr, val);
+				} else if (isPyInstance(obj)) {
+					obj.attrs.set(attr, val);
+				}
 				return idx + 1;
 			}
 		}
@@ -2123,8 +2383,7 @@ class Interpreter {
 		);
 		if (multiAssignMatch) {
 			const rhs = this.pyEval(multiAssignMatch[3] as string, scope);
-			const targets = (line
-				.split("=")[0] as string)
+			const targets = (line.split("=")[0] as string)
 				.split(",")
 				.map((s) => s.trim());
 			const values = pyIter(rhs);
@@ -2146,7 +2405,9 @@ class Interpreter {
 		try {
 			this.pyEval(line, scope);
 		} catch (e) {
-			if (e instanceof PyError || e instanceof ExitSignal) { throw e; }
+			if (e instanceof PyError || e instanceof ExitSignal) {
+				throw e;
+			}
 			// Ignore eval errors for expression statements
 		}
 		return idx + 1;

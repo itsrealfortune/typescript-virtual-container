@@ -1,4 +1,8 @@
-import type { CommandContext, CommandResult, ShellModule } from "../types/commands";
+import type {
+	CommandContext,
+	CommandResult,
+	ShellModule,
+} from "../types/commands";
 import { adduserCommand } from "./adduser";
 import { aliasCommand, unaliasCommand } from "./alias";
 import { aptCacheCommand, aptCommand } from "./apt";
@@ -15,7 +19,17 @@ import { chmodCommand } from "./chmod";
 import { chownCommand } from "./chown";
 import { clearCommand } from "./clear";
 import { conntrackCommand } from "./conntrack";
-import { columnCommand, mktempCommand, nlCommand, nprocCommand, pasteCommand, shufCommand, tacCommand, timeoutCommand, waitCommand } from "./coreutils";
+import {
+	columnCommand,
+	mktempCommand,
+	nlCommand,
+	nprocCommand,
+	pasteCommand,
+	shufCommand,
+	tacCommand,
+	timeoutCommand,
+	waitCommand,
+} from "./coreutils";
 import { cpCommand } from "./cp";
 import { curlCommand } from "./curl";
 import { cutCommand } from "./cut";
@@ -35,7 +49,14 @@ import { exprCommand } from "./expr";
 import { fileCommand } from "./file";
 import { findCommand } from "./find";
 import { freeCommand } from "./free";
-import { cmatrixCommand, cowsayCommand, cowthinkCommand, fortuneCommand, slCommand, yesCommand } from "./fun";
+import {
+	cmatrixCommand,
+	cowsayCommand,
+	cowthinkCommand,
+	fortuneCommand,
+	slCommand,
+	yesCommand,
+} from "./fun";
 import { getentCommand } from "./getent";
 import { gpasswdCommand } from "./gpasswd";
 import { grepCommand } from "./grep";
@@ -60,7 +81,15 @@ import { lsCommand } from "./ls";
 import { lsbReleaseCommand } from "./lsb-release";
 import { lsofCommand } from "./lsof";
 import { manCommand } from "./man";
-import { expandCommand, fmtCommand, foldCommand, md5sumCommand, realpathCommand, sha256sumCommand, stringsCommand } from "./miscutils";
+import {
+	expandCommand,
+	fmtCommand,
+	foldCommand,
+	md5sumCommand,
+	realpathCommand,
+	sha256sumCommand,
+	stringsCommand,
+} from "./miscutils";
 import { mkdirCommand } from "./mkdir";
 import { mkfifoCommand, mknodCommand } from "./mknod";
 import { mousepadCommand } from "./mousepad";
@@ -106,7 +135,12 @@ import { tarCommand } from "./tar";
 import { tcCommand } from "./tc";
 import { teeCommand } from "./tee";
 import { testCommand } from "./test";
-import { commCommand, csplitCommand, joinCommand, splitCommand } from "./textutils";
+import {
+	commCommand,
+	csplitCommand,
+	joinCommand,
+	splitCommand,
+} from "./textutils";
 import { topCommand } from "./top";
 import { touchCommand } from "./touch";
 import { sttyCommand, tputCommand } from "./tput";
@@ -330,7 +364,9 @@ function buildCache(): void {
 	commandRegistry.clear();
 	for (const mod of getCommandModules()) {
 		commandRegistry.set(mod.name, mod);
-		for (const alias of mod.aliases ?? []) { commandRegistry.set(alias, mod); }
+		for (const alias of mod.aliases ?? []) {
+			commandRegistry.set(alias, mod);
+		}
 	}
 	cachedCommandNames = Array.from(commandRegistry.keys()).sort();
 }
@@ -360,7 +396,9 @@ export function registerCommand(module: ShellModule): void {
 	customCommands.push(normalized);
 	// Incremental insert — avoids full Map rebuild for every registerCommand call
 	commandRegistry.set(normalized.name, normalized);
-	for (const alias of normalized.aliases ?? []) { commandRegistry.set(alias, normalized); }
+	for (const alias of normalized.aliases ?? []) {
+		commandRegistry.set(alias, normalized);
+	}
 	// Invalidate sorted names cache; rebuilt lazily on next getCommandNames()
 	cachedCommandNames = null;
 }
@@ -390,7 +428,9 @@ export function createCustomCommand(
  * @returns A sorted array of command names
  */
 export function getCommandNames(): string[] {
-	if (!cachedCommandNames) { buildCache(); }
+	if (!cachedCommandNames) {
+		buildCache();
+	}
 	return cachedCommandNames!;
 }
 
@@ -412,6 +452,8 @@ export function getCommandModulesPublic(): ShellModule[] {
  * @returns The matching ShellModule, or undefined if not found
  */
 export function resolveModule(name: string): ShellModule | undefined {
-	if (!cachedCommandNames) { buildCache(); }
+	if (!cachedCommandNames) {
+		buildCache();
+	}
 	return commandRegistry.get(name.toLowerCase());
 }

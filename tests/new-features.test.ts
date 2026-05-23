@@ -14,7 +14,12 @@ async function setupClient(vmName: string) {
 	const ssh = new VirtualSshServer({ port: 0, shell });
 	const port = await ssh.start();
 	const client = new SshClient();
-	await client.connect({ host: "localhost", port, username: "root", password: "root" });
+	await client.connect({
+		host: "localhost",
+		port,
+		username: "root",
+		password: "root",
+	});
 	return { shell, client, ssh };
 }
 
@@ -240,7 +245,12 @@ describe("Package manager (apt/dpkg)", () => {
 		await shell.users.addUser("alice", "pass");
 		const aliceClient = new SshClient();
 		const port = (ssh as VirtualSshServer).port;
-		await aliceClient.connect({ host: "localhost", port, username: "alice", password: "pass" });
+		await aliceClient.connect({
+			host: "localhost",
+			port,
+			username: "alice",
+			password: "pass",
+		});
 		const r = await aliceClient.exec("apt install vim");
 		expect(r.exitCode).not.toBe(0);
 		expect(r.stderr).toContain("Permission denied");
@@ -546,7 +556,9 @@ describe("Bug fixes", () => {
 	// test / [ command
 	test("[ -f path ] returns 0 for existing file", async () => {
 		await client.exec("touch /tmp/testfile-bf");
-		const r = await client.exec("[ -f /tmp/testfile-bf ] && echo yes || echo no");
+		const r = await client.exec(
+			"[ -f /tmp/testfile-bf ] && echo yes || echo no",
+		);
 		expect(r.stdout?.trim()).toBe("yes");
 	});
 
@@ -612,7 +624,9 @@ describe("Bug fixes", () => {
 	});
 
 	test("sh -c for loop with $(cmd)", async () => {
-		const r = await client.exec("sh -c 'for x in a b; do echo $(echo $x); done'");
+		const r = await client.exec(
+			"sh -c 'for x in a b; do echo $(echo $x); done'",
+		);
 		expect(r.stdout?.trim()).toBe("a\nb");
 	});
 

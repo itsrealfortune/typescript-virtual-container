@@ -1,6 +1,11 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 import type { SshClient, VirtualShell } from "../src";
-import { createTestDir, createTestEnv, createTestFile, runCmd } from "./test-helper";
+import {
+	createTestDir,
+	createTestEnv,
+	createTestFile,
+	runCmd,
+} from "./test-helper";
 
 let shell: VirtualShell;
 let client: InstanceType<typeof SshClient>;
@@ -44,7 +49,10 @@ describe("sh command - function unit tests", () => {
 	});
 
 	test("sh -c with conditional", async () => {
-		const r = await runCmd(client, "sh -c 'test -f /tmp && echo exists || echo missing'");
+		const r = await runCmd(
+			client,
+			"sh -c 'test -f /tmp && echo exists || echo missing'",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 
@@ -64,7 +72,10 @@ describe("sh command - function unit tests", () => {
 	});
 
 	test("sh with @-expansion", async () => {
-		const r = await runCmd(client, "sh -c 'for arg in \"$@\"; do echo $arg; done' script a b c");
+		const r = await runCmd(
+			client,
+			"sh -c 'for arg in \"$@\"; do echo $arg; done' script a b c",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 });
@@ -102,14 +113,20 @@ describe("find command - case analysis", () => {
 		createTestDir(shell, "/tmp/findor");
 		createTestFile(shell, "/tmp/findor/a.txt", "a");
 		createTestFile(shell, "/tmp/findor/b.log", "b");
-		const r = await runCmd(client, "find /tmp/findor -name '*.txt' -o -name '*.log'");
+		const r = await runCmd(
+			client,
+			"find /tmp/findor -name '*.txt' -o -name '*.log'",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 
 	test("find with action -exec", async () => {
 		createTestDir(shell, "/tmp/findexec");
 		createTestFile(shell, "/tmp/findexec/test.txt", "content");
-		const r = await runCmd(client, "find /tmp/findexec -type f -exec ls -l {} \\;");
+		const r = await runCmd(
+			client,
+			"find /tmp/findexec -type f -exec ls -l {} \\;",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 });
@@ -118,7 +135,10 @@ describe("find command - case analysis", () => {
 
 describe("sed command - regex transformations", () => {
 	test("sed basic substitution", async () => {
-		const r = await runCmd(client, "echo 'hello world' | sed 's/world/universe/'");
+		const r = await runCmd(
+			client,
+			"echo 'hello world' | sed 's/world/universe/'",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 
@@ -129,7 +149,10 @@ describe("sed command - regex transformations", () => {
 
 	test("sed multiple commands", async () => {
 		createTestFile(shell, "/tmp/sedtest.txt", "line1\\nline2\\nline3");
-		const r = await runCmd(client, "sed -e 's/line/LINE/' -e 's/1/ONE/' /tmp/sedtest.txt");
+		const r = await runCmd(
+			client,
+			"sed -e 's/line/LINE/' -e 's/1/ONE/' /tmp/sedtest.txt",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 
@@ -154,7 +177,10 @@ describe("awk command - field processing", () => {
 	});
 
 	test("awk multiple fields", async () => {
-		const r = await runCmd(client, "echo 'one two three' | awk '{print $1, $3}'");
+		const r = await runCmd(
+			client,
+			"echo 'one two three' | awk '{print $1, $3}'",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 
@@ -205,7 +231,10 @@ describe("xargs command - argument processing", () => {
 	});
 
 	test("xargs -I replace", async () => {
-		const r = await runCmd(client, "echo -e 'a\\nb\\nc' | xargs -I {} echo file-{}");
+		const r = await runCmd(
+			client,
+			"echo -e 'a\\nb\\nc' | xargs -I {} echo file-{}",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 
@@ -269,7 +298,10 @@ describe("read command - input processing", () => {
 	});
 
 	test("read multiple vars", async () => {
-		const r = await runCmd(client, "echo 'a b c' | read x y z && echo $x $y $z");
+		const r = await runCmd(
+			client,
+			"echo 'a b c' | read x y z && echo $x $y $z",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 

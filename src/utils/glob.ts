@@ -14,20 +14,27 @@ const _globCache = new Map<string, RegExp>();
 export function globToRegex(pattern: string, flags = ""): RegExp {
 	const key = `${flags}:${pattern}`;
 	const cached = _globCache.get(key);
-	if (cached) { return cached; }
+	if (cached) {
+		return cached;
+	}
 	let re = "^";
 	for (let i = 0; i < pattern.length; i++) {
 		const c = pattern.charAt(i);
-		if (c === "*") { re += ".*"; }
-		else if (c === "?") { re += "."; }
-		else if (c === "[") {
+		if (c === "*") {
+			re += ".*";
+		} else if (c === "?") {
+			re += ".";
+		} else if (c === "[") {
 			const close = pattern.indexOf("]", i + 1);
-			if (close === -1) { re += "\\["; }
-			else {
+			if (close === -1) {
+				re += "\\[";
+			} else {
 				re += `[${pattern.slice(i + 1, close)}]`;
 				i = close;
 			}
-		} else { re += c.replace(/[.+^${}()|[\]\\]/g, "\\$&"); }
+		} else {
+			re += c.replace(/[.+^${}()|[\]\\]/g, "\\$&");
+		}
 	}
 	const result = new RegExp(`${re}$`, flags);
 	_globCache.set(key, result);

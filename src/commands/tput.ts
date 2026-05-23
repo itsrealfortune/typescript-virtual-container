@@ -1,16 +1,42 @@
 import type { ShellModule } from "../types/commands";
 
 const CAPS: Record<string, string | number> = {
-	cols: 220, lines: 50, colors: 256,
-	bold: "\x1b[1m", dim: "\x1b[2m", smul: "\x1b[4m", rmul: "\x1b[24m",
-	rev: "\x1b[7m", smso: "\x1b[7m", rmso: "\x1b[27m",
-	sgr0: "\x1b[0m", el: "\x1b[K", ed: "\x1b[J",
-	clear: "\x1b[2J\x1b[H", cup: "", setaf: "", setab: "",
+	cols: 220,
+	lines: 50,
+	colors: 256,
+	bold: "\x1b[1m",
+	dim: "\x1b[2m",
+	smul: "\x1b[4m",
+	rmul: "\x1b[24m",
+	rev: "\x1b[7m",
+	smso: "\x1b[7m",
+	rmso: "\x1b[27m",
+	sgr0: "\x1b[0m",
+	el: "\x1b[K",
+	ed: "\x1b[J",
+	clear: "\x1b[2J\x1b[H",
+	cup: "",
+	setaf: "",
+	setab: "",
 };
 
 const ANSI_COLORS = [
-	"30","31","32","33","34","35","36","37",
-	"90","91","92","93","94","95","96","97",
+	"30",
+	"31",
+	"32",
+	"33",
+	"34",
+	"35",
+	"36",
+	"37",
+	"90",
+	"91",
+	"92",
+	"93",
+	"94",
+	"95",
+	"96",
+	"97",
 ];
 
 /**
@@ -25,7 +51,9 @@ export const tputCommand: ShellModule = {
 	params: ["<cap> [args...]"],
 	run: ({ args }) => {
 		const cap = args[0];
-		if (!cap) { return { stderr: "tput: missing capability", exitCode: 1 }; }
+		if (!cap) {
+			return { stderr: "tput: missing capability", exitCode: 1 };
+		}
 		if (cap === "setaf" && args[1] !== undefined) {
 			const n = Number.parseInt(args[1], 10);
 			const code = ANSI_COLORS[n] ?? "39";
@@ -37,10 +65,18 @@ export const tputCommand: ShellModule = {
 			return { stdout: `\x1b[${code}m`, exitCode: 0 };
 		}
 		if (cap === "cup" && args[1] !== undefined && args[2] !== undefined) {
-			return { stdout: `\x1b[${Number.parseInt(args[1],10)+1};${Number.parseInt(args[2],10)+1}H`, exitCode: 0 };
+			return {
+				stdout: `\x1b[${Number.parseInt(args[1], 10) + 1};${Number.parseInt(args[2], 10) + 1}H`,
+				exitCode: 0,
+			};
 		}
 		const val = CAPS[cap];
-		if (val === undefined) { return { stderr: `tput: unknown terminal capability '${cap}'`, exitCode: 1 }; }
+		if (val === undefined) {
+			return {
+				stderr: `tput: unknown terminal capability '${cap}'`,
+				exitCode: 1,
+			};
+		}
 		return { stdout: String(val), exitCode: 0 };
 	},
 };

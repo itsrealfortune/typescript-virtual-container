@@ -25,9 +25,17 @@ console.log("--- Provision tenants ---");
 const tenants: Tenant[] = [];
 
 const tenantConfigs = [
-	{ id: "acme-corp", subnet: "10.10.1.0/24", users: ["admin", "developer", "analyst"] },
+	{
+		id: "acme-corp",
+		subnet: "10.10.1.0/24",
+		users: ["admin", "developer", "analyst"],
+	},
 	{ id: "globex-inc", subnet: "10.10.2.0/24", users: ["admin", "engineer"] },
-	{ id: "initech", subnet: "10.10.3.0/24", users: ["admin", "devops", "qa", "manager"] },
+	{
+		id: "initech",
+		subnet: "10.10.3.0/24",
+		users: ["admin", "devops", "qa", "manager"],
+	},
 ];
 
 for (const config of tenantConfigs) {
@@ -55,25 +63,47 @@ for (const config of tenantConfigs) {
 	const [appPort, dbPort] = await Promise.all([appSsh.start(), dbSsh.start()]);
 
 	const appClient = new SshClient();
-	await appClient.connect({ host: "localhost", port: appPort, username: "root", password: "root" });
+	await appClient.connect({
+		host: "localhost",
+		port: appPort,
+		username: "root",
+		password: "root",
+	});
 	await appClient.exec(
 		"mkdir -p /app/config /app/logs /app/data && " +
-		`echo '{"tenant":"${config.id}","env":"production"}' > /app/config/app.json && ` +
-		"echo 'App initialized' > /app/logs/init.log"
+			`echo '{"tenant":"${config.id}","env":"production"}' > /app/config/app.json && ` +
+			"echo 'App initialized' > /app/logs/init.log",
 	);
 	appClient.disconnect();
 
 	const dbClient = new SshClient();
-	await dbClient.connect({ host: "localhost", port: dbPort, username: "root", password: "root" });
+	await dbClient.connect({
+		host: "localhost",
+		port: dbPort,
+		username: "root",
+		password: "root",
+	});
 	await dbClient.exec(
 		"mkdir -p /var/lib/db /var/log/db && " +
-		`echo 'CREATE DATABASE ${config.id.replace(/-/g, "_")};' > /var/lib/db/init.sql && ` +
-		"echo 'Database initialized' > /var/log/db/init.log"
+			`echo 'CREATE DATABASE ${config.id.replace(/-/g, "_")};' > /var/lib/db/init.sql && ` +
+			"echo 'Database initialized' > /var/log/db/init.log",
 	);
 	dbClient.disconnect();
 
-	tenants.push({ id: config.id, baie, appVM, dbVM, appSsh, dbSsh, appPort, dbPort, users: config.users });
-	console.log(`  ${config.id}: ${config.users.length} users, app+db VMs, app SSH ${appPort}, db SSH ${dbPort}`);
+	tenants.push({
+		id: config.id,
+		baie,
+		appVM,
+		dbVM,
+		appSsh,
+		dbSsh,
+		appPort,
+		dbPort,
+		users: config.users,
+	});
+	console.log(
+		`  ${config.id}: ${config.users.length} users, app+db VMs, app SSH ${appPort}, db SSH ${dbPort}`,
+	);
 }
 
 // ── Cross-tenant isolation verification ───────────────────────────
@@ -81,18 +111,30 @@ console.log("\n--- Cross-tenant isolation verification ---");
 
 for (let i = 0; i < tenants.length; i++) {
 	for (let j = 0; j < tenants.length; j++) {
-		if (i === j) { continue; }
+		if (i === j) {
+			continue;
+		}
 
 		const t1 = tenants[i]!;
 		const t2 = tenants[j]!;
 
 		const appClient = new SshClient();
-		await appClient.connect({ host: "localhost", port: t1.appPort, username: "root", password: "root" });
-		const result = await appClient.exec(`nc -z -w 1 ${t2.baie.switch.gateway} 5432 2>&1 || echo "unreachable"`);
+		await appClient.connect({
+			host: "localhost",
+			port: t1.appPort,
+			username: "root",
+			password: "root",
+		});
+		const result = await appClient.exec(
+			`nc -z -w 1 ${t2.baie.switch.gateway} 5432 2>&1 || echo "unreachable"`,
+		);
 		appClient.disconnect();
 
-		const isolated = result.stdout!.includes("unreachable") || result.exitCode !== 0;
-		console.log(`  ${t1.id} -> ${t2.id}: ${isolated ? "isolated" : "connected"}`);
+		const isolated =
+			result.stdout!.includes("unreachable") || result.exitCode !== 0;
+		console.log(
+			`  ${t1.id} -> ${t2.id}: ${isolated ? "isolated" : "connected"}`,
+		);
 	}
 }
 
@@ -110,8 +152,14 @@ for (const tenant of tenants) {
 	console.log(`    Users: ${tenant.users.join(", ")}`);
 	console.log(`    App VM: ${appProcs.length} processes`);
 	console.log(`    DB VM: ${dbProcs.length} processes`);
-	if (appSwap) { console.log(`    Swap: ${appSwap.filesSwapped} files swapped`); }
-	if (appCache) { console.log(`    Cache: ${appCache.entries} entries, ${appCache.hitRate.toFixed(0)}% hit rate`); }
+	if (appSwap) {
+		console.log(`    Swap: ${appSwap.filesSwapped} files swapped`);
+	}
+	if (appCache) {
+		console.log(
+			`    Cache: ${appCache.entries} entries, ${appCache.hitRate.toFixed(0)}% hit rate`,
+		);
+	}
 }
 
 // ── Cleanup ───────────────────────────────────────────────────────

@@ -143,12 +143,20 @@ describe("expandSync - arithmetic expansion", () => {
 
 describe("expandSync - complex scenarios", () => {
 	test("multiple expansions in one string", () => {
-		const result = expandSync("$HOME/path/$USER", { HOME: "/home", USER: "bob" }, 0);
+		const result = expandSync(
+			"$HOME/path/$USER",
+			{ HOME: "/home", USER: "bob" },
+			0,
+		);
 		expect(result).toMatch(/\/home.*bob/);
 	});
 
 	test("expansion with special chars", () => {
-		const result = expandSync("Path: $PWD, User: $USER", { PWD: "/tmp", USER: "alice" }, 0);
+		const result = expandSync(
+			"Path: $PWD, User: $USER",
+			{ PWD: "/tmp", USER: "alice" },
+			0,
+		);
 		expect(result).toMatch(/Path: \/tmp.*User: alice/);
 	});
 

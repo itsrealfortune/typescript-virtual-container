@@ -201,15 +201,21 @@ export class HoneyPot {
 			this._log("VirtualFileSystem", "mirror:flush", {});
 		});
 
-		(vfs as EventEmitter).on("snapshot:restore", (data: Record<string, unknown>) => {
-			this._stats.snapshotsRestored++;
-			this._log("VirtualFileSystem", "snapshot:restore", data);
-		});
+		(vfs as EventEmitter).on(
+			"snapshot:restore",
+			(data: Record<string, unknown>) => {
+				this._stats.snapshotsRestored++;
+				this._log("VirtualFileSystem", "snapshot:restore", data);
+			},
+		);
 
-		(vfs as EventEmitter).on("snapshot:import", (data: Record<string, unknown>) => {
-			this._stats.snapshotsImported++;
-			this._log("VirtualFileSystem", "snapshot:import", data);
-		});
+		(vfs as EventEmitter).on(
+			"snapshot:import",
+			(data: Record<string, unknown>) => {
+				this._stats.snapshotsImported++;
+				this._log("VirtualFileSystem", "snapshot:import", data);
+			},
+		);
 
 		(vfs as EventEmitter).on("mount", (data: Record<string, unknown>) => {
 			this._stats.mounts++;
@@ -222,11 +228,14 @@ export class HoneyPot {
 			this._log("VirtualFileSystem", "unmount", data);
 		});
 
-		(vfs as EventEmitter).on("symlink:create", (data: Record<string, unknown>) => {
-			this._stats.symlinksCreated++;
-			this._shell?.pingIdle();
-			this._log("VirtualFileSystem", "symlink:create", data);
-		});
+		(vfs as EventEmitter).on(
+			"symlink:create",
+			(data: Record<string, unknown>) => {
+				this._stats.symlinksCreated++;
+				this._shell?.pingIdle();
+				this._log("VirtualFileSystem", "symlink:create", data);
+			},
+		);
 
 		(vfs as EventEmitter).on("node:remove", (data: Record<string, unknown>) => {
 			this._stats.nodesRemoved++;
@@ -269,13 +278,10 @@ export class HoneyPot {
 			},
 		);
 
-		(users as EventEmitter).on(
-			"key:add",
-			(data: Record<string, unknown>) => {
-				this._stats.keysAdded++;
-				this._log("VirtualUserManager", "key:add", data);
-			},
-		);
+		(users as EventEmitter).on("key:add", (data: Record<string, unknown>) => {
+			this._stats.keysAdded++;
+			this._log("VirtualUserManager", "key:add", data);
+		});
 
 		(users as EventEmitter).on(
 			"key:remove",

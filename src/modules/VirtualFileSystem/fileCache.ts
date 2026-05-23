@@ -112,8 +112,11 @@ export class FileCache {
 		this._diskIo = {
 			readLatencyMs: io.readLatencyMs ?? DEFAULT_DISK_IO.readLatencyMs,
 			writeLatencyMs: io.writeLatencyMs ?? DEFAULT_DISK_IO.writeLatencyMs,
-			sequentialReadThroughput: io.sequentialReadThroughput ?? DEFAULT_DISK_IO.sequentialReadThroughput,
-			sequentialWriteThroughput: io.sequentialWriteThroughput ?? DEFAULT_DISK_IO.sequentialWriteThroughput,
+			sequentialReadThroughput:
+				io.sequentialReadThroughput ?? DEFAULT_DISK_IO.sequentialReadThroughput,
+			sequentialWriteThroughput:
+				io.sequentialWriteThroughput ??
+				DEFAULT_DISK_IO.sequentialWriteThroughput,
 		};
 	}
 
@@ -123,7 +126,10 @@ export class FileCache {
 	 * @param diskReadFn - Function to read from disk if not in cache.
 	 * @returns File content as Buffer.
 	 */
-	async get(path: string, diskReadFn: () => Buffer | Promise<Buffer>): Promise<Buffer> {
+	async get(
+		path: string,
+		diskReadFn: () => Buffer | Promise<Buffer>,
+	): Promise<Buffer> {
 		const entry = this._cache.get(path);
 		if (entry) {
 			this._hits++;
@@ -137,7 +143,8 @@ export class FileCache {
 		// Simulate disk read latency
 		if (this._simulateDiskIo) {
 			const content = await diskReadFn();
-			const transferTime = content.length / this._diskIo.sequentialReadThroughput;
+			const transferTime =
+				content.length / this._diskIo.sequentialReadThroughput;
 			const totalLatency = this._diskIo.readLatencyMs + transferTime;
 			await this._delay(totalLatency);
 			this._set(path, content);
@@ -171,7 +178,8 @@ export class FileCache {
 
 		// Simulate disk read latency (synchronous)
 		if (this._simulateDiskIo) {
-			const transferTime = content.length / this._diskIo.sequentialReadThroughput;
+			const transferTime =
+				content.length / this._diskIo.sequentialReadThroughput;
 			const totalLatency = this._diskIo.readLatencyMs + transferTime;
 			this._syncDelay(totalLatency);
 		}
@@ -186,10 +194,15 @@ export class FileCache {
 	 * @param content - Content to write.
 	 * @param diskWriteFn - Function to write to disk.
 	 */
-	async set(path: string, content: Buffer, diskWriteFn?: (data: Buffer) => void | Promise<void>): Promise<void> {
+	async set(
+		path: string,
+		content: Buffer,
+		diskWriteFn?: (data: Buffer) => void | Promise<void>,
+	): Promise<void> {
 		// Simulate disk write latency
 		if (this._simulateDiskIo && diskWriteFn) {
-			const transferTime = content.length / this._diskIo.sequentialWriteThroughput;
+			const transferTime =
+				content.length / this._diskIo.sequentialWriteThroughput;
 			const totalLatency = this._diskIo.writeLatencyMs + transferTime;
 			await diskWriteFn(content);
 			await this._delay(totalLatency);
@@ -206,11 +219,16 @@ export class FileCache {
 	 * @param content - Content to write.
 	 * @param diskWriteFn - Function to write to disk.
 	 */
-	setSync(path: string, content: Buffer, diskWriteFn?: (data: Buffer) => void): void {
+	setSync(
+		path: string,
+		content: Buffer,
+		diskWriteFn?: (data: Buffer) => void,
+	): void {
 		// Simulate disk write latency (synchronous)
 		if (this._simulateDiskIo && diskWriteFn) {
 			diskWriteFn(content);
-			const transferTime = content.length / this._diskIo.sequentialWriteThroughput;
+			const transferTime =
+				content.length / this._diskIo.sequentialWriteThroughput;
 			const totalLatency = this._diskIo.writeLatencyMs + transferTime;
 			this._syncDelay(totalLatency);
 		} else if (diskWriteFn) {
@@ -298,10 +316,18 @@ export class FileCache {
 	 * @param params - New disk I/O parameters to merge.
 	 */
 	updateDiskIoParams(params: Partial<DiskIoParams>): void {
-		if (params.readLatencyMs !== undefined) { this._diskIo.readLatencyMs = params.readLatencyMs; }
-		if (params.writeLatencyMs !== undefined) { this._diskIo.writeLatencyMs = params.writeLatencyMs; }
-		if (params.sequentialReadThroughput !== undefined) { this._diskIo.sequentialReadThroughput = params.sequentialReadThroughput; }
-		if (params.sequentialWriteThroughput !== undefined) { this._diskIo.sequentialWriteThroughput = params.sequentialWriteThroughput; }
+		if (params.readLatencyMs !== undefined) {
+			this._diskIo.readLatencyMs = params.readLatencyMs;
+		}
+		if (params.writeLatencyMs !== undefined) {
+			this._diskIo.writeLatencyMs = params.writeLatencyMs;
+		}
+		if (params.sequentialReadThroughput !== undefined) {
+			this._diskIo.sequentialReadThroughput = params.sequentialReadThroughput;
+		}
+		if (params.sequentialWriteThroughput !== undefined) {
+			this._diskIo.sequentialWriteThroughput = params.sequentialWriteThroughput;
+		}
 	}
 
 	/**
@@ -316,8 +342,13 @@ export class FileCache {
 		const size = content.length;
 
 		// Evict if necessary
-		while (this._cache.size >= this._maxEntries || this._totalMemoryUsage + size > this._maxMemoryBytes) {
-			if (!this._evictOne()) { break; }
+		while (
+			this._cache.size >= this._maxEntries ||
+			this._totalMemoryUsage + size > this._maxMemoryBytes
+		) {
+			if (!this._evictOne()) {
+				break;
+			}
 		}
 
 		const entry: CacheEntry = {
@@ -337,7 +368,9 @@ export class FileCache {
 	 * @returns True if an entry was evicted.
 	 */
 	private _evictOne(): boolean {
-		if (this._cache.size === 0) { return false; }
+		if (this._cache.size === 0) {
+			return false;
+		}
 
 		let targetKey: string | null = null;
 
@@ -429,7 +462,9 @@ export class FileCache {
 	 * Note: This blocks the event loop - use sparingly.
 	 */
 	private _syncDelay(ms: number): void {
-		if (ms <= 0) { return; }
+		if (ms <= 0) {
+			return;
+		}
 		const start = Date.now();
 		while (Date.now() - start < ms) {
 			// Busy wait - simulates disk I/O blocking

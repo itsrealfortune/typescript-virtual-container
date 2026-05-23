@@ -1,17 +1,33 @@
 import { EventEmitter } from "node:events";
-import { createCustomCommand, registerCommand, runCommand } from "../../commands";
+import {
+	createCustomCommand,
+	registerCommand,
+	runCommand,
+} from "../../commands";
 import type { CommandContext, CommandResult } from "../../types/commands";
 import type { ShellStream } from "../../types/streams";
 import type { VfsNodeStats } from "../../types/vfs";
 import { type PerfLogger, createPerfLogger } from "../../utils/perfLogger";
 import type { DesktopManager } from "../desktopManager";
-import { bootstrapLinuxRootfs, refreshProc, syncEtcPasswd } from "../linuxRootfs";
-import { type SysctlState, defaultSysctlState, resolveSysctlPath } from "../sysctl";
+import {
+	bootstrapLinuxRootfs,
+	refreshProc,
+	syncEtcPasswd,
+} from "../linuxRootfs";
+import {
+	type SysctlState,
+	defaultSysctlState,
+	resolveSysctlPath,
+} from "../sysctl";
 import VirtualFileSystem, { type VfsOptions } from "../VirtualFileSystem";
 import { VirtualNetworkManager } from "../VirtualNetworkManager";
 import { VirtualPackageManager } from "../VirtualPackageManager";
 import { VirtualUserManager } from "../VirtualUserManager";
-import { type GcStats, IdleManager, type IdleManagerOptions } from "./idleManager";
+import {
+	type GcStats,
+	IdleManager,
+	type IdleManagerOptions,
+} from "./idleManager";
 import { startShell } from "./shell";
 
 /**
@@ -169,7 +185,9 @@ export interface VirtualShellResourceCaps {
 	cpuCapCores?: number;
 }
 
-function hasVfsInstance(obj: unknown): obj is { vfsInstance: VirtualShellVfsLike } {
+function hasVfsInstance(
+	obj: unknown,
+): obj is { vfsInstance: VirtualShellVfsLike } {
 	return (
 		typeof obj === "object" &&
 		obj !== null &&
@@ -278,7 +296,10 @@ class VirtualShell extends EventEmitter {
 	constructor(
 		hostname: string,
 		properties?: ShellProperties,
-		vfsOptionsOrInstance?: VfsOptions | VirtualShellVfsLike | VirtualShellVfsOptions,
+		vfsOptionsOrInstance?:
+			| VfsOptions
+			| VirtualShellVfsLike
+			| VirtualShellVfsOptions,
 		resourceCaps?: VirtualShellResourceCaps,
 	) {
 		super();
@@ -292,9 +313,12 @@ class VirtualShell extends EventEmitter {
 		if (isVirtualShellVfsLike(vfsOptionsOrInstance)) {
 			this.vfs = vfsOptionsOrInstance as unknown as VirtualFileSystem;
 		} else if (hasVfsInstance(vfsOptionsOrInstance)) {
-			this.vfs = vfsOptionsOrInstance.vfsInstance as unknown as VirtualFileSystem;
+			this.vfs =
+				vfsOptionsOrInstance.vfsInstance as unknown as VirtualFileSystem;
 		} else {
-			this.vfs = new VirtualFileSystem((vfsOptionsOrInstance as VfsOptions) ?? {});
+			this.vfs = new VirtualFileSystem(
+				(vfsOptionsOrInstance as VfsOptions) ?? {},
+			);
 		}
 		this.users = new VirtualUserManager(this.vfs, resolveAutoSudoForNewUsers());
 		this.packageManager = new VirtualPackageManager(this.vfs, this.users);
@@ -315,11 +339,28 @@ class VirtualShell extends EventEmitter {
 			await vfs.restoreMirror();
 			users.initialize();
 			// Bootstrap Linux rootfs (idempotent)
-			bootstrapLinuxRootfs(vfs, users, shellHostname, shellProps, startTime, [], network, caps);
+			bootstrapLinuxRootfs(
+				vfs,
+				users,
+				shellHostname,
+				shellProps,
+				startTime,
+				[],
+				network,
+				caps,
+			);
 
 			// Register read hook: refresh /proc dynamically on every access
 			vfs.onBeforeRead("/proc", () => {
-				refreshProc(vfs, shellProps, shellHostname, startTime, users.listActiveSessions(), network, caps);
+				refreshProc(
+					vfs,
+					shellProps,
+					shellHostname,
+					startTime,
+					users.listActiveSessions(),
+					network,
+					caps,
+				);
 			});
 
 			// Register content resolver: serve sysctl values from /proc/sys/*
@@ -327,7 +368,11 @@ class VirtualShell extends EventEmitter {
 				const resolved = resolveSysctlPath(sysctl, sysPath);
 				if (resolved) {
 					const v = resolved.value;
-					return typeof v === "number" ? `${v}\n` : v.endsWith("\n") ? v : `${v}\n`;
+					return typeof v === "number"
+						? `${v}\n`
+						: v.endsWith("\n")
+							? v
+							: `${v}\n`;
 				}
 				return null;
 			});
@@ -336,7 +381,9 @@ class VirtualShell extends EventEmitter {
 			vfs.onBeforeWrite("/proc/sys", (normalizedPath, content) => {
 				const resolved = resolveSysctlPath(sysctl, normalizedPath);
 				if (resolved) {
-					resolved.set(typeof content === "string" ? content.trim() : String(content));
+					resolved.set(
+						typeof content === "string" ? content.trim() : String(content),
+					);
 				}
 				// Apply RAM/CPU caps in real-time when sysctl values change
 				if (normalizedPath.includes("vm/ram_cap_bytes")) {
@@ -404,13 +451,24 @@ class VirtualShell extends EventEmitter {
 	 * @param rawInput Unparsed command line (e.g. `"ls -la /tmp"`).
 	 * @param authUser Username to run the command as.
 	 * @param cwd      Current working directory for path resolution.
-	 * 
+	 *
 	 * @returns CommandResult or a Promise that resolves to CommandResult. The result is also emitted via the "command" event.
 	 */
-	executeCommand(rawInput: string, authUser: string, cwd: string): CommandResult | Promise<CommandResult> {
+	executeCommand(
+		rawInput: string,
+		authUser: string,
+		cwd: string,
+	): CommandResult | Promise<CommandResult> {
 		perf.mark("executeCommand");
 		this._idle?.ping();
-		const result = runCommand(rawInput, authUser, this.hostname, "shell", cwd, this);
+		const result = runCommand(
+			rawInput,
+			authUser,
+			this.hostname,
+			"shell",
+			cwd,
+			this,
+		);
 		this.emit("command", { command: rawInput, user: authUser, cwd });
 		return result;
 	}
@@ -514,7 +572,11 @@ class VirtualShell extends EventEmitter {
 	 * List all active mounts with their VFS paths, host paths, and read-only flags.
 	 * @returns Array of mount descriptors.
 	 */
-	public getMounts(): Array<{ vPath: string; hostPath: string; readOnly: boolean }> {
+	public getMounts(): Array<{
+		vPath: string;
+		hostPath: string;
+		readOnly: boolean;
+	}> {
 		return this.vfs.getMounts();
 	}
 
@@ -605,10 +667,12 @@ class VirtualShell extends EventEmitter {
 	 * @param options - Idle configuration (threshold, check interval).
 	 */
 	public enableIdleManagement(options?: IdleManagerOptions): void {
-		if (this._idle) { return; }
+		if (this._idle) {
+			return;
+		}
 		this._idle = new IdleManager(this, options);
 		this._idle.on("freeze", () => this.emit("shell:freeze"));
-		this._idle.on("thaw",   () => this.emit("shell:thaw"));
+		this._idle.on("thaw", () => this.emit("shell:thaw"));
 		this._idle.on("gc:run", (stats) => this.emit("gc:run", stats));
 		this._idle.start();
 	}
@@ -618,7 +682,9 @@ class VirtualShell extends EventEmitter {
 	 * Safe to call even if idle management was never enabled.
 	 */
 	public disableIdleManagement(): void {
-		if (!this._idle) { return; }
+		if (!this._idle) {
+			return;
+		}
 		this._idle.stop();
 		this._idle = null;
 	}

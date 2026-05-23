@@ -3,14 +3,27 @@ import * as os from "node:os";
 import { VirtualShell, VirtualSshServer } from "../src";
 import { SshClient } from "../src/modules/SSHClient";
 
-async function setupClient(vmName: string, options?: { ramCapBytes?: number; cpuCapCores?: number }) {
-	const shell = new VirtualShell(vmName, undefined, { mode: "memory" }, options);
+async function setupClient(
+	vmName: string,
+	options?: { ramCapBytes?: number; cpuCapCores?: number },
+) {
+	const shell = new VirtualShell(
+		vmName,
+		undefined,
+		{ mode: "memory" },
+		options,
+	);
 	await shell.ensureInitialized();
 	shell.users.setPassword("root", "root");
 	const ssh = new VirtualSshServer({ port: 0, shell });
 	const port = await ssh.start();
 	const client = new SshClient();
-	await client.connect({ host: "localhost", port, username: "root", password: "root" });
+	await client.connect({
+		host: "localhost",
+		port,
+		username: "root",
+		password: "root",
+	});
 	return { shell, client, ssh };
 }
 
@@ -21,7 +34,9 @@ describe("RAM capping — reporting", () => {
 	let ssh: InstanceType<typeof VirtualSshServer>;
 
 	beforeAll(async () => {
-		const env = await setupClient("ram-report", { ramCapBytes: 256 * 1024 * 1024 });
+		const env = await setupClient("ram-report", {
+			ramCapBytes: 256 * 1024 * 1024,
+		});
 		client = env.client;
 		ssh = env.ssh;
 	});
@@ -34,9 +49,14 @@ describe("RAM capping — reporting", () => {
 	test("/proc/meminfo shows capped MemTotal", async () => {
 		const r = await client.cat("/proc/meminfo");
 		expect(r.exitCode).toBe(0);
-		const memTotalLine = r.stdout!.split("\n").find((l) => l.startsWith("MemTotal:"));
+		const memTotalLine = r
+			.stdout!.split("\n")
+			.find((l) => l.startsWith("MemTotal:"));
 		expect(memTotalLine).toBeDefined();
-		const memTotalKb = Number.parseInt(memTotalLine!.split(/\s+/)[1] ?? "0", 10);
+		const memTotalKb = Number.parseInt(
+			memTotalLine!.split(/\s+/)[1] ?? "0",
+			10,
+		);
 		expect(memTotalKb).toBeLessThanOrEqual(262144);
 	});
 
@@ -87,8 +107,12 @@ describe("RAM capping — enforcement", () => {
 	});
 
 	test("dd command fails with ENOMEM when VFS is near cap", async () => {
-		const { client, ssh } = await setupClient("ram-enforce-dd", { ramCapBytes: 64 * 1024 });
-		const r = await client.exec("dd if=/dev/zero of=/tmp/big bs=1024 count=16 2>&1");
+		const { client, ssh } = await setupClient("ram-enforce-dd", {
+			ramCapBytes: 64 * 1024,
+		});
+		const r = await client.exec(
+			"dd if=/dev/zero of=/tmp/big bs=1024 count=16 2>&1",
+		);
 		const output = (r.stdout || "") + (r.stderr || "");
 		if (r.exitCode !== 0) {
 			expect(output).toContain("ENOMEM");
@@ -129,7 +153,9 @@ describe("RAM capping — runtime sysctl changes", () => {
 
 		expect(shell.resourceCaps.ramCapBytes).toBe(cap);
 
-		const r3 = await client.exec("dd if=/dev/zero of=/tmp/overflow bs=1024 count=16 2>&1");
+		const r3 = await client.exec(
+			"dd if=/dev/zero of=/tmp/overflow bs=1024 count=16 2>&1",
+		);
 		const output = (r3.stdout || "") + (r3.stderr || "");
 		expect(r3.exitCode).toBe(1);
 		expect(output).toContain("ENOMEM");
@@ -139,7 +165,9 @@ describe("RAM capping — runtime sysctl changes", () => {
 		const r = await client.exec("sysctl vm.ram_cap_bytes=0");
 		expect(r.exitCode).toBe(0);
 
-		const r2 = await client.exec("dd if=/dev/zero of=/tmp/ok bs=1024 count=16 2>&1");
+		const r2 = await client.exec(
+			"dd if=/dev/zero of=/tmp/ok bs=1024 count=16 2>&1",
+		);
 		expect(r2.exitCode).toBe(0);
 	});
 });
@@ -288,7 +316,10 @@ describe("Combined RAM + CPU caps", () => {
 	let ssh: InstanceType<typeof VirtualSshServer>;
 
 	beforeAll(async () => {
-		const env = await setupClient("combined", { ramCapBytes: 128 * 1024 * 1024, cpuCapCores: 1 });
+		const env = await setupClient("combined", {
+			ramCapBytes: 128 * 1024 * 1024,
+			cpuCapCores: 1,
+		});
 		shell = env.shell;
 		client = env.client;
 		ssh = env.ssh;
@@ -364,8 +395,13 @@ describe("No caps — host passthrough", () => {
 	test("/proc/meminfo shows host MemTotal", async () => {
 		const r = await client.cat("/proc/meminfo");
 		expect(r.exitCode).toBe(0);
-		const memTotalLine = r.stdout!.split("\n").find((l) => l.startsWith("MemTotal:"));
-		const memTotalKb = Number.parseInt(memTotalLine!.split(/\s+/)[1] ?? "0", 10);
+		const memTotalLine = r
+			.stdout!.split("\n")
+			.find((l) => l.startsWith("MemTotal:"));
+		const memTotalKb = Number.parseInt(
+			memTotalLine!.split(/\s+/)[1] ?? "0",
+			10,
+		);
 		const hostTotalKb = Math.floor(os.totalmem() / 1024);
 		expect(memTotalKb).toBe(hostTotalKb);
 	});

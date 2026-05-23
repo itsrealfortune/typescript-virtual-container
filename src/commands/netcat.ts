@@ -11,22 +11,30 @@ export const ncCommand: ShellModule = {
 	description: "Netcat network utility",
 	category: "net",
 	params: ["[-l] [-p port] [-v]"],
-	run:  async ({ args }) => {
+	run: async ({ args }) => {
 		let mod: typeof import("node:net");
-		try { mod = await import("node:net") as typeof import("node:net"); }
-		catch { return { stderr: "nc: not available in this environment\n", exitCode: 1 }; }
+		try {
+			mod = (await import("node:net")) as typeof import("node:net");
+		} catch {
+			return { stderr: "nc: not available in this environment\n", exitCode: 1 };
+		}
 		const net = mod;
 
 		const isListen = args.includes("-l");
 		const pIdx = args.indexOf("-p");
-		const port = pIdx !== -1 && args[pIdx + 1] ? Number.parseInt(args[pIdx + 1] as string, 10) : undefined;
+		const port =
+			pIdx !== -1 && args[pIdx + 1]
+				? Number.parseInt(args[pIdx + 1] as string, 10)
+				: undefined;
 		const verbose = args.includes("-v");
 
 		if (isListen && port) {
 			return new Promise((resolve) => {
 				const server = net.createServer((socket) => {
 					let data = "";
-					socket.on("data", (chunk: Buffer) => { data += chunk.toString(); });
+					socket.on("data", (chunk: Buffer) => {
+						data += chunk.toString();
+					});
 					socket.on("end", () => {
 						server.close();
 						resolve({ stdout: data, exitCode: 0 });
@@ -37,7 +45,10 @@ export const ncCommand: ShellModule = {
 						resolve({ stdout: `Listening on port ${port}...\n`, exitCode: 0 });
 					}
 				});
-				setTimeout(() => { server.close(); resolve({ exitCode: 0 }); }, 5000);
+				setTimeout(() => {
+					server.close();
+					resolve({ exitCode: 0 });
+				}, 5000);
 			});
 		}
 
@@ -48,19 +59,32 @@ export const ncCommand: ShellModule = {
 			return new Promise((resolve) => {
 				const socket = net.createConnection({ host, port: portNum }, () => {
 					if (verbose) {
-						resolve({ stdout: `Connected to ${host}:${portNum}\n`, exitCode: 0 });
+						resolve({
+							stdout: `Connected to ${host}:${portNum}\n`,
+							exitCode: 0,
+						});
 					}
-					setTimeout(() => { socket.end(); resolve({ exitCode: 0 }); }, 3000);
+					setTimeout(() => {
+						socket.end();
+						resolve({ exitCode: 0 });
+					}, 3000);
 				});
 				socket.on("error", () => {
-					resolve({ stderr: `nc: connection to ${host}:${portNum} failed\n`, exitCode: 1 });
+					resolve({
+						stderr: `nc: connection to ${host}:${portNum} failed\n`,
+						exitCode: 1,
+					});
 				});
-				setTimeout(() => { socket.destroy(); resolve({ exitCode: 1 }); }, 5000);
+				setTimeout(() => {
+					socket.destroy();
+					resolve({ exitCode: 1 });
+				}, 5000);
 			});
 		}
 
 		return {
-			stderr: "nc: missing arguments. Usage: nc [-l] [-p port] [-v] [host] [port]\n",
+			stderr:
+				"nc: missing arguments. Usage: nc [-l] [-p port] [-v] [host] [port]\n",
 			exitCode: 1,
 		};
 	},

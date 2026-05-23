@@ -8,10 +8,10 @@
  */
 
 import {
-    HoneyPot,
-    SshClient,
-    VirtualShell,
-    VirtualSshServer,
+	HoneyPot,
+	SshClient,
+	VirtualShell,
+	VirtualSshServer,
 } from "../../src/index";
 
 async function demonstrateHoneypot() {
@@ -40,7 +40,12 @@ async function demonstrateHoneypot() {
 	users.addUser("bob", "bob_pass456");
 
 	const alice = new SshClient();
-	await alice.connect({ host: "localhost", port: 2222, username: "alice", password: "alice_pass123" });
+	await alice.connect({
+		host: "localhost",
+		port: 2222,
+		username: "alice",
+		password: "alice_pass123",
+	});
 	await alice.mkdir("/home/alice/work", true);
 	await alice.writeFile("/home/alice/work/notes.txt", "Project notes");
 	await alice.ls("/home/alice/work");
@@ -52,7 +57,12 @@ async function demonstrateHoneypot() {
 	console.log("--- Scenario 2: Suspicious Attempt ---\n");
 
 	const bob = new SshClient();
-	await bob.connect({ host: "localhost", port: 2222, username: "bob", password: "bob_pass456" });
+	await bob.connect({
+		host: "localhost",
+		port: 2222,
+		username: "bob",
+		password: "bob_pass456",
+	});
 	// These will fail but are tracked
 	await bob.readFile("/etc/shadow");
 	await bob.readFile("/etc/passwd");

@@ -55,7 +55,9 @@ function renderFull(modules: ShellModule[]): string {
 	const grouped: Record<string, ShellModule[]> = {};
 	for (const mod of modules) {
 		const cat = mod.category ?? "misc";
-		if (!grouped[cat]) { grouped[cat] = []; }
+		if (!grouped[cat]) {
+			grouped[cat] = [];
+		}
 		grouped[cat]?.push(mod);
 	}
 
@@ -74,7 +76,9 @@ function renderFull(modules: ShellModule[]): string {
 
 	for (const cat of cats) {
 		const mods = grouped[cat];
-		if (!mods?.length) { continue; }
+		if (!mods?.length) {
+			continue;
+		}
 
 		lines.push(`${YLW}${CATEGORY_LABELS[cat] ?? cat}${RESET}`);
 		const sorted = [...mods].sort((a, b) => a.name.localeCompare(b.name));

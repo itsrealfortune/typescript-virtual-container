@@ -21,12 +21,16 @@ for (const pkg of results.slice(0, 5)) {
 }
 
 // ── List available ────────────────────────────────────────────────
-console.log(`\n--- Available packages: ${VirtualPackageManager.listAvailable().length} total ---`);
+console.log(
+	`\n--- Available packages: ${VirtualPackageManager.listAvailable().length} total ---`,
+);
 
 // ── Inspect a specific package ────────────────────────────────────
 console.log("\n--- Inspect curl ---");
 const curlInfo = pm.show("curl");
-if (curlInfo) { console.log(curlInfo); }
+if (curlInfo) {
+	console.log(curlInfo);
+}
 
 // ── List installed ────────────────────────────────────────────────
 console.log(`\n--- Currently installed: ${pm.installedCount()} packages ---`);

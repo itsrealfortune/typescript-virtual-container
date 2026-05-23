@@ -18,7 +18,8 @@ console.log("Created user 'alice' with password fallback");
 
 // ── Simulate SSH key pair ─────────────────────────────────────────
 console.log("--- Simulate SSH key pair ---");
-const pubKeyLine = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGtFeG9hbXBsZUtleUZvckRlbW9uc3RyYXRpb25Pbmx5 alice@laptop";
+const pubKeyLine =
+	"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGtFeG9hbXBsZUtleUZvckRlbW9uc3RyYXRpb25Pbmx5 alice@laptop";
 const [algo, b64] = pubKeyLine.split(" ") as [string, string];
 const keyData = Buffer.from(b64, "base64");
 
@@ -29,7 +30,8 @@ console.log(`Added ${algo} key for alice (${keyData.length} bytes)`);
 
 // ── Add second key for rotation ───────────────────────────────────
 console.log("--- Add second key for rotation ---");
-const key2Line = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDExampleRsaKeyForDemoPurposesOnly alice@desktop";
+const key2Line =
+	"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDExampleRsaKeyForDemoPurposesOnly alice@desktop";
 const [algo2, b64_2] = key2Line.split(" ") as [string, string];
 shell.users.addAuthorizedKey("alice", algo2, Buffer.from(b64_2, "base64"));
 console.log(`Added ${algo2} key for alice (key rotation)`);

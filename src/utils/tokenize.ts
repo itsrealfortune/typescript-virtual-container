@@ -61,19 +61,39 @@ export function tokenizeCommand(input: string): string[] {
 			const c3 = input[i + 3];
 			const c4 = input[i + 4];
 			if (c2 === ">" && c3 === "&" && c4 === "1") {
-				if (current) { tokens.push(current); current = ""; }
-				tokens.push("2>>&1"); i += 5; continue;
+				if (current) {
+					tokens.push(current);
+					current = "";
+				}
+				tokens.push("2>>&1");
+				i += 5;
+				continue;
 			}
 			if (c2 === "&" && c3 === "1") {
-				if (current) { tokens.push(current); current = ""; }
-				tokens.push("2>&1"); i += 4; continue;
+				if (current) {
+					tokens.push(current);
+					current = "";
+				}
+				tokens.push("2>&1");
+				i += 4;
+				continue;
 			}
 			if (c2 === ">") {
-				if (current) { tokens.push(current); current = ""; }
-				tokens.push("2>>"); i += 3; continue;
+				if (current) {
+					tokens.push(current);
+					current = "";
+				}
+				tokens.push("2>>");
+				i += 3;
+				continue;
 			}
-			if (current) { tokens.push(current); current = ""; }
-			tokens.push("2>"); i += 2; continue;
+			if (current) {
+				tokens.push(current);
+				current = "";
+			}
+			tokens.push("2>");
+			i += 2;
+			continue;
 		}
 		if ((ch === ">" || ch === "<") && !inQ) {
 			if (current) {
@@ -93,6 +113,8 @@ export function tokenizeCommand(input: string): string[] {
 		current += ch;
 		i++;
 	}
-	if (current) { tokens.push(current); }
+	if (current) {
+		tokens.push(current);
+	}
 	return tokens;
 }

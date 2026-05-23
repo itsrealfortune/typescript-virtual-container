@@ -18,7 +18,10 @@ export const chownCommand: ShellModule = {
 		}
 
 		if (authUser !== "root") {
-			return { stderr: "chown: changing ownership: Operation not permitted", exitCode: 1 };
+			return {
+				stderr: "chown: changing ownership: Operation not permitted",
+				exitCode: 1,
+			};
 		}
 
 		const filePath = resolvePath(cwd, fileArg);
@@ -53,13 +56,21 @@ export const chownCommand: ShellModule = {
 				if (groupPart) {
 					gid = resolveGroup(shell, groupPart);
 					if (gid === null) {
-						return { stderr: `chown: invalid group: ${groupPart}`, exitCode: 1 };
+						return {
+							stderr: `chown: invalid group: ${groupPart}`,
+							exitCode: 1,
+						};
 					}
 				}
 			}
 
 			const current = shell.vfs.getOwner(filePath);
-			shell.vfs.chown(filePath, uidTarget ?? current.uid, gid ?? current.gid, uid);
+			shell.vfs.chown(
+				filePath,
+				uidTarget ?? current.uid,
+				gid ?? current.gid,
+				uid,
+			);
 			return { exitCode: 0 };
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
@@ -68,18 +79,34 @@ export const chownCommand: ShellModule = {
 	},
 };
 
-function resolveUser(shell: { users: { getUid: (u: string) => number; listUsers: () => string[] } }, name: string): number | null {
+function resolveUser(
+	shell: {
+		users: { getUid: (u: string) => number; listUsers: () => string[] };
+	},
+	name: string,
+): number | null {
 	const users = shell.users.listUsers();
-	if (users.includes(name)) { return shell.users.getUid(name); }
+	if (users.includes(name)) {
+		return shell.users.getUid(name);
+	}
 	const num = Number.parseInt(name, 10);
-	if (!Number.isNaN(num)) { return num; }
+	if (!Number.isNaN(num)) {
+		return num;
+	}
 	return null;
 }
 
-function resolveGroup(shell: { users: { getGidByName: (n: string) => number | null } }, name: string): number | null {
+function resolveGroup(
+	shell: { users: { getGidByName: (n: string) => number | null } },
+	name: string,
+): number | null {
 	const gid = shell.users.getGidByName(name);
-	if (gid !== null) { return gid; }
+	if (gid !== null) {
+		return gid;
+	}
 	const num = Number.parseInt(name, 10);
-	if (!Number.isNaN(num)) { return num; }
+	if (!Number.isNaN(num)) {
+		return num;
+	}
 	return null;
 }

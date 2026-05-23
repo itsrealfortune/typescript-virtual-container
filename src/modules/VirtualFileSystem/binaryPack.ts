@@ -161,7 +161,9 @@ function encodeNode(enc: Encoder, node: InternalNode): void {
 		enc.writeFloat64(d.updatedAt);
 		const children = Object.values(d.children);
 		enc.writeUint32(children.length);
-		for (const child of children) { encodeNode(enc, child); }
+		for (const child of children) {
+			encodeNode(enc, child);
+		}
 	}
 }
 
@@ -300,12 +302,16 @@ const _namePool = new Map<string, string>();
 const _maxNamePoolSize = 500;
 function internName(s: string): string {
 	const cached = _namePool.get(s);
-	if (cached !== undefined) { return cached; }
+	if (cached !== undefined) {
+		return cached;
+	}
 	if (_namePool.size >= _maxNamePoolSize) {
 		// Evict first 25% of entries (simple LRU approximation)
 		const toRemove = Math.floor(_maxNamePoolSize / 4);
 		const keys = [..._namePool.keys()];
-		for (let i = 0; i < toRemove; i++) { _namePool.delete(keys[i] as string); }
+		for (let i = 0; i < toRemove; i++) {
+			_namePool.delete(keys[i] as string);
+		}
 	}
 	_namePool.set(s, s);
 	return s;
@@ -319,13 +325,16 @@ function internName(s: string): string {
  * @param base - Root directory node to fork.
  * @returns New root directory node with shared file/stub references.
  */
-export function forkDirTree(base: InternalDirectoryNode): InternalDirectoryNode {
+export function forkDirTree(
+	base: InternalDirectoryNode,
+): InternalDirectoryNode {
 	const children = Object.create(null) as Record<string, InternalNode>;
 	for (const name of Object.keys(base.children)) {
 		const child = base.children[name] as InternalNode;
-		children[name] = child.type === "directory"
-			? forkDirTree(child as InternalDirectoryNode)
-			: child;
+		children[name] =
+			child.type === "directory"
+				? forkDirTree(child as InternalDirectoryNode)
+				: child;
 	}
 	return {
 		type: "directory",
@@ -348,7 +357,9 @@ export function forkDirTree(base: InternalDirectoryNode): InternalDirectoryNode 
  * @returns Reconstructed root directory node.
  */
 export function decodeVfs(buf: Buffer): InternalDirectoryNode {
-	if (buf.length < 5) { throw new Error("[VFS binary] Buffer too short"); }
+	if (buf.length < 5) {
+		throw new Error("[VFS binary] Buffer too short");
+	}
 
 	const magic = buf.slice(0, 4);
 	if (!magic.equals(MAGIC)) {
@@ -357,7 +368,10 @@ export function decodeVfs(buf: Buffer): InternalDirectoryNode {
 
 	const dec = new Decoder(buf);
 	// skip magic (4)
-	dec.readUint8(); dec.readUint8(); dec.readUint8(); dec.readUint8();
+	dec.readUint8();
+	dec.readUint8();
+	dec.readUint8();
+	dec.readUint8();
 	const version = dec.readUint8();
 	const includeUidGid = version >= 0x02;
 

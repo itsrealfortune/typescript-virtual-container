@@ -32,8 +32,12 @@ export const uptimeCommand: ShellModule = {
 
 		if (pretty) {
 			const parts: string[] = [];
-			if (days > 0) { parts.push(`${days} day${days > 1 ? "s" : ""}`); }
-			if (hours > 0) { parts.push(`${hours} hour${hours > 1 ? "s" : ""}`); }
+			if (days > 0) {
+				parts.push(`${days} day${days > 1 ? "s" : ""}`);
+			}
+			if (hours > 0) {
+				parts.push(`${hours} hour${hours > 1 ? "s" : ""}`);
+			}
 			parts.push(`${mins} minute${mins === 1 ? "" : "s"}`);
 			return { stdout: `up ${parts.join(", ")}`, exitCode: 0 };
 		}

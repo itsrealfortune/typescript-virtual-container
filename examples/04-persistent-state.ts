@@ -12,7 +12,9 @@ import { mkdirSync, existsSync, rmSync } from "node:fs";
 // ── FS mode — automatic .vfsb persistence ─────────────────────────
 console.log("--- FS mode — automatic .vfsb persistence ---");
 const dataDir = "./container-data";
-if (!existsSync(dataDir)) { mkdirSync(dataDir); }
+if (!existsSync(dataDir)) {
+	mkdirSync(dataDir);
+}
 const vfsFs = new VirtualFileSystem({
 	mode: "fs",
 	snapshotPath: dataDir,

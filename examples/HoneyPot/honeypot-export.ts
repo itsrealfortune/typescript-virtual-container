@@ -9,10 +9,10 @@
 
 import * as fs from "node:fs";
 import {
-    HoneyPot,
-    SshClient,
-    VirtualShell,
-    VirtualSshServer,
+	HoneyPot,
+	SshClient,
+	VirtualShell,
+	VirtualSshServer,
 } from "../../src/index";
 
 interface AuditReport {
@@ -64,7 +64,12 @@ async function generateAuditReport() {
 
 	// Analyst activities (authorized)
 	const analyst = new SshClient();
-	await analyst.connect({ host: "localhost", port: 2222, username: "analyst", password: "pass123" });
+	await analyst.connect({
+		host: "localhost",
+		port: 2222,
+		username: "analyst",
+		password: "pass123",
+	});
 	await analyst.mkdir("/data/reports", true);
 	await analyst.writeFile(
 		"/data/reports/analysis.txt",
@@ -74,7 +79,12 @@ async function generateAuditReport() {
 
 	// Developer activities
 	const dev = new SshClient();
-	await dev.connect({ host: "localhost", port: 2222, username: "developer", password: "pass456" });
+	await dev.connect({
+		host: "localhost",
+		port: 2222,
+		username: "developer",
+		password: "pass456",
+	});
 	await dev.mkdir("/code/project", true);
 	await dev.writeFile("/code/project/main.ts", "export function main() {}");
 

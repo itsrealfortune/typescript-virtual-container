@@ -20,12 +20,13 @@ export const suCommand: ShellModule = {
 	category: "users",
 	params: ["[-] [-c <cmd>] [username]"],
 	run: ({ authUser, shell, args, hostname, mode, cwd }) => {
-		const loginShellFlag = args.includes("-") || args.includes("-l") || args.includes("--login");
+		const loginShellFlag =
+			args.includes("-") || args.includes("-l") || args.includes("--login");
 		const cIdx = args.indexOf("-c");
 		const cmdLine = cIdx === -1 ? undefined : args[cIdx + 1];
-		const filteredArgs = args.filter((_, i) =>
-			i !== cIdx && i !== cIdx + 1
-		).filter((a) => a !== "-" && a !== "-l" && a !== "--login");
+		const filteredArgs = args
+			.filter((_, i) => i !== cIdx && i !== cIdx + 1)
+			.filter((a) => a !== "-" && a !== "-l" && a !== "--login");
 		const targetUser = filteredArgs.find((a) => !a.startsWith("-")) ?? "root";
 
 		// Verify target user exists (create if missing, for auto-provisioning)
@@ -33,7 +34,10 @@ export const suCommand: ShellModule = {
 			if (authUser === "root") {
 				shell.users.ensureUser(targetUser);
 			} else {
-				return { stderr: `su: user '${targetUser}' does not exist\n`, exitCode: 1 };
+				return {
+					stderr: `su: user '${targetUser}' does not exist\n`,
+					exitCode: 1,
+				};
 			}
 		}
 

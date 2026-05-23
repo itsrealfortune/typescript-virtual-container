@@ -2,10 +2,14 @@ import type { ShellModule } from "../types/commands";
 import { parseArgs } from "./command-helpers";
 
 const isBrowser =
-	typeof process === "undefined" || typeof (process as NodeJS.Process).versions?.node === "undefined";
+	typeof process === "undefined" ||
+	typeof (process as NodeJS.Process).versions?.node === "undefined";
 
 /** Lazily import execSync — avoids static import that breaks browser polyfills. */
-async function execPing(count: number, host: string): Promise<{ stdout: string } | { stderr: string } | null> {
+async function execPing(
+	count: number,
+	host: string,
+): Promise<{ stdout: string } | { stderr: string } | null> {
 	try {
 		const { execSync } = await import("node:child_process");
 		const output = execSync(`ping -c ${count} ${host}`, {
@@ -15,8 +19,11 @@ async function execPing(count: number, host: string): Promise<{ stdout: string }
 		});
 		return { stdout: output as string };
 	} catch (err: unknown) {
-		const stderrMsg = err instanceof Error ? (err as Error & { stderr?: string }).stderr : "";
-		if (stderrMsg) { return { stderr: stderrMsg }; }
+		const stderrMsg =
+			err instanceof Error ? (err as Error & { stderr?: string }).stderr : "";
+		if (stderrMsg) {
+			return { stderr: stderrMsg };
+		}
 		return null;
 	}
 }
@@ -38,16 +45,22 @@ export const pingCommand: ShellModule = {
 		});
 		const host = positionals[0] ?? "localhost";
 		const countArg = flagsWithValues.get("-c");
-		const count = countArg ? Math.max(1, Number.parseInt(countArg, 10) || 4) : 4;
+		const count = countArg
+			? Math.max(1, Number.parseInt(countArg, 10) || 4)
+			: 4;
 
 		// Try real system ping first (Node.js only)
 		if (!isBrowser) {
 			const result = await execPing(count, host);
-			if (result) { return { ...result, exitCode: "stdout" in result ? 0 : 1 }; }
+			if (result) {
+				return { ...result, exitCode: "stdout" in result ? 0 : 1 };
+			}
 		}
 
 		// Fallback: VirtualNetworkManager simulation
-		const lines = [`PING ${host} (${host === "localhost" ? "127.0.0.1" : host}): 56 data bytes`];
+		const lines = [
+			`PING ${host} (${host === "localhost" ? "127.0.0.1" : host}): 56 data bytes`,
+		];
 		let transmitted = 0;
 		let received = 0;
 		for (let i = 0; i < count; i++) {
@@ -57,13 +70,17 @@ export const pingCommand: ShellModule = {
 				lines.push(`From ${host} icmp_seq=${i} Destination Host Unreachable`);
 			} else {
 				received++;
-				lines.push(`64 bytes from ${host}: icmp_seq=${i} ttl=64 time=${latency.toFixed(3)} ms`);
+				lines.push(
+					`64 bytes from ${host}: icmp_seq=${i} ttl=64 time=${latency.toFixed(3)} ms`,
+				);
 			}
 		}
 		const lost = transmitted - received;
 		const lossPct = ((lost / transmitted) * 100).toFixed(0);
 		lines.push(`--- ${host} ping statistics ---`);
-		lines.push(`${transmitted} packets transmitted, ${received} received, ${lossPct}% packet loss`);
+		lines.push(
+			`${transmitted} packets transmitted, ${received} received, ${lossPct}% packet loss`,
+		);
 		return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 	},
 };

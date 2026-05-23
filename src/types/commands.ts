@@ -62,7 +62,10 @@ export interface SudoChallenge {
 	 * Returns a `CommandResult` written to the terminal, or `null` to show
 	 * another prompt (pass `nextPrompt` to change the prompt text).
 	 */
-	onPassword?: (input: string, shell: VirtualShell) => Promise<{
+	onPassword?: (
+		input: string,
+		shell: VirtualShell,
+	) => Promise<{
 		result: CommandResult | null;
 		nextPrompt?: string;
 	}>;

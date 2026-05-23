@@ -16,9 +16,16 @@ export const conntrackCommand: ShellModule = {
 		if (args.includes("-L") || args.includes("--list") || args.length === 0) {
 			const entries = net.getConntrack();
 			if (entries.length === 0) {
-				return { stdout: "conntrack v1.4.6 (conntrack-tools): 0 flow entries have been shown.\n", exitCode: 0 };
+				return {
+					stdout:
+						"conntrack v1.4.6 (conntrack-tools): 0 flow entries have been shown.\n",
+					exitCode: 0,
+				};
 			}
-			return { stdout: `${net.formatConntrack()}\n\nconntrack v1.4.6 (conntrack-tools): ${entries.length} flow entries have been shown.\n`, exitCode: 0 };
+			return {
+				stdout: `${net.formatConntrack()}\n\nconntrack v1.4.6 (conntrack-tools): ${entries.length} flow entries have been shown.\n`,
+				exitCode: 0,
+			};
 		}
 
 		if (args.includes("-F") || args.includes("--flush")) {
@@ -49,7 +56,10 @@ export const conntrackCommand: ShellModule = {
 				return { stderr: "conntrack: no entries to delete\n", exitCode: 1 };
 			}
 			net.flushConntrack();
-			return { stdout: `${entries.length} flow entries have been deleted.\n`, exitCode: 0 };
+			return {
+				stdout: `${entries.length} flow entries have been deleted.\n`,
+				exitCode: 0,
+			};
 		}
 
 		if (args.includes("-U") || args.includes("--update")) {
@@ -65,7 +75,8 @@ export const conntrackCommand: ShellModule = {
 		}
 
 		return {
-			stderr: "Usage: conntrack [options]\nOptions:\n  -L, --list      List entries\n  -F, --flush     Flush entries\n  -C, --count     Count entries\n  -S, --stats     Show statistics\n  -E, --event     Listen for events\n  -D, --delete    Delete entries\n  -U, --update    Update entries\n  -I, --create    Create entry\n  -G, --get       Get entry",
+			stderr:
+				"Usage: conntrack [options]\nOptions:\n  -L, --list      List entries\n  -F, --flush     Flush entries\n  -C, --count     Count entries\n  -S, --stats     Show statistics\n  -E, --event     Listen for events\n  -D, --delete    Delete entries\n  -U, --update    Update entries\n  -I, --create    Create entry\n  -G, --get       Get entry",
 			exitCode: 1,
 		};
 	},

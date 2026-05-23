@@ -36,7 +36,9 @@ export const sortCommand: ShellModule = {
 
 		const lines = getContent().split("\n").filter(Boolean);
 		const sorted = [...lines].sort((a, b) => {
-			if (numeric) { return Number(a) - Number(b); }
+			if (numeric) {
+				return Number(a) - Number(b);
+			}
 			return a.localeCompare(b);
 		});
 		const result = reverse ? sorted.reverse() : sorted;

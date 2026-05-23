@@ -23,8 +23,12 @@ export const unameCommand: ShellModule = {
 				exitCode: 0,
 			};
 		}
-		if (ifFlag(args, ["-r"])) { return { stdout: release, exitCode: 0 }; }
-		if (ifFlag(args, ["-m"])) { return { stdout: machine, exitCode: 0 }; }
+		if (ifFlag(args, ["-r"])) {
+			return { stdout: release, exitCode: 0 };
+		}
+		if (ifFlag(args, ["-m"])) {
+			return { stdout: machine, exitCode: 0 };
+		}
 		return { stdout: sysname, exitCode: 0 };
 	},
 };

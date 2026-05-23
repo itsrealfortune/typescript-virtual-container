@@ -15,9 +15,12 @@ export const tailCommand: ShellModule = {
 	run: ({ authUser, shell, cwd, args, stdin }) => {
 		const nArg = getFlag(args, ["-n"]);
 		const shortN = args.find((a) => /^-\d+$/.test(a));
-		const n = typeof nArg === "string"
-			? Number.parseInt(nArg, 10)
-			: shortN ? Number.parseInt(shortN.slice(1), 10) : 10;
+		const n =
+			typeof nArg === "string"
+				? Number.parseInt(nArg, 10)
+				: shortN
+					? Number.parseInt(shortN.slice(1), 10)
+					: 10;
 		const positionals = args.filter(
 			(a) => !a.startsWith("-") && a !== nArg && a !== String(n),
 		);

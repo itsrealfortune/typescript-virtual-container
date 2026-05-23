@@ -35,7 +35,9 @@ export const lsbReleaseCommand: ShellModule = {
 						.trim();
 				}
 			}
-		} catch { /* /etc/os-release may not exist */ }
+		} catch {
+			/* /etc/os-release may not exist */
+		}
 
 		const all = ifFlag(args, ["-a", "--all"]);
 		const showId = ifFlag(args, ["-i", "--id"]);
@@ -56,10 +58,18 @@ export const lsbReleaseCommand: ShellModule = {
 		}
 
 		const lines: string[] = [];
-		if (showId) { lines.push("Distributor ID:\tFortune"); }
-		if (showDesc) { lines.push(`Description:\t${osName}`); }
-		if (showRelease) { lines.push(`Release:\t${version}`); }
-		if (showCodename) { lines.push(`Codename:\t${codename}`); }
+		if (showId) {
+			lines.push("Distributor ID:\tFortune");
+		}
+		if (showDesc) {
+			lines.push(`Description:\t${osName}`);
+		}
+		if (showRelease) {
+			lines.push(`Release:\t${version}`);
+		}
+		if (showCodename) {
+			lines.push(`Codename:\t${codename}`);
+		}
 
 		return { stdout: lines.join("\n"), exitCode: 0 };
 	},

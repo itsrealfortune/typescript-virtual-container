@@ -35,9 +35,15 @@ function matchFlagToken(
 
 	// Short flag inline value: -f2, -d: (single char flag like -f, -d, -n)
 	// Only applies to single-char flags (-X), not long flags (--flag)
-	if (flag.length === 2 && flag.startsWith("-") && !flag.startsWith("--") && token.startsWith(flag) && token.length > flag.length) {
-			return { matched: true, inlineValue: token.slice(flag.length) };
-		}
+	if (
+		flag.length === 2 &&
+		flag.startsWith("-") &&
+		!flag.startsWith("--") &&
+		token.startsWith(flag) &&
+		token.length > flag.length
+	) {
+		return { matched: true, inlineValue: token.slice(flag.length) };
+	}
 
 	return { matched: false, inlineValue: null };
 }

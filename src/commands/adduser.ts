@@ -58,7 +58,10 @@ export const adduserCommand: ShellModule = {
 				}
 				newPassword = input;
 				step = "retype";
-				return Promise.resolve({ result: null, nextPrompt: "Retype new password: " });
+				return Promise.resolve({
+					result: null,
+					nextPrompt: "Retype new password: ",
+				});
 			}
 
 			// step === "retype"

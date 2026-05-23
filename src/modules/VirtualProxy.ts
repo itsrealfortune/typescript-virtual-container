@@ -37,11 +37,19 @@ interface ForwardRule {
  * ```
  */
 export class VirtualProxy {
-	private readonly _baie: { getVM: (name: string) => VirtualShell | undefined; switch: VirtualSwitch; listVMs: () => Array<{ hostname: string; ip: string; shell: VirtualShell }> };
+	private readonly _baie: {
+		getVM: (name: string) => VirtualShell | undefined;
+		switch: VirtualSwitch;
+		listVMs: () => Array<{ hostname: string; ip: string; shell: VirtualShell }>;
+	};
 	private _forwards: ForwardRule[] = [];
 	private _socksServer: net.Server | null = null;
 
-	constructor(baie: { getVM: (name: string) => VirtualShell | undefined; switch: VirtualSwitch; listVMs: () => Array<{ hostname: string; ip: string; shell: VirtualShell }> }) {
+	constructor(baie: {
+		getVM: (name: string) => VirtualShell | undefined;
+		switch: VirtualSwitch;
+		listVMs: () => Array<{ hostname: string; ip: string; shell: VirtualShell }>;
+	}) {
 		this._baie = baie;
 	}
 
@@ -106,8 +114,16 @@ export class VirtualProxy {
 	 * List all active port forwards.
 	 * @returns The operation result.
 	 */
-	public listPorts(): Array<{ vmName: string; vmPort: number; hostPort: number }> {
-		return this._forwards.map((f) => ({ vmName: f.vmName, vmPort: f.vmPort, hostPort: f.hostPort }));
+	public listPorts(): Array<{
+		vmName: string;
+		vmPort: number;
+		hostPort: number;
+	}> {
+		return this._forwards.map((f) => ({
+			vmName: f.vmName,
+			vmPort: f.vmPort,
+			hostPort: f.hostPort,
+		}));
 	}
 
 	/**
@@ -117,7 +133,9 @@ export class VirtualProxy {
 	 * @param port - Local port for the SOCKS5 proxy.
 	 */
 	public startSocksProxy(port: number): void {
-		if (this._socksServer) { this._socksServer.close(); }
+		if (this._socksServer) {
+			this._socksServer.close();
+		}
 
 		this._socksServer = net.createServer((clientSocket) => {
 			clientSocket.once("data", (handshake: Buffer) => {
@@ -146,7 +164,9 @@ export class VirtualProxy {
 					if (atyp === 1) {
 						// IPv4
 						const octets: number[] = [];
-						for (let i = 0; i < 4; i++) { octets.push(request[4 + i] ?? 0); }
+						for (let i = 0; i < 4; i++) {
+							octets.push(request[4 + i] ?? 0);
+						}
 						dstHost = octets.join(".");
 						dstPort = ((request[8] as number) << 8) + (request[9] as number);
 					} else if (atyp === 3) {
@@ -192,7 +212,9 @@ export class VirtualProxy {
 	 * Stop the SOCKS5 proxy and all port forwards.
 	 */
 	public stop(): void {
-		for (const f of this._forwards) { f.server.close(); }
+		for (const f of this._forwards) {
+			f.server.close();
+		}
 		this._forwards = [];
 		if (this._socksServer) {
 			this._socksServer.close();

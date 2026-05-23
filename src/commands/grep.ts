@@ -14,15 +14,27 @@ export const grepCommand: ShellModule = {
 	params: ["[-i] [-v] [-n] [-r] <pattern> [file...]"],
 	run: ({ authUser, shell, cwd, args, stdin }) => {
 		const { flags, positionals } = parseArgs(args, {
-			flags: ["-i", "-v", "-n", "-r", "-c", "-l", "-L", "-q", "--quiet", "--silent"],
+			flags: [
+				"-i",
+				"-v",
+				"-n",
+				"-r",
+				"-c",
+				"-l",
+				"-L",
+				"-q",
+				"--quiet",
+				"--silent",
+			],
 		});
-		const caseInsensitive  = flags.has("-i");
-		const invertMatch      = flags.has("-v");
-		const showLineNumbers  = flags.has("-n");
-		const recursive        = flags.has("-r");
-		const countOnly        = flags.has("-c");
+		const caseInsensitive = flags.has("-i");
+		const invertMatch = flags.has("-v");
+		const showLineNumbers = flags.has("-n");
+		const recursive = flags.has("-r");
+		const countOnly = flags.has("-c");
 		const filesWithMatches = flags.has("-l");
-		const quiet            = flags.has("-q") || flags.has("--quiet") || flags.has("--silent");
+		const quiet =
+			flags.has("-q") || flags.has("--quiet") || flags.has("--silent");
 		const pattern = positionals[0];
 		const files = positionals.slice(1);
 
@@ -55,17 +67,26 @@ export const grepCommand: ShellModule = {
 		};
 
 		const readPaths = (base: string): string[] => {
-			if (!shell.vfs.exists(base)) { return []; }
+			if (!shell.vfs.exists(base)) {
+				return [];
+			}
 			const stat = shell.vfs.stat(base);
-			if (stat.type === "file") { return [base]; }
-			if (!recursive) { return []; }
+			if (stat.type === "file") {
+				return [base];
+			}
+			if (!recursive) {
+				return [];
+			}
 			const paths: string[] = [];
 			const walk = (dir: string) => {
 				for (const entry of shell.vfs.list(dir)) {
 					const full = `${dir}/${entry}`;
 					const s = shell.vfs.stat(full);
-					if (s.type === "file") { paths.push(full); }
-					else { walk(full); }
+					if (s.type === "file") {
+						paths.push(full);
+					} else {
+						walk(full);
+					}
 				}
 			};
 			walk(base);
@@ -75,10 +96,19 @@ export const grepCommand: ShellModule = {
 		const results: string[] = [];
 
 		if (files.length === 0) {
-			if (!stdin) { return { stdout: "", exitCode: 1 }; }
+			if (!stdin) {
+				return { stdout: "", exitCode: 1 };
+			}
 			const matched = matchLines(stdin);
-			if (countOnly) { return { stdout: `${matched.length}\n`, exitCode: matched.length > 0 ? 0 : 1 }; }
-			if (quiet) { return { exitCode: matched.length > 0 ? 0 : 1 }; }
+			if (countOnly) {
+				return {
+					stdout: `${matched.length}\n`,
+					exitCode: matched.length > 0 ? 0 : 1,
+				};
+			}
+			if (quiet) {
+				return { exitCode: matched.length > 0 ? 0 : 1 };
+			}
 			results.push(...matched);
 		} else {
 			const resolvedPaths = files.flatMap((f) => {
@@ -93,9 +123,15 @@ export const grepCommand: ShellModule = {
 					const prefix = resolvedPaths.length > 1 ? `${file}:` : "";
 					const matched = matchLines(content, prefix);
 					if (countOnly) {
-						results.push(resolvedPaths.length > 1 ? `${file}:${matched.length}` : String(matched.length));
+						results.push(
+							resolvedPaths.length > 1
+								? `${file}:${matched.length}`
+								: String(matched.length),
+						);
 					} else if (filesWithMatches) {
-						if (matched.length > 0) { results.push(file); }
+						if (matched.length > 0) {
+							results.push(file);
+						}
 					} else {
 						results.push(...matched);
 					}

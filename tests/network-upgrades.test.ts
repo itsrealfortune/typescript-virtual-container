@@ -25,15 +25,17 @@ describe("VirtualNetworkManager - Multiple Interfaces", () => {
 
 	test("addInterface rejects duplicate names", () => {
 		const net = new VirtualNetworkManager();
-		expect(net.addInterface({
-			name: "eth0",
-			type: "ether",
-			mac: "02:42:ac:11:00:02",
-			mtu: 1500,
-			ipv4: "192.168.1.2",
-			ipv4Mask: 24,
-			ipv6: "fe80::1",
-		})).toBe(false);
+		expect(
+			net.addInterface({
+				name: "eth0",
+				type: "ether",
+				mac: "02:42:ac:11:00:02",
+				mtu: 1500,
+				ipv4: "192.168.1.2",
+				ipv4Mask: 24,
+				ipv6: "fe80::1",
+			}),
+		).toBe(false);
 	});
 
 	test("removeInterface removes interface and related routes", () => {
@@ -97,7 +99,9 @@ describe("VirtualNetworkManager - Advanced Routing", () => {
 	test("addRouteToTable adds route to specific table", () => {
 		const net = new VirtualNetworkManager();
 		const id = net.addRoutingTable("custom");
-		expect(net.addRouteToTable("10.10.0.0", "10.0.0.1", "255.255.255.0", "eth0", id)).toBe(true);
+		expect(
+			net.addRouteToTable("10.10.0.0", "10.0.0.1", "255.255.255.0", "eth0", id),
+		).toBe(true);
 		const table = net.getRoutingTable(id);
 		expect(table?.routes.length).toBe(1);
 	});
@@ -117,7 +121,11 @@ describe("VirtualNetworkManager - Advanced Routing", () => {
 
 	test("delPolicyRule removes rule", () => {
 		const net = new VirtualNetworkManager();
-		const priority = net.addPolicyRule({ from: "10.0.0.0/8", table: 100, action: "lookup" });
+		const priority = net.addPolicyRule({
+			from: "10.0.0.0/8",
+			table: 100,
+			action: "lookup",
+		});
 		expect(net.delPolicyRule(priority)).toBe(true);
 		expect(net.listPolicyRules().length).toBe(0);
 	});
@@ -169,7 +177,12 @@ describe("VirtualNetworkManager - Connection Tracking", () => {
 
 	test("flushConntrack clears all entries", () => {
 		const net = new VirtualNetworkManager();
-		net.addConntrackEntry({ protocol: "tcp", srcIp: "10.0.0.2", dstIp: "10.0.0.1", state: "NEW" });
+		net.addConntrackEntry({
+			protocol: "tcp",
+			srcIp: "10.0.0.2",
+			dstIp: "10.0.0.1",
+			state: "NEW",
+		});
 		net.flushConntrack();
 		expect(net.getConntrackCount()).toBe(0);
 	});
@@ -207,7 +220,9 @@ describe("VirtualSwitch - Bandwidth Enforcement", () => {
 		const baie = new Baie("bw-test", "10.0.1.0/24");
 		void baie.createVM("test");
 		const port = baie.switch.getPorts().values().next().value;
-		if (!port) { return; }
+		if (!port) {
+			return;
+		}
 
 		baie.switch.setTrafficRule(port.mac, {
 			vms: ["test"],
@@ -245,8 +260,16 @@ describe("VirtualSwitch - Qdisc Rules", () => {
 
 	test("removeQdiscRule removes specific interface", () => {
 		const baie = new Baie("qdisc2", "10.0.1.0/24");
-		baie.switch.addQdiscRule("test-mac", { interface: "eth0", type: "netem", latencyMs: 50 });
-		baie.switch.addQdiscRule("test-mac", { interface: "eth1", type: "tbf", rateMbps: 10 });
+		baie.switch.addQdiscRule("test-mac", {
+			interface: "eth0",
+			type: "netem",
+			latencyMs: 50,
+		});
+		baie.switch.addQdiscRule("test-mac", {
+			interface: "eth1",
+			type: "tbf",
+			rateMbps: 10,
+		});
 		baie.switch.removeQdiscRule("test-mac", "eth0");
 		const rules = baie.switch.getQdiscRules("test-mac");
 		expect(rules.length).toBe(1);
@@ -266,7 +289,9 @@ describe("VirtualSwitch - Packet Reordering", () => {
 		const baie = new Baie("reorder", "10.0.1.0/24");
 		void baie.createVM("test");
 		const port = baie.switch.getPorts().values().next().value;
-		if (!port) { return; }
+		if (!port) {
+			return;
+		}
 
 		baie.switch.addQdiscRule(port.mac, {
 			interface: "eth0",
@@ -292,7 +317,9 @@ describe("VirtualSwitch - MTU Enforcement", () => {
 		const baie = new Baie("mtu", "10.0.1.0/24");
 		void baie.createVM("test");
 		const port = baie.switch.getPorts().values().next().value;
-		if (!port) { return; }
+		if (!port) {
+			return;
+		}
 
 		const result = await baie.switch.route({
 			srcIp: port.ip,
@@ -313,7 +340,9 @@ describeNetwork("VirtualSwitch - Gaussian Jitter", () => {
 		const baie = new Baie("jitter", "10.0.1.0/24");
 		void baie.createVM("test");
 		const port = baie.switch.getPorts().values().next().value;
-		if (!port) { return; }
+		if (!port) {
+			return;
+		}
 
 		baie.switch.setTrafficRule(port.mac, {
 			vms: ["test"],

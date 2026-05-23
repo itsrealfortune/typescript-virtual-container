@@ -11,9 +11,11 @@ export const timeoutCommand: ShellModule = {
 	description: "Run command with time limit",
 	category: "shell",
 	params: ["<duration>", "<command>", "[args...]"],
-	run:  async ({ args, authUser, hostname, mode, cwd, shell, env, stdin }) => {
+	run: async ({ args, authUser, hostname, mode, cwd, shell, env, stdin }) => {
 		// First arg is duration (ignored in simulation), rest is the command
-		if (args.length < 2) { return { stderr: "timeout: missing operand", exitCode: 1 }; }
+		if (args.length < 2) {
+			return { stderr: "timeout: missing operand", exitCode: 1 };
+		}
 		const { runCommand } = await import("./runtime");
 		const cmd = args.slice(1).join(" ");
 		return runCommand(cmd, authUser, hostname, mode, cwd, shell, stdin, env);
@@ -32,7 +34,8 @@ export const mktempCommand: ShellModule = {
 	params: ["[-d]", "[TEMPLATE]"],
 	run: ({ args, shell, authUser }) => {
 		const isDir = args.includes("-d");
-		const templateArg = args.find((a) => !a.startsWith("-")) ?? "tmp.XXXXXXXXXX";
+		const templateArg =
+			args.find((a) => !a.startsWith("-")) ?? "tmp.XXXXXXXXXX";
 		const suffix = templateArg.replace(/X+$/, "") || "tmp.";
 		const rand = Math.random().toString(36).slice(2, 10);
 		const name = `${suffix}${rand}`;
@@ -41,14 +44,19 @@ export const mktempCommand: ShellModule = {
 		const gid = shell.users.getGid(authUser);
 
 		try {
-			if (!shell.vfs.exists("/tmp")) { shell.vfs.mkdir("/tmp", 0o1777, 0, 0); }
+			if (!shell.vfs.exists("/tmp")) {
+				shell.vfs.mkdir("/tmp", 0o1777, 0, 0);
+			}
 			if (isDir) {
 				shell.vfs.mkdir(path, 0o700, uid, gid);
 			} else {
 				shell.vfs.writeFile(path, "", {}, uid, gid);
 			}
 		} catch {
-			return { stderr: `mktemp: failed to create ${isDir ? "directory" : "file"} via template '${templateArg}'`, exitCode: 1 };
+			return {
+				stderr: `mktemp: failed to create ${isDir ? "directory" : "file"} via template '${templateArg}'`,
+				exitCode: 1,
+			};
 		}
 		return { stdout: path, exitCode: 0 };
 	},
@@ -95,23 +103,27 @@ export const shufCommand: ShellModule = {
 	category: "text",
 	params: ["[-n count]", "[-i lo-hi]", "[file]"],
 	run: ({ args, stdin, shell, cwd }) => {
-
 		// -i lo-hi: generate range
 		const iIdx = args.indexOf("-i");
 		if (iIdx !== -1) {
 			const range = args[iIdx + 1] ?? "";
 			const m = range.match(/^(-?\d+)-(-?\d+)$/);
-			if (!m) { return { stderr: "shuf: invalid range", exitCode: 1 }; }
+			if (!m) {
+				return { stderr: "shuf: invalid range", exitCode: 1 };
+			}
 			const lo = Number.parseInt(m[1] as string, 10);
 			const hi = Number.parseInt(m[2] as string, 10);
 			const nums: number[] = [];
-			for (let n = lo; n <= hi; n++) { nums.push(n); }
+			for (let n = lo; n <= hi; n++) {
+				nums.push(n);
+			}
 			for (let i = nums.length - 1; i > 0; i--) {
 				const j = Math.floor(Math.random() * (i + 1));
 				[nums[i], nums[j]] = [nums[j] as number, nums[i] as number];
 			}
 			const nIdx = args.indexOf("-n");
-			const count = nIdx === -1 ? nums.length : Number.parseInt(args[nIdx + 1] ?? "0", 10);
+			const count =
+				nIdx === -1 ? nums.length : Number.parseInt(args[nIdx + 1] ?? "0", 10);
 			return { stdout: nums.slice(0, count).join("\n"), exitCode: 0 };
 		}
 
@@ -120,7 +132,12 @@ export const shufCommand: ShellModule = {
 		const fileArg = args.find((a) => !a.startsWith("-"));
 		if (fileArg) {
 			const p = resolvePath(cwd ?? "/", fileArg);
-			if (!shell.vfs.exists(p)) { return { stderr: `shuf: ${fileArg}: No such file or directory`, exitCode: 1 }; }
+			if (!shell.vfs.exists(p)) {
+				return {
+					stderr: `shuf: ${fileArg}: No such file or directory`,
+					exitCode: 1,
+				};
+			}
 			input = shell.vfs.readFile(p);
 		}
 		const lines = input.split("\n").filter((l) => l !== "");
@@ -129,7 +146,8 @@ export const shufCommand: ShellModule = {
 			[lines[i], lines[j]] = [lines[j] as string, lines[i] as string];
 		}
 		const nIdx = args.indexOf("-n");
-		const count = nIdx === -1 ? lines.length : Number.parseInt(args[nIdx + 1] ?? "0", 10);
+		const count =
+			nIdx === -1 ? lines.length : Number.parseInt(args[nIdx + 1] ?? "0", 10);
 		return { stdout: lines.slice(0, count).join("\n"), exitCode: 0 };
 	},
 };
@@ -145,13 +163,17 @@ export const pasteCommand: ShellModule = {
 	category: "text",
 	params: ["[-d delimiter]", "file..."],
 	run: ({ args, stdin, shell, cwd }) => {
-
 		let delim = "\t";
 		const files: string[] = [];
 		let i = 0;
 		while (i < args.length) {
-			if (args[i] === "-d" && args[i + 1]) { delim = args[i + 1] as string; i += 2; }
-			else { files.push(args[i] as string); i++; }
+			if (args[i] === "-d" && args[i + 1]) {
+				delim = args[i + 1] as string;
+				i += 2;
+			} else {
+				files.push(args[i] as string);
+				i++;
+			}
 		}
 
 		// serial mode (-s not implemented; basic merge)
@@ -161,7 +183,9 @@ export const pasteCommand: ShellModule = {
 		} else {
 			sources = files.map((f) => {
 				const p = resolvePath(cwd ?? "/", f);
-				if (!shell.vfs.exists(p)) { return []; }
+				if (!shell.vfs.exists(p)) {
+					return [];
+				}
 				return shell.vfs.readFile(p).split("\n");
 			});
 		}
@@ -185,20 +209,26 @@ export const tacCommand: ShellModule = {
 	category: "text",
 	params: ["[file...]"],
 	run: ({ args, stdin, shell, cwd }) => {
-
 		let input = "";
 		if (args.length === 0 || (args.length === 1 && args[0] === "-")) {
 			input = stdin ?? "";
 		} else {
 			for (const f of args) {
 				const p = resolvePath(cwd ?? "/", f);
-				if (!shell.vfs.exists(p)) { return { stderr: `tac: ${f}: No such file or directory`, exitCode: 1 }; }
+				if (!shell.vfs.exists(p)) {
+					return {
+						stderr: `tac: ${f}: No such file or directory`,
+						exitCode: 1,
+					};
+				}
 				input += shell.vfs.readFile(p);
 			}
 		}
 		const lines = input.split("\n");
 		// preserve trailing newline behaviour
-		if (lines[lines.length - 1] === "") { lines.pop(); }
+		if (lines[lines.length - 1] === "") {
+			lines.pop();
+		}
 		return { stdout: lines.reverse().join("\n"), exitCode: 0 };
 	},
 };
@@ -214,19 +244,27 @@ export const nlCommand: ShellModule = {
 	category: "text",
 	params: ["[-ba] [-nrz] [file]"],
 	run: ({ args, stdin, shell, cwd }) => {
-
 		const fileArg = args.find((a) => !a.startsWith("-"));
 		let input = stdin ?? "";
 		if (fileArg) {
 			const p = resolvePath(cwd ?? "/", fileArg);
-			if (!shell.vfs.exists(p)) { return { stderr: `nl: ${fileArg}: No such file or directory`, exitCode: 1 }; }
+			if (!shell.vfs.exists(p)) {
+				return {
+					stderr: `nl: ${fileArg}: No such file or directory`,
+					exitCode: 1,
+				};
+			}
 			input = shell.vfs.readFile(p);
 		}
 		const lines = input.split("\n");
-		if (lines[lines.length - 1] === "") { lines.pop(); }
+		if (lines[lines.length - 1] === "") {
+			lines.pop();
+		}
 		let n = 1;
 		const out = lines.map((l) => {
-			if (l.trim() === "") { return `\t${l}`; }
+			if (l.trim() === "") {
+				return `\t${l}`;
+			}
 			return `${String(n++).padStart(6)}\t${l}`;
 		});
 		return { stdout: out.join("\n"), exitCode: 0 };
@@ -244,21 +282,29 @@ export const columnCommand: ShellModule = {
 	category: "text",
 	params: ["[-t]", "[-s sep]", "[file]"],
 	run: ({ args, stdin, shell, cwd }) => {
-
 		const tableMode = args.includes("-t");
 		const sIdx = args.indexOf("-s");
 		const sep = sIdx === -1 ? /\s+/ : (args[sIdx + 1] ?? "\t");
-		const fileArg = args.find((a) => !a.startsWith("-") && a !== args[sIdx + 1]);
+		const fileArg = args.find(
+			(a) => !a.startsWith("-") && a !== args[sIdx + 1],
+		);
 		let input = stdin ?? "";
 		if (fileArg) {
 			const p = resolvePath(cwd ?? "/", fileArg);
-			if (!shell.vfs.exists(p)) { return { stderr: `column: ${fileArg}: No such file or directory`, exitCode: 1 }; }
+			if (!shell.vfs.exists(p)) {
+				return {
+					stderr: `column: ${fileArg}: No such file or directory`,
+					exitCode: 1,
+				};
+			}
 			input = shell.vfs.readFile(p);
 		}
 		const lines = input.split("\n").filter((l) => l !== "");
 
 		if (tableMode) {
-			const rows = lines.map((l) => (typeof sep === "string" ? l.split(sep) : l.split(sep)));
+			const rows = lines.map((l) =>
+				typeof sep === "string" ? l.split(sep) : l.split(sep),
+			);
 			const colWidths: number[] = [];
 			for (const row of rows) {
 				row.forEach((cell, ci) => {
@@ -266,7 +312,10 @@ export const columnCommand: ShellModule = {
 				});
 			}
 			const out = rows.map((row) =>
-				row.map((cell, ci) => cell.padEnd(colWidths[ci] ?? 0)).join("  ").trimEnd(),
+				row
+					.map((cell, ci) => cell.padEnd(colWidths[ci] ?? 0))
+					.join("  ")
+					.trimEnd(),
 			);
 			return { stdout: out.join("\n"), exitCode: 0 };
 		}

@@ -27,7 +27,13 @@ export const mvCommand: ShellModule = {
 
 		try {
 			checkFilePermission(shell.vfs, shell.users, authUser, srcPath, 2);
-			checkFilePermission(shell.vfs, shell.users, authUser, path.posix.dirname(destPath), 2);
+			checkFilePermission(
+				shell.vfs,
+				shell.users,
+				authUser,
+				path.posix.dirname(destPath),
+				2,
+			);
 
 			if (!shell.vfs.exists(srcPath)) {
 				return {

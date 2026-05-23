@@ -13,13 +13,17 @@ export const pgrepCommand: ShellModule = {
 	run: ({ activeSessions, args }) => {
 		const useFull = args.includes("-f");
 		const pattern = args.find((a) => !a.startsWith("-"));
-		if (!pattern) { return { stderr: "pgrep: missing pattern\n", exitCode: 1 }; }
+		if (!pattern) {
+			return { stderr: "pgrep: missing pattern\n", exitCode: 1 };
+		}
 		try {
 			const re = new RegExp(pattern);
 			const results: string[] = [];
 			for (let i = 0; i < activeSessions.length; i++) {
 				const s = activeSessions[i];
-				if (s === undefined) { continue; }
+				if (s === undefined) {
+					continue;
+				}
 				const target = useFull
 					? `${s.username} ${s.tty} ${s.remoteAddress} ${s.id}`
 					: s.username;
@@ -27,7 +31,9 @@ export const pgrepCommand: ShellModule = {
 					results.push(String(1000 + i));
 				}
 			}
-			if (results.length === 0) { return { exitCode: 1 }; }
+			if (results.length === 0) {
+				return { exitCode: 1 };
+			}
 			return { stdout: `${results.join("\n")}\n`, exitCode: 0 };
 		} catch {
 			return { stderr: "pgrep: invalid pattern\n", exitCode: 2 };
@@ -48,7 +54,9 @@ export const pkillCommand: ShellModule = {
 	run: ({ activeSessions, shell, args }) => {
 		const useFull = args.includes("-f");
 		const pattern = args.find((a) => !a.startsWith("-"));
-		if (!pattern) { return { stderr: "pkill: missing pattern\n", exitCode: 1 }; }
+		if (!pattern) {
+			return { stderr: "pkill: missing pattern\n", exitCode: 1 };
+		}
 		try {
 			const re = new RegExp(pattern);
 			let killed = 0;
@@ -61,7 +69,9 @@ export const pkillCommand: ShellModule = {
 					killed++;
 				}
 			}
-			if (killed === 0) { return { exitCode: 1 }; }
+			if (killed === 0) {
+				return { exitCode: 1 };
+			}
 			return { stdout: `killed ${killed} process(es)\n`, exitCode: 0 };
 		} catch {
 			return { stderr: "pkill: invalid pattern\n", exitCode: 2 };

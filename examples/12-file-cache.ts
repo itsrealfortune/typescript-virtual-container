@@ -1,6 +1,6 @@
 /**
  * 12 - File Cache with Disk I/O Simulation
- * 
+ *
  * Demonstrates the VFS file cache with configurable eviction policies
  * (LRU, LFU, FIFO) and simulated disk read/write latencies.
  */
@@ -27,7 +27,10 @@ const vfs = new VirtualFileSystem({
 console.log("--- Write files ---");
 
 vfs.writeFile("/etc/config.txt", "database_host=localhost\ndatabase_port=5432");
-vfs.writeFile("/var/log/app.log", "INFO: Application started\nINFO: Listening on port 3000");
+vfs.writeFile(
+	"/var/log/app.log",
+	"INFO: Application started\nINFO: Listening on port 3000",
+);
 vfs.writeFile("/tmp/data.bin", Buffer.alloc(10000, 0x42));
 
 // ── First read (populates cache) ───────────────────────────────────
@@ -65,7 +68,10 @@ console.log("Preloaded 2 files into cache");
 // ── Cache invalidation on write ────────────────────────────────────
 console.log("\n--- Cache invalidation on write ---");
 
-vfs.writeFile("/etc/config.txt", "database_host=production-db\ndatabase_port=5433");
+vfs.writeFile(
+	"/etc/config.txt",
+	"database_host=production-db\ndatabase_port=5433",
+);
 console.log("Wrote new config -- cache invalidated");
 
 const fresh = vfs.readFile("/etc/config.txt");

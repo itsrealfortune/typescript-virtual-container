@@ -1,6 +1,6 @@
 /**
  * 13 - Process Scheduler with Priority-Based CPU Allocation
- * 
+ *
  * Demonstrates the full scheduler API: nice values, CFS weights,
  * fair-share enforcement, timeslice calculation, process registration,
  * priority changes, CPU accounting, and scheduler statistics.
@@ -30,7 +30,15 @@ console.log("\n--- Nice value to Priority mapping ---");
 
 const niceValues = [-20, -15, -10, -5, 0, 5, 10, 15, 19];
 for (const nice of niceValues) {
-	const pid = shell.users.registerProcess("root", "test", ["test"], "pts/0", undefined, 1, nice);
+	const pid = shell.users.registerProcess(
+		"root",
+		"test",
+		["test"],
+		"pts/0",
+		undefined,
+		1,
+		nice,
+	);
 	const priority = shell.users.getProcessPriority(pid);
 	shell.users.unregisterProcess(pid);
 	console.log(`  nice ${String(nice).padStart(3)} -> ${priority.padEnd(12)}`);
@@ -42,15 +50,29 @@ console.log("\n--- Process registration ---");
 const processes = [
 	{ name: "nginx", nice: -10, cmd: ["nginx", "-g", "daemon off;"] },
 	{ name: "node", nice: 0, cmd: ["node", "server.js"] },
-	{ name: "backup", nice: 15, cmd: ["tar", "-czf", "/backup/full.tar.gz", "/"] },
+	{
+		name: "backup",
+		nice: 15,
+		cmd: ["tar", "-czf", "/backup/full.tar.gz", "/"],
+	},
 	{ name: "cron", nice: 19, cmd: ["cron", "-f"] },
 ];
 
 const pids: number[] = [];
 for (const proc of processes) {
-	const pid = shell.users.registerProcess("root", proc.name, proc.cmd, "pts/0", undefined, 1, proc.nice);
+	const pid = shell.users.registerProcess(
+		"root",
+		proc.name,
+		proc.cmd,
+		"pts/0",
+		undefined,
+		1,
+		proc.nice,
+	);
 	pids.push(pid);
-	console.log(`  PID ${pid}: ${proc.name} (nice ${proc.nice}, priority: ${shell.users.getProcessPriority(pid)})`);
+	console.log(
+		`  PID ${pid}: ${proc.name} (nice ${proc.nice}, priority: ${shell.users.getProcessPriority(pid)})`,
+	);
 }
 
 // ── CPU accounting ─────────────────────────────────────────────────
@@ -67,10 +89,14 @@ for (const pid of pids) {
 console.log("\n--- Priority boosting ---");
 
 const backupPid = pids.find((pid) => shell.users.getProcessNice(pid) === 15)!;
-console.log(`  Before: PID ${backupPid} nice=${shell.users.getProcessNice(backupPid)}, priority=${shell.users.getProcessPriority(backupPid)}`);
+console.log(
+	`  Before: PID ${backupPid} nice=${shell.users.getProcessNice(backupPid)}, priority=${shell.users.getProcessPriority(backupPid)}`,
+);
 
 shell.users.setProcessNice(backupPid, -5);
-console.log(`  After:  PID ${backupPid} nice=${shell.users.getProcessNice(backupPid)}, priority=${shell.users.getProcessPriority(backupPid)}`);
+console.log(
+	`  After:  PID ${backupPid} nice=${shell.users.getProcessNice(backupPid)}, priority=${shell.users.getProcessPriority(backupPid)}`,
+);
 
 // ── Scheduler statistics ───────────────────────────────────────────
 console.log("\n--- Scheduler statistics ---");

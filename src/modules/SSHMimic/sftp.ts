@@ -12,11 +12,9 @@ import type { VirtualUserManager } from "../VirtualUserManager";
 import { loadOrCreateHostKey } from "./hostKey";
 // ── Dev-mode logger — silent in production ────────────────────────────────────
 const DEV = Boolean(process.env.DEV_MODE);
-const devLog  = DEV ? console.log.bind(console)  : () => {};
+const devLog = DEV ? console.log.bind(console) : () => {};
 const devWarn = DEV ? console.warn.bind(console) : () => {};
-const devErr  = DEV ? console.error.bind(console): () => {};
-
-
+const devErr = DEV ? console.error.bind(console) : () => {};
 
 const SFTP_STATUS_CODE = {
 	OK: 0,
@@ -236,7 +234,9 @@ export class SftpMimic extends EventEmitter {
 	 */
 	public async start(): Promise<number> {
 		if (this.port === undefined) {
-			throw new Error("SftpMimic: cannot start — no port configured (this instance is a subsystem handler only)");
+			throw new Error(
+				"SftpMimic: cannot start — no port configured (this instance is a subsystem handler only)",
+			);
 		}
 		perf.mark("start");
 		const privateKey = loadOrCreateHostKey();
@@ -381,10 +381,7 @@ export class SftpMimic extends EventEmitter {
 
 						// Add error handling for the session
 						session.on("error", (error: unknown) => {
-							devErr(
-								`[SFTP] Session error for user=${authUser}:`,
-								error,
-							);
+							devErr(`[SFTP] Session error for user=${authUser}:`, error);
 						});
 
 						session.on("sftp", (acceptSftp) => {
@@ -433,7 +430,10 @@ export class SftpMimic extends EventEmitter {
 	 * @param authUser - The authenticated username.
 	 * @returns The result string.
 	 */
-	private static _resolveRequestPath(requestPath: string, authUser: string): string {
+	private static _resolveRequestPath(
+		requestPath: string,
+		authUser: string,
+	): string {
 		const homePath = userHome(authUser);
 
 		// Empty path or "." → resolve to home directory
@@ -457,7 +457,10 @@ export class SftpMimic extends EventEmitter {
 	 * @param authUser - The authenticated username
 	 * @returns true if path is within home, false if traversal attempt detected
 	 */
-	private static _isPathWithinHome(targetPath: string, authUser: string): boolean {
+	private static _isPathWithinHome(
+		targetPath: string,
+		authUser: string,
+	): boolean {
 		const homePath = userHome(authUser);
 		const normalized = path.posix.normalize(targetPath);
 
@@ -887,7 +890,10 @@ export class SftpMimic extends EventEmitter {
 
 			// Security: Confine both source and destination to home directory
 			if (
-				!(SftpMimic._isPathWithinHome(fromPath, authUser) &&SftpMimic._isPathWithinHome(toPath, authUser))
+				!(
+					SftpMimic._isPathWithinHome(fromPath, authUser) &&
+					SftpMimic._isPathWithinHome(toPath, authUser)
+				)
 			) {
 				devWarn(
 					`[SFTP] Path traversal attempt blocked: user=${authUser}, from=${fromPath}, to=${toPath}`,

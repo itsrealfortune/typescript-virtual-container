@@ -11,7 +11,9 @@ export const aliasCommand: ShellModule = {
 	category: "shell",
 	params: ["[name[=value] ...]"],
 	run: ({ args, env }) => {
-		if (!env) { return { exitCode: 0 }; }
+		if (!env) {
+			return { exitCode: 0 };
+		}
 
 		// Aliases stored in env.vars under prefix __alias_
 		if (args.length === 0) {
@@ -27,8 +29,11 @@ export const aliasCommand: ShellModule = {
 			if (eq === -1) {
 				// Display single alias
 				const val = env.vars[`__alias_${arg}`];
-				if (val) { lines.push(`alias ${arg}='${val}'`); }
-				else { return { stderr: `alias: ${arg}: not found`, exitCode: 1 }; }
+				if (val) {
+					lines.push(`alias ${arg}='${val}'`);
+				} else {
+					return { stderr: `alias: ${arg}: not found`, exitCode: 1 };
+				}
 			} else {
 				// Set alias
 				const name = arg.slice(0, eq);
@@ -52,11 +57,15 @@ export const unaliasCommand: ShellModule = {
 	category: "shell",
 	params: ["<name...> | -a"],
 	run: ({ args, env }) => {
-		if (!env) { return { exitCode: 0 }; }
+		if (!env) {
+			return { exitCode: 0 };
+		}
 
 		if (ifFlag(args, ["-a"])) {
 			for (const k of Object.keys(env.vars)) {
-				if (k.startsWith("__alias_")) { delete env.vars[k]; }
+				if (k.startsWith("__alias_")) {
+					delete env.vars[k];
+				}
 			}
 			return { exitCode: 0 };
 		}

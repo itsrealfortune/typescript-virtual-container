@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { Baie, VirtualProxy, VirtualVpn, } from "../src";
+import { Baie, VirtualProxy, VirtualVpn } from "../src";
 
 describe("Baie", () => {
 	test("createVM assigns IP from subnet", async () => {
@@ -122,7 +122,12 @@ describe("VirtualSwitch", () => {
 	test("removeLoadBalancer removes the rule", () => {
 		const baie = new Baie("lb3", "10.0.1.0/24");
 		const sw = baie.switch;
-		sw.addLoadBalancer({ name: "x", port: 80, targets: [{ hostname: "a", port: 80, weight: 1 }], algorithm: "round-robin" });
+		sw.addLoadBalancer({
+			name: "x",
+			port: 80,
+			targets: [{ hostname: "a", port: 80, weight: 1 }],
+			algorithm: "round-robin",
+		});
 		sw.removeLoadBalancer("x");
 		expect(sw.resolveLoadBalancer(80)).toBeNull();
 	});
@@ -172,7 +177,10 @@ describe("VirtualVpn", () => {
 	test("creates tunnel between two Baie instances", () => {
 		const paris = new Baie("paris", "10.0.1.0/24");
 		const tokyo = new Baie("tokyo", "10.0.2.0/24");
-		const vpn = new VirtualVpn(paris, tokyo, { key: "test-key", latencyMs: 10 });
+		const vpn = new VirtualVpn(paris, tokyo, {
+			key: "test-key",
+			latencyMs: 10,
+		});
 		expect(vpn).toBeDefined();
 	});
 

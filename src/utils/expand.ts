@@ -23,15 +23,23 @@ import { globToRegex } from "./glob";
 // Memoized shell-pattern → RegExp for ${VAR//pat/rep} etc. forms.
 // Key encodes anchor/greedy options to keep separate caches per form.
 const _shellPatCache = new Map<string, RegExp>();
-function shellPatToRegex(pat: string, anchor: "none" | "prefix" | "suffix", greedy: boolean, global = false): RegExp {
+function shellPatToRegex(
+	pat: string,
+	anchor: "none" | "prefix" | "suffix",
+	greedy: boolean,
+	global = false,
+): RegExp {
 	const key = `${anchor}:${greedy ? "g" : "s"}:${global ? "G" : ""}:${pat}`;
 	let re = _shellPatCache.get(key);
-	if (re) { return re; }
+	if (re) {
+		return re;
+	}
 	const esc = pat.replace(/[.+^${}()|[\]\\]/g, "\\$&");
 	const body = greedy
 		? esc.replace(/\*/g, ".*").replace(/\?/g, ".")
 		: esc.replace(/\*/g, "[^/]*").replace(/\?/g, ".");
-	const src = anchor === "prefix" ? `^${body}` : anchor === "suffix" ? `${body}$` : body;
+	const src =
+		anchor === "prefix" ? `^${body}` : anchor === "suffix" ? `${body}$` : body;
 	re = new RegExp(src, global ? "g" : "");
 	_shellPatCache.set(key, re);
 	return re;
@@ -41,9 +49,22 @@ function shellPatToRegex(pat: string, anchor: "none" | "prefix" | "suffix", gree
 
 type ArithToken =
 	| { type: "number"; value: number }
-	| { type: "plus" | "minus" | "mul" | "div" | "mod" | "pow" | "lparen" | "rparen" };
+	| {
+			type:
+				| "plus"
+				| "minus"
+				| "mul"
+				| "div"
+				| "mod"
+				| "pow"
+				| "lparen"
+				| "rparen";
+	  };
 
-function tokenizeArith(expr: string, env: Record<string, string>): ArithToken[] {
+function tokenizeArith(
+	expr: string,
+	env: Record<string, string>,
+): ArithToken[] {
 	const tokens: ArithToken[] = [];
 	let i = 0;
 	while (i < expr.length) {
@@ -52,32 +73,67 @@ function tokenizeArith(expr: string, env: Record<string, string>): ArithToken[] 
 			i++;
 			continue;
 		}
-		if (ch === "+") { tokens.push({ type: "plus" }); i++; continue; }
-		if (ch === "-") { tokens.push({ type: "minus" }); i++; continue; }
+		if (ch === "+") {
+			tokens.push({ type: "plus" });
+			i++;
+			continue;
+		}
+		if (ch === "-") {
+			tokens.push({ type: "minus" });
+			i++;
+			continue;
+		}
 		if (ch === "*") {
-			if (expr[i + 1] === "*") { tokens.push({ type: "pow" }); i += 2; continue; }
+			if (expr[i + 1] === "*") {
+				tokens.push({ type: "pow" });
+				i += 2;
+				continue;
+			}
 			tokens.push({ type: "mul" });
 			i++;
 			continue;
 		}
-		if (ch === "/") { tokens.push({ type: "div" }); i++; continue; }
-		if (ch === "%") { tokens.push({ type: "mod" }); i++; continue; }
-		if (ch === "(") { tokens.push({ type: "lparen" }); i++; continue; }
-		if (ch === ")") { tokens.push({ type: "rparen" }); i++; continue; }
+		if (ch === "/") {
+			tokens.push({ type: "div" });
+			i++;
+			continue;
+		}
+		if (ch === "%") {
+			tokens.push({ type: "mod" });
+			i++;
+			continue;
+		}
+		if (ch === "(") {
+			tokens.push({ type: "lparen" });
+			i++;
+			continue;
+		}
+		if (ch === ")") {
+			tokens.push({ type: "rparen" });
+			i++;
+			continue;
+		}
 		if (/\d/.test(ch)) {
 			let j = i + 1;
-			while (j < expr.length && /\d/.test(expr.charAt(j))) { j++; }
+			while (j < expr.length && /\d/.test(expr.charAt(j))) {
+				j++;
+			}
 			tokens.push({ type: "number", value: Number(expr.slice(i, j)) });
 			i = j;
 			continue;
 		}
 		if (/[A-Za-z_]/.test(ch)) {
 			let j = i + 1;
-			while (j < expr.length && /[A-Za-z0-9_]/.test(expr.charAt(j))) { j++; }
+			while (j < expr.length && /[A-Za-z0-9_]/.test(expr.charAt(j))) {
+				j++;
+			}
 			const name = expr.slice(i, j);
 			const raw = env[name];
 			const value = raw === undefined || raw === "" ? 0 : Number(raw);
-			tokens.push({ type: "number", value: Number.isFinite(value) ? value : 0 });
+			tokens.push({
+				type: "number",
+				value: Number.isFinite(value) ? value : 0,
+			});
 			i = j;
 			continue;
 		}
@@ -94,9 +150,13 @@ function tokenizeArith(expr: string, env: Record<string, string>): ArithToken[] 
  */
 export function evalArith(expr: string, env: Record<string, string>): number {
 	const trimmed = expr.trim();
-	if (trimmed.length === 0 || trimmed.length > 1024) { return Number.NaN; }
+	if (trimmed.length === 0 || trimmed.length > 1024) {
+		return Number.NaN;
+	}
 	const tokens = tokenizeArith(trimmed, env);
-	if (tokens.length === 0) { return Number.NaN; }
+	if (tokens.length === 0) {
+		return Number.NaN;
+	}
 
 	let index = 0;
 
@@ -105,11 +165,17 @@ export function evalArith(expr: string, env: Record<string, string>): number {
 
 	const parsePrimary = (): number => {
 		const token = consume();
-		if (!token) { return Number.NaN; }
-		if (token.type === "number") { return token.value; }
+		if (!token) {
+			return Number.NaN;
+		}
+		if (token.type === "number") {
+			return token.value;
+		}
 		if (token.type === "lparen") {
 			const value = parseExpression();
-			if (tokens[index]?.type !== "rparen") { return Number.NaN; }
+			if (tokens[index]?.type !== "rparen") {
+				return Number.NaN;
+			}
 			index++;
 			return value;
 		}
@@ -183,7 +249,9 @@ export function evalArith(expr: string, env: Record<string, string>): number {
 	};
 
 	const result = parseExpression();
-	if (!Number.isFinite(result) || index !== tokens.length) { return Number.NaN; }
+	if (!Number.isFinite(result) || index !== tokens.length) {
+		return Number.NaN;
+	}
 	return Math.trunc(result);
 }
 
@@ -198,7 +266,9 @@ function outsideSingleQuotes(
 	replacer: (chunk: string) => string,
 ): string {
 	// Fast path: no single quotes → apply replacer to whole string, no allocation
-	if (!input.includes("'")) { return replacer(input); }
+	if (!input.includes("'")) {
+		return replacer(input);
+	}
 
 	const parts: string[] = [];
 	let i = 0;
@@ -244,14 +314,18 @@ export function expandBraces(token: string): string[] {
 	const MaxBraceExpansions = 256;
 
 	function expandBracesInternal(value: string, depth: number): string[] {
-		if (depth > MaxBraceDepth) { return [value]; }
+		if (depth > MaxBraceDepth) {
+			return [value];
+		}
 		// Find the first { not preceded by $
 		let braceDepth = 0;
 		let start = -1;
 		for (let i = 0; i < value.length; i++) {
 			const ch = value.charAt(i);
 			if (ch === "{" && value[i - 1] !== "$") {
-				if (braceDepth === 0) { start = i; }
+				if (braceDepth === 0) {
+					start = i;
+				}
 				braceDepth++;
 			} else if (ch === "}") {
 				braceDepth--;
@@ -261,14 +335,17 @@ export function expandBraces(token: string): string[] {
 					const suffix = value.slice(i + 1);
 
 					// Range: {1..5} or {a..e}
-					const rangeMatch = inner.match(/^(-?\d+)\.\.(-?\d+)(?:\.\.-?(\d+))?$/) ||
-					                   inner.match(/^([a-z])\.\.([a-z])$/);
+					const rangeMatch =
+						inner.match(/^(-?\d+)\.\.(-?\d+)(?:\.\.-?(\d+))?$/) ||
+						inner.match(/^([a-z])\.\.([a-z])$/);
 					if (rangeMatch) {
 						const items: string[] = [];
 						if (/\d/.test(rangeMatch[1] as string)) {
 							const from = Number.parseInt(rangeMatch[1] as string, 10);
 							const to = Number.parseInt(rangeMatch[2] as string, 10);
-							const step = rangeMatch[3] ? Number.parseInt(rangeMatch[3], 10) : 1;
+							const step = rangeMatch[3]
+								? Number.parseInt(rangeMatch[3], 10)
+								: 1;
 							const inc = from <= to ? step : -step;
 							for (let n = from; from <= to ? n <= to : n >= to; n += inc) {
 								items.push(String(n));
@@ -286,7 +363,9 @@ export function expandBraces(token: string): string[] {
 						const output: string[] = [];
 						for (const item of expanded) {
 							output.push(...expandBracesInternal(item, depth + 1));
-							if (output.length > MaxBraceExpansions) { return [value]; }
+							if (output.length > MaxBraceExpansions) {
+								return [value];
+							}
 						}
 						return output;
 					}
@@ -296,18 +375,30 @@ export function expandBraces(token: string): string[] {
 					let cur = "";
 					let innerDepth = 0;
 					for (const ch2 of inner) {
-						if (ch2 === "{") { innerDepth++; cur += ch2; }
-						else if (ch2 === "}") { innerDepth--; cur += ch2; }
-						else if (ch2 === "," && innerDepth === 0) { parts.push(cur); cur = ""; }
-						else { cur += ch2; }
+						if (ch2 === "{") {
+							innerDepth++;
+							cur += ch2;
+						} else if (ch2 === "}") {
+							innerDepth--;
+							cur += ch2;
+						} else if (ch2 === "," && innerDepth === 0) {
+							parts.push(cur);
+							cur = "";
+						} else {
+							cur += ch2;
+						}
 					}
 					parts.push(cur);
 
 					if (parts.length > 1) {
 						const output: string[] = [];
 						for (const part of parts) {
-							output.push(...expandBracesInternal(`${prefix}${part}${suffix}`, depth + 1));
-							if (output.length > MaxBraceExpansions) { return [value]; }
+							output.push(
+								...expandBracesInternal(`${prefix}${part}${suffix}`, depth + 1),
+							);
+							if (output.length > MaxBraceExpansions) {
+								return [value];
+							}
 						}
 						return output;
 					}
@@ -321,13 +412,22 @@ export function expandBraces(token: string): string[] {
 	return expandBracesInternal(token, 0);
 }
 
-function expandArithmeticChunks(input: string, env: Record<string, string>): string {
-	if (!input.includes("$((")) { return input; }
+function expandArithmeticChunks(
+	input: string,
+	env: Record<string, string>,
+): string {
+	if (!input.includes("$((")) {
+		return input;
+	}
 	let result = "";
 	let index = 0;
 	let flush = 0;
 	while (index < input.length) {
-		if (input[index] === "$" && input[index + 1] === "(" && input[index + 2] === "(") {
+		if (
+			input[index] === "$" &&
+			input[index + 1] === "(" &&
+			input[index + 2] === "("
+		) {
 			result += input.slice(flush, index);
 			let scan = index + 3;
 			let depth = 0;
@@ -376,7 +476,9 @@ export function expandSync(
 	home?: string,
 ): string {
 	// Fast path: nothing to expand (no $ and no ~ and no single quotes)
-	if (!((input.includes("$") || input.includes("~") ) || input.includes("'"))) { return input; }
+	if (!(input.includes("$") || input.includes("~") || input.includes("'"))) {
+		return input;
+	}
 
 	const homePath = home ?? env.HOME ?? "/home/user";
 
@@ -393,22 +495,34 @@ export function expandSync(
 		s = s.replace(/\$\?/g, String(lastExit));
 		s = s.replace(/\$\$/g, "1");
 		s = s.replace(/\$#/g, "0");
-		s = s.replace(/\$RANDOM\b/g, () => String(Math.floor(Math.random() * 32768)));
+		s = s.replace(/\$RANDOM\b/g, () =>
+			String(Math.floor(Math.random() * 32768)),
+		);
 		s = s.replace(/\$LINENO\b/g, "1");
 
 		// $(( arithmetic )) — must come before ${ and $VAR to avoid conflicts
 		s = expandArithmeticChunks(s, env);
 
 		// ${arr[@]} and ${arr[*]} — all array elements
-		s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)[@*]\}/g, (_, name) => env[name] ?? "");
+		s = s.replace(
+			/\$\{([A-Za-z_][A-Za-z0-9_]*)[@*]\}/g,
+			(_, name) => env[name] ?? "",
+		);
 
 		// ${arr[N]} — single array element
-		s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)\[(\d+)\]\}/g, (_, name, idx) => env[`${name}[${idx}]`] ?? "");
+		s = s.replace(
+			/\$\{([A-Za-z_][A-Za-z0-9_]*)\[(\d+)\]\}/g,
+			(_, name, idx) => env[`${name}[${idx}]`] ?? "",
+		);
 
 		// ${#arr[@]} — array length
 		s = s.replace(/\$\{#([A-Za-z_][A-Za-z0-9_]*)[@*]\}/g, (_, name) => {
 			let count = 0;
-			for (const k of Object.keys(env)) { if (k.startsWith(`${name}[`)) { count++;  }}
+			for (const k of Object.keys(env)) {
+				if (k.startsWith(`${name}[`)) {
+					count++;
+				}
+			}
 			return String(count);
 		});
 
@@ -426,7 +540,9 @@ export function expandSync(
 		s = s.replace(
 			/\$\{([A-Za-z_][A-Za-z0-9_]*):=([^}]*)\}/g,
 			(_, name, def) => {
-				if (env[name] === undefined || env[name] === "") { env[name] = def; }
+				if (env[name] === undefined || env[name] === "") {
+					env[name] = def;
+				}
 				return env[name] as string;
 			},
 		);
@@ -444,8 +560,11 @@ export function expandSync(
 			(_, name, offset, len) => {
 				const val = env[name] ?? "";
 				const off = Number.parseInt(offset, 10);
-				const start = off < 0 ? Math.max(0, val.length + off) : Math.min(off, val.length);
-				return len === undefined ? val.slice(start) : val.slice(start, start + Number.parseInt(len, 10));
+				const start =
+					off < 0 ? Math.max(0, val.length + off) : Math.min(off, val.length);
+				return len === undefined
+					? val.slice(start)
+					: val.slice(start, start + Number.parseInt(len, 10));
 			},
 		);
 
@@ -454,8 +573,11 @@ export function expandSync(
 			/\$\{([A-Za-z_][A-Za-z0-9_]*)\/\/([^/}]*)\/([^}]*)\}/g,
 			(_, name, pat, rep) => {
 				const val = env[name] ?? "";
-				try { return val.replace(shellPatToRegex(pat, "none", true, true), rep); }
-				catch { return val; }
+				try {
+					return val.replace(shellPatToRegex(pat, "none", true, true), rep);
+				} catch {
+					return val;
+				}
 			},
 		);
 
@@ -464,33 +586,32 @@ export function expandSync(
 			/\$\{([A-Za-z_][A-Za-z0-9_]*)\/([^/}]*)\/([^}]*)\}/g,
 			(_, name, pat, rep) => {
 				const val = env[name] ?? "";
-				try { return val.replace(shellPatToRegex(pat, "none", true, false), rep); }
-				catch { return val; }
+				try {
+					return val.replace(shellPatToRegex(pat, "none", true, false), rep);
+				} catch {
+					return val;
+				}
 			},
 		);
 
 		// ${VAR##pattern} — strip longest prefix
-		s = s.replace(
-			/\$\{([A-Za-z_][A-Za-z0-9_]*)##([^}]+)\}/g,
-			(_, name, pat) => (env[name] ?? "").replace(shellPatToRegex(pat, "prefix", true), ""),
+		s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)##([^}]+)\}/g, (_, name, pat) =>
+			(env[name] ?? "").replace(shellPatToRegex(pat, "prefix", true), ""),
 		);
 
 		// ${VAR#pattern} — strip shortest prefix
-		s = s.replace(
-			/\$\{([A-Za-z_][A-Za-z0-9_]*)#([^}]+)\}/g,
-			(_, name, pat) => (env[name] ?? "").replace(shellPatToRegex(pat, "prefix", false), ""),
+		s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)#([^}]+)\}/g, (_, name, pat) =>
+			(env[name] ?? "").replace(shellPatToRegex(pat, "prefix", false), ""),
 		);
 
 		// ${VAR%%pattern} — strip longest suffix
-		s = s.replace(
-			/\$\{([A-Za-z_][A-Za-z0-9_]*)%%([^}]+)\}/g,
-			(_, name, pat) => (env[name] ?? "").replace(shellPatToRegex(pat, "suffix", true), ""),
+		s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)%%([^}]+)\}/g, (_, name, pat) =>
+			(env[name] ?? "").replace(shellPatToRegex(pat, "suffix", true), ""),
 		);
 
 		// ${VAR%pattern} — strip shortest suffix
-		s = s.replace(
-			/\$\{([A-Za-z_][A-Za-z0-9_]*)%([^}]+)\}/g,
-			(_, name, pat) => (env[name] ?? "").replace(shellPatToRegex(pat, "suffix", false), ""),
+		s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)%([^}]+)\}/g, (_, name, pat) =>
+			(env[name] ?? "").replace(shellPatToRegex(pat, "suffix", false), ""),
 		);
 
 		// ${VAR}
@@ -500,7 +621,10 @@ export function expandSync(
 		);
 
 		// $VAR and positional params $1 $2 ...
-		s = s.replace(/\$([A-Za-z_][A-Za-z0-9_]*|\d+)/g, (_, name) => env[name] ?? "");
+		s = s.replace(
+			/\$([A-Za-z_][A-Za-z0-9_]*|\d+)/g,
+			(_, name) => env[name] ?? "",
+		);
 
 		return s;
 	});
@@ -533,63 +657,69 @@ export async function expandAsync(
 	}
 	env[depthKey] = String(currentDepth + 1);
 	try {
-	// $(cmd) substitution — skip content inside single quotes
-	if (input.includes("$(")) {
-		let result = "";
-		let inSingle = false;
-		let i = 0;
+		// $(cmd) substitution — skip content inside single quotes
+		if (input.includes("$(")) {
+			let result = "";
+			let inSingle = false;
+			let i = 0;
 
-		while (i < input.length) {
-			const ch = input.charAt(i);
+			while (i < input.length) {
+				const ch = input.charAt(i);
 
-			if (ch === "'" && !inSingle) {
-				inSingle = true;
-				result += ch;
-				i++;
-				continue;
-			}
-			if (ch === "'" && inSingle) {
-				inSingle = false;
-				result += ch;
-				i++;
-				continue;
-			}
-
-			if (!inSingle && ch === "$" && input[i + 1] === "(") {
-				// $((expr)) arithmetic — NOT a $(cmd) substitution, skip it
-				if (input[i + 2] === "(") {
+				if (ch === "'" && !inSingle) {
+					inSingle = true;
 					result += ch;
 					i++;
 					continue;
 				}
-				// Find matching ) with depth tracking
-				let depth = 0;
-				let j = i + 1;
-				while (j < input.length) {
-					if (input[j] === "(") { depth++; }
-					else if (input[j] === ")") {
-						depth--;
-						if (depth === 0) { break; }
-					}
-					j++;
+				if (ch === "'" && inSingle) {
+					inSingle = false;
+					result += ch;
+					i++;
+					continue;
 				}
-				const sub = input.slice(i + 2, j).trim();
-				const out = (await runCmd(sub)).replace(/\n$/, "");
-				result += out;
-				i = j + 1;
-				continue;
+
+				if (!inSingle && ch === "$" && input[i + 1] === "(") {
+					// $((expr)) arithmetic — NOT a $(cmd) substitution, skip it
+					if (input[i + 2] === "(") {
+						result += ch;
+						i++;
+						continue;
+					}
+					// Find matching ) with depth tracking
+					let depth = 0;
+					let j = i + 1;
+					while (j < input.length) {
+						if (input[j] === "(") {
+							depth++;
+						} else if (input[j] === ")") {
+							depth--;
+							if (depth === 0) {
+								break;
+							}
+						}
+						j++;
+					}
+					const sub = input.slice(i + 2, j).trim();
+					const out = (await runCmd(sub)).replace(/\n$/, "");
+					result += out;
+					i = j + 1;
+					continue;
+				}
+
+				result += ch;
+				i++;
 			}
-
-			result += ch;
-			i++;
+			input = result;
 		}
-		input = result;
-	}
 
-	return expandSync(input, env, lastExit);
+		return expandSync(input, env, lastExit);
 	} finally {
-		if (currentDepth <= 0) { delete env[depthKey]; }
-		else { env[depthKey] = String(currentDepth); }
+		if (currentDepth <= 0) {
+			delete env[depthKey];
+		} else {
+			env[depthKey] = String(currentDepth);
+		}
 	}
 }
 
@@ -608,8 +738,14 @@ interface GlobVfs {
 }
 
 function nodeType(vfs: GlobVfs, p: string): string | null {
-	if (vfs.statType) { return vfs.statType(p); }
-	try { return vfs.stat(p).type; } catch { return null; }
+	if (vfs.statType) {
+		return vfs.statType(p);
+	}
+	try {
+		return vfs.stat(p).type;
+	} catch {
+		return null;
+	}
 }
 
 /**
@@ -627,45 +763,67 @@ export function expandGlob(
 	vfs: GlobVfs,
 ): string[] {
 	// No glob chars → return as-is
-	if (!(pattern.includes('*') || pattern.includes('?'))) { return [pattern]; }
+	if (!(pattern.includes("*") || pattern.includes("?"))) {
+		return [pattern];
+	}
 
-	const isAbsolute = pattern.startsWith('/');
-	const base = isAbsolute ? '/' : cwd;
+	const isAbsolute = pattern.startsWith("/");
+	const base = isAbsolute ? "/" : cwd;
 	const relPattern = isAbsolute ? pattern.slice(1) : pattern;
 
-	const results = matchGlob(base, relPattern.split('/'), vfs);
-	if (results.length === 0) { return [pattern]; // no match → literal
-}
+	const results = matchGlob(base, relPattern.split("/"), vfs);
+	if (results.length === 0) {
+		return [pattern]; // no match → literal
+	}
 	return results.sort();
 }
 
 function matchGlob(dir: string, segments: string[], vfs: GlobVfs): string[] {
-	if (segments.length === 0) { return [dir]; }
+	if (segments.length === 0) {
+		return [dir];
+	}
 	const [seg, ...rest] = segments;
-	if (!seg) { return [dir]; }
+	if (!seg) {
+		return [dir];
+	}
 
 	// ** matches zero or more path segments
-	if (seg === '**') {
+	if (seg === "**") {
 		const all = walkAll(dir, vfs);
-		if (rest.length === 0) { return all; }
+		if (rest.length === 0) {
+			return all;
+		}
 		const out: string[] = [];
 		for (const d of all) {
-			if (nodeType(vfs, d) === 'directory') { out.push(...matchGlob(d, rest, vfs)); }
+			if (nodeType(vfs, d) === "directory") {
+				out.push(...matchGlob(d, rest, vfs));
+			}
 		}
 		return out;
 	}
 
 	let entries: string[] = [];
-	try { entries = vfs.list(dir); } catch { return []; }
+	try {
+		entries = vfs.list(dir);
+	} catch {
+		return [];
+	}
 
 	const re = globToRegex(seg);
-	const showHidden = seg.startsWith('.');
+	const showHidden = seg.startsWith(".");
 	const matched: string[] = [];
 	for (const e of entries) {
-		if ((!showHidden && e.startsWith('.')) || !re.test(e)) { continue; }
-		const full = dir === '/' ? `/${e}` : `${dir}/${e}`;
-		if (rest.length === 0) { matched.push(full); continue; }
-		if (nodeType(vfs, full) === 'directory') { matched.push(...matchGlob(full, rest, vfs)); }
+		if ((!showHidden && e.startsWith(".")) || !re.test(e)) {
+			continue;
+		}
+		const full = dir === "/" ? `/${e}` : `${dir}/${e}`;
+		if (rest.length === 0) {
+			matched.push(full);
+			continue;
+		}
+		if (nodeType(vfs, full) === "directory") {
+			matched.push(...matchGlob(full, rest, vfs));
+		}
 	}
 	return matched;
 }
@@ -673,11 +831,16 @@ function matchGlob(dir: string, segments: string[], vfs: GlobVfs): string[] {
 function walkAll(dir: string, vfs: GlobVfs): string[] {
 	const results: string[] = [dir];
 	let entries: string[] = [];
-	try { entries = vfs.list(dir); } catch { return results; }
+	try {
+		entries = vfs.list(dir);
+	} catch {
+		return results;
+	}
 	for (const e of entries) {
-		const full = dir === '/' ? `/${e}` : `${dir}/${e}`;
-		if (nodeType(vfs, full) === 'directory') { results.push(...walkAll(full, vfs)); }
+		const full = dir === "/" ? `/${e}` : `${dir}/${e}`;
+		if (nodeType(vfs, full) === "directory") {
+			results.push(...walkAll(full, vfs));
+		}
 	}
 	return results;
 }
-

@@ -20,8 +20,12 @@ export const freeCommand: ShellModule = {
 		const hostTotalB = os.totalmem();
 		const hostFreeB = os.freemem();
 		const ramCap = shell.resourceCaps?.ramCapBytes;
-		const osTotalB = ramCap === undefined ? hostTotalB : Math.min(hostTotalB, ramCap);
-		const osFreeB = ramCap === undefined ? hostFreeB : Math.floor(osTotalB * (hostFreeB / hostTotalB));
+		const osTotalB =
+			ramCap === undefined ? hostTotalB : Math.min(hostTotalB, ramCap);
+		const osFreeB =
+			ramCap === undefined
+				? hostFreeB
+				: Math.floor(osTotalB * (hostFreeB / hostTotalB));
 		const usedB = osTotalB - osFreeB;
 		const sharedB = Math.floor(osTotalB * 0.02);
 		const buffersB = Math.floor(osTotalB * 0.05);
@@ -38,12 +42,17 @@ export const freeCommand: ShellModule = {
 				}
 				return `${(bytes / 1024).toFixed(1)}K`;
 			}
-			if (gb) { return String(Math.floor(bytes / (1024 * 1024 * 1024))); }
-			if (mb) { return String(Math.floor(bytes / (1024 * 1024))); }
+			if (gb) {
+				return String(Math.floor(bytes / (1024 * 1024 * 1024)));
+			}
+			if (mb) {
+				return String(Math.floor(bytes / (1024 * 1024)));
+			}
 			return String(Math.floor(bytes / 1024));
 		};
 
-		const header = "               total        used        free      shared  buff/cache   available";
+		const header =
+			"               total        used        free      shared  buff/cache   available";
 		const memRow = `Mem:  ${fmt(osTotalB).padStart(12)} ${fmt(usedB).padStart(11)} ${fmt(osFreeB).padStart(11)} ${fmt(sharedB).padStart(11)} ${fmt(buffersB).padStart(11)} ${fmt(availableB).padStart(11)}`;
 		const swapRow = `Swap: ${fmt(swapB).padStart(12)} ${fmt(0).padStart(11)} ${fmt(swapB).padStart(11)}`;
 

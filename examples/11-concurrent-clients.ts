@@ -1,6 +1,6 @@
 /**
  * 11 - Concurrent Clients
- * 
+ *
  * Demonstrates running operations from multiple SshClient instances
  * in parallel against the same VirtualShell, showing shared state,
  * race conditions, and concurrent file operations.
@@ -24,18 +24,39 @@ const client2 = new SshClient();
 const client3 = new SshClient();
 
 await Promise.all([
-	client1.connect({ host: "localhost", port, username: "alice", password: "alice123" }),
-	client2.connect({ host: "localhost", port, username: "bob", password: "bob456" }),
-	client3.connect({ host: "localhost", port, username: "charlie", password: "charlie789" }),
+	client1.connect({
+		host: "localhost",
+		port,
+		username: "alice",
+		password: "alice123",
+	}),
+	client2.connect({
+		host: "localhost",
+		port,
+		username: "bob",
+		password: "bob456",
+	}),
+	client3.connect({
+		host: "localhost",
+		port,
+		username: "charlie",
+		password: "charlie789",
+	}),
 ]);
 
 // ── Concurrent file writes ─────────────────────────────────────────
 console.log("--- Concurrent file writes ---");
 
 const [r1, r2, r3] = await Promise.all([
-	client1.writeFile("/tmp/alice.txt", `Alice's data -- written at ${Date.now()}`),
+	client1.writeFile(
+		"/tmp/alice.txt",
+		`Alice's data -- written at ${Date.now()}`,
+	),
 	client2.writeFile("/tmp/bob.txt", `Bob's data -- written at ${Date.now()}`),
-	client3.writeFile("/tmp/charlie.txt", `Charlie's data -- written at ${Date.now()}`),
+	client3.writeFile(
+		"/tmp/charlie.txt",
+		`Charlie's data -- written at ${Date.now()}`,
+	),
 ]);
 
 console.log(`Alice write: exit ${r1.exitCode}`);
@@ -59,7 +80,9 @@ console.log(`Charlie's file: "${read3.stdout!.trim()}"`);
 console.log("\n--- Cross-user file sharing ---");
 
 const bobReadsAlice = await client2.cat("/tmp/alice.txt");
-console.log(`Bob reads Alice's file: exit ${bobReadsAlice.exitCode} -- "${bobReadsAlice.stdout!.trim().slice(0, 30)}..."`);
+console.log(
+	`Bob reads Alice's file: exit ${bobReadsAlice.exitCode} -- "${bobReadsAlice.stdout!.trim().slice(0, 30)}..."`,
+);
 
 // ── Concurrent directory listing ───────────────────────────────────
 console.log("\n--- Concurrent directory listing ---");

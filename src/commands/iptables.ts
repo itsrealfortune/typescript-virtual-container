@@ -10,7 +10,9 @@ export const iptablesCommand: ShellModule = {
 	name: "iptables",
 	description: "Configure firewall rules",
 	category: "network",
-	params: ["-L | -A <chain> [-p proto] [-s src] [-d dst] [--dport port] -j ACTION | -F | -P <chain> <policy>"],
+	params: [
+		"-L | -A <chain> [-p proto] [-s src] [-d dst] [--dport port] -j ACTION | -F | -P <chain> <policy>",
+	],
 	run: ({ args, shell }) => {
 		const net = shell.network;
 		let action: "list" | "append" | "flush" | "policy" = "list";
@@ -19,7 +21,9 @@ export const iptablesCommand: ShellModule = {
 
 		for (let i = 0; i < args.length; i++) {
 			const arg = args[i];
-			if (!arg) { continue; }
+			if (!arg) {
+				continue;
+			}
 
 			switch (arg) {
 				case "-L":
@@ -73,16 +77,35 @@ export const iptablesCommand: ShellModule = {
 				return { stdout: "", exitCode: 0 };
 
 			case "policy": {
-				if (!(chain && (args.includes("-j") || ["ACCEPT", "DROP"].includes(args[args.length - 1] ?? "")))) {
+				if (
+					!(
+						chain &&
+						(args.includes("-j") ||
+							["ACCEPT", "DROP"].includes(args[args.length - 1] ?? ""))
+					)
+				) {
 					const policy = args.find((a) => a === "ACCEPT" || a === "DROP");
-					if (!policy) { return { stderr: "iptables: -P requires chain and policy (ACCEPT|DROP)", exitCode: 1 }; }
+					if (!policy) {
+						return {
+							stderr: "iptables: -P requires chain and policy (ACCEPT|DROP)",
+							exitCode: 1,
+						};
+					}
 					if (!net.setPolicy(chain, policy as "ACCEPT" | "DROP")) {
-						return { stderr: `iptables: unknown chain '${chain}'`, exitCode: 1 };
+						return {
+							stderr: `iptables: unknown chain '${chain}'`,
+							exitCode: 1,
+						};
 					}
 					return { stdout: "", exitCode: 0 };
 				}
 				const policy = args.find((a) => a === "ACCEPT" || a === "DROP");
-				if (!policy) { return { stderr: "iptables: -P requires policy (ACCEPT|DROP)", exitCode: 1 }; }
+				if (!policy) {
+					return {
+						stderr: "iptables: -P requires policy (ACCEPT|DROP)",
+						exitCode: 1,
+					};
+				}
 				if (!net.setPolicy(chain, policy as "ACCEPT" | "DROP")) {
 					return { stderr: `iptables: unknown chain '${chain}'`, exitCode: 1 };
 				}
@@ -91,13 +114,19 @@ export const iptablesCommand: ShellModule = {
 
 			case "append": {
 				if (!(chain && rule.action)) {
-					return { stderr: "iptables: -A requires chain and -j action", exitCode: 1 };
+					return {
+						stderr: "iptables: -A requires chain and -j action",
+						exitCode: 1,
+					};
 				}
 				if (!["INPUT", "OUTPUT", "FORWARD"].includes(chain)) {
 					return { stderr: `iptables: unknown chain '${chain}'`, exitCode: 1 };
 				}
 				if (!["ACCEPT", "DROP", "REJECT"].includes(rule.action)) {
-					return { stderr: `iptables: unknown action '${rule.action}'`, exitCode: 1 };
+					return {
+						stderr: `iptables: unknown action '${rule.action}'`,
+						exitCode: 1,
+					};
 				}
 				const idx = net.addFirewallRule({
 					chain: chain as FirewallRule["chain"],
@@ -111,7 +140,10 @@ export const iptablesCommand: ShellModule = {
 			}
 
 			default:
-				return { stderr: "iptables: no action specified (-L, -A, -F, -P)", exitCode: 1 };
+				return {
+					stderr: "iptables: no action specified (-L, -A, -F, -P)",
+					exitCode: 1,
+				};
 		}
 	},
 };

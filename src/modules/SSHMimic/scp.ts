@@ -137,7 +137,11 @@ export function runScpSink(
 				}
 				const dir = `${currentDir()}/${name}`;
 				if (!shell.vfs.exists(dir)) {
-					try { shell.vfs.mkdir(dir, 0o755); } catch { /* already exists */ }
+					try {
+						shell.vfs.mkdir(dir, 0o755);
+					} catch {
+						/* already exists */
+					}
 				}
 				dirStack.push(dir);
 				send(ACK);
@@ -161,8 +165,9 @@ export function runScpSink(
 		while (buf.length > 0) {
 			if (state === "cmd") {
 				const nl = buf.indexOf(0x0a); // \n
-				if (nl === -1) { break; // wait for more
-}
+				if (nl === -1) {
+					break; // wait for more
+				}
 				const line = buf.subarray(0, nl).toString("utf8").replace(/\r$/, "");
 				buf = buf.subarray(nl + 1);
 				processCmd(line);
@@ -176,7 +181,9 @@ export function runScpSink(
 				}
 				if (bytesRead >= pendingFile.size) {
 					// Next byte must be \0 (end-of-file marker from client)
-					if (buf.length === 0) { break; }
+					if (buf.length === 0) {
+						break;
+					}
 					const marker = buf[0];
 					buf = buf.subarray(1);
 					if (marker !== 0x00) {
@@ -209,7 +216,9 @@ export function runScpSink(
 	send(ACK);
 
 	stream.on("data", (chunk: Buffer) => {
-		if (finished) { return; }
+		if (finished) {
+			return;
+		}
 		buf = Buffer.concat([buf, chunk]);
 		processBuffer();
 	});
@@ -290,7 +299,9 @@ export function runScpSource(
 		}
 
 		const entry = entries[idx];
-		if (entry === undefined) { return; }
+		if (entry === undefined) {
+			return;
+		}
 		idx++;
 
 		if (entry.kind === "dir-open") {

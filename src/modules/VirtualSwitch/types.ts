@@ -1,4 +1,9 @@
-import type { VirtualRoute, ConntrackEntry, RoutingTable, PolicyRule } from "../VirtualNetworkManager/types";
+import type {
+	VirtualRoute,
+	ConntrackEntry,
+	RoutingTable,
+	PolicyRule,
+} from "../VirtualNetworkManager/types";
 import type { VirtualShell } from "../VirtualShell";
 
 export type MacAddress = string;

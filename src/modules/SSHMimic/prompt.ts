@@ -6,15 +6,24 @@
  * `\\x01`/`\\x02` (SOH/STX) so readline ignores them when computing the
  * visible prompt length — without this the cursor position is wrong.
  */
-export function expandPs1(ps1: string, user: string, host: string, cwd: string, readlineMode = false): string {
+export function expandPs1(
+	ps1: string,
+	user: string,
+	host: string,
+	cwd: string,
+	readlineMode = false,
+): string {
 	const home = user === "root" ? "/root" : `/home/${user}`;
 	const withTilde =
-		cwd === home ? "~"
-		: cwd.startsWith(`${home}/`) ? `~${cwd.slice(home.length)}`
-		: cwd;
+		cwd === home
+			? "~"
+			: cwd.startsWith(`${home}/`)
+				? `~${cwd.slice(home.length)}`
+				: cwd;
 	const base = cwd.split("/").at(-1) || "/";
 	let result = ps1
-		.replace(/\\033\[/g, "\x1b[").replace(/\\e\[/g, "\x1b[")
+		.replace(/\\033\[/g, "\x1b[")
+		.replace(/\\e\[/g, "\x1b[")
 		.replace(/\\u/g, user)
 		.replace(/\\h/g, host.split(".")[0] ?? host)
 		.replace(/\\H/g, host)
@@ -51,9 +60,11 @@ export function buildPrompt(
 	fullCwd?: string,
 	readlineMode = false,
 ): string {
-	if (ps1) { return expandPs1(ps1, user, host, fullCwd ?? cwdName, readlineMode); }
+	if (ps1) {
+		return expandPs1(ps1, user, host, fullCwd ?? cwdName, readlineMode);
+	}
 	const isRoot = user === "root";
-	const w = (code: string) => readlineMode ? `\x01${code}\x02` : code;
+	const w = (code: string) => (readlineMode ? `\x01${code}\x02` : code);
 	// Use bold+color combined sequences for better compatibility
 	const white = w("\x1b[37m"); // normal white
 	const colorUser = isRoot ? w("\x1b[1;31m") : w("\x1b[1;35m"); // bold red or magenta

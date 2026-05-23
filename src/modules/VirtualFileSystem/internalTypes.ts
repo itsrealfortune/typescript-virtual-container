@@ -1,5 +1,9 @@
 /** @internal */
-export type InternalNode = InternalFileNode | InternalStubNode | InternalDirectoryNode | InternalDeviceNode;
+export type InternalNode =
+	| InternalFileNode
+	| InternalStubNode
+	| InternalDirectoryNode
+	| InternalDeviceNode;
 
 interface InternalBaseNode {
 	name: string;

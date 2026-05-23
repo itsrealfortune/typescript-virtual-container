@@ -14,26 +14,39 @@ export const statCommand: ShellModule = {
 		const fmtIdx = args.findIndex((a) => a === "-c" || a === "--format");
 		const fmt = fmtIdx === -1 ? undefined : args[fmtIdx + 1];
 		const file = args.find((a) => !a.startsWith("-") && a !== fmt);
-		if (!file) { return { stderr: "stat: missing operand\n", exitCode: 1 }; }
+		if (!file) {
+			return { stderr: "stat: missing operand\n", exitCode: 1 };
+		}
 
 		const p = resolvePath(cwd, file);
 		if (!shell.vfs.exists(p)) {
-			return { stderr: `stat: cannot stat '${file}': No such file or directory\n`, exitCode: 1 };
+			return {
+				stderr: `stat: cannot stat '${file}': No such file or directory\n`,
+				exitCode: 1,
+			};
 		}
 
 		const st = shell.vfs.stat(p);
 		const isDir = st.type === "directory";
 		const isSymlink = shell.vfs.isSymlink(p);
 		const modePerm = (mode: number): string => {
-			const bits = [0o400,0o200,0o100,0o040,0o020,0o010,0o004,0o002,0o001];
-			const syms = ["r","w","x","r","w","x","r","w","x"];
-			return (isDir ? "d" : isSymlink ? "l" : "-") +
-				bits.map((b, i) => mode & b ? syms[i] : "-").join("");
+			const bits = [
+				0o400, 0o200, 0o100, 0o040, 0o020, 0o010, 0o004, 0o002, 0o001,
+			];
+			const syms = ["r", "w", "x", "r", "w", "x", "r", "w", "x"];
+			return (
+				(isDir ? "d" : isSymlink ? "l" : "-") +
+				bits.map((b, i) => (mode & b ? syms[i] : "-")).join("")
+			);
 		};
-		const octal = (st.mode).toString(8).padStart(4, "0");
+		const octal = st.mode.toString(8).padStart(4, "0");
 		const modeStr = modePerm(st.mode);
-		const size = "size" in st ? (st as {size: number}).size : 0;
-		const ts = (d: Date) => d.toISOString().replace("T", " ").replace(/\.\d+Z$/, " +0000");
+		const size = "size" in st ? (st as { size: number }).size : 0;
+		const ts = (d: Date) =>
+			d
+				.toISOString()
+				.replace("T", " ")
+				.replace(/\.\d+Z$/, " +0000");
 
 		// -c format string support
 		if (fmt) {
@@ -42,7 +55,10 @@ export const statCommand: ShellModule = {
 				.replace("%s", String(size))
 				.replace("%a", octal.slice(1)) // access in octal (no leading 0)
 				.replace("%A", modeStr)
-				.replace("%F", isSymlink ? "symbolic link" : isDir ? "directory" : "regular file")
+				.replace(
+					"%F",
+					isSymlink ? "symbolic link" : isDir ? "directory" : "regular file",
+				)
 				.replace("%y", ts(st.updatedAt))
 				.replace("%z", ts(st.updatedAt));
 			return { stdout: `${out}\n`, exitCode: 0 };

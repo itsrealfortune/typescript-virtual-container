@@ -28,7 +28,6 @@ const perf: PerfLogger = createPerfLogger("SshMimic");
 const DEV = Boolean(process.env.DEV_MODE);
 const devLog = DEV ? console.log.bind(console) : () => {};
 
-
 /** @internal */
 interface RateLimitEntry {
 	attempts: number;
@@ -109,8 +108,12 @@ class SshMimic extends EventEmitter {
 
 	private _isLockedOut(ip: string): boolean {
 		const entry = this._authAttempts.get(ip);
-		if (!entry) { return false; }
-		if (Date.now() < entry.lockedUntil) { return true; }
+		if (!entry) {
+			return false;
+		}
+		if (Date.now() < entry.lockedUntil) {
+			return true;
+		}
 		if (entry.lockedUntil > 0) {
 			this._authAttempts.delete(ip);
 		}
@@ -319,7 +322,9 @@ class SshMimic extends EventEmitter {
 
 						session.on("exec", (acceptExec, _rejectExec, info) => {
 							const stream = acceptExec();
-							if (!stream) { return; }
+							if (!stream) {
+								return;
+							}
 							const cmd = info.command.trim();
 							const parts = cmd.split(/\s+/);
 							if (parts[0] === "scp") {
@@ -336,7 +341,7 @@ class SshMimic extends EventEmitter {
 								// Close the SSH connection when the SFTP channel ends
 								// (scp/sftp clients open a session just for the transfer).
 								sftp.on("close", () => client.end());
-								sftp.on("end",   () => sftp.end());
+								sftp.on("end", () => sftp.end());
 							} else {
 								rejectSftp();
 							}
@@ -350,7 +355,8 @@ class SshMimic extends EventEmitter {
 			this.server?.once("error", (err: unknown) => reject(err));
 			this.server?.listen(this.port, "0.0.0.0", () => {
 				const addr = this.server?.address();
-				const actualPort = typeof addr === "object" && addr ? addr.port : this.port;
+				const actualPort =
+					typeof addr === "object" && addr ? addr.port : this.port;
 				this.port = actualPort;
 				devLog(`SSH Mimic listening on port ${actualPort}`);
 				this.emit("start", { port: actualPort });
@@ -394,4 +400,3 @@ class SshMimic extends EventEmitter {
 
 export { SftpMimic } from "./sftp";
 export { SshMimic };
-

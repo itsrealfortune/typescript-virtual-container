@@ -19,14 +19,20 @@ afterAll(() => {
 });
 
 function makeShellWithFsVfs() {
-	return new VirtualShell("test-vm-fs", undefined, { mode: "fs", snapshotPath: tmpDir });
+	return new VirtualShell("test-vm-fs", undefined, {
+		mode: "fs",
+		snapshotPath: tmpDir,
+	});
 }
 
 describe("IdleManager", () => {
 	test("starts as active", async () => {
 		const shell = makeShell();
 		await shell.ensureInitialized();
-		const idle = new IdleManager(shell, { idleThresholdMs: 50, checkIntervalMs: 20 });
+		const idle = new IdleManager(shell, {
+			idleThresholdMs: 50,
+			checkIntervalMs: 20,
+		});
 		expect(idle.state).toBe("active");
 		idle.stop();
 	});
@@ -34,7 +40,10 @@ describe("IdleManager", () => {
 	test("stop() cleans up timer", async () => {
 		const shell = makeShell();
 		await shell.ensureInitialized();
-		const idle = new IdleManager(shell, { idleThresholdMs: 50, checkIntervalMs: 20 });
+		const idle = new IdleManager(shell, {
+			idleThresholdMs: 50,
+			checkIntervalMs: 20,
+		});
 		idle.start();
 		idle.stop();
 		expect(idle.state).toBe("active");
@@ -44,7 +53,10 @@ describe("IdleManager", () => {
 		const shell = makeShell();
 		await shell.ensureInitialized();
 		shell.vfs.writeFile("/tmp/test.txt", "data");
-		const idle = new IdleManager(shell, { idleThresholdMs: 20, checkIntervalMs: 10 });
+		const idle = new IdleManager(shell, {
+			idleThresholdMs: 20,
+			checkIntervalMs: 10,
+		});
 
 		const events: string[] = [];
 		idle.on("freeze", () => events.push("freeze"));
@@ -66,7 +78,10 @@ describe("IdleManager", () => {
 	test("ping resets idle clock", async () => {
 		const shell = makeShell();
 		await shell.ensureInitialized();
-		const idle = new IdleManager(shell, { idleThresholdMs: 1000, checkIntervalMs: 50 });
+		const idle = new IdleManager(shell, {
+			idleThresholdMs: 1000,
+			checkIntervalMs: 50,
+		});
 		idle.start();
 		await Bun.sleep(30);
 		idle.ping();
@@ -77,7 +92,10 @@ describe("IdleManager", () => {
 	test("start is idempotent", async () => {
 		const shell = makeShell();
 		await shell.ensureInitialized();
-		const idle = new IdleManager(shell, { idleThresholdMs: 50, checkIntervalMs: 20 });
+		const idle = new IdleManager(shell, {
+			idleThresholdMs: 50,
+			checkIntervalMs: 20,
+		});
 		idle.start();
 		idle.start();
 		idle.stop();
@@ -101,7 +119,12 @@ describe("IdleManager", () => {
 	test("gc does not remove running processes", async () => {
 		const shell = makeShell();
 		await shell.ensureInitialized();
-		const pid = shell.users.registerProcess("root", "sleep", ["sleep", "60"], "pts/0");
+		const pid = shell.users.registerProcess(
+			"root",
+			"sleep",
+			["sleep", "60"],
+			"pts/0",
+		);
 		expect(shell.users.getProcess(pid)?.status).toBe("running");
 
 		const idle = new IdleManager(shell, { gcIntervalMs: 0 });

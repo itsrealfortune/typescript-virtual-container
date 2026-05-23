@@ -39,8 +39,12 @@ describe("ProcessScheduler", () => {
 
 	test("getNiceWeight returns correct weights", () => {
 		expect(ProcessScheduler.getNiceWeight(0)).toBe(1024);
-		expect(ProcessScheduler.getNiceWeight(-20)).toBeGreaterThan(ProcessScheduler.getNiceWeight(0));
-		expect(ProcessScheduler.getNiceWeight(19)).toBeLessThan(ProcessScheduler.getNiceWeight(0));
+		expect(ProcessScheduler.getNiceWeight(-20)).toBeGreaterThan(
+			ProcessScheduler.getNiceWeight(0),
+		);
+		expect(ProcessScheduler.getNiceWeight(19)).toBeLessThan(
+			ProcessScheduler.getNiceWeight(0),
+		);
 	});
 
 	test("priorityToNice converts priority names correctly", () => {

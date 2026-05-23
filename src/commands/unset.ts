@@ -11,7 +11,9 @@ export const unsetCommand: ShellModule = {
 	category: "shell",
 	params: ["<VAR>"],
 	run: ({ args, env }) => {
-		for (const name of args) { delete env.vars[name]; }
+		for (const name of args) {
+			delete env.vars[name];
+		}
 		return { exitCode: 0 };
 	},
 };

@@ -22,7 +22,10 @@ export const groupdelCommand: ShellModule = {
 
 		try {
 			shell.users.deleteGroup(groupName);
-			return { stdout: `groupdel: group '${groupName}' deleted\n`, exitCode: 0 };
+			return {
+				stdout: `groupdel: group '${groupName}' deleted\n`,
+				exitCode: 0,
+			};
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
 			return { stderr: `${msg}\n`, exitCode: 1 };

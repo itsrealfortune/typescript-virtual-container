@@ -39,7 +39,9 @@ console.log(`  alice is intern: ${users.isMemberOf("alice", "interns")}`);
 // ── List groups ───────────────────────────────────────────────────
 console.log("\n--- All groups ---");
 for (const g of users.listGroups()) {
-	console.log(`  ${g.name}:${g.gid} → members: ${g.members?.join(", ") ?? "none"}`);
+	console.log(
+		`  ${g.name}:${g.gid} → members: ${g.members?.join(", ") ?? "none"}`,
+	);
 }
 
 // ── Password aging ────────────────────────────────────────────────
@@ -47,7 +49,9 @@ console.log("\n--- Password aging ---");
 users.setPasswordAging("alice", 1, 90, 7, 30);
 const aging = users.getPasswordAging("alice");
 if (aging) {
-	console.log(`  alice: min=${aging.minAge}d, max=${aging.maxAge}d, warn=${aging.warnDays}d, inactive=${aging.inactiveDays}d`);
+	console.log(
+		`  alice: min=${aging.minAge}d, max=${aging.maxAge}d, warn=${aging.warnDays}d, inactive=${aging.inactiveDays}d`,
+	);
 }
 console.log(`  alice password expired: ${users.isPasswordExpired("alice")}`);
 
@@ -59,7 +63,9 @@ console.log(`  bob password expired: ${users.isPasswordExpired("bob")}`);
 console.log("\n--- Account expiry ---");
 const nextWeekTs = Date.now() + 7 * 24 * 60 * 60 * 1000;
 users.setAccountExpiry("carol", nextWeekTs);
-console.log(`  carol expires: ${new Date(nextWeekTs).toISOString().slice(0, 10)}`);
+console.log(
+	`  carol expires: ${new Date(nextWeekTs).toISOString().slice(0, 10)}`,
+);
 
 // ── Account locking ───────────────────────────────────────────────
 console.log("\n--- Account locking ---");
@@ -75,7 +81,9 @@ users.recordLoginFailure("bob", "10.0.0.99");
 users.recordLoginFailure("bob", "10.0.0.99");
 users.recordLoginFailure("bob", "10.0.0.99");
 console.log(`  bob failures: ${users.getLoginFailures("bob")}`);
-console.log(`  bob locked by failures: ${users.isAccountLockedByFailures("bob")}`);
+console.log(
+	`  bob locked by failures: ${users.isAccountLockedByFailures("bob")}`,
+);
 users.resetLoginFailures("bob");
 console.log(`  bob failures after reset: ${users.getLoginFailures("bob")}`);
 
@@ -93,7 +101,9 @@ console.log(`  Active sessions: ${users.listActiveSessions().length}`);
 
 // ── Shadow file ───────────────────────────────────────────────────
 console.log("\n--- /etc/shadow (generated) ---");
-console.log(`${users.generateShadowFile().split("\n").slice(0, 3).join("\n")}\n...`);
+console.log(
+	`${users.generateShadowFile().split("\n").slice(0, 3).join("\n")}\n...`,
+);
 
 // ── Group file ────────────────────────────────────────────────────
 console.log("\n--- /etc/group (generated) ---");

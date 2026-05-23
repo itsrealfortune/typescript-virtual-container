@@ -29,7 +29,10 @@ export const niceCommand: ShellModule = {
 
 			const nice = niceStr === undefined ? 0 : Number.parseInt(niceStr, 10);
 			if (Number.isNaN(nice) || nice < -20 || nice > 19) {
-				return { stderr: `nice: invalid priority: ${niceStr} (must be -20 to 19)\n`, exitCode: 1 };
+				return {
+					stderr: `nice: invalid priority: ${niceStr} (must be -20 to 19)\n`,
+					exitCode: 1,
+				};
 			}
 
 			const proc = shell.users.getProcess(pid);
@@ -47,13 +50,19 @@ export const niceCommand: ShellModule = {
 				return { stderr: "nice: failed to set priority\n", exitCode: 1 };
 			}
 
-			return { stdout: `pid ${pid}: nice ${oldNice} → ${nice} (${proc.priority})\n`, exitCode: 0 };
+			return {
+				stdout: `pid ${pid}: nice ${oldNice} → ${nice} (${proc.priority})\n`,
+				exitCode: 0,
+			};
 		}
 
 		// Run command with specified nice value
 		const nice = niceStr === undefined ? 10 : Number.parseInt(niceStr, 10);
 		if (Number.isNaN(nice) || nice < -20 || nice > 19) {
-			return { stderr: `nice: invalid priority: ${niceStr} (must be -20 to 19)\n`, exitCode: 1 };
+			return {
+				stderr: `nice: invalid priority: ${niceStr} (must be -20 to 19)\n`,
+				exitCode: 1,
+			};
 		}
 
 		const cmd = positionals.join(" ");
@@ -65,6 +74,15 @@ export const niceCommand: ShellModule = {
 		// Run the command with the specified nice value
 		// The nice value is passed through to process registration via env
 		const niceEnv = { ...env, NICE_PRIORITY: String(nice) };
-		return runCommand(cmd, authUser, hostname, mode, cwd, shell, stdin, niceEnv);
+		return runCommand(
+			cmd,
+			authUser,
+			hostname,
+			mode,
+			cwd,
+			shell,
+			stdin,
+			niceEnv,
+		);
 	},
 };

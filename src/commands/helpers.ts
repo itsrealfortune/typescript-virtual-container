@@ -21,7 +21,11 @@ const PROTECTED_PREFIXES = ["/.virtual-env-js/.auth", "/etc/htpasswd"] as const;
  * @param homeDir   - The home directory to use for `~` expansion (defaults to `/root`)
  * @returns The normalized absolute path
  */
-export function resolvePath(cwd: string, inputPath: string, homeDir?: string): string {
+export function resolvePath(
+	cwd: string,
+	inputPath: string,
+	homeDir?: string,
+): string {
 	if (!inputPath || inputPath.trim() === "") {
 		return cwd;
 	}
@@ -183,9 +187,12 @@ export function checkFilePermission(
 	filePath: string,
 	want: number,
 ): void {
-	if (authUser === "root") { return; }
-	if (want === 0) { return; // F_OK — just existence
-}
+	if (authUser === "root") {
+		return;
+	}
+	if (want === 0) {
+		return; // F_OK — just existence
+	}
 	assertPathAccess(authUser, filePath, "access");
 	const uid = users.getUid(authUser);
 	const gid = users.getGid(authUser);

@@ -25,12 +25,18 @@ export const newgrpCommand: ShellModule = {
 
 		const targetGroup = shell.users.getGroup(groupName);
 		if (!targetGroup) {
-			return { stderr: `newgrp: group '${groupName}' does not exist\n`, exitCode: 1 };
+			return {
+				stderr: `newgrp: group '${groupName}' does not exist\n`,
+				exitCode: 1,
+			};
 		}
 
 		// Check if user is a member of the target group
 		if (!shell.users.isMemberOf(authUser, groupName)) {
-			return { stderr: `newgrp: user '${authUser}' is not a member of '${groupName}'\n`, exitCode: 1 };
+			return {
+				stderr: `newgrp: user '${authUser}' is not a member of '${groupName}'\n`,
+				exitCode: 1,
+			};
 		}
 
 		return {

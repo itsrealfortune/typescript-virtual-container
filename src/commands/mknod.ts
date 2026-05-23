@@ -2,8 +2,17 @@ import type { DeviceKind } from "../modules/VirtualFileSystem/internalTypes";
 import type { ShellModule } from "../types/commands";
 
 const DEVICE_KINDS: DeviceKind[] = [
-	"null", "zero", "full", "random", "urandom",
-	"tty", "console", "ptmx", "stdin", "stdout", "stderr",
+	"null",
+	"zero",
+	"full",
+	"random",
+	"urandom",
+	"tty",
+	"console",
+	"ptmx",
+	"stdin",
+	"stdout",
+	"stderr",
 ];
 
 /**
@@ -47,7 +56,10 @@ export const mknodCommand: ShellModule = {
 			shell.vfs.mknod(targetPath, deviceKind);
 			return { exitCode: 0 };
 		} catch (e) {
-			return { stderr: `mknod: ${e instanceof Error ? e.message : String(e)}`, exitCode: 1 };
+			return {
+				stderr: `mknod: ${e instanceof Error ? e.message : String(e)}`,
+				exitCode: 1,
+			};
 		}
 	},
 };
@@ -77,7 +89,10 @@ export const mkfifoCommand: ShellModule = {
 			shell.vfs.writeFile(targetPath, "", { mode: 0o644 }, uid, gid);
 			return { exitCode: 0 };
 		} catch (e) {
-			return { stderr: `mkfifo: ${e instanceof Error ? e.message : String(e)}`, exitCode: 1 };
+			return {
+				stderr: `mkfifo: ${e instanceof Error ? e.message : String(e)}`,
+				exitCode: 1,
+			};
 		}
 	},
 };

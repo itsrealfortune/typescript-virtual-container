@@ -13,7 +13,7 @@ export const passwdCommand: ShellModule = {
 	description: "Change user password",
 	category: "users",
 	params: ["[username]"],
-	run:  async ({ authUser, args, shell, stdin }) => {
+	run: async ({ authUser, args, shell, stdin }) => {
 		const targetUser = args[0] ?? authUser;
 
 		// Permission check
@@ -23,7 +23,10 @@ export const passwdCommand: ShellModule = {
 
 		// Target must exist
 		if (!shell.users.listUsers().includes(targetUser)) {
-			return { stderr: `passwd: user '${targetUser}' does not exist`, exitCode: 1 };
+			return {
+				stderr: `passwd: user '${targetUser}' does not exist`,
+				exitCode: 1,
+			};
 		}
 
 		// Non-interactive: read new password from stdin

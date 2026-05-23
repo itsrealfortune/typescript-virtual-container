@@ -9,11 +9,7 @@ import { resolvePath } from "./helpers";
  *           string =, !=, numeric -eq -ne -lt -le -gt -ge,
  *           ! (negate), -a (and), -o (or).
  */
-function evalTest(
-	tokens: string[],
-	shell: VirtualShell,
-	cwd: string,
-): boolean {
+function evalTest(tokens: string[], shell: VirtualShell, cwd: string): boolean {
 	// When called via [ command, ] is the last arg — strip it
 	// When called via test command, no brackets present
 	if (tokens[tokens.length - 1] === "]") {
@@ -24,10 +20,14 @@ function evalTest(
 		tokens = tokens.slice(1);
 	}
 
-	if (tokens.length === 0) { return false; }
+	if (tokens.length === 0) {
+		return false;
+	}
 
 	// Negation
-	if (tokens[0] === "!") { return !evalTest(tokens.slice(1), shell, cwd); }
+	if (tokens[0] === "!") {
+		return !evalTest(tokens.slice(1), shell, cwd);
+	}
 
 	// Boolean -a / -o (simple left-right, no precedence)
 	const andIdx = tokens.indexOf("-a");
@@ -64,7 +64,9 @@ function evalTest(
 			case "-w":
 				return shell.vfs.exists(path);
 			case "-x":
-				return shell.vfs.exists(path) && Boolean((shell.vfs.stat(path).mode & 0o111));
+				return (
+					shell.vfs.exists(path) && Boolean(shell.vfs.stat(path).mode & 0o111)
+				);
 			case "-s":
 				return (
 					shell.vfs.exists(path) &&
@@ -118,7 +120,9 @@ function evalTest(
 	}
 
 	// Single string (truthy if non-empty)
-	if (tokens.length === 1) { return (tokens[0] ?? "").length > 0; }
+	if (tokens.length === 1) {
+		return (tokens[0] ?? "").length > 0;
+	}
 
 	return false;
 }

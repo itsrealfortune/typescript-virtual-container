@@ -90,8 +90,12 @@ export const commCommand: ShellModule = {
 
 		const lines1 = shell.vfs.readFile(p1).split("\n");
 		const lines2 = shell.vfs.readFile(p2).split("\n");
-		if (lines1[lines1.length - 1] === "") { lines1.pop(); }
-		if (lines2[lines2.length - 1] === "") { lines2.pop(); }
+		if (lines1[lines1.length - 1] === "") {
+			lines1.pop();
+		}
+		if (lines2[lines2.length - 1] === "") {
+			lines2.pop();
+		}
 
 		const set1 = new Set(lines1);
 		const set2 = new Set(lines2);
@@ -117,9 +121,9 @@ export const commCommand: ShellModule = {
 		const maxLen = Math.max(only1.length, only2.length, both.length);
 		const results: string[] = [];
 		for (let i = 0; i < maxLen; i++) {
-			const col1 = i < only1.length ? only1[i] as string : "";
-			const col2 = i < only2.length ? only2[i] as string : "";
-			const col3 = i < both.length ? both[i] as string : "";
+			const col1 = i < only1.length ? (only1[i] as string) : "";
+			const col2 = i < only2.length ? (only2[i] as string) : "";
+			const col3 = i < both.length ? (both[i] as string) : "";
 			results.push(`${col1}\t${col2}\t${col3}`);
 		}
 
@@ -141,8 +145,13 @@ export const splitCommand: ShellModule = {
 		const { flagsWithValues, positionals } = parseArgs(args, {
 			flagsWithValue: ["-l", "-b"],
 		});
-		const linesPerFile = Number.parseInt(flagsWithValues.get("-l") || "1000", 10);
-		const bytesPerFile = flagsWithValues.has("-b") ? Number.parseInt(flagsWithValues.get("-b") as string, 10) : undefined;
+		const linesPerFile = Number.parseInt(
+			flagsWithValues.get("-l") || "1000",
+			10,
+		);
+		const bytesPerFile = flagsWithValues.has("-b")
+			? Number.parseInt(flagsWithValues.get("-b") as string, 10)
+			: undefined;
 		const fileArg = positionals[0];
 		const prefix = positionals[1] || "x";
 
@@ -152,7 +161,10 @@ export const splitCommand: ShellModule = {
 
 		const p = resolvePath(cwd, fileArg);
 		if (!shell.vfs.exists(p)) {
-			return { stderr: `split: ${fileArg}: No such file or directory\n`, exitCode: 1 };
+			return {
+				stderr: `split: ${fileArg}: No such file or directory\n`,
+				exitCode: 1,
+			};
 		}
 
 		const content = shell.vfs.readFile(p, uid, gid);

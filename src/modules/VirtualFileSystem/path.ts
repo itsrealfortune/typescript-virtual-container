@@ -41,7 +41,9 @@ export function getNodeNormalized(
 	root: InternalDirectoryNode,
 	normalized: string,
 ): InternalNode {
-	if (normalized === "/") { return root; }
+	if (normalized === "/") {
+		return root;
+	}
 
 	let current: InternalNode = root;
 	let i = 1; // skip leading "/"
@@ -53,11 +55,16 @@ export function getNodeNormalized(
 			if (current.type !== "directory") {
 				throw new Error(`Path '${normalized}' does not exist.`);
 			}
-			const next: InternalNode | undefined = (current as InternalDirectoryNode).children[part];
-			if (!next) { throw new Error(`Path '${normalized}' does not exist.`); }
+			const next: InternalNode | undefined = (current as InternalDirectoryNode)
+				.children[part];
+			if (!next) {
+				throw new Error(`Path '${normalized}' does not exist.`);
+			}
 			current = next;
 		}
-		if (slash === -1) { break; }
+		if (slash === -1) {
+			break;
+		}
 		i = slash + 1;
 	}
 	return current;

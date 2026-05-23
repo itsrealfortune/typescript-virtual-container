@@ -28,20 +28,25 @@ export const ddCommand: ShellModule = {
 		}
 
 		if (!shell.vfs.exists(ifPath)) {
-			return { stderr: `dd: ${kv.if}: No such file or directory\n`, exitCode: 1 };
+			return {
+				stderr: `dd: ${kv.if}: No such file or directory\n`,
+				exitCode: 1,
+			};
 		}
 
 		const bs = Number.parseInt(kv.bs || "512", 10);
 		const content = shell.vfs.readFile(ifPath, uid, gid);
 		const skipBlocks = Number.parseInt(kv.skip || "0", 10);
 		const seekBlocks = Number.parseInt(kv.seek || "0", 10);
-		const countBlocks = kv.count === undefined ? undefined : Number.parseInt(kv.count, 10);
+		const countBlocks =
+			kv.count === undefined ? undefined : Number.parseInt(kv.count, 10);
 
 		const startByte = skipBlocks * bs;
 		const available = content.slice(startByte);
-		const totalBytes = countBlocks === undefined
-			? available.length
-			: Math.min(available.length, countBlocks * bs);
+		const totalBytes =
+			countBlocks === undefined
+				? available.length
+				: Math.min(available.length, countBlocks * bs);
 		const data = available.slice(0, totalBytes);
 
 		let output: string;
@@ -56,7 +61,8 @@ export const ddCommand: ShellModule = {
 			if (output.length < seekByte) {
 				output = output.padEnd(seekByte, "\0");
 			}
-			output = output.slice(0, seekByte) + data + output.slice(seekByte + data.length);
+			output =
+				output.slice(0, seekByte) + data + output.slice(seekByte + data.length);
 		} else {
 			output = data;
 		}
@@ -64,6 +70,9 @@ export const ddCommand: ShellModule = {
 		shell.vfs.writeFile(ofPath, output, {}, uid, gid);
 
 		const recordsIn = Math.ceil(data.length / bs);
-		return { stdout: `${recordsIn}+0 records in\n${recordsIn}+0 records out\n`, exitCode: 0 };
+		return {
+			stdout: `${recordsIn}+0 records in\n${recordsIn}+0 records out\n`,
+			exitCode: 0,
+		};
 	},
 };

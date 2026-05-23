@@ -4,15 +4,30 @@ import { stdin, stdout } from "node:process";
 import { createInterface, type Interface } from "node:readline";
 
 import { getCommandNames } from "./commands/registry";
-import { applyUserSwitch, makeDefaultEnv, runCommand, userHome } from "./commands/runtime";
+import {
+	applyUserSwitch,
+	makeDefaultEnv,
+	runCommand,
+	userHome,
+} from "./commands/runtime";
 import { NanoEditor } from "./modules/nanoEditor";
 import { PacmanGame } from "./modules/pacmanGame";
 import { buildLoginBanner } from "./modules/SSHMimic/loginBanner";
 import { buildPrompt } from "./modules/SSHMimic/prompt";
 import { VirtualShell } from "./modules/VirtualShell";
-import type { CommandResult, PasswordChallenge, SudoChallenge } from "./types/commands";
+import type {
+	CommandResult,
+	PasswordChallenge,
+	SudoChallenge,
+} from "./types/commands";
 import { getFlag, getOptionString } from "./utils/argv";
-import { listPathCompletions, loadHistory, readLastLogin, saveHistory, writeLastLogin } from "./utils/shellSession";
+import {
+	listPathCompletions,
+	loadHistory,
+	readLastLogin,
+	saveHistory,
+	writeLastLogin,
+} from "./utils/shellSession";
 
 // ── CLI args ──────────────────────────────────────────────────────────────────
 
@@ -57,7 +72,11 @@ function readUserArg(): string {
 	return "root";
 }
 
-const hostname = getOptionString(argv, "--hostname", process.env.SSH_MIMIC_HOSTNAME ?? "typescript-vm");
+const hostname = getOptionString(
+	argv,
+	"--hostname",
+	process.env.SSH_MIMIC_HOSTNAME ?? "typescript-vm",
+);
 const snapshotPath = getOptionString(argv, "--snapshot", ".vfs");
 const initialUser = readUserArg();
 
@@ -79,11 +98,16 @@ function flushVfs(): void {
 
 function makeCompleter(getState: () => { cwd: string }) {
 	const commandNames = Array.from(new Set(getCommandNames())).sort();
-	return (line: string, cb: (err: null, result: [string[], string]) => void): void => {
+	return (
+		line: string,
+		cb: (err: null, result: [string[], string]) => void,
+	): void => {
 		const { cwd } = getState();
 		const token = line.split(/\s+/).at(-1) ?? "";
 		const isFirstToken = line.trimStart() === token;
-		const cmdHits = isFirstToken ? commandNames.filter((n) => n.startsWith(token)) : [];
+		const cmdHits = isFirstToken
+			? commandNames.filter((n) => n.startsWith(token))
+			: [];
 		const pathHits = listPathCompletions(virtualShell.vfs, cwd, token);
 		const hits = Array.from(new Set([...cmdHits, ...pathHits])).sort();
 		cb(null, [hits, token]);
@@ -104,7 +128,9 @@ function askHiddenQuestion(rl: Interface, promptText: string): Promise<string> {
 
 		const cleanup = (): void => {
 			stdin.off("data", onData);
-			if (!wasRawMode) { stdin.setRawMode(false); }
+			if (!wasRawMode) {
+				stdin.setRawMode(false);
+			}
 		};
 
 		const finish = (value: string): void => {
@@ -117,15 +143,25 @@ function askHiddenQuestion(rl: Interface, promptText: string): Promise<string> {
 			const input = chunk.toString("utf8");
 			for (let i = 0; i < input.length; i += 1) {
 				const ch = input.charAt(i);
-				if (ch === "\r" || ch === "\n") { finish(buffer); return; }
-				if (ch === "" || ch === "\b") { buffer = buffer.slice(0, -1); continue; }
-				if (ch >= " ") { buffer += ch; }
+				if (ch === "\r" || ch === "\n") {
+					finish(buffer);
+					return;
+				}
+				if (ch === "" || ch === "\b") {
+					buffer = buffer.slice(0, -1);
+					continue;
+				}
+				if (ch >= " ") {
+					buffer += ch;
+				}
 			}
 		};
 
 		rl.pause();
 		stdout.write(promptText);
-		if (!wasRawMode) { stdin.setRawMode(true); }
+		if (!wasRawMode) {
+			stdin.setRawMode(true);
+		}
 		stdin.resume();
 		stdin.on("data", onData);
 	});
@@ -169,7 +205,9 @@ async function runReadlineShell(): Promise<void> {
 
 	const selectedUser = initialUser.trim() || "root";
 	if (virtualShell.users.getPasswordHash(selectedUser) === null) {
-		process.stderr.write(`self-standalone: user '${selectedUser}' does not exist\n`);
+		process.stderr.write(
+			`self-standalone: user '${selectedUser}' does not exist\n`,
+		);
 		process.exit(1);
 	}
 
@@ -217,15 +255,29 @@ async function runReadlineShell(): Promise<void> {
 	// pop the session stack and re-prompt instead of closing readline.
 	{
 		const rlRecord2 = rl as unknown as Record<string, unknown>;
-		const ttyWrite = rlRecord2._ttyWrite as ((s: string, key: { ctrl?: boolean; name?: string } | null) => void) | undefined;
-		if (ttyWrite === undefined) { return; }
+		const ttyWrite = rlRecord2._ttyWrite as
+			| ((s: string, key: { ctrl?: boolean; name?: string } | null) => void)
+			| undefined;
+		if (ttyWrite === undefined) {
+			return;
+		}
 		const orig = ttyWrite.bind(rl);
-		rlRecord2._ttyWrite = (s: string, key: { ctrl?: boolean; name?: string } | null) => {
+		rlRecord2._ttyWrite = (
+			s: string,
+			key: { ctrl?: boolean; name?: string } | null,
+		) => {
 			const line = rlRecord2.line as string;
-			if (key?.ctrl && key?.name === "d" && line === "" && sessionStack.length > 0) {
+			if (
+				key?.ctrl &&
+				key?.name === "d" &&
+				line === "" &&
+				sessionStack.length > 0
+			) {
 				stdout.write("^D\n");
 				const prev = sessionStack.pop();
-				if (prev === undefined) { return; }
+				if (prev === undefined) {
+					return;
+				}
 				authUser = prev.authUser;
 				cwd = prev.cwd;
 				shellEnv.vars.USER = authUser;
@@ -250,7 +302,9 @@ async function runReadlineShell(): Promise<void> {
 	): Promise<void> {
 		return new Promise<void>((resolve) => {
 			const stream: import("./types/streams").ShellStream = {
-				write: (data: string) => { stdout.write(data); },
+				write: (data: string) => {
+					stdout.write(data);
+				},
 				exit: () => undefined,
 				end: () => undefined,
 				on: () => undefined,
@@ -261,12 +315,20 @@ async function runReadlineShell(): Promise<void> {
 			// Steal all stdin listeners from readline so it gets no bytes during nano.
 			// Store them to restore later — this is safer than rl.pause()/resume()
 			// which leaves readline's internal state machine in a broken position.
-			const stdinListeners = stdin.listeners("data") as ((chunk: Buffer) => void)[];
-			for (const l of stdinListeners) { stdin.off("data", l); }
+			const stdinListeners = stdin.listeners("data") as ((
+				chunk: Buffer,
+			) => void)[];
+			for (const l of stdinListeners) {
+				stdin.off("data", l);
+			}
 
 			// Also steal the "keypress" listeners readline attaches for raw key events.
-			const keypressListeners = stdin.listeners("keypress") as ((...args: unknown[]) => void)[];
-			for (const l of keypressListeners) { stdin.off("keypress", l); }
+			const keypressListeners = stdin.listeners("keypress") as ((
+				...args: unknown[]
+			) => void)[];
+			for (const l of keypressListeners) {
+				stdin.off("keypress", l);
+			}
 
 			function cleanup(): void {
 				process.off("SIGWINCH", onResize);
@@ -277,8 +339,12 @@ async function runReadlineShell(): Promise<void> {
 				// readline re-enables raw mode itself when it resumes — calling
 				// setRawMode(false) here leaves stdin in cooked mode and causes
 				// escape sequences to print as literal text.
-				for (const l of stdinListeners) { stdin.on("data", l); }
-				for (const l of keypressListeners) { stdin.on("keypress", l); }
+				for (const l of stdinListeners) {
+					stdin.on("data", l);
+				}
+				for (const l of keypressListeners) {
+					stdin.on("keypress", l);
+				}
 
 				// Reset terminal visual state only (cursor, SGR).
 				stdout.write("\x1b[?25h\x1b[0m");
@@ -288,7 +354,9 @@ async function runReadlineShell(): Promise<void> {
 			}
 
 			// Block SIGINT from killing the process while in nano
-			const onSigint = (): void => { /* absorbed — nano handles ^C via raw bytes */ };
+			const onSigint = (): void => {
+				/* absorbed — nano handles ^C via raw bytes */
+			};
 
 			const editor = new NanoEditor({
 				stream,
@@ -314,10 +382,15 @@ async function runReadlineShell(): Promise<void> {
 			});
 
 			const onResize = (): void => {
-				editor.resize({ cols: stdout.columns ?? snapSize.cols, rows: stdout.rows ?? snapSize.rows });
+				editor.resize({
+					cols: stdout.columns ?? snapSize.cols,
+					rows: stdout.rows ?? snapSize.rows,
+				});
 			};
 
-			const forwardInput = (chunk: Buffer): void => { editor.handleInput(chunk); };
+			const forwardInput = (chunk: Buffer): void => {
+				editor.handleInput(chunk);
+			};
 
 			stdin.setRawMode(true);
 			stdin.resume();
@@ -333,7 +406,9 @@ async function runReadlineShell(): Promise<void> {
 	function startPacmanGame(): Promise<void> {
 		return new Promise<void>((resolve) => {
 			const stream: import("./types/streams").ShellStream = {
-				write: (data: string) => { stdout.write(data); },
+				write: (data: string) => {
+					stdout.write(data);
+				},
 				exit: () => undefined,
 				end: () => undefined,
 				on: () => undefined,
@@ -342,23 +417,37 @@ async function runReadlineShell(): Promise<void> {
 			const snapSize = { cols: stdout.columns ?? 80, rows: stdout.rows ?? 24 };
 
 			// Steal stdin listeners from readline so game gets raw input
-			const stdinListeners = stdin.listeners("data") as ((chunk: Buffer) => void)[];
-			for (const l of stdinListeners) { stdin.off("data", l); }
-			const keypressListeners = stdin.listeners("keypress") as ((...args: unknown[]) => void)[];
-			for (const l of keypressListeners) { stdin.off("keypress", l); }
+			const stdinListeners = stdin.listeners("data") as ((
+				chunk: Buffer,
+			) => void)[];
+			for (const l of stdinListeners) {
+				stdin.off("data", l);
+			}
+			const keypressListeners = stdin.listeners("keypress") as ((
+				...args: unknown[]
+			) => void)[];
+			for (const l of keypressListeners) {
+				stdin.off("keypress", l);
+			}
 
 			function cleanup(): void {
 				process.off("SIGWINCH", onResize);
 				process.off("SIGINT", onSigint);
 				stdin.off("data", forwardInput);
-				for (const l of stdinListeners) { stdin.on("data", l); }
-				for (const l of keypressListeners) { stdin.on("keypress", l); }
+				for (const l of stdinListeners) {
+					stdin.on("data", l);
+				}
+				for (const l of keypressListeners) {
+					stdin.on("keypress", l);
+				}
 				stdout.write("\x1b[?25h\x1b[0m");
 				rl.resume();
 				resolve();
 			}
 
-			if (stdin.isTTY) { stdin.setRawMode(true); }
+			if (stdin.isTTY) {
+				stdin.setRawMode(true);
+			}
 			stdin.resume();
 
 			const game = new PacmanGame({
@@ -434,7 +523,9 @@ async function runReadlineShell(): Promise<void> {
 		await handleCommandResult(nestedResult);
 	}
 
-	async function handlePasswordChallenge(challenge: PasswordChallenge): Promise<void> {
+	async function handlePasswordChallenge(
+		challenge: PasswordChallenge,
+	): Promise<void> {
 		const first = await askHiddenQuestion(rl, challenge.prompt);
 		if (challenge.confirmPrompt) {
 			const second = await askHiddenQuestion(rl, challenge.confirmPrompt);
@@ -459,7 +550,9 @@ async function runReadlineShell(): Promise<void> {
 				break;
 			case "deluser":
 				virtualShell.users.deleteUser(challenge.targetUsername);
-				stdout.write(`Removing user '${challenge.targetUsername}' ...\ndeluser: done.\n`);
+				stdout.write(
+					`Removing user '${challenge.targetUsername}' ...\ndeluser: done.\n`,
+				);
 				break;
 			case "su":
 				sessionStack.push({ authUser, cwd });
@@ -507,11 +600,15 @@ async function runReadlineShell(): Promise<void> {
 		}
 
 		if (result.stdout) {
-			stdout.write(result.stdout.endsWith("\n") ? result.stdout : `${result.stdout}\n`);
+			stdout.write(
+				result.stdout.endsWith("\n") ? result.stdout : `${result.stdout}\n`,
+			);
 		}
 
 		if (result.stderr) {
-			process.stderr.write(result.stderr.endsWith("\n") ? result.stderr : `${result.stderr}\n`);
+			process.stderr.write(
+				result.stderr.endsWith("\n") ? result.stderr : `${result.stderr}\n`,
+			);
 		}
 
 		if (result.switchUser) {
@@ -547,9 +644,18 @@ async function runReadlineShell(): Promise<void> {
 	// ── Prompt helper ──────────────────────────────────────────────────────────
 
 	const renderPrompt = (): string => {
-		if (shellEnv.vars.PS1) { return buildPrompt(authUser, hostname, "", shellEnv.vars.PS1, cwd, true); }
+		if (shellEnv.vars.PS1) {
+			return buildPrompt(authUser, hostname, "", shellEnv.vars.PS1, cwd, true);
+		}
 		const cwdLabel = cwd === userHome(authUser) ? "~" : basename(cwd) || "/";
-		return buildPrompt(authUser, hostname, cwdLabel, undefined, undefined, true);
+		return buildPrompt(
+			authUser,
+			hostname,
+			cwdLabel,
+			undefined,
+			undefined,
+			true,
+		);
 	};
 
 	const prompt = (): void => {
@@ -561,7 +667,11 @@ async function runReadlineShell(): Promise<void> {
 	// Bypass if virtual user is root, or if host process runs as real root
 	// (real root can read/write VFS files directly — password gate is theater).
 
-	if (authUser !== "root" && process.env.USER !== "root" && virtualShell.users.hasPassword(authUser)) {
+	if (
+		authUser !== "root" &&
+		process.env.USER !== "root" &&
+		virtualShell.users.hasPassword(authUser)
+	) {
 		const password = await askHiddenQuestion(rl, `Password for ${authUser}: `);
 		if (!virtualShell.users.verifyPassword(authUser, password)) {
 			process.stderr.write("self-standalone: authentication failed\n");
@@ -571,19 +681,46 @@ async function runReadlineShell(): Promise<void> {
 
 	// ── Login banner ───────────────────────────────────────────────────────────
 
-	stdout.write(buildLoginBanner(hostname, virtualShell.properties, readLastLogin(virtualShell.vfs, authUser)));
+	stdout.write(
+		buildLoginBanner(
+			hostname,
+			virtualShell.properties,
+			readLastLogin(virtualShell.vfs, authUser),
+		),
+	);
 	writeLastLogin(virtualShell.vfs, authUser, remoteAddress);
 
 	// Source login/rc files so PS1, aliases, exports are applied before first prompt.
-	for (const rcPath of ["/etc/environment", `${userHome(authUser)}/.profile`, `${userHome(authUser)}/.bashrc`]) {
-		if (!virtualShell.vfs.exists(rcPath)) { continue; }
+	for (const rcPath of [
+		"/etc/environment",
+		`${userHome(authUser)}/.profile`,
+		`${userHome(authUser)}/.bashrc`,
+	]) {
+		if (!virtualShell.vfs.exists(rcPath)) {
+			continue;
+		}
 		for (const raw of virtualShell.vfs.readFile(rcPath).split("\n")) {
 			const l = raw.trim();
-			if (!l || l.startsWith("#")) { continue; }
+			if (!l || l.startsWith("#")) {
+				continue;
+			}
 			try {
-				const r = await runCommand(l, authUser, hostname, "shell", cwd, virtualShell, undefined, shellEnv);
-				if (r.stdout) { stdout.write(r.stdout); }
-			} catch { /* ignore */ }
+				const r = await runCommand(
+					l,
+					authUser,
+					hostname,
+					"shell",
+					cwd,
+					virtualShell,
+					undefined,
+					shellEnv,
+				);
+				if (r.stdout) {
+					stdout.write(r.stdout);
+				}
+			} catch {
+				/* ignore */
+			}
 		}
 	}
 
@@ -600,7 +737,9 @@ async function runReadlineShell(): Promise<void> {
 	let busy = false;
 
 	rl.on("line", async (inputLine: string) => {
-		if (busy) { return; }
+		if (busy) {
+			return;
+		}
 		busy = true;
 		rl.pause();
 
@@ -609,7 +748,9 @@ async function runReadlineShell(): Promise<void> {
 			// ignoredups: skip consecutive duplicates
 			if (history.at(-1) !== inputLine) {
 				history.push(inputLine);
-				if (history.length > 500) { history = history.slice(history.length - 500); }
+				if (history.length > 500) {
+					history = history.slice(history.length - 500);
+				}
 				saveHistory(virtualShell.vfs, authUser, history);
 			}
 			rlRecord.history = [...history].reverse();
@@ -642,7 +783,7 @@ async function runReadlineShell(): Promise<void> {
 	rl.on("close", () => {
 		const prev = sessionStack.pop();
 		if (prev === undefined) {
-			void flushVfs(); 
+			void flushVfs();
 			console.log("");
 			process.exit(0);
 		} else {
@@ -664,18 +805,27 @@ runReadlineShell().catch((error: unknown) => {
 	process.exit(1);
 });
 
-
 // ── Graceful shutdown (process-level) ────────────────────────────────────────
 let _shuttingDown = false;
 function _gracefulShutdown(signal: string): void {
-	if (_shuttingDown) { return; }
+	if (_shuttingDown) {
+		return;
+	}
 	_shuttingDown = true;
 	process.stdout.write(`\n[${signal}] Saving VFS...\n`);
-	try { virtualShell.vfs.stopAutoFlush(); } catch { /* best-effort flush on shutdown */ }
+	try {
+		virtualShell.vfs.stopAutoFlush();
+	} catch {
+		/* best-effort flush on shutdown */
+	}
 	process.exit(0);
 }
-process.on("SIGTERM", () => { void _gracefulShutdown("SIGTERM"); });
-process.on("beforeExit", () => { void virtualShell.vfs.stopAutoFlush(); });
+process.on("SIGTERM", () => {
+	void _gracefulShutdown("SIGTERM");
+});
+process.on("beforeExit", () => {
+	void virtualShell.vfs.stopAutoFlush();
+});
 
 process.on("uncaughtException", (error) => {
 	console.error("Uncaught exception:", error);

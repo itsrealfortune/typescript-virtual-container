@@ -116,7 +116,13 @@ describe("SSHClient API", () => {
 	});
 });
 
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	mkdtempSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadOrCreateHostKey } from "../src/modules/SSHMimic/hostKey";
@@ -155,13 +161,21 @@ import { buildLoginBanner } from "../src/modules/SSHMimic/loginBanner";
 
 describe("loginBanner", () => {
 	test("buildLoginBanner returns string", () => {
-		const banner = buildLoginBanner("test-vm", { kernel: "6.1.0", arch: "amd64", os: "Linux" }, null);
+		const banner = buildLoginBanner(
+			"test-vm",
+			{ kernel: "6.1.0", arch: "amd64", os: "Linux" },
+			null,
+		);
 		expect(banner).toContain("test-vm");
 		expect(banner).toContain("6.1.0");
 	});
 
 	test("buildLoginBanner with last login", () => {
-		const banner = buildLoginBanner("test-vm", { kernel: "6.1.0", arch: "amd64", os: "Linux" }, { at: "Tue May 20 09:00:00", from: "127.0.0.1" });
+		const banner = buildLoginBanner(
+			"test-vm",
+			{ kernel: "6.1.0", arch: "amd64", os: "Linux" },
+			{ at: "Tue May 20 09:00:00", from: "127.0.0.1" },
+		);
 		expect(banner).toContain("Last login");
 	});
 });

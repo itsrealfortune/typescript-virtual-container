@@ -195,7 +195,9 @@ export const aptCacheCommand: ShellModule = {
 
 		switch (sub) {
 			case "search": {
-				if (!pkgName) { return { stderr: "Need a search term", exitCode: 1 }; }
+				if (!pkgName) {
+					return { stderr: "Need a search term", exitCode: 1 };
+				}
 				const results = VirtualPackageManager.search(pkgName);
 				return {
 					stdout:
@@ -206,14 +208,18 @@ export const aptCacheCommand: ShellModule = {
 				};
 			}
 			case "show": {
-				if (!pkgName) { return { stderr: "Need a package name", exitCode: 1 }; }
+				if (!pkgName) {
+					return { stderr: "Need a package name", exitCode: 1 };
+				}
 				const info = pm.show(pkgName);
 				return info
 					? { stdout: info, exitCode: 0 }
 					: { stderr: `N: Unable to locate package ${pkgName}`, exitCode: 100 };
 			}
 			case "policy": {
-				if (!pkgName) { return { stderr: "Need a package name", exitCode: 1 }; }
+				if (!pkgName) {
+					return { stderr: "Need a package name", exitCode: 1 };
+				}
 				const def = VirtualPackageManager.findInRegistry(pkgName);
 				if (!def) {
 					return {

@@ -65,15 +65,22 @@ export const fortuneCommand: ShellModule = {
 
 function cowsay(message: string, dead = false): string {
 	const lines = message.split("\n");
-	const maxLen = Math.max(...lines.map(l => l.length));
-	const body = lines.length === 1
-		? `< ${lines[0]} >`
-		: lines.map((l, i) => {
-			const pad = " ".repeat(maxLen - l.length);
-			if (i === 0) { return `/ ${l}${pad} \\`; }
-			if (i === lines.length - 1) { return `\\ ${l}${pad} /`; }
-			return `| ${l}${pad} |`;
-		}).join("\n");
+	const maxLen = Math.max(...lines.map((l) => l.length));
+	const body =
+		lines.length === 1
+			? `< ${lines[0]} >`
+			: lines
+					.map((l, i) => {
+						const pad = " ".repeat(maxLen - l.length);
+						if (i === 0) {
+							return `/ ${l}${pad} \\`;
+						}
+						if (i === lines.length - 1) {
+							return `\\ ${l}${pad} /`;
+						}
+						return `| ${l}${pad} |`;
+					})
+					.join("\n");
 	const eyes = dead ? "xx" : "oo";
 	return [
 		` ${"_".repeat(maxLen + 2)}`,
@@ -115,7 +122,12 @@ export const cowthinkCommand: ShellModule = {
 	params: ["[message]"],
 	run: ({ args, stdin }) => {
 		const msg = args.length ? args.join(" ") : (stdin?.trim() ?? "Hmm...");
-		return { stdout: cowsay(msg).replace(/\\\s*\^__\^/, "o   ^__^").replace(/\\\s*\(oo\)/, "o  (oo)"), exitCode: 0 };
+		return {
+			stdout: cowsay(msg)
+				.replace(/\\\s*\^__\^/, "o   ^__^")
+				.replace(/\\\s*\(oo\)/, "o  (oo)"),
+			exitCode: 0,
+		};
 	},
 };
 
@@ -143,13 +155,20 @@ export const cmatrixCommand: ShellModule = {
 			let line = "";
 			for (let c = 0; c < cols; c++) {
 				const ch = chars[Math.floor(Math.random() * chars.length)] as string;
-				if (Math.random() < 0.05) { line += bright + ch + reset; }
-				else if (Math.random() < 0.7) { line += green + ch + reset; }
-				else { line += " "; }
+				if (Math.random() < 0.05) {
+					line += bright + ch + reset;
+				} else if (Math.random() < 0.7) {
+					line += green + ch + reset;
+				} else {
+					line += " ";
+				}
 			}
 			lines.push(line);
 		}
-		return { stdout: `\x1b[2J\x1b[H${lines.join("\n")}\n${reset}[cmatrix: press Ctrl+C to exit]`, exitCode: 0 };
+		return {
+			stdout: `\x1b[2J\x1b[H${lines.join("\n")}\n${reset}[cmatrix: press Ctrl+C to exit]`,
+			exitCode: 0,
+		};
 	},
 };
 

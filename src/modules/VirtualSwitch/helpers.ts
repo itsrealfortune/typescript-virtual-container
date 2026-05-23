@@ -8,11 +8,17 @@ export function nextMac(): MacAddress {
 }
 
 export function ipToInt(ip: string): number {
-	return ip.split(".").reduce((acc, oct) => (acc << 8) + Number.parseInt(oct, 10), 0) >>> 0;
+	return (
+		ip
+			.split(".")
+			.reduce((acc, oct) => (acc << 8) + Number.parseInt(oct, 10), 0) >>> 0
+	);
 }
 
 export function intToIp(n: number): string {
-	return [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join(".");
+	return [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join(
+		".",
+	);
 }
 
 export function cidrRange(cidr: string): { network: number; mask: number } {

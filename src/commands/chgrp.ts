@@ -18,7 +18,10 @@ export const chgrpCommand: ShellModule = {
 		}
 
 		if (authUser !== "root") {
-			return { stderr: "chgrp: changing group: Operation not permitted", exitCode: 1 };
+			return {
+				stderr: "chgrp: changing group: Operation not permitted",
+				exitCode: 1,
+			};
 		}
 
 		const filePath = resolvePath(cwd, fileArg);
@@ -46,10 +49,17 @@ export const chgrpCommand: ShellModule = {
 	},
 };
 
-function resolveGroup(shell: { users: { getGidByName: (n: string) => number | null } }, name: string): number | null {
+function resolveGroup(
+	shell: { users: { getGidByName: (n: string) => number | null } },
+	name: string,
+): number | null {
 	const gid = shell.users.getGidByName(name);
-	if (gid !== null) { return gid; }
+	if (gid !== null) {
+		return gid;
+	}
 	const num = Number.parseInt(name, 10);
-	if (!Number.isNaN(num)) { return num; }
+	if (!Number.isNaN(num)) {
+		return num;
+	}
 	return null;
 }

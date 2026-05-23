@@ -55,7 +55,12 @@ for (const spec of podSpecs) {
 	const port = await ssh.start();
 
 	const client = new SshClient();
-	await client.connect({ host: "localhost", port, username: "root", password: "root" });
+	await client.connect({
+		host: "localhost",
+		port,
+		username: "root",
+		password: "root",
+	});
 
 	await client.exec(`mkdir -p /app && echo '${spec.image}' > /app/image`);
 	for (const p of spec.ports) {
@@ -80,10 +85,30 @@ for (const spec of podSpecs) {
 console.log("\n--- Create services ---");
 
 const services: Service[] = [
-	{ name: "web-svc", pods: pods.filter((p) => p.name.startsWith("web")), port: 80, targetPort: 80 },
-	{ name: "api-svc", pods: pods.filter((p) => p.name.startsWith("api")), port: 3000, targetPort: 3000 },
-	{ name: "db-svc", pods: pods.filter((p) => p.name.startsWith("db")), port: 5432, targetPort: 5432 },
-	{ name: "cache-svc", pods: pods.filter((p) => p.name.startsWith("cache")), port: 6379, targetPort: 6379 },
+	{
+		name: "web-svc",
+		pods: pods.filter((p) => p.name.startsWith("web")),
+		port: 80,
+		targetPort: 80,
+	},
+	{
+		name: "api-svc",
+		pods: pods.filter((p) => p.name.startsWith("api")),
+		port: 3000,
+		targetPort: 3000,
+	},
+	{
+		name: "db-svc",
+		pods: pods.filter((p) => p.name.startsWith("db")),
+		port: 5432,
+		targetPort: 5432,
+	},
+	{
+		name: "cache-svc",
+		pods: pods.filter((p) => p.name.startsWith("cache")),
+		port: 6379,
+		targetPort: 6379,
+	},
 ];
 
 for (const svc of services) {
@@ -100,7 +125,9 @@ for (const svc of services) {
 			})),
 			algorithm: "round-robin",
 		});
-		console.log(`  ${svc.name}: ${svc.pods.length} pods, round-robin LB on port ${svc.port}`);
+		console.log(
+			`  ${svc.name}: ${svc.pods.length} pods, round-robin LB on port ${svc.port}`,
+		);
 	} else {
 		console.log(`  ${svc.name}: 1 pod on port ${svc.port}`);
 	}
@@ -113,8 +140,12 @@ const webClient = pods[0]!.client;
 await webClient.exec("iptables -A OUTPUT -d 172.16.0.0/16 -j ACCEPT");
 
 const dbClient = pods.find((p) => p.name === "db-1")!.client;
-await dbClient.exec("iptables -A INPUT -s 172.16.0.4 -p tcp --dport 5432 -j ACCEPT");
-await dbClient.exec("iptables -A INPUT -s 172.16.0.5 -p tcp --dport 5432 -j ACCEPT");
+await dbClient.exec(
+	"iptables -A INPUT -s 172.16.0.4 -p tcp --dport 5432 -j ACCEPT",
+);
+await dbClient.exec(
+	"iptables -A INPUT -s 172.16.0.5 -p tcp --dport 5432 -j ACCEPT",
+);
 await dbClient.exec("iptables -P INPUT DROP");
 
 console.log("  web -> api: allowed");
@@ -125,11 +156,19 @@ console.log("  external -> db: denied (default)");
 // ── Verify connectivity ───────────────────────────────────────────
 console.log("\n--- Verify connectivity ---");
 
-const webToApi = await webClient.exec("echo 'test' | nc -w 1 172.16.0.4 3000 2>&1 || echo 'connection-refused'");
-console.log(`  web-1 -> api-1: ${webToApi.exitCode === 0 ? "connected" : "refused"}`);
+const webToApi = await webClient.exec(
+	"echo 'test' | nc -w 1 172.16.0.4 3000 2>&1 || echo 'connection-refused'",
+);
+console.log(
+	`  web-1 -> api-1: ${webToApi.exitCode === 0 ? "connected" : "refused"}`,
+);
 
-const webToDb = await webClient.exec("nc -z -w 1 172.16.0.6 5432 2>&1 || echo 'unreachable'");
-console.log(`  web-1 -> db-1: ${(webToDb.stdout ?? "").includes("unreachable") ? "blocked" : "open"}`);
+const webToDb = await webClient.exec(
+	"nc -z -w 1 172.16.0.6 5432 2>&1 || echo 'unreachable'",
+);
+console.log(
+	`  web-1 -> db-1: ${(webToDb.stdout ?? "").includes("unreachable") ? "blocked" : "open"}`,
+);
 
 // ── Rolling update ────────────────────────────────────────────────
 console.log("\n--- Rolling update: web pods v1.25 -> v1.26 ---");
@@ -153,12 +192,16 @@ console.log("=".repeat(60));
 console.log(`\n  Pods: ${pods.length} total`);
 for (const pod of pods) {
 	const status = pod.ready ? "Running" : "NotReady";
-	console.log(`    ${pod.name}: ${pod.image} [${pod.ports.join(", ")}] - ${status}`);
+	console.log(
+		`    ${pod.name}: ${pod.image} [${pod.ports.join(", ")}] - ${status}`,
+	);
 }
 
 console.log(`\n  Services: ${services.length}`);
 for (const svc of services) {
-	console.log(`    ${svc.name}: ${svc.pods.length} pods, port ${svc.port}->${svc.targetPort}`);
+	console.log(
+		`    ${svc.name}: ${svc.pods.length} pods, port ${svc.port}->${svc.targetPort}`,
+	);
 }
 
 let totalSent = 0;
@@ -167,14 +210,18 @@ for (const [mac] of cluster.switch.getPorts()) {
 	totalSent += cluster.switch.getBytesSent(mac);
 	totalReceived += cluster.switch.getBytesReceived(mac);
 }
-console.log(`\n  Network bandwidth: ${totalSent} bytes sent, ${totalReceived} bytes received`);
+console.log(
+	`\n  Network bandwidth: ${totalSent} bytes sent, ${totalReceived} bytes received`,
+);
 
 let _totalRam = 0;
 for (const pod of pods) {
 	const procs = pod.vm.users.listProcesses();
 	_totalRam += procs.length * 10;
 }
-console.log(`  Total processes: ${pods.reduce((sum, p) => sum + p.vm.users.listProcesses().length, 0)}`);
+console.log(
+	`  Total processes: ${pods.reduce((sum, p) => sum + p.vm.users.listProcesses().length, 0)}`,
+);
 
 console.log("\n--- Cluster running ---");
 

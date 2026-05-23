@@ -10,7 +10,10 @@ beforeAll(async () => {
 
 describe("VirtualShell API", () => {
 	test("addCommand registers a custom command", async () => {
-		shell.addCommand("mycmd", ["<arg>"], () => ({ stdout: "custom\n", exitCode: 0 }));
+		shell.addCommand("mycmd", ["<arg>"], () => ({
+			stdout: "custom\n",
+			exitCode: 0,
+		}));
 		const r = await shell.executeCommand("mycmd", "root", "/");
 		expect(r.exitCode).toBe(0);
 		expect(r.stdout).toBe("custom\n");
@@ -18,7 +21,9 @@ describe("VirtualShell API", () => {
 
 	test("addCommand rejects invalid name", () => {
 		expect(() => shell.addCommand("", [], () => ({ exitCode: 0 }))).toThrow();
-		expect(() => shell.addCommand("has space", [], () => ({ exitCode: 0 }))).toThrow();
+		expect(() =>
+			shell.addCommand("has space", [], () => ({ exitCode: 0 })),
+		).toThrow();
 	});
 
 	test("executeCommand runs a command", async () => {
@@ -44,7 +49,10 @@ describe("VirtualShell API", () => {
 
 	test("enableIdleManagement and disableIdleManagement", () => {
 		expect(shell.idleState).toBe("active");
-		shell.enableIdleManagement({ idleThresholdMs: 50000, checkIntervalMs: 10000 });
+		shell.enableIdleManagement({
+			idleThresholdMs: 50000,
+			checkIntervalMs: 10000,
+		});
 		expect(shell.idleState).toBe("active");
 		expect(shell.idleMs).toBe(0);
 		shell.disableIdleManagement();

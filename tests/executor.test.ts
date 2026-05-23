@@ -15,7 +15,12 @@ beforeAll(async () => {
 	ssh = new VirtualSshServer({ port: 0, shell });
 	port = await ssh.start();
 	client = new SshClient();
-	await client.connect({ host: "localhost", port, username: "root", password: "root" });
+	await client.connect({
+		host: "localhost",
+		port,
+		username: "root",
+		password: "root",
+	});
 });
 
 afterAll(() => {
@@ -28,7 +33,9 @@ describe("runExec", () => {
 		const written: string[] = [];
 
 		const stream: ExecStream = {
-			write: (s: string) => { written.push(s); },
+			write: (s: string) => {
+				written.push(s);
+			},
 			stderr: { write: () => {} },
 			exit: () => {},
 			end: () => {},
@@ -44,7 +51,11 @@ describe("runExec", () => {
 
 		const stream: ExecStream = {
 			write: () => {},
-			stderr: { write: (s: string) => { stderrWritten.push(s); } },
+			stderr: {
+				write: (s: string) => {
+					stderrWritten.push(s);
+				},
+			},
 			exit: () => {},
 			end: () => {},
 		};

@@ -51,7 +51,11 @@ interface GcUserManager {
 	listProcesses(): Array<{ pid: number; status: string }>;
 	unregisterProcess(pid: number): void;
 	getProcessCpuTime(pid: number): number;
-	listActiveSessions(): Array<{ id: string; username: string; startedAt: string }>;
+	listActiveSessions(): Array<{
+		id: string;
+		username: string;
+		startedAt: string;
+	}>;
 }
 
 /**
@@ -102,15 +106,25 @@ export class IdleManager extends EventEmitter {
 
 	/** Start monitoring for idle and GC. Call once after shell initialisation. */
 	public start(): void {
-		if (this._checkTimer) { return; }
+		if (this._checkTimer) {
+			return;
+		}
 		this._lastActivity = Date.now();
 		this._checkTimer = setInterval(() => this._check(), this._checkIntervalMs);
-		if (typeof this._checkTimer === "object" && this._checkTimer !== null && "unref" in this._checkTimer) {
+		if (
+			typeof this._checkTimer === "object" &&
+			this._checkTimer !== null &&
+			"unref" in this._checkTimer
+		) {
 			(this._checkTimer as NodeJS.Timeout).unref();
 		}
 		if (this._gcIntervalMs > 0) {
 			this._gcTimer = setInterval(() => this._runGc(), this._gcIntervalMs);
-			if (typeof this._gcTimer === "object" && this._gcTimer !== null && "unref" in this._gcTimer) {
+			if (
+				typeof this._gcTimer === "object" &&
+				this._gcTimer !== null &&
+				"unref" in this._gcTimer
+			) {
 				(this._gcTimer as NodeJS.Timeout).unref();
 			}
 		}
@@ -126,7 +140,9 @@ export class IdleManager extends EventEmitter {
 			clearInterval(this._gcTimer);
 			this._gcTimer = null;
 		}
-		if (this._state === "frozen") { this._thaw(); }
+		if (this._state === "frozen") {
+			this._thaw();
+		}
 	}
 
 	/**
@@ -139,7 +155,9 @@ export class IdleManager extends EventEmitter {
 	 */
 	public ping(): void {
 		this._lastActivity = Date.now();
-		if (this._state === "frozen") { this._thaw(); }
+		if (this._state === "frozen") {
+			this._thaw();
+		}
 	}
 
 	/** Current idle state. */
@@ -160,14 +178,18 @@ export class IdleManager extends EventEmitter {
 	// ── Internal ──────────────────────────────────────────────────────────────
 
 	private _check(): void {
-		if (this._state === "frozen") { return; }
+		if (this._state === "frozen") {
+			return;
+		}
 		if (Date.now() - this._lastActivity >= this._idleThresholdMs) {
 			void this._freeze();
 		}
 	}
 
 	private _freeze(): void {
-		if (this._state === "frozen") { return; }
+		if (this._state === "frozen") {
+			return;
+		}
 		// Flush any pending writes before freezing
 		this._vfs.stopAutoFlush();
 		// Serialise the live tree to a compact binary buffer
@@ -179,7 +201,9 @@ export class IdleManager extends EventEmitter {
 	}
 
 	private _thaw(): void {
-		if (this._state !== "frozen" || !this._frozenBuffer) { return; }
+		if (this._state !== "frozen" || !this._frozenBuffer) {
+			return;
+		}
 		const root = decodeVfs(this._frozenBuffer);
 		this._vfs.importRootTree(root);
 		this._frozenBuffer = null;
@@ -208,7 +232,9 @@ export class IdleManager extends EventEmitter {
 
 	private _cleanupTerminatedProcesses(): number {
 		const users = this._shell.users;
-		if (!users) { return 0; }
+		if (!users) {
+			return 0;
+		}
 
 		const procs = users.listProcesses();
 		let cleaned = 0;
@@ -223,7 +249,9 @@ export class IdleManager extends EventEmitter {
 
 	private _cleanupStaleCpuEntries(): number {
 		const users = this._shell.users;
-		if (!users) { return 0; }
+		if (!users) {
+			return 0;
+		}
 
 		const procs = users.listProcesses();
 		const activePids = new Set(procs.map((p) => p.pid));
@@ -244,14 +272,18 @@ export class IdleManager extends EventEmitter {
 	}
 
 	private _evictClosedFiles(): number {
-		if (this._state === "frozen") { return 0; }
+		if (this._state === "frozen") {
+			return 0;
+		}
 		const openPaths = this._vfs.getOpenPaths();
 		const evicted = this._vfs.evictUnusedLargeFiles(openPaths);
 		return evicted;
 	}
 
 	private static _forceNodeGc(): boolean {
-		const gc = (globalThis as Record<string, unknown>).gc as (() => void) | undefined;
+		const gc = (globalThis as Record<string, unknown>).gc as
+			| (() => void)
+			| undefined;
 		if (typeof gc === "function") {
 			gc();
 			return true;

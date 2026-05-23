@@ -1,4 +1,8 @@
-import type { CommandContext, CommandResult, ShellModule } from "../types/commands";
+import type {
+	CommandContext,
+	CommandResult,
+	ShellModule,
+} from "../types/commands";
 
 export const startxfce4Command: ShellModule = {
 	name: "startxfce4",
@@ -7,7 +11,10 @@ export const startxfce4Command: ShellModule = {
 	async run(ctx: CommandContext): Promise<CommandResult> {
 		const dm = ctx.shell.desktopManager;
 		if (!dm) {
-			return { stderr: "startxfce4: desktop is only available in the browser", exitCode: 1 };
+			return {
+				stderr: "startxfce4: desktop is only available in the browser",
+				exitCode: 1,
+			};
 		}
 		await dm.start();
 		return { exitCode: 0 };

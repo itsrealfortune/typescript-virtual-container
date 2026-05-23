@@ -1,25 +1,21 @@
 import { executeStatements } from "../modules/SSHMimic/executor";
 import type { VirtualShell } from "../modules/VirtualShell";
 import { parseScript } from "../modules/VirtualShell/shellParser";
-import type {
-	CommandMode,
-	CommandResult,
-	ShellEnv,
-} from "../types/commands";
+import type { CommandMode, CommandResult, ShellEnv } from "../types/commands";
 import { expandAsync, expandBraces, expandGlob } from "../utils/expand";
 import { tokenizeCommand } from "../utils/tokenize";
 import { resolveModule } from "./registry";
 
 // Module-level compiled regexes — avoids recompilation on every runCommand call
-const ASSIGN_RE      = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/;
-const RE_FOR         = /\bfor\s+\w+\s+in\b/;
-const RE_WHILE       = /\bwhile\s+/;
-const RE_IF          = /\bif\s+/;
-const RE_FUNC_BRACE  = /\w+\s*\(\s*\)\s*\{/;
-const RE_FUNC_KW     = /\bfunction\s+\w+/;
-const RE_ARITH       = /\(\(\s*.+\s*\)\)/;
-const RE_PIPE        = /(?<![|&])[|](?![|])/;
-const RE_OPERATORS   = /[><;&]|\|\|/;
+const ASSIGN_RE = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/;
+const RE_FOR = /\bfor\s+\w+\s+in\b/;
+const RE_WHILE = /\bwhile\s+/;
+const RE_IF = /\bif\s+/;
+const RE_FUNC_BRACE = /\w+\s*\(\s*\)\s*\{/;
+const RE_FUNC_KW = /\bfunction\s+\w+/;
+const RE_ARITH = /\(\(\s*.+\s*\)\)/;
+const RE_PIPE = /(?<![|&])[|](?![|])/;
+const RE_OPERATORS = /[><;&]|\|\|/;
 
 /** Returns the home directory path for a given user. Root lives at /root. */
 export function userHome(authUser: string): string {
@@ -42,11 +38,28 @@ export async function applyUserSwitch(
 	shellEnv.vars.HOME = userHome(newUser);
 	shellEnv.vars.PS1 = makeDefaultEnv(newUser, hostname).vars.PS1 ?? "";
 	const rcPath = `${userHome(newUser)}/.bashrc`;
-	if (!shell.vfs.exists(rcPath)) { return; }
+	if (!shell.vfs.exists(rcPath)) {
+		return;
+	}
 	for (const raw of shell.vfs.readFile(rcPath).split("\n")) {
 		const l = raw.trim();
-		if (!l || l.startsWith("#")) { continue; }
-		try { await runCommand(l, newUser, hostname, "shell", cwd, shell, undefined, shellEnv); } catch { /* ignore */ }
+		if (!l || l.startsWith("#")) {
+			continue;
+		}
+		try {
+			await runCommand(
+				l,
+				newUser,
+				hostname,
+				"shell",
+				cwd,
+				shell,
+				undefined,
+				shellEnv,
+			);
+		} catch {
+			/* ignore */
+		}
 	}
 }
 
@@ -69,9 +82,10 @@ export function makeDefaultEnv(authUser: string, hostname: string): ShellEnv {
 			SHELL: "/bin/bash",
 			TERM: "xterm-256color",
 			HOSTNAME: hostname,
-			PS1: authUser === "root"
-				? "\\[\\e[37m\\][\\[\\e[31;1m\\]\\u\\[\\e[37m\\]@\\[\\e[34;1m\\]\\h\\[\\e[0m\\] \\w\\[\\e[37m\\]]\\[\\e[31;1m\\]\\$\\[\\e[0m\\] "
-				: "\\[\\e[37m\\][\\[\\e[35;1m\\]\\u\\[\\e[37m\\]@\\[\\e[34;1m\\]\\h\\[\\e[0m\\] \\w\\[\\e[37m\\]]\\[\\e[0m\\]\\$ ",
+			PS1:
+				authUser === "root"
+					? "\\[\\e[37m\\][\\[\\e[31;1m\\]\\u\\[\\e[37m\\]@\\[\\e[34;1m\\]\\h\\[\\e[0m\\] \\w\\[\\e[37m\\]]\\[\\e[31;1m\\]\\$\\[\\e[0m\\] "
+					: "\\[\\e[37m\\][\\[\\e[35;1m\\]\\u\\[\\e[37m\\]@\\[\\e[34;1m\\]\\h\\[\\e[0m\\] \\w\\[\\e[37m\\]]\\[\\e[0m\\]\\$ ",
 			"0": "/bin/bash",
 		},
 		lastExitCode: 0,
@@ -85,11 +99,17 @@ function resolveVfsBinary(
 	authUser: string,
 ): string | null {
 	if (name.startsWith("/")) {
-		if (!shell.vfs.exists(name)) { return null; }
+		if (!shell.vfs.exists(name)) {
+			return null;
+		}
 		try {
 			const st = shell.vfs.stat(name);
-			if (st.type !== "file") { return null; }
-			if (!(st.mode & 0o111)) { return null; }
+			if (st.type !== "file") {
+				return null;
+			}
+			if (!(st.mode & 0o111)) {
+				return null;
+			}
 			if (
 				(name.startsWith("/sbin/") || name.startsWith("/usr/sbin/")) &&
 				authUser !== "root"
@@ -114,13 +134,21 @@ function resolveVfsBinary(
 			continue;
 		}
 		const full = `${dir}/${name}`;
-		if (!shell.vfs.exists(full)) { continue; }
+		if (!shell.vfs.exists(full)) {
+			continue;
+		}
 		try {
 			const st = shell.vfs.stat(full);
-			if (st.type !== "file") { continue; }
-			if (!(st.mode & 0o111)) { continue; }
+			if (st.type !== "file") {
+				continue;
+			}
+			if (!(st.mode & 0o111)) {
+				continue;
+			}
 			return full;
-		} catch { /* not a regular file */ }
+		} catch {
+			/* not a regular file */
+		}
 	}
 	return null;
 }
@@ -149,24 +177,42 @@ function runVfsStub(
 			const uid = shell.users.getUid(authUser);
 			const gid = shell.users.getGid(authUser);
 			return builtinMod.run({
-				authUser, uid, gid, hostname,
+				authUser,
+				uid,
+				gid,
+				hostname,
 				activeSessions: shell.users.listActiveSessions(),
-				rawInput, mode, args, stdin, cwd, shell, env,
+				rawInput,
+				mode,
+				args,
+				stdin,
+				cwd,
+				shell,
+				env,
 			});
 		}
-		return { stderr: `${cmdName}: exec builtin '${builtinMatch[1]}' not found`, exitCode: 127 };
+		return {
+			stderr: `${cmdName}: exec builtin '${builtinMatch[1]}' not found`,
+			exitCode: 127,
+		};
 	}
 	const shMod = resolveModule("sh");
 	if (shMod) {
 		const uid = shell.users.getUid(authUser);
 		const gid = shell.users.getGid(authUser);
 		return shMod.run({
-			authUser, uid, gid, hostname,
+			authUser,
+			uid,
+			gid,
+			hostname,
 			activeSessions: shell.users.listActiveSessions(),
 			rawInput: `sh -c ${JSON.stringify(stubContent)}`,
 			mode,
 			args: ["-c", stubContent, "--", ...args],
-			stdin, cwd, shell, env,
+			stdin,
+			cwd,
+			shell,
+			env,
 		});
 	}
 	return { stderr: `${cmdName}: command not found`, exitCode: 127 };
@@ -210,26 +256,53 @@ export function runCommandDirect(
 	_callDepth++;
 	if (_callDepth > MAX_CALL_DEPTH) {
 		_callDepth--;
-		return { stderr: `${name}: maximum call depth (${MAX_CALL_DEPTH}) exceeded`, exitCode: 126 };
+		return {
+			stderr: `${name}: maximum call depth (${MAX_CALL_DEPTH}) exceeded`,
+			exitCode: 126,
+		};
 	}
 	// Register as visible process only at the outermost call level
 	const isTopLevel = _callDepth === 1;
 	const ppid = 1; // PID 1 is init
-	const nice = env.vars.NICE_PRIORITY ? Number.parseInt(env.vars.NICE_PRIORITY, 10) : 0;
+	const nice = env.vars.NICE_PRIORITY
+		? Number.parseInt(env.vars.NICE_PRIORITY, 10)
+		: 0;
 	const pid = isTopLevel
-		? shell.users.registerProcess(authUser, name, [name, ...args], env.vars.__TTY ?? "?", abortController, ppid, Number.isNaN(nice) ? 0 : nice)
+		? shell.users.registerProcess(
+				authUser,
+				name,
+				[name, ...args],
+				env.vars.__TTY ?? "?",
+				abortController,
+				ppid,
+				Number.isNaN(nice) ? 0 : nice,
+			)
 		: -1;
 	const startTime = Date.now();
 	try {
 		if (background && abortController?.signal.aborted) {
 			return { stderr: "", exitCode: 130 };
 		}
-		const inner = _runCommandDirectInner(name, args, authUser, hostname, mode, cwd, shell, stdin, env);
+		const inner = _runCommandDirectInner(
+			name,
+			args,
+			authUser,
+			hostname,
+			mode,
+			cwd,
+			shell,
+			stdin,
+			env,
+		);
 		if (abortController) {
 			const killed = new Promise<CommandResult>((resolve) => {
-				abortController.signal.addEventListener("abort", () => {
-					resolve({ stderr: "", exitCode: 130 });
-				}, { once: true });
+				abortController.signal.addEventListener(
+					"abort",
+					() => {
+						resolve({ stderr: "", exitCode: 130 });
+					},
+					{ once: true },
+				);
 			});
 			return Promise.race([inner, killed]);
 		}
@@ -262,11 +335,17 @@ async function _runCommandDirectInner(
 	const assignRe = ASSIGN_RE;
 	const invocation = [name, ...args];
 	let assignCount = 0;
-	while (assignCount < invocation.length && assignRe.test(invocation[assignCount] as string)) {
+	while (
+		assignCount < invocation.length &&
+		assignRe.test(invocation[assignCount] as string)
+	) {
 		assignCount += 1;
 	}
 	if (assignCount > 0) {
-		const assignments = invocation.slice(0, assignCount).map((token) => token.match(assignRe)).filter((m): m is RegExpMatchArray => m !== null);
+		const assignments = invocation
+			.slice(0, assignCount)
+			.map((token) => token.match(assignRe))
+			.filter((m): m is RegExpMatchArray => m !== null);
 		const remaining = invocation.slice(assignCount);
 		const restored: [string, string | undefined][] = [];
 		for (const [, key, value] of assignments) {
@@ -293,8 +372,11 @@ async function _runCommandDirectInner(
 			return result;
 		} finally {
 			for (const [key, value] of restored) {
-				if (value === undefined) { delete env.vars[key]; }
-				else { env.vars[key] = value; }
+				if (value === undefined) {
+					delete env.vars[key];
+				} else {
+					env.vars[key] = value;
+				}
 			}
 		}
 	}
@@ -303,7 +385,9 @@ async function _runCommandDirectInner(
 	const funcBody = env.vars[`__func_${name}`];
 	if (funcBody) {
 		const shMod = resolveModule("sh");
-		if (!shMod) { return { stderr: `${name}: sh not available`, exitCode: 127 }; }
+		if (!shMod) {
+			return { stderr: `${name}: sh not available`, exitCode: 127 };
+		}
 		const savedPositional: Record<string, string | undefined> = {};
 		args.forEach((a, i) => {
 			savedPositional[String(i + 1)] = env.vars[String(i + 1)];
@@ -315,7 +399,10 @@ async function _runCommandDirectInner(
 			const uid = shell.users.getUid(authUser);
 			const gid = shell.users.getGid(authUser);
 			return await shMod.run({
-				authUser, uid, gid, hostname,
+				authUser,
+				uid,
+				gid,
+				hostname,
 				activeSessions: shell.users.listActiveSessions(),
 				rawInput: funcBody,
 				mode,
@@ -327,8 +414,11 @@ async function _runCommandDirectInner(
 			});
 		} finally {
 			for (const [k, v] of Object.entries(savedPositional)) {
-				if (v === undefined) { delete env.vars[k]; }
-				else { env.vars[k] = v; }
+				if (v === undefined) {
+					delete env.vars[k];
+				} else {
+					env.vars[k] = v;
+				}
 			}
 		}
 	}
@@ -351,8 +441,19 @@ async function _runCommandDirectInner(
 	if (!mod) {
 		const vfsBinary = resolveVfsBinary(name, env, shell, authUser);
 		if (vfsBinary) {
-			return runVfsStub(vfsBinary, name, args, [name, ...args].join(" "),
-				authUser, hostname, mode, cwd, shell, env, stdin);
+			return runVfsStub(
+				vfsBinary,
+				name,
+				args,
+				[name, ...args].join(" "),
+				authUser,
+				hostname,
+				mode,
+				cwd,
+				shell,
+				env,
+				stdin,
+			);
 		}
 		return { stderr: `${name}: command not found`, exitCode: 127 };
 	}
@@ -410,7 +511,9 @@ export async function runCommand(
 	env?: ShellEnv,
 ): Promise<CommandResult> {
 	const trimmed = rawInput.trim();
-	if (trimmed.length === 0) { return { exitCode: 0 }; }
+	if (trimmed.length === 0) {
+		return { exitCode: 0 };
+	}
 
 	const shellEnv: ShellEnv = env ?? makeDefaultEnv(authUser, hostname);
 
@@ -420,166 +523,208 @@ export async function runCommand(
 	if (_callDepth > MAX_CALL_DEPTH) {
 		_callDepth--;
 		// console.debug(`[LOOP DETECTED] runCommand blocked: ${trimmed.slice(0, 60)}`);
-		return { stderr: `${trimmed.split(" ")[0]}: maximum call depth (${MAX_CALL_DEPTH}) exceeded`, exitCode: 126 };
+		return {
+			stderr: `${trimmed.split(" ")[0]}: maximum call depth (${MAX_CALL_DEPTH}) exceeded`,
+			exitCode: 126,
+		};
 	}
 	try {
-
-	// History expansion: !! and !n
-	if (trimmed === '!!' || /^!-?\d+$/.test(trimmed) || trimmed.startsWith('!! ')) {
-		const histPath = `${shellEnv.vars.HOME ?? `/home/${authUser}`}/.bash_history`;
-		if (shell.vfs.exists(histPath)) {
-			const lines = shell.vfs.readFile(histPath).split('\n').filter(Boolean);
-			let cmd: string | undefined;
-			if (trimmed === '!!' || trimmed.startsWith('!! ')) {
-				cmd = lines[lines.length - 1];
-			} else {
-				const n = Number.parseInt(trimmed.slice(1), 10);
-				cmd = n > 0 ? lines[n - 1] : lines[lines.length + n];
+		// History expansion: !! and !n
+		if (
+			trimmed === "!!" ||
+			/^!-?\d+$/.test(trimmed) ||
+			trimmed.startsWith("!! ")
+		) {
+			const histPath = `${shellEnv.vars.HOME ?? `/home/${authUser}`}/.bash_history`;
+			if (shell.vfs.exists(histPath)) {
+				const lines = shell.vfs.readFile(histPath).split("\n").filter(Boolean);
+				let cmd: string | undefined;
+				if (trimmed === "!!" || trimmed.startsWith("!! ")) {
+					cmd = lines[lines.length - 1];
+				} else {
+					const n = Number.parseInt(trimmed.slice(1), 10);
+					cmd = n > 0 ? lines[n - 1] : lines[lines.length + n];
+				}
+				if (cmd) {
+					const suffix = trimmed.startsWith("!! ") ? trimmed.slice(3) : "";
+					return runCommand(
+						`${cmd}${suffix ? ` ${suffix}` : ""}`,
+						authUser,
+						hostname,
+						mode,
+						cwd,
+						shell,
+						stdin,
+						shellEnv,
+					);
+				}
 			}
-			if (cmd) {
-				const suffix = trimmed.startsWith('!! ') ? trimmed.slice(3) : '';
-				return runCommand(`${cmd}${suffix ? ` ${suffix}` : ''}`, authUser, hostname, mode, cwd, shell, stdin, shellEnv);
-			}
+			return { stderr: `${trimmed}: event not found`, exitCode: 1 };
 		}
-		return { stderr: `${trimmed}: event not found`, exitCode: 1 };
-	}
 
-	const rawTokens = tokenizeCommand(trimmed);
-	const rawFirstWord = rawTokens[0]?.toLowerCase() ?? "";
-	const aliasVal = shellEnv.vars[`__alias_${rawFirstWord}`];
-	const aliasExpanded = aliasVal
-		? trimmed.replace(rawFirstWord, aliasVal)
-		: trimmed;
+		const rawTokens = tokenizeCommand(trimmed);
+		const rawFirstWord = rawTokens[0]?.toLowerCase() ?? "";
+		const aliasVal = shellEnv.vars[`__alias_${rawFirstWord}`];
+		const aliasExpanded = aliasVal
+			? trimmed.replace(rawFirstWord, aliasVal)
+			: trimmed;
 
-	// Detect sh-syntax constructs that must be handled by the sh interpreter
-	const isShScript =
-		RE_FOR.test(aliasExpanded) ||
-		RE_WHILE.test(aliasExpanded) ||
-		RE_IF.test(aliasExpanded) ||
-		RE_FUNC_BRACE.test(aliasExpanded) ||
-		RE_FUNC_KW.test(aliasExpanded) ||
-		RE_ARITH.test(aliasExpanded);
+		// Detect sh-syntax constructs that must be handled by the sh interpreter
+		const isShScript =
+			RE_FOR.test(aliasExpanded) ||
+			RE_WHILE.test(aliasExpanded) ||
+			RE_IF.test(aliasExpanded) ||
+			RE_FUNC_BRACE.test(aliasExpanded) ||
+			RE_FUNC_KW.test(aliasExpanded) ||
+			RE_ARITH.test(aliasExpanded);
 
-	const hasOperators = RE_PIPE.test(aliasExpanded) || RE_OPERATORS.test(aliasExpanded);
+		const hasOperators =
+			RE_PIPE.test(aliasExpanded) || RE_OPERATORS.test(aliasExpanded);
 
-	if ((isShScript && rawFirstWord !== "sh" && rawFirstWord !== "bash") || hasOperators) {
-		// sh-syntax: route through sh interpreter to handle for/while/functions
-		if (isShScript && rawFirstWord !== "sh" && rawFirstWord !== "bash") {
-			const shMod = resolveModule("sh");
-			if (shMod) {
-				const uid = shell.users.getUid(authUser);
-				const gid = shell.users.getGid(authUser);
-				return await shMod.run({
-					authUser, uid, gid, hostname,
-					activeSessions: shell.users.listActiveSessions(),
-					rawInput: aliasExpanded,
+		if (
+			(isShScript && rawFirstWord !== "sh" && rawFirstWord !== "bash") ||
+			hasOperators
+		) {
+			// sh-syntax: route through sh interpreter to handle for/while/functions
+			if (isShScript && rawFirstWord !== "sh" && rawFirstWord !== "bash") {
+				const shMod = resolveModule("sh");
+				if (shMod) {
+					const uid = shell.users.getUid(authUser);
+					const gid = shell.users.getGid(authUser);
+					return await shMod.run({
+						authUser,
+						uid,
+						gid,
+						hostname,
+						activeSessions: shell.users.listActiveSessions(),
+						rawInput: aliasExpanded,
+						mode,
+						args: ["-c", aliasExpanded],
+						stdin: undefined,
+						cwd,
+						shell,
+						env: shellEnv,
+					});
+				}
+			}
+			const script = parseScript(aliasExpanded);
+			if (!script.isValid) {
+				return { stderr: script.error || "Syntax error", exitCode: 1 };
+			}
+			try {
+				return await executeStatements(
+					script.statements,
+					authUser,
+					hostname,
 					mode,
-					args: ["-c", aliasExpanded],
-					stdin: undefined,
 					cwd,
 					shell,
-					env: shellEnv,
-				});
+					shellEnv,
+				);
+			} catch (error: unknown) {
+				return {
+					stderr: error instanceof Error ? error.message : "Execution failed",
+					exitCode: 1,
+				};
 			}
 		}
-		const script = parseScript(aliasExpanded);
-		if (!script.isValid) {
-			return { stderr: script.error || "Syntax error", exitCode: 1 };
+
+		const expanded = await expandAsync(
+			aliasExpanded,
+			shellEnv.vars,
+			shellEnv.lastExitCode,
+			(sub) =>
+				runCommand(
+					sub,
+					authUser,
+					hostname,
+					mode,
+					cwd,
+					shell,
+					undefined,
+					shellEnv,
+				).then((r) => r.stdout ?? ""),
+		);
+
+		const parts = tokenizeCommand(expanded.trim());
+		if (parts.length === 0) {
+			return { exitCode: 0 };
 		}
-		try {
-			return await executeStatements(
-				script.statements,
+		const assignRe = ASSIGN_RE;
+		if (assignRe.test(parts[0] as string)) {
+			return runCommandDirect(
+				parts[0] as string,
+				parts.slice(1),
 				authUser,
 				hostname,
 				mode,
 				cwd,
 				shell,
+				stdin,
 				shellEnv,
 			);
+		}
+		const commandName = parts[0]?.toLowerCase() ?? "";
+		// Apply brace expansion to each arg token
+		const rawArgs = parts.slice(1);
+		const args: string[] = [];
+		for (const token of rawArgs) {
+			for (const brace of expandBraces(token)) {
+				for (const glob of expandGlob(brace, cwd, shell.vfs)) {
+					args.push(glob);
+				}
+			}
+		}
+		const mod = resolveModule(commandName);
+
+		if (!mod) {
+			const vfsBinary = resolveVfsBinary(
+				commandName,
+				shellEnv,
+				shell,
+				authUser,
+			);
+			if (vfsBinary) {
+				return runVfsStub(
+					vfsBinary,
+					commandName,
+					args,
+					expanded,
+					authUser,
+					hostname,
+					mode,
+					cwd,
+					shell,
+					shellEnv,
+					stdin,
+				);
+			}
+			return { stderr: `${commandName}: command not found`, exitCode: 127 };
+		}
+
+		try {
+			const uid = shell.users.getUid(authUser);
+			const gid = shell.users.getGid(authUser);
+			return await mod.run({
+				authUser,
+				uid,
+				gid,
+				hostname,
+				activeSessions: shell.users.listActiveSessions(),
+				rawInput: expanded,
+				mode,
+				args,
+				stdin,
+				cwd,
+				shell,
+				env: shellEnv,
+			});
 		} catch (error: unknown) {
 			return {
-				stderr: error instanceof Error ? error.message : "Execution failed",
+				stderr: error instanceof Error ? error.message : "Command failed",
 				exitCode: 1,
 			};
 		}
-	}
-
-	const expanded = await expandAsync(
-		aliasExpanded,
-		shellEnv.vars,
-		shellEnv.lastExitCode,
-		(sub) =>
-			runCommand(
-				sub,
-				authUser,
-				hostname,
-				mode,
-				cwd,
-				shell,
-				undefined,
-				shellEnv,
-			).then((r) => r.stdout ?? ""),
-	);
-
-	const parts = tokenizeCommand(expanded.trim());
-	if (parts.length === 0) { return { exitCode: 0 }; }
-	const assignRe = ASSIGN_RE;
-	if (assignRe.test(parts[0] as string)) {
-		return runCommandDirect(
-			parts[0] as string,
-			parts.slice(1),
-			authUser,
-			hostname,
-			mode,
-			cwd,
-			shell,
-			stdin,
-			shellEnv,
-		);
-	}
-	const commandName = parts[0]?.toLowerCase() ?? "";
-	// Apply brace expansion to each arg token
-	const rawArgs = parts.slice(1);
-	const args: string[] = [];
-	for (const token of rawArgs) {
-		for (const brace of expandBraces(token)) {
-			for (const glob of expandGlob(brace, cwd, shell.vfs)) { args.push(glob); }
-		}
-	}
-	const mod = resolveModule(commandName);
-
-	if (!mod) {
-		const vfsBinary = resolveVfsBinary(commandName, shellEnv, shell, authUser);
-		if (vfsBinary) {
-			return runVfsStub(vfsBinary, commandName, args, expanded,
-				authUser, hostname, mode, cwd, shell, shellEnv, stdin);
-		}
-		return { stderr: `${commandName}: command not found`, exitCode: 127 };
-	}
-
-	try {
-		const uid = shell.users.getUid(authUser);
-		const gid = shell.users.getGid(authUser);
-		return await mod.run({
-			authUser,
-			uid,
-			gid,
-			hostname,
-			activeSessions: shell.users.listActiveSessions(),
-			rawInput: expanded,
-			mode,
-			args,
-			stdin,
-			cwd,
-			shell,
-			env: shellEnv,
-		});
-	} catch (error: unknown) {
-		return {
-			stderr: error instanceof Error ? error.message : "Command failed",
-			exitCode: 1,
-		};
-	}
 	} finally {
 		_callDepth--;
 	}

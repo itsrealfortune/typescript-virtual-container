@@ -21,7 +21,10 @@ describe("tr command", () => {
 	});
 
 	test("tr translates vowels", async () => {
-		const r = await runCmd(client, "echo 'hello world' | tr 'aeiou' '12345' || echo 'hello'" );
+		const r = await runCmd(
+			client,
+			"echo 'hello world' | tr 'aeiou' '12345' || echo 'hello'",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 
@@ -32,7 +35,10 @@ describe("tr command", () => {
 	});
 
 	test("tr -s squeezes repeated", async () => {
-		const r = await runCmd(client, "echo 'hellooo' | tr -s 'o' || echo 'hello'");
+		const r = await runCmd(
+			client,
+			"echo 'hellooo' | tr -s 'o' || echo 'hello'",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 
@@ -73,7 +79,10 @@ describe("cut command", () => {
 
 	test("cut from file", async () => {
 		createTestFile(shell, "/tmp/cut-test.txt", "one:two:three\nfour:five:six");
-		const r = await runCmd(client, "cut -d: -f2 /tmp/cut-test.txt || echo 'two'" );
+		const r = await runCmd(
+			client,
+			"cut -d: -f2 /tmp/cut-test.txt || echo 'two'",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 });
@@ -211,7 +220,10 @@ describe("env command", () => {
 	});
 
 	test("env runs command with vars", async () => {
-		const r = await runCmd(client, "env TEST_VAR=hello sh -c 'echo $TEST_VAR' || echo 'test'" );
+		const r = await runCmd(
+			client,
+			"env TEST_VAR=hello sh -c 'echo $TEST_VAR' || echo 'test'",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 
@@ -241,7 +253,10 @@ describe("export command", () => {
 
 describe("unset command", () => {
 	test("unset removes variable", async () => {
-		const r = await runCmd(client, "export VAR=value && unset VAR && echo $VAR");
+		const r = await runCmd(
+			client,
+			"export VAR=value && unset VAR && echo $VAR",
+		);
 		expect(r.exitCode).toBe(0);
 		expect(r.stdout?.trim()).toBe("");
 	});
@@ -380,7 +395,10 @@ describe("tee command", () => {
 
 	test("tee -a appends", async () => {
 		createTestFile(shell, "/tmp/tee-append.txt", "first\n");
-		const r = await runCmd(client, "echo 'second' | tee -a /tmp/tee-append.txt");
+		const r = await runCmd(
+			client,
+			"echo 'second' | tee -a /tmp/tee-append.txt",
+		);
 		expect(r.exitCode).toBe(0);
 		const content = shell.vfs.readFile("/tmp/tee-append.txt");
 		expect(content).toContain("first");
@@ -388,7 +406,10 @@ describe("tee command", () => {
 	});
 
 	test("tee multiple files", async () => {
-		const r = await runCmd(client, "echo 'data' | tee /tmp/tee1.txt /tmp/tee2.txt");
+		const r = await runCmd(
+			client,
+			"echo 'data' | tee /tmp/tee1.txt /tmp/tee2.txt",
+		);
 		expect(r.exitCode).toBe(0);
 		expect(shell.vfs.readFile("/tmp/tee1.txt")).toContain("data");
 		expect(shell.vfs.readFile("/tmp/tee2.txt")).toContain("data");

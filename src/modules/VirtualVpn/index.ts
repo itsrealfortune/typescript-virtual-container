@@ -15,8 +15,12 @@ export class VirtualVpn {
 	private readonly _routes: Map<string, VirtualVpn> = new Map();
 
 	constructor(
-		private readonly _baieA: { switch: { route: (p: Packet) => Promise<PacketResult>; subnet: string } },
-		private readonly _baieB: { switch: { route: (p: Packet) => Promise<PacketResult>; subnet: string } },
+		private readonly _baieA: {
+			switch: { route: (p: Packet) => Promise<PacketResult>; subnet: string };
+		},
+		private readonly _baieB: {
+			switch: { route: (p: Packet) => Promise<PacketResult>; subnet: string };
+		},
 		options: VpnOptions,
 	) {
 		this._key = deriveKey(options.key);
@@ -32,7 +36,11 @@ export class VirtualVpn {
 		const iv = randomBytes(16);
 		const encrypted = encrypt(JSON.stringify(packet), this._key, iv);
 		const wire = Buffer.concat([iv, encrypted]);
-		const decrypted = decrypt(wire.subarray(16), this._key, wire.subarray(0, 16));
+		const decrypted = decrypt(
+			wire.subarray(16),
+			this._key,
+			wire.subarray(0, 16),
+		);
 		const remote: Packet = JSON.parse(decrypted);
 
 		await new Promise((r) => setTimeout(r, this._latencyMs));

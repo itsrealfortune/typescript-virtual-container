@@ -42,7 +42,9 @@ export const catCommand: ShellModule = {
 		const numbered = combined
 			.split("\n")
 			.map((line) => {
-				if (numberNonBlank && line.trim() === "") { return line; }
+				if (numberNonBlank && line.trim() === "") {
+					return line;
+				}
 				return `${String(lineNum++).padStart(6)}\t${line}`;
 			})
 			.join("\n");

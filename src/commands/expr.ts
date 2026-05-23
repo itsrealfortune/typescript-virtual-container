@@ -36,15 +36,25 @@ export const exprCommand: ShellModule = {
 			}
 			let result: number;
 			switch (op) {
-				case "+": result = left + right; break;
-				case "-": result = left - right; break;
-				case "*": result = left * right; break;
+				case "+":
+					result = left + right;
+					break;
+				case "-":
+					result = left - right;
+					break;
+				case "*":
+					result = left * right;
+					break;
 				case "/":
-					if (right === 0) { return { stderr: "expr: division by zero\n", exitCode: 2 }; }
+					if (right === 0) {
+						return { stderr: "expr: division by zero\n", exitCode: 2 };
+					}
 					result = Math.trunc(left / right);
 					break;
 				case "%":
-					if (right === 0) { return { stderr: "expr: division by zero\n", exitCode: 2 }; }
+					if (right === 0) {
+						return { stderr: "expr: division by zero\n", exitCode: 2 };
+					}
 					result = left % right;
 					break;
 				default:

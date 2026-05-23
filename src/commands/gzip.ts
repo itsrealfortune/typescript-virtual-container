@@ -21,7 +21,9 @@ export const gzipCommand: ShellModule = {
 		const keepOrig = args.includes("-k") || args.includes("--keep");
 		const decompress = args.includes("-d");
 		const file = args.find((a) => !a.startsWith("-"));
-		if (!file) { return { stderr: "gzip: no file specified\n", exitCode: 1 }; }
+		if (!file) {
+			return { stderr: "gzip: no file specified\n", exitCode: 1 };
+		}
 
 		const p = resolvePath(cwd, file);
 		const uid = shell.users.getUid(authUser);
@@ -30,29 +32,45 @@ export const gzipCommand: ShellModule = {
 		if (decompress) {
 			// gzip -d = gunzip
 			if (!file.endsWith(".gz")) {
-				return { stderr: `gzip: ${file}: unknown suffix -- ignored\n`, exitCode: 1 };
+				return {
+					stderr: `gzip: ${file}: unknown suffix -- ignored\n`,
+					exitCode: 1,
+				};
 			}
 			if (!shell.vfs.exists(p)) {
-				return { stderr: `gzip: ${file}: No such file or directory\n`, exitCode: 1 };
+				return {
+					stderr: `gzip: ${file}: No such file or directory\n`,
+					exitCode: 1,
+				};
 			}
 			const content = shell.vfs.readFile(p);
 			const dest = p.slice(0, -3);
 			shell.vfs.writeFile(dest, content, {}, uid, gid);
-			if (!keepOrig) { shell.vfs.remove(p, { recursive: false }, uid, gid); }
+			if (!keepOrig) {
+				shell.vfs.remove(p, { recursive: false }, uid, gid);
+			}
 			return { exitCode: 0 };
 		}
 
 		if (!shell.vfs.exists(p)) {
-			return { stderr: `gzip: ${file}: No such file or directory\n`, exitCode: 1 };
+			return {
+				stderr: `gzip: ${file}: No such file or directory\n`,
+				exitCode: 1,
+			};
 		}
 		if (file.endsWith(".gz")) {
-			return { stderr: `gzip: ${file}: already has .gz suffix -- unchanged\n`, exitCode: 1 };
+			return {
+				stderr: `gzip: ${file}: already has .gz suffix -- unchanged\n`,
+				exitCode: 1,
+			};
 		}
 
 		const rawContent = shell.vfs.readFileRaw(p);
 		const gzPath = `${p}.gz`;
 		shell.vfs.writeFile(gzPath, rawContent, { compress: true }, uid, gid);
-		if (!keepOrig) { shell.vfs.remove(p, { recursive: false }, uid, gid); }
+		if (!keepOrig) {
+			shell.vfs.remove(p, { recursive: false }, uid, gid);
+		}
 		return { exitCode: 0 };
 	},
 };
@@ -70,23 +88,33 @@ export const gunzipCommand: ShellModule = {
 	run: ({ shell, cwd, args, authUser }) => {
 		const keepOrig = args.includes("-k") || args.includes("--keep");
 		const file = args.find((a) => !a.startsWith("-"));
-		if (!file) { return { stderr: "gunzip: no file specified\n", exitCode: 1 }; }
+		if (!file) {
+			return { stderr: "gunzip: no file specified\n", exitCode: 1 };
+		}
 
 		const p = resolvePath(cwd, file);
 		const uid = shell.users.getUid(authUser);
 		const gid = shell.users.getGid(authUser);
 
 		if (!shell.vfs.exists(p)) {
-			return { stderr: `gunzip: ${file}: No such file or directory\n`, exitCode: 1 };
+			return {
+				stderr: `gunzip: ${file}: No such file or directory\n`,
+				exitCode: 1,
+			};
 		}
 		if (!file.endsWith(".gz")) {
-			return { stderr: `gunzip: ${file}: unknown suffix -- ignored\n`, exitCode: 1 };
+			return {
+				stderr: `gunzip: ${file}: unknown suffix -- ignored\n`,
+				exitCode: 1,
+			};
 		}
 
 		const content = shell.vfs.readFile(p);
 		const dest = p.slice(0, -3);
 		shell.vfs.writeFile(dest, content, {}, uid, gid);
-		if (!keepOrig) { shell.vfs.remove(p, { recursive: false }, uid, gid); }
+		if (!keepOrig) {
+			shell.vfs.remove(p, { recursive: false }, uid, gid);
+		}
 		return { exitCode: 0 };
 	},
 };

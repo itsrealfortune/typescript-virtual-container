@@ -1,7 +1,12 @@
 /** biome-ignore-all lint/suspicious/noTemplateCurlyInString: expand */
 import { beforeAll, describe, expect, test } from "bun:test";
 import type { SshClient, VirtualShell } from "../src";
-import { createTestEnv, createTestFile, pathExists, runCmd } from "./test-helper";
+import {
+	createTestEnv,
+	createTestFile,
+	pathExists,
+	runCmd,
+} from "./test-helper";
 
 let shell: VirtualShell;
 let client: InstanceType<typeof SshClient>;
@@ -69,7 +74,10 @@ describe("source/dot command", () => {
 
 	test("source with variable assignment", async () => {
 		createTestFile(shell, "/tmp/srcvar.sh", "VAR=sourced_value");
-		const r = await runCmd(client, "source /tmp/srcvar.sh && echo $VAR || echo 'fail'");
+		const r = await runCmd(
+			client,
+			"source /tmp/srcvar.sh && echo $VAR || echo 'fail'",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 
@@ -80,13 +88,19 @@ describe("source/dot command", () => {
 	});
 
 	test("source non-existent file fails", async () => {
-		const r = await runCmd(client, "source /nonexistent.sh 2>&1 || echo 'error'");
+		const r = await runCmd(
+			client,
+			"source /nonexistent.sh 2>&1 || echo 'error'",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 
 	test("source with functions", async () => {
 		createTestFile(shell, "/tmp/func.sh", "myfunc() { echo func_result; }");
-		const r = await runCmd(client, "source /tmp/func.sh && myfunc || echo 'no func'");
+		const r = await runCmd(
+			client,
+			"source /tmp/func.sh && myfunc || echo 'no func'",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 });
@@ -169,7 +183,10 @@ describe("pipes and redirections", () => {
 	});
 
 	test("redirect stderr (2>)", async () => {
-		const r = await runCmd(client, "ls /nonexistent 2> /tmp/err.txt 2>&1 || echo done");
+		const r = await runCmd(
+			client,
+			"ls /nonexistent 2> /tmp/err.txt 2>&1 || echo done",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 
@@ -203,7 +220,10 @@ describe("command chaining and sequencing", () => {
 	});
 
 	test("AND operator (&&) with failure", async () => {
-		const r = await runCmd(client, "false && echo 'should not print' || echo 'failed'");
+		const r = await runCmd(
+			client,
+			"false && echo 'should not print' || echo 'failed'",
+		);
 		expect(r.exitCode).toBe(0);
 		expect(r.stdout?.trim()).toBe("failed");
 	});
@@ -302,12 +322,18 @@ describe("command substitution", () => {
 	});
 
 	test("command substitution in variable", async () => {
-		const r = await runCmd(client, "VAR=$(echo value) && echo $VAR || echo 'subst'");
+		const r = await runCmd(
+			client,
+			"VAR=$(echo value) && echo $VAR || echo 'subst'",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 
 	test("command substitution with pipe", async () => {
-		const r = await runCmd(client, "echo $(echo hello | tr a-z A-Z) || echo 'subst'");
+		const r = await runCmd(
+			client,
+			"echo $(echo hello | tr a-z A-Z) || echo 'subst'",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 });
@@ -316,23 +342,35 @@ describe("command substitution", () => {
 
 describe("conditionals (if/then/else)", () => {
 	test("if with true condition", async () => {
-		const r = await runCmd(client, "if true; then echo yes; fi 2>&1 || echo 'if'");
+		const r = await runCmd(
+			client,
+			"if true; then echo yes; fi 2>&1 || echo 'if'",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 
 	test("if with false condition", async () => {
-		const r = await runCmd(client, "if false; then echo yes; else echo no; fi 2>&1 || echo 'if'");
+		const r = await runCmd(
+			client,
+			"if false; then echo yes; else echo no; fi 2>&1 || echo 'if'",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 
 	test("if with test -f", async () => {
 		createTestFile(shell, "/tmp/iftest.txt", "content");
-		const r = await runCmd(client, "if test -f /tmp/iftest.txt; then echo exists; fi 2>&1 || echo 'if'");
+		const r = await runCmd(
+			client,
+			"if test -f /tmp/iftest.txt; then echo exists; fi 2>&1 || echo 'if'",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 
 	test("if/elif/else chain", async () => {
-		const r = await runCmd(client, "if [ 1 -eq 2 ]; then echo a; elif [ 2 -eq 2 ]; then echo b; else echo c; fi");
+		const r = await runCmd(
+			client,
+			"if [ 1 -eq 2 ]; then echo a; elif [ 2 -eq 2 ]; then echo b; else echo c; fi",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 });
@@ -356,7 +394,10 @@ describe("loops (for/while)", () => {
 	test("for loop with glob", async () => {
 		createTestFile(shell, "/tmp/loop1.txt", "");
 		createTestFile(shell, "/tmp/loop2.txt", "");
-		const r = await runCmd(client, "for f in /tmp/loop*.txt; do echo $f; done 2>&1 || echo 'for'");
+		const r = await runCmd(
+			client,
+			"for f in /tmp/loop*.txt; do echo $f; done 2>&1 || echo 'for'",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 });
@@ -387,12 +428,18 @@ describe("special variables", () => {
 	});
 
 	test("$1, $2, ... positional args", async () => {
-		const r = await runCmd(client, "sh -c 'echo $1 $2' script arg1 arg2 || echo 'args'");
+		const r = await runCmd(
+			client,
+			"sh -c 'echo $1 $2' script arg1 arg2 || echo 'args'",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 
 	test("$@ all positional args", async () => {
-		const r = await runCmd(client, "sh -c 'for a in \"$@\"; do echo $a; done' script a b c");
+		const r = await runCmd(
+			client,
+			"sh -c 'for a in \"$@\"; do echo $a; done' script a b c",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 });
@@ -401,12 +448,18 @@ describe("special variables", () => {
 
 describe("quoting and escaping", () => {
 	test("double quotes with variables", async () => {
-		const r = await runCmd(client, "V=hello && echo \"$V world\" || echo 'quote'");
+		const r = await runCmd(
+			client,
+			"V=hello && echo \"$V world\" || echo 'quote'",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 
 	test("single quotes (no substitution)", async () => {
-		const r = await runCmd(client, "V=hello && echo '$V world' || echo 'quote'");
+		const r = await runCmd(
+			client,
+			"V=hello && echo '$V world' || echo 'quote'",
+		);
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 
@@ -513,13 +566,19 @@ describe("parameter expansion", () => {
 describe("process and I/O operations", () => {
 	test("multiple input/output redirection", async () => {
 		createTestFile(shell, "/tmp/input.txt", "line1\nline2\nline3");
-		const r = await runCmd(client, "cat /tmp/input.txt | grep 'line' | sort | uniq");
+		const r = await runCmd(
+			client,
+			"cat /tmp/input.txt | grep 'line' | sort | uniq",
+		);
 		expect(r.exitCode).toBe(0);
 		expect(r.stdout).toContain("line");
 	});
 
 	test("tee to multiple files via pipe", async () => {
-		const r = await runCmd(client, "echo 'test' | tee /tmp/t1.txt /tmp/t2.txt | cat");
+		const r = await runCmd(
+			client,
+			"echo 'test' | tee /tmp/t1.txt /tmp/t2.txt | cat",
+		);
 		expect(r.exitCode).toBe(0);
 		expect(shell.vfs.exists("/tmp/t1.txt")).toBe(true);
 		expect(shell.vfs.exists("/tmp/t2.txt")).toBe(true);

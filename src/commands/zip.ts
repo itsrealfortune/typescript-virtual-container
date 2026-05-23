@@ -8,7 +8,9 @@ const CRC_TABLE = (() => {
 	const t = new Uint32Array(256);
 	for (let i = 0; i < 256; i++) {
 		let c = i;
-		for (let j = 0; j < 8; j++) { c = c & 1 ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1); }
+		for (let j = 0; j < 8; j++) {
+			c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+		}
 		t[i] = c;
 	}
 	return t;
@@ -16,7 +18,12 @@ const CRC_TABLE = (() => {
 
 function crc32(buf: Buffer): number {
 	let crc = 0xffffffff;
-	for (let i = 0; i < buf.length; i++) { crc = ((CRC_TABLE[(crc ^ (buf[i] as number)) & 0xff] as number) ^ (crc >>> 8)) >>> 0; }
+	for (let i = 0; i < buf.length; i++) {
+		crc =
+			((CRC_TABLE[(crc ^ (buf[i] as number)) & 0xff] as number) ^
+				(crc >>> 8)) >>>
+			0;
+	}
 	return (crc ^ 0xffffffff) >>> 0;
 }
 
@@ -24,8 +31,12 @@ function crc32(buf: Buffer): number {
 
 function dosDateTime(): [number, number] {
 	const d = new Date();
-	const date = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
-	const time = (d.getHours() << 11) | (d.getMinutes() << 5) | Math.floor(d.getSeconds() / 2);
+	const date =
+		((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+	const time =
+		(d.getHours() << 11) |
+		(d.getMinutes() << 5) |
+		Math.floor(d.getSeconds() / 2);
 	return [time, date];
 }
 
@@ -107,9 +118,13 @@ function parseZip(raw: Buffer): Array<{ name: string; content: Buffer }> {
 	let off = 0;
 	while (off + 4 <= raw.length) {
 		const sig = raw.readUInt32LE(off);
-		if (sig === 0x02014b50 || sig === 0x06054b50) { break; // central dir / EOCD
-}
-		if (sig !== 0x04034b50) { off++; continue; }
+		if (sig === 0x02014b50 || sig === 0x06054b50) {
+			break; // central dir / EOCD
+		}
+		if (sig !== 0x04034b50) {
+			off++;
+			continue;
+		}
 
 		const method = raw.readUInt16LE(off + 8);
 		const compSize = raw.readUInt32LE(off + 18);
@@ -122,16 +137,22 @@ function parseZip(raw: Buffer): Array<{ name: string; content: Buffer }> {
 
 		let content: Buffer;
 		if (method === 8) {
-			try { content = Buffer.from(inflateSync(compData)); }
-			catch { content = compData; }
+			try {
+				content = Buffer.from(inflateSync(compData));
+			} catch {
+				content = compData;
+			}
 		} else {
 			content = compData;
 		}
 
 		if (name && !name.endsWith("/")) {
 			// Validate size
-			if (content.length === uncompSize || method !== 0) { files.push({ name, content }); }
-			else { files.push({ name, content }); }
+			if (content.length === uncompSize || method !== 0) {
+				files.push({ name, content });
+			} else {
+				files.push({ name, content });
+			}
 		}
 		off = dataOff + compSize;
 	}
@@ -154,10 +175,17 @@ export const zipCommand: ShellModule = {
 		const files = args.filter((a) => !a.startsWith("-"));
 		const archiveArg = files[0];
 		const sources = files.slice(1);
-		if (!archiveArg) { return { stderr: "zip: no archive specified", exitCode: 1 }; }
-		if (sources.length === 0) { return { stderr: "zip: nothing to do!", exitCode: 12 }; }
+		if (!archiveArg) {
+			return { stderr: "zip: no archive specified", exitCode: 1 };
+		}
+		if (sources.length === 0) {
+			return { stderr: "zip: nothing to do!", exitCode: 12 };
+		}
 
-		const archivePath = resolvePath(cwd, archiveArg.endsWith(".zip") ? archiveArg : `${archiveArg}.zip`);
+		const archivePath = resolvePath(
+			cwd,
+			archiveArg.endsWith(".zip") ? archiveArg : `${archiveArg}.zip`,
+		);
 		const entries: Array<{ name: string; content: Buffer }> = [];
 		const verboseLines: string[] = [];
 		const uid = shell.users.getUid(authUser);
@@ -165,7 +193,12 @@ export const zipCommand: ShellModule = {
 
 		for (const src of sources) {
 			const p = resolvePath(cwd, src);
-			if (!shell.vfs.exists(p)) { return { stderr: `zip warning: name not matched: ${src}`, exitCode: 12 }; }
+			if (!shell.vfs.exists(p)) {
+				return {
+					stderr: `zip warning: name not matched: ${src}`,
+					exitCode: 12,
+				};
+			}
 			const st = shell.vfs.stat(p);
 			// Strip leading slash — real zip does this for security (avoids absolute-path extraction)
 			const storeName = src.startsWith("/") ? src.slice(1) : src;
@@ -179,10 +212,14 @@ export const zipCommand: ShellModule = {
 						const full = `${dir}/${e}`;
 						const rel = `${prefix}/${e}`;
 						const s = shell.vfs.stat(full);
-						if (s.type === "directory") { walk(full, rel); }
-						else {
+						if (s.type === "directory") {
+							walk(full, rel);
+						} else {
 							const content = shell.vfs.readFileRaw(full);
-							entries.push({ name: rel.startsWith("/") ? rel.slice(1) : rel, content });
+							entries.push({
+								name: rel.startsWith("/") ? rel.slice(1) : rel,
+								content,
+							});
 							verboseLines.push(`  adding: ${rel} (deflated)`);
 						}
 					}
@@ -191,7 +228,9 @@ export const zipCommand: ShellModule = {
 			}
 		}
 
-		if (entries.length === 0) { return { stderr: "zip: nothing to do!", exitCode: 12 }; }
+		if (entries.length === 0) {
+			return { stderr: "zip: nothing to do!", exitCode: 12 };
+		}
 		const zipBuf = buildZip(entries);
 		shell.vfs.writeFile(archivePath, zipBuf, {}, uid, gid);
 		return { stdout: verboseLines.join("\n"), exitCode: 0 };
@@ -212,15 +251,25 @@ export const unzipCommand: ShellModule = {
 		const dIdx = args.indexOf("-d");
 		const destDir = dIdx === -1 ? undefined : args[dIdx + 1];
 		const archive = args.find((a) => !a.startsWith("-") && a !== destDir);
-		if (!archive) { return { stderr: "unzip: missing archive operand", exitCode: 1 }; }
+		if (!archive) {
+			return { stderr: "unzip: missing archive operand", exitCode: 1 };
+		}
 
 		const archivePath = resolvePath(cwd, archive);
-		if (!shell.vfs.exists(archivePath)) { return { stderr: `unzip: cannot find or open ${archive}`, exitCode: 9 }; }
+		if (!shell.vfs.exists(archivePath)) {
+			return { stderr: `unzip: cannot find or open ${archive}`, exitCode: 9 };
+		}
 
 		const raw = shell.vfs.readFileRaw(archivePath);
 		let files: Array<{ name: string; content: Buffer }>;
-		try { files = parseZip(raw); }
-		catch (e) { return { stderr: `unzip: ${archive}: not a valid ZIP file: ${e instanceof Error ? e.message : String(e)}`, exitCode: 1 }; }
+		try {
+			files = parseZip(raw);
+		} catch (e) {
+			return {
+				stderr: `unzip: ${archive}: not a valid ZIP file: ${e instanceof Error ? e.message : String(e)}`,
+				exitCode: 1,
+			};
+		}
 
 		const dest = destDir ? resolvePath(cwd, destDir) : cwd;
 		const uid = shell.users.getUid(authUser);
@@ -228,10 +277,16 @@ export const unzipCommand: ShellModule = {
 
 		if (listOnly) {
 			const header = `Archive:  ${archive}\n  Length      Date    Time    Name\n---------  ---------- -----   ----`;
-			const rows = files.map((f) => `  ${String(f.content.length).padStart(8)}  2024-01-01 00:00   ${f.name}`);
+			const rows = files.map(
+				(f) =>
+					`  ${String(f.content.length).padStart(8)}  2024-01-01 00:00   ${f.name}`,
+			);
 			const total = files.reduce((s, f) => s + f.content.length, 0);
 			const footer = `---------                     -------\n  ${String(total).padStart(8)}                     ${files.length} file${files.length === 1 ? "" : "s"}`;
-			return { stdout: `${header}\n${rows.join("\n")}\n${footer}`, exitCode: 0 };
+			return {
+				stdout: `${header}\n${rows.join("\n")}\n${footer}`,
+				exitCode: 0,
+			};
 		}
 
 		const out: string[] = [`Archive:  ${archive}`];

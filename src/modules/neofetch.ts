@@ -151,19 +151,17 @@ function readOsPrettyName(): string | undefined {
 			const value = line.slice("PRETTY_NAME=".length).trim();
 			return value.replace(/^"|"$/g, "");
 		}
-	} catch {
-	}
+	} catch {}
 }
 
 function readFirstLine(filePath: string): string | undefined {
 	try {
 		const data = readFileSync(filePath, "utf8").split("\n")[0]?.trim();
 		if (!data || data.length === 0) {
-			return ;
+			return;
 		}
 		return data;
-	} catch {
-	}
+	} catch {}
 }
 
 function resolveHostLabel(fallback: string): string {
@@ -192,7 +190,9 @@ function countDpkgPackages(): number | undefined {
 			const data = readFileSync(filePath, "utf8");
 			const matches = data.match(/^Package:\s+/gm);
 			return matches?.length ?? 0;
-		} catch { /* dpkg status file may not exist */ }
+		} catch {
+			/* dpkg status file may not exist */
+		}
 	}
 }
 
@@ -208,7 +208,9 @@ function countSnapPackages(): number | undefined {
 			const entries = readdirSync(dirPath, { withFileTypes: true });
 			const count = entries.filter((entry) => entry.isDirectory()).length;
 			return count;
-		} catch { /* snap directory may not be readable */ }
+		} catch {
+			/* snap directory may not be readable */
+		}
 	}
 }
 
@@ -258,8 +260,14 @@ function resolveDefaults(info: NeofetchInfo): Required<NeofetchInfo> {
 	const hostTotalMem = os.totalmem();
 	const hostFreeMem = os.freemem();
 	const ramCap = info.ramCapBytes;
-	const totalMem = ramCap !== undefined && ramCap > 0 ? Math.min(hostTotalMem, ramCap) : hostTotalMem;
-	const freeMem = ramCap !== undefined && ramCap > 0 ? Math.floor(totalMem * (hostFreeMem / hostTotalMem)) : hostFreeMem;
+	const totalMem =
+		ramCap !== undefined && ramCap > 0
+			? Math.min(hostTotalMem, ramCap)
+			: hostTotalMem;
+	const freeMem =
+		ramCap !== undefined && ramCap > 0
+			? Math.floor(totalMem * (hostFreeMem / hostTotalMem))
+			: hostFreeMem;
 	const usedMem = Math.max(0, totalMem - freeMem);
 	const shellProps = info.shellProps;
 

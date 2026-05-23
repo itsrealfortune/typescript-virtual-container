@@ -24,9 +24,7 @@ export const deluserCommand: ShellModule = {
 		}
 
 		const force =
-			args.includes("-f") ||
-			args.includes("--force") ||
-			args.includes("-y");
+			args.includes("-f") || args.includes("--force") || args.includes("-y");
 		const username = args.find((a) => !a.startsWith("-"));
 
 		if (!username) {

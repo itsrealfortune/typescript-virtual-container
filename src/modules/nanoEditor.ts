@@ -32,7 +32,9 @@ function stripAnsi(s: string): string {
 	while (i < s.length) {
 		if (s[i] === ESC && s[i + 1] === "[") {
 			i += 2;
-			while (i < s.length && (s.charAt(i) < "@" || s.charAt(i) > "~")) { i++; }
+			while (i < s.length && (s.charAt(i) < "@" || s.charAt(i) > "~")) {
+				i++;
+			}
 			i++;
 		} else {
 			out += s[i];
@@ -92,12 +94,12 @@ interface SearchState {
 // Input mode
 type Mode =
 	| "normal"
-	| "exit-confirm"       // ^X with unsaved changes: "Save modified buffer?"
-	| "exit-filename"      // after "Y" in exit-confirm: prompt filename
-	| "writeout"           // ^O: prompt filename
-	| "search"             // ^W: type query
-	| "search-confirm"     // not found, press key
-	| "goto-line"          // ^_ / Alt+G
+	| "exit-confirm" // ^X with unsaved changes: "Save modified buffer?"
+	| "exit-filename" // after "Y" in exit-confirm: prompt filename
+	| "writeout" // ^O: prompt filename
+	| "search" // ^W: type query
+	| "search-confirm" // not found, press key
+	| "goto-line" // ^_ / Alt+G
 	| "help";
 
 // ── NanoEditor ───────────────────────────────────────────────────────────────
@@ -140,7 +142,7 @@ export class NanoEditor {
 	private _filename: string;
 
 	private _mode: Mode = "normal";
-	private _inputBuffer = "";        // for multi-char prompts
+	private _inputBuffer = ""; // for multi-char prompts
 	private _searchState: SearchState | null = null;
 	private _clipboard: string[] = []; // ^K cut lines
 	private _undoStack: UndoEntry[] = [];
@@ -167,7 +169,9 @@ export class NanoEditor {
 		if (this._lines.length > 1 && this._lines.at(-1) === "") {
 			this._lines.pop();
 		}
-		if (this._lines.length === 0) { this._lines = [""]; }
+		if (this._lines.length === 0) {
+			this._lines = [""];
+		}
 	}
 
 	// ── Public API ────────────────────────────────────────────────────────────
@@ -214,7 +218,12 @@ export class NanoEditor {
 			if (data[i + 1] === "[") {
 				// CSI sequence
 				let j = i + 2;
-				while (j < data.length && (data.charAt(j) < "@" || data.charAt(j) > "~")) { j++; }
+				while (
+					j < data.length &&
+					(data.charAt(j) < "@" || data.charAt(j) > "~")
+				) {
+					j++;
+				}
 				const seq = data.slice(i, j + 1);
 				this._handleEscape(seq);
 				return j - i + 1;
@@ -239,19 +248,51 @@ export class NanoEditor {
 
 	private _handleEscape(seq: string): void {
 		switch (seq) {
-			case `${ESC}[A`: case `${ESC}OA`: this._dispatch("up"); break;
-			case `${ESC}[B`: case `${ESC}OB`: this._dispatch("down"); break;
-			case `${ESC}[C`: case `${ESC}OC`: this._dispatch("right"); break;
-			case `${ESC}[D`: case `${ESC}OD`: this._dispatch("left"); break;
-			case `${ESC}[H`: case `${ESC}[1~`: this._dispatch("home"); break;
-			case `${ESC}[F`: case `${ESC}[4~`: this._dispatch("end"); break;
-			case `${ESC}[5~`: this._dispatch("pageup"); break;
-			case `${ESC}[6~`: this._dispatch("pagedown"); break;
-			case `${ESC}[3~`: this._dispatch("delete"); break;
-			case `${ESC}[1;5C`: this._dispatch("ctrl-right"); break;
-			case `${ESC}[1;5D`: this._dispatch("ctrl-left"); break;
-			case `${ESC}[1;5A`: this._dispatch("ctrl-up"); break;
-			case `${ESC}[1;5B`: this._dispatch("ctrl-down"); break;
+			case `${ESC}[A`:
+			case `${ESC}OA`:
+				this._dispatch("up");
+				break;
+			case `${ESC}[B`:
+			case `${ESC}OB`:
+				this._dispatch("down");
+				break;
+			case `${ESC}[C`:
+			case `${ESC}OC`:
+				this._dispatch("right");
+				break;
+			case `${ESC}[D`:
+			case `${ESC}OD`:
+				this._dispatch("left");
+				break;
+			case `${ESC}[H`:
+			case `${ESC}[1~`:
+				this._dispatch("home");
+				break;
+			case `${ESC}[F`:
+			case `${ESC}[4~`:
+				this._dispatch("end");
+				break;
+			case `${ESC}[5~`:
+				this._dispatch("pageup");
+				break;
+			case `${ESC}[6~`:
+				this._dispatch("pagedown");
+				break;
+			case `${ESC}[3~`:
+				this._dispatch("delete");
+				break;
+			case `${ESC}[1;5C`:
+				this._dispatch("ctrl-right");
+				break;
+			case `${ESC}[1;5D`:
+				this._dispatch("ctrl-left");
+				break;
+			case `${ESC}[1;5A`:
+				this._dispatch("ctrl-up");
+				break;
+			case `${ESC}[1;5B`:
+				this._dispatch("ctrl-down");
+				break;
 			default:
 				break;
 		}
@@ -259,12 +300,29 @@ export class NanoEditor {
 
 	private _handleAlt(key: string): void {
 		const k = key.toLowerCase();
-		if (k === "u") { this._doUndo(); return; }
-		if (k === "e") { this._doRedo(); return; }
-		if (k === "g") { this._enterGotoLine(); return; }
-		if (k === "r") { this._doSearchReplace(); return; }
-		if (k === "a") { this._toggleMark(); return; }
-		if (k === "^") { this._doUndo(); } // Alt+6 = Alt+^
+		if (k === "u") {
+			this._doUndo();
+			return;
+		}
+		if (k === "e") {
+			this._doRedo();
+			return;
+		}
+		if (k === "g") {
+			this._enterGotoLine();
+			return;
+		}
+		if (k === "r") {
+			this._doSearchReplace();
+			return;
+		}
+		if (k === "a") {
+			this._toggleMark();
+			return;
+		}
+		if (k === "^") {
+			this._doUndo();
+		} // Alt+6 = Alt+^
 	}
 
 	private _handleChar(ch: string): void {
@@ -289,60 +347,131 @@ export class NanoEditor {
 	private _handleControl(code: number): void {
 		switch (code) {
 			// Navigation
-			case 1: this._dispatch("home"); break;          // ^A
-			case 5: this._dispatch("end"); break;           // ^E
-			case 16: this._dispatch("up"); break;           // ^P (emacs)
-			case 14: this._dispatch("down"); break;         // ^N (emacs)
-			case 2: this._dispatch("left"); break;          // ^B
-			case 6: this._dispatch("right"); break;         // ^F
+			case 1:
+				this._dispatch("home");
+				break; // ^A
+			case 5:
+				this._dispatch("end");
+				break; // ^E
+			case 16:
+				this._dispatch("up");
+				break; // ^P (emacs)
+			case 14:
+				this._dispatch("down");
+				break; // ^N (emacs)
+			case 2:
+				this._dispatch("left");
+				break; // ^B
+			case 6:
+				this._dispatch("right");
+				break; // ^F
 
 			// Editing
-			case 8: case 127: this._doBackspace(); break;   // ^H / DEL
-			case 13: this._doEnter(); break;                // ^M / Enter
-			case 11: this._doCutLine(); break;              // ^K
-			case 21: this._doUncut(); break;                // ^U
-			case 9: this._doInsertChar("\t"); break;        // ^I / Tab
+			case 8:
+			case 127:
+				this._doBackspace();
+				break; // ^H / DEL
+			case 13:
+				this._doEnter();
+				break; // ^M / Enter
+			case 11:
+				this._doCutLine();
+				break; // ^K
+			case 21:
+				this._doUncut();
+				break; // ^U
+			case 9:
+				this._doInsertChar("\t");
+				break; // ^I / Tab
 
 			// File ops
-			case 15: this._enterWriteout(); break;          // ^O
-			case 19: this._doSave(); break;                 // ^S (save without prompt)
-			case 24: this._doExit(); break;                 // ^X
-			case 18: this._doSearch(); break;               // ^R (reused as search-next)
+			case 15:
+				this._enterWriteout();
+				break; // ^O
+			case 19:
+				this._doSave();
+				break; // ^S (save without prompt)
+			case 24:
+				this._doExit();
+				break; // ^X
+			case 18:
+				this._doSearch();
+				break; // ^R (reused as search-next)
 
 			// Search
-			case 23: this._enterSearch(); break;            // ^W
-			case 12: this._doSearchNext(); break;           // ^L (refresh / search next)
+			case 23:
+				this._enterSearch();
+				break; // ^W
+			case 12:
+				this._doSearchNext();
+				break; // ^L (refresh / search next)
 
 			// Info
-			case 3: this._showCursorPos(); break;           // ^C
-			case 7: this._enterHelp(); break;               // ^G
+			case 3:
+				this._showCursorPos();
+				break; // ^C
+			case 7:
+				this._enterHelp();
+				break; // ^G
 
 			// Undo/Redo (nano uses Alt+U / Alt+E, but also ^Z in some builds)
-			case 26: this._doUndo(); break;                 // ^Z (non-standard but common)
+			case 26:
+				this._doUndo();
+				break; // ^Z (non-standard but common)
 
 			// Goto line
-			case 31: this._enterGotoLine(); break;          // ^_
+			case 31:
+				this._enterGotoLine();
+				break; // ^_
 			default:
 				break;
 		}
 	}
 
 	private _dispatch(action: string): void {
-		if (this._mode !== "normal") { return; }
+		if (this._mode !== "normal") {
+			return;
+		}
 		switch (action) {
-			case "up": this._moveCursor(-1); break;
-			case "down": this._moveCursor(1); break;
-			case "left": this._moveCursorLeft(); break;
-			case "right": this._moveCursorRight(); break;
-			case "home": this._moveCursorHome(); break;
-			case "end": this._moveCursorEnd(); break;
-			case "pageup": this._movePage(-1); break;
-			case "pagedown": this._movePage(1); break;
-			case "delete": this._doDelete(); break;
-			case "ctrl-right": this._moveWordRight(); break;
-			case "ctrl-left": this._moveWordLeft(); break;
-			case "ctrl-up": this._moveCursor(-1); break;
-			case "ctrl-down": this._moveCursor(1); break;
+			case "up":
+				this._moveCursor(-1);
+				break;
+			case "down":
+				this._moveCursor(1);
+				break;
+			case "left":
+				this._moveCursorLeft();
+				break;
+			case "right":
+				this._moveCursorRight();
+				break;
+			case "home":
+				this._moveCursorHome();
+				break;
+			case "end":
+				this._moveCursorEnd();
+				break;
+			case "pageup":
+				this._movePage(-1);
+				break;
+			case "pagedown":
+				this._movePage(1);
+				break;
+			case "delete":
+				this._doDelete();
+				break;
+			case "ctrl-right":
+				this._moveWordRight();
+				break;
+			case "ctrl-left":
+				this._moveWordLeft();
+				break;
+			case "ctrl-up":
+				this._moveCursor(-1);
+				break;
+			case "ctrl-down":
+				this._moveCursor(1);
+				break;
 			default:
 				break;
 		}
@@ -385,7 +514,9 @@ export class NanoEditor {
 			if (code === 13) {
 				// Confirm filename
 				const name = this._inputBuffer.trim();
-				if (name) { this._filename = name; }
+				if (name) {
+					this._filename = name;
+				}
 				const content = this._getCurrentContent();
 				this._modified = false;
 				if (this._mode === "exit-filename") {
@@ -408,7 +539,8 @@ export class NanoEditor {
 			} else if (code >= 32) {
 				this._inputBuffer += ch;
 			}
-			const label = this._mode === "writeout" ? "File Name to Write" : "File Name to Write";
+			const label =
+				this._mode === "writeout" ? "File Name to Write" : "File Name to Write";
 			this._renderStatusBar(`${label}: ${this._inputBuffer}`);
 			return;
 		}
@@ -418,11 +550,19 @@ export class NanoEditor {
 				// Execute search
 				const query = this._inputBuffer.trim();
 				if (query) {
-					this._searchState = { query, caseSensitive: false, row: this._cursorRow, col: this._cursorCol + 1 };
+					this._searchState = {
+						query,
+						caseSensitive: false,
+						row: this._cursorRow,
+						col: this._cursorCol + 1,
+					};
 				}
 				this._mode = "normal";
-				if (this._searchState) { this._doSearchNext(); }
-				else { this.fullRedraw(); }
+				if (this._searchState) {
+					this._doSearchNext();
+				} else {
+					this.fullRedraw();
+				}
 				return;
 			}
 			if (code === 7 || code === 3) {
@@ -474,7 +614,10 @@ export class NanoEditor {
 	// ── Cursor movement ───────────────────────────────────────────────────────
 
 	private _moveCursor(dRow: number): void {
-		this._cursorRow = Math.max(0, Math.min(this._lines.length - 1, this._cursorRow + dRow));
+		this._cursorRow = Math.max(
+			0,
+			Math.min(this._lines.length - 1, this._cursorRow + dRow),
+		);
 		this._cursorCol = Math.min(this._cursorCol, this._currentLine().length);
 		const prevScrollTop = this._scrollTop;
 		this._clampScroll();
@@ -494,7 +637,11 @@ export class NanoEditor {
 		}
 		const prevScrollTop = this._scrollTop;
 		this._clampScroll();
-		if (this._scrollTop === prevScrollTop) { this._renderCursor(); } else { this._renderEditArea(); }
+		if (this._scrollTop === prevScrollTop) {
+			this._renderCursor();
+		} else {
+			this._renderEditArea();
+		}
 	}
 
 	private _moveCursorRight(): void {
@@ -507,7 +654,11 @@ export class NanoEditor {
 		}
 		const prevScrollTop = this._scrollTop;
 		this._clampScroll();
-		if (this._scrollTop === prevScrollTop) { this._renderCursor(); } else { this._renderEditArea(); }
+		if (this._scrollTop === prevScrollTop) {
+			this._renderCursor();
+		} else {
+			this._renderEditArea();
+		}
 	}
 
 	private _moveCursorHome(): void {
@@ -522,7 +673,10 @@ export class NanoEditor {
 
 	private _movePage(dir: number): void {
 		const editRows = this._editAreaRows();
-		this._cursorRow = Math.max(0, Math.min(this._lines.length - 1, this._cursorRow + dir * editRows));
+		this._cursorRow = Math.max(
+			0,
+			Math.min(this._lines.length - 1, this._cursorRow + dir * editRows),
+		);
 		this._cursorCol = Math.min(this._cursorCol, this._currentLine().length);
 		this._clampScroll();
 		this._renderEditArea();
@@ -531,8 +685,12 @@ export class NanoEditor {
 	private _moveWordRight(): void {
 		const line = this._currentLine();
 		let col = this._cursorCol;
-		while (col < line.length && /\w/.test(line.charAt(col))) { col++; }
-		while (col < line.length && !/\w/.test(line.charAt(col))) { col++; }
+		while (col < line.length && /\w/.test(line.charAt(col))) {
+			col++;
+		}
+		while (col < line.length && !/\w/.test(line.charAt(col))) {
+			col++;
+		}
 		this._cursorCol = col;
 		this._renderCursor();
 	}
@@ -540,9 +698,15 @@ export class NanoEditor {
 	private _moveWordLeft(): void {
 		const line = this._currentLine();
 		let col = this._cursorCol;
-		if (col > 0) { col--; }
-		while (col > 0 && !/\w/.test(line.charAt(col))) { col--; }
-		while (col > 0 && /\w/.test(line.charAt(col - 1))) { col--; }
+		if (col > 0) {
+			col--;
+		}
+		while (col > 0 && !/\w/.test(line.charAt(col))) {
+			col--;
+		}
+		while (col > 0 && /\w/.test(line.charAt(col - 1))) {
+			col--;
+		}
 		this._cursorCol = col;
 		this._renderCursor();
 	}
@@ -550,15 +714,22 @@ export class NanoEditor {
 	// ── Edit operations ───────────────────────────────────────────────────────
 
 	private _pushUndo(): void {
-		this._undoStack.push({ lines: [...this._lines], cursorRow: this._cursorRow, cursorCol: this._cursorCol });
-		if (this._undoStack.length > 200) { this._undoStack.shift(); }
+		this._undoStack.push({
+			lines: [...this._lines],
+			cursorRow: this._cursorRow,
+			cursorCol: this._cursorCol,
+		});
+		if (this._undoStack.length > 200) {
+			this._undoStack.shift();
+		}
 		this._redoStack = [];
 	}
 
 	private _doInsertChar(ch: string): void {
 		this._pushUndo();
 		const line = this._currentLine();
-		this._lines[this._cursorRow] = line.slice(0, this._cursorCol) + ch + line.slice(this._cursorCol);
+		this._lines[this._cursorRow] =
+			line.slice(0, this._cursorCol) + ch + line.slice(this._cursorCol);
 		this._cursorCol++;
 		this._modified = true;
 		this._renderLine(this._cursorRow);
@@ -583,11 +754,14 @@ export class NanoEditor {
 	}
 
 	private _doBackspace(): void {
-		if (this._cursorCol === 0 && this._cursorRow === 0) { return; }
+		if (this._cursorCol === 0 && this._cursorRow === 0) {
+			return;
+		}
 		this._pushUndo();
 		if (this._cursorCol > 0) {
 			const line = this._currentLine();
-			this._lines[this._cursorRow] = line.slice(0, this._cursorCol - 1) + line.slice(this._cursorCol);
+			this._lines[this._cursorRow] =
+				line.slice(0, this._cursorCol - 1) + line.slice(this._cursorCol);
 			this._cursorCol--;
 		} else {
 			const prevLine = this._lines[this._cursorRow - 1] as string;
@@ -606,10 +780,16 @@ export class NanoEditor {
 
 	private _doDelete(): void {
 		const line = this._currentLine();
-		if (this._cursorCol === line.length && this._cursorRow === this._lines.length - 1) { return; }
+		if (
+			this._cursorCol === line.length &&
+			this._cursorRow === this._lines.length - 1
+		) {
+			return;
+		}
 		this._pushUndo();
 		if (this._cursorCol < line.length) {
-			this._lines[this._cursorRow] = line.slice(0, this._cursorCol) + line.slice(this._cursorCol + 1);
+			this._lines[this._cursorRow] =
+				line.slice(0, this._cursorCol) + line.slice(this._cursorCol + 1);
 		} else {
 			const nextLine = this._lines[this._cursorRow + 1] ?? "";
 			this._lines[this._cursorRow] = line + nextLine;
@@ -623,10 +803,14 @@ export class NanoEditor {
 
 	private _doCutLine(): void {
 		this._pushUndo();
-		if (this._lines.length === 1 && this._lines[0] === "") { return; }
+		if (this._lines.length === 1 && this._lines[0] === "") {
+			return;
+		}
 		const cut = this._lines.splice(this._cursorRow, 1)[0] ?? "";
 		this._clipboard.push(cut);
-		if (this._lines.length === 0) { this._lines = [""]; }
+		if (this._lines.length === 0) {
+			this._lines = [""];
+		}
 		this._cursorRow = Math.min(this._cursorRow, this._lines.length - 1);
 		this._cursorCol = Math.min(this._cursorCol, this._currentLine().length);
 		this._modified = true;
@@ -638,12 +822,17 @@ export class NanoEditor {
 	}
 
 	private _doUncut(): void {
-		if (this._clipboard.length === 0) { return; }
+		if (this._clipboard.length === 0) {
+			return;
+		}
 		this._pushUndo();
 		const lines = [...this._clipboard];
 		this._clipboard = [];
 		this._lines.splice(this._cursorRow, 0, ...lines);
-		this._cursorRow = Math.min(this._cursorRow + lines.length - 1, this._lines.length - 1);
+		this._cursorRow = Math.min(
+			this._cursorRow + lines.length - 1,
+			this._lines.length - 1,
+		);
 		this._modified = true;
 		this._clampScroll();
 		this._renderEditArea();
@@ -657,10 +846,16 @@ export class NanoEditor {
 			this._renderStatusLine("Nothing to undo");
 			return;
 		}
-		const current = { lines: [...this._lines], cursorRow: this._cursorRow, cursorCol: this._cursorCol };
+		const current = {
+			lines: [...this._lines],
+			cursorRow: this._cursorRow,
+			cursorCol: this._cursorCol,
+		};
 		this._redoStack.push(current);
 		const prev = this._undoStack.pop();
-		if (prev === undefined) { return; }
+		if (prev === undefined) {
+			return;
+		}
 		this._lines = prev.lines;
 		this._cursorRow = prev.cursorRow;
 		this._cursorCol = prev.cursorCol;
@@ -674,10 +869,16 @@ export class NanoEditor {
 			this._renderStatusLine("Nothing to redo");
 			return;
 		}
-		const current = { lines: [...this._lines], cursorRow: this._cursorRow, cursorCol: this._cursorCol };
+		const current = {
+			lines: [...this._lines],
+			cursorRow: this._cursorRow,
+			cursorCol: this._cursorCol,
+		};
 		this._undoStack.push(current);
 		const next = this._redoStack.pop();
-		if (next === undefined) { return; }
+		if (next === undefined) {
+			return;
+		}
 		this._lines = next.lines;
 		this._cursorRow = next.cursorRow;
 		this._cursorCol = next.cursorCol;
@@ -712,7 +913,9 @@ export class NanoEditor {
 
 		for (let pass = 0; pass < 2; pass++) {
 			for (let r = startRow; r < this._lines.length; r++) {
-				const line = caseSensitive ? (this._lines[r] as string) : (this._lines[r] as string).toLowerCase();
+				const line = caseSensitive
+					? (this._lines[r] as string)
+					: (this._lines[r] as string).toLowerCase();
 				const col = line.indexOf(q, r === startRow ? startCol : 0);
 				if (col !== -1) {
 					this._cursorRow = r;
@@ -755,7 +958,9 @@ export class NanoEditor {
 	private _doExit(): void {
 		if (this._modified) {
 			this._mode = "exit-confirm";
-			this._renderStatusBar("Save modified buffer? (Answering \"No\" will DISCARD changes.) Y N");
+			this._renderStatusBar(
+				'Save modified buffer? (Answering "No" will DISCARD changes.) Y N',
+			);
 			return;
 		}
 		this._onExit("aborted", this._getCurrentContent());
@@ -802,12 +1007,22 @@ export class NanoEditor {
 
 	// ── Render ────────────────────────────────────────────────────────────────
 
-	private get cols(): number { return Math.max(1, this._terminalSize.cols); }
-	private get rows(): number { return Math.max(4, this._terminalSize.rows); }
-	private _editAreaRows(): number { return this.rows - 3; } // title + 2 help rows
-	private _editAreaStart(): number { return 2; } // row 1 = title, rows 2..N-2 = edit
+	private get cols(): number {
+		return Math.max(1, this._terminalSize.cols);
+	}
+	private get rows(): number {
+		return Math.max(4, this._terminalSize.rows);
+	}
+	private _editAreaRows(): number {
+		return this.rows - 3;
+	} // title + 2 help rows
+	private _editAreaStart(): number {
+		return 2;
+	} // row 1 = title, rows 2..N-2 = edit
 
-	private _currentLine(): string { return this._lines[this._cursorRow] ?? ""; }
+	private _currentLine(): string {
+		return this._lines[this._cursorRow] ?? "";
+	}
 
 	private _clampScroll(): void {
 		const editRows = this._editAreaRows();
@@ -824,7 +1039,9 @@ export class NanoEditor {
 	}
 
 	private static _pad(s: string, width: number): string {
-		if (s.length >= width) { return s.slice(0, width); }
+		if (s.length >= width) {
+			return s.slice(0, width);
+		}
 		return s + " ".repeat(width - s.length);
 	}
 
@@ -862,7 +1079,12 @@ export class NanoEditor {
 
 	private _renderLine(row: number): void {
 		const screenRow = row - this._scrollTop + this._editAreaStart();
-		if (screenRow < this._editAreaStart() || screenRow >= this._editAreaStart() + this._editAreaRows()) { return; }
+		if (
+			screenRow < this._editAreaStart() ||
+			screenRow >= this._editAreaStart() + this._editAreaRows()
+		) {
+			return;
+		}
 		const buf: string[] = [];
 		buf.push(ansi.cursorHide());
 		buf.push(ansi.cup(screenRow, 1));
@@ -908,7 +1130,13 @@ export class NanoEditor {
 		const title = ` GNU nano  ${this._filename || "New Buffer"}`;
 		const right = modMark;
 		const mid = NanoEditor._pad(
-			title + " ".repeat(Math.max(0, Math.floor((this.cols - title.length - right.length) / 2))),
+			title +
+				" ".repeat(
+					Math.max(
+						0,
+						Math.floor((this.cols - title.length - right.length) / 2),
+					),
+				),
 			this.cols - right.length,
 		);
 		const full = NanoEditor._pad(mid + right, this.cols);
@@ -950,12 +1178,20 @@ export class NanoEditor {
 	private _buildHelpBar(buf: string[]): void {
 		// Two rows at bottom like real nano
 		const shortcuts1 = [
-			["^G", "Help"], ["^X", "Exit"], ["^O", "WriteOut"], ["^R", "ReadFile"],
-			["^W", "Where Is"], ["^\\", "Replace"],
+			["^G", "Help"],
+			["^X", "Exit"],
+			["^O", "WriteOut"],
+			["^R", "ReadFile"],
+			["^W", "Where Is"],
+			["^\\", "Replace"],
 		];
 		const shortcuts2 = [
-			["^K", "Cut"], ["^U", "UnCut"], ["^T", "Execute"], ["^J", "Justify"],
-			["^C", "Cur Pos"], ["^/", "Go To Line"],
+			["^K", "Cut"],
+			["^U", "UnCut"],
+			["^T", "Execute"],
+			["^J", "Justify"],
+			["^C", "Cur Pos"],
+			["^/", "Go To Line"],
 		];
 
 		buf.push(ansi.cup(this.rows - 1, 1));
@@ -977,7 +1213,9 @@ export class NanoEditor {
 			const label2 = shortcuts[i + 1]?.[1] ?? "";
 			const cell = `${ansi.reverse(key)} ${label.padEnd(colWidth - 5)}${ansi.reverse(key2)} ${label2.padEnd(colWidth - 5)}`;
 			result += cell;
-			if (stripAnsi(result).length >= this.cols) { break; }
+			if (stripAnsi(result).length >= this.cols) {
+				break;
+			}
 		}
 		return result;
 	}

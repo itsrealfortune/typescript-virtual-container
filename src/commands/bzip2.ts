@@ -13,9 +13,14 @@ function vfsBzip2(data: Buffer): Buffer {
 }
 
 function vfsBunzip2(data: Buffer): Buffer | null {
-	if (!data.subarray(0, BZ2_MAGIC.length).equals(BZ2_MAGIC)) { return null; }
-	try { return Buffer.from(gunzipSync(data.subarray(BZ2_MAGIC.length))); }
-	catch { return null; }
+	if (!data.subarray(0, BZ2_MAGIC.length).equals(BZ2_MAGIC)) {
+		return null;
+	}
+	try {
+		return Buffer.from(gunzipSync(data.subarray(BZ2_MAGIC.length)));
+	} catch {
+		return null;
+	}
 }
 
 /**
@@ -31,26 +36,49 @@ export const bzip2Command: ShellModule = {
 		const keepOrig = args.includes("-k") || args.includes("--keep");
 		const decompress = args.includes("-d") || args.includes("--decompress");
 		const file = args.find((a) => !a.startsWith("-"));
-		if (!file) { return { stderr: "bzip2: no file specified", exitCode: 1 }; }
+		if (!file) {
+			return { stderr: "bzip2: no file specified", exitCode: 1 };
+		}
 
 		const p = resolvePath(cwd, file);
-		if (!shell.vfs.exists(p)) { return { stderr: `bzip2: ${file}: No such file or directory`, exitCode: 1 }; }
+		if (!shell.vfs.exists(p)) {
+			return {
+				stderr: `bzip2: ${file}: No such file or directory`,
+				exitCode: 1,
+			};
+		}
 
 		if (decompress) {
-			if (!file.endsWith(".bz2")) { return { stderr: `bzip2: ${file}: unknown suffix -- ignored`, exitCode: 1 }; }
+			if (!file.endsWith(".bz2")) {
+				return {
+					stderr: `bzip2: ${file}: unknown suffix -- ignored`,
+					exitCode: 1,
+				};
+			}
 			const raw = shell.vfs.readFileRaw(p);
 			const result = vfsBunzip2(raw);
-			if (!result) { return { stderr: `bzip2: ${file}: data integrity error`, exitCode: 2 }; }
+			if (!result) {
+				return { stderr: `bzip2: ${file}: data integrity error`, exitCode: 2 };
+			}
 			const dest = p.slice(0, -4);
 			shell.vfs.writeFile(dest, result, {}, uid, gid);
-			if (!keepOrig) { shell.vfs.remove(p, { recursive: false }, uid, gid); }
+			if (!keepOrig) {
+				shell.vfs.remove(p, { recursive: false }, uid, gid);
+			}
 			return { exitCode: 0 };
 		}
 
-		if (file.endsWith(".bz2")) { return { stderr: `bzip2: ${file}: already has .bz2 suffix -- unchanged`, exitCode: 1 }; }
+		if (file.endsWith(".bz2")) {
+			return {
+				stderr: `bzip2: ${file}: already has .bz2 suffix -- unchanged`,
+				exitCode: 1,
+			};
+		}
 		const raw = shell.vfs.readFileRaw(p);
 		shell.vfs.writeFile(`${p}.bz2`, vfsBzip2(raw), {}, uid, gid);
-		if (!keepOrig) { shell.vfs.remove(p, { recursive: false }, uid, gid); }
+		if (!keepOrig) {
+			shell.vfs.remove(p, { recursive: false }, uid, gid);
+		}
 		return { exitCode: 0 };
 	},
 };
@@ -68,16 +96,32 @@ export const bunzip2Command: ShellModule = {
 	run: ({ shell, cwd, args, uid, gid }) => {
 		const keepOrig = args.includes("-k") || args.includes("--keep");
 		const file = args.find((a) => !a.startsWith("-"));
-		if (!file) { return { stderr: "bunzip2: no file specified", exitCode: 1 }; }
+		if (!file) {
+			return { stderr: "bunzip2: no file specified", exitCode: 1 };
+		}
 		const p = resolvePath(cwd, file);
-		if (!shell.vfs.exists(p)) { return { stderr: `bunzip2: ${file}: No such file or directory`, exitCode: 1 }; }
-		if (!file.endsWith(".bz2")) { return { stderr: `bunzip2: ${file}: unknown suffix -- ignored`, exitCode: 1 }; }
+		if (!shell.vfs.exists(p)) {
+			return {
+				stderr: `bunzip2: ${file}: No such file or directory`,
+				exitCode: 1,
+			};
+		}
+		if (!file.endsWith(".bz2")) {
+			return {
+				stderr: `bunzip2: ${file}: unknown suffix -- ignored`,
+				exitCode: 1,
+			};
+		}
 		const raw = shell.vfs.readFileRaw(p);
 		const result = vfsBunzip2(raw);
-		if (!result) { return { stderr: `bunzip2: ${file}: data integrity error`, exitCode: 2 }; }
+		if (!result) {
+			return { stderr: `bunzip2: ${file}: data integrity error`, exitCode: 2 };
+		}
 		const dest = p.slice(0, -4);
 		shell.vfs.writeFile(dest, result, {}, uid, gid);
-		if (!keepOrig) { shell.vfs.remove(p, { recursive: false }, uid, gid); }
+		if (!keepOrig) {
+			shell.vfs.remove(p, { recursive: false }, uid, gid);
+		}
 		return { exitCode: 0 };
 	},
 };
