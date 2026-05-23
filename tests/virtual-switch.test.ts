@@ -2,9 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { Baie, VirtualProxy, VirtualVpn, } from "../src";
 
 describe("Baie", () => {
-	test("createVM assigns IP from subnet", () => {
+	test("createVM assigns IP from subnet", async () => {
 		const baie = new Baie("test", "10.0.1.0/24");
-		const vm = baie.createVM("web");
+		const vm = await baie.createVM("web");
 		expect(vm).toBeDefined();
 		const list = baie.listVMs();
 		expect(list.length).toBe(1);
