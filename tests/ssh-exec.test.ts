@@ -25,7 +25,7 @@ describe("SSH exec inline commands", () => {
 			},
 		};
 
-		shell.ensureInitialized();
+		await shell.ensureInitialized();
 
 		const endPromise = new Promise<void>((resolve) => {
 			stream.end = () => {

@@ -42,7 +42,7 @@ describe("IdleManager", () => {
 
 	test("freeze and thaw cycle", async () => {
 		const shell = makeShell();
-		shell.ensureInitialized();
+		await shell.ensureInitialized();
 		shell.vfs.writeFile("/tmp/test.txt", "data");
 		const idle = new IdleManager(shell, { idleThresholdMs: 20, checkIntervalMs: 10 });
 
@@ -65,7 +65,7 @@ describe("IdleManager", () => {
 
 	test("ping resets idle clock", async () => {
 		const shell = makeShell();
-		shell.ensureInitialized();
+		await shell.ensureInitialized();
 		const idle = new IdleManager(shell, { idleThresholdMs: 1000, checkIntervalMs: 50 });
 		idle.start();
 		await Bun.sleep(30);
@@ -179,7 +179,7 @@ describe("IdleManager", () => {
 
 	test("gc timer fires automatically", async () => {
 		const shell = makeShell();
-		shell.ensureInitialized();
+		await shell.ensureInitialized();
 		const pid = shell.users.registerProcess("root", "test", ["test"], "pts/0");
 		shell.users.markProcessDone(pid);
 

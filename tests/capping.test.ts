@@ -5,7 +5,7 @@ import { SshClient } from "../src/modules/SSHClient";
 
 async function setupClient(vmName: string, options?: { ramCapBytes?: number; cpuCapCores?: number }) {
 	const shell = new VirtualShell(vmName, undefined, { mode: "memory" }, options);
-	shell.ensureInitialized();
+	await shell.ensureInitialized();
 	shell.users.setPassword("root", "root");
 	const ssh = new VirtualSshServer({ port: 0, shell });
 	const port = await ssh.start();
