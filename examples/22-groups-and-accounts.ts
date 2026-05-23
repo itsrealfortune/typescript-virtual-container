@@ -8,7 +8,7 @@
 import { VirtualShell } from "../src";
 
 const shell = new VirtualShell("accounts-demo");
-shell.ensureInitialized();
+await shell.ensureInitialized();
 
 const users = shell.users;
 

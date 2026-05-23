@@ -40,3 +40,14 @@ const cpuFeaturesPath = path.join(
 
 deleteFile(sshCryptoPath);
 deleteDirectory(cpuFeaturesPath);
+
+// .pnpm also contains builds
+const pnpmDir = path.join(__dirname, '..', 'node_modules', '.pnpm');
+if (fs.existsSync(pnpmDir)) {
+  const entries = fs.readdirSync(pnpmDir);
+  for (const entry of entries) {
+    if (entry.startsWith('cpu-features')) {
+      deleteDirectory(path.join(pnpmDir, entry));
+    }
+  }
+}

@@ -99,6 +99,11 @@ export interface VfsOptions {
 	 * simulated disk I/O latencies and configurable eviction policies.
 	 */
 	cache?: VfsCacheOptions;
+	/**
+	 * Internal option to enable Roxify compression for large files in the snapshot
+	 * You must install the `roxify` package separately and ensure it's available at runtime for this to work.
+	 */
+	roxifyCompression?: boolean;
 }
 
 // ── VirtualFileSystem ─────────────────────────────────────────────────────────
@@ -175,6 +180,8 @@ class VirtualFileSystem extends EventEmitter {
 	/** True when running in a browser environment (no host FS access). */
 	private static readonly _isBrowser =
 		typeof process === "undefined" || typeof (process as NodeJS.Process).versions?.node === "undefined";
+	/** Internal option to enable Roxify compression for large files in the snapshot */
+	private readonly _roxifyCompression: boolean;
 
 	// ── File descriptor table ──────────────────────────────────────────────
 	/** Open file descriptors: fd → { path, flags, refCount } */
@@ -199,6 +206,7 @@ class VirtualFileSystem extends EventEmitter {
 			this._evictionThreshold = options.evictionThresholdBytes ?? 64 * 1024; // 64 KB default
 			this._flushAfterNWrites = options.flushAfterNWrites ?? 500;
 			this._swapEnabled = options.swapEnabled ?? false;
+			this._roxifyCompression = options.roxifyCompression ?? false;
 			if (this._swapEnabled) {
 				const swapDir = options.swapDir ?? path.resolve(options.snapshotPath, "swap");
 				this._swapStore = new SwapStore(swapDir);
@@ -221,6 +229,7 @@ class VirtualFileSystem extends EventEmitter {
 			this._evictionThreshold = 0; // disabled in memory mode
 			this._flushAfterNWrites = 0;
 			this._swapEnabled = false;
+			this._roxifyCompression = false;
 		}
 		this._cacheEnabled = options.cache?.enabled ?? false;
 		if (this._cacheEnabled) {
@@ -248,7 +257,7 @@ class VirtualFileSystem extends EventEmitter {
 			gid,
 			createdAt: now,
 			updatedAt: now,
-		children: Object.create(null) as Record<string, InternalNode>,
+			children: Object.create(null) as Record<string, InternalNode>,
 			_childCount: 0,
 			_sortedKeys: null,
 		};
@@ -533,10 +542,12 @@ class VirtualFileSystem extends EventEmitter {
 	 *
 	 * In `"memory"` mode: no-op (kept for API compatibility).
 	 */
-	public restoreMirror(): void {
+	public async restoreMirror(): Promise<void> {
 		if (this._mode !== "fs" || !this._snapshotFile) { return; }
 
-		if (!fsSync.existsSync(this._snapshotFile)) {
+		const snapshotFile = this._roxifyCompression ? this._snapshotFile.replaceAll(".vfsb", ".rvfsb") : this._snapshotFile;
+
+		if (!fsSync.existsSync(snapshotFile)) {
 			// No snapshot yet — but replay journal if it exists (crash after writes, before first flush)
 			if (this._journalFile) {
 				const entries = readJournal(this._journalFile);
@@ -546,7 +557,26 @@ class VirtualFileSystem extends EventEmitter {
 		}
 
 		try {
-			const raw = fsSync.readFileSync(this._snapshotFile);
+			let raw: Buffer = Buffer.alloc(0);
+			if (this._roxifyCompression) {
+				let roxify = null;
+				try { roxify = await import("roxify"); }
+				catch {
+					console.warn(`
+						[VirtualFileSystem] Roxify decompression failed, falling back to uncompressed snapshot. Did you approve the build of the 'roxify' package?
+					`)
+				}
+				const roxifiedPath = this._snapshotFile.replaceAll(".vfsb", ".rvfsb");
+				if (fsSync.existsSync(roxifiedPath)) {
+					const roxifiedData = fsSync.readFileSync(roxifiedPath);
+					const buffer = await roxify?.decodePngToBinary(roxifiedData);
+					raw = buffer!.buf!;
+				} else {
+					raw = fsSync.readFileSync(this._snapshotFile);
+				}
+			} else {
+				raw = fsSync.readFileSync(this._snapshotFile);
+			}
 			if (isBinarySnapshot(raw)) {
 				// Fast binary format (current)
 				this._root = decodeVfs(raw);
@@ -590,7 +620,37 @@ class VirtualFileSystem extends EventEmitter {
 		fsSync.mkdirSync(dir, { recursive: true });
 		const root = this._root;
 		const binary = encodeVfs(root);
-		fsSync.writeFileSync(this._snapshotFile, binary);
+
+		if (this._roxifyCompression) {
+			// biome-ignore lint/suspicious/noAsyncPromiseExecutor: import needs to be async
+			new Promise(async (resolve, reject) => {
+				let roxify = null;
+				try { roxify = await import("roxify"); }
+				catch {
+					reject()
+				}
+
+				try {
+					const roxified = await roxify!.encodeBinaryToPng(binary);
+					fsSync.writeFileSync(this._snapshotFile!.replaceAll(".vfsb", ".rvfsb"), roxified);
+					resolve(void 0);
+				} catch {
+					console.warn(`
+						[VirtualFileSystem] Roxify compression failed, falling back to uncompressed snapshot. Did you approve the build of the 'roxify' package?
+					`)
+					reject()
+				}
+			}).catch((err) => {
+				console.warn(
+					"[VirtualFileSystem] Roxify compression failed, falling back to uncompressed snapshot:",
+					err instanceof Error ? err.message : String(err),
+				);
+				fsSync.writeFileSync(this._snapshotFile!, binary);
+			});
+		} else {
+			fsSync.writeFileSync(this._snapshotFile, binary);
+		}
+
 		// Checkpoint complete — truncate the journal (entries are now in the snapshot)
 		if (this._journalFile) { truncateJournal(this._journalFile); }
 		this._dirty = false;
@@ -706,10 +766,10 @@ class VirtualFileSystem extends EventEmitter {
 					this._mergeDir(existing, node);
 				}
 			} else if (!existing) {
-					live.children[name] = node;
-					live._childCount++;
-					live._sortedKeys = null;
-				}
+				live.children[name] = node;
+				live._childCount++;
+				live._sortedKeys = null;
+			}
 		}
 	}
 
@@ -796,7 +856,7 @@ class VirtualFileSystem extends EventEmitter {
 							this._swapStore.swapOut(normalizedPath, node.content, node.compressed);
 						}
 					}
-					node.size    = rawSize;
+					node.size = rawSize;
 					node.content = Buffer.alloc(0);
 					node.evicted = true;
 				}
@@ -1167,10 +1227,11 @@ class VirtualFileSystem extends EventEmitter {
 		hostPath: string,
 		{ readOnly = true }: { readOnly?: boolean } = {},
 	): void {
-		if (VirtualFileSystem._isBrowser) { return; // silently degrade in browser
-}
+		if (VirtualFileSystem._isBrowser) {
+			return; // silently degrade in browser
+		}
 		const normalized = normalizePath(vPath);
-		const resolved   = path.resolve(hostPath);
+		const resolved = path.resolve(hostPath);
 		if (!fsSync.existsSync(resolved)) {
 			throw new Error(`VirtualFileSystem.mount: host path does not exist: "${resolved}"`);
 		}
@@ -1254,7 +1315,7 @@ class VirtualFileSystem extends EventEmitter {
 	private _resolveMount(targetPath: string): {
 		hostPath: string;
 		readOnly: boolean;
-		relPath:  string;
+		relPath: string;
 		fullHostPath: string;
 	} | null {
 		const normalized = normalizePath(targetPath);
@@ -1264,7 +1325,7 @@ class VirtualFileSystem extends EventEmitter {
 		}
 		for (const [vBase, opts] of this._sortedMounts) {
 			if (normalized === vBase || normalized.startsWith(`${vBase}/`)) {
-				const relPath      = normalized.slice(vBase.length).replace(/^\//, "");
+				const relPath = normalized.slice(vBase.length).replace(/^\//, "");
 				const fullHostPath = relPath ? path.join(opts.hostPath, relPath) : opts.hostPath;
 				return { hostPath: opts.hostPath, readOnly: opts.readOnly, relPath, fullHostPath };
 			}
@@ -1460,11 +1521,11 @@ class VirtualFileSystem extends EventEmitter {
 		}
 
 		// Check cache first if enabled
-		if (this._cacheEnabled  && this._fileCache?.has(normalized)) {
-				const cached = this._fileCache.getSync(normalized, () => Buffer.alloc(0));
-				this.emit("file:read", { path: normalized, size: cached.length });
-				return cached.toString("utf8");
-			}
+		if (this._cacheEnabled && this._fileCache?.has(normalized)) {
+			const cached = this._fileCache.getSync(normalized, () => Buffer.alloc(0));
+			this.emit("file:read", { path: normalized, size: cached.length });
+			return cached.toString("utf8");
+		}
 
 		if (uid !== undefined && gid !== undefined) {
 			enforcePathTraversal(this._root, normalized, uid, gid);
@@ -2050,8 +2111,8 @@ class VirtualFileSystem extends EventEmitter {
 					current = target.startsWith("/")
 						? target
 						: normalizePath(
-								path.posix.join(path.posix.dirname(current), target),
-							);
+							path.posix.join(path.posix.dirname(current), target),
+						);
 					continue;
 				}
 			} catch {
@@ -2093,15 +2154,15 @@ class VirtualFileSystem extends EventEmitter {
 		}
 		const node = getNodeNormalized(this._root, normalized);
 		if (node.type === "directory" && !options.recursive && node._childCount > 0) {
-				throw new Error(
-					`Directory '${normalized}' is not empty. Use recursive option.`,
-				);
-			}
+			throw new Error(
+				`Directory '${normalized}' is not empty. Use recursive option.`,
+			);
+		}
 		const { parent, name } = getParentDirectory(
 			this._root,
 			normalized,
 			false,
-			() => {},
+			() => { },
 		);
 		delete parent.children[name];
 		parent._childCount--;
@@ -2151,13 +2212,13 @@ class VirtualFileSystem extends EventEmitter {
 			this._root,
 			toNormalized,
 			false,
-			() => {},
+			() => { },
 		);
 		const { parent: srcParent, name: srcName } = getParentDirectory(
 			this._root,
 			fromNormalized,
 			false,
-			() => {},
+			() => { },
 		);
 		delete srcParent.children[srcName];
 		srcParent._childCount--;

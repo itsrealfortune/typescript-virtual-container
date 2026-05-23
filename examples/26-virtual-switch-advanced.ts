@@ -12,17 +12,17 @@ const net = new VirtualSwitch("10.0.0.0/24");
 // ── Attach VMs ────────────────────────────────────────────────────
 console.log("--- Attach VMs ---");
 const vm1 = new VirtualShell("app-1");
-vm1.ensureInitialized();
+await vm1.ensureInitialized();
 const port1 = net.attach(vm1, "10.0.0.10");
 console.log(`  app-1: ${port1.ip} / ${port1.mac}`);
 
 const vm2 = new VirtualShell("app-2");
-vm2.ensureInitialized();
+await vm2.ensureInitialized();
 const port2 = net.attach(vm2, "10.0.0.11");
 console.log(`  app-2: ${port2.ip} / ${port2.mac}`);
 
 const vm3 = new VirtualShell("db-1");
-vm3.ensureInitialized();
+await vm3.ensureInitialized();
 const port3 = net.attach(vm3, "10.0.0.20");
 console.log(`  db-1: ${port3.ip} / ${port3.mac}`);
 

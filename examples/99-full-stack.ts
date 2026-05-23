@@ -13,11 +13,11 @@ console.log("--- Infrastructure ---");
 const net = new VirtualSwitch("10.0.100.0/24");
 
 const web = new VirtualShell("web-01");
-web.ensureInitialized();
+await web.ensureInitialized();
 const webPort = net.attach(web, "10.0.100.10");
 
 const db = new VirtualShell("db-01");
-db.ensureInitialized();
+await db.ensureInitialized();
 const dbPort = net.attach(db, "10.0.100.20");
 
 console.log(`  web-01: ${webPort.ip} / ${webPort.mac}`);

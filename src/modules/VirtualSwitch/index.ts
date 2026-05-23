@@ -464,9 +464,9 @@ export class Baie {
 		this.switch = new VirtualSwitch(subnet);
 	}
 
-	public createVM(hostname: string, vfsOptions?: never, preferredIp?: string): VirtualShell {
+	public async createVM(hostname: string, vfsOptions?: never, preferredIp?: string): Promise<VirtualShell> {
 		const shell = new VirtualShell(hostname, undefined, (vfsOptions ?? { mode: "memory" }) as never);
-		shell.ensureInitialized();
+		await shell.ensureInitialized();
 		this.switch.attach(shell, preferredIp);
 
 		const port = this._findPort(shell);

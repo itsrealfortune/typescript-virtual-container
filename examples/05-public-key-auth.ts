@@ -9,7 +9,7 @@
 import { VirtualShell } from "../src";
 
 const shell = new VirtualShell("secure-vm");
-shell.ensureInitialized();
+await shell.ensureInitialized();
 
 // ── Create user with password fallback ────────────────────────────
 console.log("--- Create user with password fallback ---");

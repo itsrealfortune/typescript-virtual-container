@@ -46,7 +46,7 @@ const podSpecs = [
 const pods: Pod[] = [];
 
 for (const spec of podSpecs) {
-	const vm = cluster.createVM(spec.name);
+	const vm = await cluster.createVM(spec.name);
 	vm.vfs.setRamCap(256 * 1024 * 1024);
 	vm.users.setCpuCapCores(1);
 	vm.users.setPassword("root", "root");

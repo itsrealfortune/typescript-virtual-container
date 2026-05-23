@@ -23,17 +23,17 @@ function makeShellWithFsVfs() {
 }
 
 describe("IdleManager", () => {
-	test("starts as active", () => {
+	test("starts as active", async () => {
 		const shell = makeShell();
-		shell.ensureInitialized();
+		await shell.ensureInitialized();
 		const idle = new IdleManager(shell, { idleThresholdMs: 50, checkIntervalMs: 20 });
 		expect(idle.state).toBe("active");
 		idle.stop();
 	});
 
-	test("stop() cleans up timer", () => {
+	test("stop() cleans up timer", async () => {
 		const shell = makeShell();
-		shell.ensureInitialized();
+		await shell.ensureInitialized();
 		const idle = new IdleManager(shell, { idleThresholdMs: 50, checkIntervalMs: 20 });
 		idle.start();
 		idle.stop();
@@ -42,7 +42,7 @@ describe("IdleManager", () => {
 
 	test("freeze and thaw cycle", async () => {
 		const shell = makeShell();
-		shell.ensureInitialized();
+		await shell.ensureInitialized();
 		shell.vfs.writeFile("/tmp/test.txt", "data");
 		const idle = new IdleManager(shell, { idleThresholdMs: 20, checkIntervalMs: 10 });
 
@@ -65,7 +65,7 @@ describe("IdleManager", () => {
 
 	test("ping resets idle clock", async () => {
 		const shell = makeShell();
-		shell.ensureInitialized();
+		await shell.ensureInitialized();
 		const idle = new IdleManager(shell, { idleThresholdMs: 1000, checkIntervalMs: 50 });
 		idle.start();
 		await Bun.sleep(30);
@@ -74,18 +74,18 @@ describe("IdleManager", () => {
 		idle.stop();
 	});
 
-	test("start is idempotent", () => {
+	test("start is idempotent", async () => {
 		const shell = makeShell();
-		shell.ensureInitialized();
+		await shell.ensureInitialized();
 		const idle = new IdleManager(shell, { idleThresholdMs: 50, checkIntervalMs: 20 });
 		idle.start();
 		idle.start();
 		idle.stop();
 	});
 
-	test("gc cleans up terminated processes", () => {
+	test("gc cleans up terminated processes", async () => {
 		const shell = makeShell();
-		shell.ensureInitialized();
+		await shell.ensureInitialized();
 		const pid = shell.users.registerProcess("root", "test", ["test"], "pts/0");
 		expect(shell.users.getProcess(pid)?.status).toBe("running");
 		shell.users.markProcessDone(pid);
@@ -98,9 +98,9 @@ describe("IdleManager", () => {
 		expect(shell.users.getProcess(pid)).toBeUndefined();
 	});
 
-	test("gc does not remove running processes", () => {
+	test("gc does not remove running processes", async () => {
 		const shell = makeShell();
-		shell.ensureInitialized();
+		await shell.ensureInitialized();
 		const pid = shell.users.registerProcess("root", "sleep", ["sleep", "60"], "pts/0");
 		expect(shell.users.getProcess(pid)?.status).toBe("running");
 
@@ -111,9 +111,9 @@ describe("IdleManager", () => {
 		expect(shell.users.getProcess(pid)).toBeDefined();
 	});
 
-	test("runGc returns full stats shape", () => {
+	test("runGc returns full stats shape", async () => {
 		const shell = makeShell();
-		shell.ensureInitialized();
+		await shell.ensureInitialized();
 		const idle = new IdleManager(shell, { gcIntervalMs: 0 });
 
 		const stats = idle.runGc();
@@ -127,9 +127,9 @@ describe("IdleManager", () => {
 		expect(typeof stats.forcedGc).toBe("boolean");
 	});
 
-	test("evictUnusedLargeFiles evicts files without open FDs", () => {
+	test("evictUnusedLargeFiles evicts files without open FDs", async () => {
 		const shell = makeShellWithFsVfs();
-		shell.ensureInitialized();
+		await shell.ensureInitialized();
 		shell.vfs.writeFile("/tmp/big.txt", "x".repeat(100_000));
 
 		// biome-ignore lint/suspicious/noExplicitAny: accessing internal VFS node for test verification
@@ -145,9 +145,9 @@ describe("IdleManager", () => {
 		expect(node.content.length).toBe(0);
 	});
 
-	test("evictUnusedLargeFiles skips files with open FDs", () => {
+	test("evictUnusedLargeFiles skips files with open FDs", async () => {
 		const shell = makeShellWithFsVfs();
-		shell.ensureInitialized();
+		await shell.ensureInitialized();
 		shell.vfs.writeFile("/tmp/open.txt", "y".repeat(100_000));
 
 		const fd = shell.vfs.fdOpen("/tmp/open.txt", 0);
@@ -162,9 +162,9 @@ describe("IdleManager", () => {
 		shell.vfs.fdClose(fd);
 	});
 
-	test("gc:run event emitted with stats", () => {
+	test("gc:run event emitted with stats", async () => {
 		const shell = makeShell();
-		shell.ensureInitialized();
+		await shell.ensureInitialized();
 		const idle = new IdleManager(shell, { gcIntervalMs: 0 });
 
 		const events: unknown[] = [];
@@ -179,7 +179,7 @@ describe("IdleManager", () => {
 
 	test("gc timer fires automatically", async () => {
 		const shell = makeShell();
-		shell.ensureInitialized();
+		await shell.ensureInitialized();
 		const pid = shell.users.registerProcess("root", "test", ["test"], "pts/0");
 		shell.users.markProcessDone(pid);
 

@@ -5,7 +5,7 @@ import { SshClient } from "../src/modules/SSHClient";
 
 async function setupClient(vmName: string, options?: { ramCapBytes?: number; cpuCapCores?: number }) {
 	const shell = new VirtualShell(vmName, undefined, { mode: "memory" }, options);
-	shell.ensureInitialized();
+	await shell.ensureInitialized();
 	shell.users.setPassword("root", "root");
 	const ssh = new VirtualSshServer({ port: 0, shell });
 	const port = await ssh.start();
@@ -76,11 +76,11 @@ describe("RAM capping — enforcement", () => {
 		expect(shell.vfs.getRamCap()).toBeNull();
 	});
 
-	test("writeFile throws ENOMEM when cap is below current usage", () => {
+	test("writeFile throws ENOMEM when cap is below current usage", async () => {
 		const shell = new VirtualShell("vfs-api-enforce", undefined, undefined, {
 			ramCapBytes: 56 * 1024,
 		});
-		shell.ensureInitialized();
+		await shell.ensureInitialized();
 		expect(() => {
 			shell.vfs.writeFile("/tmp/big", "A".repeat(8192));
 		}).toThrow(/ENOMEM/);

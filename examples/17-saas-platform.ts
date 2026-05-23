@@ -34,8 +34,8 @@ for (const config of tenantConfigs) {
 	console.log(`\n--- Tenant: ${config.id} ---`);
 
 	const baie = new Baie(config.id, config.subnet);
-	const appVM = baie.createVM("app");
-	const dbVM = baie.createVM("db");
+	const appVM = await baie.createVM("app");
+	const dbVM = await baie.createVM("db");
 
 	appVM.vfs.setRamCap(100 * 1024 * 1024);
 	appVM.users.setCpuCapCores(2);

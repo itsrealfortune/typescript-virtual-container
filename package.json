@@ -71,5 +71,8 @@
   "dependencies": {
     "fflate": "^0.8.3",
     "ssh2": "^1.17.0"
+  },
+  "optionalDependencies": {
+    "roxify": "^1.16.14"
   }
 }

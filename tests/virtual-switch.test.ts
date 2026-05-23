@@ -2,9 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { Baie, VirtualProxy, VirtualVpn, } from "../src";
 
 describe("Baie", () => {
-	test("createVM assigns IP from subnet", () => {
+	test("createVM assigns IP from subnet", async () => {
 		const baie = new Baie("test", "10.0.1.0/24");
-		const vm = baie.createVM("web");
+		const vm = await baie.createVM("web");
 		expect(vm).toBeDefined();
 		const list = baie.listVMs();
 		expect(list.length).toBe(1);
@@ -12,37 +12,37 @@ describe("Baie", () => {
 		expect(list[0]!.hostname).toBe("web");
 	});
 
-	test("createVM auto-registers DNS", () => {
+	test("createVM auto-registers DNS", async () => {
 		const baie = new Baie("dns-test", "10.0.1.0/24");
-		baie.createVM("web");
+		await baie.createVM("web");
 		expect(baie.switch.resolveHostname("web")).toBe("10.0.1.2");
 	});
 
-	test("createVM with preferred IP", () => {
+	test("createVM with preferred IP", async () => {
 		const baie = new Baie("ip-test", "10.0.1.0/24");
-		baie.createVM("web", undefined as never, "10.0.1.100");
+		await baie.createVM("web", undefined as never, "10.0.1.100");
 		expect(baie.listVMs()[0]!.ip).toBe("10.0.1.100");
 	});
 
-	test("multiple VMs get sequential IPs", () => {
+	test("multiple VMs get sequential IPs", async () => {
 		const baie = new Baie("multi", "10.0.1.0/24");
-		baie.createVM("vm1");
-		baie.createVM("vm2");
-		baie.createVM("vm3");
+		await baie.createVM("vm1");
+		await baie.createVM("vm2");
+		await baie.createVM("vm3");
 		const ips = baie.listVMs().map((v) => v.ip);
 		expect(ips).toEqual(["10.0.1.2", "10.0.1.3", "10.0.1.4"]);
 	});
 
-	test("destroyVM removes VM", () => {
+	test("destroyVM removes VM", async () => {
 		const baie = new Baie("destroy", "10.0.1.0/24");
-		baie.createVM("web");
+		await baie.createVM("web");
 		baie.destroyVM("web");
 		expect(baie.listVMs().length).toBe(0);
 	});
 
-	test("getVM returns correct shell", () => {
+	test("getVM returns correct shell", async () => {
 		const baie = new Baie("get", "10.0.1.0/24");
-		const vm = baie.createVM("web");
+		const vm = await baie.createVM("web");
 		expect(baie.getVM("web")).toBe(vm);
 		expect(baie.getVM("nonexistent")).toBeUndefined();
 	});
@@ -59,9 +59,9 @@ describe("VirtualSwitch", () => {
 		expect(baie.switch.arpResolve("10.0.1.1")).not.toBeNull();
 	});
 
-	test("ARP resolves attached VM IP", () => {
+	test("ARP resolves attached VM IP", async () => {
 		const baie = new Baie("arp2", "10.0.1.0/24");
-		baie.createVM("web");
+		await baie.createVM("web");
 		expect(baie.switch.arpResolve("10.0.1.2")).not.toBeNull();
 	});
 
