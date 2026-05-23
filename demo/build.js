@@ -18,6 +18,7 @@ const ctx = await esbuild.context({
         'node:vm': '../polyfills/node_vm/index.js',
         'node:net': '../polyfills/node_net/index.js',
         'ssh2': '../polyfills/ssh2/index.js',
+        'roxify': '../polyfills/roxify.js',
     },
     minify: true,
     treeShaking: true,

@@ -19,5 +19,6 @@ await esbuild.build({
         'node:vm': './polyfills/node_vm/index.js',
         'node:net': './polyfills/node_net/index.js',
         'ssh2': './polyfills/ssh2/index.js',
+        'roxify': './polyfills/roxify.js',
     }, inject: ['./polyfills/process.js', './polyfills/buffer.js'],
 });
