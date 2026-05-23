@@ -1,12 +1,13 @@
 # Examples
 
-Run any example with: `bun run examples/<number>-<name>.ts`
+Run numbered examples with: `bun run examples/<number>-<name>.ts`
+Run HoneyPot examples with: `bun run examples/HoneyPot/honeypot-<name>.ts`
 
 Each example has a detailed guide in [`guides/examples/`](./examples/).
 
 | # | File | What it covers | Key APIs | Guide |
 |---|------|---------------|----------|-------|
-| 01 | [`01-ssh-server-events.ts`](../examples/01-ssh-server-events.ts) | SSH server lifecycle: event listeners, auth success/failure/lockout, client connect/disconnect, admin unblock, graceful shutdown | `SshMimic` constructor, `.on()`, `.recordAuthFailure()`, `.clearLockout()`, `.start()`, `.stop()`, `SshClient` for commands | [guide](./examples/01-ssh-server-events.md) |
+| 01 | [`01-ssh-server-events.ts`](../examples/01-ssh-server-events.ts) | SSH server lifecycle: event listeners, auth success/failure/lockout, client connect/disconnect, admin unblock, graceful shutdown | `SshMimic` constructor, `.on()`, `.recordAuthFailure()`, `.clearLockout()`, `.start()`, `.stop()`, `runCommand()` | [guide](./examples/01-ssh-server-events.md) |
 | 02 | [`02-ssh-sftp-shared-state.ts`](../examples/02-ssh-sftp-shared-state.ts) | Shared VFS between SSH and SFTP servers: write through one, read through the other without real network transport | `VirtualSftpServer` constructor + `.start()`/`.stop()`, `vfs.writeFile()`, `vfs.readFile()`, `vfs.list()` | [guide](./examples/02-ssh-sftp-shared-state.md) |
 | 03 | [`03-multi-user-quotas.ts`](../examples/03-multi-user-quotas.ts) | Multi-user permissions: user creation, sudo removal, disk quotas, file ownership, permission enforcement (mode 600) | `.addUser()`, `.removeSudoer()`, `.setQuotaBytes()`, `.getQuotaBytes()`, `SshClient.cat()` | [guide](./examples/03-multi-user-quotas.md) |
 | 04 | [`04-persistent-state.ts`](../examples/04-persistent-state.ts) | Two VFS persistence strategies: **FS mode** with automatic `.vfsb` binary snapshots, **Memory mode** with manual `toSnapshot()`/`fromSnapshot()` JSON round-trip | `VirtualFileSystem({ mode, snapshotPath })`, `.flushMirror()`, `.toSnapshot()`, `.fromSnapshot()` | [guide](./examples/04-persistent-state.md) |
@@ -16,6 +17,9 @@ Each example has a detailed guide in [`guides/examples/`](./examples/).
 | 08 | [`08-snapshot-diff.ts`](../examples/08-snapshot-diff.ts) | Snapshot diffing: before/after capture, compute diff, display added/modified/removed entries, assert changes | `vfs.toSnapshot()`, `diffSnapshots()`, `assertDiff()` | [guide](./examples/08-snapshot-diff.md) |
 | 09 | [`09-symlinks.ts`](../examples/09-symlinks.ts) | Symbolic links on VFS: create, check, resolve | `.symlink()`, `.isSymlink()`, `.resolveSymlink()` | [guide](./examples/09-symlinks.md) |
 | 10 | [`10-honeypot-auditing.ts`](../examples/10-honeypot-auditing.ts) | HoneyPot auditing: attach to shell/VFS/users, track file ops and commands, query stats, detect anomalies, recent log entries | `HoneyPot` constructor, `.attach()`, `.getStats()`, `.detectAnomalies()`, `.getRecent()` | [guide](./examples/10-honeypot-auditing.md) |
+| — | [`honeypot-quickstart.ts`](../examples/HoneyPot/honeypot-quickstart.ts) | HoneyPot quick start: create env, create HoneyPot, attach, perform ops, view stats/recent events, filtered logs, anomalies, export | `HoneyPot`, `SshClient.connect()`, `.attach()`, `.getStats()`, `.getRecent()`, `.getAuditLog()`, `.detectAnomalies()` | [guide](./examples/HoneyPot/honeypot-quickstart.md) |
+| — | [`honeypot-audit.ts`](../examples/HoneyPot/honeypot-audit.ts) | Comprehensive auditing: multi-user scenario, normal vs suspicious activity, per-user trails, file-activity tracking, severity-graded anomaly detection | `HoneyPot({ maxLogSize })`, `.getAuditLog(type, source)`, `.detectAnomalies()` | [guide](./examples/HoneyPot/honeypot-audit.md) |
+| — | [`honeypot-export.ts`](../examples/HoneyPot/honeypot-export.ts) | Audit export & analysis: structured JSON report, CSV timeline, stats-only export, integration patterns (DB, API, SIEM, queues) | `HoneyPot`, `fs.writeFileSync()`, `.getStats()`, `.getAuditLog()`, `.detectAnomalies()` | [guide](./examples/HoneyPot/honeypot-export.md) |
 | 11 | [`11-concurrent-clients.ts`](../examples/11-concurrent-clients.ts) | Concurrent VFS access: 3 users doing parallel writes, reads, cross-user access, and commands via `Promise.all()` | `SshClient` constructor, `.writeFile()`, `.cat()`, `.ls()`, `.exec()`, `Promise.all()` | [guide](./examples/11-concurrent-clients.md) |
 | 12 | [`12-file-cache.ts`](../examples/12-file-cache.ts) | File cache with LRU eviction, disk I/O simulation, hit/miss tracking, preload, invalidation on write, clear | `VirtualFileSystem({ cache })`, `.getCacheStats()`, `.preloadCache()`, `.clearCache()` | [guide](./examples/12-file-cache.md) |
 | 13 | [`13-process-scheduler.ts`](../examples/13-process-scheduler.ts) | CFS scheduler: nice-to-priority mapping, process registration, CPU accounting, throttle detection, stats | `.enableScheduler()`, `.registerProcess()`, `.getProcessPriority()`, `.recordAndCheckThrottle()`, `.getSchedulerStats()` | [guide](./examples/13-process-scheduler.md) |
