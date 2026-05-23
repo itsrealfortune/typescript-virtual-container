@@ -182,16 +182,16 @@ const shell = new VirtualShell(HOSTNAME, {
   flushIntervalMs: 10_000,
 });
 
-shell.vfs.restoreMirror();
+shell.ensureInitialized();
 
-const isFirstRun = !shell.vfs.exists('/bin');
+// Detect first run by checking a marker that only exists after a successful flush.
+// /root/.bashrc and /root/.profile are created by bootstrapRoot in the constructor
+// on EVERY load, so they can't serve as markers. /root/README.txt is only created here.
+const isFirstRun = !shell.vfs.exists('/root/README.txt');
 if (isFirstRun) {
-  shell.ensureInitialized();
   if (!shell.vfs.exists('/root')) { shell.vfs.mkdir('/root', 0o700); }
   shell.vfs.writeFile('/root/README.txt', `Welcome to ${HOSTNAME}\n`);
   shell.vfs.flushMirror();
-} else {
-  shell.ensureInitialized();
 }
 
 window.addEventListener('beforeunload', () => { shell.vfs.flushMirror(); });

@@ -14,7 +14,6 @@ export function expandPs1(ps1: string, user: string, host: string, cwd: string, 
 		: cwd;
 	const base = cwd.split("/").at(-1) || "/";
 	let result = ps1
-		.replace(/\\\[/g, "").replace(/\\\]/g, "")
 		.replace(/\\033\[/g, "\x1b[").replace(/\\e\[/g, "\x1b[")
 		.replace(/\\u/g, user)
 		.replace(/\\h/g, host.split(".")[0] ?? host)
@@ -25,8 +24,12 @@ export function expandPs1(ps1: string, user: string, host: string, cwd: string, 
 		.replace(/\\n/g, "\n")
 		.replace(/\\\\/g, "\\");
 	if (readlineMode) {
-		// biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape sequences need to be wrapped with SOH/STX for readline
-		result = result.replace(/\x1b\[[0-9;]*m/g, (m) => `\x01${m}\x02`);
+		// Convert readline's non-printing delimiters to SOH/STX so readline
+		// ignores ANSI escapes when computing visible prompt length.
+		result = result.replace(/\\\[/g, "\x01").replace(/\\\]/g, "\x02");
+	} else {
+		// Outside readline: strip the literal \[ \] markers entirely.
+		result = result.replace(/\\\[/g, "").replace(/\\\]/g, "");
 	}
 	return result;
 }
@@ -51,12 +54,12 @@ export function buildPrompt(
 	if (ps1) { return expandPs1(ps1, user, host, fullCwd ?? cwdName, readlineMode); }
 	const isRoot = user === "root";
 	const w = (code: string) => readlineMode ? `\x01${code}\x02` : code;
-	const white = w("\x1b[37;1m");
-	const colorUser = isRoot ? w("\x1b[31;1m") : w("\x1b[35;1m");
-	const colorBlue = w("\x1b[34;1m");
-	const colorReset = w("\x1b[0m");
-	const colorSymbol = isRoot ? w("\x1b[31;1m") : "";
+	// Use bold+color combined sequences for better compatibility
+	const white = w("\x1b[37m"); // normal white
+	const colorUser = isRoot ? w("\x1b[1;31m") : w("\x1b[1;35m"); // bold red or magenta
+	const colorBlue = w("\x1b[1;34m"); // bold blue
+	const colorSymbol = isRoot ? w("\x1b[1;31m") : ""; // bold red for root prompt symbol
 	const symbol = isRoot ? "#" : "$";
 
-	return `${white}[${colorUser}${user}${white}@${colorBlue}${host}${colorReset} ${cwdName}${white}]${colorSymbol}${symbol}${colorReset} `;
+	return `${white}[${colorUser}${user}${white}@${colorBlue}${host}${white} ${cwdName}]${colorSymbol}${symbol}\x1b[0m `;
 }
