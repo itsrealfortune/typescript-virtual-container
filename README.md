@@ -122,16 +122,18 @@ bun run build-all       # rebuild everything (library + standalone + demo + docs
 
 ```html
 <script type="module">
-  import { VirtualShell, VirtualFileSystem, SshClient } from "./builds/fortune-nyx-v1.7.5-web.min.js";
+  import { VirtualShell, VirtualFileSystem, SshClient } from "./fortune-nyx-v1.7.5-web.min.js";
 
   // Wait for IndexedDB VFS to finish loading (required before any VFS ops)
   await globalThis.__fsReady__;
 
   const shell = new VirtualShell("web-vm");
   await shell.ensureInitialized();
+  shell.setPassword("root", "root");
 
-  const client = new SshClient(shell, "root");
-  await client.exec("echo hello from the browser");
+  shell.runCommand("echo Hello from the web shell!").then(result => {
+    console.log(result.stdout); // "Hello from the web shell!\n"
+  });
 </script>
 ```
 
@@ -152,11 +154,17 @@ The demo (`demo/app.ts`) adds a terminal renderer (`WebTermRenderer`) and a desk
 <summary><strong>Programmatic API</strong></summary>
 
 ```typescript
-import { SshClient, VirtualShell } from "typescript-virtual-container";
+import { VirtualShell, VirtualSshServer, SshClient } from "typescript-virtual-container";
 
 const shell  = new VirtualShell("typescript-vm");
 await shell.ensureInitialized();
-const client = new SshClient(shell, "root");
+shell.setPassword("root", "root");
+
+const ssh = new VirtualSshServer({ port: 0, shell });
+const port = await ssh.start();
+
+const client = new SshClient();
+await client.connect({ host: "localhost", port, username: "root", password: "root" });
 
 await client.mkdir("/app/config", true);
 await client.writeFile("/app/config/settings.json", JSON.stringify({ env: "dev" }));
