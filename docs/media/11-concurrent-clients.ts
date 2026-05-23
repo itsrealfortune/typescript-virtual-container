@@ -9,7 +9,7 @@
 import { SshClient, VirtualShell, VirtualSshServer } from "../src";
 
 const shell = new VirtualShell("typescript-vm");
-shell.ensureInitialized();
+await shell.ensureInitialized();
 shell.users.setPassword("root", "root");
 
 shell.users.addUser("alice", "alice123");
