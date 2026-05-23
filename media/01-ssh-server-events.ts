@@ -56,7 +56,14 @@ console.log("Accepting real SSH connections: ssh root@localhost -p", port);
 
 // ── Simulate activity via command runner ──────────────────────────
 console.log("--- Simulate activity ---");
-const result = await runCommand("echo 'Hello from connected client'", "root", "lab-environment", "exec", "/", shell);
+const result = await runCommand(
+	"echo 'Hello from connected client'",
+	"root",
+	"lab-environment",
+	"exec",
+	"/",
+	shell,
+);
 console.log(`Command output: ${result.stdout?.trim()}`);
 
 // ── Demonstrate lockout mechanism ─────────────────────────────────
