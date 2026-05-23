@@ -182,7 +182,7 @@ const shell = new VirtualShell(HOSTNAME, {
   flushIntervalMs: 10_000,
 });
 
-shell.ensureInitialized();
+await shell.ensureInitialized();
 
 // Detect first run by checking a marker that only exists after a successful flush.
 // /root/.bashrc and /root/.profile are created by bootstrapRoot in the constructor

@@ -165,7 +165,7 @@ virtualShell.addCommand("demo", [], () => ({
 // ── Main shell ────────────────────────────────────────────────────────────────
 
 async function runReadlineShell(): Promise<void> {
-	virtualShell.ensureInitialized();
+	await virtualShell.ensureInitialized();
 
 	const selectedUser = initialUser.trim() || "root";
 	if (virtualShell.users.getPasswordHash(selectedUser) === null) {

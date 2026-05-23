@@ -260,7 +260,7 @@ class VirtualShell extends EventEmitter {
 	 * constructor's 4th argument or at runtime through `sysctl` tunables
 	 * (`vm.ram_cap_bytes`, `kernel.cpu_cap_cores`). */
 	resourceCaps: VirtualShellResourceCaps;
-	private _initialized: undefined;
+	private _initialized: Promise<void>;
 
 	/**
 	 * Creates a new virtual shell instance.
@@ -311,8 +311,8 @@ class VirtualShell extends EventEmitter {
 		const caps = this.resourceCaps;
 
 		// Initialize both VFS mirror and users, ensuring all is ready before auth
-		this._initialized = (() => {
-			vfs.restoreMirror();
+		this._initialized = (async () => {
+			await vfs.restoreMirror();
 			users.initialize();
 			// Bootstrap Linux rootfs (idempotent)
 			bootstrapLinuxRootfs(vfs, users, shellHostname, shellProps, startTime, [], network, caps);
@@ -368,9 +368,9 @@ class VirtualShell extends EventEmitter {
 	 * Ensures initialization is complete before allowing operations.
 	 * Call this before any authentication or command execution.
 	 */
-	public ensureInitialized(): void {
+	public ensureInitialized(): Promise<void> {
 		perf.mark("ensureInitialized");
-		this._initialized;
+		return this._initialized;
 	}
 
 	/**
