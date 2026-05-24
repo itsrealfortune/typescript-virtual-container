@@ -242,6 +242,42 @@ See [`guides/EXAMPLES.md`](guides/EXAMPLES.md) for:
 
 ---
 
+<details id="virtualshell-vs-sandboxedshell">
+<summary><strong>VirtualShell vs SandboxedShell</strong></summary>
+
+Two execution modes for different isolation needs:
+
+| | `VirtualShell` | `SandboxedShell` |
+|---|---|---|
+| **Thread** | Main thread | Worker thread (`node:worker_threads`) |
+| **JS heap** | Shared with host and other shells | **Isolated** (separate V8 isolate) |
+| **API** | Full shell — pipes, redirects, desktop, `exec()`, interactive sessions | Minimal — `exec(cmd, user?, cwd?)` only |
+| **Overhead** | ~0.1ms per command | IPC message passing + worker bootstrap |
+| **Timeout** | None | Configurable (default 30s) |
+| **Lifespan** | Long-lived, reusable | Single worker (create, exec, terminate) |
+| **Use case** | Test harnesses, embedded shells, automation | Multi-tenant, untrusted code, CI runners |
+| **Browser** | ✅ Yes (via polyfills) | ❌ No (requires `worker_threads`) |
+
+```typescript
+import { VirtualShell, SandboxedShell } from "typescript-virtual-container";
+
+// Shared heap — lightweight, full-featured
+const shell = new VirtualShell("dev-vm");
+await shell.ensureInitialized();
+const r1 = await shell.exec("echo hello");
+console.log(r1.stdout); // "hello\n"
+
+// Isolated worker — separate heap, exec-only
+const sandbox = new SandboxedShell({ execTimeoutMs: 10_000 });
+const r2 = await sandbox.exec("echo hello", "root", "/root");
+console.log(r2.stdout); // "hello\n"
+sandbox.terminate();
+```
+
+</details>
+
+---
+
 <details id="resource-capping">
 <summary><strong>Resource Capping</strong></summary>
 
