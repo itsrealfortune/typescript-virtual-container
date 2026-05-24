@@ -1,13 +1,11 @@
 import {beforeAll, describe, expect, test} from "bun:test";
-import type {SshClient, VirtualShell} from "../src";
+import type {SshClient} from "../src";
 import {createTestEnv, runCmd} from "./test-helper";
 
-let shell: VirtualShell;
 let client: InstanceType<typeof SshClient>;
 
 beforeAll(async () => {
 	const env = await createTestEnv("test-packages");
-	shell = env.shell;
 	client = env.client;
 });
 
@@ -32,10 +30,7 @@ describe("pacman command", () => {
 
 	test("pacman -Qi shows package info", async () => {
 		await runCmd(client, "pacman -S nano 2>/dev/null || true");
-		const r = await runCmd(
-			client,
-			"pacman -Qi nano 2>&1 || echo 'info'"
-		);
+		const r = await runCmd(client, "pacman -Qi nano 2>&1 || echo 'info'");
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 });

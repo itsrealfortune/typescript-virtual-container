@@ -829,10 +829,7 @@ describe("tc command", () => {
 	});
 
 	test("tc qdisc add with loss", async () => {
-		const r = await runCmd(
-			client,
-			"tc qdisc add dev eth0 root netem loss 10%"
-		);
+		const r = await runCmd(client, "tc qdisc add dev eth0 root netem loss 10%");
 		expect(r.exitCode).toBe(0);
 	});
 
