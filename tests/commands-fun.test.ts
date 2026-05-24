@@ -1,13 +1,11 @@
 import {beforeAll, describe, expect, test} from "bun:test";
-import type {SshClient, VirtualShell} from "../src";
+import type {SshClient} from "../src";
 import {createTestEnv, runCmd} from "./test-helper";
 
-let shell: VirtualShell;
 let client: InstanceType<typeof SshClient>;
 
 beforeAll(async () => {
 	const env = await createTestEnv("test-fun");
-	shell = env.shell;
 	client = env.client;
 });
 
