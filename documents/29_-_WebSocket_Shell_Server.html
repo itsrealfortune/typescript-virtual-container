@@ -1,0 +1,128 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>29 - WebSocket Shell Server | typescript-virtual-container - v1.7.5</title><meta name="description" content="Documentation for typescript-virtual-container"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="../index" class="title">typescript-virtual-container - v1.7.5</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><ul class="tsd-breadcrumb" aria-label="Breadcrumb"><li><a href="" aria-current="page">29 - WebSocket Shell Server</a></li></ul></div><div class="tsd-panel tsd-typography"><h1 id="example-29-websocket-shell-server" class="tsd-anchor-link">Example 29 — WebSocket Shell Server<a href="#example-29-websocket-shell-server" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<h2 id="the-scenario" class="tsd-anchor-link">The Scenario<a href="#the-scenario" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>SSH is powerful, but not every user has an SSH client. A WebSocket-based shell server lets you expose a terminal directly in the browser — no client software required. This is especially useful for web-based labs, demo environments, and browser-accessible bastion hosts.</p>
+<p>This example demonstrates a browser-accessible terminal server using <code>VirtualWebSocketServer</code>, with optional auth token, idle timeout, and graceful shutdown.</p>
+<h2 id="modules-used" class="tsd-anchor-link">Modules Used<a href="#modules-used" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="_" class="tsd-anchor-link"><code>VirtualShell</code><a href="#_" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>The central simulation container. Manages VFS, user accounts, process space, and command execution.</p>
+<h3 id="_-1" class="tsd-anchor-link"><code>VirtualWebSocketServer</code><a href="#_-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>A WebSocket server that accepts browser connections and presents a full terminal session backed by <code>VirtualShell</code>. Each connection gets its own isolated interactive shell session.</p>
+<pre><code class="ts"><span class="hl-5">import</span><span class="hl-1"> { </span><span class="hl-6">VirtualShell</span><span class="hl-1"> } </span><span class="hl-5">from</span><span class="hl-1"> </span><span class="hl-2">&quot;../src/modules/VirtualShell/index&quot;</span><span class="hl-1">;</span><br/><span class="hl-5">import</span><span class="hl-1"> { </span><span class="hl-6">VirtualWebSocketServer</span><span class="hl-1"> } </span><span class="hl-5">from</span><span class="hl-1"> </span><span class="hl-2">&quot;../src/modules/WebSocketShell/wsServer&quot;</span><span class="hl-1">;</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="step-by-step-walkthrough" class="tsd-anchor-link">Step-by-Step Walkthrough<a href="#step-by-step-walkthrough" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="step-1-create-and-initialize-the-shell" class="tsd-anchor-link">Step 1 — Create and Initialize the Shell<a href="#step-1-create-and-initialize-the-shell" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="ts"><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">shell</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualShell</span><span class="hl-1">(</span><span class="hl-2">&quot;websocket-demo&quot;</span><span class="hl-1">);</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-0">ensureInitialized</span><span class="hl-1">();</span><br/><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-6">users</span><span class="hl-1">.</span><span class="hl-0">setPassword</span><span class="hl-1">(</span><span class="hl-2">&quot;demo&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;demo&quot;</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Creates a <code>VirtualShell</code> with hostname <code>&quot;websocket-demo&quot;</code>. <code>ensureInitialized()</code> populates the VFS with a minimal Linux filesystem. A <code>demo</code> user is created with password <code>demo</code>.</p>
+<h3 id="step-2-configure-the-websocket-server" class="tsd-anchor-link">Step 2 — Configure the WebSocket Server<a href="#step-2-configure-the-websocket-server" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="ts"><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">token</span><span class="hl-1"> = </span><span class="hl-6">process</span><span class="hl-1">.</span><span class="hl-6">env</span><span class="hl-1">.</span><span class="hl-7">TOKEN</span><span class="hl-1">;</span><br/><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">server</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualWebSocketServer</span><span class="hl-1">({</span><br/><span class="hl-1">	</span><span class="hl-6">port:</span><span class="hl-1"> </span><span class="hl-8">8080</span><span class="hl-1">,</span><br/><span class="hl-1">	</span><span class="hl-6">shell</span><span class="hl-1">,</span><br/><span class="hl-1">	</span><span class="hl-6">authToken:</span><span class="hl-1"> </span><span class="hl-6">token</span><span class="hl-1">,</span><br/><span class="hl-1">	</span><span class="hl-6">idleTimeoutMs:</span><span class="hl-1"> </span><span class="hl-8">600_000</span><span class="hl-1">, </span><span class="hl-3">// 10 min idle before disconnect</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Constructor options:</p>
+<ul>
+<li><code>port</code>: TCP port to bind the WebSocket server.</li>
+<li><code>shell</code>: The <code>VirtualShell</code> instance backing all terminal sessions.</li>
+<li><code>authToken</code>: Optional bearer token required via <code>?token=</code> query parameter in the WebSocket URL. If <code>undefined</code>, no auth is required.</li>
+<li><code>idleTimeoutMs</code>: Maximum idle time before the server disconnects a client. Defaults to 10 minutes.</li>
+</ul>
+<h3 id="step-3-start-the-server" class="tsd-anchor-link">Step 3 — Start the Server<a href="#step-3-start-the-server" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="ts"><span class="hl-6">server</span><span class="hl-1">.</span><span class="hl-0">start</span><span class="hl-1">();</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Binds the WebSocket server to <code>0.0.0.0:8080</code>. After this, clients can connect.</p>
+<h3 id="step-4-open-the-client" class="tsd-anchor-link">Step 4 — Open the Client<a href="#step-4-open-the-client" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="html"><span class="hl-1">demo/ws-client.html</span>
+</code><button type="button">Copy</button></pre>
+
+<p>The companion HTML file (<code>demo/ws-client.html</code>) is a standalone terminal client with:</p>
+<ul>
+<li><strong>Connect bar</strong>: Enter <code>ws://host:port?user=demo&amp;token=...</code> and click Connect.</li>
+<li><strong>VT100 renderer</strong>: Renders terminal output in a <code>&lt;pre&gt;</code> element, matching the library's built-in <code>WebTermRenderer</code>.</li>
+<li><strong>Keyboard input</strong>: Sends keystrokes as JSON messages over the WebSocket.</li>
+<li><strong>Paste support</strong>: Ctrl+Shift+V pastes clipboard content.</li>
+<li><strong>Resize handling</strong>: Sends terminal resize events on window resize.</li>
+</ul>
+<h3 id="step-5-graceful-shutdown" class="tsd-anchor-link">Step 5 — Graceful Shutdown<a href="#step-5-graceful-shutdown" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="ts"><span class="hl-6">process</span><span class="hl-1">.</span><span class="hl-0">on</span><span class="hl-1">(</span><span class="hl-2">&quot;SIGINT&quot;</span><span class="hl-1">, </span><span class="hl-4">async</span><span class="hl-1"> () </span><span class="hl-4">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">	</span><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">server</span><span class="hl-1">.</span><span class="hl-0">stop</span><span class="hl-1">();</span><br/><span class="hl-1">	</span><span class="hl-6">process</span><span class="hl-1">.</span><span class="hl-0">exit</span><span class="hl-1">(</span><span class="hl-8">0</span><span class="hl-1">);</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<p><code>server.stop()</code> closes all active connections and unbinds the WebSocket listener. The example hooks both <code>SIGINT</code> and <code>SIGTERM</code> for clean termination under any signal.</p>
+<h2 id="protocol" class="tsd-anchor-link">Protocol<a href="#protocol" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>The WebSocket shell uses a JSON message protocol:</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Direction</th>
+<th>Payload</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>data</code></td>
+<td>Client → Server</td>
+<td><code>{ type: &quot;data&quot;, data: &quot;ls\n&quot; }</code></td>
+<td>Send terminal input</td>
+</tr>
+<tr>
+<td><code>data</code></td>
+<td>Server → Client</td>
+<td><code>{ type: &quot;data&quot;, data: &quot;...output...&quot; }</code></td>
+<td>Receive terminal output</td>
+</tr>
+<tr>
+<td><code>resize</code></td>
+<td>Client → Server</td>
+<td><code>{ type: &quot;resize&quot;, cols: 80, rows: 24 }</code></td>
+<td>Terminal resize</td>
+</tr>
+<tr>
+<td><code>ping</code></td>
+<td>Bidirectional</td>
+<td><code>{ type: &quot;ping&quot; }</code></td>
+<td>Keepalive (server responds with <code>pong</code>)</td>
+</tr>
+<tr>
+<td><code>pong</code></td>
+<td>Bidirectional</td>
+<td><code>{ type: &quot;pong&quot; }</code></td>
+<td>Keepalive response</td>
+</tr>
+<tr>
+<td><code>exit</code></td>
+<td>Server → Client</td>
+<td><code>{ type: &quot;exit&quot;, code: 0 }</code></td>
+<td>Session ended</td>
+</tr>
+<tr>
+<td><code>error</code></td>
+<td>Server → Client</td>
+<td><code>{ type: &quot;error&quot;, message: &quot;...&quot; }</code></td>
+<td>Error notification</td>
+</tr>
+</tbody>
+</table>
+<p>Auth is handled via the WebSocket URL query parameter <code>?token=...</code>. The server checks <code>req.url</code> for the token during the upgrade handshake and rejects unauthorized connections with a 403 status code.</p>
+<h2 id="running-the-example" class="tsd-anchor-link">Running the Example<a href="#running-the-example" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code class="bash"><span class="hl-3"># Start the server (no auth)</span><br/><span class="hl-0">bun</span><span class="hl-1"> </span><span class="hl-2">examples/29-websocket-server.ts</span><br/><br/><span class="hl-3"># Start with auth</span><br/><span class="hl-6">TOKEN</span><span class="hl-1">=</span><span class="hl-2">supersecret</span><span class="hl-1"> </span><span class="hl-0">bun</span><span class="hl-1"> </span><span class="hl-2">examples/29-websocket-server.ts</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Then open <code>demo/ws-client.html</code> in a browser and connect to <code>ws://localhost:8080?user=demo</code>. If using auth, append <code>&amp;token=supersecret</code>.</p>
+<h2 id="expected-output" class="tsd-anchor-link">Expected Output<a href="#expected-output" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code><span class="hl-6">WebSocket</span><span class="hl-1"> </span><span class="hl-6">server</span><span class="hl-1"> </span><span class="hl-6">ready</span><span class="hl-1"> </span><span class="hl-6">at</span><span class="hl-1"> </span><span class="hl-14">ws</span><span class="hl-1">:</span><span class="hl-3">//localhost:8080</span><br/><span class="hl-1">  </span><span class="hl-14">Username</span><span class="hl-1">: </span><span class="hl-6">demo</span><br/><span class="hl-1">  </span><span class="hl-6">Auth</span><span class="hl-1"> </span><span class="hl-14">token</span><span class="hl-1">: </span><span class="hl-0">none</span><span class="hl-1"> (</span><span class="hl-6">omit</span><span class="hl-1"> ?</span><span class="hl-6">token</span><span class="hl-1">=)</span><br/><span class="hl-6">Open</span><span class="hl-1"> </span><span class="hl-6">demo</span><span class="hl-1">/</span><span class="hl-6">ws</span><span class="hl-1">-</span><span class="hl-6">client</span><span class="hl-1">.</span><span class="hl-6">html</span><span class="hl-1"> </span><span class="hl-4">in</span><span class="hl-1"> </span><span class="hl-6">your</span><span class="hl-1"> </span><span class="hl-6">browser</span><span class="hl-1"> </span><span class="hl-6">to</span><span class="hl-1"> </span><span class="hl-6">connect</span><span class="hl-1">.</span>
+</code><button>Copy</button></pre>
+
+<p>After a client connects, terminal output appears in the browser. Typing <code>ls</code> shows the virtual filesystem contents. <code>exit</code> or Ctrl+D ends the session.</p>
+<h2 id="key-concepts" class="tsd-anchor-link">Key Concepts<a href="#key-concepts" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><strong>Browser-native terminal</strong>: No SSH client needed — just a WebSocket-capable browser. The <code>demo/ws-client.html</code> client includes a full VT100 renderer.</li>
+<li><strong>Session isolation</strong>: Each WebSocket connection gets an independent <code>VirtualShell</code> session via <code>startInteractiveSession()</code>. Sessions share no state beyond the read-only VFS.</li>
+<li><strong>JSON message protocol</strong>: Messages are JSON-encoded for debuggability and extensibility. Binary payloads are also supported for future optimization.</li>
+<li><strong>Auth via URL parameter</strong>: Stateless token-based auth in the WebSocket upgrade handshake. No cookies or sessions required.</li>
+<li><strong>Idle timeout</strong>: Connections are automatically cleaned up after <code>idleTimeoutMs</code> of inactivity. Prevents resource leaks from abandoned browser tabs.</li>
+<li><strong>Graceful shutdown</strong>: <code>server.stop()</code> drains active connections and unbinds the listener cleanly. Works with process signals or programmatic calls.</li>
+</ul>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#example-29-websocket-shell-server"><span>Example 29 — <wbr/>Web<wbr/>Socket <wbr/>Shell <wbr/>Server</span></a><ul><li><a href="#the-scenario"><span>The <wbr/>Scenario</span></a></li><li><a href="#modules-used"><span>Modules <wbr/>Used</span></a></li><li><ul><li><a href="#_"><span></span></a></li><li><a href="#_-1"><span></span></a></li></ul></li><li><a href="#step-by-step-walkthrough"><span>Step-<wbr/>by-<wbr/>Step <wbr/>Walkthrough</span></a></li><li><ul><li><a href="#step-1-create-and-initialize-the-shell"><span>Step 1 — <wbr/>Create and <wbr/>Initialize the <wbr/>Shell</span></a></li><li><a href="#step-2-configure-the-websocket-server"><span>Step 2 — <wbr/>Configure the <wbr/>Web<wbr/>Socket <wbr/>Server</span></a></li><li><a href="#step-3-start-the-server"><span>Step 3 — <wbr/>Start the <wbr/>Server</span></a></li><li><a href="#step-4-open-the-client"><span>Step 4 — <wbr/>Open the <wbr/>Client</span></a></li><li><a href="#step-5-graceful-shutdown"><span>Step 5 — <wbr/>Graceful <wbr/>Shutdown</span></a></li></ul></li><li><a href="#protocol"><span>Protocol</span></a></li><li><a href="#running-the-example"><span>Running the <wbr/>Example</span></a></li><li><a href="#expected-output"><span>Expected <wbr/>Output</span></a></li><li><a href="#key-concepts"><span>Key <wbr/>Concepts</span></a></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="../modules">typescript-virtual-container - v1.7.5</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>
