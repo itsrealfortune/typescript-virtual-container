@@ -10,9 +10,7 @@ export const hashCommand: ShellModule = {
 		const names = args.filter((a) => a !== "-r");
 
 		if (hasR) {
-			const keys = Object.keys(env.vars).filter((k) =>
-				k.startsWith("__hash_")
-			);
+			const keys = Object.keys(env.vars).filter((k) => k.startsWith("__hash_"));
 			for (const k of keys) {
 				delete env.vars[k];
 			}
@@ -46,7 +44,10 @@ export const hashCommand: ShellModule = {
 					lines.push(`${k.slice(7)}  ${v}`);
 				}
 			}
-			return {stdout: lines.length > 0 ? `${lines.join("\n")}\n` : "", exitCode: 0};
+			return {
+				stdout: lines.length > 0 ? `${lines.join("\n")}\n` : "",
+				exitCode: 0,
+			};
 		}
 
 		return {exitCode: 0};
