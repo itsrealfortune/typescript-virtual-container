@@ -35,6 +35,7 @@ function toChunk(bytes: Uint8Array): Buffer {
 
 // ── Types ──────────────────────────────────────────────────────────────
 
+/** Content state for a terminal emulator window. */
 export interface TerminalContent {
 	type: "terminal";
 	termRenderer: WebTermRenderer;
@@ -43,26 +44,31 @@ export interface TerminalContent {
 	stream?: ShellStream;
 }
 
+/** Content state for a Thunar file manager window. */
 export interface ThunarContent {
 	type: "thunar";
 	path: string;
 }
 
+/** Content state for the About dialog window. */
 export interface AboutContent {
 	type: "about";
 }
 
+/** Content state for a Task Manager (htop-like) window. */
 export interface TaskManagerContent {
 	type: "taskmanager";
 	refreshInterval?: ReturnType<typeof setInterval>;
 }
 
+/** Content state for a Mousepad/Nano text editor window. */
 export interface EditorContent {
 	type: "editor";
 	path: string;
 	dirty: boolean;
 }
 
+/** Union type for all possible window content variants. */
 export type WindowContent =
 	| TerminalContent
 	| ThunarContent
@@ -70,6 +76,7 @@ export type WindowContent =
 	| EditorContent
 	| TaskManagerContent;
 
+/** Represents a single desktop window with position, size, and content. */
 export interface DesktopWindow {
 	id: string;
 	title: string;
@@ -85,6 +92,7 @@ export interface DesktopWindow {
 	content: WindowContent;
 }
 
+/** Snapshot of the desktop state for external consumers. */
 export interface DesktopState {
 	active: boolean;
 	windows: DesktopWindow[];

@@ -1,3 +1,4 @@
+/** Split a raw shell command string into tokens respecting quotes and redirection operators. */
 export function tokenizeCommand(input: string): string[] {
 	const tokens: string[] = [];
 	let current = "";

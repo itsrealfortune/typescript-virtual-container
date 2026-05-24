@@ -185,6 +185,7 @@ function evalTest(
 	return false;
 }
 
+/** POSIX `test` / `[` builtin — evaluate conditional expressions. */
 export const testCommand: ShellModule = {
 	name: "test",
 	aliases: ["["],
@@ -208,6 +209,7 @@ export const testCommand: ShellModule = {
 	},
 };
 
+/** Extended test `[[ ]]` builtin with pattern matching and regex support. */
 export const bracketCommand: ShellModule = {
 	name: "[[",
 	aliases: ["[["],

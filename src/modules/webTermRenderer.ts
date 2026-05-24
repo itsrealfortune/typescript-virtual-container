@@ -8,6 +8,7 @@
  *   - CSI <n> m              (SGR — bold, reverse, fg, bg, reset)
  */
 
+/** A single character cell in the terminal screen buffer with SGR styling. */
 export interface Cell {
 	ch: string;
 	bold: boolean;

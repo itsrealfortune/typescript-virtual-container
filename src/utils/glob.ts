@@ -76,6 +76,7 @@ function globToRegexInner(pattern: string, anchor: boolean): string {
 	return re;
 }
 
+/** Convert a glob pattern to a RegExp with full anchoring (^...$). */
 export function globToRegex(pattern: string, flags = ""): RegExp {
 	const key = `${flags}:${pattern}`;
 	const cached = _globCache.get(key);
@@ -87,6 +88,7 @@ export function globToRegex(pattern: string, flags = ""): RegExp {
 	return result;
 }
 
+/** Convert a glob pattern to a RegExp for substring/prefix matching. */
 export function globToRegexMatch(pattern: string): RegExp {
 	return globToRegex(pattern);
 }
