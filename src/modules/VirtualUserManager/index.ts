@@ -166,6 +166,8 @@ export class VirtualUserManager extends EventEmitter {
 	private _cpuWindowStart = Date.now();
 	/** Per-process CPU time consumed in current window (ms). */
 	private _processCpuTime = new Map<number, number>();
+	/** Per-session CPU time consumed in current window (ms), keyed by TTY. */
+	private _sessionCpuTime = new Map<string, number>();
 	/** Watcher interval handle for CPU enforcement. */
 	private _cpuWatcher: ReturnType<typeof setInterval> | null = null;
 	/** Group manager for /etc/group handling. */
@@ -1037,6 +1039,13 @@ export class VirtualUserManager extends EventEmitter {
 	public addProcessCpuTime(pid: number, elapsedMs: number): void {
 		const current = this._processCpuTime.get(pid) ?? 0;
 		this._processCpuTime.set(pid, current + elapsedMs);
+
+		const proc = this._activeProcesses.get(pid);
+		if (proc) {
+			const ttyKey = proc.tty || "?";
+			const sessCur = this._sessionCpuTime.get(ttyKey) ?? 0;
+			this._sessionCpuTime.set(ttyKey, sessCur + elapsedMs);
+		}
 	}
 
 	/**
@@ -1065,6 +1074,8 @@ export class VirtualUserManager extends EventEmitter {
 
 	/**
 	 * Enforces CPU cap: kills processes that exceeded their budget.
+	 * Budget is per-session: the total budget is divided among active sessions
+	 * so one session cannot starve another.
 	 */
 	private _enforceCpuCaps(): void {
 		if (this._cpuBudgetMs <= 0) {
@@ -1078,27 +1089,48 @@ export class VirtualUserManager extends EventEmitter {
 		if (windowElapsed >= this._cpuWindowMs) {
 			this._cpuWindowStart = now;
 			this._processCpuTime.clear();
+			this._sessionCpuTime.clear();
 			return;
 		}
 
-		// Check each running process
+		// Calculate per-session budget
+		const activeTtys = new Set<string>();
+		for (const [, proc] of this._activeProcesses) {
+			if (proc.status === "running" && proc.tty) {
+				activeTtys.add(proc.tty);
+			}
+		}
+		const numSessions = Math.max(activeTtys.size, 1);
+		const sessionBudgetMs = Math.ceil(this._cpuBudgetMs / numSessions);
+
+		// Check each session's total CPU time
+		const ttyCpuTotals = new Map<string, number>();
 		for (const [pid, proc] of this._activeProcesses) {
 			if (proc.status !== "running") {
 				continue;
 			}
 			const cpuTime = this._processCpuTime.get(pid) ?? 0;
-			// Update wall-clock time for running processes
 			const procStart = new Date(proc.startedAt).getTime();
 			const wallTime = Math.min(now - procStart, windowElapsed);
 			const effectiveCpu = Math.max(cpuTime, wallTime);
 
-			if (effectiveCpu > this._cpuBudgetMs) {
-				// Process exceeded budget — kill it
+			const ttyKey = proc.tty || "?";
+			ttyCpuTotals.set(ttyKey, (ttyCpuTotals.get(ttyKey) ?? 0) + effectiveCpu);
+		}
+
+		// Kill processes in sessions that exceeded their budget
+		for (const [pid, proc] of this._activeProcesses) {
+			if (proc.status !== "running") {
+				continue;
+			}
+			const ttyKey = proc.tty || "?";
+			const sessionTotal = ttyCpuTotals.get(ttyKey) ?? 0;
+			if (sessionTotal > sessionBudgetMs) {
 				this.killProcess(pid, 9); // SIGKILL
 				this.emit("process:killed:cpu", {
 					pid,
 					command: proc.command,
-					cpuTime: effectiveCpu,
+					cpuTime: sessionTotal,
 				});
 			}
 		}

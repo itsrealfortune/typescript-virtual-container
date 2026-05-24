@@ -1489,6 +1489,24 @@ function bootstrapSys(
 	);
 	ensureFile(vfs, "/sys/fs/cgroup/cpu/cpu.shares", "1024\n");
 
+	// cgroup v2 files
+	ensureFile(vfs, "/sys/fs/cgroup/unified/cgroup.procs", "1\n");
+	ensureFile(
+		vfs,
+		"/sys/fs/cgroup/unified/cgroup.controllers",
+		"cpu memory io pids\n"
+	);
+	const effectiveCpuQuotaV2 =
+		resourceCaps?.cpuCapCores === undefined
+			? "max"
+			: `${resourceCaps.cpuCapCores * 100000} 100000`;
+	ensureFile(vfs, "/sys/fs/cgroup/unified/cpu.max", `${effectiveCpuQuotaV2}\n`);
+	ensureFile(vfs, "/sys/fs/cgroup/unified/cpu.weight", "100\n");
+	ensureFile(vfs, "/sys/fs/cgroup/unified/memory.max", `${ramCapBytes}\n`);
+	ensureFile(vfs, "/sys/fs/cgroup/unified/memory.current", "0\n");
+	ensureFile(vfs, "/sys/fs/cgroup/unified/pids.max", "max\n");
+	ensureFile(vfs, "/sys/fs/cgroup/unified/pids.current", "1\n");
+
 	ensureDir(vfs, "/sys/kernel");
 	ensureFile(vfs, "/sys/kernel/hostname", `${hostname}\n`);
 	ensureFile(vfs, "/sys/kernel/osrelease", `${props.kernel}\n`);

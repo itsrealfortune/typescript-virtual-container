@@ -33,6 +33,11 @@ const server = createServer(async (req, res) => {
       'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
     };
     
+    // Content Security Policy for all HTML pages
+    if (ext === '.html') {
+      headers['Content-Security-Policy'] = "default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' https://itsrealfortune.fr data:; script-src 'self'";
+    }
+
     // Cloudflare-specific header to bypass challenge
     if (reqPath === '/index.html' || reqPath === '/app.js' || reqPath === '/web.min.js') {
       headers['CF-Mitigate-Challenge'] = 'bypass';

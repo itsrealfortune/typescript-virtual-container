@@ -20,6 +20,7 @@ import {
 	IdleManager,
 	type IdleManagerOptions,
 } from "./idleManager";
+import type {NetworkRestrictionConfig} from "../../utils/networkRestrictions";
 import {startShell} from "./shell";
 
 /**
@@ -175,6 +176,31 @@ export interface VirtualShellResourceCaps {
 	 * @example 2 // 2 vCPUs
 	 */
 	cpuCapCores?: number;
+	/**
+	 * Outbound network restriction policy for curl/wget and other virtual
+	 * network commands.
+	 *
+	 * - `"allow-all"` (default) — no restrictions.
+	 * - `"block-private"` — blocks requests to RFC1918, loopback, and link-local
+	 *   addresses. If `honeypot` is set, returns simulated responses instead of
+	 *   blocking.
+	 * - `"blocklist"` — blocks hosts matching `blocklist` entries.
+	 * - `"allowlist"` — blocks all hosts except those in `allowlist`.
+	 *
+	 * @example
+	 * ```ts
+	 * const shell = new VirtualShell("sandbox", props, vfsOptions, {
+	 *   outboundRestriction: {
+	 *     mode: "block-private",
+	 *     honeypot: true,
+	 *   },
+	 * });
+	 * // Inside the VM:
+	 * //   curl http://192.168.1.1  → fake nginx page (honeypot)
+	 * //   curl https://example.com → real fetch
+	 * ```
+	 */
+	outboundRestriction?: NetworkRestrictionConfig;
 }
 
 function hasVfsInstance(
