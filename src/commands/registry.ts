@@ -17,6 +17,7 @@ import {chageCommand} from "./chage";
 import {chgrpCommand} from "./chgrp";
 import {chmodCommand} from "./chmod";
 import {chownCommand} from "./chown";
+import {callerCommand} from "./caller";
 import {clearCommand} from "./clear";
 import {conntrackCommand} from "./conntrack";
 import {crontabCommand} from "./crontab";
@@ -309,6 +310,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	exportCommand,
 	readonlyCommand,
 	hashCommand,
+	callerCommand,
 	setCommand,
 	unsetCommand,
 	shCommand,

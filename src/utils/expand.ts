@@ -853,7 +853,7 @@ export function expandSync(
 			}
 		);
 
-		// $? $$ $# $RANDOM $LINENO
+		// $? $$ $# $RANDOM $LINENO $BASHPID $EPOCHSECONDS $EPOCHREALTIME
 		s = s.replace(/\$\?/g, String(lastExit));
 		s = s.replace(/\$\$/g, "1");
 		s = s.replace(/\$#/g, "0");
@@ -861,6 +861,36 @@ export function expandSync(
 			String(Math.floor(Math.random() * 32768))
 		);
 		s = s.replace(/\$LINENO\b/g, "1");
+		s = s.replace(/\$BASHPID\b/g, () =>
+			String(Math.floor(Math.random() * 32768) + 1000)
+		);
+		s = s.replace(/\$EPOCHSECONDS\b/g, () =>
+			String(Math.floor(Date.now() / 1000))
+		);
+		s = s.replace(/\$EPOCHREALTIME\b/g, () => String(Date.now() / 1000));
+		s = s.replace(/\$-/g, () => {
+			let flags = "";
+			if (env.__errexit === "1") {
+				flags += "e";
+			}
+			if (env.__nounset === "1") {
+				flags += "u";
+			}
+			if (env.__noclobber === "1") {
+				flags += "C";
+			}
+			if (env.__xtrace === "1") {
+				flags += "x";
+			}
+			if (env.__pipefail === "1") {
+				flags += "o pipefail";
+			}
+			return flags;
+		});
+		s = s.replace(/\$_/g, () => env.__lastarg ?? "");
+		s = s.replace(/\$PIPESTATUS\b/g, () => env.__pipestatus ?? "0");
+		s = s.replace(/\$\{PIPESTATUS\[@\]\}/g, () => env.__pipestatus ?? "0");
+		s = s.replace(/\$\{PIPESTATUS\[\*\]\}/g, () => env.__pipestatus ?? "0");
 
 		// $(( arithmetic )) — must come before ${ and $VAR to avoid conflicts
 		s = expandArithmeticChunks(s, env);
