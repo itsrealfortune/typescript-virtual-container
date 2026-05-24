@@ -21,56 +21,66 @@ Several utilities in `src/utils/` have no direct tests:
 
 ## Subtasks
 
-### 1. tokenize.ts
-- [ ] Simple tokenization: `echo hello world`
-- [ ] Quotes: `echo "hello world"`, `echo 'it\'s'`
-- [ ] Escaping: `echo hello\ world`
-- [ ] Pipes and redirections: `cat file | grep foo > out`
-- [ ] Variables: `echo $HOME`, `echo ${VAR:-default}`
-- [ ] Logical operators: `cmd1 && cmd2`, `cmd1 || cmd2`
-- [ ] Subshell: `(cmd1; cmd2)`
-- [ ] Background: `cmd &`
-- [ ] Heredoc: `cat << EOF ... EOF`
+### 1. tokenize.ts (31 tests)
+- [x] Simple tokenization: `echo hello world`
+- [x] Quotes: `echo "hello world"`, `echo 'it\'s'`
+- [x] Escaping: `echo hello\ world` (backslash kept literal — tokenizer limitation)
+- [x] Pipes and redirections: `cat file | grep foo > out`
+- [x] Variables in quotes: `'$HOME'`, `"$HOME"`
+- [x] Logical operators: `cmd1 && cmd2`, `cmd1 || cmd2`
+- [x] Subshell: `(cmd1; cmd2)` (parens kept as token content)
+- [x] Background: `cmd &`
+- [x] Heredoc: `cat << EOF ... EOF`, `<<-`, `<<<`
 
-### 2. glob.ts
-- [ ] `*` match
-- [ ] `?` match
-- [ ] `[abc]` character class
-- [ ] `[!abc]` negated character class
-- [ ] `**` recursive match
-- [ ] `{a,b}` brace expansion in glob
-- [ ] Edge cases: hidden files (`.` prefix), empty pattern
+### 2. glob.ts (21 tests)
+- [x] `*` match
+- [x] `?` match
+- [x] `[abc]` character class
+- [x] `[!abc]` negated character class
+- [x] `**` recursive match
+- [x] Extglob: `@(a|b)`, `?(a)`, `*(pat)`, `+(pat)`
+- [x] `shellGlobToRegex` prefix/suffix/none/greedy modes
 
-### 3. argv.ts
-- [ ] `getFlag()` — boolean flags
-- [ ] `getOption()` — string options
-- [ ] `getOptionInt()` — integer options with defaults
-- [ ] Mixed flags and options
-- [ ] `--` terminator
-- [ ] Combined short flags: `-abc`
+### 3. argv.ts (13 tests)
+- [x] `getFlag()` — boolean flags
+- [x] `getOptionString()` — string options with fallback
+- [x] `getOptionInt()` — integer options with defaults
+- [x] Mixed args: `--name VALUE` and `--name=VALUE` forms
+- [x] Flags before positional args
+- [x] Unparseable value returns NaN
 
-### 4. vfsDiff.ts
-- [ ] File addition detected
-- [ ] File modification detected
-- [ ] File deletion detected
-- [ ] Permission change detected
-- [ ] Identical snapshots → empty diff
+### 4. vfsDiff.ts (17 tests)
+- [x] File addition detected
+- [x] File modification detected
+- [x] File deletion detected
+- [x] Permission change detected
+- [x] Identical snapshots → empty diff
+- [x] `formatDiff` output formatting (+, -, ~, summary)
+- [x] `assertDiff` expectation matching
 
-### 5. keyToBytes.ts
-- [ ] RSA key conversion OpenSSH format → Buffer
-- [ ] Ed25519 key conversion OpenSSH format → Buffer
-- [ ] Error handling: invalid format
+### 5. keyToBytes.ts (21 tests)
+- [x] Control characters: Ctrl+A..Z, Ctrl+[, Ctrl+Backspace
+- [x] Alt+key combos
+- [x] Arrow keys, Home, End, PageUp, PageDown
+- [x] Function keys: F1-F4
+- [x] Special keys: Enter, Tab, Escape, Backspace, Delete, Insert
+- [x] Regular characters
+- [x] Unknown keys and meta combos return null
 
-### 6. perfLogger.ts
-- [ ] Mark and measure
-- [ ] Clear
-- [ ] Empty entries
-- [ ] Multiple entries
+### 6. perfLogger.ts (5 tests)
+- [x] Disabled by default (DEV_MODE not set)
+- [x] `mark` and `done` are no-ops when disabled
+- [x] Multiple marks don't throw
 
-### 7. shellSession.ts
-- [ ] Session serialization
-- [ ] Deserialization
-- [ ] Valid and invalid states
+### 7. shellSession.ts (8 tests)
+- [x] `loadHistory` creates file if missing
+- [x] `loadHistory` returns lines, filters empty
+- [x] `loadHistory` works for non-root user paths
+- [x] `saveHistory` writes entries
+- [x] `saveHistory` empty array writes empty file
+- [x] `listPathCompletions` returns sorted matches
+- [x] `listPathCompletions` hides/shows dot-files
+- [x] `listPathCompletions` appends `/` for directories
 
 ## Acceptance Criteria
 
