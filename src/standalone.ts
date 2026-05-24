@@ -1,5 +1,5 @@
-import { VirtualSftpServer, VirtualShell, VirtualSshServer } from ".";
-import { getFlag, getOptionInt } from "./utils/argv";
+import { VirtualSftpServer, VirtualShell, VirtualSshServer, VirtualWebSocketServer } from ".";
+import { getFlag, getOptionInt, getOptionString } from "./utils/argv";
 
 // ── CLI argument parsing ──────────────────────────────────────────────────────
 
@@ -7,6 +7,8 @@ const argv = process.argv.slice(2);
 
 const noSsh = getFlag(argv, "--no-ssh");
 const sshPort = getOptionInt(argv, "--ssh-port", 2222);
+const wsPort = getOptionInt(argv, "--ws-port", 8080);
+const wsTransport = getFlag(argv, "--transport-ws") || getOptionString(argv, "--transport", "") === "ws";
 
 // ── Baseline memory (before any shell is created) ─────────────────────────────
 
@@ -83,6 +85,14 @@ if (!noSsh) {
 			console.error("Failed to start SSH server:", error);
 			process.exit(1);
 		});
+}
+
+if (wsTransport) {
+	new VirtualWebSocketServer({
+		port: wsPort,
+		hostname,
+		shell: virtualShell,
+	}).start();
 }
 
 // ── Graceful shutdown ─────────────────────────────────────────────────────────

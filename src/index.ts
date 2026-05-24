@@ -238,8 +238,12 @@ export {
 	diffSnapshots,
 	formatDiff,
 } from "./utils/vfsDiff";
-export type {
-	VfsDiff,
-	VfsDiffEntry,
-	VfsDiffModified,
-} from "./utils/vfsDiff";
+export type { VfsDiff, VfsDiffEntry, VfsDiffModified, } from "./utils/vfsDiff";
+
+/**
+ * WebSocket shell server — bridges a browser terminal to VirtualShell.
+ * See {@link VirtualWebSocketServer} for full documentation.
+ * @module
+ */
+export { VirtualWebSocketServer } from "./modules/WebSocketShell/wsServer";
+export type { VirtualWebSocketServerOptions } from "./modules/WebSocketShell/wsServer";

@@ -35,6 +35,7 @@ Run with `bun examples/<file>` from the project root.
 | 26 | `26-virtual-switch-advanced.ts` | VirtualSwitch, VirtualShell |
 | 27 | `27-sandboxed-shell.ts` | SandboxedShell (worker thread) |
 | 28 | `28-virtual-vpn.ts` | VirtualVpn, VirtualSwitch |
+| 29 | `29-websocket-server.ts` | VirtualWebSocketServer, VirtualShell |
 | 99 | `99-full-stack.ts` | All modules — end-to-end scenario |
 | — | `HoneyPot/` | Honeypot quickstart + audit tools |
 
