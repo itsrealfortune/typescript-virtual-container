@@ -1222,7 +1222,7 @@ function matchGlob(
 	}
 
 	const re = globToRegex(seg);
-	const showHidden = dotglob ? false : seg.startsWith(".");
+	const showHidden = dotglob ? true : seg.startsWith(".");
 	const matched: string[] = [];
 	for (const e of entries) {
 		if ((!showHidden && e.startsWith(".")) || !re.test(e)) {
