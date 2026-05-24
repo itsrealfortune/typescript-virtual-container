@@ -128,6 +128,32 @@ EXAMPLES
        bc           # start interactive calculator
        echo "2+2" | bc   # calculate 2+2
        echo "scale=2; 10/3" | bc   # division with 2 decimal places`,
+	builtin: `BUILTIN(1)               Shell Builtins              BUILTIN(1)
+
+NAME
+       builtin - run a shell builtin command
+
+SYNOPSIS
+       builtin [builtin_name [args...]]
+
+DESCRIPTION
+       Execute  the  specified  shell builtin, ignoring any shell
+       function or alias with the same name.
+
+       If builtin_name is not a shell builtin, a non-zero  exit
+       status is returned.
+
+EXIT STATUS
+       Returns the exit status of the executed builtin.
+
+       Returns 1 if builtin_name is not a shell builtin.
+
+       Returns 1 if no builtin_name is given.
+
+EXAMPLES
+       builtin echo hello
+       builtin readonly
+       builtin set -o`,
 	bzip2: `BZIP2(1)               User Commands               BZIP2(1)
 
 NAME
