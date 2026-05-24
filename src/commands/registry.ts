@@ -63,6 +63,7 @@ import {getentCommand} from "./getent";
 import {gitCommand} from "./git";
 import {gpasswdCommand} from "./gpasswd";
 import {grepCommand} from "./grep";
+import {hashCommand} from "./hash";
 import {groupaddCommand} from "./groupadd";
 import {groupdelCommand} from "./groupdel";
 import {groupsCommand} from "./groups";
@@ -97,6 +98,7 @@ import {
 	sha256sumCommand,
 	stringsCommand,
 } from "./miscutils";
+import {shoptCommand} from "./shopt";
 import {mkdirCommand} from "./mkdir";
 import {mkfifoCommand, mknodCommand} from "./mknod";
 import {moreCommand} from "./more";
@@ -306,6 +308,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	envCommand,
 	exportCommand,
 	readonlyCommand,
+	hashCommand,
 	setCommand,
 	unsetCommand,
 	shCommand,
@@ -390,6 +393,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	whichCommand,
 	typeCommand,
 	commandCommand,
+	shoptCommand,
 	manCommand,
 	aliasCommand,
 	unaliasCommand,
