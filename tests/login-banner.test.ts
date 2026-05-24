@@ -23,11 +23,10 @@ describe("buildLoginBanner", () => {
 	});
 
 	test("includes last login when provided", () => {
-		const banner = buildLoginBanner(
-			"vm",
-			defaultProps,
-			{at: "2024-03-15T10:30:00Z", from: "192.168.1.100"}
-		);
+		const banner = buildLoginBanner("vm", defaultProps, {
+			at: "2024-03-15T10:30:00Z",
+			from: "192.168.1.100",
+		});
 		expect(banner).toContain("Last login:");
 		expect(banner).toContain("192.168.1.100");
 	});
@@ -38,11 +37,10 @@ describe("buildLoginBanner", () => {
 	});
 
 	test("handles invalid date string in lastLogin", () => {
-		const banner = buildLoginBanner(
-			"vm",
-			defaultProps,
-			{at: "not-a-date", from: "10.0.0.1"}
-		);
+		const banner = buildLoginBanner("vm", defaultProps, {
+			at: "not-a-date",
+			from: "10.0.0.1",
+		});
 		expect(banner).toContain("Last login: not-a-date from 10.0.0.1");
 	});
 
@@ -57,11 +55,10 @@ describe("buildLoginBanner", () => {
 	});
 
 	test("handles empty from address", () => {
-		const banner = buildLoginBanner(
-			"vm",
-			defaultProps,
-			{at: "2024-01-01T00:00:00Z", from: ""}
-		);
+		const banner = buildLoginBanner("vm", defaultProps, {
+			at: "2024-01-01T00:00:00Z",
+			from: "",
+		});
 		expect(banner).toContain("from unknown");
 	});
 });

@@ -274,9 +274,9 @@ describe("HoneyPot", () => {
 		}
 
 		const anomalies2 = hp.detectAnomalies();
-		expect(
-			anomalies2.some((a) => a.type === "excessive_auth_failures")
-		).toBe(true);
+		expect(anomalies2.some((a) => a.type === "excessive_auth_failures")).toBe(
+			true
+		);
 	});
 
 	test("detectAnomalies - high command volume", () => {

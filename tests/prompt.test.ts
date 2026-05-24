@@ -97,7 +97,14 @@ describe("expandPs1", () => {
 
 describe("buildPrompt", () => {
 	test("expands PS1 when provided", () => {
-		const result = buildPrompt("root", "server", "~", "\\u:\\w# ", undefined, false);
+		const result = buildPrompt(
+			"root",
+			"server",
+			"~",
+			"\\u:\\w# ",
+			undefined,
+			false
+		);
 		expect(result).toContain("root");
 		expect(result).toContain("~");
 		expect(result).toContain("#");
@@ -109,7 +116,14 @@ describe("buildPrompt", () => {
 	}
 
 	test("returns colored default prompt for root without PS1", () => {
-		const result = buildPrompt("root", "hostname", "/root", undefined, undefined, false);
+		const result = buildPrompt(
+			"root",
+			"hostname",
+			"/root",
+			undefined,
+			undefined,
+			false
+		);
 		const plain = stripAnsi(result);
 		expect(plain).toContain("root@hostname");
 		expect(plain).toContain("#");
@@ -117,7 +131,14 @@ describe("buildPrompt", () => {
 	});
 
 	test("returns colored default prompt for user without PS1", () => {
-		const result = buildPrompt("alice", "box", "~", undefined, undefined, false);
+		const result = buildPrompt(
+			"alice",
+			"box",
+			"~",
+			undefined,
+			undefined,
+			false
+		);
 		const plain = stripAnsi(result);
 		expect(plain).toContain("alice@box");
 		expect(plain).toContain("$");
