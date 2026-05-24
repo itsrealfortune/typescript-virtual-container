@@ -200,7 +200,9 @@ function gitStatus(
 		);
 		lines.push("");
 		for (const f of untrackedFiles) {
-			if (f.startsWith(".git")) { continue; }
+			if (f.startsWith(".git")) {
+				continue;
+			}
 			lines.push(`\t${f}`);
 		}
 		lines.push("");
@@ -311,7 +313,9 @@ function gitLog(
 	while (hash && !seen.has(hash)) {
 		seen.add(hash);
 		const cp = objPath(cwd, hash);
-		if (!vfs.exists(cp)) { break; }
+		if (!vfs.exists(cp)) {
+			break;
+		}
 
 		const content = vfs.readFile(cp);
 		const msgMatch = content.match(/\n\n([\s\S]*)$/);
@@ -398,7 +402,9 @@ function currentBranch(
 	vfs: {readFile: (p: string) => string; exists: (p: string) => boolean},
 	cwd: string
 ): string {
-	if (!vfs.exists(headRef(cwd))) { return "master"; }
+	if (!vfs.exists(headRef(cwd))) {
+		return "master";
+	}
 	const head = vfs.readFile(headRef(cwd)).trim();
 	const m = head.match(/^ref:\s*refs\/heads\/(.+)$/);
 	return m ? m[1]! : head.slice(0, 7);
@@ -408,12 +414,16 @@ function getHeadCommit(
 	vfs: {readFile: (p: string) => string; exists: (p: string) => boolean},
 	cwd: string
 ): string | null {
-	if (!vfs.exists(headRef(cwd))) { return null; }
+	if (!vfs.exists(headRef(cwd))) {
+		return null;
+	}
 	const head = vfs.readFile(headRef(cwd)).trim();
 	const m = head.match(/^ref:\s*(.+)$/);
 	if (m) {
 		const ref = refPath(cwd, m[1]!);
-		if (!vfs.exists(ref)) { return null; }
+		if (!vfs.exists(ref)) {
+			return null;
+		}
 		return vfs.readFile(ref).trim();
 	}
 	return head || null;
@@ -440,7 +450,9 @@ function listFiles(
 	const results: string[] = [];
 	const entries = vfs.list(dir);
 	for (const e of entries) {
-		if (e === "." || e === ".." || e === ".git") { continue; }
+		if (e === "." || e === ".." || e === ".git") {
+			continue;
+		}
 		const full = path.posix.join(dir, e);
 		const rel = prefix ? `${prefix}/${e}` : e;
 		try {

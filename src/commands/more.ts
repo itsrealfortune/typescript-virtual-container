@@ -28,7 +28,9 @@ export const moreCommand: ShellModule = {
 			if (!process.stdin.isTTY) {
 				let input = "";
 				const buf = process.stdin.read();
-				if (buf) { input = buf.toString(); }
+				if (buf) {
+					input = buf.toString();
+				}
 				return {stdout: `${input}\n`, exitCode: 0};
 			}
 			return {stderr: "more: missing file operand", exitCode: 1};

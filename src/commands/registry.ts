@@ -176,6 +176,39 @@ import {xargsCommand} from "./xargs";
 import {thunarCommand} from "./xfceDesktop";
 import {unzipCommand, zipCommand} from "./zip";
 
+import {arpCommand} from "./arp";
+import {cmpCommand} from "./cmp";
+import {digCommand} from "./dig";
+import {ethtoolCommand} from "./ethtool";
+import {
+	figletCommand,
+	bannerCommand,
+	toiletCommand,
+	factorCommand,
+	rsCommand,
+} from "./p3-fun";
+import {gpgCommand} from "./gpg";
+import {hexdumpCommand} from "./hexdump";
+import {iconvCommand} from "./iconv";
+import {loggerCommand} from "./logger";
+import {nslookupCommand} from "./nslookup";
+import {odCommand} from "./od";
+import {opensslCommand} from "./openssl";
+import {patchCommand} from "./patch";
+import {prCommand} from "./pr";
+import {recodeCommand} from "./recode";
+import {routeCommand} from "./route";
+import {rsyncCommand} from "./rsync";
+import {
+	screenCommand,
+	tmuxCommand,
+	watchCommand,
+	timeCommand,
+} from "./p3-terminal";
+import {serviceCommand} from "./service";
+import {useraddCommand, userdelCommand, groupmodCommand} from "./useradd";
+import {xxdCommand} from "./xxd";
+
 const BASE_COMMANDS: ShellModule[] = [
 	// Navigation
 	pwdCommand,
@@ -225,6 +258,15 @@ const BASE_COMMANDS: ShellModule[] = [
 	commCommand,
 	splitCommand,
 	csplitCommand,
+	// Text & data (extended)
+	cmpCommand,
+	odCommand,
+	xxdCommand,
+	hexdumpCommand,
+	patchCommand,
+	iconvCommand,
+	recodeCommand,
+	prCommand,
 	// Archives
 	tarCommand,
 	gzipCommand,
@@ -286,6 +328,11 @@ const BASE_COMMANDS: ShellModule[] = [
 	cowthinkCommand,
 	cmatrixCommand,
 	slCommand,
+	figletCommand,
+	bannerCommand,
+	toiletCommand,
+	factorCommand,
+	rsCommand,
 	pacmanCommand,
 	htopCommand,
 	// Development
@@ -301,10 +348,21 @@ const BASE_COMMANDS: ShellModule[] = [
 	tracerouteCommand,
 	conntrackCommand,
 	ifconfigCommand,
+	digCommand,
+	nslookupCommand,
+	routeCommand,
+	arpCommand,
+	ethtoolCommand,
+	serviceCommand,
+	loggerCommand,
+	rsyncCommand,
 	// Users
 	adduserCommand,
 	passwdCommand,
 	deluserCommand,
+	useraddCommand,
+	userdelCommand,
+	groupmodCommand,
 	sudoCommand,
 	sysctlCommand,
 	suCommand,
@@ -351,6 +409,14 @@ const BASE_COMMANDS: ShellModule[] = [
 	startxfce4Command,
 	thunarCommand,
 	mousepadCommand,
+	// Security
+	gpgCommand,
+	opensslCommand,
+	// Terminal multiplexers
+	screenCommand,
+	tmuxCommand,
+	watchCommand,
+	timeCommand,
 	// System (extended)
 	mountCommand,
 	umountCommand,

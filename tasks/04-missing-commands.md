@@ -28,47 +28,47 @@
 - [x] `git` — version control (even partial: init, add, commit, log, status)
 
 ### P2 — Network
-- [ ] `dig` — DNS queries
-- [ ] `nslookup` — DNS lookup
-- [ ] `route` — routing table display
-- [ ] `arp` — ARP cache
-- [ ] `ethtool` — network interface configuration
-- [ ] `service` — service management (init.d)
-- [ ] `logger` — syslog message sending
+- [x] `dig` — DNS queries
+- [x] `nslookup` — DNS lookup
+- [x] `route` — routing table display
+- [x] `arp` — ARP cache
+- [x] `ethtool` — network interface configuration
+- [x] `service` — service management (init.d)
+- [x] `logger` — syslog message sending
 
 ### P2 — Text and data
-- [ ] `cmp` — binary comparison
-- [ ] `od` — octal dump
-- [ ] `xxd` — hex dump
-- [ ] `hexdump` — hex dump
-- [ ] `patch` — apply diffs
-- [ ] `iconv` — encoding conversion
-- [ ] `recode` — character set conversion
-- [ ] `pr` — file pagination
+- [x] `cmp` — binary comparison
+- [x] `od` — octal dump
+- [x] `xxd` — hex dump
+- [x] `hexdump` — hex dump
+- [x] `patch` — apply diffs
+- [x] `iconv` — encoding conversion
+- [x] `recode` — character set conversion
+- [x] `pr` — file pagination
 
 ### P2 — Security and encryption
-- [ ] `gpg` — encryption/signing
-- [ ] `openssl` — crypto utility
+- [x] `gpg` — encryption/signing
+- [x] `openssl` — crypto utility
 
 ### P3 — Process and terminal
-- [ ] `screen` — terminal multiplexer
-- [ ] `tmux` — terminal multiplexer
-- [ ] `watch` — periodic execution
-- [ ] `time` — execution time measurement
+- [x] `screen` — terminal multiplexer
+- [x] `tmux` — terminal multiplexer
+- [x] `watch` — periodic execution
+- [x] `time` — execution time measurement
 
 ### P3 — Fun and display
-- [ ] `figlet` — ASCII banners
-- [ ] `banner` — banners
-- [ ] `toilet` — colored banners
-- [ ] `factor` — integer factorization
-- [ ] `rs` — data reshaping
+- [x] `figlet` — ASCII banners
+- [x] `banner` — banners
+- [x] `toilet` — colored banners
+- [x] `factor` — integer factorization
+- [x] `rs` — data reshaping
 
 ### P3 — Transfer
-- [ ] `rsync` — file synchronization (can use VFS)
+- [x] `rsync` — file synchronization (can use VFS)
 
 ### P3 — Groups and users
-- [ ] `useradd` / `userdel` — in addition to adduser/deluser (Debian vs POSIX semantics)
-- [ ] `groupmod` — group modification
+- [x] `useradd` / `userdel` — in addition to adduser/deluser (Debian vs POSIX semantics)
+- [x] `groupmod` — group modification
 
 ## Acceptance Criteria
 

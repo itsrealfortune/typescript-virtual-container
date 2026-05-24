@@ -154,7 +154,9 @@ function parseMakefile(content: string): Rule[] {
 
 		const targetMatch = line.match(/^([a-zA-Z0-9_.-/]+)\s*:\s*(.*)$/);
 		if (targetMatch) {
-			if (current) { rules.push(current); }
+			if (current) {
+				rules.push(current);
+			}
 			const target = targetMatch[1]!;
 			const depsStr = targetMatch[2]!.trim();
 			const deps = depsStr ? depsStr.split(/\s+/) : [];
@@ -162,7 +164,9 @@ function parseMakefile(content: string): Rule[] {
 		}
 	}
 
-	if (current) { rules.push(current); }
+	if (current) {
+		rules.push(current);
+	}
 
 	return rules;
 }
