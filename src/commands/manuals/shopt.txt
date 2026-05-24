@@ -1,0 +1,29 @@
+SHOPT(1)                 User Commands                    SHOPT(1)
+
+NAME
+       shopt - manage shell options (bash extension)
+
+SYNOPSIS
+       shopt [-pqsu] [-o] [optname ...]
+
+DESCRIPTION
+       Display and manage shell option variables.  Without arguments,
+       list all shell options and their current state.
+
+       -s     Set (enable) the named options.
+       -u     Unset (disable) the named options.
+       -q     Quiet mode: return 0 if all named options are set, 1
+              otherwise.  No output is printed.
+       -p     Print option settings in a reusable format.
+       -o     Use POSIX-style option names (errexit, nounset, etc.)
+              instead of bash-style names.
+
+       Shell options are stored in the environment.  Options that can
+       be set via shopt include: dotglob, nullglob, failglob, extglob,
+       histexpand, cdable_vars, extdebug.
+
+EXAMPLES
+       shopt
+       shopt -s dotglob
+       shopt -u nullglob
+       shopt -q extglob

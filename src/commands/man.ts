@@ -3,6 +3,8 @@ import {MANUALS} from "./manuals-bundle";
 
 const MANUAL_ALIASES: Record<string, string> = {
 	gunzip: "gzip",
+	"[": "test",
+	"[[": "test",
 };
 
 /**

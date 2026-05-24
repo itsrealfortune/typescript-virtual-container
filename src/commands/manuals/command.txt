@@ -1,0 +1,24 @@
+COMMAND(1)               User Commands                    COMMAND(1)
+
+NAME
+       command - run a command or display information about it
+
+SYNOPSIS
+       command [-vVp] <command> [args...]
+
+DESCRIPTION
+       Run a command or display information about how a command would
+       be resolved.
+
+       -v     Print the path or name of the command.
+       -V     Print a verbose description of the command.
+       -p     Use a default PATH (POSIX-standard path) instead of the
+              current shell PATH.
+
+       Without -v or -V, run the command with the given arguments,
+       bypassing any shell function with the same name.
+
+EXAMPLES
+       command -v ls
+       command -V ls
+       command -p ls -la

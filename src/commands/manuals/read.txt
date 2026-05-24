@@ -4,16 +4,22 @@ NAME
        read - read a line from standard input
 
 SYNOPSIS
-       read [-r] [-p PROMPT] [-s] NAME...
+       read [-rs] [-d delim] [-n nchars] [-p prompt] [-t timeout] [-a array] [NAME...]
 
 OPTIONS
-       -r    do not allow backslashes to escape characters
-       -p PROMPT  output the string PROMPT before reading
-       -s    do not echo input (silent, for passwords)
-       -n N  return after reading N characters
+       -r        Do not allow backslashes to escape characters.
+       -d delim  Read until DELIM instead of newline.
+       -n nchars Return after reading NCHARS characters.
+       -p PROMPT Output PROMPT before reading.
+       -s        Silent mode (do not echo input).
+       -t TIMEOUT Time out after TIMEOUT seconds.
+       -a ARRAY  Store words into array ARRAY.
 
 EXAMPLES
        read name
        read -p "Enter name: " name
        read -s password
        read -r line
+       read -d: field
+       read -n 5 first5
+       read -a arr

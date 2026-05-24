@@ -5,6 +5,7 @@ import type {
 } from "../types/commands";
 import {adduserCommand} from "./adduser";
 import {aliasCommand, unaliasCommand} from "./alias";
+import {builtinCommand} from "./builtin";
 import {aptCacheCommand, aptCommand} from "./apt";
 import {awkCommand} from "./awk";
 import {base64Command} from "./base64";
@@ -17,6 +18,7 @@ import {chageCommand} from "./chage";
 import {chgrpCommand} from "./chgrp";
 import {chmodCommand} from "./chmod";
 import {chownCommand} from "./chown";
+import {callerCommand} from "./caller";
 import {clearCommand} from "./clear";
 import {conntrackCommand} from "./conntrack";
 import {crontabCommand} from "./crontab";
@@ -42,6 +44,7 @@ import {dfCommand} from "./df";
 import {diffCommand} from "./diff";
 import {dpkgCommand, dpkgQueryCommand} from "./dpkg";
 import {duCommand} from "./du";
+import {commandCommand} from "./command";
 import {echoCommand} from "./echo";
 import {envCommand} from "./env";
 import {exitCommand} from "./exit";
@@ -62,6 +65,7 @@ import {getentCommand} from "./getent";
 import {gitCommand} from "./git";
 import {gpasswdCommand} from "./gpasswd";
 import {grepCommand} from "./grep";
+import {hashCommand} from "./hash";
 import {groupaddCommand} from "./groupadd";
 import {groupdelCommand} from "./groupdel";
 import {groupsCommand} from "./groups";
@@ -96,6 +100,7 @@ import {
 	sha256sumCommand,
 	stringsCommand,
 } from "./miscutils";
+import {shoptCommand} from "./shopt";
 import {mkdirCommand} from "./mkdir";
 import {mkfifoCommand, mknodCommand} from "./mknod";
 import {moreCommand} from "./more";
@@ -119,6 +124,7 @@ import {psCommand} from "./ps";
 import {pwdCommand} from "./pwd";
 import {python3Command} from "./python";
 import {readCommand} from "./read";
+import {readonlyCommand} from "./readonly";
 import {rmCommand} from "./rm";
 import {sedCommand} from "./sed";
 import {seqCommand} from "./seq";
@@ -145,7 +151,7 @@ import {tailCommand} from "./tail";
 import {tarCommand} from "./tar";
 import {tcCommand} from "./tc";
 import {teeCommand} from "./tee";
-import {testCommand} from "./test";
+import {bracketCommand, testCommand} from "./test";
 import {
 	commCommand,
 	csplitCommand,
@@ -303,6 +309,9 @@ const BASE_COMMANDS: ShellModule[] = [
 	echoCommand,
 	envCommand,
 	exportCommand,
+	readonlyCommand,
+	hashCommand,
+	callerCommand,
 	setCommand,
 	unsetCommand,
 	shCommand,
@@ -386,10 +395,14 @@ const BASE_COMMANDS: ShellModule[] = [
 	bcCommand,
 	whichCommand,
 	typeCommand,
+	builtinCommand,
+	commandCommand,
+	shoptCommand,
 	manCommand,
 	aliasCommand,
 	unaliasCommand,
 	testCommand,
+	bracketCommand,
 	sourceCommand,
 	historyCommand,
 	printfCommand,

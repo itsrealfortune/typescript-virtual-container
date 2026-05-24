@@ -1,12 +1,29 @@
 DECLARE(1)               Shell Builtins               DECLARE(1)
 
 NAME
-       declare - set variable values and attributes
+       declare, local, typeset - set variable values and attributes
 
 SYNOPSIS
        declare [OPTION]... [NAME[=VALUE]...]
+       local [NAME[=VALUE]...]
 
 OPTIONS
-       -i     variable has integer attribute
-       -r     make NAMEs readonly
-       -x     export NAMEs to environment
+       -i     Variable has integer attribute (arithmetic evaluation).
+       -r     Make NAMEs readonly.
+       -x     Export NAMEs to environment.
+       -a     Declare array variable.
+
+DESCRIPTION
+       Set variable values and attributes.  Without arguments, print
+       all shell variables with their attributes.
+
+       The local keyword is equivalent to declare inside a function
+       body, and the variable's scope is limited to the function.
+       Local variables are automatically restored when the function
+       returns.
+
+EXAMPLES
+       declare -r PATH
+       declare -i count=0
+       local myvar=hello
+       declare -x MY_ENV=value

@@ -641,9 +641,9 @@ describe("comm command", () => {
 });
 
 describe("cmp command", () => {
-	test("cmp not found", async () => {
+	test("cmp missing operand", async () => {
 		const r = await runCmd(client, "cmp");
-		expect(r.exitCode).toBe(127);
+		expect(r.exitCode).toBe(2);
 	});
 });
 

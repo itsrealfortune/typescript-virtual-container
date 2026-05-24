@@ -232,7 +232,9 @@ async function executeSingleCommandWithRedirections(
 	abortController?: AbortController
 ): Promise<CommandResult> {
 	let stdin: string | undefined;
-	if (cmd.inputFile) {
+	if (cmd.hereString !== undefined) {
+		stdin = cmd.hereString;
+	} else if (cmd.inputFile) {
 		const inputPath = resolvePath(cwd, cmd.inputFile);
 		try {
 			stdin = shell.vfs.readFile(inputPath);

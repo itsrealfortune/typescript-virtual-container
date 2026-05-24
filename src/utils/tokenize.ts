@@ -1,22 +1,3 @@
-/**
- * tokenize.ts
- *
- * Shared shell tokenizer used by `shellParser.ts` and `runtime.ts`.
- * Splits a shell input string into tokens respecting single and double
- * quotes, and separates `>`, `>>`, `<` as standalone redirect tokens.
- */
-
-/**
- * Tokenize a shell command line respecting quoted strings and redirect
- * operators.
- *
- * - Single-quoted content is preserved verbatim.
- * - Double-quoted content is preserved (expansion happens later).
- * - `>`, `>>`, and `<` are emitted as standalone tokens.
- *
- * @param input Raw shell command string.
- * @returns Array of string tokens.
- */
 export function tokenizeCommand(input: string): string[] {
 	const tokens: string[] = [];
 	let current = "";
@@ -55,7 +36,6 @@ export function tokenizeCommand(input: string): string[] {
 			continue;
 		}
 
-		// Handle 2>&1, 2>>, 2>, >&, >>
 		if (!inQ && ch === "2" && next === ">") {
 			const c2 = input[i + 2];
 			const c3 = input[i + 3];
@@ -63,8 +43,8 @@ export function tokenizeCommand(input: string): string[] {
 			if (c2 === ">" && c3 === "&" && c4 === "1") {
 				if (current) {
 					tokens.push(current);
-					current = "";
 				}
+				current = "";
 				tokens.push("2>>&1");
 				i += 5;
 				continue;
@@ -72,8 +52,8 @@ export function tokenizeCommand(input: string): string[] {
 			if (c2 === "&" && c3 === "1") {
 				if (current) {
 					tokens.push(current);
-					current = "";
 				}
+				current = "";
 				tokens.push("2>&1");
 				i += 4;
 				continue;
@@ -81,20 +61,70 @@ export function tokenizeCommand(input: string): string[] {
 			if (c2 === ">") {
 				if (current) {
 					tokens.push(current);
-					current = "";
 				}
+				current = "";
 				tokens.push("2>>");
 				i += 3;
 				continue;
 			}
 			if (current) {
 				tokens.push(current);
-				current = "";
 			}
+			current = "";
 			tokens.push("2>");
 			i += 2;
 			continue;
 		}
+
+		if (ch === "|" && next === "&") {
+			if (current) {
+				tokens.push(current);
+			}
+			current = "";
+			tokens.push("|&");
+			i += 2;
+			continue;
+		}
+
+		if (ch === "<" && next === "<") {
+			const c2 = input[i + 2];
+			if (c2 === "<") {
+				if (current) {
+					tokens.push(current);
+				}
+				current = "";
+				tokens.push("<<<");
+				i += 3;
+				continue;
+			}
+			if (c2 === "-") {
+				if (current) {
+					tokens.push(current);
+				}
+				current = "";
+				tokens.push("<<-");
+				i += 3;
+				continue;
+			}
+			if (current) {
+				tokens.push(current);
+			}
+			current = "";
+			tokens.push("<<");
+			i += 2;
+			continue;
+		}
+
+		if (ch === "<" && next === ">") {
+			if (current) {
+				tokens.push(current);
+			}
+			current = "";
+			tokens.push("<>");
+			i += 2;
+			continue;
+		}
+
 		if ((ch === ">" || ch === "<") && !inQ) {
 			if (current) {
 				tokens.push(current);

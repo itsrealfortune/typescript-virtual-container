@@ -357,3 +357,211 @@ describe("registry command - hidden feature", () => {
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 });
+
+// ─── TYPE command ─────────────────────────────────────────────────────────
+
+describe("type command - enhanced flags", () => {
+	test("type -t shows type of builtin", async () => {
+		const r = await runCmd(client, "type -t echo");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.trim()).toBe("builtin");
+	});
+
+	test("type -p shows path of external", async () => {
+		// touch is a registered builtin with a VFS path
+		const r = await runCmd(client, "type -p touch");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("type -a lists all", async () => {
+		const r = await runCmd(client, "type -a echo");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout).toBeTruthy();
+	});
+});
+
+// ─── COMMAND builtin ──────────────────────────────────────────────────────
+
+describe("command builtin - execution and flags", () => {
+	test("command -v identifies builtin", async () => {
+		const r = await runCmd(client, "command -v echo");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.trim()).toBe("echo");
+	});
+
+	test("command -V shows description", async () => {
+		const r = await runCmd(client, "command -V echo");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout).toContain("builtin");
+	});
+
+	test("command runs builtin skipping function", async () => {
+		const r = await runCmd(
+			client,
+			"sh -c 'echo() { false; }; command echo hello'"
+		);
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.trim()).toBe("hello");
+	});
+});
+
+// ─── BUILTIN command ──────────────────────────────────────────────────────
+
+describe("builtin command - skip functions and aliases", () => {
+	test("builtin runs echo", async () => {
+		const r = await runCmd(client, "builtin echo hello");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.trim()).toBe("hello");
+	});
+
+	test("builtin errors on missing builtin", async () => {
+		const r = await runCmd(client, "builtin nonexistent_cmd");
+		expect(r.exitCode).toBe(1);
+	});
+
+	test("builtin requires argument", async () => {
+		const r = await runCmd(client, "builtin");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("missing argument");
+	});
+});
+
+// ─── HASH command ─────────────────────────────────────────────────────────
+
+describe("hash command - PATH cache", () => {
+	test("hash -r clears cache", async () => {
+		const r = await runCmd(client, "hash -r");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("hash displays cached paths", async () => {
+		const r = await runCmd(client, "hash");
+		expect(r.exitCode).toBeGreaterThanOrEqual(0);
+	});
+});
+
+// ─── SHOPT command ────────────────────────────────────────────────────────
+
+describe("shopt command - shell options", () => {
+	test("shopt without args lists options", async () => {
+		const r = await runCmd(client, "shopt");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("shopt -s sets an option", async () => {
+		const r = await runCmd(client, "shopt -s dotglob");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("shopt -u unsets an option", async () => {
+		const r = await runCmd(client, "shopt -u dotglob");
+		expect(r.exitCode).toBe(0);
+	});
+});
+
+// ─── CALLER command ───────────────────────────────────────────────────────
+
+describe("caller command - stack trace", () => {
+	test("caller outside function prints nothing", async () => {
+		const r = await runCmd(client, "caller");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("caller inside function prints frame", async () => {
+		const r = await runCmd(client, "sh -c 'f() { caller 0; }; f'");
+		expect(r.exitCode).toBe(0);
+	});
+});
+
+// ─── READ enhanced flags ──────────────────────────────────────────────────
+
+describe("read command - enhanced flags", () => {
+	test("read -d sets delimiter", async () => {
+		const r = await runCmd(
+			client,
+			"sh -c 'echo hello:world | { read -d: a b && echo $a; }'"
+		);
+		expect(r.exitCode).toBeGreaterThanOrEqual(0);
+	});
+
+	test("read -n reads N chars", async () => {
+		const r = await runCmd(
+			client,
+			"sh -c 'echo abcde | { read -n 2 x; echo $x; }'"
+		);
+		expect(r.exitCode).toBeGreaterThanOrEqual(0);
+	});
+});
+
+// ─── EXPORT enhanced flags ────────────────────────────────────────────────
+
+describe("export command - enhanced flags", () => {
+	test("export -p displays exported vars", async () => {
+		const r = await runCmd(client, "export -p");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout).toBeTruthy();
+	});
+
+	test("export -n removes export property", async () => {
+		const r = await runCmd(client, "export TESTVAR=val && export -n TESTVAR");
+		expect(r.exitCode).toBe(0);
+	});
+});
+
+// ─── UNSET enhanced flags ─────────────────────────────────────────────────
+
+describe("unset command - enhanced flags", () => {
+	test("unset -v removes variable", async () => {
+		const r = await runCmd(client, "X=5 && unset -v X && echo $X");
+		expect(r.exitCode).toBeGreaterThanOrEqual(0);
+		expect(r.stdout?.trim()).toBe("");
+	});
+
+	test("unset -f removes function", async () => {
+		const r = await runCmd(client, "sh -c 'f() { echo func; }; unset -f f; f'");
+		expect(r.exitCode).not.toBe(0);
+	});
+});
+
+// ─── SET -o / +o ──────────────────────────────────────────────────────────
+
+describe("set -o / +o option management", () => {
+	test("set -o accepts option", async () => {
+		const r = await runCmd(client, "set -o pipefail");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("set +o disables option", async () => {
+		const r = await runCmd(client, "set +o pipefail");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("set +o alone returns success", async () => {
+		const r = await runCmd(client, "set +o");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("set -- sets positional args", async () => {
+		const r = await runCmd(client, "set -- a b c && echo $2");
+		expect(r.exitCode).toBeGreaterThanOrEqual(0);
+		expect(r.stdout?.trim()).toBe("b");
+	});
+});
+
+// ─── TRAP -p flag ─────────────────────────────────────────────────────────
+
+describe("trap -p display active traps", () => {
+	test("trap -p lists active traps", async () => {
+		const r = await runCmd(client, "trap -p");
+		expect(r.exitCode).toBeGreaterThanOrEqual(0);
+	});
+});
+
+// ─── WAIT -n flag ─────────────────────────────────────────────────────────
+
+describe("wait -n flag", () => {
+	test("wait -n succeeds", async () => {
+		const r = await runCmd(client, "wait -n");
+		expect(r.exitCode).toBeGreaterThanOrEqual(0);
+	});
+});

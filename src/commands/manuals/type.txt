@@ -4,7 +4,23 @@ NAME
        type - display how a command name is interpreted
 
 SYNOPSIS
-       type NAME...
+       type [-afptP] NAME...
+
+OPTIONS
+       -a     Show all locations containing the command (all builtins
+              and all PATH matches).
+       -f     Suppress shell function lookup.
+       -p     Print the disk file path of the command.
+       -t     Print a single word: alias, builtin, file, function, or
+              keyword.
 
 DESCRIPTION
-       Indicate whether NAME is a shell builtin, alias, or found in PATH.
+       Indicate how each NAME would be interpreted if used as a
+       command name.  Shows whether NAME is a shell builtin, function,
+       or found in PATH.
+
+EXAMPLES
+       type ls
+       type -t ls
+       type -p ls
+       type -a ls

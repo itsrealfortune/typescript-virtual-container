@@ -1,0 +1,25 @@
+READONLY(1)              User Commands                    READONLY(1)
+
+NAME
+       readonly - mark shell variables as readonly
+
+SYNOPSIS
+       readonly [-p] [NAME[=VALUE] ...]
+
+DESCRIPTION
+       Mark shell variables as readonly.  Subsequent attempts to modify
+       a readonly variable will fail.
+
+       -p     Print all readonly variables (default when no NAME given).
+
+       With NAME, mark the named variable as readonly.  With
+       NAME=VALUE, set the variable to VALUE and mark it readonly.
+
+EXAMPLES
+       readonly PATH
+       readonly MYVAR=hello
+       readonly -p
+
+NOTES
+       Readonly status is stored in the shell environment and persists
+       until the shell session ends.

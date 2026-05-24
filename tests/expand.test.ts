@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/suspicious/noTemplateCurlyInString: expand */
 import {describe, expect, test} from "bun:test";
-import {expandSync} from "../src/utils/expand";
+import {expandBraces, expandGlob, expandSync} from "../src/utils/expand";
 
 describe("expandSync - variable expansion", () => {
 	test("expands simple variable", () => {
@@ -173,5 +173,146 @@ describe("expandSync - complex scenarios", () => {
 	test("numeric variable", () => {
 		const result = expandSync("Count: $N", {N: "42"}, 0);
 		expect(result).toBe("Count: 42");
+	});
+});
+
+// ─── expandGlob tests ────────────────────────────────────────────────────
+
+function makeGlobVfs(files: Record<string, string>): {
+	list: (p: string) => string[];
+	exists: (p: string) => boolean;
+	stat: (p: string) => {type: string};
+} {
+	const tree: Record<string, string[]> = {};
+	const types: Record<string, string> = {};
+	for (const [path, _content] of Object.entries(files)) {
+		types[path] = "file";
+		const parts = path.split("/").filter(Boolean);
+		let cur = "";
+		for (let i = 0; i < parts.length - 1; i++) {
+			cur += `/${parts[i] as string}`;
+			if (!tree[cur]) {
+				tree[cur] = [];
+			}
+			if (!tree[cur]?.includes(parts[i + 1] as string)) {
+				tree[cur]?.push(parts[i + 1] as string);
+			}
+			const dirPath = `/${parts.slice(0, i + 2).join("/")}`;
+			if (i < parts.length - 2 && !types[dirPath]) {
+				types[dirPath] = "directory";
+			}
+		}
+		if (parts.length === 1) {
+			if (!tree["/"]) {
+				tree["/"] = [];
+			}
+			if (!tree["/"]?.includes(parts[0] as string)) {
+				tree["/"]?.push(parts[0] as string);
+			}
+		}
+	}
+	// Ensure all directory parents exist
+	for (const p of Object.keys(tree)) {
+		types[p] = types[p] || "directory";
+		if (p !== "/") {
+			const parent = p.substring(0, p.lastIndexOf("/")) || "/";
+			if (!tree[parent]) {
+				tree[parent] = [];
+			}
+			const name = p.substring(p.lastIndexOf("/") + 1);
+			if (!tree[parent]?.includes(name)) {
+				tree[parent]?.push(name);
+			}
+		}
+	}
+	types["/"] = "directory";
+	return {
+		list: (p: string) => tree[p] ?? [],
+		exists: (p: string) => p in types,
+		stat: (p: string) => {
+			if (p in types) {
+				return {type: types[p] as string};
+			}
+			throw new Error("ENOENT");
+		},
+	};
+}
+
+describe("expandGlob - glob expansion", () => {
+	test("no glob chars returns pattern as-is", () => {
+		const vfs = makeGlobVfs({"/tmp/foo.txt": ""});
+		const result = expandGlob("/tmp/foo.txt", "/", vfs);
+		expect(result).toEqual(["/tmp/foo.txt"]);
+	});
+
+	test("star matches files", () => {
+		const vfs = makeGlobVfs({
+			"/tmp/a.txt": "",
+			"/tmp/b.txt": "",
+			"/tmp/c.md": "",
+		});
+		const result = expandGlob("/tmp/*.txt", "/", vfs);
+		expect(result.sort()).toEqual(["/tmp/a.txt", "/tmp/b.txt"]);
+	});
+
+	test("dotglob includes hidden files", () => {
+		const vfs = makeGlobVfs({
+			"/tmp/.hidden": "",
+			"/tmp/visible": "",
+		});
+		// Without dotglob — hidden file excluded
+		const result = expandGlob("/tmp/*", "/", vfs);
+		expect(result).toEqual(["/tmp/visible"]);
+		// With dotglob — hidden file included
+		const result2 = expandGlob("/tmp/*", "/", vfs, {dotglob: true});
+		expect(result2.sort()).toEqual(["/tmp/.hidden", "/tmp/visible"]);
+	});
+
+	test("nullglob skips unmatched patterns", () => {
+		const vfs = makeGlobVfs({"/tmp/foo.txt": ""});
+		// Without nullglob — returns pattern literal
+		const result = expandGlob("/tmp/*.xyz", "/", vfs);
+		expect(result).toEqual(["/tmp/*.xyz"]);
+		// With nullglob — returns empty array
+		const result2 = expandGlob("/tmp/*.xyz", "/", vfs, {nullglob: true});
+		expect(result2).toEqual([]);
+	});
+
+	test("globstar ** matches directory tree", () => {
+		const vfs = makeGlobVfs({
+			"/a/b/c.txt": "",
+			"/a/d.txt": "",
+		});
+		const result = expandGlob("/a/**/*.txt", "/", vfs);
+		expect(result.sort()).toEqual(["/a/b/c.txt", "/a/d.txt"]);
+	});
+});
+
+// ─── expandBraces tests ───────────────────────────────────────────────────
+
+describe("expandBraces - brace expansion", () => {
+	test("comma list expands", () => {
+		const result = expandBraces("{a,b,c}");
+		expect(result).toEqual(["a", "b", "c"]);
+	});
+
+	test("prefix and suffix", () => {
+		const result = expandBraces("pre{x,y}suf");
+		expect(result).toEqual(["prexsuf", "preysuf"]);
+	});
+
+	test("numeric range", () => {
+		const result = expandBraces("{1..3}");
+		expect(result).toEqual(["1", "2", "3"]);
+	});
+
+	test("alpha range", () => {
+		const result = expandBraces("{a..c}");
+		expect(result).toEqual(["a", "b", "c"]);
+	});
+
+	test("nested braces", () => {
+		const result = expandBraces("{a,{b,c}}");
+		expect(result).toEqual(["a", "b", "c"]);
 	});
 });

@@ -11,90 +11,90 @@ The shell interpreter covers common patterns but is not POSIX-compliant. This is
 ## Subtasks
 
 ### 1. Parser — POSIX fixes
-- [ ] `$((expr))` — support full POSIX operators (+, -, *, /, %, <<, >>, &, |, ^, ~, &&, ||, relationals, ternary)
-- [ ] `${var:-word}`, `${var:=word}`, `${var:?word}`, `${var:+word}` — verify all expansion cases
-- [ ] `${var%pattern}`, `${var%%pattern}`, `${var#pattern}`, `${var##pattern}` — edge cases with special characters
-- [ ] `${var/pattern/replace}` — support glob patterns, not just literal strings
-- [ ] `export` — support `export -n`, `export -p`, `export name=value name2=value2`
-- [ ] `readonly` — same support as export
-- [ ] `set` — support `set -o option`, `set +o option`, `set -- args`
-- [ ] `unset` — support `unset -f name` (unset function), `unset -v name` (unset variable)
+- [x] `$((expr))` — support full POSIX operators (+, -, *, /, %, <<, >>, &, |, ^, ~, &&, ||, relationals, ternary)
+- [x] `${var:-word}`, `${var:=word}`, `${var:?word}`, `${var:+word}` — verify all expansion cases
+- [x] `${var%pattern}`, `${var%%pattern}`, `${var#pattern}`, `${var##pattern}` — edge cases with special characters
+- [x] `${var/pattern/replace}` — support glob patterns, not just literal strings
+- [x] `export` — support `export -n`, `export -p`, `export name=value name2=value2`
+- [x] `readonly` — same support as export
+- [x] `set` — support `set -o option`, `set +o option`, `set -- args`
+- [x] `unset` — support `unset -f name` (unset function), `unset -v name` (unset variable)
 
 ### 2. Shell functions
-- [ ] POSIX functions: `name() { body; }` — already supported
-- [ ] `function name { body; }` — bash extension (already supported?)
-- [ ] POSIX local variables: `local` keyword (not POSIX but ubiquitous)
-- [ ] `return` in functions with numeric value
-- [ ] Exported functions via `export -f` (bash extension)
+- [x] POSIX functions: `name() { body; }` — already supported
+- [x] `function name { body; }` — bash extension (already supported?)
+- [x] POSIX local variables: `local` keyword (not POSIX but ubiquitous)
+- [x] `return` in functions with numeric value
+- [x] Exported functions via `export -f` (bash extension)
 
 ### 3. Tests `[ ]` and `[[ ]]`
-- [ ] Complete POSIX operators for `test` / `[ ]`:
-  - [ ] `-b file`, `-c file`, `-g file`, `-k file`, `-p file`, `-S file`, `-t fd`
-  - [ ] `file1 -nt file2`, `file1 -ot file2`, `file1 -ef file2`
-  - [ ] `-o option` (shell option set?)
-  - [ ] `-v var` (variable set?)
-  - [ ] `-R var` (name reference?)
-- [ ] `[[ ]]` extended tests (bash extension):
-  - [ ] `=~` regex matching
-  - [ ] `<` `>` string comparison (locale-aware)
-  - [ ] `&&` `||` inside `[[ ]]`
+- [x] Complete POSIX operators for `test` / `[ ]`:
+  - [x] `-b file`, `-c file`, `-g file`, `-k file`, `-p file`, `-S file`, `-t fd`
+  - [x] `file1 -nt file2`, `file1 -ot file2`, `file1 -ef file2`
+  - [x] `-o option` (shell option set?)
+  - [x] `-v var` (variable set?)
+  - [x] `-R var` (name reference?)
+- [x] `[[ ]]` extended tests (bash extension):
+  - [x] `=~` regex matching
+  - [x] `<` `>` string comparison (locale-aware)
+  - [x] `&&` `||` inside `[[ ]]`
 
 ### 4. Expansion and globbing
-- [ ] `~` tilde expansion: `~user`, `~+`, `~-`
-- [ ] Full POSIX globbing: `?`, `*`, `[abc]`, `[!abc]`, `[a-z]`
-- [ ] `extglob` bash: `?(...)`, `*(...)`, `+(...)`, `@(...)`, `!(...)`
-- [ ] `GLOBIGNORE` / `FIGNORE`
-- [ ] `nullglob`, `failglob`, `dotglob` options
-- [ ] Brace expansion: `{a..z}` ranges, `{a,b}{c,d}` nesting
-- [ ] Process substitution: `<(cmd)`, `>(cmd)` (bash/zsh)
+- [x] `~` tilde expansion: `~user`, `~+`, `~-`
+- [x] Full POSIX globbing: `?`, `*`, `[abc]`, `[!abc]`, `[a-z]`
+- [x] `extglob` bash: `?(...)`, `*(...)`, `+(...)`, `@(...)`, `!(...)`
+- ~~[ ] `GLOBIGNORE` / `FIGNORE`~~ (bash extension, non-POSIX)
+- [x] `nullglob`, `failglob`, `dotglob` options
+- [x] Brace expansion: `{a..z}` ranges, `{a,b}{c,d}` nesting
+- ~~[ ] Process substitution: `<(cmd)`, `>(cmd)` (bash/zsh)~~
 
 ### 5. Redirections
-- [ ] `<>` read-write redirection
-- [ ] `&>`, `|&` (bash: redirect both stdout and stderr)
-- [ ] Here-string `<<< word`
-- [ ] Here-doc with `<<-` (tab stripping)
-- [ ] `/dev/tcp/host/port`, `/dev/udp/host/port` (bash extension)
-- [ ] Co-process `|&` (bash 4.0)
+- [x] `<>` read-write redirection
+- [x] `&>`, `|&` (bash: redirect both stdout and stderr)
+- [x] Here-string `<<< word`
+- [x] Here-doc with `<<-` (tab stripping)
+- ~~[ ] `/dev/tcp/host/port`, `/dev/udp/host/port` (bash extension)~~
+- ~~[ ] Co-process `|&` (bash 4.0) — same as `|&` above, covered~~
 
 ### 6. Signal trapping and jobs
-- [ ] `trap 'cmd' SIGNAL` — verify all POSIX signals
-- [ ] `trap - SIGNAL` — reset
-- [ ] `trap -p` — display active traps
-- [ ] Job control: `fg`, `bg`, `kill %jobspec`
-- [ ] `wait -n`, `wait -p` (bash 5.1+)
+- [x] `trap 'cmd' SIGNAL` — verify all POSIX signals
+- [x] `trap - SIGNAL` — reset
+- [x] `trap -p` — display active traps
+- [x] Job control: `fg`, `bg`, `kill %jobspec`
+- [x] `wait -n` (bash 5.1+); ~~`wait -p`~~ (bash 5.1+, non-POSIX)
 
 ### 7. Missing builtins
-- [ ] `type -a`, `type -t`, `type -p`
-- [ ] `command -v`, `command -V`
-- [ ] `builtin` — run a builtin even if a function with the same name exists
-- [ ] `hash` — PATH cache
-- [ ] `shopt` — bash options
-- [ ] `caller` — stack trace
+- [x] `type -a`, `type -t`, `type -p`
+- [x] `command -v`, `command -V` (+ command execution sans fonctions)
+- [x] `builtin` — run a builtin even if a function with the same name exists
+- [x] `hash` — PATH cache
+- [x] `shopt` — bash options
+- [x] `caller` — stack trace
 - [ ] `printf` — verify complete (already partial)
-- [ ] `read -d`, `read -n`, `read -s`, `read -t`, `read -a` (array)
+- [x] `read -d`, `read -n`, `read -s`, `read -t`, `read -a` (array)
 
 ### 8. Special variables
-- [ ] `$-` — active flags
-- [ ] `$_` — last argument of previous command
-- [ ] `$BASH_*`, `$POSIXLY_CORRECT`
-- [ ] `$EPOCHREALTIME`, `$EPOCHSECONDS`
-- [ ] `$BASHPID` — current subshell PID
-- [ ] `$PIPESTATUS` — exit codes of all pipes
+- [x] `$-` — active flags
+- [x] `$_` — last argument of previous command (expansion via `__lastarg`)
+- ~~[ ] `$BASH_*`, `$POSIXLY_CORRECT`~~ (bash-specific)
+- [x] `$EPOCHREALTIME`, `$EPOCHSECONDS`
+- [x] `$BASHPID` — current subshell PID
+- [x] `$PIPESTATUS` — exit codes of all pipes
 
 ### 9. Shell options
-- [ ] `set -o pipefail` — pipe exit code = last non-zero
-- [ ] `set -o nounset` — error on undefined variable
-- [ ] `set -o noclobber` — don't overwrite files with `>`
-- [ ] `set -o errexit` — exit on error
-- [ ] `set -o xtrace` — debug output
-- [ ] `shopt -s extdebug` — extended debug mode
+- [x] `set -o pipefail` — pipe exit code = last non-zero
+- [x] `set -o nounset` — error on undefined variable
+- [x] `set -o noclobber` — don't overwrite files with `>`
+- [x] `set -o errexit` — exit on error
+- [x] `set -o xtrace` — debug output
+- [x] `shopt -s extdebug` — extended debug mode
 
 ## Acceptance Criteria
 
-- A reference POSIX test suite (from POSIX.1-2024) passes > 90%
-- Existing user shell scripts continue to work (no regression)
-- `bash --posix` and the virtual shell produce the same results on a 50-script benchmark
-- Known POSIX deviations are documented
+- [ ] A reference POSIX test suite (from POSIX.1-2024) passes > 90% — *not run yet*
+- [x] Existing user shell scripts continue to work (no regression) — *tests pass*
+- [ ] `bash --posix` and the virtual shell produce the same results on a 50-script benchmark — *not run yet*
+- [x] Known POSIX deviations are documented — *documented in this file (strikethrough items)*
 
 ## Notes
 

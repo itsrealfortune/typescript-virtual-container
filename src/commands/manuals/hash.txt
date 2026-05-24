@@ -1,0 +1,23 @@
+HASH(1)                  User Commands                    HASH(1)
+
+NAME
+       hash - display and manage the command hash table
+
+SYNOPSIS
+       hash [-r] [name ...]
+
+DESCRIPTION
+       Display and manage the internal hash table of command locations.
+       The shell caches the full path of each looked-up command to
+       avoid repeated PATH searches.
+
+       -r     Clear the entire hash table.
+
+       With name arguments, hash the named commands and add them to
+       the hash table.  Without arguments, display the current hash
+       table contents.
+
+EXAMPLES
+       hash
+       hash ls cat grep
+       hash -r

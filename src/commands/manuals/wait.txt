@@ -4,17 +4,20 @@ NAME
        wait - wait for job completion
 
 SYNOPSIS
-       wait [jobspec or pid ...]
+       wait [-n] [jobspec or pid ...]
+
+OPTIONS
+       -n     Wait for the next background job to complete and return
+              its exit status.
 
 DESCRIPTION
-       Wait for each specified process or job and return its termination
-       status. If no arguments are given, wait for all currently active
-       background jobs.
-
-       In this environment, background jobs are fire-and-forget; wait
-       returns immediately with exit code 0.
+       Wait for each specified process or job and return its
+       termination status.  If no arguments are given, wait for all
+       currently active background jobs.
 
 EXAMPLES
        sleep 5 &
        wait
        echo "done"
+       sleep 3 &
+       wait -n
