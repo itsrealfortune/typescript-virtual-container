@@ -1,3 +1,4 @@
+/** A virtual network interface (loopback, ethernet, wifi, tunnel, etc.). */
 export interface VirtualInterface {
 	name: string;
 	type: "loopback" | "ether" | "wifi" | "tunnel" | "bridge" | "vlan";
@@ -14,6 +15,7 @@ export interface VirtualInterface {
 	parent?: string;
 }
 
+/** A routing table entry. */
 export interface VirtualRoute {
 	destination: string;
 	gateway: string;
@@ -25,6 +27,7 @@ export interface VirtualRoute {
 	proto?: string;
 }
 
+/** An entry in the ARP cache mapping IPs to MAC addresses. */
 export interface VirtualArpEntry {
 	ip: string;
 	mac: string;
@@ -32,6 +35,7 @@ export interface VirtualArpEntry {
 	state: "REACHABLE" | "STALE" | "PERMANENT" | "FAILED" | "DELAY" | "PROBE";
 }
 
+/** A firewall rule (iptables-like) for filtering or NAT. */
 export interface FirewallRule {
 	chain: "INPUT" | "OUTPUT" | "FORWARD" | "PREROUTING" | "POSTROUTING";
 	protocol: "tcp" | "udp" | "icmp" | "all";
@@ -43,6 +47,7 @@ export interface FirewallRule {
 	comment?: string;
 }
 
+/** A connection tracking entry tracking packet/byte counts per flow. */
 export interface ConntrackEntry {
 	protocol: "tcp" | "udp" | "icmp";
 	srcIp: string;
@@ -58,12 +63,14 @@ export interface ConntrackEntry {
 	bytesReceived: number;
 }
 
+/** A named routing table with multiple routes. */
 export interface RoutingTable {
 	id: number;
 	name: string;
 	routes: VirtualRoute[];
 }
 
+/** A policy-based routing rule (ip rule-like). */
 export interface PolicyRule {
 	priority: number;
 	from?: string;
@@ -74,6 +81,7 @@ export interface PolicyRule {
 	action: "lookup" | "blackhole" | "unreachable" | "prohibit";
 }
 
+/** Generate a random locally-administered MAC address (02:42:xx:xx:xx:xx). */
 export function randomMac(): string {
 	const hex = () =>
 		Math.floor(Math.random() * 256)

@@ -1,6 +1,7 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/** Make a hexdump or reverse a hexdump. */
 export const xxdCommand: ShellModule = {
 	name: "xxd",
 	description: "Make a hexdump or reverse a hexdump",

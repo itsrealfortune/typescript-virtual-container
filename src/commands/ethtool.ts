@@ -1,6 +1,7 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/** Display or modify network interface parameters. */
 export const ethtoolCommand: ShellModule = {
 	name: "ethtool",
 	description: "Display or modify network interface parameters",

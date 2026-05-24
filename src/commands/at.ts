@@ -4,6 +4,7 @@ import { ifFlag } from "./command-helpers";
 
 const AT_DIR = "/var/spool/at";
 
+/** Schedule delayed execution of commands. */
 export const atCommand: ShellModule = {
 	name: "at",
 	description: "Schedule delayed execution of commands",
@@ -66,6 +67,7 @@ export const atCommand: ShellModule = {
 	},
 };
 
+/** List pending at jobs. */
 export const atqCommand: ShellModule = {
 	name: "atq",
 	description: "List pending at jobs",
@@ -74,6 +76,7 @@ export const atqCommand: ShellModule = {
 	run: ({ shell }) => listJobs(shell.vfs),
 };
 
+/** Delete pending at jobs. */
 export const atrmCommand: ShellModule = {
 	name: "atrm",
 	description: "Delete pending at jobs",

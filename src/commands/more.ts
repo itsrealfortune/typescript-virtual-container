@@ -3,6 +3,7 @@ import { ifFlag } from "./command-helpers";
 
 const PAGE_SIZE = 24;
 
+/** View file content page by page. */
 export const moreCommand: ShellModule = {
 	name: "more",
 	description: "View file content page by page",

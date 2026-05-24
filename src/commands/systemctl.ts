@@ -5,6 +5,7 @@ import { ifFlag } from "./command-helpers";
 const UNIT_DIRS = ["/etc/systemd/system", "/lib/systemd/system"];
 const WANTS_DIR = "/etc/systemd/system/multi-user.target.wants";
 
+/** Control the systemd system and service manager. */
 export const systemctlCommand: ShellModule = {
 	name: "systemctl",
 	description: "Control the systemd system and service manager",

@@ -1,6 +1,7 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/** Terminal multiplexer. */
 export const screenCommand: ShellModule = {
 	name: "screen",
 	description: "Terminal multiplexer",
@@ -36,6 +37,7 @@ export const screenCommand: ShellModule = {
 	},
 };
 
+/** Terminal multiplexer. */
 export const tmuxCommand: ShellModule = {
 	name: "tmux",
 	description: "Terminal multiplexer",
@@ -64,6 +66,7 @@ export const tmuxCommand: ShellModule = {
 	},
 };
 
+/** Execute a program periodically. */
 export const watchCommand: ShellModule = {
 	name: "watch",
 	description: "Execute a program periodically",
@@ -91,6 +94,7 @@ export const watchCommand: ShellModule = {
 	},
 };
 
+/** Measure command execution time. */
 export const timeCommand: ShellModule = {
 	name: "time",
 	description: "Measure command execution time",

@@ -35,6 +35,7 @@ function toChunk(bytes: Uint8Array): Buffer {
 
 // ── Types ──────────────────────────────────────────────────────────────
 
+/** Content state for a terminal emulator window. */
 export interface TerminalContent {
 	type: "terminal";
 	termRenderer: WebTermRenderer;
@@ -43,33 +44,45 @@ export interface TerminalContent {
 	stream?: ShellStream;
 }
 
+/** Content state for a Thunar file manager window. */
 export interface ThunarContent {
 	type: "thunar";
 	path: string;
 }
 
+/** Content state for the About dialog window. */
 export interface AboutContent {
 	type: "about";
 }
 
+/** Content state for the Keyboard Shortcuts dialog window. */
+export interface ShortcutsContent {
+	type: "shortcuts";
+}
+
+/** Content state for a Task Manager (htop-like) window. */
 export interface TaskManagerContent {
 	type: "taskmanager";
 	refreshInterval?: ReturnType<typeof setInterval>;
 }
 
+/** Content state for a Mousepad/Nano text editor window. */
 export interface EditorContent {
 	type: "editor";
 	path: string;
 	dirty: boolean;
 }
 
+/** Union type for all possible window content variants. */
 export type WindowContent =
 	| TerminalContent
 	| ThunarContent
 	| AboutContent
 	| EditorContent
-	| TaskManagerContent;
+	| TaskManagerContent
+	| ShortcutsContent;
 
+/** Represents a single desktop window with position, size, and content. */
 export interface DesktopWindow {
 	id: string;
 	title: string;
@@ -85,12 +98,23 @@ export interface DesktopWindow {
 	content: WindowContent;
 }
 
+/** Snapshot of the desktop state for external consumers. */
 export interface DesktopState {
 	active: boolean;
 	windows: DesktopWindow[];
 	menuOpen: boolean;
 	clock: string;
 	focusedWindowId: string | null;
+}
+
+/** A desktop notification toast. */
+export interface DesktopNotification {
+	id: string;
+	title: string;
+	message: string;
+	type: "info" | "success" | "warning" | "error";
+	timestamp: number;
+	dismissed: boolean;
 }
 
 // ── Desktop Manager ───────────────────────────────────────────────────
@@ -155,6 +179,11 @@ export class DesktopManager {
 	private _globalDocListeners: Array<{ type: string; fn: EventListener }> = [];
 	private _pendingTimeouts: Set<ReturnType<typeof setTimeout>> = new Set();
 	private _thunar: ThunarManager;
+	private _notifications: DesktopNotification[] = [];
+	private _notificationHistory: DesktopNotification[] = [];
+	private _nextNotifId = 0;
+	private _clipboard = "";
+	private _calendarOpen = false;
 
 	/**
 	 * Creates a desktop manager bound to a VirtualShell and DOM container.
@@ -233,7 +262,9 @@ export class DesktopManager {
 			}
 		}
 		this._windows = [];
+		this._notifications = [];
 		this._menuOpen = false;
+		this._calendarOpen = false;
 		this._dragState = null;
 		this._resizeState = null;
 		for (const id of this._pendingTimeouts) {
@@ -266,6 +297,9 @@ export class DesktopManager {
 					break;
 				case "about":
 					id = this.createAboutWindow();
+					break;
+				case "shortcuts":
+					id = this.createShortcutsWindow();
 					break;
 				default:
 					continue;
@@ -320,6 +354,7 @@ export class DesktopManager {
 	/**
 	 * Handle a keyboard event and forward keystrokes to the focused terminal.
 	 * Handles Ctrl+C/V passthrough and Escape to close the panel menu.
+	 * Super/Windows key toggles the application menu.
 	 * @param e - Keyboard event from the browser.
 	 */
 	handleKeyDown(e: KeyboardEvent): void {
@@ -327,9 +362,37 @@ export class DesktopManager {
 			return;
 		}
 
-		if (e.key === "Escape" && this._menuOpen) {
-			this._menuOpen = false;
-			this._renderPanel();
+		if (e.key === "Escape") {
+			if (this._menuOpen) {
+				this._menuOpen = false;
+				this._renderPanel();
+				return;
+			}
+			const search = this._container.querySelector(
+				".menu-search"
+			) as HTMLInputElement | null;
+			if (search) {
+				search.blur();
+			}
+		}
+
+		// Super/Meta key toggles menu or opens shortcuts
+		if (
+			e.key === "Meta" ||
+			e.key === "Super" ||
+			e.code === "MetaLeft" ||
+			e.code === "MetaRight"
+		) {
+			if (!e.repeat) {
+				this._menuOpen = !this._menuOpen;
+				this._renderPanel();
+			}
+			e.preventDefault();
+			return;
+		}
+		if (e.metaKey && e.key === "s") {
+			e.preventDefault();
+			this.createShortcutsWindow();
 			return;
 		}
 
@@ -488,6 +551,19 @@ export class DesktopManager {
 	}
 
 	/**
+	 * Create a keyboard shortcuts dialog window.
+	 * @returns The unique window ID.
+	 */
+	createShortcutsWindow(): string {
+		return this._createWindow({
+			title: "Keyboard Shortcuts",
+			width: 480,
+			height: 420,
+			content: { type: "shortcuts" },
+		});
+	}
+
+	/**
 	 * Create a task manager window showing running processes.
 	 * @returns The unique window ID.
 	 */
@@ -510,6 +586,46 @@ export class DesktopManager {
 			}, 3000);
 		}
 		return id;
+	}
+
+	/**
+	 * Show a desktop notification toast.
+	 * @param title - Notification title.
+	 * @param message - Notification body text.
+	 * @param type - Severity: "info" | "success" | "warning" | "error".
+	 */
+	showNotification(
+		title: string,
+		message: string,
+		type: "info" | "success" | "warning" | "error" = "info"
+	): void {
+		const notif: DesktopNotification = {
+			id: `notif-${++this._nextNotifId}`,
+			title,
+			message,
+			type,
+			timestamp: Date.now(),
+			dismissed: false,
+		};
+		this._notifications.push(notif);
+		this._notificationHistory.push(notif);
+		this._renderNotifications();
+		const tid = setTimeout(() => {
+			this._pendingTimeouts.delete(tid);
+			this._dismissNotification(notif.id);
+		}, 5000);
+		this._pendingTimeouts.add(tid);
+	}
+
+	/** Get the current system clipboard content. */
+	getClipboard(): string {
+		return this._clipboard;
+	}
+
+	/** Set the system clipboard content. */
+	setClipboard(text: string): void {
+		this._clipboard = text;
+		this.showNotification("Clipboard", "Copied to clipboard", "info");
 	}
 
 	/**
@@ -701,6 +817,8 @@ export class DesktopManager {
 			this._renderEditorContent(el, win.id, win.content);
 		} else if (win.content.type === "taskmanager") {
 			this._renderTaskManagerContent(el, win.id);
+		} else if (win.content.type === "shortcuts") {
+			this._renderShortcutsContent(el);
 		}
 	}
 
@@ -896,6 +1014,8 @@ export class DesktopManager {
 					this.createEditorWindow();
 				} else if (action === "taskmanager") {
 					this.createTaskManagerWindow();
+				} else if (action === "shortcuts") {
+					this.createShortcutsWindow();
 				} else if (action === "about") {
 					this.createAboutWindow();
 				} else if (action === "logout") {
@@ -906,8 +1026,58 @@ export class DesktopManager {
 				return;
 			}
 
+			// Notification close button
+			if (target.classList.contains("notif-close")) {
+				const id = target
+					.closest(".notif-toast")
+					?.getAttribute("data-notif-id");
+				if (id) {
+					this._dismissNotification(id);
+				}
+				e.stopPropagation();
+				return;
+			}
+
+			// Notification area click → show history
+			if (
+				target.classList.contains("xfce-notif-area") ||
+				target.closest(".xfce-notif-area")
+			) {
+				this._showNotificationHistory();
+				e.stopPropagation();
+				return;
+			}
+
+			// Clock click → toggle calendar
+			if (
+				target.classList.contains("xfce-clock") ||
+				target.closest(".xfce-clock")
+			) {
+				const clockEl = this._container.querySelector(
+					".xfce-clock"
+				) as HTMLElement;
+				if (clockEl) {
+					this._renderCalendarPopup(clockEl);
+				}
+				e.stopPropagation();
+				return;
+			}
+
+			// Click outside calendar → close it
+			if (
+				this._calendarOpen &&
+				!target.closest("#desktop-calendar") &&
+				!target.closest(".xfce-clock")
+			) {
+				const cal = this._container.querySelector("#desktop-calendar");
+				if (cal) {
+					cal.remove();
+					this._calendarOpen = false;
+				}
+			}
+
 			// Click outside menu → close it
-			if (this._menuOpen) {
+			if (this._menuOpen && !target.closest(".xfce-menu")) {
 				this._menuOpen = false;
 				this._renderPanel();
 			}
@@ -1108,6 +1278,121 @@ export class DesktopManager {
 			true
 		); // capture phase so it fires before the generic click handler
 	}
+	private _showNotificationHistory(): void {
+		const existing = this._container.querySelector(
+			"#desktop-notif-history"
+		) as HTMLElement | null;
+		if (existing) {
+			existing.remove();
+			return;
+		}
+		const history = this._notificationHistory.slice().reverse().slice(0, 20);
+		const panel = this._container.querySelector(
+			"#desktop-panel"
+		) as HTMLElement;
+		if (!panel) {
+			return;
+		}
+		const popup = document.createElement("div");
+		popup.id = "desktop-notif-history";
+		popup.innerHTML =
+			history.length === 0
+				? '<div class="notif-history-empty">No notifications</div>'
+				: history
+						.map(
+							(n) =>
+								`<div class="notif-history-item notif-${n.type}">
+                  <div class="notif-history-title">${DesktopManager._escapeHtml(n.title)}</div>
+                  <div class="notif-history-msg">${DesktopManager._escapeHtml(n.message)}</div>
+                  <div class="notif-history-time">${new Date(n.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+                </div>`
+						)
+						.join("");
+		panel.appendChild(popup);
+	}
+
+	private _renderNotifications(): void {
+		let container = this._container.querySelector(
+			"#desktop-notifications"
+		) as HTMLElement;
+		if (!container) {
+			container = document.createElement("div");
+			container.id = "desktop-notifications";
+			this._container.appendChild(container);
+		}
+		const active = this._notifications.filter((n) => !n.dismissed);
+		container.innerHTML = active
+			.map(
+				(n) =>
+					`<div class="notif-toast notif-${n.type}" data-notif-id="${n.id}">
+            <div class="notif-header">
+              <span class="notif-title">${DesktopManager._escapeHtml(n.title)}</span>
+              <button class="notif-close">✕</button>
+            </div>
+            <div class="notif-body">${DesktopManager._escapeHtml(n.message)}</div>
+          </div>`
+			)
+			.join("");
+
+		const badge = this._container.querySelector(
+			".xfce-notif-badge"
+		) as HTMLElement | null;
+		if (badge) {
+			const count = active.length;
+			badge.textContent = String(count);
+			badge.style.display = count > 0 ? "flex" : "none";
+		}
+	}
+
+	private _dismissNotification(id: string): void {
+		const n = this._notifications.find((nn) => nn.id === id);
+		if (n) {
+			n.dismissed = true;
+		}
+		this._notifications = this._notifications.filter((nn) => !nn.dismissed);
+		this._renderNotifications();
+	}
+
+	private _renderCalendarPopup(clockEl: HTMLElement): void {
+		const existing = this._container.querySelector(
+			"#desktop-calendar"
+		) as HTMLElement | null;
+		if (existing) {
+			existing.remove();
+			this._calendarOpen = false;
+			return;
+		}
+		const now = new Date();
+		const y = now.getFullYear();
+		const m = now.getMonth();
+		const firstDay = new Date(y, m, 1).getDay();
+		const daysInMonth = new Date(y, m + 1, 0).getDate();
+		const today = now.getDate();
+
+		let days = "";
+		const dayNames = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+		for (const d of dayNames) {
+			days += `<div class="cal-day-header">${d}</div>`;
+		}
+		for (let i = 0; i < firstDay; i++) {
+			days += `<div class="cal-day cal-day-empty"></div>`;
+		}
+		for (let d = 1; d <= daysInMonth; d++) {
+			days += `<div class="cal-day${d === today ? " cal-today" : ""}">${d}</div>`;
+		}
+
+		const popup = document.createElement("div");
+		popup.id = "desktop-calendar";
+		popup.innerHTML = `
+        <div class="cal-header">
+          <span class="cal-month-year">${now.toLocaleDateString([], { month: "long", year: "numeric" })}</span>
+        </div>
+        <div class="cal-grid">${days}</div>
+      `;
+		clockEl.parentElement?.appendChild(popup);
+		this._calendarOpen = true;
+	}
+
 	// ── Rendering ──────────────────────────────────────────────────────
 
 	private _renderAll(): void {
@@ -1136,10 +1421,14 @@ export class DesktopManager {
         </div>
         <div class="xfce-window-list"></div>
         <div class="xfce-tray">
+          <span class="xfce-tray-icon xfce-notif-area" title="Notifications">
+            <i class="fa-solid fa-bell"></i>
+            <span class="xfce-notif-badge" style="display:none">0</span>
+          </span>
           <span class="xfce-tray-icon" title="Network"><i class="fa-solid fa-wifi"></i></span>
           <span class="xfce-tray-icon" title="Volume"><i class="fa-solid fa-volume-high"></i></span>
         </div>
-        <div class="xfce-clock">
+        <div class="xfce-clock" style="cursor:pointer">
           <span class="xfce-clock-time"></span>
           <span class="xfce-clock-date"></span>
         </div>
@@ -1203,16 +1492,39 @@ export class DesktopManager {
 			menu = document.createElement("div");
 			menu.className = "xfce-menu";
 			menu.innerHTML = `
-        <div class="menu-category">System</div>
-        <div class="menu-item" data-action="terminal"><span class="menu-item-icon"><i class="fa-solid fa-terminal"></i></span>Terminal</div>
-        <div class="menu-item" data-action="thunar"><span class="menu-item-icon"><i class="fa-solid fa-folder-open"></i></span>File Manager</div>
-        <div class="menu-item" data-action="editor"><span class="menu-item-icon"><i class="fa-solid fa-file-pen"></i></span>Text Editor</div>
-        <div class="menu-item" data-action="taskmanager"><span class="menu-item-icon"><i class="fa-solid fa-chart-bar"></i></span>Task Manager</div>
-        <div class="menu-separator"></div>
-        <div class="menu-item" data-action="about"><span class="menu-item-icon"><i class="fa-solid fa-circle-info"></i></span>About Fortune GNU/Linux</div>
-        <div class="menu-separator"></div>
-        <div class="menu-item" data-action="logout"><span class="menu-item-icon"><i class="fa-solid fa-power-off"></i></span>Log Out</div>
+        <div class="menu-search-wrap">
+          <i class="fa-solid fa-search menu-search-icon"></i>
+          <input class="menu-search" type="text" placeholder="Search applications..." autocomplete="off">
+        </div>
+        <div class="menu-scroll">
+          <div class="menu-category">System</div>
+          <div class="menu-item" data-action="terminal" data-search="terminal console shell"><span class="menu-item-icon"><i class="fa-solid fa-terminal"></i></span>Terminal</div>
+          <div class="menu-item" data-action="thunar" data-search="thunar file manager explorer"><span class="menu-item-icon"><i class="fa-solid fa-folder-open"></i></span>File Manager</div>
+          <div class="menu-item" data-action="editor" data-search="mousepad editor text nano"><span class="menu-item-icon"><i class="fa-solid fa-file-pen"></i></span>Text Editor</div>
+          <div class="menu-item" data-action="taskmanager" data-search="task manager processes htop"><span class="menu-item-icon"><i class="fa-solid fa-chart-bar"></i></span>Task Manager</div>
+          <div class="menu-separator"></div>
+          <div class="menu-item" data-action="shortcuts" data-search="shortcuts keyboard keys"><span class="menu-item-icon"><i class="fa-solid fa-keyboard"></i></span>Keyboard Shortcuts</div>
+          <div class="menu-item" data-action="about" data-search="about information system"><span class="menu-item-icon"><i class="fa-solid fa-circle-info"></i></span>About Fortune GNU/Linux</div>
+          <div class="menu-separator"></div>
+          <div class="menu-item" data-action="logout" data-search="logout quit exit"><span class="menu-item-icon"><i class="fa-solid fa-power-off"></i></span>Log Out</div>
+        </div>
       `;
+			// Live search filter
+			const searchInput = menu.querySelector(
+				".menu-search"
+			) as HTMLInputElement;
+			searchInput.addEventListener("input", () => {
+				const q = searchInput.value.toLowerCase();
+				const items = menu?.querySelectorAll(".menu-item");
+				for (const item of items ?? []) {
+					const text =
+						item.getAttribute("data-search") ?? item.textContent ?? "";
+					(item as HTMLElement).style.display =
+						q === "" || text.toLowerCase().includes(q) ? "flex" : "none";
+				}
+			});
+			// Focus search when menu opens
+			setTimeout(() => searchInput.focus(), 50);
 			panel.appendChild(menu);
 		} else if (!this._menuOpen && menu) {
 			menu.remove();
@@ -1405,6 +1717,33 @@ export class DesktopManager {
         <p>Kernel: ${this._shell.properties.kernel}</p>
         <p>Architecture: ${this._shell.properties.arch}</p>
         <p class="about-close-hint">Close this window to return</p>
+      </div>
+    `;
+	}
+
+	private _renderShortcutsContent(el: HTMLElement): void {
+		const contentArea = el.querySelector(".win-content") as HTMLElement;
+		if (!contentArea) {
+			return;
+		}
+		const shortcuts = [
+			{ keys: "Super", desc: "Open Application Menu" },
+			{ keys: "Super + S", desc: "Keyboard Shortcuts" },
+			{ keys: "Alt+Tab", desc: "Switch between windows" },
+			{ keys: "Super + Left/Right", desc: "Tile window to half screen" },
+			{ keys: "Ctrl+Alt+F1-F4", desc: "Switch workspace" },
+			{ keys: "Escape", desc: "Close menu / cancel" },
+			{ keys: "Ctrl+C", desc: "Copy in terminal" },
+			{ keys: "Ctrl+V", desc: "Paste in terminal" },
+			{ keys: "Ctrl+S", desc: "Save file in editor" },
+			{ keys: "Double-click titlebar", desc: "Toggle maximize" },
+		];
+		contentArea.innerHTML = `
+      <div class="shortcuts-dialog">
+        <h3>Keyboard Shortcuts</h3>
+        <div class="shortcuts-list">
+          ${shortcuts.map((s) => `<div class="shortcut-row"><span class="shortcut-keys">${DesktopManager._escapeHtml(s.keys)}</span><span class="shortcut-desc">${DesktopManager._escapeHtml(s.desc)}</span></div>`).join("")}
+        </div>
       </div>
     `;
 	}

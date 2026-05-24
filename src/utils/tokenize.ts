@@ -1,3 +1,9 @@
+/**
+ * Split a raw shell command string into tokens respecting quotes and redirection operators.
+ * Supports single/double quotes, `2>&1`, `2>>`, `2>>&1`, `|&`, `<<`, `<<-`, `<<<`, `<>`, `>>`, `>`.
+ * @param input - Raw shell command string.
+ * @returns Array of token strings.
+ */
 export function tokenizeCommand(input: string): string[] {
 	const tokens: string[] = [];
 	let current = "";

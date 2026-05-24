@@ -53,6 +53,7 @@ function runCommandVfsStub(
 	return { stderr: `${cmdName}: command not found`, exitCode: 127 };
 }
 
+/** Run a command or display info about it. */
 export const commandCommand: ShellModule = {
 	name: "command",
 	description: "Run a command or display info about it",

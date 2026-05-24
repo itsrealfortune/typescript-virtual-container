@@ -42,8 +42,11 @@ const targets = [
 --outfile=${BUILDS_DIR}/${NAMES.selfStandalone} --tree-shaking=true --minify ${BANNER}`,
 
   // standalone SSH+SFTP (CJS) — supports --no-ssh, --no-sftp, --ssh-port, --sftp-port
+  // --log-override:empty-import-meta=silent: SandboxedShell uses import.meta.url
+  // but gets tree-shaken from ssh-only builds
   `${ESBUILD} src/standalone.ts --bundle --platform=node --target=node18 \
---outfile=${BUILDS_DIR}/${NAMES.standalone} --tree-shaking=true --minify ${BANNER}`,
+--outfile=${BUILDS_DIR}/${NAMES.standalone} --tree-shaking=true --minify ${BANNER} \
+--log-override:empty-import-meta=silent`,
 ];
 
 for (const cmd of targets) {

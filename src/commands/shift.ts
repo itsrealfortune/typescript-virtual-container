@@ -92,6 +92,7 @@ export const trapCommand: ShellModule = {
 	},
 };
 
+/** Return from a shell function. */
 export const returnCommand: ShellModule = {
 	name: "return",
 	description: "Return from a shell function",

@@ -3,6 +3,7 @@ import { ifFlag } from "./command-helpers";
 
 const PAGE_SIZE = 24;
 
+/** View file content with pagination. */
 export const lessCommand: ShellModule = {
 	name: "less",
 	description: "View file content with pagination",

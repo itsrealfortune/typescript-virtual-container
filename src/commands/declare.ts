@@ -33,6 +33,7 @@ export function popScope(vars: Record<string, string>): void {
 	vars[SCOPE_KEY] = "[]";
 }
 
+/** Declare variables and give them attributes. */
 export const declareCommand: ShellModule = {
 	name: "declare",
 	aliases: ["local", "typeset"],

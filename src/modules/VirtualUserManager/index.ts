@@ -46,6 +46,7 @@ export interface VirtualUserRecord {
 	accountExpiryDate: number;
 }
 
+/** Process lifecycle status. */
 export type ProcessStatus = "running" | "stopped" | "done";
 
 /** Runtime representation of a command currently executing in a session. */
@@ -1558,15 +1559,6 @@ export class VirtualUserManager extends EventEmitter {
 		return Boolean(record.passwordHash);
 	}
 
-	/**
-	 * Hashes a plaintext password using scrypt (or SHA-256 in fast-hash mode).
-	 *
-	 * Set `SSH_MIMIC_FAST_PASSWORD_HASH=1` to switch to SHA-256 for test
-	 * environments where scrypt latency is undesirable.
-	 *
-	 * @param password Plaintext password string.
-	 * @returns Hex-encoded hash string.
-	 */
 	/**
 	 * Hash a password with an optional salt.
 	 * When salt is provided (verify path), the same salt is used for a

@@ -11,6 +11,7 @@ function getFlagValue(args: string[], flag: string): string | undefined {
 	}
 }
 
+/** Read a line from stdin into variables. */
 export const readCommand: ShellModule = {
 	name: "read",
 	description: "Read a line from stdin into variables",

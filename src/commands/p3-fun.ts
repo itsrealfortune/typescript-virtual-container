@@ -1,6 +1,7 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/** Display large characters in ASCII art. */
 export const figletCommand: ShellModule = {
 	name: "figlet",
 	description: "Display large characters in ASCII art",
@@ -19,6 +20,7 @@ export const figletCommand: ShellModule = {
 	},
 };
 
+/** Print large banners. */
 export const bannerCommand: ShellModule = {
 	name: "banner",
 	description: "Print large banners",
@@ -38,6 +40,7 @@ export const bannerCommand: ShellModule = {
 	},
 };
 
+/** Display large colored banners. */
 export const toiletCommand: ShellModule = {
 	name: "toilet",
 	description: "Display large colored banners",
@@ -56,6 +59,7 @@ export const toiletCommand: ShellModule = {
 	},
 };
 
+/** Factor integers into prime factors. */
 export const factorCommand: ShellModule = {
 	name: "factor",
 	description: "Factor integers into prime factors",
@@ -78,6 +82,7 @@ export const factorCommand: ShellModule = {
 	},
 };
 
+/** Reshape data matrix. */
 export const rsCommand: ShellModule = {
 	name: "rs",
 	description: "Reshape data matrix",

@@ -139,6 +139,7 @@ export const dpkgCommand: ShellModule = {
 	},
 };
 
+/** Show information about installed packages. */
 export const dpkgQueryCommand: ShellModule = {
 	name: "dpkg-query",
 	description: "Show information about installed packages",

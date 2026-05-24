@@ -591,3 +591,238 @@ body {
   background: #7a2222;
   color: #fff;
 }
+
+/* ── Notifications ────────────────────────────────── */
+#desktop-notifications {
+  position: fixed;
+  top: 36px;
+  right: 8px;
+  z-index: 8000;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+}
+.notif-toast {
+  width: 320px;
+  background: #333;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 8px 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  pointer-events: auto;
+  animation: notif-in 0.25s ease-out;
+}
+@keyframes notif-in {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.notif-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+.notif-title {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: #e8e8e8;
+}
+.notif-close {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+}
+.notif-close:hover { color: #fff; }
+.notif-body {
+  font-size: 11px;
+  color: #bbb;
+  padding-left: 2px;
+}
+.notif-info { border-left: 3px solid #4a7fc1; }
+.notif-success { border-left: 3px solid #4caf50; }
+.notif-warning { border-left: 3px solid #ff9800; }
+.notif-error { border-left: 3px solid #f44336; }
+
+.xfce-notif-area {
+  position: relative;
+}
+.xfce-notif-badge {
+  position: absolute;
+  top: 3px;
+  right: 1px;
+  background: #f44336;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 700;
+  min-width: 14px;
+  height: 14px;
+  border-radius: 7px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+}
+
+/* Notification history popup */
+#desktop-notif-history {
+  position: absolute;
+  top: 28px;
+  right: 60px;
+  width: 280px;
+  max-height: 300px;
+  overflow-y: auto;
+  background: #3a3a3a;
+  border: 1px solid #222;
+  border-radius: 0 0 4px 4px;
+  box-shadow: 3px 6px 16px rgba(0,0,0,0.6);
+  z-index: 3000;
+}
+.notif-history-empty {
+  padding: 16px;
+  text-align: center;
+  color: #888;
+  font-size: 12px;
+}
+.notif-history-item {
+  padding: 6px 10px;
+  border-bottom: 1px solid #444;
+  cursor: default;
+}
+.notif-history-item:last-child { border-bottom: none; }
+.notif-history-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ddd;
+}
+.notif-history-msg {
+  font-size: 11px;
+  color: #999;
+  margin-top: 2px;
+}
+.notif-history-time {
+  font-size: 10px;
+  color: #666;
+  margin-top: 2px;
+}
+
+/* Calendar popup */
+#desktop-calendar {
+  position: absolute;
+  top: 28px;
+  right: 0;
+  background: #3a3a3a;
+  border: 1px solid #222;
+  border-radius: 0 0 4px 4px;
+  padding: 8px;
+  box-shadow: 3px 6px 16px rgba(0,0,0,0.6);
+  z-index: 3000;
+  user-select: none;
+}
+.cal-header {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ddd;
+  margin-bottom: 6px;
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  font-size: 11px;
+}
+.cal-day-header {
+  text-align: center;
+  color: #888;
+  font-weight: 600;
+  padding: 2px 4px;
+}
+.cal-day {
+  text-align: center;
+  padding: 3px 4px;
+  color: #ccc;
+  border-radius: 2px;
+}
+.cal-today {
+  background: #4a7fc1;
+  color: #fff;
+  font-weight: 600;
+}
+.cal-day-empty { background: transparent; }
+
+/* ── Application search ────────────────────────────── */
+.menu-search-wrap {
+  position: relative;
+  padding: 6px 8px;
+}
+.menu-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #888;
+  font-size: 12px;
+  pointer-events: none;
+}
+.menu-search {
+  width: 100%;
+  padding: 5px 6px 5px 22px;
+  background: #2a2a2a;
+  border: 1px solid #555;
+  border-radius: 3px;
+  color: #ddd;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+}
+.menu-search:focus {
+  border-color: #4a7fc1;
+}
+.menu-search::placeholder {
+  color: #666;
+}
+.menu-scroll {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+/* ── Keyboard Shortcuts ────────────────────────────── */
+.shortcuts-dialog {
+  padding: 16px 20px;
+  height: 100%;
+  overflow-y: auto;
+}
+.shortcuts-dialog h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: #8cf;
+}
+.shortcuts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.shortcut-row {
+  display: flex;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px solid #333;
+}
+.shortcut-keys {
+  min-width: 180px;
+  font-family: 'JetBrains Mono', 'Cascadia Code', monospace;
+  font-size: 12px;
+  color: #e8e8e8;
+  background: #2a2a2a;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+.shortcut-desc {
+  font-size: 12px;
+  color: #aaa;
+  padding-left: 12px;
+}

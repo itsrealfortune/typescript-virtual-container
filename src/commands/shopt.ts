@@ -22,6 +22,7 @@ function getOptionMap(hasO: boolean): Record<string, string> {
 	return hasO ? SHOPT_O_OPTIONS : SHOPT_OPTIONS;
 }
 
+/** Manage shell options. */
 export const shoptCommand: ShellModule = {
 	name: "shopt",
 	description: "Manage shell options",

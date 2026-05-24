@@ -1,6 +1,7 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/** Compare two files byte by byte. */
 export const cmpCommand: ShellModule = {
 	name: "cmp",
 	description: "Compare two files byte by byte",

@@ -1,6 +1,7 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/** Display or modify the ARP cache. */
 export const arpCommand: ShellModule = {
 	name: "arp",
 	description: "Display or modify the ARP cache",

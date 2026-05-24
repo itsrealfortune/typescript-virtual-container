@@ -76,6 +76,14 @@ function globToRegexInner(pattern: string, anchor: boolean): string {
 	return re;
 }
 
+/**
+ * Convert a glob pattern to a RegExp with full anchoring (^...$).
+ * Supports *, **, ?, [...], and extglob patterns (@(a|b), *(pat), etc.).
+ * Results are cached for reuse.
+ * @param pattern - Glob pattern string.
+ * @param flags - RegExp flags (e.g. "i" for case-insensitive).
+ * @returns Compiled RegExp anchored to the full input.
+ */
 export function globToRegex(pattern: string, flags = ""): RegExp {
 	const key = `${flags}:${pattern}`;
 	const cached = _globCache.get(key);
@@ -87,11 +95,25 @@ export function globToRegex(pattern: string, flags = ""): RegExp {
 	return result;
 }
 
+/**
+ * Convert a glob pattern to a RegExp for substring/prefix matching.
+ * Alias for `globToRegex(pattern)` — remains for backward compat.
+ * @param pattern - Glob pattern string.
+ * @returns Compiled RegExp.
+ */
 export function globToRegexMatch(pattern: string): RegExp {
 	return globToRegex(pattern);
 }
 
-/** Convert a glob pattern to a prefix/suffix/substring match pattern for shell pattern ops. */
+/**
+ * Convert a glob pattern to a prefix/suffix/substring match pattern for shell pattern ops.
+ * Supports shell-style `${var#pat}`, `${var##pat}`, `${var%pat}`, `${var%%pat}` operators.
+ * @param pat - Glob pattern (without shell metacharacters like $, {, }).
+ * @param mode - Match mode: "none" for substring, "prefix" for leading, "suffix" for trailing.
+ * @param greedy - When false, limits `*` to non-greedy `[^/]*`.
+ * @param global - When true, uses the "g" flag for global matching.
+ * @returns Compiled RegExp.
+ */
 export function shellGlobToRegex(
 	pat: string,
 	mode: "none" | "prefix" | "suffix",

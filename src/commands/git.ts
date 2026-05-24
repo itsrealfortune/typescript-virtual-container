@@ -22,6 +22,7 @@ function indexFile(cwd: string): string {
 	return path.posix.join(gitDir(cwd), "index");
 }
 
+/** Distributed version control (minimal). */
 export const gitCommand: ShellModule = {
 	name: "git",
 	description: "Distributed version control (minimal)",

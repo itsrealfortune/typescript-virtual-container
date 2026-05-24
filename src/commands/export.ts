@@ -1,5 +1,6 @@
 import type { ShellModule } from "../types/commands";
 
+/** Set shell environment variable. */
 export const exportCommand: ShellModule = {
 	name: "export",
 	description: "Set shell environment variable",

@@ -1,6 +1,7 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/** Convert character encoding of files. */
 export const recodeCommand: ShellModule = {
 	name: "recode",
 	description: "Convert character encoding of files",

@@ -3,6 +3,7 @@ import { ifFlag } from "./command-helpers";
 
 const CRON_DIR = "/var/spool/cron/crontabs";
 
+/** Manage per-user crontab files. */
 export const crontabCommand: ShellModule = {
 	name: "crontab",
 	description: "Manage per-user crontab files",

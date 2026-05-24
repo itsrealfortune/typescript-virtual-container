@@ -1,6 +1,7 @@
 import type { ShellModule } from "../types/commands";
 import { resolveModule } from "./registry";
 
+/** Run a shell builtin (skip shell functions and aliases). */
 export const builtinCommand: ShellModule = {
 	name: "builtin",
 	description: "Run a shell builtin (skip shell functions and aliases)",

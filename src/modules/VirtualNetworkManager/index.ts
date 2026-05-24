@@ -19,6 +19,7 @@ export type {
 	PolicyRule,
 } from "./types";
 
+/** Simulated network stack with interfaces, routing, firewalls, and connection tracking. */
 export class VirtualNetworkManager {
 	private _interfaces: VirtualInterface[] = [
 		{
@@ -104,18 +105,35 @@ export class VirtualNetworkManager {
 
 	private _nextTableId = 100;
 
+	/**
+	 * Returns a copy of all virtual network interfaces.
+	 * @returns Array of VirtualInterface objects.
+	 */
 	public getInterfaces(): VirtualInterface[] {
 		return [...this._interfaces];
 	}
 
+	/**
+	 * Returns a copy of all routing table entries.
+	 * @returns Array of VirtualRoute objects.
+	 */
 	public getRoutes(): VirtualRoute[] {
 		return [...this._routes];
 	}
 
+	/**
+	 * Returns a copy of the ARP cache entries.
+	 * @returns Array of VirtualArpEntry objects.
+	 */
 	public getArpCache(): VirtualArpEntry[] {
 		return [...this.arpCache];
 	}
 
+	/**
+	 * Adds a new virtual interface in DOWN state.
+	 * @param iface - Interface configuration excluding the state field.
+	 * @returns True if the interface was added, false if a duplicate name exists.
+	 */
 	public addInterface(iface: Omit<VirtualInterface, "state">): boolean {
 		if (this._interfaces.some((i) => i.name === iface.name)) {
 			return false;
@@ -124,6 +142,12 @@ export class VirtualNetworkManager {
 		return true;
 	}
 
+	/**
+	 * Removes a virtual interface and associated routes/ARP entries.
+	 * The loopback interface ("lo") cannot be removed.
+	 * @param name - Name of the interface to remove.
+	 * @returns True if the interface was removed, false if not found or protected.
+	 */
 	public removeInterface(name: string): boolean {
 		if (name === "lo") {
 			return false;
@@ -138,6 +162,12 @@ export class VirtualNetworkManager {
 		return true;
 	}
 
+	/**
+	 * Sets the type of a virtual interface.
+	 * @param name - Interface name.
+	 * @param type - New interface type.
+	 * @returns True if the interface was found and updated.
+	 */
 	public setInterfaceType(
 		name: string,
 		type: VirtualInterface["type"]
@@ -150,6 +180,12 @@ export class VirtualNetworkManager {
 		return true;
 	}
 
+	/**
+	 * Sets the MTU of a virtual interface.
+	 * @param name - Interface name.
+	 * @param mtu - New MTU value.
+	 * @returns True if the interface was found and updated.
+	 */
 	public setInterfaceMtu(name: string, mtu: number): boolean {
 		const iface = this._interfaces.find((i) => i.name === name);
 		if (!iface) {
@@ -159,6 +195,12 @@ export class VirtualNetworkManager {
 		return true;
 	}
 
+	/**
+	 * Sets the link speed of a virtual interface.
+	 * @param name - Interface name.
+	 * @param speed - Speed in Mb/s.
+	 * @returns True if the interface was found and updated.
+	 */
 	public setInterfaceSpeed(name: string, speed: number): boolean {
 		const iface = this._interfaces.find((i) => i.name === name);
 		if (!iface) {
@@ -168,6 +210,14 @@ export class VirtualNetworkManager {
 		return true;
 	}
 
+	/**
+	 * Adds a route to the main routing table.
+	 * @param dest - Destination network or "default".
+	 * @param gateway - Gateway IP address.
+	 * @param netmask - Subnet mask (e.g. "255.255.255.0").
+	 * @param device - Outbound interface name.
+	 * @param metric - Optional route metric (lower is preferred).
+	 */
 	public addRoute(
 		dest: string,
 		gateway: string,
@@ -186,6 +236,11 @@ export class VirtualNetworkManager {
 		});
 	}
 
+	/**
+	 * Deletes a route from the main routing table by destination.
+	 * @param dest - Destination network to remove.
+	 * @returns True if the route was found and removed.
+	 */
 	public delRoute(dest: string): boolean {
 		const idx = this._routes.findIndex((r) => r.destination === dest);
 		if (idx === -1) {
@@ -195,20 +250,43 @@ export class VirtualNetworkManager {
 		return true;
 	}
 
+	/**
+	 * Creates a new named routing table with an auto-assigned ID.
+	 * @param name - Human-readable table name.
+	 * @returns The auto-assigned numeric table ID.
+	 */
 	public addRoutingTable(name: string): number {
 		const id = this._nextTableId++;
 		this._routingTables.push({ id, name, routes: [] });
 		return id;
 	}
 
+	/**
+	 * Looks up a routing table by numeric ID.
+	 * @param id - Table ID to find.
+	 * @returns The RoutingTable object, or undefined if not found.
+	 */
 	public getRoutingTable(id: number): RoutingTable | undefined {
 		return this._routingTables.find((t) => t.id === id);
 	}
 
+	/**
+	 * Returns a copy of all routing tables.
+	 * @returns Array of RoutingTable objects.
+	 */
 	public listRoutingTables(): RoutingTable[] {
 		return [...this._routingTables];
 	}
 
+	/**
+	 * Adds a route to a specific routing table.
+	 * @param dest - Destination network or "default".
+	 * @param gateway - Gateway IP address.
+	 * @param netmask - Subnet mask.
+	 * @param device - Outbound interface name.
+	 * @param tableId - Target routing table ID.
+	 * @returns True if the table was found and the route was added.
+	 */
 	public addRouteToTable(
 		dest: string,
 		gateway: string,
@@ -230,6 +308,11 @@ export class VirtualNetworkManager {
 		return true;
 	}
 
+	/**
+	 * Adds a policy routing rule with an auto-assigned priority.
+	 * @param rule - Rule configuration (priority is assigned automatically).
+	 * @returns The assigned priority value.
+	 */
 	public addPolicyRule(rule: Omit<PolicyRule, "priority">): number {
 		const priority =
 			this._policyRules.length > 0
@@ -239,10 +322,19 @@ export class VirtualNetworkManager {
 		return priority;
 	}
 
+	/**
+	 * Returns all policy routing rules sorted by priority.
+	 * @returns Array of PolicyRule objects.
+	 */
 	public listPolicyRules(): PolicyRule[] {
 		return [...this._policyRules].sort((a, b) => a.priority - b.priority);
 	}
 
+	/**
+	 * Deletes a policy routing rule by priority.
+	 * @param priority - Priority value of the rule to remove.
+	 * @returns True if the rule was found and removed.
+	 */
 	public delPolicyRule(priority: number): boolean {
 		const idx = this._policyRules.findIndex((r) => r.priority === priority);
 		if (idx === -1) {
@@ -252,6 +344,12 @@ export class VirtualNetworkManager {
 		return true;
 	}
 
+	/**
+	 * Sets the operational state of a virtual interface.
+	 * @param name - Interface name.
+	 * @param state - New state: "UP", "DOWN", or "UNKNOWN".
+	 * @returns True if the interface was found and updated.
+	 */
 	public setInterfaceState(
 		name: string,
 		state: "UP" | "DOWN" | "UNKNOWN"
@@ -264,6 +362,13 @@ export class VirtualNetworkManager {
 		return true;
 	}
 
+	/**
+	 * Sets the IPv4 address and netmask on a virtual interface.
+	 * @param name - Interface name.
+	 * @param ipv4 - New IPv4 address.
+	 * @param mask - New subnet mask in CIDR notation (e.g. 24).
+	 * @returns True if the interface was found and updated.
+	 */
 	public setInterfaceIp(name: string, ipv4: string, mask: number): boolean {
 		const iface = this._interfaces.find((i) => i.name === name);
 		if (!iface) {
@@ -274,10 +379,21 @@ export class VirtualNetworkManager {
 		return true;
 	}
 
+	/**
+	 * Looks up a virtual interface by name.
+	 * @param name - Interface name to find.
+	 * @returns The VirtualInterface object, or undefined if not found.
+	 */
 	public getInterface(name: string): VirtualInterface | undefined {
 		return this._interfaces.find((i) => i.name === name);
 	}
 
+	/**
+	 * Simulates an ICMP ping to a host.
+	 * Returns simulated round-trip time in milliseconds, or -1 if the host is unreachable.
+	 * @param host - Target IP address or hostname.
+	 * @returns Round-trip time in ms, or -1 if unreachable.
+	 */
 	public ping(host: string): number {
 		if (host === "127.0.0.1" || host === "localhost" || host === "::1") {
 			return 0.05 + Math.random() * 0.1;
@@ -292,6 +408,10 @@ export class VirtualNetworkManager {
 		return 0.8 + Math.random() * 5;
 	}
 
+	/**
+	 * Formats interface addresses in `ip addr` style output.
+	 * @returns Formatted string resembling `ip addr` output.
+	 */
 	public formatIpAddr(): string {
 		const lines: string[] = [];
 		let idx = 1;
@@ -319,6 +439,10 @@ export class VirtualNetworkManager {
 		return lines.join("\n");
 	}
 
+	/**
+	 * Formats routes in `ip route` style output, sorted by metric.
+	 * @returns Formatted string resembling `ip route` output.
+	 */
 	public formatIpRoute(): string {
 		const lines: string[] = [];
 		const sorted = [...this._routes].sort(
@@ -338,6 +462,12 @@ export class VirtualNetworkManager {
 		return lines.join("\n");
 	}
 
+	/**
+	 * Formats routes for a specific routing table.
+	 * Defaults to the main table (ID 254) when no table ID is given.
+	 * @param tableId - Optional numeric table ID.
+	 * @returns Formatted route string, or empty string if the table has no routes.
+	 */
 	public formatIpRouteTable(tableId?: number): string {
 		if (tableId === undefined || tableId === 254) {
 			return this.formatIpRoute();
@@ -356,6 +486,11 @@ export class VirtualNetworkManager {
 			.join("\n");
 	}
 
+	/**
+	 * Formats policy routing rules in `ip rule` style output.
+	 * Includes default rules for local, main, and default tables.
+	 * @returns Formatted string resembling `ip rule` output.
+	 */
 	public formatIpRule(): string {
 		const rules = this.listPolicyRules();
 		if (rules.length === 0) {
@@ -389,6 +524,10 @@ export class VirtualNetworkManager {
 		return lines.join("\n");
 	}
 
+	/**
+	 * Formats interfaces in `ip link` style output with speed and duplex info.
+	 * @returns Formatted string resembling `ip link` output.
+	 */
 	public formatIpLink(): string {
 		const lines: string[] = [];
 		let idx = 1;
@@ -417,6 +556,10 @@ export class VirtualNetworkManager {
 		return lines.join("\n");
 	}
 
+	/**
+	 * Formats the ARP cache in `ip neigh` style output.
+	 * @returns Formatted string resembling `ip neigh` output.
+	 */
 	public formatIpNeigh(): string {
 		return this.arpCache
 			.map((e) => `${e.ip} dev ${e.device} lladdr ${e.mac} ${e.state}`)
@@ -457,11 +600,21 @@ export class VirtualNetworkManager {
 		return this._interfaces.find((i) => i.name === device)?.ipv4 ?? "0.0.0.0";
 	}
 
+	/**
+	 * Appends a firewall rule to the rule list.
+	 * @param rule - The firewall rule to add.
+	 * @returns The index of the newly added rule.
+	 */
 	public addFirewallRule(rule: FirewallRule): number {
 		this._firewallRules.push(rule);
 		return this._firewallRules.length - 1;
 	}
 
+	/**
+	 * Removes a firewall rule at the given index.
+	 * @param index - Index of the rule to remove.
+	 * @returns True if the index was valid and the rule was removed.
+	 */
 	public removeFirewallRule(index: number): boolean {
 		if (index < 0 || index >= this._firewallRules.length) {
 			return false;
@@ -470,10 +623,20 @@ export class VirtualNetworkManager {
 		return true;
 	}
 
+	/**
+	 * Returns a copy of all firewall rules.
+	 * @returns Array of FirewallRule objects.
+	 */
 	public getFirewallRules(): FirewallRule[] {
 		return [...this._firewallRules];
 	}
 
+	/**
+	 * Sets the default policy for a firewall chain.
+	 * @param chain - Chain name (INPUT, OUTPUT, or FORWARD).
+	 * @param policy - New default policy: "ACCEPT" or "DROP".
+	 * @returns True if the chain was found and updated.
+	 */
 	public setPolicy(chain: string, policy: "ACCEPT" | "DROP"): boolean {
 		if (!(chain in this._policies)) {
 			return false;
@@ -482,10 +645,26 @@ export class VirtualNetworkManager {
 		return true;
 	}
 
+	/**
+	 * Returns the default policy for a firewall chain.
+	 * @param chain - Chain name.
+	 * @returns The chain policy, defaulting to "ACCEPT".
+	 */
 	public getPolicy(chain: string): "ACCEPT" | "DROP" {
 		return this._policies[chain] ?? "ACCEPT";
 	}
 
+	/**
+	 * Checks whether a packet matches any firewall rule in the given chain.
+	 * Evaluates rules in order and returns the first matching action.
+	 * Falls back to the chain's default policy if no rule matches.
+	 * @param chain - Chain to evaluate against.
+	 * @param protocol - Layer-4 protocol.
+	 * @param source - Optional source IP to match.
+	 * @param destination - Optional destination IP to match.
+	 * @param destPort - Optional destination port to match.
+	 * @returns The action ("ACCEPT", "DROP", or "REJECT").
+	 */
 	public checkFirewall(
 		chain: "INPUT" | "OUTPUT" | "FORWARD" | "PREROUTING" | "POSTROUTING",
 		protocol: "tcp" | "udp" | "icmp" | "all",
@@ -518,10 +697,17 @@ export class VirtualNetworkManager {
 		return this._policies[chain] ?? "ACCEPT";
 	}
 
+	/**
+	 * Removes all firewall rules.
+	 */
 	public flushFirewall(): void {
 		this._firewallRules = [];
 	}
 
+	/**
+	 * Formats all firewall rules and chain policies in iptables-like output.
+	 * @returns Formatted string resembling `iptables -L` output.
+	 */
 	public formatFirewall(): string {
 		const lines: string[] = [];
 		for (const chain of [
@@ -551,22 +737,44 @@ export class VirtualNetworkManager {
 		return lines.join("\n");
 	}
 
+	/**
+	 * Returns a copy of all connection tracking entries.
+	 * @returns Array of ConntrackEntry objects.
+	 */
 	public getConntrack(): ConntrackEntry[] {
 		return [...this._conntrack];
 	}
 
+	/**
+	 * Returns the current number of connection tracking entries.
+	 * @returns Entry count.
+	 */
 	public getConntrackCount(): number {
 		return this._conntrack.length;
 	}
 
+	/**
+	 * Returns the maximum number of connection tracking entries allowed.
+	 * @returns Maximum conntrack entries.
+	 */
 	public getConntrackMax(): number {
 		return this._conntrackMax;
 	}
 
+	/**
+	 * Sets the maximum number of connection tracking entries.
+	 * @param max - New maximum entry count.
+	 */
 	public setConntrackMax(max: number): void {
 		this._conntrackMax = max;
 	}
 
+	/**
+	 * Adds a new connection tracking entry with default timeout and zeroed counters.
+	 * Evicts the oldest entry if the conntrack table is full.
+	 * @param entry - Partial conntrack entry (timestamp, timeout, and counters are auto-filled).
+	 * @returns The newly created ConntrackEntry, or null if it could not be added.
+	 */
 	public addConntrackEntry(
 		entry: Omit<
 			ConntrackEntry,
@@ -595,6 +803,16 @@ export class VirtualNetworkManager {
 		return newEntry;
 	}
 
+	/**
+	 * Updates an existing conntrack entry or creates a new one if no match is found.
+	 * Increments sent counters for forward lookups and received counters for reverse lookups.
+	 * @param srcIp - Source IP address.
+	 * @param dstIp - Destination IP address.
+	 * @param protocol - Layer-4 protocol.
+	 * @param srcPort - Optional source port.
+	 * @param dstPort - Optional destination port.
+	 * @param bytes - Optional byte count to add.
+	 */
 	public updateConntrack(
 		srcIp: string,
 		dstIp: string,
@@ -636,10 +854,17 @@ export class VirtualNetworkManager {
 		}
 	}
 
+	/**
+	 * Removes all connection tracking entries.
+	 */
 	public flushConntrack(): void {
 		this._conntrack = [];
 	}
 
+	/**
+	 * Formats all conntrack entries in `conntrack -L` style output.
+	 * @returns Formatted string resembling conntrack output.
+	 */
 	public formatConntrack(): string {
 		return this._conntrack
 			.map((e) => {
@@ -681,6 +906,12 @@ export class VirtualNetworkManager {
 		this._conntrack.splice(oldestIdx, 1);
 	}
 
+	/**
+	 * Resolves the best route for a destination IP using policy routing rules.
+	 * Checks policy rules in priority order, then falls back to the main table.
+	 * @param dstIp - Destination IP address to resolve.
+	 * @returns Object containing the matched route (or null) and table ID.
+	 */
 	public resolveRoute(dstIp: string): {
 		route: VirtualRoute | null;
 		table: number;

@@ -1,5 +1,6 @@
 import type { ShellModule } from "../types/commands";
 
+/** Remove shell variable or function. */
 export const unsetCommand: ShellModule = {
 	name: "unset",
 	description: "Remove shell variable or function",

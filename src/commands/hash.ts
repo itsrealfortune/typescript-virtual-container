@@ -1,5 +1,6 @@
 import type { ShellModule } from "../types/commands";
 
+/** Display and manage the command hash table. */
 export const hashCommand: ShellModule = {
 	name: "hash",
 	description: "Display and manage the command hash table",

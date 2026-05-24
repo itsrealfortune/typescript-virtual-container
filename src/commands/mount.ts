@@ -2,6 +2,7 @@ import * as path from "node:path";
 import type { ShellModule } from "../types/commands";
 import { ifFlag, parseArgs } from "./command-helpers";
 
+/** Mount a filesystem or list active mounts. */
 export const mountCommand: ShellModule = {
 	name: "mount",
 	description: "Mount a filesystem or list active mounts",

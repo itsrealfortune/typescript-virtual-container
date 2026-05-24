@@ -22,12 +22,17 @@ const files = readdirSync(manualsDir)
   .filter((f) => f.endsWith(".txt"))
   .sort();
 
+function needsQuotes(s) {
+  return !/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(s);
+}
+
 const entries = files.map((file) => {
   const key = basename(file, ".txt");
   const content = readFileSync(join(manualsDir, file), "utf8").replace(/\n$/, "");
   // Escape backticks and template literal syntax
   const escaped = content.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${");
-  return `\t"${key}": \`${escaped}\``;
+  const formattedKey = needsQuotes(key) ? `"${key}"` : key;
+  return `\t${formattedKey}: \`${escaped}\``;
 });
 
 const output = `/**

@@ -1,6 +1,7 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/** DNS lookup utility. */
 export const digCommand: ShellModule = {
 	name: "dig",
 	description: "DNS lookup utility",
