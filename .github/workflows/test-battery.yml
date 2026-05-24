@@ -107,8 +107,8 @@ jobs:
       - run: node build.js
       - name: Check bundle size
         run: |
-          if [ -f builds/fortune-nyx-v1.7.5-web.min.js ]; then
-            size=$(wc -c < builds/fortune-nyx-v1.7.5-web.min.js)
+          if [ -f builds/fortune-nyx-v1.7.6-web.min.js ]; then
+            size=$(wc -c < builds/fortune-nyx-v1.7.6-web.min.js)
             echo "Web bundle: ${size} bytes ($(( size / 1024 )) KB)"
             if [ "$size" -gt 51200 ]; then
               echo "❌ Web bundle ${size}B exceeds 50KB limit"

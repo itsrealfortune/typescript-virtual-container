@@ -1,9 +1,9 @@
 import {
-	createHash,
-	randomBytes,
-	randomUUID,
-	scryptSync,
-	timingSafeEqual,
+    createHash,
+    randomBytes,
+    randomUUID,
+    scryptSync,
+    timingSafeEqual,
 } from "node:crypto";
 import { EventEmitter } from "node:events";
 import * as path from "node:path";
@@ -11,10 +11,10 @@ import { type PerfLogger, createPerfLogger } from "../../utils/perfLogger";
 import type VirtualFileSystem from "../VirtualFileSystem";
 import { VirtualGroupManager, type VirtualGroupRecord } from "./groups";
 import {
-	type ProcessPriority,
-	ProcessScheduler,
-	type SchedulerConfig,
-	type SchedulerStats,
+    type ProcessPriority,
+    ProcessScheduler,
+    type SchedulerConfig,
+    type SchedulerStats,
 } from "./processScheduler";
 
 /**
@@ -1292,7 +1292,7 @@ export class VirtualUserManager extends EventEmitter {
 			}
 
 			// Format: username:uid:gid:salt:passwordHash:lastChange:minAge:maxAge:warnDays:inactiveDays:expiry (new)
-			// Format: username:uid:gid:salt:passwordHash (legacy v1.7.5)
+			// Format: username:uid:gid:salt:passwordHash (legacy v1.7.6)
 			// Format: username:salt:passwordHash (legacy older)
 			if (parts.length >= 11) {
 				const [
@@ -2137,8 +2137,9 @@ function normalizeVfsPath(targetPath: string): string {
 // Re-export scheduler types for external consumers
 export { ProcessScheduler } from "./processScheduler";
 export type {
-	ProcessPriority,
-	SchedulerAction,
-	SchedulerConfig,
-	SchedulerStats,
+    ProcessPriority,
+    SchedulerAction,
+    SchedulerConfig,
+    SchedulerStats
 } from "./processScheduler";
+
