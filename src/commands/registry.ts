@@ -19,6 +19,7 @@ import {chmodCommand} from "./chmod";
 import {chownCommand} from "./chown";
 import {clearCommand} from "./clear";
 import {conntrackCommand} from "./conntrack";
+import {crontabCommand} from "./crontab";
 import {
 	columnCommand,
 	mktempCommand,
@@ -58,6 +59,7 @@ import {
 	yesCommand,
 } from "./fun";
 import {getentCommand} from "./getent";
+import {gitCommand} from "./git";
 import {gpasswdCommand} from "./gpasswd";
 import {grepCommand} from "./grep";
 import {groupaddCommand} from "./groupadd";
@@ -67,7 +69,9 @@ import {gunzipCommand, gzipCommand} from "./gzip";
 import {headCommand} from "./head";
 import {createHelpCommand} from "./help";
 import {historyCommand} from "./history";
+import {atCommand, atqCommand, atrmCommand} from "./at";
 import {hostnameCommand} from "./hostname";
+import {journalctlCommand} from "./journalctl";
 import {htopCommand} from "./htop";
 import {idCommand} from "./id";
 import {ifconfigCommand} from "./ifconfig";
@@ -76,10 +80,12 @@ import {iptablesCommand} from "./iptables";
 import {bgCommand, fgCommand, jobsCommand} from "./jobs";
 import {killCommand} from "./kill";
 import {dmesgCommand, lastCommand} from "./last";
+import {lessCommand} from "./less";
 import {lnCommand, readlinkCommand} from "./ln";
 import {lsCommand} from "./ls";
 import {lsbReleaseCommand} from "./lsb-release";
 import {lsofCommand} from "./lsof";
+import {makeCommand} from "./make";
 import {manCommand} from "./man";
 import {
 	expandCommand,
@@ -92,6 +98,7 @@ import {
 } from "./miscutils";
 import {mkdirCommand} from "./mkdir";
 import {mkfifoCommand, mknodCommand} from "./mknod";
+import {moreCommand} from "./more";
 import {mousepadCommand} from "./mousepad";
 import {mvCommand} from "./mv";
 import {nanoCommand} from "./nano";
@@ -121,6 +128,7 @@ import {returnCommand, shiftCommand, trapCommand} from "./shift";
 import {sleepCommand} from "./sleep";
 import {sortCommand} from "./sort";
 import {sourceCommand} from "./source";
+import {sshKeygenCommand} from "./ssh-keygen";
 import {ssCommand} from "./ss";
 import {startxfce4Command} from "./startxfce4";
 import {statCommand} from "./stat";
@@ -128,7 +136,10 @@ import {straceCommand} from "./strace";
 import {suCommand} from "./su";
 import {sudoCommand} from "./sudo";
 import {swapCommand} from "./swap";
+import {systemctlCommand} from "./systemctl";
+import {umountCommand} from "./umount";
 import {sysctlCommand} from "./sysctl";
+import {mountCommand} from "./mount";
 import {lscpuCommand, lspciCommand, lsusbCommand} from "./sysinfo";
 import {tailCommand} from "./tail";
 import {tarCommand} from "./tar";
@@ -154,6 +165,7 @@ import {uniqCommand} from "./uniq";
 import {unsetCommand} from "./unset";
 import {uptimeCommand} from "./uptime";
 import {usermodCommand} from "./usermod";
+import {viCommand} from "./vi";
 import {wCommand} from "./w";
 import {wcCommand} from "./wc";
 import {wgetCommand} from "./wget";
@@ -163,6 +175,39 @@ import {whoamiCommand} from "./whoami";
 import {xargsCommand} from "./xargs";
 import {thunarCommand} from "./xfceDesktop";
 import {unzipCommand, zipCommand} from "./zip";
+
+import {arpCommand} from "./arp";
+import {cmpCommand} from "./cmp";
+import {digCommand} from "./dig";
+import {ethtoolCommand} from "./ethtool";
+import {
+	figletCommand,
+	bannerCommand,
+	toiletCommand,
+	factorCommand,
+	rsCommand,
+} from "./p3-fun";
+import {gpgCommand} from "./gpg";
+import {hexdumpCommand} from "./hexdump";
+import {iconvCommand} from "./iconv";
+import {loggerCommand} from "./logger";
+import {nslookupCommand} from "./nslookup";
+import {odCommand} from "./od";
+import {opensslCommand} from "./openssl";
+import {patchCommand} from "./patch";
+import {prCommand} from "./pr";
+import {recodeCommand} from "./recode";
+import {routeCommand} from "./route";
+import {rsyncCommand} from "./rsync";
+import {
+	screenCommand,
+	tmuxCommand,
+	watchCommand,
+	timeCommand,
+} from "./p3-terminal";
+import {serviceCommand} from "./service";
+import {useraddCommand, userdelCommand, groupmodCommand} from "./useradd";
+import {xxdCommand} from "./xxd";
 
 const BASE_COMMANDS: ShellModule[] = [
 	// Navigation
@@ -213,6 +258,15 @@ const BASE_COMMANDS: ShellModule[] = [
 	commCommand,
 	splitCommand,
 	csplitCommand,
+	// Text & data (extended)
+	cmpCommand,
+	odCommand,
+	xxdCommand,
+	hexdumpCommand,
+	patchCommand,
+	iconvCommand,
+	recodeCommand,
+	prCommand,
 	// Archives
 	tarCommand,
 	gzipCommand,
@@ -256,6 +310,9 @@ const BASE_COMMANDS: ShellModule[] = [
 	exitCommand,
 	// Editors
 	nanoCommand,
+	viCommand,
+	lessCommand,
+	moreCommand,
 	wCommand,
 	basenameCommand,
 	dirnameCommand,
@@ -271,8 +328,16 @@ const BASE_COMMANDS: ShellModule[] = [
 	cowthinkCommand,
 	cmatrixCommand,
 	slCommand,
+	figletCommand,
+	bannerCommand,
+	toiletCommand,
+	factorCommand,
+	rsCommand,
 	pacmanCommand,
 	htopCommand,
+	// Development
+	makeCommand,
+	gitCommand,
 	// Network
 	curlCommand,
 	wgetCommand,
@@ -283,10 +348,21 @@ const BASE_COMMANDS: ShellModule[] = [
 	tracerouteCommand,
 	conntrackCommand,
 	ifconfigCommand,
+	digCommand,
+	nslookupCommand,
+	routeCommand,
+	arpCommand,
+	ethtoolCommand,
+	serviceCommand,
+	loggerCommand,
+	rsyncCommand,
 	// Users
 	adduserCommand,
 	passwdCommand,
 	deluserCommand,
+	useraddCommand,
+	userdelCommand,
+	groupmodCommand,
 	sudoCommand,
 	sysctlCommand,
 	suCommand,
@@ -333,7 +409,24 @@ const BASE_COMMANDS: ShellModule[] = [
 	startxfce4Command,
 	thunarCommand,
 	mousepadCommand,
+	// Security
+	gpgCommand,
+	opensslCommand,
+	// Terminal multiplexers
+	screenCommand,
+	tmuxCommand,
+	watchCommand,
+	timeCommand,
 	// System (extended)
+	mountCommand,
+	umountCommand,
+	systemctlCommand,
+	journalctlCommand,
+	sshKeygenCommand,
+	crontabCommand,
+	atCommand,
+	atqCommand,
+	atrmCommand,
 	uptimeCommand,
 	freeCommand,
 	lsbReleaseCommand,
