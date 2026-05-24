@@ -18,6 +18,8 @@ await esbuild.build({
         'node:zlib': './polyfills/node_zlib/index.js',
         'node:vm': './polyfills/node_vm/index.js',
         'node:net': './polyfills/node_net/index.js',
+        'node:url': './polyfills/node_url/index.js',
+        'node:worker_threads': './polyfills/node_worker_threads/index.js',
         'ssh2': './polyfills/ssh2/index.js',
         'roxify': './polyfills/roxify.js',
     }, inject: ['./polyfills/process.js', './polyfills/buffer.js'],
