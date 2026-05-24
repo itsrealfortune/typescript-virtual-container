@@ -1,4 +1,4 @@
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 /**
  * Render a printf format string with given arguments.
@@ -151,12 +151,12 @@ export const printfCommand: ShellModule = {
 	description: "Format and print data",
 	category: "shell",
 	params: ["<format> [args...]"],
-	run: ({args}) => {
+	run: ({ args }) => {
 		const fmt = args[0];
 		if (!fmt) {
-			return {stderr: "printf: missing format string", exitCode: 1};
+			return { stderr: "printf: missing format string", exitCode: 1 };
 		}
 		const output = renderPrintf(fmt, args.slice(1));
-		return {stdout: output, exitCode: 0};
+		return { stdout: output, exitCode: 0 };
 	},
 };

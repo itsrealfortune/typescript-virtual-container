@@ -1,4 +1,4 @@
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 /** Generate sequences of numbers. seq LAST / seq FIRST LAST / seq FIRST INCREMENT LAST */
 export const seqCommand: ShellModule = {
@@ -6,7 +6,7 @@ export const seqCommand: ShellModule = {
 	description: "Print a sequence of numbers",
 	category: "text",
 	params: ["[FIRST [INCREMENT]] LAST"],
-	run: ({args}) => {
+	run: ({ args }) => {
 		const nums = args
 			.filter((a) => !a.startsWith("-") || /^-[\d.]/.test(a))
 			.map(Number);
@@ -35,10 +35,10 @@ export const seqCommand: ShellModule = {
 		}
 
 		if (inc === 0) {
-			return {stderr: "seq: zero increment\n", exitCode: 1};
+			return { stderr: "seq: zero increment\n", exitCode: 1 };
 		}
 		if ((inc > 0 && first > last) || (inc < 0 && first < last)) {
-			return {stdout: "", exitCode: 0};
+			return { stdout: "", exitCode: 0 };
 		}
 
 		const results: string[] = [];
@@ -70,6 +70,6 @@ export const seqCommand: ShellModule = {
 			results.push(s);
 		}
 
-		return {stdout: `${results.join(sep)}\n`, exitCode: 0};
+		return { stdout: `${results.join(sep)}\n`, exitCode: 0 };
 	},
 };

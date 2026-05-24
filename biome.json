@@ -252,7 +252,7 @@
 		"indentWidth": 2,
 		"lineWidth": 80,
 		"lineEnding": "lf",
-		"bracketSpacing": false
+		"bracketSpacing": true
 	},
 	"javascript": {
 		"formatter": {

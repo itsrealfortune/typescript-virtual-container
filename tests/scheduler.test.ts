@@ -1,5 +1,5 @@
-import {describe, expect, test} from "bun:test";
-import {ProcessScheduler} from "../src/modules/VirtualUserManager/processScheduler";
+import { describe, expect, test } from "bun:test";
+import { ProcessScheduler } from "../src/modules/VirtualUserManager/processScheduler";
 
 describe("ProcessScheduler", () => {
 	test("scheduler is created with default config", () => {
@@ -12,7 +12,7 @@ describe("ProcessScheduler", () => {
 	});
 
 	test("calculateTimeslice returns longer timeslice for higher priority", () => {
-		const scheduler = new ProcessScheduler({baseTimesliceMs: 100});
+		const scheduler = new ProcessScheduler({ baseTimesliceMs: 100 });
 
 		const highPriority = scheduler.calculateTimeslice(-20);
 		const normalPriority = scheduler.calculateTimeslice(0);
@@ -129,7 +129,7 @@ describe("ProcessScheduler", () => {
 
 describe("ProcessScheduler throttling", () => {
 	test("shouldThrottle returns false for single process", () => {
-		const scheduler = new ProcessScheduler({enforceFairShare: true});
+		const scheduler = new ProcessScheduler({ enforceFairShare: true });
 
 		scheduler.recordCpuTime(1001, 1000);
 		expect(scheduler.shouldThrottle(1001, 0, 1)).toBe(false);
@@ -160,18 +160,18 @@ describe("ProcessScheduler throttling", () => {
 
 describe("ProcessScheduler with custom config", () => {
 	test("custom baseTimesliceMs affects calculations", () => {
-		const scheduler = new ProcessScheduler({baseTimesliceMs: 200});
+		const scheduler = new ProcessScheduler({ baseTimesliceMs: 200 });
 		expect(scheduler.calculateTimeslice(0)).toBe(200);
 	});
 
 	test("custom accountingWindowMs is stored", () => {
-		const scheduler = new ProcessScheduler({accountingWindowMs: 2000});
+		const scheduler = new ProcessScheduler({ accountingWindowMs: 2000 });
 		const stats = scheduler.getStats();
 		expect(stats).toBeDefined();
 	});
 
 	test("disable fair share enforcement", () => {
-		const scheduler = new ProcessScheduler({enforceFairShare: false});
+		const scheduler = new ProcessScheduler({ enforceFairShare: false });
 
 		scheduler.recordCpuTime(1001, 999999);
 		expect(scheduler.shouldThrottle(1001, 0, 10)).toBe(false);

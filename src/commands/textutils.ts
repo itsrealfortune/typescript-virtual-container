@@ -1,6 +1,6 @@
-import type {ShellModule} from "../types/commands";
-import {parseArgs} from "./command-helpers";
-import {resolvePath} from "./helpers";
+import type { ShellModule } from "../types/commands";
+import { parseArgs } from "./command-helpers";
+import { resolvePath } from "./helpers";
 
 function alphaSuffix(n: number): string {
 	let result = "";
@@ -22,22 +22,22 @@ export const joinCommand: ShellModule = {
 	description: "Join lines of two files on a common field",
 	category: "text",
 	params: ["[-t sep] <file1> <file2>"],
-	run: ({shell, cwd, args}) => {
-		const {flagsWithValues, positionals} = parseArgs(args, {
+	run: ({ shell, cwd, args }) => {
+		const { flagsWithValues, positionals } = parseArgs(args, {
 			flagsWithValue: ["-t"],
 		});
 		const separator = flagsWithValues.get("-t") || " \t";
 		const [file1, file2] = positionals;
 
 		if (!(file1 && file2)) {
-			return {stderr: "join: missing operand\n", exitCode: 1};
+			return { stderr: "join: missing operand\n", exitCode: 1 };
 		}
 
 		const p1 = resolvePath(cwd, file1);
 		const p2 = resolvePath(cwd, file2);
 
 		if (!(shell.vfs.exists(p1) && shell.vfs.exists(p2))) {
-			return {stderr: "join: No such file\n", exitCode: 1};
+			return { stderr: "join: No such file\n", exitCode: 1 };
 		}
 
 		const lines1 = shell.vfs.readFile(p1).split("\n").filter(Boolean);
@@ -59,7 +59,7 @@ export const joinCommand: ShellModule = {
 			}
 		}
 
-		return {stdout: `${results.join("\n")}\n`, exitCode: 0};
+		return { stdout: `${results.join("\n")}\n`, exitCode: 0 };
 	},
 };
 
@@ -73,19 +73,19 @@ export const commCommand: ShellModule = {
 	description: "Compare two sorted files line by line",
 	category: "text",
 	params: ["<file1> <file2>"],
-	run: ({shell, cwd, args}) => {
+	run: ({ shell, cwd, args }) => {
 		const positionals = args.filter((a) => !a.startsWith("-"));
 		const [file1, file2] = positionals;
 
 		if (!(file1 && file2)) {
-			return {stderr: "comm: missing operand\n", exitCode: 1};
+			return { stderr: "comm: missing operand\n", exitCode: 1 };
 		}
 
 		const p1 = resolvePath(cwd, file1);
 		const p2 = resolvePath(cwd, file2);
 
 		if (!(shell.vfs.exists(p1) && shell.vfs.exists(p2))) {
-			return {stderr: "comm: No such file\n", exitCode: 1};
+			return { stderr: "comm: No such file\n", exitCode: 1 };
 		}
 
 		const lines1 = shell.vfs.readFile(p1).split("\n");
@@ -127,7 +127,7 @@ export const commCommand: ShellModule = {
 			results.push(`${col1}\t${col2}\t${col3}`);
 		}
 
-		return {stdout: `${results.join("\n")}\n`, exitCode: 0};
+		return { stdout: `${results.join("\n")}\n`, exitCode: 0 };
 	},
 };
 
@@ -141,8 +141,8 @@ export const splitCommand: ShellModule = {
 	description: "Split a file into pieces",
 	category: "text",
 	params: ["[-l lines] [-b bytes] <file> [prefix]"],
-	run: ({shell, cwd, args, uid, gid}) => {
-		const {flagsWithValues, positionals} = parseArgs(args, {
+	run: ({ shell, cwd, args, uid, gid }) => {
+		const { flagsWithValues, positionals } = parseArgs(args, {
 			flagsWithValue: ["-l", "-b"],
 		});
 		const linesPerFile = Number.parseInt(
@@ -156,7 +156,7 @@ export const splitCommand: ShellModule = {
 		const prefix = positionals[1] || "x";
 
 		if (!fileArg) {
-			return {stderr: "split: missing file operand\n", exitCode: 1};
+			return { stderr: "split: missing file operand\n", exitCode: 1 };
 		}
 
 		const p = resolvePath(cwd, fileArg);
@@ -177,7 +177,7 @@ export const splitCommand: ShellModule = {
 				shell.vfs.writeFile(outPath, chunk, {}, uid, gid);
 				chunkIndex++;
 			}
-			return {exitCode: 0};
+			return { exitCode: 0 };
 		}
 
 		const allLines = content.split("\n");
@@ -189,7 +189,7 @@ export const splitCommand: ShellModule = {
 			chunkIndex++;
 		}
 
-		return {exitCode: 0};
+		return { exitCode: 0 };
 	},
 };
 
@@ -204,6 +204,6 @@ export const csplitCommand: ShellModule = {
 	category: "text",
 	params: ["<file> <pattern>..."],
 	run: () => {
-		return {stderr: "csplit: not implemented\n", exitCode: 1};
+		return { stderr: "csplit: not implemented\n", exitCode: 1 };
 	},
 };

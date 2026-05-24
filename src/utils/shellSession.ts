@@ -5,8 +5,8 @@
  * helpers for interactive shell sessions.
  */
 import * as path from "node:path";
-import {resolvePath} from "../commands/helpers";
-import {userHome} from "../commands/runtime";
+import { resolvePath } from "../commands/helpers";
+import { userHome } from "../commands/runtime";
 import type VirtualFileSystem from "../modules/VirtualFileSystem";
 
 // ── History ───────────────────────────────────────────────────────────────────
@@ -84,7 +84,7 @@ export function readLastLogin(
 		if (typeof obj.from !== "string" || typeof obj.timestamp !== "number") {
 			return null;
 		}
-		return {from: obj.from, at: new Date(obj.timestamp).toISOString()};
+		return { from: obj.from, at: new Date(obj.timestamp).toISOString() };
 	} catch {
 		return null;
 	}
@@ -103,7 +103,7 @@ export function writeLastLogin(
 ): void {
 	const p =
 		authUser === "root" ? "/root/.lastlog.json" : `/home/${authUser}/.lastlog`;
-	vfs.writeFile(p, JSON.stringify({at: new Date().toISOString(), from}));
+	vfs.writeFile(p, JSON.stringify({ at: new Date().toISOString(), from }));
 }
 
 // ── Path completion ───────────────────────────────────────────────────────────

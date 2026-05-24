@@ -1,12 +1,12 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 export const ethtoolCommand: ShellModule = {
 	name: "ethtool",
 	description: "Display or modify network interface parameters",
 	category: "network",
 	params: ["<interface>"],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout: [
@@ -21,13 +21,13 @@ export const ethtoolCommand: ShellModule = {
 
 		const ifaceName = args.find((a) => !a.startsWith("-"));
 		if (!ifaceName) {
-			return {stderr: "ethtool: missing interface name", exitCode: 1};
+			return { stderr: "ethtool: missing interface name", exitCode: 1 };
 		}
 
 		const net = shell.network;
 		const iface = net.getInterface(ifaceName);
 		if (!iface) {
-			return {stderr: `ethtool: ${ifaceName}: No such device`, exitCode: 1};
+			return { stderr: `ethtool: ${ifaceName}: No such device`, exitCode: 1 };
 		}
 
 		return {

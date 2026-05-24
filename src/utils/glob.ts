@@ -1,27 +1,27 @@
 const _globCache = new Map<string, RegExp>();
 
-function parseExtglob(pat: string, i: number): {re: string; end: number} {
+function parseExtglob(pat: string, i: number): { re: string; end: number } {
 	const op = pat[i] as string;
 	const i2 = i + 2;
 	const end = pat.indexOf(")", i2);
 	if (end === -1) {
-		return {re: `\\${op}\\(`, end: i + 1};
+		return { re: `\\${op}\\(`, end: i + 1 };
 	}
 	const inner = pat.slice(i2, end);
 	const innerRe = globToRegexInner(inner, false);
 	switch (op) {
 		case "?":
-			return {re: `(?:${innerRe})?`, end};
+			return { re: `(?:${innerRe})?`, end };
 		case "*":
-			return {re: `(?:${innerRe})*`, end};
+			return { re: `(?:${innerRe})*`, end };
 		case "+":
-			return {re: `(?:${innerRe})+`, end};
+			return { re: `(?:${innerRe})+`, end };
 		case "@":
-			return {re: `(?:${innerRe})`, end};
+			return { re: `(?:${innerRe})`, end };
 		case "!":
-			return {re: `(?:(?!${innerRe}).)`, end};
+			return { re: `(?:(?!${innerRe}).)`, end };
 		default:
-			return {re: `\\${op}\\(`, end: i + 1};
+			return { re: `\\${op}\\(`, end: i + 1 };
 	}
 }
 
@@ -33,7 +33,7 @@ function globToRegexInner(pattern: string, anchor: boolean): string {
 			(c === "?" || c === "*" || c === "+" || c === "@" || c === "!") &&
 			pattern[i + 1] === "("
 		) {
-			const {re: subRe, end} = parseExtglob(pattern, i);
+			const { re: subRe, end } = parseExtglob(pattern, i);
 			re += subRe;
 			i = end;
 			continue;

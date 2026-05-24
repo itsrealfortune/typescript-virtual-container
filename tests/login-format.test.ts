@@ -1,5 +1,5 @@
-import {describe, expect, test} from "bun:test";
-import {formatLoginDate} from "../src/modules/SSHMimic/loginFormat";
+import { describe, expect, test } from "bun:test";
+import { formatLoginDate } from "../src/modules/SSHMimic/loginFormat";
 
 describe("formatLoginDate", () => {
 	test("formats a known date correctly", () => {

@@ -13,7 +13,7 @@
  *  - collectChildPids() — recursively collect all child PIDs of a process
  *  - getVisibleHtopPidList() — build a formatted PID list for htop display
  */
-import {readFile} from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import * as path from "node:path";
 
 /** Terminal dimensions (columns × rows). */

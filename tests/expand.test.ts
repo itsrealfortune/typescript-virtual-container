@@ -1,35 +1,35 @@
 /** biome-ignore-all lint/suspicious/noTemplateCurlyInString: expand */
-import {describe, expect, test} from "bun:test";
-import {expandBraces, expandGlob, expandSync} from "../src/utils/expand";
+import { describe, expect, test } from "bun:test";
+import { expandBraces, expandGlob, expandSync } from "../src/utils/expand";
 
 describe("expandSync - variable expansion", () => {
 	test("expands simple variable", () => {
-		const result = expandSync("$VAR", {VAR: "value"}, 0);
+		const result = expandSync("$VAR", { VAR: "value" }, 0);
 		expect(result).toBe("value");
 	});
 
 	test("expands multiple variables", () => {
-		const result = expandSync("$A and $B", {A: "first", B: "second"}, 0);
+		const result = expandSync("$A and $B", { A: "first", B: "second" }, 0);
 		expect(result).toBe("first and second");
 	});
 
 	test("expands ${VAR} syntax", () => {
-		const result = expandSync("${VAR}", {VAR: "test"}, 0);
+		const result = expandSync("${VAR}", { VAR: "test" }, 0);
 		expect(result).toBe("test");
 	});
 
 	test("expands $HOME", () => {
-		const result = expandSync("$HOME", {HOME: "/home/user"}, 0);
+		const result = expandSync("$HOME", { HOME: "/home/user" }, 0);
 		expect(result).toBe("/home/user");
 	});
 
 	test("expands $USER", () => {
-		const result = expandSync("$USER", {USER: "alice"}, 0);
+		const result = expandSync("$USER", { USER: "alice" }, 0);
 		expect(result).toBe("alice");
 	});
 
 	test("expands $PWD", () => {
-		const result = expandSync("$PWD", {PWD: "/tmp"}, 0);
+		const result = expandSync("$PWD", { PWD: "/tmp" }, 0);
 		expect(result).toBe("/tmp");
 	});
 
@@ -49,7 +49,7 @@ describe("expandSync - variable expansion", () => {
 	});
 
 	test("expands ${VAR:-default} with value", () => {
-		const result = expandSync("${VAR:-default}", {VAR: "actual"}, 0);
+		const result = expandSync("${VAR:-default}", { VAR: "actual" }, 0);
 		expect(result).toBe("actual");
 	});
 
@@ -59,7 +59,7 @@ describe("expandSync - variable expansion", () => {
 	});
 
 	test("expands ${#VAR} length", () => {
-		const result = expandSync("${#VAR}", {VAR: "hello"}, 0);
+		const result = expandSync("${#VAR}", { VAR: "hello" }, 0);
 		expect(result).toBe("5");
 	});
 
@@ -74,22 +74,22 @@ describe("expandSync - variable expansion", () => {
 	});
 
 	test("expands tilde in path", () => {
-		const result = expandSync("~/documents", {HOME: "/home/user"}, 0);
+		const result = expandSync("~/documents", { HOME: "/home/user" }, 0);
 		expect(result).toMatch(/^\/home\/user|^~/);
 	});
 
 	test("multiple vars in string", () => {
-		const result = expandSync("$A/$B/$C", {A: "a", B: "b", C: "c"}, 0);
+		const result = expandSync("$A/$B/$C", { A: "a", B: "b", C: "c" }, 0);
 		expect(result).toBe("a/b/c");
 	});
 
 	test("variable in quotes", () => {
-		const result = expandSync('"$VAR"', {VAR: "quoted"}, 0);
+		const result = expandSync('"$VAR"', { VAR: "quoted" }, 0);
 		expect(result).toContain("quoted");
 	});
 
 	test("backslash escapes variable", () => {
-		const result = expandSync("\\$VAR", {VAR: "value"}, 0);
+		const result = expandSync("\\$VAR", { VAR: "value" }, 0);
 		expect(result?.length).toBeGreaterThan(0);
 	});
 
@@ -136,7 +136,7 @@ describe("expandSync - arithmetic expansion", () => {
 	});
 
 	test("arithmetic with variables", () => {
-		const result = expandSync("$((A+B))", {A: "5", B: "3"}, 0);
+		const result = expandSync("$((A+B))", { A: "5", B: "3" }, 0);
 		expect(result).toBe("8");
 	});
 });
@@ -145,7 +145,7 @@ describe("expandSync - complex scenarios", () => {
 	test("multiple expansions in one string", () => {
 		const result = expandSync(
 			"$HOME/path/$USER",
-			{HOME: "/home", USER: "bob"},
+			{ HOME: "/home", USER: "bob" },
 			0
 		);
 		expect(result).toMatch(/\/home.*bob/);
@@ -154,24 +154,24 @@ describe("expandSync - complex scenarios", () => {
 	test("expansion with special chars", () => {
 		const result = expandSync(
 			"Path: $PWD, User: $USER",
-			{PWD: "/tmp", USER: "alice"},
+			{ PWD: "/tmp", USER: "alice" },
 			0
 		);
 		expect(result).toMatch(/Path: \/tmp.*User: alice/);
 	});
 
 	test("consecutive variables", () => {
-		const result = expandSync("$A$B$C", {A: "x", B: "y", C: "z"}, 0);
+		const result = expandSync("$A$B$C", { A: "x", B: "y", C: "z" }, 0);
 		expect(result).toBe("xyz");
 	});
 
 	test("empty variable between text", () => {
-		const result = expandSync("a$EMPTY b", {EMPTY: ""}, 0);
+		const result = expandSync("a$EMPTY b", { EMPTY: "" }, 0);
 		expect(result).toBe("a b");
 	});
 
 	test("numeric variable", () => {
-		const result = expandSync("Count: $N", {N: "42"}, 0);
+		const result = expandSync("Count: $N", { N: "42" }, 0);
 		expect(result).toBe("Count: 42");
 	});
 });
@@ -181,7 +181,7 @@ describe("expandSync - complex scenarios", () => {
 function makeGlobVfs(files: Record<string, string>): {
 	list: (p: string) => string[];
 	exists: (p: string) => boolean;
-	stat: (p: string) => {type: string};
+	stat: (p: string) => { type: string };
 } {
 	const tree: Record<string, string[]> = {};
 	const types: Record<string, string> = {};
@@ -231,7 +231,7 @@ function makeGlobVfs(files: Record<string, string>): {
 		exists: (p: string) => p in types,
 		stat: (p: string) => {
 			if (p in types) {
-				return {type: types[p] as string};
+				return { type: types[p] as string };
 			}
 			throw new Error("ENOENT");
 		},
@@ -240,7 +240,7 @@ function makeGlobVfs(files: Record<string, string>): {
 
 describe("expandGlob - glob expansion", () => {
 	test("no glob chars returns pattern as-is", () => {
-		const vfs = makeGlobVfs({"/tmp/foo.txt": ""});
+		const vfs = makeGlobVfs({ "/tmp/foo.txt": "" });
 		const result = expandGlob("/tmp/foo.txt", "/", vfs);
 		expect(result).toEqual(["/tmp/foo.txt"]);
 	});
@@ -264,17 +264,17 @@ describe("expandGlob - glob expansion", () => {
 		const result = expandGlob("/tmp/*", "/", vfs);
 		expect(result).toEqual(["/tmp/visible"]);
 		// With dotglob — hidden file included
-		const result2 = expandGlob("/tmp/*", "/", vfs, {dotglob: true});
+		const result2 = expandGlob("/tmp/*", "/", vfs, { dotglob: true });
 		expect(result2.sort()).toEqual(["/tmp/.hidden", "/tmp/visible"]);
 	});
 
 	test("nullglob skips unmatched patterns", () => {
-		const vfs = makeGlobVfs({"/tmp/foo.txt": ""});
+		const vfs = makeGlobVfs({ "/tmp/foo.txt": "" });
 		// Without nullglob — returns pattern literal
 		const result = expandGlob("/tmp/*.xyz", "/", vfs);
 		expect(result).toEqual(["/tmp/*.xyz"]);
 		// With nullglob — returns empty array
-		const result2 = expandGlob("/tmp/*.xyz", "/", vfs, {nullglob: true});
+		const result2 = expandGlob("/tmp/*.xyz", "/", vfs, { nullglob: true });
 		expect(result2).toEqual([]);
 	});
 

@@ -1,27 +1,35 @@
-import {EventEmitter} from "node:events";
-import {createCustomCommand, registerCommand, runCommand} from "../../commands";
-import type {CommandContext, CommandResult} from "../../types/commands";
-import type {ShellStream} from "../../types/streams";
-import type {VfsNodeStats} from "../../types/vfs";
-import {type PerfLogger, createPerfLogger} from "../../utils/perfLogger";
-import type {DesktopManager} from "../desktopManager";
-import {bootstrapLinuxRootfs, refreshProc, syncEtcPasswd} from "../linuxRootfs";
+import { EventEmitter } from "node:events";
+import {
+	createCustomCommand,
+	registerCommand,
+	runCommand,
+} from "../../commands";
+import type { CommandContext, CommandResult } from "../../types/commands";
+import type { ShellStream } from "../../types/streams";
+import type { VfsNodeStats } from "../../types/vfs";
+import { type PerfLogger, createPerfLogger } from "../../utils/perfLogger";
+import type { DesktopManager } from "../desktopManager";
+import {
+	bootstrapLinuxRootfs,
+	refreshProc,
+	syncEtcPasswd,
+} from "../linuxRootfs";
 import {
 	type SysctlState,
 	defaultSysctlState,
 	resolveSysctlPath,
 } from "../sysctl";
-import VirtualFileSystem, {type VfsOptions} from "../VirtualFileSystem";
-import {VirtualNetworkManager} from "../VirtualNetworkManager";
-import {VirtualPackageManager} from "../VirtualPackageManager";
-import {VirtualUserManager} from "../VirtualUserManager";
+import VirtualFileSystem, { type VfsOptions } from "../VirtualFileSystem";
+import { VirtualNetworkManager } from "../VirtualNetworkManager";
+import { VirtualPackageManager } from "../VirtualPackageManager";
+import { VirtualUserManager } from "../VirtualUserManager";
 import {
 	type GcStats,
 	IdleManager,
 	type IdleManagerOptions,
 } from "./idleManager";
-import type {NetworkRestrictionConfig} from "../../utils/networkRestrictions";
-import {startShell} from "./shell";
+import type { NetworkRestrictionConfig } from "../../utils/networkRestrictions";
+import { startShell } from "./shell";
 
 /**
  * Virtual machine identity strings surfaced by system-info commands
@@ -65,7 +73,7 @@ export interface VirtualShellVfsLike {
 	exists(targetPath: string): boolean;
 	stat(targetPath: string): VfsNodeStats;
 	list(targetPath: string): string[];
-	remove(targetPath: string, options?: {recursive?: boolean}): void;
+	remove(targetPath: string, options?: { recursive?: boolean }): void;
 	chmod?(targetPath: string, mode: number): void;
 	symlink?(targetPath: string, linkPath: string): void;
 	getUsageBytes?(targetPath?: string): number;
@@ -205,7 +213,7 @@ export interface VirtualShellResourceCaps {
 
 function hasVfsInstance(
 	obj: unknown
-): obj is {vfsInstance: VirtualShellVfsLike} {
+): obj is { vfsInstance: VirtualShellVfsLike } {
 	return (
 		typeof obj === "object" &&
 		obj !== null &&
@@ -487,7 +495,7 @@ class VirtualShell extends EventEmitter {
 			cwd,
 			this
 		);
-		this.emit("command", {command: rawInput, user: authUser, cwd});
+		this.emit("command", { command: rawInput, user: authUser, cwd });
 		return result;
 	}
 
@@ -510,12 +518,12 @@ class VirtualShell extends EventEmitter {
 		authUser: string,
 		sessionId: string | null,
 		remoteAddress: string,
-		terminalSize: {cols: number; rows: number}
+		terminalSize: { cols: number; rows: number }
 	): void {
 		perf.mark("startInteractiveSession");
 		this._idle?.ping();
 		// Interactive shell logic
-		this.emit("session:start", {user: authUser, sessionId, remoteAddress});
+		this.emit("session:start", { user: authUser, sessionId, remoteAddress });
 		startShell(
 			this.properties,
 			stream,
@@ -573,7 +581,7 @@ class VirtualShell extends EventEmitter {
 	public mount(
 		vPath: string,
 		hostPath: string,
-		options: {readOnly?: boolean} = {}
+		options: { readOnly?: boolean } = {}
 	): void {
 		this.vfs.mount(vPath, hostPath, options);
 	}
@@ -742,4 +750,4 @@ class VirtualShell extends EventEmitter {
 	}
 }
 
-export {VirtualShell};
+export { VirtualShell };

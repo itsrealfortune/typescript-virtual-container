@@ -1,12 +1,12 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 export const useraddCommand: ShellModule = {
 	name: "useradd",
 	description: "Create a new user (POSIX semantics)",
 	category: "system",
 	params: ["[-m] [-s <shell>] <username>"],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout:
@@ -17,7 +17,7 @@ export const useraddCommand: ShellModule = {
 
 		const username = args.find((a) => !a.startsWith("-"));
 		if (!username) {
-			return {stderr: "useradd: missing username", exitCode: 1};
+			return { stderr: "useradd: missing username", exitCode: 1 };
 		}
 
 		if (shell.users.listUsers().includes(username)) {
@@ -33,7 +33,7 @@ export const useraddCommand: ShellModule = {
 			shell.vfs.mkdir(homeDir, 0o755);
 		}
 
-		return {stdout: "", exitCode: 0};
+		return { stdout: "", exitCode: 0 };
 	},
 };
 
@@ -42,7 +42,7 @@ export const userdelCommand: ShellModule = {
 	description: "Delete a user account (POSIX semantics)",
 	category: "system",
 	params: ["[-r] <username>"],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout:
@@ -53,7 +53,7 @@ export const userdelCommand: ShellModule = {
 
 		const username = args.find((a) => !a.startsWith("-"));
 		if (!username) {
-			return {stderr: "userdel: missing username", exitCode: 1};
+			return { stderr: "userdel: missing username", exitCode: 1 };
 		}
 
 		if (!shell.users.listUsers().includes(username)) {
@@ -66,12 +66,12 @@ export const userdelCommand: ShellModule = {
 		if (ifFlag(args, ["-r"])) {
 			const homeDir = `/home/${username}`;
 			try {
-				shell.vfs.remove(homeDir, {recursive: true});
+				shell.vfs.remove(homeDir, { recursive: true });
 			} catch {}
 		}
 
 		shell.users.deleteUser(username);
-		return {stdout: "", exitCode: 0};
+		return { stdout: "", exitCode: 0 };
 	},
 };
 
@@ -80,7 +80,7 @@ export const groupmodCommand: ShellModule = {
 	description: "Modify a group",
 	category: "system",
 	params: ["[-n <new-name>] [-g <gid>] <group>"],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout:
@@ -91,7 +91,7 @@ export const groupmodCommand: ShellModule = {
 
 		const group = args.find((a) => !a.startsWith("-"));
 		if (!group) {
-			return {stderr: "groupmod: missing group name", exitCode: 1};
+			return { stderr: "groupmod: missing group name", exitCode: 1 };
 		}
 
 		const nIdx = args.indexOf("-n");
@@ -99,9 +99,12 @@ export const groupmodCommand: ShellModule = {
 			nIdx !== -1 && nIdx + 1 < args.length ? args[nIdx + 1] : null;
 
 		if (
-			!shell.users.listGroups().some((g: {name: string}) => g.name === group)
+			!shell.users.listGroups().some((g: { name: string }) => g.name === group)
 		) {
-			return {stderr: `groupmod: group '${group}' does not exist`, exitCode: 6};
+			return {
+				stderr: `groupmod: group '${group}' does not exist`,
+				exitCode: 6,
+			};
 		}
 
 		if (newName) {
@@ -111,6 +114,6 @@ export const groupmodCommand: ShellModule = {
 			};
 		}
 
-		return {stdout: "", exitCode: 0};
+		return { stdout: "", exitCode: 0 };
 	},
 };

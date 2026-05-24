@@ -1,6 +1,6 @@
-import type {ShellModule} from "../types/commands";
-import {parseArgs} from "./command-helpers";
-import {assertPathAccess, resolvePath} from "./helpers";
+import type { ShellModule } from "../types/commands";
+import { parseArgs } from "./command-helpers";
+import { assertPathAccess, resolvePath } from "./helpers";
 
 /**
  * Search for a regex pattern in files or stdin with common flags.
@@ -12,8 +12,8 @@ export const grepCommand: ShellModule = {
 	description: "Search text patterns",
 	category: "text",
 	params: ["[-i] [-v] [-n] [-r] <pattern> [file...]"],
-	run: ({authUser, shell, cwd, args, stdin}) => {
-		const {flags, positionals} = parseArgs(args, {
+	run: ({ authUser, shell, cwd, args, stdin }) => {
+		const { flags, positionals } = parseArgs(args, {
 			flags: [
 				"-i",
 				"-v",
@@ -39,7 +39,7 @@ export const grepCommand: ShellModule = {
 		const files = positionals.slice(1);
 
 		if (!pattern) {
-			return {stderr: "grep: no pattern specified", exitCode: 1};
+			return { stderr: "grep: no pattern specified", exitCode: 1 };
 		}
 
 		let regex: RegExp;
@@ -48,7 +48,7 @@ export const grepCommand: ShellModule = {
 			const regexFlags = caseInsensitive ? "mi" : "m";
 			regex = new RegExp(pattern, regexFlags);
 		} catch {
-			return {stderr: `grep: invalid regex: ${pattern}`, exitCode: 1};
+			return { stderr: `grep: invalid regex: ${pattern}`, exitCode: 1 };
 		}
 
 		const matchLines = (content: string, prefix = ""): string[] => {
@@ -97,7 +97,7 @@ export const grepCommand: ShellModule = {
 
 		if (files.length === 0) {
 			if (!stdin) {
-				return {stdout: "", exitCode: 1};
+				return { stdout: "", exitCode: 1 };
 			}
 			const matched = matchLines(stdin);
 			if (countOnly) {
@@ -107,16 +107,16 @@ export const grepCommand: ShellModule = {
 				};
 			}
 			if (quiet) {
-				return {exitCode: matched.length > 0 ? 0 : 1};
+				return { exitCode: matched.length > 0 ? 0 : 1 };
 			}
 			results.push(...matched);
 		} else {
 			const resolvedPaths = files.flatMap((f) => {
 				const target = resolvePath(cwd, f);
-				return readPaths(target).map((p) => ({file: f, path: p}));
+				return readPaths(target).map((p) => ({ file: f, path: p }));
 			});
 
-			for (const {file, path: filePath} of resolvedPaths) {
+			for (const { file, path: filePath } of resolvedPaths) {
 				try {
 					assertPathAccess(authUser, filePath, "grep");
 					const content = shell.vfs.readFile(filePath);

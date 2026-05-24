@@ -1,5 +1,5 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 const INIT_D_DIR = "/etc/init.d";
 
@@ -8,7 +8,7 @@ export const serviceCommand: ShellModule = {
 	description: "Run System V init script",
 	category: "network",
 	params: ["<service> <command>"],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout: [
@@ -25,7 +25,10 @@ export const serviceCommand: ShellModule = {
 
 		const positionals = args.filter((a) => !a.startsWith("-"));
 		if (positionals.length < 2) {
-			return {stderr: "service: missing service name or command", exitCode: 1};
+			return {
+				stderr: "service: missing service name or command",
+				exitCode: 1,
+			};
 		}
 
 		const serviceName = positionals[0]!;
@@ -50,9 +53,9 @@ export const serviceCommand: ShellModule = {
 		if (command === "status") {
 			const running = isServiceRunning(shell, serviceName);
 			if (running) {
-				return {stdout: ` * ${serviceName} is running\n`, exitCode: 0};
+				return { stdout: ` * ${serviceName} is running\n`, exitCode: 0 };
 			}
-			return {stdout: ` * ${serviceName} is not running\n`, exitCode: 3};
+			return { stdout: ` * ${serviceName} is not running\n`, exitCode: 3 };
 		}
 
 		if (command === "start") {
@@ -69,21 +72,21 @@ export const serviceCommand: ShellModule = {
 };
 
 function isServiceRunning(
-	shell: {vfs: {exists: (p: string) => boolean}},
+	shell: { vfs: { exists: (p: string) => boolean } },
 	name: string
 ): boolean {
 	return shell.vfs.exists(`/var/run/${name}.pid`);
 }
 
 function startService(
-	shell: {vfs: {writeFile: (p: string, content: string) => void}},
+	shell: { vfs: { writeFile: (p: string, content: string) => void } },
 	name: string
 ) {
 	shell.vfs.writeFile(`/var/run/${name}.pid`, String(process.pid));
 }
 
 function stopService(
-	shell: {vfs: {remove: (p: string) => void}},
+	shell: { vfs: { remove: (p: string) => void } },
 	name: string
 ) {
 	try {

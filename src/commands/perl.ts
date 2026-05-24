@@ -1,4 +1,4 @@
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 /**
  * Perl interpreter stub — supports -e one-liners with print, say, basic regex, and -p/-n/-i.
@@ -9,7 +9,7 @@ export const perlCommand: ShellModule = {
 	description: "Practical Extraction and Report Language",
 	category: "scripting",
 	params: ["[-e <expr>] [-p] [-n] [-i] [file]"],
-	run: ({args, stdin}) => {
+	run: ({ args, stdin }) => {
 		const eIdx = args.indexOf("-e");
 		const code = eIdx === -1 ? undefined : args[eIdx + 1];
 		const printLoop = args.includes("-p");

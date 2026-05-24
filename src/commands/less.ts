@@ -1,5 +1,5 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 const PAGE_SIZE = 24;
 
@@ -8,7 +8,7 @@ export const lessCommand: ShellModule = {
 	description: "View file content with pagination",
 	category: "files",
 	params: ["[-N] [file...]"],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout: [
@@ -26,13 +26,13 @@ export const lessCommand: ShellModule = {
 		const files = args.filter((a) => !a.startsWith("-"));
 
 		if (files.length === 0) {
-			return {stderr: "less: missing file operand", exitCode: 1};
+			return { stderr: "less: missing file operand", exitCode: 1 };
 		}
 
 		const parts: string[] = [];
 		for (const file of files) {
 			if (!shell.vfs.exists(file)) {
-				return {stderr: `less: ${file}: No such file`, exitCode: 1};
+				return { stderr: `less: ${file}: No such file`, exitCode: 1 };
 			}
 			const content = shell.vfs.readFile(file);
 			const lines = content.split("\n");
@@ -52,7 +52,7 @@ export const lessCommand: ShellModule = {
 		const totalLines = text.split("\n").length;
 
 		if (totalLines <= PAGE_SIZE) {
-			return {stdout: `${text}\n`, exitCode: 0};
+			return { stdout: `${text}\n`, exitCode: 0 };
 		}
 
 		const result: string[] = [];
@@ -69,6 +69,6 @@ export const lessCommand: ShellModule = {
 			}
 		}
 
-		return {stdout: `${result.join("\n")}\n(END)\n`, exitCode: 0};
+		return { stdout: `${result.join("\n")}\n(END)\n`, exitCode: 0 };
 	},
 };

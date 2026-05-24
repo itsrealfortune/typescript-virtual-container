@@ -1,4 +1,4 @@
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 /**
  * Print environment variables for the current session.
@@ -10,8 +10,8 @@ export const envCommand: ShellModule = {
 	description: "Print environment variables",
 	category: "shell",
 	params: [],
-	run: ({env, authUser}) => {
-		const vars = {...env.vars, USER: authUser, HOME: `/home/${authUser}`};
+	run: ({ env, authUser }) => {
+		const vars = { ...env.vars, USER: authUser, HOME: `/home/${authUser}` };
 		return {
 			stdout: Object.entries(vars)
 				.map(([k, v]) => `${k}=${v}`)

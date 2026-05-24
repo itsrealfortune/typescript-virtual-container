@@ -1,16 +1,21 @@
-import {afterAll, beforeAll, describe, expect, test} from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import * as os from "node:os";
-import {VirtualShell, VirtualSshServer} from "../src";
-import {SshClient} from "../src/modules/SSHClient";
+import { VirtualShell, VirtualSshServer } from "../src";
+import { SshClient } from "../src/modules/SSHClient";
 
 async function setupClient(
 	vmName: string,
-	options?: {ramCapBytes?: number; cpuCapCores?: number}
+	options?: { ramCapBytes?: number; cpuCapCores?: number }
 ) {
-	const shell = new VirtualShell(vmName, undefined, {mode: "memory"}, options);
+	const shell = new VirtualShell(
+		vmName,
+		undefined,
+		{ mode: "memory" },
+		options
+	);
 	await shell.ensureInitialized();
 	shell.users.setPassword("root", "root");
-	const ssh = new VirtualSshServer({port: 0, shell});
+	const ssh = new VirtualSshServer({ port: 0, shell });
 	const port = await ssh.start();
 	const client = new SshClient();
 	await client.connect({
@@ -19,7 +24,7 @@ async function setupClient(
 		username: "root",
 		password: "root",
 	});
-	return {shell, client, ssh};
+	return { shell, client, ssh };
 }
 
 // ─── RAM capping — reporting ─────────────────────────────────────────────────
@@ -102,7 +107,7 @@ describe("RAM capping — enforcement", () => {
 	});
 
 	test("dd command fails with ENOMEM when VFS is near cap", async () => {
-		const {client, ssh} = await setupClient("ram-enforce-dd", {
+		const { client, ssh } = await setupClient("ram-enforce-dd", {
 			ramCapBytes: 64 * 1024,
 		});
 		const r = await client.exec(
@@ -174,7 +179,7 @@ describe("CPU capping — reporting", () => {
 	let ssh: InstanceType<typeof VirtualSshServer>;
 
 	beforeAll(async () => {
-		const env = await setupClient("cpu-report", {cpuCapCores: 2});
+		const env = await setupClient("cpu-report", { cpuCapCores: 2 });
 		client = env.client;
 		ssh = env.ssh;
 	});

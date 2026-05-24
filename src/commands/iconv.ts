@@ -1,5 +1,5 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 const CHARSET_MAP: Record<string, string> = {
 	"utf-8": "utf8",
@@ -21,7 +21,7 @@ export const iconvCommand: ShellModule = {
 	description: "Convert text from one character encoding to another",
 	category: "files",
 	params: ["-f <from> -t <to> [file]"],
-	run: ({shell, args, stdin}) => {
+	run: ({ shell, args, stdin }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout:
@@ -51,13 +51,13 @@ export const iconvCommand: ShellModule = {
 		let data = "";
 		if (file) {
 			if (!shell.vfs.exists(file)) {
-				return {stderr: `iconv: ${file}: No such file`, exitCode: 1};
+				return { stderr: `iconv: ${file}: No such file`, exitCode: 1 };
 			}
 			data = shell.vfs.readFile(file);
 		} else if (stdin) {
 			data = stdin;
 		} else {
-			return {stderr: "iconv: missing operand", exitCode: 1};
+			return { stderr: "iconv: missing operand", exitCode: 1 };
 		}
 
 		const from = CHARSET_MAP[fromEnc.toLowerCase()] ?? "utf8";
@@ -66,7 +66,7 @@ export const iconvCommand: ShellModule = {
 		try {
 			const buf = Buffer.from(data, from as BufferEncoding);
 			const result = buf.toString(to as BufferEncoding);
-			return {stdout: result, exitCode: 0};
+			return { stdout: result, exitCode: 0 };
 		} catch {
 			return {
 				stderr: `iconv: conversion from ${fromEnc} to ${toEnc} not supported`,

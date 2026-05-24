@@ -1,5 +1,5 @@
-import type {VirtualShell} from "../modules/VirtualShell";
-import type {CommandResult, ShellModule} from "../types/commands";
+import type { VirtualShell } from "../modules/VirtualShell";
+import type { CommandResult, ShellModule } from "../types/commands";
 
 /**
  * Add a new user interactively.
@@ -18,9 +18,9 @@ export const adduserCommand: ShellModule = {
 	description: "Add a new user",
 	category: "users",
 	params: ["<username>"],
-	run: ({authUser, shell, args}) => {
+	run: ({ authUser, shell, args }) => {
 		if (authUser !== "root") {
-			return {stderr: "adduser: permission denied\n", exitCode: 1};
+			return { stderr: "adduser: permission denied\n", exitCode: 1 };
 		}
 
 		const username = args[0];
@@ -46,7 +46,7 @@ export const adduserCommand: ShellModule = {
 		const onPassword = (
 			input: string,
 			sh: VirtualShell
-		): Promise<{result: CommandResult | null; nextPrompt?: string}> => {
+		): Promise<{ result: CommandResult | null; nextPrompt?: string }> => {
 			if (step === "new") {
 				if (input.length < 1) {
 					return Promise.resolve({

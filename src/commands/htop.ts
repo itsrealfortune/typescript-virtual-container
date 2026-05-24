@@ -1,5 +1,5 @@
 import * as os from "node:os";
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 const C = {
 	reset: "\x1b[0m",
@@ -60,7 +60,7 @@ export const htopCommand: ShellModule = {
 	description: "Interactive system monitor",
 	category: "system",
 	params: ["[-d delay]", "[-p pid]"],
-	run: ({shell, authUser}) => {
+	run: ({ shell, authUser }) => {
 		// Render ANSI snapshot in all modes — real htop child_process unavailable in-process
 		const hostTotalMem = os.totalmem();
 		const hostFreeMem = os.freemem();
@@ -145,8 +145,8 @@ export const htopCommand: ShellModule = {
 
 		// Kernel / system processes
 		const sysProcs = [
-			{pid: 1, user: "root", cmd: "systemd", cpu: 0.0, mem: 0.1},
-			{pid: 2, user: "root", cmd: "kthreadd", cpu: 0.0, mem: 0.0},
+			{ pid: 1, user: "root", cmd: "systemd", cpu: 0.0, mem: 0.1 },
+			{ pid: 2, user: "root", cmd: "kthreadd", cpu: 0.0, mem: 0.0 },
 			{
 				pid: 9,
 				user: "root",
@@ -154,7 +154,7 @@ export const htopCommand: ShellModule = {
 				cpu: Math.random() * 0.2,
 				mem: 0.0,
 			},
-			{pid: 127, user: "root", cmd: "sshd", cpu: 0.0, mem: 0.2},
+			{ pid: 127, user: "root", cmd: "sshd", cpu: 0.0, mem: 0.2 },
 		];
 
 		// Active sessions (bash processes)
@@ -225,6 +225,6 @@ export const htopCommand: ShellModule = {
 				`press ${C.reset}${C.bold}q${C.reset}${C.dim} to quit in interactive mode${C.reset}`
 		);
 
-		return {stdout: lines.join("\n"), exitCode: 0};
+		return { stdout: lines.join("\n"), exitCode: 0 };
 	},
 };

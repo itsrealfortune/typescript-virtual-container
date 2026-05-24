@@ -1,14 +1,14 @@
-import {describe, expect, test} from "bun:test";
-import {EventEmitter} from "node:events";
-import type {SshMimic} from "../src/modules/SSHMimic";
-import type {SftpMimic} from "../src/modules/SSHMimic/sftp";
+import { describe, expect, test } from "bun:test";
+import { EventEmitter } from "node:events";
+import type { SshMimic } from "../src/modules/SSHMimic";
+import type { SftpMimic } from "../src/modules/SSHMimic/sftp";
 import type VirtualFileSystem from "../src/modules/VirtualFileSystem";
-import type {VirtualShell} from "../src/modules/VirtualShell";
-import type {VirtualUserManager} from "../src/modules/VirtualUserManager";
-import {HoneyPot} from "../src/modules/Honeypot";
+import type { VirtualShell } from "../src/modules/VirtualShell";
+import type { VirtualUserManager } from "../src/modules/VirtualUserManager";
+import { HoneyPot } from "../src/modules/Honeypot";
 
 function mockShell(): VirtualShell {
-	const ee = new EventEmitter() as EventEmitter & {pingIdle: () => void};
+	const ee = new EventEmitter() as EventEmitter & { pingIdle: () => void };
 	ee.pingIdle = () => {};
 	return ee as unknown as VirtualShell;
 }
@@ -52,8 +52,8 @@ describe("HoneyPot", () => {
 
 		hp.attach(shell, vfs, users);
 
-		shell.emit("command", {cmd: "ls -la"});
-		shell.emit("session:start", {sessionId: "s1"});
+		shell.emit("command", { cmd: "ls -la" });
+		shell.emit("session:start", { sessionId: "s1" });
 		shell.emit("shell:freeze");
 		shell.emit("shell:thaw");
 
@@ -69,7 +69,7 @@ describe("HoneyPot", () => {
 		hp.attach(shell, mockVfs(), mockUsers());
 
 		for (let i = 0; i < 5; i++) {
-			shell.emit("command", {cmd: `cmd-${i}`});
+			shell.emit("command", { cmd: `cmd-${i}` });
 		}
 
 		expect(hp.getStats().commands).toBe(5);
@@ -80,9 +80,9 @@ describe("HoneyPot", () => {
 		const vfs = mockVfs();
 		hp.attach(mockShell(), vfs, mockUsers());
 
-		vfs.emit("file:read", {path: "/etc/passwd"});
-		vfs.emit("file:write", {path: "/tmp/test"});
-		vfs.emit("file:read", {path: "/home/user/file"});
+		vfs.emit("file:read", { path: "/etc/passwd" });
+		vfs.emit("file:write", { path: "/tmp/test" });
+		vfs.emit("file:read", { path: "/home/user/file" });
 
 		const stats = hp.getStats();
 		expect(stats.fileReads).toBe(2);
@@ -94,8 +94,8 @@ describe("HoneyPot", () => {
 		const vfs = mockVfs();
 		hp.attach(mockShell(), vfs, mockUsers());
 
-		vfs.emit("mount", {target: "/mnt"});
-		vfs.emit("unmount", {target: "/mnt"});
+		vfs.emit("mount", { target: "/mnt" });
+		vfs.emit("unmount", { target: "/mnt" });
 
 		expect(hp.getStats().mounts).toBe(1);
 		expect(hp.getStats().unmounts).toBe(1);
@@ -106,8 +106,8 @@ describe("HoneyPot", () => {
 		const users = mockUsers();
 		hp.attach(mockShell(), mockVfs(), users);
 
-		users.emit("user:add", {username: "bob"});
-		users.emit("user:delete", {username: "alice"});
+		users.emit("user:add", { username: "bob" });
+		users.emit("user:delete", { username: "alice" });
 
 		const stats = hp.getStats();
 		expect(stats.userCreated).toBe(1);
@@ -119,8 +119,8 @@ describe("HoneyPot", () => {
 		const ssh = mockSsh();
 		hp.attach(mockShell(), mockVfs(), mockUsers(), ssh);
 
-		ssh.emit("auth:success", {user: "root"});
-		ssh.emit("auth:failure", {user: "attacker"});
+		ssh.emit("auth:success", { user: "root" });
+		ssh.emit("auth:failure", { user: "attacker" });
 
 		const stats = hp.getStats();
 		expect(stats.authAttempts).toBe(2);
@@ -133,7 +133,7 @@ describe("HoneyPot", () => {
 		const ssh = mockSsh();
 		hp.attach(mockShell(), mockVfs(), mockUsers(), ssh);
 
-		ssh.emit("auth:lockout", {user: "attacker"});
+		ssh.emit("auth:lockout", { user: "attacker" });
 		expect(hp.getStats().authLockouts).toBe(1);
 	});
 
@@ -143,7 +143,7 @@ describe("HoneyPot", () => {
 		hp.attach(mockShell(), mockVfs(), mockUsers(), ssh);
 
 		ssh.emit("client:connect");
-		ssh.emit("client:disconnect", {ip: "10.0.0.1"});
+		ssh.emit("client:disconnect", { ip: "10.0.0.1" });
 
 		const stats = hp.getStats();
 		expect(stats.clientConnects).toBe(1);
@@ -155,7 +155,7 @@ describe("HoneyPot", () => {
 		const sftp = mockSftp();
 		hp.attach(mockShell(), mockVfs(), mockUsers(), undefined, sftp);
 
-		sftp.emit("auth:success", {user: "root"});
+		sftp.emit("auth:success", { user: "root" });
 		sftp.emit("client:connect");
 
 		expect(hp.getStats().authSuccesses).toBe(1);
@@ -168,9 +168,9 @@ describe("HoneyPot", () => {
 		const users = mockUsers();
 		hp.attach(shell, mockVfs(), users);
 
-		shell.emit("session:start", {id: "s1"});
-		shell.emit("session:start", {id: "s2"});
-		users.emit("session:unregister", {id: "s1"});
+		shell.emit("session:start", { id: "s1" });
+		shell.emit("session:start", { id: "s2" });
+		users.emit("session:unregister", { id: "s1" });
 
 		expect(hp.getStats().sessionStarts).toBe(2);
 		expect(hp.getStats().sessionEnds).toBe(1);
@@ -181,8 +181,8 @@ describe("HoneyPot", () => {
 		const users = mockUsers();
 		hp.attach(mockShell(), mockVfs(), users);
 
-		users.emit("key:add", {key: "ssh-rsa AAAA..."});
-		users.emit("key:remove", {key: "ssh-rsa AAAA..."});
+		users.emit("key:add", { key: "ssh-rsa AAAA..." });
+		users.emit("key:remove", { key: "ssh-rsa AAAA..." });
 
 		expect(hp.getStats().keysAdded).toBe(1);
 		expect(hp.getStats().keysRemoved).toBe(1);
@@ -193,10 +193,10 @@ describe("HoneyPot", () => {
 		const vfs = mockVfs();
 		hp.attach(mockShell(), vfs, mockUsers());
 
-		vfs.emit("snapshot:restore", {name: "backup-1"});
-		vfs.emit("snapshot:import", {name: "backup-2"});
-		vfs.emit("symlink:create", {target: "/link", source: "/orig"});
-		vfs.emit("node:remove", {path: "/tmp/file"});
+		vfs.emit("snapshot:restore", { name: "backup-1" });
+		vfs.emit("snapshot:import", { name: "backup-2" });
+		vfs.emit("symlink:create", { target: "/link", source: "/orig" });
+		vfs.emit("node:remove", { path: "/tmp/file" });
 
 		const stats = hp.getStats();
 		expect(stats.snapshotsRestored).toBe(1);
@@ -210,9 +210,9 @@ describe("HoneyPot", () => {
 		const shell = mockShell();
 		hp.attach(shell, mockVfs(), mockUsers());
 
-		shell.emit("command", {cmd: "ls"});
-		shell.emit("session:start", {id: "s1"});
-		shell.emit("command", {cmd: "whoami"});
+		shell.emit("command", { cmd: "ls" });
+		shell.emit("session:start", { id: "s1" });
+		shell.emit("command", { cmd: "whoami" });
 
 		const commands = hp.getAuditLog("command");
 		expect(commands).toHaveLength(2);
@@ -223,7 +223,7 @@ describe("HoneyPot", () => {
 		const shell = mockShell();
 		hp.attach(shell, mockVfs(), mockUsers());
 
-		shell.emit("command", {cmd: "ls"});
+		shell.emit("command", { cmd: "ls" });
 
 		const shellLogs = hp.getAuditLog(undefined, "VirtualShell");
 		expect(shellLogs).toHaveLength(1);
@@ -235,7 +235,7 @@ describe("HoneyPot", () => {
 		hp.attach(shell, mockVfs(), mockUsers());
 
 		for (let i = 0; i < 10; i++) {
-			shell.emit("command", {cmd: `cmd-${i}`});
+			shell.emit("command", { cmd: `cmd-${i}` });
 		}
 
 		const recent = hp.getRecent(3);
@@ -247,7 +247,7 @@ describe("HoneyPot", () => {
 		const shell = mockShell();
 		hp.attach(shell, mockVfs(), mockUsers());
 
-		shell.emit("command", {cmd: "ls"});
+		shell.emit("command", { cmd: "ls" });
 		expect(hp.getAuditLog()).toHaveLength(1);
 
 		hp.reset();
@@ -260,9 +260,9 @@ describe("HoneyPot", () => {
 		const ssh = mockSsh();
 		hp.attach(mockShell(), mockVfs(), mockUsers(), ssh);
 
-		ssh.emit("auth:failure", {user: "x"});
-		ssh.emit("auth:failure", {user: "x"});
-		ssh.emit("auth:failure", {user: "x"});
+		ssh.emit("auth:failure", { user: "x" });
+		ssh.emit("auth:failure", { user: "x" });
+		ssh.emit("auth:failure", { user: "x" });
 
 		const anomalies = hp.detectAnomalies();
 		expect(anomalies.some((a) => a.type === "excessive_auth_failures")).toBe(
@@ -270,7 +270,7 @@ describe("HoneyPot", () => {
 		);
 
 		for (let i = 0; i < 12; i++) {
-			ssh.emit("auth:failure", {user: "x"});
+			ssh.emit("auth:failure", { user: "x" });
 		}
 
 		const anomalies2 = hp.detectAnomalies();
@@ -285,7 +285,7 @@ describe("HoneyPot", () => {
 		hp.attach(shell, mockVfs(), mockUsers());
 
 		for (let i = 0; i < 1001; i++) {
-			shell.emit("command", {cmd: "ls"});
+			shell.emit("command", { cmd: "ls" });
 		}
 
 		const anomalies = hp.detectAnomalies();
@@ -298,7 +298,7 @@ describe("HoneyPot", () => {
 		hp.attach(shell, mockVfs(), mockUsers());
 
 		for (let i = 0; i < 10; i++) {
-			shell.emit("command", {cmd: `cmd-${i}`});
+			shell.emit("command", { cmd: `cmd-${i}` });
 		}
 
 		expect(hp.getAuditLog()).toHaveLength(5);
@@ -321,7 +321,7 @@ describe("HoneyPot", () => {
 		const ssh = mockSsh();
 		hp.attach(mockShell(), mockVfs(), mockUsers(), ssh);
 
-		ssh.emit("start", {port: 2222});
+		ssh.emit("start", { port: 2222 });
 		ssh.emit("stop");
 
 		const log = hp.getAuditLog();
@@ -335,7 +335,7 @@ describe("HoneyPot", () => {
 		const users = mockUsers();
 		hp.attach(mockShell(), mockVfs(), users);
 
-		users.emit("session:register", {id: "s1", user: "root"});
+		users.emit("session:register", { id: "s1", user: "root" });
 
 		const log = hp.getAuditLog();
 		expect(log).toHaveLength(1);

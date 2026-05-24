@@ -1,6 +1,6 @@
-import {describe, expect, test} from "bun:test";
-import {VirtualShell} from "../src";
-import {executePipeline} from "../src/modules/SSHMimic/executor";
+import { describe, expect, test } from "bun:test";
+import { VirtualShell } from "../src";
+import { executePipeline } from "../src/modules/SSHMimic/executor";
 import {
 	consumeHeredocs,
 	parseScript,

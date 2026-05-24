@@ -1,12 +1,12 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 export const routeCommand: ShellModule = {
 	name: "route",
 	description: "Display or modify the routing table",
 	category: "network",
 	params: ["[-n] [add|del]"],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout: [
@@ -42,7 +42,7 @@ export const routeCommand: ShellModule = {
 				);
 			}
 
-			return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
+			return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 		}
 
 		const cmd = positionals[0]!;
@@ -57,17 +57,17 @@ export const routeCommand: ShellModule = {
 			const device = "eth0";
 
 			if (!target) {
-				return {stderr: "route: missing target", exitCode: 1};
+				return { stderr: "route: missing target", exitCode: 1 };
 			}
 
 			if (cmd === "add") {
 				net.addRoute(target, gw!, netmask, device);
-				return {stdout: "", exitCode: 0};
+				return { stdout: "", exitCode: 0 };
 			}
 			net.delRoute(target);
-			return {stdout: "", exitCode: 0};
+			return { stdout: "", exitCode: 0 };
 		}
 
-		return {stderr: `route: unknown command '${cmd}'`, exitCode: 1};
+		return { stderr: `route: unknown command '${cmd}'`, exitCode: 1 };
 	},
 };

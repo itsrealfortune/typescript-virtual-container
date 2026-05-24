@@ -18,8 +18,8 @@
  * nano.handleInput(Buffer.from("a")); // type 'a'
  * ```
  */
-import type {ShellStream} from "../types/streams";
-import type {TerminalSize} from "./shellRuntime";
+import type { ShellStream } from "../types/streams";
+import type { TerminalSize } from "./shellRuntime";
 
 // ── ANSI helpers ─────────────────────────────────────────────────────────────
 
@@ -905,7 +905,7 @@ export class NanoEditor {
 			this._enterSearch();
 			return;
 		}
-		const {query, caseSensitive} = this._searchState;
+		const { query, caseSensitive } = this._searchState;
 		const q = caseSensitive ? query : query.toLowerCase();
 
 		let startRow = this._searchState.row;

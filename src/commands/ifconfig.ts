@@ -1,4 +1,4 @@
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 /**
  * Configure network interface parameters (legacy command, use 'ip' instead).
@@ -13,7 +13,7 @@ export const ifconfigCommand: ShellModule = {
 	params: [
 		"[interface] [up|down] [inet <address>] [netmask <mask>] [mtu <size>]",
 	],
-	run: ({args, shell}) => {
+	run: ({ args, shell }) => {
 		const net = shell.network;
 		const ifaceName = args.find(
 			(a) =>
@@ -38,12 +38,12 @@ export const ifconfigCommand: ShellModule = {
 
 			if (args.includes("up")) {
 				net.setInterfaceState(ifaceName, "UP");
-				return {exitCode: 0};
+				return { exitCode: 0 };
 			}
 
 			if (args.includes("down")) {
 				net.setInterfaceState(ifaceName, "DOWN");
-				return {exitCode: 0};
+				return { exitCode: 0 };
 			}
 
 			const inetIdx = args.indexOf("inet");
@@ -57,7 +57,7 @@ export const ifconfigCommand: ShellModule = {
 				if (addr) {
 					net.setInterfaceIp(ifaceName, addr, mask);
 				}
-				return {exitCode: 0};
+				return { exitCode: 0 };
 			}
 
 			const mtuIdx = args.indexOf("mtu");
@@ -66,7 +66,7 @@ export const ifconfigCommand: ShellModule = {
 				if (!Number.isNaN(mtu)) {
 					net.setInterfaceMtu(ifaceName, mtu);
 				}
-				return {exitCode: 0};
+				return { exitCode: 0 };
 			}
 
 			return _showInterface(iface);
@@ -78,7 +78,7 @@ export const ifconfigCommand: ShellModule = {
 
 function _showAllInterfaces(
 	net: import("../modules/VirtualNetworkManager").VirtualNetworkManager
-): {stdout: string; exitCode: number} {
+): { stdout: string; exitCode: number } {
 	const ifaces = net.getInterfaces();
 	const lines: string[] = [];
 
@@ -87,13 +87,13 @@ function _showAllInterfaces(
 		lines.push("");
 	}
 
-	return {stdout: lines.join("\n"), exitCode: 0};
+	return { stdout: lines.join("\n"), exitCode: 0 };
 }
 
 function _showInterface(
 	iface: import("../modules/VirtualNetworkManager/types").VirtualInterface
-): {stdout: string; exitCode: number} {
-	return {stdout: `${_formatInterface(iface)}\n`, exitCode: 0};
+): { stdout: string; exitCode: number } {
+	return { stdout: `${_formatInterface(iface)}\n`, exitCode: 0 };
 }
 
 function _formatInterface(

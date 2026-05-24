@@ -7,7 +7,7 @@ import type {
 	Statement,
 	Subshell,
 } from "../../types/pipeline";
-import {tokenizeCommand} from "../../utils/tokenize";
+import { tokenizeCommand } from "../../utils/tokenize";
 
 // ── Heredoc pre-processing ───────────────────────────────────────────────────
 
@@ -106,15 +106,15 @@ export function consumeHeredocs(input: string): string {
 export function parseScript(rawInput: string): Script {
 	const trimmed = rawInput.trim();
 	if (!trimmed) {
-		return {statements: [], isValid: true};
+		return { statements: [], isValid: true };
 	}
 
 	try {
 		const processed = consumeHeredocs(trimmed);
 		const statements = parseStatements(processed);
-		return {statements, isValid: true};
+		return { statements, isValid: true };
 	} catch (e) {
-		return {statements: [], isValid: false, error: (e as Error).message};
+		return { statements: [], isValid: false, error: (e as Error).message };
 	}
 }
 
@@ -129,13 +129,13 @@ export function parseScript(rawInput: string): Script {
 export function parseShellPipeline(rawInput: string): Pipeline {
 	const trimmed = rawInput.trim();
 	if (!trimmed) {
-		return {commands: [], isValid: true};
+		return { commands: [], isValid: true };
 	}
 	try {
 		const pipeline = parsePipeline(trimmed);
 		return pipeline;
 	} catch (e) {
-		return {commands: [], isValid: false, error: (e as Error).message};
+		return { commands: [], isValid: false, error: (e as Error).message };
 	}
 }
 
@@ -157,7 +157,7 @@ function parseStatements(input: string): Statement[] {
 
 		if (text.startsWith("(") && text.endsWith(")")) {
 			const inner = text.slice(1, -1).trim();
-			stmt.subshell = {statements: parseStatements(inner)} satisfies Subshell;
+			stmt.subshell = { statements: parseStatements(inner) } satisfies Subshell;
 		} else if (text.startsWith("{") && text.endsWith("}")) {
 			const inner = text.slice(1, -1).trim();
 			stmt.group = {
@@ -190,7 +190,7 @@ function splitByLogicalOps(input: string): Segment[] {
 
 	const flush = (op?: LogicalOp, background?: boolean) => {
 		if (current.trim()) {
-			segments.push({text: current, op, background});
+			segments.push({ text: current, op, background });
 		}
 		current = "";
 	};
@@ -292,7 +292,7 @@ function parsePipeline(input: string): Pipeline {
 	};
 }
 
-function splitByPipe(input: string): string[] & {rawPipeStderr?: boolean} {
+function splitByPipe(input: string): string[] & { rawPipeStderr?: boolean } {
 	const tokens: string[] = [];
 	let current = "";
 	let inQ = false;
@@ -346,15 +346,15 @@ function splitByPipe(input: string): string[] & {rawPipeStderr?: boolean} {
 	if (tail) {
 		tokens.push(tail);
 	}
-	(tokens as string[] & {rawPipeStderr?: boolean}).rawPipeStderr =
+	(tokens as string[] & { rawPipeStderr?: boolean }).rawPipeStderr =
 		hasPipeStderr;
-	return tokens as string[] & {rawPipeStderr?: boolean};
+	return tokens as string[] & { rawPipeStderr?: boolean };
 }
 
 function parseCommandWithRedirections(token: string): PipelineCommand {
 	const parts = tokenizeCommand(token);
 	if (parts.length === 0) {
-		return {name: "", args: []};
+		return { name: "", args: [] };
 	}
 
 	const cmdParts: string[] = [];

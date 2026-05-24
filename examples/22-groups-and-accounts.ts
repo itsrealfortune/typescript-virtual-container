@@ -5,7 +5,7 @@
  * unlocking, and account expiry policies.
  */
 
-import {VirtualShell} from "../src";
+import { VirtualShell } from "../src";
 
 const shell = new VirtualShell("accounts-demo");
 await shell.ensureInitialized();

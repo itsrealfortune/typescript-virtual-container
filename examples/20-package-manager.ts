@@ -5,7 +5,7 @@
  * list available/installed packages, and inspect individual packages.
  */
 
-import {VirtualPackageManager, VirtualShell, VirtualSshServer} from "../src";
+import { VirtualPackageManager, VirtualShell, VirtualSshServer } from "../src";
 
 const shell = new VirtualShell("package-manager-demo");
 await shell.ensureInitialized();
@@ -64,7 +64,7 @@ if (def) {
 
 // ── SSH server integration ────────────────────────────────────────
 console.log("\n--- SSH server with package access ---");
-const ssh = new VirtualSshServer({port: 0, shell});
+const ssh = new VirtualSshServer({ port: 0, shell });
 const sshPort = await ssh.start();
 console.log(`SSH server on port ${sshPort}`);
 ssh.stop();

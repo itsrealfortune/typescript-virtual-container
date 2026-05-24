@@ -1,4 +1,4 @@
-import {afterEach, beforeEach, describe, expect, test} from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import * as fsSync from "node:fs";
 import * as path from "node:path";
 import VirtualFileSystem from "../src/modules/VirtualFileSystem";
@@ -7,7 +7,7 @@ const TEST_DIR = path.join(process.cwd(), ".test-swap");
 
 function cleanup() {
 	try {
-		fsSync.rmSync(TEST_DIR, {recursive: true, force: true});
+		fsSync.rmSync(TEST_DIR, { recursive: true, force: true });
 	} catch {
 		/* ignore */
 	}
@@ -15,7 +15,7 @@ function cleanup() {
 
 function makeVfs(swapEnabled = false) {
 	cleanup();
-	fsSync.mkdirSync(TEST_DIR, {recursive: true});
+	fsSync.mkdirSync(TEST_DIR, { recursive: true });
 	return new VirtualFileSystem({
 		mode: "fs",
 		snapshotPath: TEST_DIR,
@@ -61,7 +61,7 @@ describe("SwapStore basic operations", () => {
 		// File should be marked as evicted
 		const stat = vfs.stat("/test.txt");
 		expect(stat.type).toBe("file");
-		expect((stat as {size: number}).size).toBe(1000);
+		expect((stat as { size: number }).size).toBe(1000);
 	});
 
 	test("reading an evicted file reloads from swap", () => {

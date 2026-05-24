@@ -1,4 +1,4 @@
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 /**
  * Change user password expiry information.
@@ -12,9 +12,9 @@ export const chageCommand: ShellModule = {
 	params: [
 		"[-m min_days|-M max_days|-W warn_days|-I inactive_days|-E expire_date|-l] <user>",
 	],
-	run: async ({authUser, shell, args}) => {
+	run: async ({ authUser, shell, args }) => {
 		if (authUser !== "root") {
-			return {stderr: "chage: permission denied\n", exitCode: 1};
+			return { stderr: "chage: permission denied\n", exitCode: 1 };
 		}
 
 		let minDays: number | undefined;
@@ -38,7 +38,7 @@ export const chageCommand: ShellModule = {
 				}
 				minDays = Number.parseInt(val, 10);
 				if (Number.isNaN(minDays)) {
-					return {stderr: `chage: invalid number '${val}'\n`, exitCode: 1};
+					return { stderr: `chage: invalid number '${val}'\n`, exitCode: 1 };
 				}
 				i++;
 			} else if (arg === "-M") {
@@ -48,7 +48,7 @@ export const chageCommand: ShellModule = {
 				}
 				maxDays = Number.parseInt(val, 10);
 				if (Number.isNaN(maxDays)) {
-					return {stderr: `chage: invalid number '${val}'\n`, exitCode: 1};
+					return { stderr: `chage: invalid number '${val}'\n`, exitCode: 1 };
 				}
 				i++;
 			} else if (arg === "-W") {
@@ -58,7 +58,7 @@ export const chageCommand: ShellModule = {
 				}
 				warnDays = Number.parseInt(val, 10);
 				if (Number.isNaN(warnDays)) {
-					return {stderr: `chage: invalid number '${val}'\n`, exitCode: 1};
+					return { stderr: `chage: invalid number '${val}'\n`, exitCode: 1 };
 				}
 				i++;
 			} else if (arg === "-I") {
@@ -68,7 +68,7 @@ export const chageCommand: ShellModule = {
 				}
 				inactiveDays = Number.parseInt(val, 10);
 				if (Number.isNaN(inactiveDays)) {
-					return {stderr: `chage: invalid number '${val}'\n`, exitCode: 1};
+					return { stderr: `chage: invalid number '${val}'\n`, exitCode: 1 };
 				}
 				i++;
 			} else if (arg === "-E") {
@@ -81,7 +81,7 @@ export const chageCommand: ShellModule = {
 				} else {
 					expiryDate = Math.floor(new Date(val).getTime() / 86400000);
 					if (Number.isNaN(expiryDate)) {
-						return {stderr: `chage: invalid date '${val}'\n`, exitCode: 1};
+						return { stderr: `chage: invalid date '${val}'\n`, exitCode: 1 };
 					}
 				}
 				i++;
@@ -111,7 +111,7 @@ export const chageCommand: ShellModule = {
 		if (list) {
 			const aging = shell.users.getPasswordAging(username);
 			if (!aging) {
-				return {stderr: `chage: user '${username}' not found\n`, exitCode: 1};
+				return { stderr: `chage: user '${username}' not found\n`, exitCode: 1 };
 			}
 
 			const formatDate = (days: number): string => {
@@ -164,7 +164,7 @@ export const chageCommand: ShellModule = {
 			};
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
-			return {stderr: `${msg}\n`, exitCode: 1};
+			return { stderr: `${msg}\n`, exitCode: 1 };
 		}
 	},
 };

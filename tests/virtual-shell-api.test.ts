@@ -1,10 +1,10 @@
-import {beforeAll, describe, expect, test} from "bun:test";
-import {VirtualShell} from "../src";
+import { beforeAll, describe, expect, test } from "bun:test";
+import { VirtualShell } from "../src";
 
 let shell: VirtualShell;
 
 beforeAll(async () => {
-	shell = new VirtualShell("api-test", undefined, {mode: "memory"});
+	shell = new VirtualShell("api-test", undefined, { mode: "memory" });
 	await shell.ensureInitialized();
 });
 
@@ -20,9 +20,9 @@ describe("VirtualShell API", () => {
 	});
 
 	test("addCommand rejects invalid name", () => {
-		expect(() => shell.addCommand("", [], () => ({exitCode: 0}))).toThrow();
+		expect(() => shell.addCommand("", [], () => ({ exitCode: 0 }))).toThrow();
 		expect(() =>
-			shell.addCommand("has space", [], () => ({exitCode: 0}))
+			shell.addCommand("has space", [], () => ({ exitCode: 0 }))
 		).toThrow();
 	});
 
@@ -34,7 +34,7 @@ describe("VirtualShell API", () => {
 
 	test("mount and unmount", () => {
 		const vPath = "/mnt/test";
-		shell.mount(vPath, "/tmp", {readOnly: true});
+		shell.mount(vPath, "/tmp", { readOnly: true });
 		const mounts = shell.getMounts();
 		expect(mounts.some((m) => m.vPath === vPath)).toBe(true);
 		shell.unmount(vPath);

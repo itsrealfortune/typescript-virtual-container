@@ -1,6 +1,6 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag, parseArgs} from "./command-helpers";
-import {assertPathAccess, resolvePath} from "./helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag, parseArgs } from "./command-helpers";
+import { assertPathAccess, resolvePath } from "./helpers";
 import {
 	checkOutboundRestriction,
 	honeypotResponse,
@@ -16,8 +16,8 @@ export const curlCommand: ShellModule = {
 	description: "Transfer data from or to a server (pure fetch)",
 	category: "network",
 	params: ["[options] <url>"],
-	run: async ({authUser, cwd, args, shell, uid, gid}) => {
-		const {flagsWithValues, positionals} = parseArgs(args, {
+	run: async ({ authUser, cwd, args, shell, uid, gid }) => {
+		const { flagsWithValues, positionals } = parseArgs(args, {
 			flagsWithValue: [
 				"-o",
 				"--output",
@@ -51,7 +51,7 @@ export const curlCommand: ShellModule = {
 
 		const url = positionals.find((a) => !a.startsWith("-"));
 		if (!url) {
-			return {stderr: "curl: no URL specified", exitCode: 1};
+			return { stderr: "curl: no URL specified", exitCode: 1 };
 		}
 
 		const outputPath =
@@ -159,14 +159,14 @@ export const curlCommand: ShellModule = {
 			for (const [k, v] of response.headers.entries()) {
 				lines.push(`${k}: ${v}`);
 			}
-			return {stdout: `${lines.join("\r\n")}\r\n`, exitCode: 0};
+			return { stdout: `${lines.join("\r\n")}\r\n`, exitCode: 0 };
 		}
 
 		let body: string;
 		try {
 			body = await response.text();
 		} catch {
-			return {stderr: "curl: failed to read response body", exitCode: 1};
+			return { stderr: "curl: failed to read response body", exitCode: 1 };
 		}
 
 		if (outputPath) {

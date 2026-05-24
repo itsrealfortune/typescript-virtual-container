@@ -3,8 +3,8 @@
  * Gated behind `apt install npm`. Provides version info and informative
  * stubs for common subcommands.
  */
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 const NPM_VERSION = "9.2.0";
 const NODE_VERSION = "18.19.0";
@@ -19,7 +19,7 @@ export const npmCommand: ShellModule = {
 	description: "Node.js package manager (virtual)",
 	category: "system",
 	params: ["<command> [args]"],
-	run: ({args, shell}) => {
+	run: ({ args, shell }) => {
 		// Require explicit installation
 		if (!shell.packageManager.isInstalled("npm")) {
 			return {
@@ -30,7 +30,7 @@ export const npmCommand: ShellModule = {
 		}
 
 		if (ifFlag(args, ["--version", "-v"])) {
-			return {stdout: `${NPM_VERSION}\n`, exitCode: 0};
+			return { stdout: `${NPM_VERSION}\n`, exitCode: 0 };
 		}
 
 		const sub = args[0]?.toLowerCase();
@@ -112,7 +112,7 @@ export const npxCommand: ShellModule = {
 	description: "Node.js package runner (virtual)",
 	category: "system",
 	params: ["<package> [args]"],
-	run: ({args, shell}) => {
+	run: ({ args, shell }) => {
 		if (!shell.packageManager.isInstalled("npm")) {
 			return {
 				stderr:
@@ -122,7 +122,7 @@ export const npxCommand: ShellModule = {
 		}
 
 		if (ifFlag(args, ["--version"])) {
-			return {stdout: `${NPM_VERSION}\n`, exitCode: 0};
+			return { stdout: `${NPM_VERSION}\n`, exitCode: 0 };
 		}
 
 		return {

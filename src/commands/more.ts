@@ -1,5 +1,5 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 const PAGE_SIZE = 24;
 
@@ -8,7 +8,7 @@ export const moreCommand: ShellModule = {
 	description: "View file content page by page",
 	category: "files",
 	params: ["[options] [file...]"],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout: [
@@ -31,15 +31,15 @@ export const moreCommand: ShellModule = {
 				if (buf) {
 					input = buf.toString();
 				}
-				return {stdout: `${input}\n`, exitCode: 0};
+				return { stdout: `${input}\n`, exitCode: 0 };
 			}
-			return {stderr: "more: missing file operand", exitCode: 1};
+			return { stderr: "more: missing file operand", exitCode: 1 };
 		}
 
 		const parts: string[] = [];
 		for (const file of files) {
 			if (!shell.vfs.exists(file)) {
-				return {stderr: `more: ${file}: No such file`, exitCode: 1};
+				return { stderr: `more: ${file}: No such file`, exitCode: 1 };
 			}
 			const content = shell.vfs.readFile(file);
 			parts.push(content);
@@ -49,7 +49,7 @@ export const moreCommand: ShellModule = {
 		const allLines = text.split("\n");
 
 		if (allLines.length <= PAGE_SIZE) {
-			return {stdout: `${text}\n`, exitCode: 0};
+			return { stdout: `${text}\n`, exitCode: 0 };
 		}
 
 		const result: string[] = [];
@@ -65,6 +65,6 @@ export const moreCommand: ShellModule = {
 			}
 		}
 
-		return {stdout: `${result.join("\n")}\n`, exitCode: 0};
+		return { stdout: `${result.join("\n")}\n`, exitCode: 0 };
 	},
 };

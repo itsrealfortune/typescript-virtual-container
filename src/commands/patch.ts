@@ -1,12 +1,12 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 export const patchCommand: ShellModule = {
 	name: "patch",
 	description: "Apply a diff file to an original",
 	category: "files",
 	params: ["[options] [file]"],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout:
@@ -20,7 +20,7 @@ export const patchCommand: ShellModule = {
 		if (iIdx !== -1 && iIdx + 1 < args.length) {
 			const patchFile = args[iIdx + 1]!;
 			if (!shell.vfs.exists(patchFile)) {
-				return {stderr: `patch: ${patchFile}: No such file`, exitCode: 1};
+				return { stderr: `patch: ${patchFile}: No such file`, exitCode: 1 };
 			}
 			patchContent = shell.vfs.readFile(patchFile);
 		} else {
@@ -29,21 +29,21 @@ export const patchCommand: ShellModule = {
 			);
 			if (fileArg) {
 				if (!shell.vfs.exists(fileArg)) {
-					return {stderr: `patch: ${fileArg}: No such file`, exitCode: 1};
+					return { stderr: `patch: ${fileArg}: No such file`, exitCode: 1 };
 				}
 				patchContent = shell.vfs.readFile(fileArg);
 			} else {
-				return {stderr: "patch: missing patch file", exitCode: 1};
+				return { stderr: "patch: missing patch file", exitCode: 1 };
 			}
 		}
 
 		const reverse = ifFlag(args, ["-R"]);
 		const applied = applyPatch(shell, patchContent, reverse);
 		if (applied.count === 0) {
-			return {stdout: "patch: no changes applied\n", exitCode: 0};
+			return { stdout: "patch: no changes applied\n", exitCode: 0 };
 		}
 
-		return {stdout: `patch: ${applied.count} hunk(s) applied\n`, exitCode: 0};
+		return { stdout: `patch: ${applied.count} hunk(s) applied\n`, exitCode: 0 };
 	},
 };
 
@@ -57,7 +57,7 @@ function applyPatch(
 	},
 	patchContent: string,
 	reverse: boolean
-): {count: number} {
+): { count: number } {
 	const lines = patchContent.split("\n");
 	let count = 0;
 	let targetFile = "";
@@ -114,7 +114,7 @@ function applyPatch(
 		count++;
 	}
 
-	return {count};
+	return { count };
 }
 
 function applyHunk(

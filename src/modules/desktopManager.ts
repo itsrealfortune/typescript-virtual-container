@@ -18,17 +18,17 @@
  *  - DesktopWindow      — interface representing a single window
  *  - WindowContent      — union type for window content variants
  */
-import type {VirtualShell} from "../modules/VirtualShell";
-import type {ShellStream} from "../types/streams";
-import {keyToBytes} from "../utils/keyToBytes";
-import {clearSession, loadSession, saveSession} from "./sessionManager";
-import {ThunarManager} from "./thunarManager";
-import {WebTermRenderer} from "./webTermRenderer";
+import type { VirtualShell } from "../modules/VirtualShell";
+import type { ShellStream } from "../types/streams";
+import { keyToBytes } from "../utils/keyToBytes";
+import { clearSession, loadSession, saveSession } from "./sessionManager";
+import { ThunarManager } from "./thunarManager";
+import { WebTermRenderer } from "./webTermRenderer";
 
 function toChunk(bytes: Uint8Array): Buffer {
 	const g = globalThis as unknown as Record<
 		string,
-		{from: (d: Uint8Array) => Buffer} | undefined
+		{ from: (d: Uint8Array) => Buffer } | undefined
 	>;
 	return g.Buffer?.from(bytes) ?? (bytes as unknown as Buffer);
 }
@@ -79,7 +79,7 @@ export interface DesktopWindow {
 	height: number;
 	minimized: boolean;
 	maximized: boolean;
-	savedRect: {x: number; y: number; width: number; height: number} | null;
+	savedRect: { x: number; y: number; width: number; height: number } | null;
 	focused: boolean;
 	zIndex: number;
 	content: WindowContent;
@@ -152,7 +152,7 @@ export class DesktopManager {
 		fn: EventListener;
 	}> = [];
 	/** Global document listeners that must be cleaned up on stop(). */
-	private _globalDocListeners: Array<{type: string; fn: EventListener}> = [];
+	private _globalDocListeners: Array<{ type: string; fn: EventListener }> = [];
 	private _pendingTimeouts: Set<ReturnType<typeof setTimeout>> = new Set();
 	private _thunar: ThunarManager;
 
@@ -251,7 +251,7 @@ export class DesktopManager {
 		if (!saved || saved.length === 0) {
 			return;
 		}
-		const created: Array<{saved: (typeof saved)[number]; id: string}> = [];
+		const created: Array<{ saved: (typeof saved)[number]; id: string }> = [];
 		for (const sw of saved) {
 			let id: string;
 			switch (sw.contentType) {
@@ -270,9 +270,9 @@ export class DesktopManager {
 				default:
 					continue;
 			}
-			created.push({saved: sw, id});
+			created.push({ saved: sw, id });
 		}
-		for (const {saved: sw, id} of created) {
+		for (const { saved: sw, id } of created) {
 			const w = this._windows.find((ww) => ww.id === id);
 			if (!w) {
 				continue;
@@ -303,7 +303,7 @@ export class DesktopManager {
 	} | null {
 		for (const w of this._windows) {
 			if (w.content.type === "terminal" && w.focused && !w.minimized) {
-				const {stream, preEl} = w.content;
+				const { stream, preEl } = w.content;
 				if (stream === undefined || preEl === undefined) {
 					continue;
 				}
@@ -454,7 +454,7 @@ export class DesktopManager {
 			title: `Thunar: ${path}`,
 			width: 600,
 			height: 400,
-			content: {type: "thunar", path},
+			content: { type: "thunar", path },
 		});
 	}
 
@@ -468,7 +468,7 @@ export class DesktopManager {
 			title: `Mousepad — ${path.split("/").pop()}`,
 			width: 640,
 			height: 480,
-			content: {type: "editor", path, dirty: false},
+			content: { type: "editor", path, dirty: false },
 		});
 		// Attach save/input listeners via event delegation (handled in setupEventDelegation)
 		return id;
@@ -483,7 +483,7 @@ export class DesktopManager {
 			title: "About Fortune GNU/Linux",
 			width: 400,
 			height: 280,
-			content: {type: "about"},
+			content: { type: "about" },
 		});
 	}
 
@@ -496,7 +496,7 @@ export class DesktopManager {
 			title: "Task Manager",
 			width: 640,
 			height: 420,
-			content: {type: "taskmanager"},
+			content: { type: "taskmanager" },
 		});
 		const w = this._windows.find((ww) => ww.id === id);
 		if (w && w.content.type === "taskmanager") {
@@ -576,7 +576,7 @@ export class DesktopManager {
 		if (w.maximized) {
 			DesktopManager._unmaximize(w);
 		} else {
-			w.savedRect = {x: w.x, y: w.y, width: w.width, height: w.height};
+			w.savedRect = { x: w.x, y: w.y, width: w.width, height: w.height };
 			const panelEl = this._container.querySelector(
 				"#desktop-panel"
 			) as HTMLElement | null;
@@ -710,15 +710,15 @@ export class DesktopManager {
 		fn: EventListener
 	): void {
 		target.addEventListener(type, fn);
-		this._docListeners.push({target, type, fn});
+		this._docListeners.push({ target, type, fn });
 	}
 
 	private _removeAllDocListeners(): void {
-		for (const {target, type, fn} of this._docListeners) {
+		for (const { target, type, fn } of this._docListeners) {
 			target.removeEventListener(type, fn);
 		}
 		this._docListeners = [];
-		for (const {type, fn} of this._globalDocListeners) {
+		for (const { type, fn } of this._globalDocListeners) {
 			document.removeEventListener(type, fn);
 		}
 		this._globalDocListeners = [];
@@ -1005,14 +1005,14 @@ export class DesktopManager {
 			this._renderWindowPositions();
 		};
 		document.addEventListener("mousemove", mouseMoveFn);
-		this._globalDocListeners.push({type: "mousemove", fn: mouseMoveFn});
+		this._globalDocListeners.push({ type: "mousemove", fn: mouseMoveFn });
 
 		const mouseUpFn = () => {
 			this._dragState = null;
 			this._resizeState = null;
 		};
 		document.addEventListener("mouseup", mouseUpFn);
-		this._globalDocListeners.push({type: "mouseup", fn: mouseUpFn});
+		this._globalDocListeners.push({ type: "mouseup", fn: mouseUpFn });
 
 		// Double-click title bar → toggle maximize
 		this._container.addEventListener("dblclick", (e) => {

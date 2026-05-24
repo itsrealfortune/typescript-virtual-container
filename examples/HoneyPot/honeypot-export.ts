@@ -46,7 +46,7 @@ async function generateAuditReport() {
 
 	// Setup
 	const shell = new VirtualShell("audit-lab");
-	const ssh = new VirtualSshServer({port: 2222, shell});
+	const ssh = new VirtualSshServer({ port: 2222, shell });
 	await ssh.start();
 
 	const users = shell.getUsers()!;

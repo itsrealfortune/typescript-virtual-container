@@ -1,7 +1,7 @@
-import type {ShellModule} from "../types/commands";
-import {globToRegex} from "../utils/glob";
-import {assertPathAccess, resolvePath} from "./helpers";
-import {runCommand} from "./runtime";
+import type { ShellModule } from "../types/commands";
+import { globToRegex } from "../utils/glob";
+import { assertPathAccess, resolvePath } from "./helpers";
+import { runCommand } from "./runtime";
 
 /**
  * Find files and directories with filtering, -exec, -maxdepth, -not, -o, -a.
@@ -13,7 +13,7 @@ export const findCommand: ShellModule = {
 	description: "Search for files",
 	category: "files",
 	params: ["[path] [expression...]"],
-	run: async ({authUser, shell, cwd, args, env, hostname, mode}) => {
+	run: async ({ authUser, shell, cwd, args, env, hostname, mode }) => {
 		// Collect root paths (positional args before first - option)
 		const roots: string[] = [];
 		let i = 0;
@@ -33,23 +33,23 @@ export const findCommand: ShellModule = {
 
 		// Parse expression tokens into a predicate tree
 		type Pred =
-			| {type: "name"; pat: string; ignoreCase: boolean}
-			| {type: "type"; t: string}
-			| {type: "maxdepth"; n: number}
-			| {type: "mindepth"; n: number}
-			| {type: "size"; n: number; unit: string}
-			| {type: "empty"}
-			| {type: "print"}
-			| {type: "not"; pred: Pred}
-			| {type: "and"; left: Pred; right: Pred}
-			| {type: "or"; left: Pred; right: Pred}
-			| {type: "exec"; cmd: string[]; useDir: boolean}
-			| {type: "true"}
-			| {type: "false"};
+			| { type: "name"; pat: string; ignoreCase: boolean }
+			| { type: "type"; t: string }
+			| { type: "maxdepth"; n: number }
+			| { type: "mindepth"; n: number }
+			| { type: "size"; n: number; unit: string }
+			| { type: "empty" }
+			| { type: "print" }
+			| { type: "not"; pred: Pred }
+			| { type: "and"; left: Pred; right: Pred }
+			| { type: "or"; left: Pred; right: Pred }
+			| { type: "exec"; cmd: string[]; useDir: boolean }
+			| { type: "true" }
+			| { type: "false" };
 
 		let maxDepth = Number.POSITIVE_INFINITY;
 		let minDepth = 0;
-		const execCmds: Array<{cmd: string[]; useDir: boolean}> = [];
+		const execCmds: Array<{ cmd: string[]; useDir: boolean }> = [];
 
 		function parseExpr(tokens: string[], pos: number): [Pred, number] {
 			return parseOr(tokens, pos);
@@ -60,7 +60,7 @@ export const findCommand: ShellModule = {
 			while (tokens[p] === "-o" || tokens[p] === "-or") {
 				p++;
 				const [right, np] = parseAnd(tokens, p);
-				left = {type: "or", left, right};
+				left = { type: "or", left, right };
 				p = np;
 			}
 			return [left, p];
@@ -81,7 +81,7 @@ export const findCommand: ShellModule = {
 					break;
 				}
 				const [right, np] = parseNot(tokens, p);
-				left = {type: "and", left, right};
+				left = { type: "and", left, right };
 				p = np;
 			}
 			return [left, p];
@@ -90,7 +90,7 @@ export const findCommand: ShellModule = {
 		function parseNot(tokens: string[], pos: number): [Pred, number] {
 			if (tokens[pos] === "!" || tokens[pos] === "-not") {
 				const [pred, np] = parsePrimary(tokens, pos + 1);
-				return [{type: "not", pred}, np];
+				return [{ type: "not", pred }, np];
 			}
 			return parsePrimary(tokens, pos);
 		}
@@ -98,7 +98,7 @@ export const findCommand: ShellModule = {
 		function parsePrimary(tokens: string[], pos: number): [Pred, number] {
 			const tok = tokens[pos];
 			if (!tok) {
-				return [{type: "true"}, pos];
+				return [{ type: "true" }, pos];
 			}
 
 			if (tok === "(") {
@@ -108,44 +108,44 @@ export const findCommand: ShellModule = {
 			}
 			if (tok === "-name") {
 				return [
-					{type: "name", pat: tokens[pos + 1] ?? "*", ignoreCase: false},
+					{ type: "name", pat: tokens[pos + 1] ?? "*", ignoreCase: false },
 					pos + 2,
 				];
 			}
 			if (tok === "-iname") {
 				return [
-					{type: "name", pat: tokens[pos + 1] ?? "*", ignoreCase: true},
+					{ type: "name", pat: tokens[pos + 1] ?? "*", ignoreCase: true },
 					pos + 2,
 				];
 			}
 			if (tok === "-type") {
-				return [{type: "type", t: tokens[pos + 1] ?? "f"}, pos + 2];
+				return [{ type: "type", t: tokens[pos + 1] ?? "f" }, pos + 2];
 			}
 			if (tok === "-maxdepth") {
 				maxDepth = Number.parseInt(tokens[pos + 1] ?? "0", 10);
-				return [{type: "true"}, pos + 2];
+				return [{ type: "true" }, pos + 2];
 			}
 			if (tok === "-mindepth") {
 				minDepth = Number.parseInt(tokens[pos + 1] ?? "0", 10);
-				return [{type: "true"}, pos + 2];
+				return [{ type: "true" }, pos + 2];
 			}
 			if (tok === "-empty") {
-				return [{type: "empty"}, pos + 1];
+				return [{ type: "empty" }, pos + 1];
 			}
 			if (tok === "-print" || tok === "-print0") {
-				return [{type: "print"}, pos + 1];
+				return [{ type: "print" }, pos + 1];
 			}
 			if (tok === "-true") {
-				return [{type: "true"}, pos + 1];
+				return [{ type: "true" }, pos + 1];
 			}
 			if (tok === "-false") {
-				return [{type: "false"}, pos + 1];
+				return [{ type: "false" }, pos + 1];
 			}
 			if (tok === "-size") {
 				const raw = tokens[pos + 1] ?? "0";
 				const unit = raw.slice(-1);
 				const n = Number.parseInt(raw, 10);
-				return [{type: "size", n, unit}, pos + 2];
+				return [{ type: "size", n, unit }, pos + 2];
 			}
 			if (tok === "-exec" || tok === "-execdir") {
 				const useDir = tok === "-execdir";
@@ -155,15 +155,17 @@ export const findCommand: ShellModule = {
 					cmd.push(tokens[j] as string);
 					j++;
 				}
-				execCmds.push({cmd, useDir});
-				return [{type: "exec", cmd, useDir}, j + 1];
+				execCmds.push({ cmd, useDir });
+				return [{ type: "exec", cmd, useDir }, j + 1];
 			}
 			// Unknown predicate — skip
-			return [{type: "true"}, pos + 1];
+			return [{ type: "true" }, pos + 1];
 		}
 
 		const pred =
-			exprArgs.length > 0 ? parseExpr(exprArgs, 0)[0] : {type: "true" as const};
+			exprArgs.length > 0
+				? parseExpr(exprArgs, 0)[0]
+				: { type: "true" as const };
 
 		function matchPred(p: Pred, fullPath: string, depth: number): boolean {
 			switch (p.type) {
@@ -286,7 +288,7 @@ export const findCommand: ShellModule = {
 		// Execute -exec commands
 		if (execCmds.length > 0 && results.length > 0) {
 			const execOutputs: string[] = [];
-			for (const {cmd} of execCmds) {
+			for (const { cmd } of execCmds) {
 				for (const filePath of results) {
 					const expanded = cmd.map((t) => (t === "{}" ? filePath : t));
 					const cmdStr = expanded
@@ -311,9 +313,9 @@ export const findCommand: ShellModule = {
 				}
 			}
 			if (execOutputs.length > 0) {
-				return {stdout: `${execOutputs.join("\n")}\n`, exitCode: 0};
+				return { stdout: `${execOutputs.join("\n")}\n`, exitCode: 0 };
 			}
-			return {exitCode: 0};
+			return { exitCode: 0 };
 		}
 
 		return {

@@ -6,7 +6,7 @@
  * collection of unused resources, and manual GC triggers.
  */
 
-import {VirtualShell} from "../src";
+import { VirtualShell } from "../src";
 
 const shell = new VirtualShell("idle-demo");
 await shell.ensureInitialized();

@@ -8,8 +8,8 @@
  * Public API:
  *  - ThunarManager — class managing file browser state and DOM rendering
  */
-import type {VirtualShell} from "../modules/VirtualShell";
-import type {DesktopWindow, ThunarContent} from "./desktopManager";
+import type { VirtualShell } from "../modules/VirtualShell";
+import type { DesktopWindow, ThunarContent } from "./desktopManager";
 
 function copyPath(path: string): void {
 	navigator.clipboard.writeText(path).catch(() => {
@@ -458,7 +458,7 @@ export class ThunarManager {
 			this._host.shell.vfs.remove(path);
 		} catch {
 			try {
-				this._host.shell.vfs.remove(path, {recursive: true});
+				this._host.shell.vfs.remove(path, { recursive: true });
 			} catch {
 				/* ignore */
 			}
@@ -481,7 +481,7 @@ export class ThunarManager {
 
 	private _trashDelete(path: string, winId: string | null): void {
 		try {
-			this._host.shell.vfs.remove(path, {recursive: true});
+			this._host.shell.vfs.remove(path, { recursive: true });
 		} catch {
 			/* ignore */
 		}

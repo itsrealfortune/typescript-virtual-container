@@ -1,7 +1,7 @@
-import {randomBytes} from "node:crypto";
-import type {Packet, PacketResult} from "../VirtualSwitch";
-import {decrypt, deriveKey, encrypt} from "./crypto";
-export {decrypt, deriveKey, encrypt} from "./crypto";
+import { randomBytes } from "node:crypto";
+import type { Packet, PacketResult } from "../VirtualSwitch";
+import { decrypt, deriveKey, encrypt } from "./crypto";
+export { decrypt, deriveKey, encrypt } from "./crypto";
 
 export interface VpnOptions {
 	key: string;
@@ -16,10 +16,10 @@ export class VirtualVpn {
 
 	constructor(
 		private readonly _baieA: {
-			switch: {route: (p: Packet) => Promise<PacketResult>; subnet: string};
+			switch: { route: (p: Packet) => Promise<PacketResult>; subnet: string };
 		},
 		private readonly _baieB: {
-			switch: {route: (p: Packet) => Promise<PacketResult>; subnet: string};
+			switch: { route: (p: Packet) => Promise<PacketResult>; subnet: string };
 		},
 		options: VpnOptions
 	) {
@@ -67,6 +67,6 @@ export class VirtualVpn {
 		if (packet.dstIp.startsWith(bPrefix)) {
 			return this._baieB.switch.route(packet);
 		}
-		return Promise.resolve({action: "DROP"});
+		return Promise.resolve({ action: "DROP" });
 	}
 }

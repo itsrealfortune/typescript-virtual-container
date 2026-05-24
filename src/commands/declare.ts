@@ -1,5 +1,5 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 const SCOPE_KEY = "__local_scope";
 
@@ -11,7 +11,7 @@ interface ScopeEntry {
 function pushScope(vars: Record<string, string>, name: string): void {
 	const raw = vars[SCOPE_KEY];
 	const stack: ScopeEntry[] = raw ? (JSON.parse(raw) as ScopeEntry[]) : [];
-	stack.push({name, oldValue: vars[name]});
+	stack.push({ name, oldValue: vars[name] });
 	vars[SCOPE_KEY] = JSON.stringify(stack);
 }
 
@@ -39,9 +39,9 @@ export const declareCommand: ShellModule = {
 	description: "Declare variables and give them attributes",
 	category: "shell",
 	params: ["[-i] [-r] [-x] [-a] [name[=value]...]"],
-	run: ({args, env}) => {
+	run: ({ args, env }) => {
 		if (!env) {
-			return {exitCode: 0};
+			return { exitCode: 0 };
 		}
 
 		const integer = ifFlag(args, ["-i"]);
@@ -51,7 +51,7 @@ export const declareCommand: ShellModule = {
 			const lines = Object.entries(env.vars).map(
 				([k, v]) => `declare -- ${k}="${v}"`
 			);
-			return {stdout: lines.join("\n"), exitCode: 0};
+			return { stdout: lines.join("\n"), exitCode: 0 };
 		}
 
 		const assignments = args.filter((a) => !a.startsWith("-"));
@@ -74,6 +74,6 @@ export const declareCommand: ShellModule = {
 			}
 		}
 
-		return {exitCode: 0};
+		return { exitCode: 0 };
 	},
 };

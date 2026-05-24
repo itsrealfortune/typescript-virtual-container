@@ -5,7 +5,7 @@
  * including target resolution and symlink type detection.
  */
 
-import {VirtualFileSystem} from "../src";
+import { VirtualFileSystem } from "../src";
 
 // ── Symlinks ────────────────────────────────────────────────────────
 console.log("--- Symlinks ---");

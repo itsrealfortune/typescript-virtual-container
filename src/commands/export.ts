@@ -1,11 +1,11 @@
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 export const exportCommand: ShellModule = {
 	name: "export",
 	description: "Set shell environment variable",
 	category: "shell",
 	params: ["[-fn] [-p] [NAME[=VALUE] ...]"],
-	run: ({args, env}) => {
+	run: ({ args, env }) => {
 		const flags = new Set(
 			args.filter((a) => a.startsWith("-") && !a.includes("="))
 		);
@@ -19,7 +19,7 @@ export const exportCommand: ShellModule = {
 					delete env.vars[funcKey];
 				}
 			}
-			return {exitCode: 0};
+			return { exitCode: 0 };
 		}
 
 		if (options.includes("p") || names.length === 0) {
@@ -30,7 +30,7 @@ export const exportCommand: ShellModule = {
 				)
 				.map(([k, v]) => `declare -x ${k}="${v}"`)
 				.join("\n");
-			return {stdout: out ? `${out}\n` : "", exitCode: 0};
+			return { stdout: out ? `${out}\n` : "", exitCode: 0 };
 		}
 
 		for (const arg of names) {
@@ -44,6 +44,6 @@ export const exportCommand: ShellModule = {
 				delete env.vars[arg];
 			}
 		}
-		return {exitCode: 0};
+		return { exitCode: 0 };
 	},
 };

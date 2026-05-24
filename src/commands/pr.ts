@@ -1,12 +1,12 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 export const prCommand: ShellModule = {
 	name: "pr",
 	description: "Paginate or columnate files for printing",
 	category: "files",
 	params: ["[options] [file...]"],
-	run: ({shell, args, stdin}) => {
+	run: ({ shell, args, stdin }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout:
@@ -26,14 +26,14 @@ export const prCommand: ShellModule = {
 		if (files.length > 0) {
 			for (const f of files) {
 				if (!shell.vfs.exists(f)) {
-					return {stderr: `pr: ${f}: No such file`, exitCode: 1};
+					return { stderr: `pr: ${f}: No such file`, exitCode: 1 };
 				}
 				data += `${shell.vfs.readFile(f)}\n`;
 			}
 		} else if (stdin) {
 			data = stdin;
 		} else {
-			return {stderr: "pr: missing file operand", exitCode: 1};
+			return { stderr: "pr: missing file operand", exitCode: 1 };
 		}
 
 		const lines = data.split("\n");
@@ -46,6 +46,6 @@ export const prCommand: ShellModule = {
 			result.push(chunk.join("\n"));
 		}
 
-		return {stdout: `${result.join("")}\n`, exitCode: 0};
+		return { stdout: `${result.join("")}\n`, exitCode: 0 };
 	},
 };

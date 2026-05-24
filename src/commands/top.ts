@@ -1,5 +1,5 @@
 import * as os from "node:os";
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 /**
  * Display processes
@@ -11,7 +11,7 @@ export const topCommand: ShellModule = {
 	description: "Display processes",
 	category: "system",
 	params: [],
-	run: ({shell}) => {
+	run: ({ shell }) => {
 		const uptimeSec = Math.floor((Date.now() - shell.startTime) / 1000);
 		const sessions = shell.users.listActiveSessions();
 		const procs = shell.users.listProcesses();
@@ -80,6 +80,6 @@ export const topCommand: ShellModule = {
 			);
 		});
 
-		return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
+		return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 	},
 };

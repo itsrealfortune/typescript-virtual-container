@@ -1,5 +1,5 @@
-import type {ShellModule} from "../types/commands";
-import {resolveModule} from "./registry";
+import type { ShellModule } from "../types/commands";
+import { resolveModule } from "./registry";
 
 function getFuncName(name: string): string {
 	return `__func_${name}`;
@@ -9,21 +9,21 @@ function classify(
 	name: string,
 	vars: Record<string, string>,
 	pathDirs: string[],
-	shell: {vfs: {exists: (p: string) => boolean}}
-): {kind: string; path?: string} {
+	shell: { vfs: { exists: (p: string) => boolean } }
+): { kind: string; path?: string } {
 	if (getFuncName(name) in vars) {
-		return {kind: "function"};
+		return { kind: "function" };
 	}
 	if (resolveModule(name)) {
-		return {kind: "builtin"};
+		return { kind: "builtin" };
 	}
 	for (const dir of pathDirs) {
 		const full = `${dir}/${name}`;
 		if (shell.vfs.exists(full)) {
-			return {kind: "file", path: full};
+			return { kind: "file", path: full };
 		}
 	}
-	return {kind: "not found"};
+	return { kind: "not found" };
 }
 
 export const typeCommand: ShellModule = {
@@ -31,9 +31,9 @@ export const typeCommand: ShellModule = {
 	description: "Describe how a command would be interpreted",
 	category: "shell",
 	params: ["[-afptP] <command...>"],
-	run: ({args, shell, env}) => {
+	run: ({ args, shell, env }) => {
 		if (args.length === 0) {
-			return {stderr: "type: missing argument", exitCode: 1};
+			return { stderr: "type: missing argument", exitCode: 1 };
 		}
 
 		const flags = new Set(
@@ -51,7 +51,7 @@ export const typeCommand: ShellModule = {
 		let exitCode = 0;
 
 		for (const name of names) {
-			const {kind, path} = classify(name, env.vars, pathDirs, shell);
+			const { kind, path } = classify(name, env.vars, pathDirs, shell);
 
 			if (hasT) {
 				lines.push(kind === "not found" ? "" : kind);
@@ -99,6 +99,6 @@ export const typeCommand: ShellModule = {
 			}
 		}
 
-		return {stdout: lines.join("\n"), exitCode};
+		return { stdout: lines.join("\n"), exitCode };
 	},
 };

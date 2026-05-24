@@ -1,4 +1,4 @@
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 function hasFlag(args: string[], flag: string): boolean {
 	return args.includes(flag);
@@ -18,7 +18,7 @@ export const readCommand: ShellModule = {
 	params: [
 		"[-rs] [-d delim] [-n nchars] [-p prompt] [-t timeout] [-a array] <var...>",
 	],
-	run: ({args, stdin, env}) => {
+	run: ({ args, stdin, env }) => {
 		const varNames = args.filter(
 			(a, i) =>
 				a !== "-r" &&
@@ -57,7 +57,7 @@ export const readCommand: ShellModule = {
 		}
 
 		if (!env) {
-			return {exitCode: 0};
+			return { exitCode: 0 };
 		}
 
 		// -a: read into array
@@ -68,7 +68,7 @@ export const readCommand: ShellModule = {
 				env.vars[`${arrayName}[${i}]`] = words[i] as string;
 			}
 			env.vars[`#${arrayName}[@]`] = String(words.length);
-			return {exitCode: 0};
+			return { exitCode: 0 };
 		}
 
 		if (varNames.length === 0) {
@@ -83,6 +83,6 @@ export const readCommand: ShellModule = {
 			}
 		}
 
-		return {exitCode: 0};
+		return { exitCode: 0 };
 	},
 };

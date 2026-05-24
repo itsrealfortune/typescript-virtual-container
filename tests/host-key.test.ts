@@ -1,13 +1,13 @@
-import {afterEach, beforeEach, describe, expect, test} from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import * as fsSync from "node:fs";
 import * as path from "node:path";
-import {loadOrCreateHostKey} from "../src/modules/SSHMimic/hostKey";
+import { loadOrCreateHostKey } from "../src/modules/SSHMimic/hostKey";
 
 const TEST_DIR = path.join(process.cwd(), ".test-hostkey");
 
 function cleanup() {
 	try {
-		fsSync.rmSync(TEST_DIR, {recursive: true, force: true});
+		fsSync.rmSync(TEST_DIR, { recursive: true, force: true });
 	} catch {
 		/* ignore */
 	}

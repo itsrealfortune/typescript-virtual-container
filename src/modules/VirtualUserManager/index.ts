@@ -5,11 +5,11 @@ import {
 	scryptSync,
 	timingSafeEqual,
 } from "node:crypto";
-import {EventEmitter} from "node:events";
+import { EventEmitter } from "node:events";
 import * as path from "node:path";
-import {type PerfLogger, createPerfLogger} from "../../utils/perfLogger";
+import { type PerfLogger, createPerfLogger } from "../../utils/perfLogger";
 import type VirtualFileSystem from "../VirtualFileSystem";
-import {VirtualGroupManager, type VirtualGroupRecord} from "./groups";
+import { VirtualGroupManager, type VirtualGroupRecord } from "./groups";
 import {
 	type ProcessPriority,
 	ProcessScheduler,
@@ -177,7 +177,7 @@ export class VirtualUserManager extends EventEmitter {
 	/** Login failure tracking: username → { count, lastTime, sourceIp }. */
 	private _loginFailures = new Map<
 		string,
-		{count: number; lastTime: number; sourceIp: string}
+		{ count: number; lastTime: number; sourceIp: string }
 	>();
 	/** Max login failures before account is locked. */
 	private readonly _maxLoginFailures = 5;
@@ -446,7 +446,7 @@ export class VirtualUserManager extends EventEmitter {
 			);
 		}
 		this.persist();
-		this.emit("user:add", {username});
+		this.emit("user:add", { username });
 	}
 
 	/**
@@ -517,7 +517,7 @@ export class VirtualUserManager extends EventEmitter {
 			);
 		}
 		void this.persist();
-		this.emit("user:add", {username});
+		this.emit("user:add", { username });
 	}
 
 	/**
@@ -595,7 +595,7 @@ export class VirtualUserManager extends EventEmitter {
 			}
 		}
 
-		this.emit("user:delete", {username});
+		this.emit("user:delete", { username });
 		this.persist();
 	}
 
@@ -1196,7 +1196,7 @@ export class VirtualUserManager extends EventEmitter {
 
 		proc.nice = nice;
 		proc.priority = ProcessScheduler.niceToPriority(nice);
-		this.emit("process:nice", {pid, nice, priority: proc.priority});
+		this.emit("process:nice", { pid, nice, priority: proc.priority });
 		return true;
 	}
 
@@ -1476,7 +1476,7 @@ export class VirtualUserManager extends EventEmitter {
 			}
 		}
 
-		this._vfs.writeFile(targetPath, content, {mode});
+		this._vfs.writeFile(targetPath, content, { mode });
 		return true;
 	}
 
@@ -1601,7 +1601,7 @@ export class VirtualUserManager extends EventEmitter {
 	}
 	private readonly _authorizedKeys = new Map<
 		string,
-		Array<{algo: string; data: Buffer}>
+		Array<{ algo: string; data: Buffer }>
 	>();
 
 	/**
@@ -1614,9 +1614,9 @@ export class VirtualUserManager extends EventEmitter {
 	public addAuthorizedKey(username: string, algo: string, data: Buffer): void {
 		perf.mark("addAuthorizedKey");
 		const keys = this._authorizedKeys.get(username) ?? [];
-		keys.push({algo, data});
+		keys.push({ algo, data });
 		this._authorizedKeys.set(username, keys);
-		this.emit("key:add", {username, algo});
+		this.emit("key:add", { username, algo });
 	}
 
 	/**
@@ -1626,7 +1626,7 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public removeAuthorizedKeys(username: string): void {
 		this._authorizedKeys.delete(username);
-		this.emit("key:remove", {username});
+		this.emit("key:remove", { username });
 	}
 
 	/**
@@ -1638,7 +1638,7 @@ export class VirtualUserManager extends EventEmitter {
 	 */
 	public getAuthorizedKeys(
 		username: string
-	): Array<{algo: string; data: Buffer}> {
+	): Array<{ algo: string; data: Buffer }> {
 		return this._authorizedKeys.get(username) ?? [];
 	}
 
@@ -2080,7 +2080,7 @@ export class VirtualUserManager extends EventEmitter {
 			existing.lastTime = now;
 			existing.sourceIp = sourceIp;
 		} else {
-			this._loginFailures.set(username, {count: 1, lastTime: now, sourceIp});
+			this._loginFailures.set(username, { count: 1, lastTime: now, sourceIp });
 		}
 	}
 
@@ -2143,7 +2143,7 @@ function normalizeVfsPath(targetPath: string): string {
 }
 
 // Re-export scheduler types for external consumers
-export {ProcessScheduler} from "./processScheduler";
+export { ProcessScheduler } from "./processScheduler";
 export type {
 	ProcessPriority,
 	SchedulerAction,

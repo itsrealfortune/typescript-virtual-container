@@ -5,7 +5,7 @@
  * user accounts, and resource caps for each customer.
  */
 
-import {Baie, SshClient, type VirtualShell, VirtualSshServer} from "../src";
+import { Baie, SshClient, type VirtualShell, VirtualSshServer } from "../src";
 
 interface Tenant {
 	id: string;
@@ -30,7 +30,7 @@ const tenantConfigs = [
 		subnet: "10.10.1.0/24",
 		users: ["admin", "developer", "analyst"],
 	},
-	{id: "globex-inc", subnet: "10.10.2.0/24", users: ["admin", "engineer"]},
+	{ id: "globex-inc", subnet: "10.10.2.0/24", users: ["admin", "engineer"] },
 	{
 		id: "initech",
 		subnet: "10.10.3.0/24",
@@ -58,8 +58,8 @@ for (const config of tenantConfigs) {
 		dbVM.users.addUser(username, "password123");
 	}
 
-	const appSsh = new VirtualSshServer({port: 0, shell: appVM});
-	const dbSsh = new VirtualSshServer({port: 0, shell: dbVM});
+	const appSsh = new VirtualSshServer({ port: 0, shell: appVM });
+	const dbSsh = new VirtualSshServer({ port: 0, shell: dbVM });
 	const [appPort, dbPort] = await Promise.all([appSsh.start(), dbSsh.start()]);
 
 	const appClient = new SshClient();

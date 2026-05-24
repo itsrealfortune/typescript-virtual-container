@@ -4,9 +4,9 @@
  * Loads or generates an RSA 2048-bit host key persisted to `.ssh-mimic/host_rsa`.
  * The key is reused across SSH server restarts so clients don't see host key changes.
  */
-import {generateKeyPairSync} from "node:crypto";
-import {existsSync, mkdirSync, readFileSync, writeFileSync} from "node:fs";
-import {dirname, resolve} from "node:path";
+import { generateKeyPairSync } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 
 /**
  * Loads an existing PEM-encoded RSA host key from `.ssh-mimic/host_rsa` under
@@ -24,11 +24,11 @@ export function loadOrCreateHostKey(baseDir: string = process.cwd()): string {
 
 	const privateKey = generateKeyPairSync("rsa", {
 		modulusLength: 2048,
-		privateKeyEncoding: {type: "pkcs1", format: "pem"},
-		publicKeyEncoding: {type: "pkcs1", format: "pem"},
+		privateKeyEncoding: { type: "pkcs1", format: "pem" },
+		publicKeyEncoding: { type: "pkcs1", format: "pem" },
 	}).privateKey;
 
-	mkdirSync(dirname(hostKeyPath), {recursive: true});
-	writeFileSync(hostKeyPath, privateKey, {mode: 0o600});
+	mkdirSync(dirname(hostKeyPath), { recursive: true });
+	writeFileSync(hostKeyPath, privateKey, { mode: 0o600 });
 	return privateKey;
 }

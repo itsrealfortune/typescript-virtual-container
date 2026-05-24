@@ -1,5 +1,5 @@
-import type {ShellModule} from "../types/commands";
-import {resolveSysctlPath} from "../modules/sysctl";
+import type { ShellModule } from "../types/commands";
+import { resolveSysctlPath } from "../modules/sysctl";
 
 /**
  * Get or set kernel parameters.
@@ -11,7 +11,7 @@ export const sysctlCommand: ShellModule = {
 	description: "Get or set kernel parameters",
 	category: "system",
 	params: ["[-w] [name=value | name]"],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		const pairs = args.filter((a) => a !== "-w" && a.includes("="));
 		const queries = args.filter((a) => a !== "-w" && !a.includes("="));
 
@@ -47,7 +47,7 @@ export const sysctlCommand: ShellModule = {
 					shell.users.setCpuCapCores(shell.resourceCaps.cpuCapCores ?? 0);
 				}
 			}
-			return {stdout: `${results.join("\n")}\n`, exitCode: 0};
+			return { stdout: `${results.join("\n")}\n`, exitCode: 0 };
 		}
 
 		if (queries.length > 0) {
@@ -64,7 +64,7 @@ export const sysctlCommand: ShellModule = {
 				const v = resolved.value;
 				results.push(`${name} = ${typeof v === "number" ? v : v}`);
 			}
-			return {stdout: `${results.join("\n")}\n`, exitCode: 0};
+			return { stdout: `${results.join("\n")}\n`, exitCode: 0 };
 		}
 
 		// List all parameters
@@ -80,6 +80,6 @@ export const sysctlCommand: ShellModule = {
 			}
 		};
 		walk(shell.sysctl as unknown as Record<string, unknown>, "");
-		return {stdout: `${lines.sort().join("\n")}\n`, exitCode: 0};
+		return { stdout: `${lines.sort().join("\n")}\n`, exitCode: 0 };
 	},
 };

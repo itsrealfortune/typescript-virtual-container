@@ -1,5 +1,5 @@
-import type {ShellModule} from "../types/commands";
-import type {FirewallRule} from "../modules/VirtualNetworkManager";
+import type { ShellModule } from "../types/commands";
+import type { FirewallRule } from "../modules/VirtualNetworkManager";
 
 /**
  * Configure firewall rules (iptables-compatible subset).
@@ -13,7 +13,7 @@ export const iptablesCommand: ShellModule = {
 	params: [
 		"-L | -A <chain> [-p proto] [-s src] [-d dst] [--dport port] -j ACTION | -F | -P <chain> <policy>",
 	],
-	run: ({args, shell}) => {
+	run: ({ args, shell }) => {
 		const net = shell.network;
 		let action: "list" | "append" | "flush" | "policy" = "list";
 		let chain = "";
@@ -70,11 +70,11 @@ export const iptablesCommand: ShellModule = {
 
 		switch (action) {
 			case "list":
-				return {stdout: `${net.formatFirewall()}\n`, exitCode: 0};
+				return { stdout: `${net.formatFirewall()}\n`, exitCode: 0 };
 
 			case "flush":
 				net.flushFirewall();
-				return {stdout: "", exitCode: 0};
+				return { stdout: "", exitCode: 0 };
 
 			case "policy": {
 				if (
@@ -97,7 +97,7 @@ export const iptablesCommand: ShellModule = {
 							exitCode: 1,
 						};
 					}
-					return {stdout: "", exitCode: 0};
+					return { stdout: "", exitCode: 0 };
 				}
 				const policy = args.find((a) => a === "ACCEPT" || a === "DROP");
 				if (!policy) {
@@ -107,9 +107,9 @@ export const iptablesCommand: ShellModule = {
 					};
 				}
 				if (!net.setPolicy(chain, policy as "ACCEPT" | "DROP")) {
-					return {stderr: `iptables: unknown chain '${chain}'`, exitCode: 1};
+					return { stderr: `iptables: unknown chain '${chain}'`, exitCode: 1 };
 				}
-				return {stdout: "", exitCode: 0};
+				return { stdout: "", exitCode: 0 };
 			}
 
 			case "append": {
@@ -120,7 +120,7 @@ export const iptablesCommand: ShellModule = {
 					};
 				}
 				if (!["INPUT", "OUTPUT", "FORWARD"].includes(chain)) {
-					return {stderr: `iptables: unknown chain '${chain}'`, exitCode: 1};
+					return { stderr: `iptables: unknown chain '${chain}'`, exitCode: 1 };
 				}
 				if (!["ACCEPT", "DROP", "REJECT"].includes(rule.action)) {
 					return {
@@ -136,7 +136,7 @@ export const iptablesCommand: ShellModule = {
 					destPort: rule.destPort,
 					action: rule.action,
 				});
-				return {stdout: `Rule added at index ${idx}\n`, exitCode: 0};
+				return { stdout: `Rule added at index ${idx}\n`, exitCode: 0 };
 			}
 
 			default:

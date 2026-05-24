@@ -1,6 +1,6 @@
 import * as path from "node:path";
-import type {ShellModule} from "../types/commands";
-import {assertPathAccess, resolvePath} from "./helpers";
+import type { ShellModule } from "../types/commands";
+import { assertPathAccess, resolvePath } from "./helpers";
 
 export const viCommand: ShellModule = {
 	name: "vi",
@@ -8,7 +8,7 @@ export const viCommand: ShellModule = {
 	description: "Modal text editor (vi compatible)",
 	category: "files",
 	params: ["<file>"],
-	run: ({authUser, shell, cwd, args}) => {
+	run: ({ authUser, shell, cwd, args }) => {
 		if (args.includes("--help") || args.includes("-h")) {
 			return {
 				stdout: [
@@ -23,7 +23,7 @@ export const viCommand: ShellModule = {
 
 		const fileArg = args.find((a) => !a.startsWith("-"));
 		if (!fileArg) {
-			return {stderr: "vi: missing file operand", exitCode: 1};
+			return { stderr: "vi: missing file operand", exitCode: 1 };
 		}
 
 		const targetPath = resolvePath(cwd, fileArg);

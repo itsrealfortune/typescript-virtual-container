@@ -1,12 +1,12 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 export const gpgCommand: ShellModule = {
 	name: "gpg",
 	description: "GNU Privacy Guard — encryption and signing",
 	category: "system",
 	params: ["[options] [file...]"],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout: [
@@ -41,7 +41,7 @@ export const gpgCommand: ShellModule = {
 		if (ifFlag(args, ["-e", "--encrypt"])) {
 			const file = args.find((a) => !a.startsWith("-"));
 			if (!file) {
-				return {stderr: "gpg: missing file", exitCode: 1};
+				return { stderr: "gpg: missing file", exitCode: 1 };
 			}
 			return {
 				stdout: `gpg: encrypted output written to ${file}.gpg\n`,
@@ -52,7 +52,7 @@ export const gpgCommand: ShellModule = {
 		if (ifFlag(args, ["-d", "--decrypt"])) {
 			const file = args.find((a) => !a.startsWith("-"));
 			if (!file) {
-				return {stderr: "gpg: missing file", exitCode: 1};
+				return { stderr: "gpg: missing file", exitCode: 1 };
 			}
 			return {
 				stdout: "gpg: decryption not supported in virtual environment\n",
@@ -63,7 +63,7 @@ export const gpgCommand: ShellModule = {
 		if (ifFlag(args, ["-s", "--sign"])) {
 			const file = args.find((a) => !a.startsWith("-"));
 			if (!file) {
-				return {stderr: "gpg: missing file", exitCode: 1};
+				return { stderr: "gpg: missing file", exitCode: 1 };
 			}
 			return {
 				stdout: `gpg: signed output written to ${file}.sig\n`,

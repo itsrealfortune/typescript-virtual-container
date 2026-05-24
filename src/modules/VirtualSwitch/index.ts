@@ -1,6 +1,6 @@
-import {VirtualNetworkManager} from "../VirtualNetworkManager";
-import {VirtualShell} from "../VirtualShell";
-import {cidrRange, intToIp, ipToInt, nextMac} from "./helpers";
+import { VirtualNetworkManager } from "../VirtualNetworkManager";
+import { VirtualShell } from "../VirtualShell";
+import { cidrRange, intToIp, ipToInt, nextMac } from "./helpers";
 import type {
 	DnsRecord,
 	LoadBalancerRule,
@@ -11,7 +11,7 @@ import type {
 	TrafficRule,
 	VmPort,
 } from "./types";
-export {cidrRange, intToIp, ipToInt, nextMac} from "./helpers";
+export { cidrRange, intToIp, ipToInt, nextMac } from "./helpers";
 export type {
 	ConntrackEntry,
 	DnsRecord,
@@ -49,7 +49,7 @@ export class VirtualSwitch {
 	private _qdiscRules: Map<string, QdiscRule[]> = new Map();
 	private _bandwidthTokens: Map<MacAddress, number> = new Map();
 	private _bandwidthLastRefill: Map<MacAddress, number> = new Map();
-	private _reorderBuffer: Array<{packet: Packet; deliverAt: number}> = [];
+	private _reorderBuffer: Array<{ packet: Packet; deliverAt: number }> = [];
 	private readonly _maxReorderBufferSize = 1000;
 	private _latencyIntervals = new Map<
 		MacAddress,
@@ -77,7 +77,7 @@ export class VirtualSwitch {
 			}
 			ip = preferredIp;
 		} else {
-			const {network} = cidrRange(this.subnet);
+			const { network } = cidrRange(this.subnet);
 			let candidate = network + this._natPool++;
 			while (this._ipToMac.has(intToIp(candidate))) {
 				candidate = network + this._natPool++;
@@ -85,7 +85,7 @@ export class VirtualSwitch {
 			ip = intToIp(candidate);
 		}
 
-		const port: VmPort = {mac, ip, shell};
+		const port: VmPort = { mac, ip, shell };
 		this._ports.set(mac, port);
 		this._ipToMac.set(ip, mac);
 
@@ -146,14 +146,14 @@ export class VirtualSwitch {
 	public async route(packet: Packet): Promise<PacketResult> {
 		if (this._dnsRecords.has(packet.dstIp)) {
 			const resolvedIp = this._dnsRecords.get(packet.dstIp) as string;
-			packet = {...packet, dstIp: resolvedIp};
+			packet = { ...packet, dstIp: resolvedIp };
 		}
 
 		const lb = this._matchLoadBalancer(packet.dstPort);
 		if (lb) {
 			const target = this._pickTarget(lb);
 			if (target) {
-				packet = {...packet, dstIp: target};
+				packet = { ...packet, dstIp: target };
 			}
 		}
 
@@ -171,20 +171,20 @@ export class VirtualSwitch {
 		const srcPort = packet.srcMac ? this._ports.get(packet.srcMac) : undefined;
 		const dstMac = this._resolveDstMac(packet.dstIp);
 		if (srcPort && dstMac && !this._canCommunicate(srcPort.mac, dstMac)) {
-			return {action: "DROP"};
+			return { action: "DROP" };
 		}
 
 		const packetSize = packet.size ?? packet.payload?.length ?? 64;
 		const mtuExceeded = this._checkMtu(packet, packetSize);
 		if (mtuExceeded) {
-			return {action: "DROP", latencyMs: 0, fragmented: true};
+			return { action: "DROP", latencyMs: 0, fragmented: true };
 		}
 
 		const dstPort = this._ports.get(dstMac ?? "");
 		if (dstPort) {
 			const bandwidthOk = this._checkBandwidthLimit(packet.srcMac, packetSize);
 			if (!bandwidthOk) {
-				return {action: "DROP", latencyMs: 0};
+				return { action: "DROP", latencyMs: 0 };
 			}
 
 			const shapeResult = this._applyTrafficShape(
@@ -192,7 +192,7 @@ export class VirtualSwitch {
 				packet
 			);
 			if (shapeResult.dropped) {
-				return {action: "DROP", latencyMs: 0};
+				return { action: "DROP", latencyMs: 0 };
 			}
 
 			const latency = shapeResult.latency;
@@ -221,7 +221,7 @@ export class VirtualSwitch {
 
 			if (shapeResult.duplicated) {
 				await new Promise((r) => setTimeout(r, latency));
-				return {action: "ACCEPT", latencyMs: latency};
+				return { action: "ACCEPT", latencyMs: latency };
 			}
 
 			const size = packet.payload?.length ?? 0;
@@ -246,15 +246,15 @@ export class VirtualSwitch {
 			);
 
 			await new Promise((r) => setTimeout(r, latency));
-			return {action: "ACCEPT", latencyMs: latency};
+			return { action: "ACCEPT", latencyMs: latency };
 		}
 
 		if (packet.dstIp.endsWith(".255") || packet.dstIp === "255.255.255.255") {
 			await new Promise((r) => setTimeout(r, 0.5 + Math.random()));
-			return {action: "ACCEPT"};
+			return { action: "ACCEPT" };
 		}
 
-		return {action: "DROP"};
+		return { action: "DROP" };
 	}
 
 	private _checkMtu(packet: Packet, size: number): boolean {
@@ -397,7 +397,7 @@ export class VirtualSwitch {
 			}
 		}
 
-		return {latency, dropped, reordered, reorderDelay, duplicated};
+		return { latency, dropped, reordered, reorderDelay, duplicated };
 	}
 
 	public addQdiscRule(mac: MacAddress, rule: QdiscRule): void {
@@ -453,7 +453,7 @@ export class VirtualSwitch {
 	}
 
 	private _isLocalSubnet(ip: string): boolean {
-		const {network, mask} = cidrRange(this.subnet);
+		const { network, mask } = cidrRange(this.subnet);
 		return (ipToInt(ip) & mask) === network;
 	}
 
@@ -529,7 +529,7 @@ export class VirtualSwitch {
 
 	public resolveLoadBalancer(
 		port: number
-	): {ip: string; hostname: string; port: number} | null {
+	): { ip: string; hostname: string; port: number } | null {
 		const lb = this._matchLoadBalancer(port);
 		if (!lb) {
 			return null;
@@ -539,7 +539,7 @@ export class VirtualSwitch {
 			return null;
 		}
 		const ip = this.resolveDns(target) ?? target;
-		return {ip, hostname: target, port: lb.port};
+		return { ip, hostname: target, port: lb.port };
 	}
 
 	public getBytesSent(mac: MacAddress): number {
@@ -606,7 +606,7 @@ export class Baie {
 		const shell = new VirtualShell(
 			hostname,
 			undefined,
-			(vfsOptions ?? {mode: "memory"}) as never
+			(vfsOptions ?? { mode: "memory" }) as never
 		);
 		await shell.ensureInitialized();
 		this.switch.attach(shell, preferredIp);
@@ -684,4 +684,4 @@ export class Baie {
 	}
 }
 
-export {Baie as VirtualNetworkBaie, VirtualSwitch as VirtualNetworkSwitch};
+export { Baie as VirtualNetworkBaie, VirtualSwitch as VirtualNetworkSwitch };

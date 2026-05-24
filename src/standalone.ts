@@ -1,5 +1,5 @@
-import {VirtualSftpServer, VirtualShell, VirtualSshServer} from ".";
-import {getFlag, getOptionInt} from "./utils/argv";
+import { VirtualSftpServer, VirtualShell, VirtualSshServer } from ".";
+import { getFlag, getOptionInt } from "./utils/argv";
 
 // ── CLI argument parsing ──────────────────────────────────────────────────────
 
@@ -51,7 +51,7 @@ virtualShell.on("gc:run", (stats: import(".").GcStats) => {
 // Trigger GC immediately when an SSH session disconnects
 virtualShell.users.on(
 	"session:unregister",
-	(data: {sessionId: string; username: string; tty: string}) => {
+	(data: { sessionId: string; username: string; tty: string }) => {
 		const killed = virtualShell.users.killProcessesByTty(data.tty);
 		const gcStats = virtualShell.runGc();
 		const total = process.memoryUsage().rss;
@@ -69,7 +69,7 @@ virtualShell.users.on(
 
 // SFTP subsystem handler — no standalone server, reused by the SSH server
 // so that `scp` and `sftp` clients work directly on the SSH port.
-const sftpHandler = new VirtualSftpServer({shell: virtualShell});
+const sftpHandler = new VirtualSftpServer({ shell: virtualShell });
 
 if (!noSsh) {
 	new VirtualSshServer({

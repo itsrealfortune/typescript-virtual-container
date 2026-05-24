@@ -1,4 +1,4 @@
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 /**
  * Print the current user name.
@@ -10,5 +10,5 @@ export const whoamiCommand: ShellModule = {
 	description: "Print current user",
 	category: "system",
 	params: [],
-	run: ({authUser}) => ({stdout: authUser, exitCode: 0}),
+	run: ({ authUser }) => ({ stdout: authUser, exitCode: 0 }),
 };

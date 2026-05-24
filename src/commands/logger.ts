@@ -1,12 +1,12 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 export const loggerCommand: ShellModule = {
 	name: "logger",
 	description: "Send message to syslog",
 	category: "network",
 	params: ["[-p priority] [-t tag] [message...]"],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout: [
@@ -54,9 +54,9 @@ export const loggerCommand: ShellModule = {
 			}
 			shell.vfs.writeFile("/var/log/syslog", `${existing + logLine}\n`);
 		} catch {
-			return {stderr: "logger: could not write to syslog", exitCode: 1};
+			return { stderr: "logger: could not write to syslog", exitCode: 1 };
 		}
 
-		return {stdout: "", exitCode: 0};
+		return { stdout: "", exitCode: 0 };
 	},
 };

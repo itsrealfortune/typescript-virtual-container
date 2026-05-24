@@ -1,5 +1,5 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 export const umountCommand: ShellModule = {
 	name: "umount",
@@ -7,7 +7,7 @@ export const umountCommand: ShellModule = {
 	description: "Unmount a mounted filesystem",
 	category: "system",
 	params: ["[-f] <target>"],
-	run: ({shell, cwd, args}) => {
+	run: ({ shell, cwd, args }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout: [
@@ -57,10 +57,10 @@ export const umountCommand: ShellModule = {
 					continue;
 				}
 				const msg = err instanceof Error ? err.message : String(err);
-				return {stderr: `umount: ${msg}`, exitCode: 32};
+				return { stderr: `umount: ${msg}`, exitCode: 32 };
 			}
 		}
 
-		return {exitCode: 0};
+		return { exitCode: 0 };
 	},
 };

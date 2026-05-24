@@ -1,5 +1,5 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 interface Rule {
 	target: string;
@@ -12,7 +12,7 @@ export const makeCommand: ShellModule = {
 	description: "Build targets from a Makefile",
 	category: "development",
 	params: ["[options] [target...]"],
-	run: ({shell, args, cwd}) => {
+	run: ({ shell, args, cwd }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout: [
@@ -70,7 +70,7 @@ export const makeCommand: ShellModule = {
 
 function runMakefile(
 	shell: {
-		vfs: {readFile: (p: string) => string; exists: (p: string) => boolean};
+		vfs: { readFile: (p: string) => string; exists: (p: string) => boolean };
 	},
 	mfPath: string,
 	targets: string[],
@@ -129,7 +129,7 @@ function runMakefile(
 		stdout.push(`make: Nothing to be done for '${toBuild.join(" ")}'.`);
 	}
 
-	return {stdout: `${stdout.join("\n")}\n`, exitCode: 0};
+	return { stdout: `${stdout.join("\n")}\n`, exitCode: 0 };
 }
 
 function parseMakefile(content: string): Rule[] {
@@ -160,7 +160,7 @@ function parseMakefile(content: string): Rule[] {
 			const target = targetMatch[1]!;
 			const depsStr = targetMatch[2]!.trim();
 			const deps = depsStr ? depsStr.split(/\s+/) : [];
-			current = {target, deps, cmds: []};
+			current = { target, deps, cmds: [] };
 		}
 	}
 

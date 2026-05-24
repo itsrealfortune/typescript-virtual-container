@@ -6,7 +6,7 @@
  * priority changes, CPU accounting, and scheduler statistics.
  */
 
-import {VirtualShell} from "../src";
+import { VirtualShell } from "../src";
 
 const shell = new VirtualShell("scheduler-demo");
 await shell.ensureInitialized();
@@ -48,14 +48,14 @@ for (const nice of niceValues) {
 console.log("\n--- Process registration ---");
 
 const processes = [
-	{name: "nginx", nice: -10, cmd: ["nginx", "-g", "daemon off;"]},
-	{name: "node", nice: 0, cmd: ["node", "server.js"]},
+	{ name: "nginx", nice: -10, cmd: ["nginx", "-g", "daemon off;"] },
+	{ name: "node", nice: 0, cmd: ["node", "server.js"] },
 	{
 		name: "backup",
 		nice: 15,
 		cmd: ["tar", "-czf", "/backup/full.tar.gz", "/"],
 	},
-	{name: "cron", nice: 19, cmd: ["cron", "-f"]},
+	{ name: "cron", nice: 19, cmd: ["cron", "-f"] },
 ];
 
 const pids: number[] = [];

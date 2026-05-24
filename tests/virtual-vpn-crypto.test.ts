@@ -1,6 +1,6 @@
-import {describe, expect, test} from "bun:test";
-import {randomBytes} from "node:crypto";
-import {decrypt, deriveKey, encrypt} from "../src/modules/VirtualVpn/crypto";
+import { describe, expect, test } from "bun:test";
+import { randomBytes } from "node:crypto";
+import { decrypt, deriveKey, encrypt } from "../src/modules/VirtualVpn/crypto";
 
 describe("VirtualVpn crypto", () => {
 	test("deriveKey produces a 32-byte key", () => {

@@ -1,5 +1,5 @@
-import {resolveSignal, SIGNALS} from "../modules/VirtualUserManager/signals";
-import type {ShellModule} from "../types/commands";
+import { resolveSignal, SIGNALS } from "../modules/VirtualUserManager/signals";
+import type { ShellModule } from "../types/commands";
 
 /**
  * Send a signal to a process by PID.
@@ -12,7 +12,7 @@ export const killCommand: ShellModule = {
 	description: "Send signal to process",
 	category: "system",
 	params: ["[-s SIGNAL | -SIGNAL] <pid>"],
-	run: ({args, shell}) => {
+	run: ({ args, shell }) => {
 		let signal = 15; // SIGTERM default
 		let pidStr: string | undefined;
 
@@ -26,7 +26,7 @@ export const killCommand: ShellModule = {
 				const lines = Object.entries(SIGNALS)
 					.sort((a, b) => Number(a[0]) - Number(b[0]))
 					.map(([num, sig]) => `${num} ${sig.name}`);
-				return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
+				return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 			}
 			if (arg === "-s" && i + 1 < args.length) {
 				const resolved = resolveSignal(args[++i] ?? "");
@@ -42,7 +42,7 @@ export const killCommand: ShellModule = {
 				if (spec) {
 					const resolved = resolveSignal(spec);
 					if (resolved === null) {
-						return {stderr: `kill: unknown signal '${arg}'`, exitCode: 1};
+						return { stderr: `kill: unknown signal '${arg}'`, exitCode: 1 };
 					}
 					signal = resolved;
 				}
@@ -52,19 +52,19 @@ export const killCommand: ShellModule = {
 		}
 
 		if (!pidStr) {
-			return {stderr: "kill: no pid specified", exitCode: 1};
+			return { stderr: "kill: no pid specified", exitCode: 1 };
 		}
 		const pid = Number.parseInt(pidStr, 10);
 		if (Number.isNaN(pid)) {
-			return {stderr: `kill: invalid pid: ${pidStr}`, exitCode: 1};
+			return { stderr: `kill: invalid pid: ${pidStr}`, exitCode: 1 };
 		}
 
 		const found = shell.users.killProcess(pid, signal);
 		if (!found) {
-			return {stderr: `kill: (${pid}) - No such process`, exitCode: 1};
+			return { stderr: `kill: (${pid}) - No such process`, exitCode: 1 };
 		}
 
 		const sigName = SIGNALS[signal]?.name ?? `signal ${signal}`;
-		return {stdout: `Sent ${sigName} to ${pid}\n`, exitCode: 0};
+		return { stdout: `Sent ${sigName} to ${pid}\n`, exitCode: 0 };
 	},
 };

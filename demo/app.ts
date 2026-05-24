@@ -1,8 +1,8 @@
-import {VirtualShell} from "../src/index.js";
-import {DesktopManager} from "../src/modules/desktopManager.js";
-import {WebTermRenderer} from "../src/modules/webTermRenderer.js";
-import type {ShellStream} from "../src/types/streams.js";
-import {keyToBytes} from "../src/utils/keyToBytes.js";
+import { VirtualShell } from "../src/index.js";
+import { DesktopManager } from "../src/modules/desktopManager.js";
+import { WebTermRenderer } from "../src/modules/webTermRenderer.js";
+import type { ShellStream } from "../src/types/streams.js";
+import { keyToBytes } from "../src/utils/keyToBytes.js";
 
 // ── Wait for IndexedDB fs shim ────────────────────────────────────────────────
 // biome-ignore lint/suspicious/noExplicitAny: globalThis shim
@@ -25,18 +25,18 @@ document.addEventListener("click", () => {
 
 // ── Measure character cell size ───────────────────────────────────────────────
 
-function measureCharCell(): {w: number; h: number} {
+function measureCharCell(): { w: number; h: number } {
 	const probe = document.createElement("span");
 	probe.style.cssText = "position:absolute;visibility:hidden;white-space:pre;";
 	probe.textContent = "X";
 	terminal.appendChild(probe);
 	const rect = probe.getBoundingClientRect();
 	terminal.removeChild(probe);
-	return {w: rect.width || 8, h: rect.height || 16};
+	return { w: rect.width || 8, h: rect.height || 16 };
 }
 
-function getTermSize(): {cols: number; rows: number} {
-	const {w, h} = measureCharCell();
+function getTermSize(): { cols: number; rows: number } {
+	const { w, h } = measureCharCell();
 	const wrapper = document.getElementById("terminal-wrapper") ?? terminal;
 	return {
 		cols: Math.max(1, Math.floor(terminal.clientWidth / w)),
@@ -46,7 +46,7 @@ function getTermSize(): {cols: number; rows: number} {
 
 // ── Renderer ──────────────────────────────────────────────────────────────────
 
-const {cols, rows} = getTermSize();
+const { cols, rows } = getTermSize();
 const renderer = new WebTermRenderer(rows, cols);
 
 let rafPending = false;
@@ -119,7 +119,7 @@ interface BufferShim {
 	from(data: Uint8Array): Buffer;
 }
 function toChunk(bytes: Uint8Array): Buffer {
-	const g = globalThis as unknown as {Buffer?: BufferShim};
+	const g = globalThis as unknown as { Buffer?: BufferShim };
 	return g.Buffer ? g.Buffer.from(bytes) : (bytes as unknown as Buffer);
 }
 
@@ -176,7 +176,7 @@ terminal.addEventListener("paste", (e: ClipboardEvent) => {
 // ── Resize ────────────────────────────────────────────────────────────────────
 
 window.addEventListener("resize", () => {
-	const {cols: newCols, rows: newRows} = getTermSize();
+	const { cols: newCols, rows: newRows } = getTermSize();
 	renderer.resize(newRows, newCols);
 	flush();
 	// shell.ts listens to stream resize via terminalSize ref — not exposed,
@@ -265,4 +265,4 @@ desktopManager.setOnExit(() => {
 
 // ── Start interactive session ─────────────────────────────────────────────────
 
-shell.startInteractiveSession(stream, "root", null, "browser", {cols, rows});
+shell.startInteractiveSession(stream, "root", null, "browser", { cols, rows });

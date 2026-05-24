@@ -1,6 +1,6 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
-import {assertPathAccess, resolvePath} from "./helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
+import { assertPathAccess, resolvePath } from "./helpers";
 
 /**
  * Sort lines of text with various options (reverse, numeric, unique).
@@ -12,7 +12,7 @@ export const sortCommand: ShellModule = {
 	description: "Sort lines of text",
 	category: "text",
 	params: ["[-r] [-n] [-u] [-k <col>] [file...]"],
-	run: ({authUser, shell, cwd, args, stdin}) => {
+	run: ({ authUser, shell, cwd, args, stdin }) => {
 		const reverse = ifFlag(args, ["-r"]);
 		const numeric = ifFlag(args, ["-n"]);
 		const unique = ifFlag(args, ["-u"]);
@@ -43,6 +43,6 @@ export const sortCommand: ShellModule = {
 		});
 		const result = reverse ? sorted.reverse() : sorted;
 		const out = unique ? [...new Set(result)] : result;
-		return {stdout: out.join("\n"), exitCode: 0};
+		return { stdout: out.join("\n"), exitCode: 0 };
 	},
 };

@@ -1,6 +1,6 @@
-import {afterAll, beforeAll, describe, expect, test} from "bun:test";
-import type {SshClient} from "../src/modules/SSHClient";
-import {createTestEnv} from "./test-helper";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import type { SshClient } from "../src/modules/SSHClient";
+import { createTestEnv } from "./test-helper";
 
 let client: InstanceType<typeof SshClient>;
 let ssh: InstanceType<typeof VirtualSshServer>;
@@ -123,9 +123,9 @@ import {
 	rmSync,
 	writeFileSync,
 } from "node:fs";
-import {tmpdir} from "node:os";
-import {join} from "node:path";
-import {loadOrCreateHostKey} from "../src/modules/SSHMimic/hostKey";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { loadOrCreateHostKey } from "../src/modules/SSHMimic/hostKey";
 
 describe("hostKey", () => {
 	test("loadOrCreateHostKey generates new key in temp dir", () => {
@@ -137,7 +137,7 @@ describe("hostKey", () => {
 			const keyPath = join(tmpDir, ".ssh-mimic", "host_rsa");
 			expect(existsSync(keyPath)).toBe(true);
 		} finally {
-			rmSync(tmpDir, {recursive: true, force: true});
+			rmSync(tmpDir, { recursive: true, force: true });
 		}
 	});
 
@@ -145,25 +145,25 @@ describe("hostKey", () => {
 		const tmpDir = mkdtempSync(join(tmpdir(), "hostkey-existing-"));
 		try {
 			const keyDir = join(tmpDir, ".ssh-mimic");
-			mkdirSync(keyDir, {recursive: true});
+			mkdirSync(keyDir, { recursive: true });
 			const keyPath = join(keyDir, "host_rsa");
-			writeFileSync(keyPath, "custom-key-data\n", {mode: 0o600});
+			writeFileSync(keyPath, "custom-key-data\n", { mode: 0o600 });
 			const key = loadOrCreateHostKey(tmpDir);
 			expect(key.trim()).toBe("custom-key-data");
 		} finally {
-			rmSync(tmpDir, {recursive: true, force: true});
+			rmSync(tmpDir, { recursive: true, force: true });
 		}
 	});
 });
 
-import type {VirtualSshServer} from "../src";
-import {buildLoginBanner} from "../src/modules/SSHMimic/loginBanner";
+import type { VirtualSshServer } from "../src";
+import { buildLoginBanner } from "../src/modules/SSHMimic/loginBanner";
 
 describe("loginBanner", () => {
 	test("buildLoginBanner returns string", () => {
 		const banner = buildLoginBanner(
 			"test-vm",
-			{kernel: "6.1.0", arch: "amd64", os: "Linux"},
+			{ kernel: "6.1.0", arch: "amd64", os: "Linux" },
 			null
 		);
 		expect(banner).toContain("test-vm");
@@ -173,8 +173,8 @@ describe("loginBanner", () => {
 	test("buildLoginBanner with last login", () => {
 		const banner = buildLoginBanner(
 			"test-vm",
-			{kernel: "6.1.0", arch: "amd64", os: "Linux"},
-			{at: "Tue May 20 09:00:00", from: "127.0.0.1"}
+			{ kernel: "6.1.0", arch: "amd64", os: "Linux" },
+			{ at: "Tue May 20 09:00:00", from: "127.0.0.1" }
 		);
 		expect(banner).toContain("Last login");
 	});

@@ -1,6 +1,6 @@
 import * as path from "node:path";
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 const AT_DIR = "/var/spool/at";
 
@@ -9,7 +9,7 @@ export const atCommand: ShellModule = {
 	description: "Schedule delayed execution of commands",
 	category: "system",
 	params: ["[options] <time-spec>"],
-	run: ({shell, args, authUser}) => {
+	run: ({ shell, args, authUser }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout: [
@@ -47,7 +47,7 @@ export const atCommand: ShellModule = {
 		const filtered = args.filter((a) => !a.startsWith("-"));
 		const timeSpec = filtered[0];
 		if (!timeSpec) {
-			return {stderr: "at: no time specified", exitCode: 1};
+			return { stderr: "at: no time specified", exitCode: 1 };
 		}
 
 		const fileIdx = args.indexOf("-f");
@@ -55,7 +55,7 @@ export const atCommand: ShellModule = {
 		if (fileIdx !== -1 && fileIdx + 1 < args.length) {
 			const filePath = args[fileIdx + 1]!;
 			if (!vfs.exists(filePath)) {
-				return {stderr: `at: ${filePath}: No such file`, exitCode: 1};
+				return { stderr: `at: ${filePath}: No such file`, exitCode: 1 };
 			}
 			jobContent = vfs.readFile(filePath);
 		} else {
@@ -71,7 +71,7 @@ export const atqCommand: ShellModule = {
 	description: "List pending at jobs",
 	category: "system",
 	params: [],
-	run: ({shell}) => listJobs(shell.vfs),
+	run: ({ shell }) => listJobs(shell.vfs),
 };
 
 export const atrmCommand: ShellModule = {
@@ -79,11 +79,11 @@ export const atrmCommand: ShellModule = {
 	description: "Delete pending at jobs",
 	category: "system",
 	params: ["<jobid>..."],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		const vfs = shell.vfs;
 		const ids = args.filter((a) => !a.startsWith("-"));
 		if (ids.length === 0) {
-			return {stderr: "atrm: missing job ID", exitCode: 1};
+			return { stderr: "atrm: missing job ID", exitCode: 1 };
 		}
 		for (const id of ids) {
 			const r = deleteJob(vfs, id);
@@ -91,7 +91,7 @@ export const atrmCommand: ShellModule = {
 				return r;
 			}
 		}
-		return {stdout: "", exitCode: 0};
+		return { stdout: "", exitCode: 0 };
 	},
 };
 
@@ -116,7 +116,7 @@ function listJobs(vfs: {
 	ensureDir(vfs, AT_DIR);
 
 	if (!vfs.exists(AT_DIR)) {
-		return {stdout: "No at jobs.\n", exitCode: 0};
+		return { stdout: "No at jobs.\n", exitCode: 0 };
 	}
 
 	const entries: string[] = [];
@@ -141,7 +141,7 @@ function listJobs(vfs: {
 	}
 
 	if (entries.length === 0) {
-		return {stdout: "No at jobs.\n", exitCode: 0};
+		return { stdout: "No at jobs.\n", exitCode: 0 };
 	}
 
 	return {
@@ -151,27 +151,27 @@ function listJobs(vfs: {
 }
 
 function deleteJob(
-	vfs: {exists: (p: string) => boolean; remove: (p: string) => void},
+	vfs: { exists: (p: string) => boolean; remove: (p: string) => void },
 	jobId: string
 ) {
 	const jobPath = path.posix.join(AT_DIR, jobId);
 	if (!vfs.exists(jobPath)) {
-		return {stderr: `atrm: job ${jobId} not found`, exitCode: 1};
+		return { stderr: `atrm: job ${jobId} not found`, exitCode: 1 };
 	}
 	vfs.remove(jobPath);
-	return {stdout: "", exitCode: 0};
+	return { stdout: "", exitCode: 0 };
 }
 
 function showJob(
-	vfs: {exists: (p: string) => boolean; readFile: (p: string) => string},
+	vfs: { exists: (p: string) => boolean; readFile: (p: string) => string },
 	jobId: string
 ) {
 	const jobPath = path.posix.join(AT_DIR, jobId);
 	if (!vfs.exists(jobPath)) {
-		return {stderr: `at: job ${jobId} not found`, exitCode: 1};
+		return { stderr: `at: job ${jobId} not found`, exitCode: 1 };
 	}
 	const content = vfs.readFile(jobPath);
-	return {stdout: `${content}\n`, exitCode: 0};
+	return { stdout: `${content}\n`, exitCode: 0 };
 }
 
 function scheduleJob(
@@ -182,7 +182,7 @@ function scheduleJob(
 		writeFile: (
 			p: string,
 			content: string | Buffer,
-			options?: {mode?: number}
+			options?: { mode?: number }
 		) => void;
 	},
 	timeSpec: string,
@@ -205,7 +205,7 @@ function scheduleJob(
 		content.trim(),
 	].join("\n");
 
-	vfs.writeFile(path.posix.join(AT_DIR, jobId), jobFile, {mode: 0o644});
+	vfs.writeFile(path.posix.join(AT_DIR, jobId), jobFile, { mode: 0o644 });
 
 	return {
 		stdout: `job ${jobId} at ${targetTime.toLocaleString()}\n`,
@@ -269,7 +269,7 @@ function parseTimeSpec(spec: string, now: Date): Date {
 function parseJobFile(
 	name: string,
 	content: string
-): {id: string; time: string; user: string} {
+): { id: string; time: string; user: string } {
 	const lines = content.split("\n");
 	const timeLine = lines.find((l) => l.startsWith("# scheduled at "));
 	const userLine = lines.find((l) => l.startsWith("# by "));

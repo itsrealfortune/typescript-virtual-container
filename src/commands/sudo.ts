@@ -1,6 +1,6 @@
-import type {ShellModule} from "../types/commands";
-import {parseArgs} from "./command-helpers";
-import {runCommand} from "./runtime";
+import type { ShellModule } from "../types/commands";
+import { parseArgs } from "./command-helpers";
+import { runCommand } from "./runtime";
 
 /**
  * Execute a command as another user (superuser by default).
@@ -12,7 +12,7 @@ function parseSudoArgs(args: string[]): {
 	loginShell: boolean;
 	commandLine: string | null;
 } {
-	const {flags, flagsWithValues, positionals} = parseArgs(args, {
+	const { flags, flagsWithValues, positionals } = parseArgs(args, {
 		flags: ["-i", "-S"],
 		flagsWithValue: ["-u", "--user"],
 	});
@@ -22,18 +22,18 @@ function parseSudoArgs(args: string[]): {
 		flagsWithValues.get("-u") || flagsWithValues.get("--user") || "root";
 	const commandLine = positionals.length > 0 ? positionals.join(" ") : null;
 
-	return {targetUser, loginShell, commandLine};
+	return { targetUser, loginShell, commandLine };
 }
 export const sudoCommand: ShellModule = {
 	name: "sudo",
 	description: "Execute as superuser",
 	category: "users",
 	params: ["<command...>"],
-	run: ({authUser, hostname, mode, cwd, shell, args}) => {
-		const {targetUser, loginShell, commandLine} = parseSudoArgs(args);
+	run: ({ authUser, hostname, mode, cwd, shell, args }) => {
+		const { targetUser, loginShell, commandLine } = parseSudoArgs(args);
 
 		if (authUser !== "root" && !shell.users.isSudoer(authUser)) {
-			return {stderr: "sudo: permission denied", exitCode: 1};
+			return { stderr: "sudo: permission denied", exitCode: 1 };
 		}
 
 		const effectiveUser = targetUser || "root";
@@ -49,7 +49,7 @@ export const sudoCommand: ShellModule = {
 			}
 
 			if (!commandLine) {
-				return {stderr: "sudo: missing command", exitCode: 1};
+				return { stderr: "sudo: missing command", exitCode: 1 };
 			}
 
 			return runCommand(

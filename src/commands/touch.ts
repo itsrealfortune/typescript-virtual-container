@@ -1,6 +1,6 @@
 import * as path from "node:path";
-import type {ShellModule} from "../types/commands";
-import {checkFilePermission, resolvePath} from "./helpers";
+import type { ShellModule } from "../types/commands";
+import { checkFilePermission, resolvePath } from "./helpers";
 
 /**
  * Create empty files or update file timestamps.
@@ -12,9 +12,9 @@ export const touchCommand: ShellModule = {
 	description: "Create or update files",
 	category: "files",
 	params: ["<file>"],
-	run: ({authUser, shell, cwd, args, uid, gid}) => {
+	run: ({ authUser, shell, cwd, args, uid, gid }) => {
 		if (args.length === 0) {
-			return {stderr: "touch: missing file operand", exitCode: 1};
+			return { stderr: "touch: missing file operand", exitCode: 1 };
 		}
 
 		for (const file of args) {
@@ -32,6 +32,6 @@ export const touchCommand: ShellModule = {
 				shell.vfs.writeFile(target, "", {}, uid, gid);
 			}
 		}
-		return {exitCode: 0};
+		return { exitCode: 0 };
 	},
 };

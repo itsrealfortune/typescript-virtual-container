@@ -1,6 +1,6 @@
-import type {ShellModule} from "../types/commands";
-import {parseArgs} from "./command-helpers";
-import {expandSync} from "../utils/expand";
+import type { ShellModule } from "../types/commands";
+import { parseArgs } from "./command-helpers";
+import { expandSync } from "../utils/expand";
 
 /**
  * Expand escape sequences for `echo -e`.
@@ -31,8 +31,8 @@ export const echoCommand: ShellModule = {
 	description: "Display text",
 	category: "shell",
 	params: ["[-n] [-e] [text...]"],
-	run: ({args, stdin, env}) => {
-		const {flags, positionals} = parseArgs(args, {
+	run: ({ args, stdin, env }) => {
+		const { flags, positionals } = parseArgs(args, {
 			flags: ["-n", "-e", "-E"],
 		});
 		const noNewline = flags.has("-n");

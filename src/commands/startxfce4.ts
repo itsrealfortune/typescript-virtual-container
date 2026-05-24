@@ -17,6 +17,6 @@ export const startxfce4Command: ShellModule = {
 			};
 		}
 		await dm.start();
-		return {exitCode: 0};
+		return { exitCode: 0 };
 	},
 };

@@ -1,5 +1,5 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 const CRON_DIR = "/var/spool/cron/crontabs";
 
@@ -8,7 +8,7 @@ export const crontabCommand: ShellModule = {
 	description: "Manage per-user crontab files",
 	category: "system",
 	params: ["[-u user] [-e|-l|-r] [file]"],
-	run: ({shell, args, authUser}) => {
+	run: ({ shell, args, authUser }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout: [
@@ -51,18 +51,18 @@ export const crontabCommand: ShellModule = {
 			return installFromFile(vfs, crontabPath, fileArg);
 		}
 
-		return {stderr: "crontab: no options or file specified", exitCode: 1};
+		return { stderr: "crontab: no options or file specified", exitCode: 1 };
 	},
 };
 
 function resolveTargetUser(
 	args: string[],
 	currentUser: string
-): string | {stderr: string; exitCode: number} {
+): string | { stderr: string; exitCode: number } {
 	const uIdx = args.indexOf("-u");
 	if (uIdx !== -1 && uIdx + 1 < args.length) {
 		if (currentUser !== "root") {
-			return {stderr: "crontab: only root can use -u", exitCode: 1};
+			return { stderr: "crontab: only root can use -u", exitCode: 1 };
 		}
 		return args[uIdx + 1]!;
 	}
@@ -70,34 +70,34 @@ function resolveTargetUser(
 }
 
 function editCrontab(
-	vfs: {exists: (p: string) => boolean; readFile: (p: string) => string},
+	vfs: { exists: (p: string) => boolean; readFile: (p: string) => string },
 	path: string
 ) {
 	if (!vfs.exists(path)) {
-		return {stdout: "no crontab for this user\n", exitCode: 0};
+		return { stdout: "no crontab for this user\n", exitCode: 0 };
 	}
 	const content = vfs.readFile(path);
-	return {stdout: content, exitCode: 0};
+	return { stdout: content, exitCode: 0 };
 }
 
 function listCrontab(
-	vfs: {exists: (p: string) => boolean; readFile: (p: string) => string},
+	vfs: { exists: (p: string) => boolean; readFile: (p: string) => string },
 	path: string
 ) {
 	if (!vfs.exists(path)) {
-		return {stdout: "no crontab for this user\n", exitCode: 0};
+		return { stdout: "no crontab for this user\n", exitCode: 0 };
 	}
 	const content = vfs.readFile(path);
-	return {stdout: `${content}\n`, exitCode: 0};
+	return { stdout: `${content}\n`, exitCode: 0 };
 }
 
 function removeCrontab(
-	vfs: {exists: (p: string) => boolean; remove: (p: string) => void},
+	vfs: { exists: (p: string) => boolean; remove: (p: string) => void },
 	path: string,
 	interactive: boolean
 ) {
 	if (!vfs.exists(path)) {
-		return {stdout: "no crontab for this user\n", exitCode: 0};
+		return { stdout: "no crontab for this user\n", exitCode: 0 };
 	}
 
 	if (interactive) {
@@ -108,7 +108,7 @@ function removeCrontab(
 	}
 
 	vfs.remove(path);
-	return {stdout: "", exitCode: 0};
+	return { stdout: "", exitCode: 0 };
 }
 
 function installFromFile(
@@ -117,7 +117,7 @@ function installFromFile(
 		writeFile: (
 			p: string,
 			content: string | Buffer,
-			options?: {mode?: number}
+			options?: { mode?: number }
 		) => void;
 		exists: (p: string) => boolean;
 		mkdir: (p: string, mode?: number) => void;
@@ -126,15 +126,15 @@ function installFromFile(
 	fileArg: string
 ) {
 	if (!vfs.exists(fileArg)) {
-		return {stderr: `crontab: ${fileArg}: No such file`, exitCode: 1};
+		return { stderr: `crontab: ${fileArg}: No such file`, exitCode: 1 };
 	}
 	const content = vfs.readFile(fileArg);
 	if (!validateCrontab(content)) {
-		return {stderr: "crontab: errors in crontab file", exitCode: 1};
+		return { stderr: "crontab: errors in crontab file", exitCode: 1 };
 	}
 	ensureDir(vfs, CRON_DIR);
-	vfs.writeFile(path, content, {mode: 0o644});
-	return {stdout: "", exitCode: 0};
+	vfs.writeFile(path, content, { mode: 0o644 });
+	return { stdout: "", exitCode: 0 };
 }
 
 function validateCrontab(content: string): boolean {

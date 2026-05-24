@@ -1,7 +1,7 @@
-import type {VirtualShell} from "../modules/VirtualShell";
-import type {ShellModule} from "../types/commands";
-import type {VfsFileNode} from "../types/vfs";
-import {resolvePath} from "./helpers";
+import type { VirtualShell } from "../modules/VirtualShell";
+import type { ShellModule } from "../types/commands";
+import type { VfsFileNode } from "../types/vfs";
+import { resolvePath } from "./helpers";
 
 function evalTest(
 	tokens: string[],
@@ -191,7 +191,7 @@ export const testCommand: ShellModule = {
 	description: "Evaluate conditional expression",
 	category: "shell",
 	params: ["<expression>"],
-	run: ({args, shell, cwd}) => {
+	run: ({ args, shell, cwd }) => {
 		try {
 			const tokens = [...args];
 			if (tokens[tokens.length - 1] === "]") {
@@ -201,9 +201,9 @@ export const testCommand: ShellModule = {
 				tokens.shift();
 			}
 			const result = evalTest(tokens, shell, cwd);
-			return {exitCode: result ? 0 : 1};
+			return { exitCode: result ? 0 : 1 };
 		} catch {
-			return {stderr: "test: malformed expression", exitCode: 2};
+			return { stderr: "test: malformed expression", exitCode: 2 };
 		}
 	},
 };
@@ -214,7 +214,7 @@ export const bracketCommand: ShellModule = {
 	description: "Evaluate conditional expression (extended)",
 	category: "shell",
 	params: ["<expression>"],
-	run: ({args, shell, cwd, env}) => {
+	run: ({ args, shell, cwd, env }) => {
 		try {
 			const tokens = [...args];
 			while (tokens[tokens.length - 1] === "]]") {
@@ -229,9 +229,9 @@ export const bracketCommand: ShellModule = {
 				t === "&&" ? "-a" : t === "||" ? "-o" : t
 			);
 			const result = evalTest(processed, shell, cwd, env.vars);
-			return {exitCode: result ? 0 : 1};
+			return { exitCode: result ? 0 : 1 };
 		} catch {
-			return {stderr: "[[ : malformed expression", exitCode: 2};
+			return { stderr: "[[ : malformed expression", exitCode: 2 };
 		}
 	},
 };

@@ -1,4 +1,4 @@
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 const READONLY_KEY = "__readonly";
 
@@ -23,7 +23,7 @@ export const readonlyCommand: ShellModule = {
 	description: "Mark shell variables as readonly",
 	category: "shell",
 	params: ["[-p] [NAME[=VALUE] ...]"],
-	run: ({args, env}) => {
+	run: ({ args, env }) => {
 		const roSet = getReadonlySet(env.vars);
 
 		if (args.length === 0 || (args.length === 1 && args[0] === "-p")) {
@@ -37,7 +37,7 @@ export const readonlyCommand: ShellModule = {
 				)
 				.map(([k, v]) => `readonly ${k}="${v}"`)
 				.join("\n");
-			return {stdout: out ? `${out}\n` : "", exitCode: 0};
+			return { stdout: out ? `${out}\n` : "", exitCode: 0 };
 		}
 		for (const arg of args) {
 			if (arg === "-p") {
@@ -54,6 +54,6 @@ export const readonlyCommand: ShellModule = {
 			}
 		}
 		saveReadonlySet(env.vars, roSet);
-		return {exitCode: 0};
+		return { exitCode: 0 };
 	},
 };

@@ -1,6 +1,6 @@
-import {beforeAll, describe, expect, test} from "bun:test";
-import type {SshClient} from "../src";
-import {createTestEnv, runCmd} from "./test-helper";
+import { beforeAll, describe, expect, test } from "bun:test";
+import type { SshClient } from "../src";
+import { createTestEnv, runCmd } from "./test-helper";
 
 let client: InstanceType<typeof SshClient>;
 

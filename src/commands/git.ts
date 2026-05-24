@@ -1,6 +1,6 @@
 import * as path from "node:path";
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 function gitDir(cwd: string): string {
 	return path.posix.join(cwd, ".git");
@@ -27,7 +27,7 @@ export const gitCommand: ShellModule = {
 	description: "Distributed version control (minimal)",
 	category: "development",
 	params: ["<command> [options]"],
-	run: ({shell, args, cwd}) => {
+	run: ({ shell, args, cwd }) => {
 		if (ifFlag(args, ["--help", "-h"]) || args.length === 0) {
 			return {
 				stdout: [
@@ -51,7 +51,7 @@ export const gitCommand: ShellModule = {
 		const subcommand = args.find((a) => !a.startsWith("-"));
 
 		if (!subcommand) {
-			return {stderr: "git: missing subcommand", exitCode: 1};
+			return { stderr: "git: missing subcommand", exitCode: 1 };
 		}
 
 		switch (subcommand) {
@@ -102,7 +102,10 @@ function gitInit(
 	vfs.writeFile(headRef(cwd), "ref: refs/heads/master\n");
 	vfs.writeFile(indexFile(cwd), "");
 
-	return {stdout: `Initialized empty Git repository in ${gd}/\n`, exitCode: 0};
+	return {
+		stdout: `Initialized empty Git repository in ${gd}/\n`,
+		exitCode: 0,
+	};
 }
 
 function gitAdd(
@@ -118,12 +121,12 @@ function gitAdd(
 ) {
 	const gd = gitDir(cwd);
 	if (!vfs.exists(gd)) {
-		return {stderr: "fatal: not a git repository", exitCode: 128};
+		return { stderr: "fatal: not a git repository", exitCode: 128 };
 	}
 
 	const files = args.filter((a) => !a.startsWith("-") && a !== "add");
 	if (files.length === 0) {
-		return {stderr: "Nothing specified, nothing added.", exitCode: 0};
+		return { stderr: "Nothing specified, nothing added.", exitCode: 0 };
 	}
 
 	const staged: string[] = [];
@@ -148,7 +151,7 @@ function gitAdd(
 	}
 
 	vfs.writeFile(indexFile(cwd), `${staged.join("\n")}\n`);
-	return {stdout: "", exitCode: 0};
+	return { stdout: "", exitCode: 0 };
 }
 
 function gitStatus(
@@ -156,13 +159,13 @@ function gitStatus(
 		exists: (p: string) => boolean;
 		readFile: (p: string) => string;
 		list: (p: string) => string[];
-		stat: (p: string) => {mode: number; updatedAt: Date};
+		stat: (p: string) => { mode: number; updatedAt: Date };
 	},
 	cwd: string
 ) {
 	const gd = gitDir(cwd);
 	if (!vfs.exists(gd)) {
-		return {stderr: "fatal: not a git repository", exitCode: 128};
+		return { stderr: "fatal: not a git repository", exitCode: 128 };
 	}
 
 	const lines: string[] = [];
@@ -212,7 +215,7 @@ function gitStatus(
 		lines.push("nothing to commit, working tree clean");
 	}
 
-	return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
+	return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 }
 
 function gitCommit(
@@ -227,13 +230,13 @@ function gitCommit(
 ) {
 	const gd = gitDir(cwd);
 	if (!vfs.exists(gd)) {
-		return {stderr: "fatal: not a git repository", exitCode: 128};
+		return { stderr: "fatal: not a git repository", exitCode: 128 };
 	}
 
 	const mIdx = args.indexOf("-m");
 	const msg = mIdx !== -1 && mIdx + 1 < args.length ? args[mIdx + 1]! : null;
 	if (!msg) {
-		return {stderr: "error: switch `m' requires a value", exitCode: 1};
+		return { stderr: "error: switch `m' requires a value", exitCode: 1 };
 	}
 
 	const indexContent = vfs.exists(indexFile(cwd))
@@ -287,13 +290,13 @@ function gitCommit(
 }
 
 function gitLog(
-	vfs: {readFile: (p: string) => string; exists: (p: string) => boolean},
+	vfs: { readFile: (p: string) => string; exists: (p: string) => boolean },
 	cwd: string,
 	args: string[]
 ) {
 	const gd = gitDir(cwd);
 	if (!vfs.exists(gd)) {
-		return {stderr: "fatal: not a git repository", exitCode: 128};
+		return { stderr: "fatal: not a git repository", exitCode: 128 };
 	}
 
 	const oneline = ifFlag(args, ["--oneline"]);
@@ -338,7 +341,7 @@ function gitLog(
 		hash = parentMatch ? parentMatch[1]! : "";
 	}
 
-	return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
+	return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 }
 
 function gitBranch(
@@ -352,12 +355,12 @@ function gitBranch(
 ) {
 	const gd = gitDir(cwd);
 	if (!vfs.exists(gd)) {
-		return {stderr: "fatal: not a git repository", exitCode: 128};
+		return { stderr: "fatal: not a git repository", exitCode: 128 };
 	}
 
 	const headsDir = path.posix.join(gd, "refs", "heads");
 	if (!vfs.exists(headsDir)) {
-		return {stdout: "", exitCode: 0};
+		return { stdout: "", exitCode: 0 };
 	}
 
 	const current = currentBranch(vfs, cwd);
@@ -366,7 +369,7 @@ function gitBranch(
 		return b === current ? `* ${b}` : `  ${b}`;
 	});
 
-	return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
+	return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 }
 
 function gitCheckout(
@@ -379,27 +382,27 @@ function gitCheckout(
 ) {
 	const gd = gitDir(cwd);
 	if (!vfs.exists(gd)) {
-		return {stderr: "fatal: not a git repository", exitCode: 128};
+		return { stderr: "fatal: not a git repository", exitCode: 128 };
 	}
 
 	const branch = args.find((a) => !a.startsWith("-") && a !== "checkout");
 	if (!branch) {
-		return {stderr: "git checkout: missing branch name", exitCode: 1};
+		return { stderr: "git checkout: missing branch name", exitCode: 1 };
 	}
 
 	const branchPath = refPath(cwd, `refs/heads/${branch}`);
 	if (!vfs.exists(branchPath)) {
 		vfs.writeFile(headRef(cwd), `ref: refs/heads/${branch}\n`);
-		return {stdout: `Switched to a new branch '${branch}'\n`, exitCode: 0};
+		return { stdout: `Switched to a new branch '${branch}'\n`, exitCode: 0 };
 	}
 
 	vfs.writeFile(headRef(cwd), `ref: refs/heads/${branch}\n`);
 
-	return {stdout: `Switched to branch '${branch}'\n`, exitCode: 0};
+	return { stdout: `Switched to branch '${branch}'\n`, exitCode: 0 };
 }
 
 function currentBranch(
-	vfs: {readFile: (p: string) => string; exists: (p: string) => boolean},
+	vfs: { readFile: (p: string) => string; exists: (p: string) => boolean },
 	cwd: string
 ): string {
 	if (!vfs.exists(headRef(cwd))) {
@@ -411,7 +414,7 @@ function currentBranch(
 }
 
 function getHeadCommit(
-	vfs: {readFile: (p: string) => string; exists: (p: string) => boolean},
+	vfs: { readFile: (p: string) => string; exists: (p: string) => boolean },
 	cwd: string
 ): string | null {
 	if (!vfs.exists(headRef(cwd))) {
@@ -442,7 +445,7 @@ function hashContent(content: string): string {
 function listFiles(
 	vfs: {
 		list: (p: string) => string[];
-		stat: (p: string) => {mode: number; updatedAt: Date};
+		stat: (p: string) => { mode: number; updatedAt: Date };
 	},
 	dir: string,
 	prefix: string

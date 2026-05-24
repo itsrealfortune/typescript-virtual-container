@@ -1,5 +1,5 @@
-import type {ShellModule} from "../types/commands";
-import {resolvePath} from "./helpers";
+import type { ShellModule } from "../types/commands";
+import { resolvePath } from "./helpers";
 
 /**
  * Compare files line-by-line and print differing lines.
@@ -11,10 +11,10 @@ export const diffCommand: ShellModule = {
 	description: "Compare files line by line",
 	category: "text",
 	params: ["<file1> <file2>"],
-	run: ({shell, cwd, args}) => {
+	run: ({ shell, cwd, args }) => {
 		const [f1, f2] = args;
 		if (!(f1 && f2)) {
-			return {stderr: "diff: missing operand", exitCode: 1};
+			return { stderr: "diff: missing operand", exitCode: 1 };
 		}
 		const p1 = resolvePath(cwd, f1);
 		const p2 = resolvePath(cwd, f2);
@@ -23,12 +23,12 @@ export const diffCommand: ShellModule = {
 		try {
 			a = shell.vfs.readFile(p1).split("\n");
 		} catch {
-			return {stderr: `diff: ${f1}: No such file or directory`, exitCode: 2};
+			return { stderr: `diff: ${f1}: No such file or directory`, exitCode: 2 };
 		}
 		try {
 			b = shell.vfs.readFile(p2).split("\n");
 		} catch {
-			return {stderr: `diff: ${f2}: No such file or directory`, exitCode: 2};
+			return { stderr: `diff: ${f2}: No such file or directory`, exitCode: 2 };
 		}
 
 		const out: string[] = [];
@@ -45,6 +45,6 @@ export const diffCommand: ShellModule = {
 				}
 			}
 		}
-		return {stdout: out.join("\n"), exitCode: out.length > 0 ? 1 : 0};
+		return { stdout: out.join("\n"), exitCode: out.length > 0 ? 1 : 0 };
 	},
 };

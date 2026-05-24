@@ -1,8 +1,8 @@
 import * as path from "node:path";
-import type {VirtualShell} from "../modules/VirtualShell";
-import type {CommandResult, ShellModule} from "../types/commands";
-import {getArg, ifFlag} from "./command-helpers";
-import {checkFilePermission, resolvePath} from "./helpers";
+import type { VirtualShell } from "../modules/VirtualShell";
+import type { CommandResult, ShellModule } from "../types/commands";
+import { getArg, ifFlag } from "./command-helpers";
+import { checkFilePermission, resolvePath } from "./helpers";
 
 const FLAG_RECURSIVE = ["-r", "-R", "-rf", "-fr", "-rF", "-Fr"];
 const FLAG_FORCE = ["-f", "-rf", "-fr", "-rF", "-Fr", "--force"];
@@ -17,9 +17,9 @@ export const rmCommand: ShellModule = {
 	description: "Remove files or directories",
 	category: "files",
 	params: ["[-r|-rf|-f] <path>"],
-	run: ({authUser, shell, cwd, args, uid, gid}) => {
+	run: ({ authUser, shell, cwd, args, uid, gid }) => {
 		if (args.length === 0) {
-			return {stderr: "rm: missing operand", exitCode: 1};
+			return { stderr: "rm: missing operand", exitCode: 1 };
 		}
 
 		const recursive = ifFlag(args, FLAG_RECURSIVE);
@@ -28,7 +28,7 @@ export const rmCommand: ShellModule = {
 
 		const targets: string[] = [];
 		for (let index = 0; ; index += 1) {
-			const target = getArg(args, index, {flags: allFlags});
+			const target = getArg(args, index, { flags: allFlags });
 			if (!target) {
 				break;
 			}
@@ -36,7 +36,7 @@ export const rmCommand: ShellModule = {
 		}
 
 		if (targets.length === 0) {
-			return {stderr: "rm: missing operand", exitCode: 1};
+			return { stderr: "rm: missing operand", exitCode: 1 };
 		}
 
 		const resolved = targets.map((t) => resolvePath(cwd, t));
@@ -65,10 +65,10 @@ export const rmCommand: ShellModule = {
 		const doRemove = (sh: VirtualShell): CommandResult => {
 			for (const r of resolved) {
 				if (sh.vfs.exists(r)) {
-					sh.vfs.remove(r, {recursive}, uid, gid);
+					sh.vfs.remove(r, { recursive }, uid, gid);
 				}
 			}
-			return {exitCode: 0};
+			return { exitCode: 0 };
 		};
 
 		if (force) {
@@ -93,10 +93,10 @@ export const rmCommand: ShellModule = {
 					const answer = input.trim().toLowerCase();
 					if (answer !== "y" && answer !== "yes") {
 						return Promise.resolve({
-							result: {stdout: "rm: cancelled\n", exitCode: 1},
+							result: { stdout: "rm: cancelled\n", exitCode: 1 },
 						});
 					}
-					return Promise.resolve({result: doRemove(sh)});
+					return Promise.resolve({ result: doRemove(sh) });
 				},
 			},
 			exitCode: 0,

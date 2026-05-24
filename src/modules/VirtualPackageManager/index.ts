@@ -15,7 +15,7 @@
  * ```
  */
 import type VirtualFileSystem from "../VirtualFileSystem";
-import type {VirtualUserManager} from "../VirtualUserManager";
+import type { VirtualUserManager } from "../VirtualUserManager";
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
@@ -157,7 +157,7 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 				content: '#!/bin/sh\nexec builtin python3 "$@"\n',
 				mode: 0o755,
 			},
-			{path: "/usr/lib/python3.11/.keep", content: ""},
+			{ path: "/usr/lib/python3.11/.keep", content: "" },
 		],
 	},
 	{
@@ -167,7 +167,7 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		description: "Minimal subset of the Python language (version 3)",
 		shortDesc: "minimal subset of Python language",
 		installedSizeKb: 196,
-		files: [{path: "/usr/lib/python3-minimal/.keep", content: ""}],
+		files: [{ path: "/usr/lib/python3-minimal/.keep", content: "" }],
 	},
 	{
 		name: "nodejs",
@@ -436,7 +436,7 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		shortDesc: "pager program",
 		installedSizeKb: 328,
 		files: [
-			{path: "/usr/bin/less", content: '#!/bin/sh\ncat "$@"\n', mode: 0o755},
+			{ path: "/usr/bin/less", content: '#!/bin/sh\ncat "$@"\n', mode: 0o755 },
 		],
 	},
 	{
@@ -508,9 +508,9 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		shortDesc: "common CA certificates",
 		installedSizeKb: 388,
 		files: [
-			{path: "/etc/ssl/certs/.keep", content: ""},
-			{path: "/etc/ssl/private/.keep", content: ""},
-			{path: "/usr/share/ca-certificates/.keep", content: ""},
+			{ path: "/etc/ssl/certs/.keep", content: "" },
+			{ path: "/etc/ssl/private/.keep", content: "" },
+			{ path: "/usr/share/ca-certificates/.keep", content: "" },
 		],
 		onInstall: (vfs) => {
 			if (!vfs.exists("/etc/ssl")) {
@@ -529,7 +529,7 @@ const PACKAGE_REGISTRY: PackageDefinition[] = [
 		shortDesc: "locale data",
 		installedSizeKb: 16484,
 		files: [
-			{path: "/etc/locale.gen", content: "en_US.UTF-8 UTF-8\n"},
+			{ path: "/etc/locale.gen", content: "en_US.UTF-8 UTF-8\n" },
 			{
 				path: "/etc/default/locale",
 				content: "LANG=en_US.UTF-8\nLANGUAGE=en_US:en\n",
@@ -829,8 +829,8 @@ export class VirtualPackageManager {
 	 */
 	public install(
 		names: string[],
-		opts: {quiet?: boolean} = {}
-	): {output: string; exitCode: number} {
+		opts: { quiet?: boolean } = {}
+	): { output: string; exitCode: number } {
 		this._ensureLoaded();
 		const lines: string[] = [];
 		const toInstall: PackageDefinition[] = [];
@@ -915,7 +915,7 @@ export class VirtualPackageManager {
 				if (dir && !this._vfs.exists(dir)) {
 					this._vfs.mkdir(dir, 0o755);
 				}
-				this._vfs.writeFile(f.path, f.content, {mode: f.mode ?? 0o644});
+				this._vfs.writeFile(f.path, f.content, { mode: f.mode ?? 0o644 });
 			}
 
 			// Run install hook
@@ -951,7 +951,7 @@ export class VirtualPackageManager {
 			lines.push("Processing triggers for man-db (2.11.2-2) ...");
 		}
 
-		return {output: lines.join("\n"), exitCode: 0};
+		return { output: lines.join("\n"), exitCode: 0 };
 	}
 
 	/**
@@ -969,8 +969,8 @@ export class VirtualPackageManager {
 	 */
 	public remove(
 		names: string[],
-		opts: {purge?: boolean; quiet?: boolean} = {}
-	): {output: string; exitCode: number} {
+		opts: { purge?: boolean; quiet?: boolean } = {}
+	): { output: string; exitCode: number } {
 		this._ensureLoaded();
 		const lines: string[] = [];
 		const toRemove: InstalledPackage[] = [];
@@ -985,7 +985,7 @@ export class VirtualPackageManager {
 		}
 
 		if (toRemove.length === 0) {
-			return {output: lines.join("\n") || "Nothing to remove.", exitCode: 0};
+			return { output: lines.join("\n") || "Nothing to remove.", exitCode: 0 };
 		}
 
 		if (!opts.quiet) {
@@ -1034,7 +1034,7 @@ export class VirtualPackageManager {
 		);
 		this._persist();
 
-		return {output: lines.join("\n"), exitCode: 0};
+		return { output: lines.join("\n"), exitCode: 0 };
 	}
 
 	/**

@@ -7,8 +7,8 @@ import type {
 	RoutingTable,
 	PolicyRule,
 } from "./types";
-import {randomMac} from "./types";
-export {randomMac} from "./types";
+import { randomMac } from "./types";
+export { randomMac } from "./types";
 export type {
 	FirewallRule,
 	VirtualArpEntry,
@@ -95,9 +95,9 @@ export class VirtualNetworkManager {
 	private _conntrackMax = 65536;
 
 	private _routingTables: RoutingTable[] = [
-		{id: 254, name: "main", routes: []},
-		{id: 253, name: "default", routes: []},
-		{id: 252, name: "local", routes: []},
+		{ id: 254, name: "main", routes: [] },
+		{ id: 253, name: "default", routes: [] },
+		{ id: 252, name: "local", routes: [] },
 	];
 
 	private _policyRules: PolicyRule[] = [];
@@ -120,7 +120,7 @@ export class VirtualNetworkManager {
 		if (this._interfaces.some((i) => i.name === iface.name)) {
 			return false;
 		}
-		this._interfaces.push({...iface, state: "DOWN"});
+		this._interfaces.push({ ...iface, state: "DOWN" });
 		return true;
 	}
 
@@ -197,7 +197,7 @@ export class VirtualNetworkManager {
 
 	public addRoutingTable(name: string): number {
 		const id = this._nextTableId++;
-		this._routingTables.push({id, name, routes: []});
+		this._routingTables.push({ id, name, routes: [] });
 		return id;
 	}
 
@@ -235,7 +235,7 @@ export class VirtualNetworkManager {
 			this._policyRules.length > 0
 				? Math.max(...this._policyRules.map((r) => r.priority)) + 1000
 				: 1000;
-		this._policyRules.push({...rule, priority});
+		this._policyRules.push({ ...rule, priority });
 		return priority;
 	}
 
@@ -696,13 +696,13 @@ export class VirtualNetworkManager {
 				continue;
 			}
 			if (rule.action === "blackhole") {
-				return {route: null, table: -1};
+				return { route: null, table: -1 };
 			}
 			if (rule.action === "unreachable") {
-				return {route: null, table: -2};
+				return { route: null, table: -2 };
 			}
 			if (rule.action === "prohibit") {
-				return {route: null, table: -3};
+				return { route: null, table: -3 };
 			}
 			if (rule.action === "lookup") {
 				const table = this._routingTables.find((t) => t.id === rule.table);
@@ -711,7 +711,7 @@ export class VirtualNetworkManager {
 						this._ipMatchesDestination(dstIp, r)
 					);
 					if (route) {
-						return {route, table: rule.table};
+						return { route, table: rule.table };
 					}
 				}
 			}
@@ -719,7 +719,7 @@ export class VirtualNetworkManager {
 		const route = this._routes.find((r) =>
 			this._ipMatchesDestination(dstIp, r)
 		);
-		return {route: route ?? null, table: 254};
+		return { route: route ?? null, table: 254 };
 	}
 
 	private static _ipMatchesRule(ip: string, pattern: string): boolean {

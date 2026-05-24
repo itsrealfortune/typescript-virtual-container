@@ -1,12 +1,12 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 export const hexdumpCommand: ShellModule = {
 	name: "hexdump",
 	description: "Display file contents in hexadecimal",
 	category: "files",
 	params: ["[-C] [file...]"],
-	run: ({shell, args, stdin}) => {
+	run: ({ shell, args, stdin }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout:
@@ -21,13 +21,13 @@ export const hexdumpCommand: ShellModule = {
 		let data = "";
 		if (files.length > 0) {
 			if (!shell.vfs.exists(files[0]!)) {
-				return {stderr: `hexdump: ${files[0]}: No such file`, exitCode: 1};
+				return { stderr: `hexdump: ${files[0]}: No such file`, exitCode: 1 };
 			}
 			data = shell.vfs.readFile(files[0]!);
 		} else if (stdin) {
 			data = stdin;
 		} else {
-			return {stderr: "hexdump: missing operand", exitCode: 1};
+			return { stderr: "hexdump: missing operand", exitCode: 1 };
 		}
 
 		const bytes = Buffer.from(data);
@@ -51,6 +51,6 @@ export const hexdumpCommand: ShellModule = {
 			}
 		}
 
-		return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
+		return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 	},
 };

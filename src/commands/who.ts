@@ -1,5 +1,5 @@
-import {formatLoginDate} from "../modules/SSHMimic/loginFormat";
-import type {ShellModule} from "../types/commands";
+import { formatLoginDate } from "../modules/SSHMimic/loginFormat";
+import type { ShellModule } from "../types/commands";
 
 /**
  * Show active user sessions.
@@ -11,7 +11,7 @@ export const whoCommand: ShellModule = {
 	description: "Show active sessions",
 	category: "system",
 	params: [],
-	run: ({shell}) => {
+	run: ({ shell }) => {
 		const lines = shell.users.listActiveSessions().map((session) => {
 			const loginAt = new Date(session.startedAt);
 			const displayDate = Number.isNaN(loginAt.getTime())
@@ -20,6 +20,6 @@ export const whoCommand: ShellModule = {
 			return `${session.username} ${session.tty} ${displayDate} (${session.remoteAddress || "unknown"})`;
 		});
 
-		return {stdout: lines.join("\n"), exitCode: 0};
+		return { stdout: lines.join("\n"), exitCode: 0 };
 	},
 };

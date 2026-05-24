@@ -1,11 +1,11 @@
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 export const hashCommand: ShellModule = {
 	name: "hash",
 	description: "Display and manage the command hash table",
 	category: "shell",
 	params: ["[-r] [name...]"],
-	run: ({args, shell, env}) => {
+	run: ({ args, shell, env }) => {
 		const hasR = args.includes("-r");
 		const names = args.filter((a) => a !== "-r");
 
@@ -34,7 +34,7 @@ export const hashCommand: ShellModule = {
 					env.vars[`__hash_${name}`] = "";
 				}
 			}
-			return {exitCode: 0};
+			return { exitCode: 0 };
 		}
 
 		if (!hasR) {
@@ -50,6 +50,6 @@ export const hashCommand: ShellModule = {
 			};
 		}
 
-		return {exitCode: 0};
+		return { exitCode: 0 };
 	},
 };

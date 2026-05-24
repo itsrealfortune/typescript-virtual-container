@@ -20,10 +20,10 @@
  * ```
  */
 
-import {EventEmitter} from "node:events";
+import { EventEmitter } from "node:events";
 import type VirtualFileSystem from "../VirtualFileSystem";
-import {decodeVfs} from "../VirtualFileSystem/binaryPack";
-import type {VirtualShell} from "../VirtualShell";
+import { decodeVfs } from "../VirtualFileSystem/binaryPack";
+import type { VirtualShell } from "../VirtualShell";
 
 export interface IdleManagerOptions {
 	/**
@@ -48,7 +48,7 @@ export type IdleState = "active" | "frozen";
 
 /** Minimal interface for GC operations on the shell's user manager. */
 interface GcUserManager {
-	listProcesses(): Array<{pid: number; status: string}>;
+	listProcesses(): Array<{ pid: number; status: string }>;
 	unregisterProcess(pid: number): void;
 	getProcessCpuTime(pid: number): number;
 	listActiveSessions(): Array<{

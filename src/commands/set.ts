@@ -1,4 +1,4 @@
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 const FLAG_TO_INTERNAL: Record<string, string> = {
 	e: "__errexit",
@@ -36,13 +36,13 @@ export const setCommand: ShellModule = {
 	description: "Display or set shell variables",
 	category: "shell",
 	params: ["[+-abCefhkmnuvx] [+-o option] [-- args]"],
-	run: ({args, env}) => {
+	run: ({ args, env }) => {
 		if (args.length === 0) {
 			const out = Object.entries(env.vars)
 				.filter(([k]) => !k.startsWith("__"))
 				.map(([k, v]) => `${k}=${v}`)
 				.join("\n");
-			return {stdout: out, exitCode: 0};
+			return { stdout: out, exitCode: 0 };
 		}
 
 		let dashDash = false;
@@ -112,6 +112,6 @@ export const setCommand: ShellModule = {
 			}
 		}
 
-		return {exitCode: 0};
+		return { exitCode: 0 };
 	},
 };

@@ -3,7 +3,7 @@ import type {
 	CommandResult,
 	ShellModule,
 } from "../types/commands";
-import {resolveModule} from "./registry";
+import { resolveModule } from "./registry";
 
 function runCommandVfsStub(
 	vfsBinary: string,
@@ -11,7 +11,7 @@ function runCommandVfsStub(
 	args: string[],
 	ctx: CommandContext
 ): CommandResult | Promise<CommandResult> {
-	const {authUser, hostname, mode, cwd, shell, stdin, env} = ctx;
+	const { authUser, hostname, mode, cwd, shell, stdin, env } = ctx;
 	const stubContent = shell.vfs.readFile(vfsBinary);
 	const builtinMatch = stubContent.match(/exec\s+builtin\s+(\S+)/);
 	if (builtinMatch) {
@@ -50,7 +50,7 @@ function runCommandVfsStub(
 			env,
 		});
 	}
-	return {stderr: `${cmdName}: command not found`, exitCode: 127};
+	return { stderr: `${cmdName}: command not found`, exitCode: 127 };
 }
 
 export const commandCommand: ShellModule = {
@@ -58,9 +58,20 @@ export const commandCommand: ShellModule = {
 	description: "Run a command or display info about it",
 	category: "shell",
 	params: ["[-vVp] <command> [args...]"],
-	run: ({args, authUser, uid, gid, hostname, mode, cwd, shell, stdin, env}) => {
+	run: ({
+		args,
+		authUser,
+		uid,
+		gid,
+		hostname,
+		mode,
+		cwd,
+		shell,
+		stdin,
+		env,
+	}) => {
 		if (args.length === 0) {
-			return {stderr: "command: missing argument", exitCode: 1};
+			return { stderr: "command: missing argument", exitCode: 1 };
 		}
 
 		const flags = new Set(
@@ -117,7 +128,7 @@ export const commandCommand: ShellModule = {
 					});
 				}
 			}
-			return {stderr: `${cmdName}: not found`, exitCode: 127};
+			return { stderr: `${cmdName}: not found`, exitCode: 127 };
 		}
 
 		if (hasV || hasVv) {
@@ -164,9 +175,9 @@ export const commandCommand: ShellModule = {
 					}
 				}
 			}
-			return {stdout: lines.join("\n"), exitCode};
+			return { stdout: lines.join("\n"), exitCode };
 		}
 
-		return {stdout: "", exitCode: 0};
+		return { stdout: "", exitCode: 0 };
 	},
 };

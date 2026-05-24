@@ -1,5 +1,5 @@
-import {describe, expect, test} from "bun:test";
-import {SandboxedShell} from "../src/modules/SandboxedShell";
+import { describe, expect, test } from "bun:test";
+import { SandboxedShell } from "../src/modules/SandboxedShell";
 
 describe("SandboxedShell", () => {
 	const timeout = 15_000;

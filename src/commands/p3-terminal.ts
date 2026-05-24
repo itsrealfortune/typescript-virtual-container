@@ -1,12 +1,12 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 export const screenCommand: ShellModule = {
 	name: "screen",
 	description: "Terminal multiplexer",
 	category: "system",
 	params: ["[-S <name>] [command]"],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout:
@@ -27,7 +27,7 @@ export const screenCommand: ShellModule = {
 					}
 				}
 			} catch {}
-			return {stdout: "No Sockets found in /var/run/screen.\n", exitCode: 1};
+			return { stdout: "No Sockets found in /var/run/screen.\n", exitCode: 1 };
 		}
 		return {
 			stdout: `[screen: session created on pts/${Math.floor(Math.random() * 256)}]\n`,
@@ -42,7 +42,7 @@ export const tmuxCommand: ShellModule = {
 	category: "system",
 	params: ["[command]"],
 	aliases: ["tmux"],
-	run: ({args}) => {
+	run: ({ args }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout:
@@ -52,15 +52,15 @@ export const tmuxCommand: ShellModule = {
 		}
 		const cmd = args.find((a) => !a.startsWith("-"));
 		if (cmd === "ls" || cmd === "list-sessions") {
-			return {stdout: "0: 1 windows (created ...) (attached)\n", exitCode: 0};
+			return { stdout: "0: 1 windows (created ...) (attached)\n", exitCode: 0 };
 		}
 		if (cmd === "new-session" || cmd === "new") {
-			return {stdout: "", exitCode: 0};
+			return { stdout: "", exitCode: 0 };
 		}
 		if (cmd === "attach" || cmd === "attach-session") {
-			return {stdout: "", exitCode: 0};
+			return { stdout: "", exitCode: 0 };
 		}
-		return {stdout: "[tmux: virtual session started]\n", exitCode: 0};
+		return { stdout: "[tmux: virtual session started]\n", exitCode: 0 };
 	},
 };
 
@@ -69,7 +69,7 @@ export const watchCommand: ShellModule = {
 	description: "Execute a program periodically",
 	category: "system",
 	params: ["[-n <seconds>] <command>"],
-	run: ({args}) => {
+	run: ({ args }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout:
@@ -96,7 +96,7 @@ export const timeCommand: ShellModule = {
 	description: "Measure command execution time",
 	category: "system",
 	params: ["<command> [args...]"],
-	run: ({args}) => {
+	run: ({ args }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout:

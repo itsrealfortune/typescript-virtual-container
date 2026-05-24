@@ -1,7 +1,7 @@
 import * as path from "node:path";
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
-import {checkFilePermission, resolvePath} from "./helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
+import { checkFilePermission, resolvePath } from "./helpers";
 
 /**
  * Copy files or directories inside the virtual filesystem.
@@ -13,13 +13,13 @@ export const cpCommand: ShellModule = {
 	description: "Copy files or directories",
 	category: "files",
 	params: ["[-r] <source> <dest>"],
-	run: ({authUser, shell, cwd, args, uid, gid}) => {
+	run: ({ authUser, shell, cwd, args, uid, gid }) => {
 		const recursive = ifFlag(args, ["-r", "-R", "--recursive"]);
 		const positionals = args.filter((a) => !a.startsWith("-"));
 		const [srcArg, destArg] = positionals;
 
 		if (!(srcArg && destArg)) {
-			return {stderr: "cp: missing operand", exitCode: 1};
+			return { stderr: "cp: missing operand", exitCode: 1 };
 		}
 
 		const srcPath = resolvePath(cwd, srcArg);
@@ -81,10 +81,10 @@ export const cpCommand: ShellModule = {
 				shell.vfs.writeFile(finalDest, content, {}, uid, gid);
 			}
 
-			return {exitCode: 0};
+			return { exitCode: 0 };
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
-			return {stderr: `cp: ${msg}`, exitCode: 1};
+			return { stderr: `cp: ${msg}`, exitCode: 1 };
 		}
 	},
 };

@@ -1,5 +1,5 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 /**
  * Print Linux distribution information.
@@ -11,7 +11,7 @@ export const lsbReleaseCommand: ShellModule = {
 	description: "Print distribution-specific information",
 	category: "system",
 	params: ["[-a] [-i] [-d] [-r] [-c]"],
-	run: ({args, shell}) => {
+	run: ({ args, shell }) => {
 		let osName = shell.properties?.os ?? "Fortune GNU/Linux x64";
 		let codename = "nyx";
 		let version = "1.0";
@@ -71,6 +71,6 @@ export const lsbReleaseCommand: ShellModule = {
 			lines.push(`Codename:\t${codename}`);
 		}
 
-		return {stdout: lines.join("\n"), exitCode: 0};
+		return { stdout: lines.join("\n"), exitCode: 0 };
 	},
 };

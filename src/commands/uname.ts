@@ -1,5 +1,5 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 /**
  * Print system information (kernel name, version, machine type).
@@ -11,7 +11,7 @@ export const unameCommand: ShellModule = {
 	description: "Print system information",
 	category: "system",
 	params: ["[-a] [-s] [-r] [-m]"],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		const all = ifFlag(args, ["-a"]);
 		const sysname = "Linux";
 		const release = shell.properties?.kernel ?? "1.0.0+itsrealfortune+1-amd64";
@@ -24,11 +24,11 @@ export const unameCommand: ShellModule = {
 			};
 		}
 		if (ifFlag(args, ["-r"])) {
-			return {stdout: release, exitCode: 0};
+			return { stdout: release, exitCode: 0 };
 		}
 		if (ifFlag(args, ["-m"])) {
-			return {stdout: machine, exitCode: 0};
+			return { stdout: machine, exitCode: 0 };
 		}
-		return {stdout: sysname, exitCode: 0};
+		return { stdout: sysname, exitCode: 0 };
 	},
 };

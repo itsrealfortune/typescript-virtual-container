@@ -1,6 +1,6 @@
-import {buildNeofetchOutput} from "../modules/neofetch";
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import { buildNeofetchOutput } from "../modules/neofetch";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 /**
  * Display system information in a decorative format.
@@ -12,7 +12,7 @@ export const neofetchCommand: ShellModule = {
 	description: "System info display",
 	category: "system",
 	params: ["[--off]"],
-	run: ({args, authUser, hostname, shell, env}) => {
+	run: ({ args, authUser, hostname, shell, env }) => {
 		if (!shell.packageManager.isInstalled("neofetch")) {
 			return {
 				stderr:

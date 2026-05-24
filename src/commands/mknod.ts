@@ -1,5 +1,5 @@
-import type {DeviceKind} from "../modules/VirtualFileSystem/internalTypes";
-import type {ShellModule} from "../types/commands";
+import type { DeviceKind } from "../modules/VirtualFileSystem/internalTypes";
+import type { ShellModule } from "../types/commands";
 
 const DEVICE_KINDS: DeviceKind[] = [
 	"null",
@@ -25,7 +25,7 @@ export const mknodCommand: ShellModule = {
 	description: "Create a special file (device node)",
 	category: "system",
 	params: ["[-t type] <path>"],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		let deviceKind: DeviceKind = "null";
 		let targetPath = "";
 
@@ -54,7 +54,7 @@ export const mknodCommand: ShellModule = {
 
 		try {
 			shell.vfs.mknod(targetPath, deviceKind);
-			return {exitCode: 0};
+			return { exitCode: 0 };
 		} catch (e) {
 			return {
 				stderr: `mknod: ${e instanceof Error ? e.message : String(e)}`,
@@ -74,7 +74,7 @@ export const mkfifoCommand: ShellModule = {
 	description: "Create a named pipe (FIFO)",
 	category: "system",
 	params: ["<path>"],
-	run: ({shell, args, authUser}) => {
+	run: ({ shell, args, authUser }) => {
 		const targetPath = args.find((a) => !a.startsWith("-"));
 		if (!targetPath) {
 			return {
@@ -86,8 +86,8 @@ export const mkfifoCommand: ShellModule = {
 		const gid = shell.users.getGid(authUser);
 
 		try {
-			shell.vfs.writeFile(targetPath, "", {mode: 0o644}, uid, gid);
-			return {exitCode: 0};
+			shell.vfs.writeFile(targetPath, "", { mode: 0o644 }, uid, gid);
+			return { exitCode: 0 };
 		} catch (e) {
 			return {
 				stderr: `mkfifo: ${e instanceof Error ? e.message : String(e)}`,

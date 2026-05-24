@@ -1,4 +1,4 @@
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 /**
  * Modify a user account — change primary group, supplementary groups, lock/unlock.
@@ -10,9 +10,9 @@ export const usermodCommand: ShellModule = {
 	description: "Modify a user account",
 	category: "users",
 	params: ["[-g group|-G groups|-aG group|-L|-U] <user>"],
-	run: ({authUser, shell, args}) => {
+	run: ({ authUser, shell, args }) => {
 		if (authUser !== "root") {
-			return {stderr: "usermod: permission denied\n", exitCode: 1};
+			return { stderr: "usermod: permission denied\n", exitCode: 1 };
 		}
 
 		let primaryGroup: string | undefined;
@@ -133,6 +133,6 @@ export const usermodCommand: ShellModule = {
 			};
 		}
 
-		return {stdout: `usermod: user '${username}' modified\n`, exitCode: 0};
+		return { stdout: `usermod: user '${username}' modified\n`, exitCode: 0 };
 	},
 };

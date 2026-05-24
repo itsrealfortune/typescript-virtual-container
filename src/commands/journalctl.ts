@@ -1,12 +1,12 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 export const journalctlCommand: ShellModule = {
 	name: "journalctl",
 	description: "Query the systemd journal",
 	category: "system",
 	params: ["[options] [pattern]"],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout: [
@@ -77,15 +77,15 @@ export const journalctlCommand: ShellModule = {
 		const result = `${filtered.join("\n")}\n`;
 
 		if (flags.follow && result) {
-			return {stdout: result, exitCode: 0};
+			return { stdout: result, exitCode: 0 };
 		}
 
-		return {stdout: result || "(no entries)\n", exitCode: 0};
+		return { stdout: result || "(no entries)\n", exitCode: 0 };
 	},
 };
 
 function listLogFiles(
-	vfs: {exists: (p: string) => boolean; list: (d: string) => string[]},
+	vfs: { exists: (p: string) => boolean; list: (d: string) => string[] },
 	dir: string
 ): string[] {
 	if (!vfs.exists(dir)) {
@@ -146,7 +146,7 @@ function extractFlags(args: string[]): {
 		}
 	}
 
-	return {lines, follow, priority, unit};
+	return { lines, follow, priority, unit };
 }
 
 function priorityLevels(name: string): number {

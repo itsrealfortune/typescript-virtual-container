@@ -1,4 +1,4 @@
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 /**
  * Shift positional parameters (remove first N arguments).
@@ -13,9 +13,9 @@ export const shiftCommand: ShellModule = {
 	// shift is meaningful only inside sh scripts where positional params exist.
 	// In the current impl, positional params ($1 $2 …) aren't tracked in env by default.
 	// We store them under env.vars.__argv and shift there if present.
-	run: ({args, env}) => {
+	run: ({ args, env }) => {
 		if (!env) {
-			return {exitCode: 0};
+			return { exitCode: 0 };
 		}
 		const n = Number.parseInt(args[0] ?? "1", 10) || 1;
 		const argv = env.vars.__argv?.split("\x00").filter(Boolean) ?? [];
@@ -25,7 +25,7 @@ export const shiftCommand: ShellModule = {
 		for (let i = 1; i <= 9; i++) {
 			env.vars[String(i)] = shifted[i - 1] ?? "";
 		}
-		return {exitCode: 0};
+		return { exitCode: 0 };
 	},
 };
 
@@ -39,9 +39,9 @@ export const trapCommand: ShellModule = {
 	description: "Trap signals and events",
 	category: "shell",
 	params: ["[action] [signal...]"],
-	run: ({args, env}) => {
+	run: ({ args, env }) => {
 		if (!env) {
-			return {exitCode: 0};
+			return { exitCode: 0 };
 		}
 
 		// trap -p — display active traps
@@ -65,7 +65,7 @@ export const trapCommand: ShellModule = {
 			for (const sig of signals) {
 				delete env.vars[`__trap_${sig.toUpperCase()}`];
 			}
-			return {exitCode: 0};
+			return { exitCode: 0 };
 		}
 
 		const action = args[0] ?? "";
@@ -80,15 +80,15 @@ export const trapCommand: ShellModule = {
 				}
 			}
 			if (lines.length > 0) {
-				return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
+				return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 			}
-			return {exitCode: 0};
+			return { exitCode: 0 };
 		}
 
 		for (const sig of signals) {
 			env.vars[`__trap_${sig.toUpperCase()}`] = action;
 		}
-		return {exitCode: 0};
+		return { exitCode: 0 };
 	},
 };
 
@@ -97,12 +97,12 @@ export const returnCommand: ShellModule = {
 	description: "Return from a shell function",
 	category: "shell",
 	params: ["[n]"],
-	run: ({args, env}) => {
+	run: ({ args, env }) => {
 		const code = Number.parseInt(args[0] ?? "0", 10);
 		if (env) {
 			env.lastExitCode = code;
 		}
 		// Signal the caller via exitCode; function return is handled by runBlocks
-		return {exitCode: code};
+		return { exitCode: code };
 	},
 };

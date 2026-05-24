@@ -1,8 +1,8 @@
 import * as crypto from "node:crypto";
-import {EventEmitter} from "node:events";
+import { EventEmitter } from "node:events";
 import * as fsSync from "node:fs";
 import * as path from "node:path";
-import {gunzipSync, gzipSync} from "node:zlib";
+import { gunzipSync, gzipSync } from "node:zlib";
 import type {
 	RemoveOptions,
 	VfsCacheOptions,
@@ -18,8 +18,8 @@ import type {
 	VfsSnapshotNode,
 	WriteFileOptions,
 } from "../../types/vfs";
-import {decodeVfs, encodeVfs, isBinarySnapshot} from "./binaryPack";
-import {FileCache, type FileCacheOptions} from "./fileCache";
+import { decodeVfs, encodeVfs, isBinarySnapshot } from "./binaryPack";
+import { FileCache, type FileCacheOptions } from "./fileCache";
 import type {
 	DeviceKind,
 	InternalDeviceNode,
@@ -34,7 +34,7 @@ import {
 	readJournal,
 	truncateJournal,
 } from "./journal";
-import {getNodeNormalized, getParentDirectory, normalizePath} from "./path";
+import { getNodeNormalized, getParentDirectory, normalizePath } from "./path";
 import {
 	enforceAccess,
 	enforceChmod,
@@ -45,7 +45,7 @@ import {
 	W_OK,
 	X_OK,
 } from "./permissions";
-import {SwapStore, type SwapStats} from "./swapStore";
+import { SwapStore, type SwapStats } from "./swapStore";
 
 // ── Persistence options ───────────────────────────────────────────────────────
 
@@ -164,11 +164,11 @@ class VirtualFileSystem extends EventEmitter {
 	/** Active host-directory mounts: vPath → { hostPath, readOnly } */
 	private readonly _mounts = new Map<
 		string,
-		{hostPath: string; readOnly: boolean}
+		{ hostPath: string; readOnly: boolean }
 	>();
 	/** Sorted mounts cache (longest-path-first). Rebuilt lazily on mount/unmount. */
 	private _sortedMounts:
-		| [string, {hostPath: string; readOnly: boolean}][]
+		| [string, { hostPath: string; readOnly: boolean }][]
 		| null = null;
 	/** Read hooks: path prefix → callback invoked before reading any file under that prefix. */
 	private readonly _readHooks = new Map<string, () => void>();
@@ -213,7 +213,7 @@ class VirtualFileSystem extends EventEmitter {
 	/** Open file descriptors: fd → { path, flags, refCount } */
 	private readonly _fdTable = new Map<
 		number,
-		{path: string; flags: number; refCount: number}
+		{ path: string; flags: number; refCount: number }
 	>();
 	/** Next FD number to allocate (starts at 3 to reserve 0,1,2 for stdin/stdout/stderr). */
 	private _nextFd = 3;
@@ -381,7 +381,7 @@ class VirtualFileSystem extends EventEmitter {
 	 */
 	public writeStub(targetPath: string, content: string, mode = 0o644): void {
 		const normalized = normalizePath(targetPath);
-		const {parent, name} = getParentDirectory(
+		const { parent, name } = getParentDirectory(
 			this._root,
 			normalized,
 			true,
@@ -421,7 +421,7 @@ class VirtualFileSystem extends EventEmitter {
 		minor = 0
 	): void {
 		const normalized = normalizePath(targetPath);
-		const {parent, name} = getParentDirectory(
+		const { parent, name } = getParentDirectory(
 			this._root,
 			normalized,
 			true,
@@ -440,8 +440,8 @@ class VirtualFileSystem extends EventEmitter {
 		);
 		parent._childCount++;
 		parent._sortedKeys = null;
-		this.emit("device:create", {path: normalized, deviceKind});
-		this._journal({op: JournalOp.MKDIR, path: normalized, mode});
+		this.emit("device:create", { path: normalized, deviceKind });
+		this._journal({ op: JournalOp.MKDIR, path: normalized, mode });
 	}
 
 	// ── File descriptor operations ─────────────────────────────────────────
@@ -465,15 +465,15 @@ class VirtualFileSystem extends EventEmitter {
 		}
 
 		if (!exists && flags & 0o100) {
-			this.writeFile(normalized, "", {mode: 0o644});
+			this.writeFile(normalized, "", { mode: 0o644 });
 		}
 
 		if (flags & 0o1000) {
-			this.writeFile(normalized, "", {mode: 0o644});
+			this.writeFile(normalized, "", { mode: 0o644 });
 		}
 
 		const fd = this._nextFd++;
-		this._fdTable.set(fd, {path: normalized, flags, refCount: 1});
+		this._fdTable.set(fd, { path: normalized, flags, refCount: 1 });
 		return fd;
 	}
 
@@ -616,8 +616,8 @@ class VirtualFileSystem extends EventEmitter {
 				current.children[part] = child;
 				current._childCount++;
 				current._sortedKeys = null;
-				this.emit("dir:create", {path: builtPath, mode});
-				this._journal({op: JournalOp.MKDIR, path: builtPath, mode});
+				this.emit("dir:create", { path: builtPath, mode });
+				this._journal({ op: JournalOp.MKDIR, path: builtPath, mode });
 			} else if (child.type !== "directory") {
 				throw new Error(
 					`Cannot create directory '${builtPath}': path is a file.`
@@ -689,7 +689,7 @@ class VirtualFileSystem extends EventEmitter {
 					"[VirtualFileSystem] Migrating legacy JSON snapshot to binary format."
 				);
 			}
-			this.emit("snapshot:restore", {path: this._snapshotFile});
+			this.emit("snapshot:restore", { path: this._snapshotFile });
 			// Replay WAL journal on top of the loaded snapshot
 			if (this._journalFile) {
 				const entries = readJournal(this._journalFile);
@@ -720,7 +720,7 @@ class VirtualFileSystem extends EventEmitter {
 		}
 
 		const dir = path.dirname(this._snapshotFile);
-		fsSync.mkdirSync(dir, {recursive: true});
+		fsSync.mkdirSync(dir, { recursive: true });
 		const root = this._root;
 		const binary = encodeVfs(root);
 
@@ -764,7 +764,7 @@ class VirtualFileSystem extends EventEmitter {
 		}
 		this._dirty = false;
 		this._writesSinceFlush = 0;
-		this.emit("mirror:flush", {path: this._snapshotFile});
+		this.emit("mirror:flush", { path: this._snapshotFile });
 		// Evict large files from RAM now that the snapshot is on disk
 		this.evictLargeFiles();
 	}
@@ -937,7 +937,7 @@ class VirtualFileSystem extends EventEmitter {
 						this.mkdir(e.path, e.mode);
 					} else if (e.op === JournalOp.REMOVE) {
 						if (this.exists(e.path)) {
-							this.remove(e.path, {recursive: true});
+							this.remove(e.path, { recursive: true });
 						}
 					} else if (e.op === JournalOp.CHMOD) {
 						if (this.exists(e.path)) {
@@ -1120,7 +1120,7 @@ class VirtualFileSystem extends EventEmitter {
 		let swapped = 0;
 
 		// Collect evictable files sorted by size (largest first for efficiency)
-		const candidates: Array<{path: string; size: number}> = [];
+		const candidates: Array<{ path: string; size: number }> = [];
 		this._collectEvictableFiles(this._root, "", openPaths, candidates);
 		candidates.sort((a, b) => b.size - a.size);
 
@@ -1260,7 +1260,7 @@ class VirtualFileSystem extends EventEmitter {
 		dir: InternalDirectoryNode,
 		prefix: string,
 		openPaths: Set<string>,
-		candidates: Array<{path: string; size: number}>
+		candidates: Array<{ path: string; size: number }>
 	): void {
 		for (const [name, node] of Object.entries(dir.children)) {
 			const fullPath = prefix ? `${prefix}/${name}` : `/${name}`;
@@ -1275,7 +1275,7 @@ class VirtualFileSystem extends EventEmitter {
 					? (node.size ?? node.content.length * 2)
 					: node.content.length;
 				if (size > 0) {
-					candidates.push({path: fullPath, size});
+					candidates.push({ path: fullPath, size });
 				}
 			}
 		}
@@ -1442,7 +1442,7 @@ class VirtualFileSystem extends EventEmitter {
 	public mount(
 		vPath: string,
 		hostPath: string,
-		{readOnly = true}: {readOnly?: boolean} = {}
+		{ readOnly = true }: { readOnly?: boolean } = {}
 	): void {
 		if (VirtualFileSystem._isBrowser) {
 			return; // silently degrade in browser
@@ -1461,9 +1461,9 @@ class VirtualFileSystem extends EventEmitter {
 		}
 		// Ensure the mount point exists in the VFS tree
 		this.mkdir(normalized);
-		this._mounts.set(normalized, {hostPath: resolved, readOnly});
+		this._mounts.set(normalized, { hostPath: resolved, readOnly });
 		this._sortedMounts = null;
-		this.emit("mount", {vPath: normalized, hostPath: resolved, readOnly});
+		this.emit("mount", { vPath: normalized, hostPath: resolved, readOnly });
 	}
 
 	/**
@@ -1476,7 +1476,7 @@ class VirtualFileSystem extends EventEmitter {
 		const normalized = normalizePath(vPath);
 		if (this._mounts.delete(normalized)) {
 			this._sortedMounts = null;
-			this.emit("unmount", {vPath: normalized});
+			this.emit("unmount", { vPath: normalized });
 		}
 	}
 
@@ -1655,7 +1655,7 @@ class VirtualFileSystem extends EventEmitter {
 			}
 			const dir = path.dirname(m.fullHostPath);
 			if (!fsSync.existsSync(dir)) {
-				fsSync.mkdirSync(dir, {recursive: true});
+				fsSync.mkdirSync(dir, { recursive: true });
 			}
 			fsSync.writeFileSync(
 				m.fullHostPath,
@@ -1690,7 +1690,7 @@ class VirtualFileSystem extends EventEmitter {
 			}
 		}
 
-		const {parent, name} = getParentDirectory(
+		const { parent, name } = getParentDirectory(
 			this._root,
 			normalized,
 			true,
@@ -1707,7 +1707,7 @@ class VirtualFileSystem extends EventEmitter {
 		if (existing?.type === "device") {
 			VirtualFileSystem._writeDeviceNode(existing, normalized);
 			existing.updatedAt = Date.now();
-			this.emit("device:write", {path: normalized});
+			this.emit("device:write", { path: normalized });
 			return;
 		}
 
@@ -1768,7 +1768,7 @@ class VirtualFileSystem extends EventEmitter {
 			);
 		}
 
-		this.emit("file:write", {path: normalized, size: storedContent.length});
+		this.emit("file:write", { path: normalized, size: storedContent.length });
 		this._journal({
 			op: JournalOp.WRITE,
 			path: normalized,
@@ -1808,14 +1808,14 @@ class VirtualFileSystem extends EventEmitter {
 		// Check content resolvers (e.g., /proc/sys sysctl values)
 		const resolved = this._resolveContent(normalized);
 		if (resolved !== null) {
-			this.emit("file:read", {path: normalized, size: resolved.length});
+			this.emit("file:read", { path: normalized, size: resolved.length });
 			return resolved;
 		}
 
 		// Check cache first if enabled
 		if (this._cacheEnabled && this._fileCache?.has(normalized)) {
 			const cached = this._fileCache.getSync(normalized, () => Buffer.alloc(0));
-			this.emit("file:read", {path: normalized, size: cached.length});
+			this.emit("file:read", { path: normalized, size: cached.length });
 			return cached.toString("utf8");
 		}
 
@@ -1836,7 +1836,7 @@ class VirtualFileSystem extends EventEmitter {
 		}
 		if (node.type === "device") {
 			const content = VirtualFileSystem._readDeviceNode(node, normalized);
-			this.emit("file:read", {path: normalized, size: content.length});
+			this.emit("file:read", { path: normalized, size: content.length });
 			return content;
 		}
 		if (node.type !== "file") {
@@ -1855,7 +1855,7 @@ class VirtualFileSystem extends EventEmitter {
 			this._fileCache.setSync(normalized, raw);
 		}
 
-		this.emit("file:read", {path: normalized, size: raw.length});
+		this.emit("file:read", { path: normalized, size: raw.length });
 		return raw.toString("utf8");
 	}
 
@@ -1880,20 +1880,20 @@ class VirtualFileSystem extends EventEmitter {
 		// Check cache first if enabled
 		if (this._cacheEnabled && this._fileCache?.has(normalized)) {
 			const cached = this._fileCache.getSync(normalized, () => Buffer.alloc(0));
-			this.emit("file:read", {path: normalized, size: cached.length});
+			this.emit("file:read", { path: normalized, size: cached.length });
 			return cached;
 		}
 
 		const node = getNodeNormalized(this._root, normalized);
 		if (node.type === "stub") {
 			const buf = Buffer.from(node.stubContent, "utf8");
-			this.emit("file:read", {path: normalized, size: buf.length});
+			this.emit("file:read", { path: normalized, size: buf.length });
 			return buf;
 		}
 		if (node.type === "device") {
 			const content = VirtualFileSystem._readDeviceNode(node, normalized);
 			const buf = Buffer.from(content, "binary");
-			this.emit("file:read", {path: normalized, size: buf.length});
+			this.emit("file:read", { path: normalized, size: buf.length });
 			return buf;
 		}
 		if (node.type !== "file") {
@@ -1909,7 +1909,7 @@ class VirtualFileSystem extends EventEmitter {
 			this._fileCache.setSync(normalized, raw);
 		}
 
-		this.emit("file:read", {path: normalized, size: raw.length});
+		this.emit("file:read", { path: normalized, size: raw.length });
 		return raw;
 	}
 
@@ -1945,7 +1945,7 @@ class VirtualFileSystem extends EventEmitter {
 			enforceChmod(this._root, normalized, uid);
 		}
 		getNodeNormalized(this._root, normalized).mode = mode;
-		this._journal({op: JournalOp.CHMOD, path: normalized, mode});
+		this._journal({ op: JournalOp.CHMOD, path: normalized, mode });
 	}
 
 	/**
@@ -1969,16 +1969,16 @@ class VirtualFileSystem extends EventEmitter {
 		const node = getNodeNormalized(this._root, normalized);
 		node.uid = uid;
 		node.gid = gid;
-		this._journal({op: JournalOp.CHMOD, path: normalized, mode: node.mode});
+		this._journal({ op: JournalOp.CHMOD, path: normalized, mode: node.mode });
 	}
 
 	/**
 	 * Returns the uid and gid of a node.
 	 * @param targetPath - The target file path.
 	 */
-	public getOwner(targetPath: string): {uid: number; gid: number} {
+	public getOwner(targetPath: string): { uid: number; gid: number } {
 		const node = getNodeNormalized(this._root, normalizePath(targetPath));
-		return {uid: node.uid, gid: node.gid};
+		return { uid: node.uid, gid: node.gid };
 	}
 
 	/**
@@ -2205,7 +2205,7 @@ class VirtualFileSystem extends EventEmitter {
 		try {
 			const m = this._resolveMount(targetPath);
 			if (m) {
-				const s = fsSync.statSync(m.fullHostPath, {throwIfNoEntry: false});
+				const s = fsSync.statSync(m.fullHostPath, { throwIfNoEntry: false });
 				if (!s) {
 					return null;
 				}
@@ -2425,7 +2425,7 @@ class VirtualFileSystem extends EventEmitter {
 			}
 		}
 
-		const {parent, name} = getParentDirectory(
+		const { parent, name } = getParentDirectory(
 			this._root,
 			normalizedLink,
 			true,
@@ -2556,7 +2556,7 @@ class VirtualFileSystem extends EventEmitter {
 				`Directory '${normalized}' is not empty. Use recursive option.`
 			);
 		}
-		const {parent, name} = getParentDirectory(
+		const { parent, name } = getParentDirectory(
 			this._root,
 			normalized,
 			false,
@@ -2565,8 +2565,8 @@ class VirtualFileSystem extends EventEmitter {
 		delete parent.children[name];
 		parent._childCount--;
 		parent._sortedKeys = null;
-		this.emit("node:remove", {path: normalized});
-		this._journal({op: JournalOp.REMOVE, path: normalized});
+		this.emit("node:remove", { path: normalized });
+		this._journal({ op: JournalOp.REMOVE, path: normalized });
 	}
 
 	/**
@@ -2613,13 +2613,13 @@ class VirtualFileSystem extends EventEmitter {
 			throw new Error(`Destination '${toNormalized}' already exists.`);
 		}
 		this._mkdirRecursive(path.posix.dirname(toNormalized), 0o755);
-		const {parent: destParent, name: destName} = getParentDirectory(
+		const { parent: destParent, name: destName } = getParentDirectory(
 			this._root,
 			toNormalized,
 			false,
 			() => {}
 		);
-		const {parent: srcParent, name: srcName} = getParentDirectory(
+		const { parent: srcParent, name: srcName } = getParentDirectory(
 			this._root,
 			fromNormalized,
 			false,
@@ -2649,7 +2649,7 @@ class VirtualFileSystem extends EventEmitter {
 	 * @returns The filesystem snapshot.
 	 */
 	public toSnapshot(): VfsSnapshot {
-		return {root: this._serializeDir(this._root)};
+		return { root: this._serializeDir(this._root) };
 	}
 
 	private _serializeDir(dir: InternalDirectoryNode): VfsSnapshotDirectoryNode {

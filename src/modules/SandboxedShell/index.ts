@@ -1,8 +1,8 @@
-import {Worker} from "node:worker_threads";
-import {resolve, dirname} from "node:path";
-import {existsSync} from "node:fs";
-import {fileURLToPath} from "node:url";
-import type {HostMessage, WorkerMessage} from "./types";
+import { Worker } from "node:worker_threads";
+import { resolve, dirname } from "node:path";
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import type { HostMessage, WorkerMessage } from "./types";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -100,7 +100,7 @@ export class SandboxedShell {
 			this._pending.clear();
 		});
 
-		this._post({type: "init"});
+		this._post({ type: "init" });
 	}
 
 	async exec(cmd: string, user = "root", cwd = "/root"): Promise<ExecResult> {
@@ -115,13 +115,13 @@ export class SandboxedShell {
 					)
 				);
 			}, this._execTimeoutMs);
-			this._pending.set(id, {resolve, reject, timer});
-			this._post({type: "exec", id, cmd, user, cwd});
+			this._pending.set(id, { resolve, reject, timer });
+			this._post({ type: "exec", id, cmd, user, cwd });
 		});
 	}
 
 	terminate(): void {
-		this._post({type: "terminate"});
+		this._post({ type: "terminate" });
 		setTimeout(() => {
 			try {
 				this._worker.terminate();

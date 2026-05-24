@@ -1,4 +1,4 @@
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 /**
  * Trace the route packets take to a network host.
@@ -11,7 +11,7 @@ export const tracerouteCommand: ShellModule = {
 	category: "network",
 	aliases: ["tracepath", "tracert"],
 	params: ["[options] <host>"],
-	run: ({args, shell}) => {
+	run: ({ args, shell }) => {
 		const net = shell.network;
 		const host = args.find((a) => !a.startsWith("-"));
 
@@ -58,7 +58,7 @@ export const tracerouteCommand: ShellModule = {
 			}
 		}
 
-		return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
+		return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 	},
 };
 
@@ -83,14 +83,14 @@ function _generateHopPath(
 		"10.0.0.1";
 
 	const intermediateHops = [
-		{ip: gateway, hostname: "gateway.local", baseLatency: 1, jitter: 0.5},
+		{ ip: gateway, hostname: "gateway.local", baseLatency: 1, jitter: 0.5 },
 		{
 			ip: "192.168.1.1",
 			hostname: "isp-router-1.isp.net",
 			baseLatency: 5,
 			jitter: 2,
 		},
-		{ip: "10.10.0.1", hostname: "core-1.isp.net", baseLatency: 10, jitter: 3},
+		{ ip: "10.10.0.1", hostname: "core-1.isp.net", baseLatency: 10, jitter: 3 },
 		{
 			ip: "172.16.0.1",
 			hostname: "peer-exchange.net",

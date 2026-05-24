@@ -1,12 +1,12 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 export const digCommand: ShellModule = {
 	name: "dig",
 	description: "DNS lookup utility",
 	category: "network",
 	params: ["[@server] <name> [type]"],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout: [
@@ -36,7 +36,7 @@ export const digCommand: ShellModule = {
 		}
 
 		if (!name) {
-			return {stderr: "dig: missing hostname", exitCode: 1};
+			return { stderr: "dig: missing hostname", exitCode: 1 };
 		}
 
 		const resolved = resolveName(shell.vfs, name);
@@ -81,12 +81,12 @@ export const digCommand: ShellModule = {
 		lines.push(`;; MSG SIZE  rcvd: ${Math.floor(Math.random() * 200 + 50)}`);
 		lines.push("");
 
-		return {stdout: lines.join("\n"), exitCode: 0};
+		return { stdout: lines.join("\n"), exitCode: 0 };
 	},
 };
 
 function resolveName(
-	vfs: {exists: (p: string) => boolean; readFile: (p: string) => string},
+	vfs: { exists: (p: string) => boolean; readFile: (p: string) => string },
 	name: string
 ): string | null {
 	try {
@@ -117,7 +117,7 @@ function resolveName(
 }
 
 function resolveAll(
-	vfs: {exists: (p: string) => boolean; readFile: (p: string) => string},
+	vfs: { exists: (p: string) => boolean; readFile: (p: string) => string },
 	name: string,
 	qtype: string
 ): string[] {

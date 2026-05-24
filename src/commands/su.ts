@@ -1,5 +1,5 @@
-import type {ShellModule} from "../types/commands";
-import {runCommand} from "./runtime";
+import type { ShellModule } from "../types/commands";
+import { runCommand } from "./runtime";
 
 /**
  * Switch to another user account.
@@ -19,7 +19,7 @@ export const suCommand: ShellModule = {
 	description: "Switch user",
 	category: "users",
 	params: ["[-] [-c <cmd>] [username]"],
-	run: ({authUser, shell, args, hostname, mode, cwd}) => {
+	run: ({ authUser, shell, args, hostname, mode, cwd }) => {
 		const loginShellFlag =
 			args.includes("-") || args.includes("-l") || args.includes("--login");
 		const cIdx = args.indexOf("-c");
@@ -62,7 +62,7 @@ export const suCommand: ShellModule = {
 
 		// Non-sudoers denied
 		if (!shell.users.isSudoer(authUser)) {
-			return {stderr: "su: permission denied\n", exitCode: 1};
+			return { stderr: "su: permission denied\n", exitCode: 1 };
 		}
 
 		// Sudoers must enter target user's password via challenge

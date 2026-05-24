@@ -39,14 +39,14 @@ export function checkOutboundRestriction(
 	config?: NetworkRestrictionConfig
 ): RestrictionCheck {
 	if (!config || config.mode === "allow-all" || !config.mode) {
-		return {allowed: true, honeypot: false};
+		return { allowed: true, honeypot: false };
 	}
 
 	let hostname: string;
 	try {
 		hostname = new URL(url).hostname;
 	} catch {
-		return {allowed: true, honeypot: false};
+		return { allowed: true, honeypot: false };
 	}
 
 	if (config.mode === "block-private" && isPrivateHostname(hostname)) {
@@ -83,7 +83,7 @@ export function checkOutboundRestriction(
 		}
 	}
 
-	return {allowed: true, honeypot: false};
+	return { allowed: true, honeypot: false };
 }
 
 const HONEYPOT_HTML = `<!DOCTYPE html>

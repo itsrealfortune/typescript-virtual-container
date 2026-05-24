@@ -1,6 +1,6 @@
-import {afterAll, beforeAll, describe, expect, test} from "bun:test";
-import {VirtualShell, VirtualSshServer} from "../src";
-import {SshClient} from "../src/modules/SSHClient";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { VirtualShell, VirtualSshServer } from "../src";
+import { SshClient } from "../src/modules/SSHClient";
 
 // Skip slow network tests by default. Run with:
 //   SSH_MIMIC_RUN_NETWORK_TESTS=1 bun test tests/new-features.test.ts
@@ -8,10 +8,10 @@ const runNetwork = Boolean(process.env.SSH_MIMIC_RUN_NETWORK_TESTS);
 const itNetwork = runNetwork ? test : test.skip;
 
 async function setupClient(vmName: string) {
-	const shell = new VirtualShell(vmName, undefined, {mode: "memory"});
+	const shell = new VirtualShell(vmName, undefined, { mode: "memory" });
 	await shell.ensureInitialized();
 	shell.users.setPassword("root", "root");
-	const ssh = new VirtualSshServer({port: 0, shell});
+	const ssh = new VirtualSshServer({ port: 0, shell });
 	const port = await ssh.start();
 	const client = new SshClient();
 	await client.connect({
@@ -20,7 +20,7 @@ async function setupClient(vmName: string) {
 		username: "root",
 		password: "root",
 	});
-	return {shell, client, ssh};
+	return { shell, client, ssh };
 }
 
 // ─── shared shell ─────────────────────────────────────────────────────────────
@@ -694,7 +694,7 @@ describe("/proc/self and /proc/<pid>", () => {
 	});
 });
 
-import {assertDiff, diffSnapshots, formatDiff} from "../src";
+import { assertDiff, diffSnapshots, formatDiff } from "../src";
 
 describe("VFS snapshot diff tooling", () => {
 	test("diffSnapshots returns clean diff for identical snapshots", () => {
@@ -710,7 +710,7 @@ describe("VFS snapshot diff tooling", () => {
 		const before = shell.vfs.toSnapshot();
 		await client.exec("echo test > /tmp/diff-test-nf.txt");
 		const after = shell.vfs.toSnapshot();
-		const diff = diffSnapshots(before, after, {ignore: ["/proc"]});
+		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
 		const paths = diff.added.map((e) => e.path);
 		expect(paths).toContain("/tmp/diff-test-nf.txt");
 		expect(diff.clean).toBe(false);
@@ -720,7 +720,7 @@ describe("VFS snapshot diff tooling", () => {
 		const before = shell.vfs.toSnapshot();
 		shell.vfs.mkdir("/tmp/diff-newdir-nf", 0o755);
 		const after = shell.vfs.toSnapshot();
-		const diff = diffSnapshots(before, after, {ignore: ["/proc"]});
+		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
 		const paths = diff.added.map((e) => e.path);
 		expect(paths).toContain("/tmp/diff-newdir-nf");
 	});
@@ -730,7 +730,7 @@ describe("VFS snapshot diff tooling", () => {
 		const before = shell.vfs.toSnapshot();
 		shell.vfs.writeFile("/tmp/modtest-nf.txt", "after");
 		const after = shell.vfs.toSnapshot();
-		const diff = diffSnapshots(before, after, {ignore: ["/proc"]});
+		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
 		const mod = diff.modified.find((e) => e.path === "/tmp/modtest-nf.txt");
 		expect(mod).toBeDefined();
 		expect(mod?.before).toBe("before");
@@ -742,7 +742,7 @@ describe("VFS snapshot diff tooling", () => {
 		const before = shell.vfs.toSnapshot();
 		shell.vfs.remove("/tmp/toremove-nf.txt");
 		const after = shell.vfs.toSnapshot();
-		const diff = diffSnapshots(before, after, {ignore: ["/proc"]});
+		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
 		const paths = diff.removed.map((e) => e.path);
 		expect(paths).toContain("/tmp/toremove-nf.txt");
 	});
@@ -752,7 +752,7 @@ describe("VFS snapshot diff tooling", () => {
 		const before = shell.vfs.toSnapshot();
 		shell.vfs.writeFile("/proc/uptime", "1000.00 900.00\n");
 		const after = shell.vfs.toSnapshot();
-		const diff = diffSnapshots(before, after, {ignore: ["/proc"]});
+		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
 		expect(diff.modified.map((e) => e.path)).not.toContain("/proc/uptime");
 	});
 
@@ -766,7 +766,7 @@ describe("VFS snapshot diff tooling", () => {
 		const before = shell.vfs.toSnapshot();
 		shell.vfs.writeFile("/tmp/format-test-nf.txt", "x");
 		const after = shell.vfs.toSnapshot();
-		const diff = diffSnapshots(before, after, {ignore: ["/proc"]});
+		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
 		const formatted = formatDiff(diff);
 		expect(formatted).toContain("added");
 	});
@@ -777,7 +777,7 @@ describe("VFS snapshot diff tooling", () => {
 		shell.vfs.writeFile("/tmp/assert-new-nf.txt", "new");
 		shell.vfs.remove("/tmp/assert-test-nf.txt");
 		const after = shell.vfs.toSnapshot();
-		const diff = diffSnapshots(before, after, {ignore: ["/proc"]});
+		const diff = diffSnapshots(before, after, { ignore: ["/proc"] });
 		expect(() =>
 			assertDiff(diff, {
 				added: ["/tmp/assert-new-nf.txt"],
@@ -789,7 +789,7 @@ describe("VFS snapshot diff tooling", () => {
 	test("assertDiff throws when expected path is missing", () => {
 		const snap = shell.vfs.toSnapshot();
 		const diff = diffSnapshots(snap, snap);
-		expect(() => assertDiff(diff, {added: ["/nonexistent"]})).toThrow();
+		expect(() => assertDiff(diff, { added: ["/nonexistent"] })).toThrow();
 	});
 });
 

@@ -1,15 +1,15 @@
-import {EventEmitter} from "node:events";
+import { EventEmitter } from "node:events";
 import * as path from "node:path";
-import type {AuthenticationType, KeyboardAuthContext} from "ssh2";
-import {Server as SshServer} from "ssh2";
-import {userHome} from "../../commands";
-import type {VfsNodeStats} from "../../types/vfs";
-import type {PerfLogger} from "../../utils/perfLogger";
-import {createPerfLogger} from "../../utils/perfLogger";
+import type { AuthenticationType, KeyboardAuthContext } from "ssh2";
+import { Server as SshServer } from "ssh2";
+import { userHome } from "../../commands";
+import type { VfsNodeStats } from "../../types/vfs";
+import type { PerfLogger } from "../../utils/perfLogger";
+import { createPerfLogger } from "../../utils/perfLogger";
 import type VirtualFileSystem from "../VirtualFileSystem";
-import {VirtualShell} from "../VirtualShell";
-import type {VirtualUserManager} from "../VirtualUserManager";
-import {loadOrCreateHostKey} from "./hostKey";
+import { VirtualShell } from "../VirtualShell";
+import type { VirtualUserManager } from "../VirtualUserManager";
+import { loadOrCreateHostKey } from "./hostKey";
 // ── Dev-mode logger — silent in production ────────────────────────────────────
 const DEV = Boolean(process.env.DEV_MODE);
 const devLog = DEV ? console.log.bind(console) : () => {};
@@ -299,7 +299,7 @@ export class SftpMimic extends EventEmitter {
 
 				client.on("authentication", (ctx) => {
 					const candidateUser = ctx.username || "root";
-					remoteAddress = (ctx as {ip?: string}).ip ?? remoteAddress;
+					remoteAddress = (ctx as { ip?: string }).ip ?? remoteAddress;
 
 					devLog(
 						`[SFTP] Auth attempt: user=${candidateUser}, method=${ctx.method}, ip=${remoteAddress}`
@@ -310,7 +310,7 @@ export class SftpMimic extends EventEmitter {
 						if (!this.getUsers().hasPassword(candidateUser)) {
 							this.getUsers().ensureUser(candidateUser);
 							acceptSession(candidateUser);
-							this.emit("auth:success", {username: authUser, remoteAddress});
+							this.emit("auth:success", { username: authUser, remoteAddress });
 							ctx.accept();
 							return;
 						}
@@ -327,7 +327,7 @@ export class SftpMimic extends EventEmitter {
 						}
 
 						acceptSession(candidateUser);
-						this.emit("auth:success", {username: authUser, remoteAddress});
+						this.emit("auth:success", { username: authUser, remoteAddress });
 						ctx.accept();
 						return;
 					}
@@ -338,12 +338,12 @@ export class SftpMimic extends EventEmitter {
 						if (!this.getUsers().hasPassword(candidateUser)) {
 							this.getUsers().ensureUser(candidateUser);
 							acceptSession(candidateUser);
-							this.emit("auth:success", {username: authUser, remoteAddress});
+							this.emit("auth:success", { username: authUser, remoteAddress });
 							keyboardCtx.accept();
 							return;
 						}
 						keyboardCtx.prompt(
-							[{prompt: "Password: ", echo: false}],
+							[{ prompt: "Password: ", echo: false }],
 							(answers) => {
 								const password = answers[0] ?? "";
 								if (!this.getUsers().verifyPassword(candidateUser, password)) {
@@ -371,7 +371,7 @@ export class SftpMimic extends EventEmitter {
 
 				client.on("close", () => {
 					this.getUsers().unregisterSession(sessionId);
-					this.emit("client:disconnect", {user: authUser});
+					this.emit("client:disconnect", { user: authUser });
 					sessionId = null;
 				});
 
@@ -402,7 +402,7 @@ export class SftpMimic extends EventEmitter {
 						? address.port
 						: this.port;
 				devLog(`SFTP Mimic listening on port ${actualPort}`);
-				this.emit("start", {port: actualPort});
+				this.emit("start", { port: actualPort });
 				resolve(actualPort as number);
 			});
 		});
@@ -708,7 +708,7 @@ export class SftpMimic extends EventEmitter {
 			const stats = getVfs().stat(filePath);
 			const attrs = SftpMimic._createAttrs(stats);
 			const longname = `${stats.type === "directory" ? "d" : "-"}${(stats.mode & 0o777).toString(8)} ${filename}`;
-			return sftp.name(reqid, [{filename, longname, attrs}]);
+			return sftp.name(reqid, [{ filename, longname, attrs }]);
 		});
 
 		sftp.on("STAT", (reqid: number, requestPath: string) => {
@@ -753,7 +753,7 @@ export class SftpMimic extends EventEmitter {
 
 		sftp.on(
 			"FSETSTAT",
-			(reqid: number, handle: Buffer, attrs: {mode?: number}) => {
+			(reqid: number, handle: Buffer, attrs: { mode?: number }) => {
 				const entry = this._getHandle(handle);
 				if (!entry) {
 					sftp.status(reqid, SFTP_STATUS_CODE.FAILURE);
@@ -773,7 +773,7 @@ export class SftpMimic extends EventEmitter {
 
 		sftp.on(
 			"SETSTAT",
-			(reqid: number, requestPath: string, attrs: {mode?: number}) => {
+			(reqid: number, requestPath: string, attrs: { mode?: number }) => {
 				const targetPath = SftpMimic._resolveRequestPath(requestPath, authUser);
 
 				// Security: Confine to home directory
@@ -857,7 +857,7 @@ export class SftpMimic extends EventEmitter {
 			}
 
 			try {
-				getVfs().remove(targetPath, {recursive: false});
+				getVfs().remove(targetPath, { recursive: false });
 				sftp.status(reqid, SFTP_STATUS_CODE.OK);
 			} catch {
 				sftp.status(reqid, SFTP_STATUS_CODE.FAILURE);
@@ -877,7 +877,7 @@ export class SftpMimic extends EventEmitter {
 			}
 
 			try {
-				getVfs().remove(targetPath, {recursive: false});
+				getVfs().remove(targetPath, { recursive: false });
 				sftp.status(reqid, SFTP_STATUS_CODE.OK);
 			} catch {
 				sftp.status(reqid, SFTP_STATUS_CODE.FAILURE);

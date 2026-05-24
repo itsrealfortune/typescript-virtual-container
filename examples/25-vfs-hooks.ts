@@ -5,7 +5,7 @@
  * dynamic file generation and beforeRead/beforeWrite hooks.
  */
 
-import {VirtualFileSystem} from "../src";
+import { VirtualFileSystem } from "../src";
 
 const vfs = new VirtualFileSystem();
 

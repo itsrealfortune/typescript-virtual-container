@@ -1,5 +1,5 @@
-import {beforeAll, describe, expect, test} from "bun:test";
-import type {SshClient, VirtualShell} from "../src";
+import { beforeAll, describe, expect, test } from "bun:test";
+import type { SshClient, VirtualShell } from "../src";
 import {
 	createTestDir,
 	createTestEnv,

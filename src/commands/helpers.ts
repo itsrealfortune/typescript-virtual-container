@@ -6,8 +6,8 @@
  */
 import * as path from "node:path";
 import type VirtualFileSystem from "../modules/VirtualFileSystem";
-import type {VirtualPackageManager} from "../modules/VirtualPackageManager";
-import type {VirtualShell} from "../modules/VirtualShell";
+import type { VirtualPackageManager } from "../modules/VirtualPackageManager";
+import type { VirtualShell } from "../modules/VirtualShell";
 
 const PROTECTED_PREFIXES = ["/.virtual-env-js/.auth", "/etc/htpasswd"] as const;
 
@@ -86,7 +86,7 @@ export function stripUrlFilename(url: string): string {
 function levenshtein(a: string, b: string): number {
 	const alen = a.length;
 	const blen = b.length;
-	const dp: number[][] = Array.from({length: alen + 1}, () =>
+	const dp: number[][] = Array.from({ length: alen + 1 }, () =>
 		new Array(blen + 1).fill(0)
 	);
 
@@ -182,7 +182,7 @@ export function getPackageManager(
  */
 export function checkFilePermission(
 	vfs: VirtualFileSystem,
-	users: {getUid: (u: string) => number; getGid: (u: string) => number},
+	users: { getUid: (u: string) => number; getGid: (u: string) => number },
 	authUser: string,
 	filePath: string,
 	want: number

@@ -9,10 +9,10 @@
  *  - NeofetchInfo  — interface for the collected system information
  *  - runNeofetch() — main function generating the formatted output
  */
-import {existsSync, readdirSync, readFileSync} from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import type {ShellProperties} from "../modules/VirtualShell";
+import type { ShellProperties } from "../modules/VirtualShell";
 
 function formatUptime(seconds: number): string {
 	const totalMinutes = Math.max(1, Math.floor(seconds / 60));
@@ -51,8 +51,8 @@ function colorizeLogoLine(line: string, index: number, total: number): string {
 		return line;
 	}
 
-	const start = {r: 255, g: 255, b: 255};
-	const end = {r: 168, g: 85, b: 247};
+	const start = { r: 255, g: 255, b: 255 };
+	const end = { r: 168, g: 85, b: 247 };
 	const ratio = total <= 1 ? 0 : index / (total - 1);
 
 	const r = Math.round(start.r + (end.r - start.r) * ratio);
@@ -97,8 +97,8 @@ function applyHorizontalGradient(text: string): string {
 		return text;
 	}
 
-	const start = {r: 255, g: 255, b: 255};
-	const end = {r: 168, g: 85, b: 247};
+	const start = { r: 255, g: 255, b: 255 };
+	const end = { r: 168, g: 85, b: 247 };
 	let result = "";
 
 	for (let i = 0; i < cleaned.length; i += 1) {
@@ -205,7 +205,7 @@ function countSnapPackages(): number | undefined {
 		}
 
 		try {
-			const entries = readdirSync(dirPath, {withFileTypes: true});
+			const entries = readdirSync(dirPath, { withFileTypes: true });
 			const count = entries.filter((entry) => entry.isDirectory()).length;
 			return count;
 		} catch {

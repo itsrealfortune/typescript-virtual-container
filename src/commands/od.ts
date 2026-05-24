@@ -1,12 +1,12 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 export const odCommand: ShellModule = {
 	name: "od",
 	description: "Dump files in octal and other formats",
 	category: "files",
 	params: ["[-t type] [file...]"],
-	run: ({shell, args, stdin}) => {
+	run: ({ shell, args, stdin }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout:
@@ -22,13 +22,13 @@ export const odCommand: ShellModule = {
 		let data = "";
 		if (files.length > 0) {
 			if (!shell.vfs.exists(files[0]!)) {
-				return {stderr: `od: ${files[0]}: No such file`, exitCode: 1};
+				return { stderr: `od: ${files[0]}: No such file`, exitCode: 1 };
 			}
 			data = shell.vfs.readFile(files[0]!);
 		} else if (stdin) {
 			data = stdin;
 		} else {
-			return {stderr: "od: missing operand", exitCode: 1};
+			return { stderr: "od: missing operand", exitCode: 1 };
 		}
 
 		const lines: string[] = [];
@@ -70,6 +70,6 @@ export const odCommand: ShellModule = {
 			}
 		}
 
-		return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
+		return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 	},
 };

@@ -1,10 +1,10 @@
-import {executeStatements} from "../modules/SSHMimic/executor";
-import type {VirtualShell} from "../modules/VirtualShell";
-import {parseScript} from "../modules/VirtualShell/shellParser";
-import type {CommandMode, CommandResult, ShellEnv} from "../types/commands";
-import {expandAsync, expandBraces, expandGlob} from "../utils/expand";
-import {tokenizeCommand} from "../utils/tokenize";
-import {resolveModule} from "./registry";
+import { executeStatements } from "../modules/SSHMimic/executor";
+import type { VirtualShell } from "../modules/VirtualShell";
+import { parseScript } from "../modules/VirtualShell/shellParser";
+import type { CommandMode, CommandResult, ShellEnv } from "../types/commands";
+import { expandAsync, expandBraces, expandGlob } from "../utils/expand";
+import { tokenizeCommand } from "../utils/tokenize";
+import { resolveModule } from "./registry";
 
 // Module-level compiled regexes — avoids recompilation on every runCommand call
 const ASSIGN_RE = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/;
@@ -215,7 +215,7 @@ function runVfsStub(
 			env,
 		});
 	}
-	return {stderr: `${cmdName}: command not found`, exitCode: 127};
+	return { stderr: `${cmdName}: command not found`, exitCode: 127 };
 }
 let _callDepth = 0;
 
@@ -281,7 +281,7 @@ export function runCommandDirect(
 	const startTime = Date.now();
 	try {
 		if (background && abortController?.signal.aborted) {
-			return {stderr: "", exitCode: 130};
+			return { stderr: "", exitCode: 130 };
 		}
 		const inner = _runCommandDirectInner(
 			name,
@@ -299,9 +299,9 @@ export function runCommandDirect(
 				abortController.signal.addEventListener(
 					"abort",
 					() => {
-						resolve({stderr: "", exitCode: 130});
+						resolve({ stderr: "", exitCode: 130 });
 					},
-					{once: true}
+					{ once: true }
 				);
 			});
 			return Promise.race([inner, killed]);
@@ -355,7 +355,7 @@ async function _runCommandDirectInner(
 			}
 		}
 		if (remaining.length === 0) {
-			return {exitCode: 0};
+			return { exitCode: 0 };
 		}
 		try {
 			const result = await runCommandDirect(
@@ -386,7 +386,7 @@ async function _runCommandDirectInner(
 	if (funcBody) {
 		const shMod = resolveModule("sh");
 		if (!shMod) {
-			return {stderr: `${name}: sh not available`, exitCode: 127};
+			return { stderr: `${name}: sh not available`, exitCode: 127 };
 		}
 		const savedPositional: Record<string, string | undefined> = {};
 		args.forEach((a, i) => {
@@ -455,7 +455,7 @@ async function _runCommandDirectInner(
 				stdin
 			);
 		}
-		return {stderr: `${name}: command not found`, exitCode: 127};
+		return { stderr: `${name}: command not found`, exitCode: 127 };
 	}
 
 	try {
@@ -512,7 +512,7 @@ export async function runCommand(
 ): Promise<CommandResult> {
 	const trimmed = rawInput.trim();
 	if (trimmed.length === 0) {
-		return {exitCode: 0};
+		return { exitCode: 0 };
 	}
 
 	const shellEnv: ShellEnv = env ?? makeDefaultEnv(authUser, hostname);
@@ -559,7 +559,7 @@ export async function runCommand(
 					);
 				}
 			}
-			return {stderr: `${trimmed}: event not found`, exitCode: 1};
+			return { stderr: `${trimmed}: event not found`, exitCode: 1 };
 		}
 
 		const rawTokens = tokenizeCommand(trimmed);
@@ -609,7 +609,7 @@ export async function runCommand(
 			}
 			const script = parseScript(aliasExpanded);
 			if (!script.isValid) {
-				return {stderr: script.error || "Syntax error", exitCode: 1};
+				return { stderr: script.error || "Syntax error", exitCode: 1 };
 			}
 			try {
 				return await executeStatements(
@@ -648,7 +648,7 @@ export async function runCommand(
 
 		const parts = tokenizeCommand(expanded.trim());
 		if (parts.length === 0) {
-			return {exitCode: 0};
+			return { exitCode: 0 };
 		}
 		const assignRe = ASSIGN_RE;
 		if (assignRe.test(parts[0] as string)) {
@@ -685,7 +685,7 @@ export async function runCommand(
 					globOptions.failglob &&
 					(brace.includes("*") || brace.includes("?"))
 				) {
-					return {stderr: `${commandName}: no match: ${brace}`, exitCode: 1};
+					return { stderr: `${commandName}: no match: ${brace}`, exitCode: 1 };
 				}
 				for (const glob of globResults) {
 					args.push(glob);
@@ -716,7 +716,7 @@ export async function runCommand(
 					stdin
 				);
 			}
-			return {stderr: `${commandName}: command not found`, exitCode: 127};
+			return { stderr: `${commandName}: command not found`, exitCode: 127 };
 		}
 
 		try {

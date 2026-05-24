@@ -1,5 +1,5 @@
-import type {ShellModule} from "../types/commands";
-import {getFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { getFlag } from "./command-helpers";
 
 /**
  * Extract selected fields from each line of input.
@@ -11,14 +11,14 @@ export const cutCommand: ShellModule = {
 	description: "Remove sections from lines",
 	category: "text",
 	params: ["-d <delim> -f <fields> [file]"],
-	run: ({args, stdin}) => {
+	run: ({ args, stdin }) => {
 		const delim = (getFlag(args, ["-d"]) as string | undefined) ?? "\t";
 		const fields = (getFlag(args, ["-f"]) as string | undefined) ?? "1";
 		const cols = fields.split(",").map((f) => {
 			const [a, b] = f.split("-").map(Number);
 			return b === undefined
-				? {from: (a ?? 1) - 1, to: (a ?? 1) - 1}
-				: {from: (a ?? 1) - 1, to: b - 1};
+				? { from: (a ?? 1) - 1, to: (a ?? 1) - 1 }
+				: { from: (a ?? 1) - 1, to: b - 1 };
 		});
 		const lines = (stdin ?? "").split("\n");
 		const out = lines.map((line) => {
@@ -31,6 +31,6 @@ export const cutCommand: ShellModule = {
 			}
 			return selected.join(delim);
 		});
-		return {stdout: out.join("\n"), exitCode: 0};
+		return { stdout: out.join("\n"), exitCode: 0 };
 	},
 };

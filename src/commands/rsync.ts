@@ -1,12 +1,12 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 export const rsyncCommand: ShellModule = {
 	name: "rsync",
 	description: "Fast file synchronization tool",
 	category: "system",
 	params: ["[options] <source> <dest>"],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout:
@@ -17,7 +17,7 @@ export const rsyncCommand: ShellModule = {
 
 		const positionals = args.filter((a) => !a.startsWith("-"));
 		if (positionals.length < 2) {
-			return {stderr: "rsync: missing source or destination", exitCode: 1};
+			return { stderr: "rsync: missing source or destination", exitCode: 1 };
 		}
 
 		const source = positionals[0]!;
@@ -36,7 +36,7 @@ export const rsyncCommand: ShellModule = {
 			const msg = verbose
 				? `sending incremental file list\n\nsent ${Math.floor(Math.random() * 1000 + 100)} bytes  received ${Math.floor(Math.random() * 100 + 10)} bytes  ${(Math.random() * 10000 + 1000).toFixed(2)} bytes/sec\ntotal size is ${Math.floor(Math.random() * 10000)}  speedup is ${(Math.random() * 10 + 1).toFixed(2)}\n`
 				: "";
-			return {stdout: msg, exitCode: 0};
+			return { stdout: msg, exitCode: 0 };
 		} catch (err: unknown) {
 			return {
 				stderr: `rsync: error: ${err instanceof Error ? err.message : String(err)}`,
@@ -53,7 +53,7 @@ function copyRecursive(
 		writeFile: (p: string, content: string) => void;
 		list: (p: string) => string[];
 		mkdir: (p: string, mode?: number) => void;
-		stat: (p: string) => {type: string; mode: number};
+		stat: (p: string) => { type: string; mode: number };
 	},
 	src: string,
 	dest: string

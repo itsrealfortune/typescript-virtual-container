@@ -4,8 +4,8 @@
  * Builds the Fortune GNU/Linux login banner with OS info, warranty notice,
  * and last login timestamp displayed on SSH connection.
  */
-import type {ShellProperties} from "../VirtualShell";
-import {formatLoginDate} from "./loginFormat";
+import type { ShellProperties } from "../VirtualShell";
+import { formatLoginDate } from "./loginFormat";
 
 /**
  * Tracks the timestamp and origin of the user's last login for the login banner.

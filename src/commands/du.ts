@@ -1,6 +1,6 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
-import {resolvePath} from "./helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
+import { resolvePath } from "./helpers";
 
 /**
  * Estimate file and directory space usage.
@@ -12,7 +12,7 @@ export const duCommand: ShellModule = {
 	description: "Estimate file space usage",
 	category: "system",
 	params: ["[-h] [-s] [path]"],
-	run: ({shell, cwd, args}) => {
+	run: ({ shell, cwd, args }) => {
 		const human = ifFlag(args, ["-h"]);
 		const summary = ifFlag(args, ["-s"]);
 		const target = args.find((a) => !a.startsWith("-")) ?? ".";
@@ -60,6 +60,6 @@ export const duCommand: ShellModule = {
 			return total;
 		};
 		walk(p, target);
-		return {stdout: lines.join("\n"), exitCode: 0};
+		return { stdout: lines.join("\n"), exitCode: 0 };
 	},
 };

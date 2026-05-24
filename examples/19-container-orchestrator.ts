@@ -5,7 +5,7 @@
  * and network policies across a virtual cluster.
  */
 
-import {Baie, SshClient, VirtualSshServer, type VirtualShell} from "../src";
+import { Baie, SshClient, VirtualSshServer, type VirtualShell } from "../src";
 
 interface Pod {
 	name: string;
@@ -34,13 +34,13 @@ const cluster = new Baie("k8s-cluster", "172.16.0.0/16");
 console.log("\n--- Deploy pods ---");
 
 const podSpecs = [
-	{name: "web-1", image: "nginx:1.25", ports: [80]},
-	{name: "web-2", image: "nginx:1.25", ports: [80]},
-	{name: "web-3", image: "nginx:1.25", ports: [80]},
-	{name: "api-1", image: "node:20-alpine", ports: [3000]},
-	{name: "api-2", image: "node:20-alpine", ports: [3000]},
-	{name: "db-1", image: "postgres:16", ports: [5432]},
-	{name: "cache-1", image: "redis:7", ports: [6379]},
+	{ name: "web-1", image: "nginx:1.25", ports: [80] },
+	{ name: "web-2", image: "nginx:1.25", ports: [80] },
+	{ name: "web-3", image: "nginx:1.25", ports: [80] },
+	{ name: "api-1", image: "node:20-alpine", ports: [3000] },
+	{ name: "api-2", image: "node:20-alpine", ports: [3000] },
+	{ name: "db-1", image: "postgres:16", ports: [5432] },
+	{ name: "cache-1", image: "redis:7", ports: [6379] },
 ];
 
 const pods: Pod[] = [];
@@ -51,7 +51,7 @@ for (const spec of podSpecs) {
 	vm.users.setCpuCapCores(1);
 	vm.users.setPassword("root", "root");
 
-	const ssh = new VirtualSshServer({port: 0, shell: vm});
+	const ssh = new VirtualSshServer({ port: 0, shell: vm });
 	const port = await ssh.start();
 
 	const client = new SshClient();

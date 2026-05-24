@@ -5,7 +5,7 @@
  * shaping, load balancing, and network partitions for isolation.
  */
 
-import {VirtualShell, VirtualSwitch} from "../src";
+import { VirtualShell, VirtualSwitch } from "../src";
 
 const net = new VirtualSwitch("10.0.0.0/24");
 
@@ -77,8 +77,8 @@ net.addLoadBalancer({
 	port: 80,
 	algorithm: "round-robin",
 	targets: [
-		{hostname: "app-1", port: 80, weight: 1},
-		{hostname: "app-2", port: 80, weight: 2},
+		{ hostname: "app-1", port: 80, weight: 1 },
+		{ hostname: "app-2", port: 80, weight: 2 },
 	],
 });
 

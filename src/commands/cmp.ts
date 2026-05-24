@@ -1,12 +1,12 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 export const cmpCommand: ShellModule = {
 	name: "cmp",
 	description: "Compare two files byte by byte",
 	category: "files",
 	params: ["<file1> <file2>"],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout:
@@ -17,28 +17,28 @@ export const cmpCommand: ShellModule = {
 
 		const files = args.filter((a) => !a.startsWith("-"));
 		if (files.length < 2) {
-			return {stderr: "cmp: missing file operand", exitCode: 2};
+			return { stderr: "cmp: missing file operand", exitCode: 2 };
 		}
 
 		const verbose = ifFlag(args, ["-l"]);
 		const silent = ifFlag(args, ["-s"]);
 
 		if (!shell.vfs.exists(files[0]!)) {
-			return {stderr: `cmp: ${files[0]}: No such file`, exitCode: 2};
+			return { stderr: `cmp: ${files[0]}: No such file`, exitCode: 2 };
 		}
 		if (!shell.vfs.exists(files[1]!)) {
-			return {stderr: `cmp: ${files[1]}: No such file`, exitCode: 2};
+			return { stderr: `cmp: ${files[1]}: No such file`, exitCode: 2 };
 		}
 
 		const a = shell.vfs.readFile(files[0]!);
 		const b = shell.vfs.readFile(files[1]!);
 
 		if (a === b) {
-			return {stdout: "", exitCode: 0};
+			return { stdout: "", exitCode: 0 };
 		}
 
 		if (silent) {
-			return {stdout: "", exitCode: 1};
+			return { stdout: "", exitCode: 1 };
 		}
 
 		const minLen = Math.min(a.length, b.length);
@@ -65,6 +65,6 @@ export const cmpCommand: ShellModule = {
 			};
 		}
 
-		return {stdout: "", exitCode: 0};
+		return { stdout: "", exitCode: 0 };
 	},
 };

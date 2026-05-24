@@ -1,12 +1,12 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 export const figletCommand: ShellModule = {
 	name: "figlet",
 	description: "Display large characters in ASCII art",
 	category: "fun",
 	params: ["[message...]"],
-	run: ({args, stdin}) => {
+	run: ({ args, stdin }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout: "Usage: figlet [message...]\n  -h, --help  Show this help\n",
@@ -15,7 +15,7 @@ export const figletCommand: ShellModule = {
 		}
 		const text =
 			args.filter((a) => !a.startsWith("-")).join(" ") || stdin || "Hello";
-		return {stdout: figletRender(text), exitCode: 0};
+		return { stdout: figletRender(text), exitCode: 0 };
 	},
 };
 
@@ -24,7 +24,7 @@ export const bannerCommand: ShellModule = {
 	description: "Print large banners",
 	category: "fun",
 	params: ["[message...]"],
-	run: ({args, stdin}) => {
+	run: ({ args, stdin }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout: "Usage: banner [message...]\n  -h, --help  Show this help\n",
@@ -34,7 +34,7 @@ export const bannerCommand: ShellModule = {
 		const text =
 			args.filter((a) => !a.startsWith("-")).join(" ") || stdin || "Hello";
 		const border = "#".repeat(text.length + 6);
-		return {stdout: `${border}\n## ${text} ##\n${border}\n`, exitCode: 0};
+		return { stdout: `${border}\n## ${text} ##\n${border}\n`, exitCode: 0 };
 	},
 };
 
@@ -43,7 +43,7 @@ export const toiletCommand: ShellModule = {
 	description: "Display large colored banners",
 	category: "fun",
 	params: ["[message...]"],
-	run: ({args, stdin}) => {
+	run: ({ args, stdin }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout: "Usage: toilet [message...]\n  -h, --help  Show this help\n",
@@ -52,7 +52,7 @@ export const toiletCommand: ShellModule = {
 		}
 		const text =
 			args.filter((a) => !a.startsWith("-")).join(" ") || stdin || "Hello";
-		return {stdout: figletRender(text), exitCode: 0};
+		return { stdout: figletRender(text), exitCode: 0 };
 	},
 };
 
@@ -61,7 +61,7 @@ export const factorCommand: ShellModule = {
 	description: "Factor integers into prime factors",
 	category: "fun",
 	params: ["<number>..."],
-	run: ({args, stdin}) => {
+	run: ({ args, stdin }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout: "Usage: factor <number>...\n  -h, --help  Show this help\n",
@@ -74,7 +74,7 @@ export const factorCommand: ShellModule = {
 			nums.push(...input.trim().split(/\s+/).map(Number));
 		}
 		const results = nums.map((n) => `${n}: ${factorize(n).join(" ")}`);
-		return {stdout: `${results.join("\n")}\n`, exitCode: 0};
+		return { stdout: `${results.join("\n")}\n`, exitCode: 0 };
 	},
 };
 
@@ -83,7 +83,7 @@ export const rsCommand: ShellModule = {
 	description: "Reshape data matrix",
 	category: "fun",
 	params: ["[options]"],
-	run: ({args, stdin}) => {
+	run: ({ args, stdin }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout: "Usage: rs [options]\n  -h, --help  Show this help\n",
@@ -104,7 +104,7 @@ export const rsCommand: ShellModule = {
 			}
 			lines.push(row.join("\t"));
 		}
-		return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
+		return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 	},
 };
 

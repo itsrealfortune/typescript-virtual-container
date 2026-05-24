@@ -8,7 +8,7 @@
  * - CPU time tracking and fair-share enforcement
  */
 
-import type {VirtualProcess} from "./index";
+import type { VirtualProcess } from "./index";
 
 /**
  * Process scheduling priority.
@@ -302,13 +302,13 @@ export class ProcessScheduler {
 		process: VirtualProcess,
 		totalRunningProcesses: number
 	): SchedulerAction {
-		const nice = (process as VirtualProcess & {nice?: number}).nice ?? 0;
+		const nice = (process as VirtualProcess & { nice?: number }).nice ?? 0;
 		const timeslice = this.calculateTimeslice(nice);
 
 		// Check if process should be throttled
 		if (this.shouldThrottle(process.pid, nice, totalRunningProcesses)) {
 			this._throttleCount++;
-			return {action: "throttle", reason: "exceeded fair share"};
+			return { action: "throttle", reason: "exceeded fair share" };
 		}
 
 		// Record scheduling decision

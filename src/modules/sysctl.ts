@@ -151,7 +151,7 @@ export function defaultSysctlState(
 export function resolveSysctlPath(
 	state: SysctlState,
 	sysPath: string
-): {value: string | number; set: (v: string) => void} | null {
+): { value: string | number; set: (v: string) => void } | null {
 	const parts = sysPath.replace("/proc/sys/", "").split("/");
 
 	// Dynamic property accessor: checks `key in obj`, returns value + setter.
@@ -159,7 +159,7 @@ export function resolveSysctlPath(
 	const access = <T extends object>(
 		obj: T,
 		key: string
-	): {value: string | number; set: (v: string) => void} | null => {
+	): { value: string | number; set: (v: string) => void } | null => {
 		if (!(key in obj)) {
 			return null;
 		}

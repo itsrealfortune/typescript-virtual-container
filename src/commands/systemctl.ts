@@ -1,6 +1,6 @@
 import * as path from "node:path";
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 const UNIT_DIRS = ["/etc/systemd/system", "/lib/systemd/system"];
 const WANTS_DIR = "/etc/systemd/system/multi-user.target.wants";
@@ -10,7 +10,7 @@ export const systemctlCommand: ShellModule = {
 	description: "Control the systemd system and service manager",
 	category: "system",
 	params: ["[options] <subcommand> [name...]"],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout: [
@@ -51,7 +51,7 @@ export const systemctlCommand: ShellModule = {
 			case "list-unit-files":
 				return listUnitFiles(vfs);
 			case "daemon-reload":
-				return {stdout: "", exitCode: 0};
+				return { stdout: "", exitCode: 0 };
 			case "start":
 			case "stop":
 			case "restart":
@@ -62,7 +62,7 @@ export const systemctlCommand: ShellModule = {
 						exitCode: 1,
 					};
 				}
-				return {stdout: "", exitCode: 0};
+				return { stdout: "", exitCode: 0 };
 			case "enable":
 			case "disable":
 				if (names.length === 0) {
@@ -79,12 +79,12 @@ export const systemctlCommand: ShellModule = {
 				return showStatus(vfs, names[0]!);
 			case "is-active":
 				if (names.length === 0) {
-					return {stderr: "systemctl: missing unit name", exitCode: 1};
+					return { stderr: "systemctl: missing unit name", exitCode: 1 };
 				}
 				return checkActive(vfs, names);
 			case "is-enabled":
 				if (names.length === 0) {
-					return {stderr: "systemctl: missing unit name", exitCode: 1};
+					return { stderr: "systemctl: missing unit name", exitCode: 1 };
 				}
 				return checkEnabled(vfs, names);
 			default:
@@ -120,7 +120,7 @@ function listServiceFiles(vfs: {
 }
 
 function readDescription(
-	vfs: {readFile: (p: string) => string},
+	vfs: { readFile: (p: string) => string },
 	unitPath: string
 ): string {
 	try {
@@ -133,7 +133,7 @@ function readDescription(
 }
 
 function isEnabled(
-	vfs: {exists: (p: string) => boolean},
+	vfs: { exists: (p: string) => boolean },
 	unitName: string
 ): boolean {
 	return vfs.exists(path.posix.join(WANTS_DIR, unitName));
@@ -172,7 +172,7 @@ function listUnits(
 	}
 
 	lines.push("", `${files.length} units listed.`);
-	return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
+	return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 }
 
 function listUnitFiles(vfs: {
@@ -196,7 +196,7 @@ function listUnitFiles(vfs: {
 	}
 
 	lines.push("", `${files.length} unit files listed.`);
-	return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
+	return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 }
 
 function toggleEnable(
@@ -241,12 +241,12 @@ function toggleEnable(
 		}
 	}
 
-	return {stdout: `${results.join("\n")}\n`, exitCode: 0};
+	return { stdout: `${results.join("\n")}\n`, exitCode: 0 };
 }
 
 function findUnit(
 	unitName: string,
-	vfs: {list: (d: string) => string[]; exists: (p: string) => boolean}
+	vfs: { list: (d: string) => string[]; exists: (p: string) => boolean }
 ): string | undefined {
 	for (const dir of UNIT_DIRS) {
 		const p = path.posix.join(dir, unitName);
@@ -267,7 +267,7 @@ function showStatus(
 	const unitName = name.endsWith(".service") ? name : `${name}.service`;
 	const unitPath = findUnit(unitName, vfs);
 	if (!unitPath) {
-		return {stderr: `Unit ${unitName} could not be found.`, exitCode: 3};
+		return { stderr: `Unit ${unitName} could not be found.`, exitCode: 3 };
 	}
 
 	const desc = readDescription(vfs, unitPath);
@@ -288,7 +288,7 @@ function showStatus(
 }
 
 function checkActive(
-	vfs: {list: (d: string) => string[]; exists: (p: string) => boolean},
+	vfs: { list: (d: string) => string[]; exists: (p: string) => boolean },
 	names: string[]
 ) {
 	const lines: string[] = [];
@@ -303,11 +303,11 @@ function checkActive(
 		}
 	}
 	const exitCode = lines.every((l) => l.endsWith("active")) ? 0 : 3;
-	return {stdout: `${lines.join("\n")}\n`, exitCode};
+	return { stdout: `${lines.join("\n")}\n`, exitCode };
 }
 
 function checkEnabled(
-	vfs: {list: (d: string) => string[]; exists: (p: string) => boolean},
+	vfs: { list: (d: string) => string[]; exists: (p: string) => boolean },
 	names: string[]
 ) {
 	const lines: string[] = [];
@@ -317,5 +317,5 @@ function checkEnabled(
 		lines.push(`${unitName} ${ok ? "enabled" : "disabled"}`);
 	}
 	const exitCode = lines.every((l) => l.endsWith("enabled")) ? 0 : 1;
-	return {stdout: `${lines.join("\n")}\n`, exitCode};
+	return { stdout: `${lines.join("\n")}\n`, exitCode };
 }

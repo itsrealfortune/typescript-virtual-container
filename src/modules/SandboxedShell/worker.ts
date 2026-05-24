@@ -1,6 +1,6 @@
-import {parentPort} from "node:worker_threads";
-import {VirtualShell} from "../VirtualShell";
-import type {HostMessage, WorkerMessage} from "./types";
+import { parentPort } from "node:worker_threads";
+import { VirtualShell } from "../VirtualShell";
+import type { HostMessage, WorkerMessage } from "./types";
 
 if (!parentPort) {
 	throw new Error("SandboxedShell worker must run as a Worker thread");
@@ -13,9 +13,9 @@ function send(msg: WorkerMessage): void {
 	port.postMessage(msg);
 }
 
-async function handleExec(msg: HostMessage & {type: "exec"}): Promise<void> {
+async function handleExec(msg: HostMessage & { type: "exec" }): Promise<void> {
 	if (!shell) {
-		send({type: "error", id: msg.id, message: "Shell not initialized"});
+		send({ type: "error", id: msg.id, message: "Shell not initialized" });
 		return;
 	}
 	try {
@@ -38,7 +38,7 @@ async function handleExec(msg: HostMessage & {type: "exec"}): Promise<void> {
 
 async function handleInit(): Promise<void> {
 	try {
-		shell = new VirtualShell("sandbox", undefined, {mode: "memory"});
+		shell = new VirtualShell("sandbox", undefined, { mode: "memory" });
 		await shell.ensureInitialized();
 		globalThis.fetch = (() => {
 			const f = (
@@ -47,9 +47,9 @@ async function handleInit(): Promise<void> {
 			): Promise<Response> => {
 				throw new Error("fetch() is disabled in sandboxed shell");
 			};
-			return Object.assign(f, {preconnect: () => {}});
+			return Object.assign(f, { preconnect: () => {} });
 		})() as unknown as typeof fetch;
-		send({type: "ready"});
+		send({ type: "ready" });
 	} catch (err: unknown) {
 		send({
 			type: "error",

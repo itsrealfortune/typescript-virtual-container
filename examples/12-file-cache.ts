@@ -5,7 +5,7 @@
  * (LRU, LFU, FIFO) and simulated disk read/write latencies.
  */
 
-import {VirtualFileSystem} from "../src";
+import { VirtualFileSystem } from "../src";
 
 const vfs = new VirtualFileSystem({
 	mode: "fs",

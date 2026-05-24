@@ -1,4 +1,4 @@
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 const SHOPT_OPTIONS: Record<string, string> = {
 	dotglob: "__dotglob",
@@ -27,7 +27,7 @@ export const shoptCommand: ShellModule = {
 	description: "Manage shell options",
 	category: "shell",
 	params: ["[-pqsu] [-o] [optname ...]"],
-	run: ({args, env}) => {
+	run: ({ args, env }) => {
 		const hasS = args.includes("-s");
 		const hasU = args.includes("-u");
 		const hasQ = args.includes("-q");
@@ -42,7 +42,7 @@ export const shoptCommand: ShellModule = {
 				const on = env.vars[key] === "1";
 				lines.push(`${on ? "on" : "off"}\t${opt}`);
 			}
-			return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
+			return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 		}
 
 		if (hasS) {
@@ -52,7 +52,7 @@ export const shoptCommand: ShellModule = {
 					env.vars[key] = "1";
 				}
 			}
-			return {exitCode: 0};
+			return { exitCode: 0 };
 		}
 
 		if (hasU) {
@@ -62,17 +62,17 @@ export const shoptCommand: ShellModule = {
 					delete env.vars[key];
 				}
 			}
-			return {exitCode: 0};
+			return { exitCode: 0 };
 		}
 
 		if (hasQ) {
 			for (const name of names) {
 				const key = optionMap[name];
 				if (!key || env.vars[key] !== "1") {
-					return {exitCode: 1};
+					return { exitCode: 1 };
 				}
 			}
-			return {exitCode: 0};
+			return { exitCode: 0 };
 		}
 
 		const lines: string[] = [];
@@ -81,6 +81,6 @@ export const shoptCommand: ShellModule = {
 			const on = key ? env.vars[key] === "1" : false;
 			lines.push(`${on ? "on" : "off"}\t${name}`);
 		}
-		return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
+		return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 	},
 };

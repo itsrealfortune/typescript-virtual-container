@@ -1,5 +1,5 @@
-import type {ShellModule} from "../types/commands";
-import {runCommand} from "./runtime";
+import type { ShellModule } from "../types/commands";
+import { runCommand } from "./runtime";
 
 /**
  * Build and execute commands from stdin arguments.
@@ -11,12 +11,12 @@ export const xargsCommand: ShellModule = {
 	description: "Build and execute command lines from stdin",
 	category: "text",
 	params: ["[command] [args...]"],
-	run: ({authUser, hostname, mode, cwd, args, stdin, shell, env}) => {
+	run: ({ authUser, hostname, mode, cwd, args, stdin, shell, env }) => {
 		const baseCmd = args[0] ?? "echo";
 		const extraArgs = args.slice(1);
 		const items = (stdin ?? "").trim().split(/\s+/).filter(Boolean);
 		if (items.length === 0) {
-			return {exitCode: 0};
+			return { exitCode: 0 };
 		}
 		const fullCmd = [baseCmd, ...extraArgs, ...items].join(" ");
 		return runCommand(

@@ -308,7 +308,7 @@ export class FileCache {
 	 * @returns Current disk I/O simulation parameters.
 	 */
 	getDiskIoParams(): DiskIoParams {
-		return {...this._diskIo};
+		return { ...this._diskIo };
 	}
 
 	/**

@@ -18,13 +18,13 @@
  *   $((expr))     arithmetic (integer)
  */
 
-import {globToRegex, shellGlobToRegex} from "./glob";
+import { globToRegex, shellGlobToRegex } from "./glob";
 
 // ─── arithmetic evaluator ────────────────────────────────────────────────────
 
 type ArithToken =
-	| {type: "number"; value: number}
-	| {type: "ident"; value: string}
+	| { type: "number"; value: number }
+	| { type: "ident"; value: string }
 	| {
 			type:
 				| "plus"
@@ -73,7 +73,7 @@ function tokenizeArith(
 				i += 2;
 				continue;
 			}
-			tokens.push({type: "plus"});
+			tokens.push({ type: "plus" });
 			i++;
 			continue;
 		}
@@ -82,118 +82,118 @@ function tokenizeArith(
 				i += 2;
 				continue;
 			}
-			tokens.push({type: "minus"});
+			tokens.push({ type: "minus" });
 			i++;
 			continue;
 		}
 		if (ch === "*") {
 			if (expr[i + 1] === "=") {
-				tokens.push({type: "assign"});
+				tokens.push({ type: "assign" });
 				i += 2;
 				continue;
 			}
 			if (expr[i + 1] === "*") {
-				tokens.push({type: "pow"});
+				tokens.push({ type: "pow" });
 				i += 2;
 				continue;
 			}
-			tokens.push({type: "mul"});
+			tokens.push({ type: "mul" });
 			i++;
 			continue;
 		}
 		if (ch === "/") {
-			tokens.push({type: "div"});
+			tokens.push({ type: "div" });
 			i++;
 			continue;
 		}
 		if (ch === "%") {
-			tokens.push({type: "mod"});
+			tokens.push({ type: "mod" });
 			i++;
 			continue;
 		}
 		if (ch === "(") {
-			tokens.push({type: "lparen"});
+			tokens.push({ type: "lparen" });
 			i++;
 			continue;
 		}
 		if (ch === ")") {
-			tokens.push({type: "rparen"});
+			tokens.push({ type: "rparen" });
 			i++;
 			continue;
 		}
 		if (ch === "&") {
 			if (expr[i + 1] === "&") {
-				tokens.push({type: "logical_and"});
+				tokens.push({ type: "logical_and" });
 				i += 2;
 				continue;
 			}
-			tokens.push({type: "bitand"});
+			tokens.push({ type: "bitand" });
 			i++;
 			continue;
 		}
 		if (ch === "|") {
 			if (expr[i + 1] === "|") {
-				tokens.push({type: "logical_or"});
+				tokens.push({ type: "logical_or" });
 				i += 2;
 				continue;
 			}
-			tokens.push({type: "bitor"});
+			tokens.push({ type: "bitor" });
 			i++;
 			continue;
 		}
 		if (ch === "^") {
-			tokens.push({type: "bitxor"});
+			tokens.push({ type: "bitxor" });
 			i++;
 			continue;
 		}
 		if (ch === "~") {
-			tokens.push({type: "bitnot"});
+			tokens.push({ type: "bitnot" });
 			i++;
 			continue;
 		}
 		if (ch === "<") {
 			if (expr[i + 1] === "<") {
-				tokens.push({type: "shl"});
+				tokens.push({ type: "shl" });
 				i += 2;
 				continue;
 			}
 			if (expr[i + 1] === "=") {
-				tokens.push({type: "le"});
+				tokens.push({ type: "le" });
 				i += 2;
 				continue;
 			}
-			tokens.push({type: "lt"});
+			tokens.push({ type: "lt" });
 			i++;
 			continue;
 		}
 		if (ch === ">") {
 			if (expr[i + 1] === ">") {
-				tokens.push({type: "shr"});
+				tokens.push({ type: "shr" });
 				i += 2;
 				continue;
 			}
 			if (expr[i + 1] === "=") {
-				tokens.push({type: "ge"});
+				tokens.push({ type: "ge" });
 				i += 2;
 				continue;
 			}
-			tokens.push({type: "gt"});
+			tokens.push({ type: "gt" });
 			i++;
 			continue;
 		}
 		if (ch === "=") {
 			if (expr[i + 1] === "=") {
-				tokens.push({type: "eq"});
+				tokens.push({ type: "eq" });
 				i += 2;
 				continue;
 			}
-			tokens.push({type: "assign"});
+			tokens.push({ type: "assign" });
 			i++;
 			continue;
 		}
 		if (ch === "!") {
 			if (expr[i + 1] === "=") {
-				tokens.push({type: "ne"});
+				tokens.push({ type: "ne" });
 				i += 2;
 				continue;
 			}
@@ -202,17 +202,17 @@ function tokenizeArith(
 			continue;
 		}
 		if (ch === "?") {
-			tokens.push({type: "ternary_q"});
+			tokens.push({ type: "ternary_q" });
 			i++;
 			continue;
 		}
 		if (ch === ":") {
-			tokens.push({type: "ternary_c"});
+			tokens.push({ type: "ternary_c" });
 			i++;
 			continue;
 		}
 		if (ch === ",") {
-			tokens.push({type: "comma"});
+			tokens.push({ type: "comma" });
 			i++;
 			continue;
 		}
@@ -247,7 +247,7 @@ function tokenizeArith(
 			while (j < expr.length && /[0-9]/.test(expr.charAt(j))) {
 				j++;
 			}
-			tokens.push({type: "number", value: Number(expr.slice(i, j))});
+			tokens.push({ type: "number", value: Number(expr.slice(i, j)) });
 			i = j;
 			continue;
 		}
@@ -257,7 +257,7 @@ function tokenizeArith(
 				j++;
 			}
 			const name = expr.slice(i, j);
-			tokens.push({type: "ident", value: name});
+			tokens.push({ type: "ident", value: name });
 			i = j;
 			continue;
 		}
@@ -532,7 +532,7 @@ export function evalArith(expr: string, env: Record<string, string>): number {
 			if (!entry) {
 				break;
 			}
-			const {prec: p, fn, rightAsso} = entry;
+			const { prec: p, fn, rightAsso } = entry;
 			if (p < prec || (p === prec && rightAsso)) {
 				break;
 			}
@@ -1135,7 +1135,7 @@ export async function expandAsync(
 interface GlobVfs {
 	list: (p: string) => string[];
 	exists: (p: string) => boolean;
-	stat: (p: string) => {type: string};
+	stat: (p: string) => { type: string };
 	statType?: (p: string) => string | null;
 }
 
@@ -1164,7 +1164,7 @@ export function expandGlob(
 	pattern: string,
 	cwd: string,
 	vfs: GlobVfs,
-	options?: {dotglob?: boolean; nullglob?: boolean; failglob?: boolean}
+	options?: { dotglob?: boolean; nullglob?: boolean; failglob?: boolean }
 ): string[] {
 	// No glob chars → return as-is
 	if (!(pattern.includes("*") || pattern.includes("?"))) {

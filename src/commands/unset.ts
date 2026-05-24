@@ -1,11 +1,11 @@
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 export const unsetCommand: ShellModule = {
 	name: "unset",
 	description: "Remove shell variable or function",
 	category: "shell",
 	params: ["[-fv] <NAME>..."],
-	run: ({args, env}) => {
+	run: ({ args, env }) => {
 		let unsetFunc = false;
 		let unsetVar = true;
 
@@ -32,6 +32,6 @@ export const unsetCommand: ShellModule = {
 				delete env.vars[`__func_${name}`];
 			}
 		}
-		return {exitCode: 0};
+		return { exitCode: 0 };
 	},
 };

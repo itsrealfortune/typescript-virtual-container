@@ -5,9 +5,9 @@
  * - node:vm sandbox restricts dangerous access
  * - Browser node:vm polyfill does not use unsafe eval
  */
-import {describe, expect, test, beforeAll, afterAll} from "bun:test";
-import {SshClient, type VirtualShell, SandboxedShell} from "../src";
-import {createTestEnv} from "./test-helper";
+import { describe, expect, test, beforeAll, afterAll } from "bun:test";
+import { SshClient, type VirtualShell, SandboxedShell } from "../src";
+import { createTestEnv } from "./test-helper";
 
 describe("user file isolation", () => {
 	let client: InstanceType<typeof SshClient>;

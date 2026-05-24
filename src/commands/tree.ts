@@ -1,6 +1,6 @@
-import type {ShellModule} from "../types/commands";
-import {getArg} from "./command-helpers";
-import {assertPathAccess, resolvePath} from "./helpers";
+import type { ShellModule } from "../types/commands";
+import { getArg } from "./command-helpers";
+import { assertPathAccess, resolvePath } from "./helpers";
 
 /**
  * Display directory structure in a tree format.
@@ -12,9 +12,9 @@ export const treeCommand: ShellModule = {
 	description: "Display directory tree",
 	category: "navigation",
 	params: ["[path]"],
-	run: ({authUser, shell, cwd, args}) => {
+	run: ({ authUser, shell, cwd, args }) => {
 		const target = resolvePath(cwd, getArg(args, 0) ?? cwd);
 		assertPathAccess(authUser, target, "tree");
-		return {stdout: shell.vfs.tree(target), exitCode: 0};
+		return { stdout: shell.vfs.tree(target), exitCode: 0 };
 	},
 };

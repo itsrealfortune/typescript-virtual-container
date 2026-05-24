@@ -1,6 +1,6 @@
-import {describe, expect, test} from "bun:test";
-import {VirtualShell} from "../src";
-import {runExec} from "../src/modules/SSHMimic/exec";
+import { describe, expect, test } from "bun:test";
+import { VirtualShell } from "../src";
+import { runExec } from "../src/modules/SSHMimic/exec";
 
 describe("SSH exec inline commands", () => {
 	test("runExec sends stdout, stderr, and exit code for inline commands", async () => {

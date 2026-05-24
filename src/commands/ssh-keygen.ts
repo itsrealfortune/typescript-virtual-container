@@ -1,12 +1,12 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 export const sshKeygenCommand: ShellModule = {
 	name: "ssh-keygen",
 	description: "Generate SSH key pairs",
 	category: "system",
 	params: ["[options]"],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout: [
@@ -59,10 +59,10 @@ export const sshKeygenCommand: ShellModule = {
 			};
 		}
 
-		const {privateKey, publicKey} = generateKeyPair(keyType, comment);
+		const { privateKey, publicKey } = generateKeyPair(keyType, comment);
 
-		vfs.writeFile(outFile, privateKey, {mode: 0o600});
-		vfs.writeFile(`${outFile}.pub`, publicKey, {mode: 0o644});
+		vfs.writeFile(outFile, privateKey, { mode: 0o600 });
+		vfs.writeFile(`${outFile}.pub`, publicKey, { mode: 0o644 });
 
 		return {
 			stdout: `${[
@@ -91,7 +91,7 @@ export const sshKeygenCommand: ShellModule = {
 function generateKeyPair(
 	type: string,
 	comment: string
-): {privateKey: string; publicKey: string} {
+): { privateKey: string; publicKey: string } {
 	const typeLabel =
 		type === "ed25519"
 			? "ssh-ed25519"
@@ -100,7 +100,7 @@ function generateKeyPair(
 				: "ssh-rsa";
 
 	const fakePubB64 = Buffer.from(
-		Array.from({length: 100}, () => Math.floor(Math.random() * 256))
+		Array.from({ length: 100 }, () => Math.floor(Math.random() * 256))
 	).toString("base64");
 
 	const publicKey = `${typeLabel} ${fakePubB64} ${comment}`;
@@ -113,21 +113,21 @@ function generateKeyPair(
 		"-----END OPENSSH PRIVATE KEY-----",
 	].join("\n")}\n`;
 
-	return {privateKey, publicKey};
+	return { privateKey, publicKey };
 }
 
 function derivePublicKey(
-	vfs: {readFile: (p: string) => string; exists: (p: string) => boolean},
+	vfs: { readFile: (p: string) => string; exists: (p: string) => boolean },
 	keyFile: string
 ) {
 	if (!vfs.exists(keyFile)) {
-		return {stderr: `${keyFile}: No such file`, exitCode: 1};
+		return { stderr: `${keyFile}: No such file`, exitCode: 1 };
 	}
 	const pubFile = `${keyFile}.pub`;
 	if (vfs.exists(pubFile)) {
-		return {stdout: `${vfs.readFile(pubFile)}\n`, exitCode: 0};
+		return { stdout: `${vfs.readFile(pubFile)}\n`, exitCode: 0 };
 	}
-	return {stderr: `${pubFile} not found`, exitCode: 1};
+	return { stderr: `${pubFile} not found`, exitCode: 1 };
 }
 
 function fingerprint(pubKey: string): string {

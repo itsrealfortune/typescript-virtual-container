@@ -326,7 +326,7 @@ net.addLoadBalancer({
 	name: "web-lb",
 	port: 80,
 	algorithm: "round-robin",
-	targets: [{hostname: "web-01", port: 80, weight: 1}],
+	targets: [{ hostname: "web-01", port: 80, weight: 1 }],
 });
 
 for (let i = 0; i < 3; i++) {
@@ -350,7 +350,7 @@ console.log("\n--- Port forwarding ---");
 const proxy = new VirtualProxy({
 	getVM: (name: string) => (name === "web-01" ? web : undefined),
 	switch: net,
-	listVMs: () => [{hostname: "web-01", ip: "10.0.100.10", shell: web}],
+	listVMs: () => [{ hostname: "web-01", ip: "10.0.100.10", shell: web }],
 });
 
 proxy.exposePort("web-01", 80, 35801);
@@ -368,7 +368,7 @@ console.log("  forwards stopped");
 
 // ── Idle management and GC ────────────────────────────────────────
 console.log("\n--- Idle management ---");
-web.enableIdleManagement({gcIntervalMs: 60000});
+web.enableIdleManagement({ gcIntervalMs: 60000 });
 console.log(`  idle state: ${web.idleState}`);
 console.log(`  idle ms: ${web.idleMs}`);
 

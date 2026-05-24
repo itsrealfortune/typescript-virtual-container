@@ -1,5 +1,5 @@
-import type {ShellModule} from "../types/commands";
-import {getCommandModulesPublic} from "./registry";
+import type { ShellModule } from "../types/commands";
+import { getCommandModulesPublic } from "./registry";
 
 // ─── category config ──────────────────────────────────────────────────────────
 
@@ -138,7 +138,7 @@ export function createHelpCommand(): ShellModule {
 		description: "List all commands, or show usage for a specific command",
 		category: "shell",
 		params: ["[command]"],
-		run: ({args}) => {
+		run: ({ args }) => {
 			const modules = getCommandModulesPublic();
 
 			if (args[0]) {
@@ -152,10 +152,10 @@ export function createHelpCommand(): ShellModule {
 						exitCode: 1,
 					};
 				}
-				return {stdout: renderDetail(mod), exitCode: 0};
+				return { stdout: renderDetail(mod), exitCode: 0 };
 			}
 
-			return {stdout: renderFull(modules), exitCode: 0};
+			return { stdout: renderFull(modules), exitCode: 0 };
 		},
 	};
 }

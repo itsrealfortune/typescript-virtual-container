@@ -1,6 +1,6 @@
-import type {ShellModule} from "../types/commands";
-import {getArg, ifFlag} from "./command-helpers";
-import {checkFilePermission, resolvePath} from "./helpers";
+import type { ShellModule } from "../types/commands";
+import { getArg, ifFlag } from "./command-helpers";
+import { checkFilePermission, resolvePath } from "./helpers";
 
 // ─── ANSI color codes (matches GNU ls --color=auto / LS_COLORS defaults) ────
 
@@ -134,7 +134,7 @@ function formatDate(date: Date): string {
 // ─── symlink target ──────────────────────────────────────────────────────────
 
 function readlinkTarget(
-	vfs: {readFile: (p: string) => string},
+	vfs: { readFile: (p: string) => string },
 	path: string
 ): string {
 	try {
@@ -162,7 +162,7 @@ function shortListing(
 		.map((name) => {
 			const childPath = `${base}/${name}`;
 			const isLink = vfs.isSymlink(childPath);
-			let stat: {mode: number; type: "file" | "directory" | "device"};
+			let stat: { mode: number; type: "file" | "directory" | "device" };
 			try {
 				stat = vfs.stat(childPath);
 			} catch {
@@ -252,7 +252,7 @@ function longListing(
 			? `${colorize(name, color)} -> ${readlinkTarget(vfs, childPath)}`
 			: colorize(name, color);
 
-		return {perms, nlink, size, date, label};
+		return { perms, nlink, size, date, label };
 	});
 
 	const wNlink = Math.max(...rows.map((r) => r.nlink.length));
@@ -267,8 +267,8 @@ function longListing(
 				return null;
 			}
 		})();
-		const uid = st && "uid" in st ? (st as {uid: number}).uid : 0;
-		const gid = st && "gid" in st ? (st as {gid: number}).gid : 0;
+		const uid = st && "uid" in st ? (st as { uid: number }).uid : 0;
+		const gid = st && "gid" in st ? (st as { gid: number }).gid : 0;
 		const uidStr = users.getUsername(uid) ?? String(uid);
 		const gidStr = users.getGroupName(gid) ?? String(gid);
 		return `${r.perms} ${r.nlink.padStart(wNlink)} ${uidStr} ${gidStr} ${r.size.padStart(wSize)} ${r.date} ${r.label}`;
@@ -289,7 +289,7 @@ export const lsCommand: ShellModule = {
 	description: "List directory contents",
 	category: "navigation",
 	params: ["[-la] [path]"],
-	run: ({authUser, shell, cwd, args}) => {
+	run: ({ authUser, shell, cwd, args }) => {
 		const longFormat = ifFlag(args, ["-l", "--long", "-la", "-al"]);
 		const showHidden = ifFlag(args, ["-a", "--all", "-la", "-al"]);
 
@@ -310,13 +310,13 @@ export const lsCommand: ShellModule = {
 					const mode = isLink ? 0o120777 : st.mode;
 					const size = isLink
 						? readlinkTarget(shell.vfs, target).length
-						: ((st as {size?: number}).size ?? 0);
+						: ((st as { size?: number }).size ?? 0);
 					const perms = formatPermissions(mode, st.type, isLink);
 					const label = isLink
 						? `${colorize(name, color)} -> ${readlinkTarget(shell.vfs, target)}`
 						: colorize(name, color);
-					const uid = "uid" in st ? (st as {uid: number}).uid : 0;
-					const gid = "gid" in st ? (st as {gid: number}).gid : 0;
+					const uid = "uid" in st ? (st as { uid: number }).uid : 0;
+					const gid = "gid" in st ? (st as { gid: number }).gid : 0;
 					const uidStr = shell.users.getUsername(uid) ?? String(uid);
 					const gidStr = shell.users.getGroupName(gid) ?? String(gid);
 					return {
@@ -324,7 +324,7 @@ export const lsCommand: ShellModule = {
 						exitCode: 0,
 					};
 				}
-				return {stdout: `${colorize(name, color)}\n`, exitCode: 0};
+				return { stdout: `${colorize(name, color)}\n`, exitCode: 0 };
 			}
 		}
 
@@ -336,6 +336,6 @@ export const lsCommand: ShellModule = {
 			? longListing(shell.vfs, shell.users, target, items)
 			: shortListing(shell.vfs, target, items);
 
-		return {stdout: `${rendered}\n`, exitCode: 0};
+		return { stdout: `${rendered}\n`, exitCode: 0 };
 	},
 };

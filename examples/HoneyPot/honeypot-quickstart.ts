@@ -20,7 +20,7 @@ async function quickStart() {
 	// Step 1: Create virtual environment
 	console.log("Step 1️⃣  Creating virtual environment...");
 	const shell = new VirtualShell("my-lab");
-	const ssh = new VirtualSshServer({port: 2222, shell});
+	const ssh = new VirtualSshServer({ port: 2222, shell });
 	await ssh.start();
 
 	const users = shell.getUsers()!;

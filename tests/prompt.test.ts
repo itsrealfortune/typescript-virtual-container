@@ -1,5 +1,5 @@
-import {describe, expect, test} from "bun:test";
-import {buildPrompt, expandPs1} from "../src/modules/SSHMimic/prompt";
+import { describe, expect, test } from "bun:test";
+import { buildPrompt, expandPs1 } from "../src/modules/SSHMimic/prompt";
 
 describe("expandPs1", () => {
 	test("expands \\u to user", () => {

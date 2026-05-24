@@ -1,4 +1,4 @@
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 /**
  * Trace system calls and signals (stub — runs command, emits fake strace output).
@@ -9,10 +9,10 @@ export const straceCommand: ShellModule = {
 	description: "Trace system calls and signals",
 	category: "system",
 	params: ["[-e <expr>] [-o <file>] <command> [args]"],
-	run: ({args}) => {
+	run: ({ args }) => {
 		const cmd = args.find((a) => !a.startsWith("-"));
 		if (!cmd) {
-			return {stderr: "strace: must have PROG [ARGS] or -p PID", exitCode: 1};
+			return { stderr: "strace: must have PROG [ARGS] or -p PID", exitCode: 1 };
 		}
 		const lines = [
 			`execve("/usr/bin/${cmd}", ["${cmd}"${args
@@ -26,6 +26,6 @@ export const straceCommand: ShellModule = {
 			"close(3)                                = 0",
 			"+++ exited with 0 +++",
 		];
-		return {stderr: lines.join("\n"), exitCode: 0};
+		return { stderr: lines.join("\n"), exitCode: 0 };
 	},
 };

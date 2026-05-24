@@ -1,6 +1,6 @@
-import type {ShellModule} from "../types/commands";
-import {assertPathAccess, resolvePath} from "./helpers";
-import {userHome} from "./runtime";
+import type { ShellModule } from "../types/commands";
+import { assertPathAccess, resolvePath } from "./helpers";
+import { userHome } from "./runtime";
 
 /**
  * Change current working directory.
@@ -12,14 +12,14 @@ export const cdCommand: ShellModule = {
 	description: "Change directory",
 	category: "navigation",
 	params: ["[path]"],
-	run: ({authUser, shell, cwd, args}) => {
+	run: ({ authUser, shell, cwd, args }) => {
 		const target = resolvePath(cwd, args[0] ?? "~", userHome(authUser));
 		assertPathAccess(authUser, target, "cd");
 		const stats = shell.vfs.stat(target);
 		if (stats.type !== "directory") {
-			return {stderr: `cd: not a directory: ${target}`, exitCode: 1};
+			return { stderr: `cd: not a directory: ${target}`, exitCode: 1 };
 		}
 
-		return {nextCwd: target, exitCode: 0};
+		return { nextCwd: target, exitCode: 0 };
 	},
 };

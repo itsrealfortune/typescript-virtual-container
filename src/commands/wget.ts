@@ -1,6 +1,6 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag, parseArgs} from "./command-helpers";
-import {assertPathAccess, resolvePath, stripUrlFilename} from "./helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag, parseArgs } from "./command-helpers";
+import { assertPathAccess, resolvePath, stripUrlFilename } from "./helpers";
 import {
 	checkOutboundRestriction,
 	honeypotResponse,
@@ -16,8 +16,8 @@ export const wgetCommand: ShellModule = {
 	description: "File downloader (pure fetch)",
 	category: "network",
 	params: ["[options] <url>"],
-	run: async ({authUser, cwd, args, shell, uid, gid}) => {
-		const {flagsWithValues, positionals} = parseArgs(args, {
+	run: async ({ authUser, cwd, args, shell, uid, gid }) => {
+		const { flagsWithValues, positionals } = parseArgs(args, {
 			flagsWithValue: [
 				"-O",
 				"--output-document",
@@ -144,19 +144,19 @@ export const wgetCommand: ShellModule = {
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
 			stderrLines.push(`wget: unable to resolve host: ${msg}`);
-			return {stderr: stderrLines.join("\n"), exitCode: 4};
+			return { stderr: stderrLines.join("\n"), exitCode: 4 };
 		}
 
 		if (!response.ok) {
 			stderrLines.push(`ERROR ${response.status}: ${response.statusText}`);
-			return {stderr: stderrLines.join("\n"), exitCode: 8};
+			return { stderr: stderrLines.join("\n"), exitCode: 8 };
 		}
 
 		let body: string;
 		try {
 			body = await response.text();
 		} catch {
-			return {stderr: "wget: failed to read response", exitCode: 1};
+			return { stderr: "wget: failed to read response", exitCode: 1 };
 		}
 
 		if (!quiet) {
@@ -184,9 +184,9 @@ export const wgetCommand: ShellModule = {
 					`Saving to: '${targetPath}'\n${targetPath}            100%[==================>]  ${body.length} B`
 				);
 			}
-			return {stderr: stderrLines.join("\n") || undefined, exitCode: 0};
+			return { stderr: stderrLines.join("\n") || undefined, exitCode: 0 };
 		}
 
-		return {stdout: body, exitCode: 0};
+		return { stdout: body, exitCode: 0 };
 	},
 };

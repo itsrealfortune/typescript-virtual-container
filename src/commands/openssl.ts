@@ -1,12 +1,12 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 export const opensslCommand: ShellModule = {
 	name: "openssl",
 	description: "OpenSSL cryptographic utility",
 	category: "system",
 	params: ["<command> [options]"],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		if (ifFlag(args, ["--help", "-h"]) || args.length === 0) {
 			return {
 				stdout: [
@@ -29,7 +29,7 @@ export const opensslCommand: ShellModule = {
 
 		const subcommand = args.find((a) => !a.startsWith("-"));
 		if (!subcommand) {
-			return {stderr: "openssl: missing command", exitCode: 1};
+			return { stderr: "openssl: missing command", exitCode: 1 };
 		}
 
 		if (subcommand === "version") {
@@ -58,13 +58,13 @@ export const opensslCommand: ShellModule = {
 			].join("\n");
 
 			if (outFile) {
-				shell.vfs.writeFile(outFile, key, {mode: 0o600});
+				shell.vfs.writeFile(outFile, key, { mode: 0o600 });
 				return {
 					stdout: `Generating RSA private key, ${bits} bit long modulus (2 primes)\n.......+++++\n....................+++++\nwrite to '${outFile}'\n`,
 					exitCode: 0,
 				};
 			}
-			return {stdout: key, exitCode: 0};
+			return { stdout: key, exitCode: 0 };
 		}
 
 		if (subcommand === "rand") {
@@ -73,18 +73,18 @@ export const opensslCommand: ShellModule = {
 				bitsIdx !== -1 && bitsIdx + 1 < args.length
 					? Number(args[bitsIdx + 1])
 					: 16;
-			const hex = Array.from({length: n}, () =>
+			const hex = Array.from({ length: n }, () =>
 				Math.floor(Math.random() * 256)
 					.toString(16)
 					.padStart(2, "0")
 			).join("");
-			return {stdout: `${hex}\n`, exitCode: 0};
+			return { stdout: `${hex}\n`, exitCode: 0 };
 		}
 
 		if (subcommand === "md5") {
 			const file = args[args.indexOf("md5") + 1];
 			if (!(file && shell.vfs.exists(file))) {
-				return {stderr: "openssl: file not found", exitCode: 1};
+				return { stderr: "openssl: file not found", exitCode: 1 };
 			}
 			const content = shell.vfs.readFile(file);
 			let hash = 0;
@@ -92,13 +92,13 @@ export const opensslCommand: ShellModule = {
 				hash = ((hash << 5) - hash + content.charCodeAt(i)) | 0;
 			}
 			const h = Math.abs(hash).toString(16).padStart(32, "0");
-			return {stdout: `MD5(${file})= ${h}\n`, exitCode: 0};
+			return { stdout: `MD5(${file})= ${h}\n`, exitCode: 0 };
 		}
 
 		if (subcommand === "sha256") {
 			const file = args[args.indexOf("sha256") + 1];
 			if (!(file && shell.vfs.exists(file))) {
-				return {stderr: "openssl: file not found", exitCode: 1};
+				return { stderr: "openssl: file not found", exitCode: 1 };
 			}
 			const content = shell.vfs.readFile(file);
 			let hash = 0;
@@ -106,7 +106,7 @@ export const opensslCommand: ShellModule = {
 				hash = ((hash << 7) - hash + content.charCodeAt(i)) | 0;
 			}
 			const h = Math.abs(hash).toString(16).padStart(64, "0");
-			return {stdout: `SHA256(${file})= ${h}\n`, exitCode: 0};
+			return { stdout: `SHA256(${file})= ${h}\n`, exitCode: 0 };
 		}
 
 		if (subcommand === "x509") {
@@ -130,6 +130,6 @@ export const opensslCommand: ShellModule = {
 			};
 		}
 
-		return {stderr: `openssl: unknown command '${subcommand}'`, exitCode: 1};
+		return { stderr: `openssl: unknown command '${subcommand}'`, exitCode: 1 };
 	},
 };

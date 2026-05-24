@@ -13,9 +13,9 @@
  *   - f-strings, multi-line scripts, assignments, for/while loops, if/elif/else
  *   - functions (def), return, class basics
  */
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
-import {resolvePath} from "./helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
+import { resolvePath } from "./helpers";
 
 const VERSION = "Python 3.11.2";
 const VERSION_INFO = "3.11.2 (default, Mar 13 2023, 12:18:29) [GCC 12.2.0]";
@@ -66,13 +66,13 @@ interface PyNone {
 	__pytype__: "none";
 }
 
-const NONE: PyNone = {__pytype__: "none"};
+const NONE: PyNone = { __pytype__: "none" };
 
 function pyDict(entries: [string, PyVal][] = []): PyDict {
-	return {__pytype__: "dict", data: new Map(entries)};
+	return { __pytype__: "dict", data: new Map(entries) };
 }
 function pyRange(start: number, stop: number, step = 1): PyRange {
-	return {__pytype__: "range", start, stop, step};
+	return { __pytype__: "range", start, stop, step };
 }
 
 function isPyDict(v: PyVal): v is PyDict {
@@ -354,9 +354,9 @@ function makeOsModule(cwd: string): PyDict {
 		["name", "posix"],
 	]);
 	// We'll handle method calls in callMethod
-	(os as unknown as {_cwd: string})._cwd = cwd;
-	(path as unknown as {_cwd: string})._cwd = cwd;
-	(os as unknown as {path: PyDict}).path = path;
+	(os as unknown as { _cwd: string })._cwd = cwd;
+	(path as unknown as { _cwd: string })._cwd = cwd;
+	(os as unknown as { path: PyDict }).path = path;
 	return os;
 }
 
@@ -717,7 +717,7 @@ class Interpreter {
 		// Uses a depth-aware scanner to find the rightmost dot at depth 0
 		const dotResult = this._findDotAccess(expr);
 		if (dotResult) {
-			const {objExpr, attr, callPart} = dotResult;
+			const { objExpr, attr, callPart } = dotResult;
 			const obj = this.pyEval(objExpr, scope);
 			if (callPart !== undefined) {
 				const argsInner = callPart.slice(1, -1);
@@ -778,7 +778,7 @@ class Interpreter {
 	 */
 	private _findDotAccess(
 		expr: string
-	): {objExpr: string; attr: string; callPart: string | undefined} | null {
+	): { objExpr: string; attr: string; callPart: string | undefined } | null {
 		// Scan right to left for a dot at depth 0 (not inside strings/brackets)
 		let depth = 0;
 		let inStr = false;
@@ -821,7 +821,7 @@ class Interpreter {
 			if (/^-?\d+$/.test(objExpr)) {
 				continue;
 			}
-			return {objExpr, attr: attrMatch[1] as string, callPart: attrMatch[2]};
+			return { objExpr, attr: attrMatch[1] as string, callPart: attrMatch[2] };
 		}
 		return null;
 	}
@@ -1055,8 +1055,8 @@ class Interpreter {
 				return obj.data.get(attr) as PyVal;
 			}
 			// Special dict attributes
-			if (attr === "path" && (obj as unknown as {path: PyVal}).path) {
-				return (obj as unknown as {path: PyVal}).path;
+			if (attr === "path" && (obj as unknown as { path: PyVal }).path) {
+				return (obj as unknown as { path: PyVal }).path;
 			}
 			return NONE;
 		}
@@ -1066,7 +1066,7 @@ class Interpreter {
 		if (typeof obj === "string") {
 			// String attributes
 			const strMethods: Record<string, PyVal> = {
-				__class__: {__pytype__: "class", name: "str"} as unknown as PyClass,
+				__class__: { __pytype__: "class", name: "str" } as unknown as PyClass,
 			};
 			return strMethods[attr] ?? NONE;
 		}
@@ -1615,7 +1615,7 @@ class Interpreter {
 			case "zip": {
 				const iters = args.map(pyIter);
 				const len = Math.min(...iters.map((it) => it.length));
-				return Array.from({length: len}, (_, i) =>
+				return Array.from({ length: len }, (_, i) =>
 					iters.map((it) => it[i] ?? NONE)
 				);
 			}
@@ -1850,7 +1850,7 @@ class Interpreter {
 	}
 
 	private _instantiate(cls: PyClass, args: PyVal[]): PyInstance {
-		const inst: PyInstance = {__pytype__: "instance", cls, attrs: new Map()};
+		const inst: PyInstance = { __pytype__: "instance", cls, attrs: new Map() };
 		const init = cls.methods.get("__init__");
 		if (init) {
 			this._callMethod(inst, "__init__", args);
@@ -2224,7 +2224,7 @@ class Interpreter {
 		if (line === "try:") {
 			const tryBody = this._collectBlock(lines, idx + 1, indent);
 			let j = idx + 1 + tryBody.length;
-			const exceptClauses: Array<{exc: string | null; body: string[]}> = [];
+			const exceptClauses: Array<{ exc: string | null; body: string[] }> = [];
 			let finallyBody: string[] = [];
 			let elseBody: string[] = [];
 
@@ -2241,7 +2241,7 @@ class Interpreter {
 					const excName = excMatch?.[1] ?? null;
 					const excAlias = excMatch?.[2];
 					const excBody = this._collectBlock(lines, j + 1, indent);
-					exceptClauses.push({exc: excName, body: excBody});
+					exceptClauses.push({ exc: excName, body: excBody });
 					if (excAlias) {
 						scope.set(excAlias, "");
 					}
@@ -2417,7 +2417,7 @@ class Interpreter {
 		this._execLines(body, 0, scope);
 	}
 
-	run(code: string): {stdout: string; stderr: string; exitCode: number} {
+	run(code: string): { stdout: string; stderr: string; exitCode: number } {
 		const scope = makeRootScope(this.cwd);
 		try {
 			this.execScript(code, scope);
@@ -2451,7 +2451,7 @@ class Interpreter {
 				exitCode: 1,
 			};
 		}
-		return {stdout: this.getOutput(), stderr: this.getStderr(), exitCode: 0};
+		return { stdout: this.getOutput(), stderr: this.getStderr(), exitCode: 0 };
 	}
 }
 
@@ -2477,7 +2477,7 @@ export const python3Command: ShellModule = {
 	description: "Python 3 interpreter (virtual)",
 	category: "system",
 	params: ["[--version] [-c <code>] [-V] [file]"],
-	run: ({args, shell, cwd}) => {
+	run: ({ args, shell, cwd }) => {
 		// Require explicit installation via `apt install python3`
 		if (!shell.packageManager.isInstalled("python3")) {
 			return {
@@ -2487,10 +2487,10 @@ export const python3Command: ShellModule = {
 			};
 		}
 		if (ifFlag(args, ["--version", "-V"])) {
-			return {stdout: `${VERSION}\n`, exitCode: 0};
+			return { stdout: `${VERSION}\n`, exitCode: 0 };
 		}
 		if (ifFlag(args, ["--version-full"])) {
-			return {stdout: `${VERSION_INFO}\n`, exitCode: 0};
+			return { stdout: `${VERSION_INFO}\n`, exitCode: 0 };
 		}
 
 		const cIdx = args.indexOf("-c");
@@ -2505,7 +2505,7 @@ export const python3Command: ShellModule = {
 			// Handle \n as actual newlines
 			const normalised = code.replace(/\\n/g, "\n").replace(/\\t/g, "\t");
 			const interp = new Interpreter(cwd);
-			const {stdout, stderr, exitCode} = interp.run(normalised);
+			const { stdout, stderr, exitCode } = interp.run(normalised);
 			return {
 				stdout: stdout || undefined,
 				stderr: stderr || undefined,
@@ -2524,7 +2524,7 @@ export const python3Command: ShellModule = {
 			}
 			const code = shell.vfs.readFile(filePath);
 			const interp = new Interpreter(cwd);
-			const {stdout, stderr, exitCode} = interp.run(code);
+			const { stdout, stderr, exitCode } = interp.run(code);
 			return {
 				stdout: stdout || undefined,
 				stderr: stderr || undefined,

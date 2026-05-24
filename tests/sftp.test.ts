@@ -1,10 +1,10 @@
 /// <reference types="bun" />
-import {describe, expect, test} from "bun:test";
-import type {FileEntryWithStats, SFTPWrapper} from "ssh2";
-import {Client} from "ssh2";
-import {SftpMimic} from "../src/modules/SSHMimic/sftp";
+import { describe, expect, test } from "bun:test";
+import type { FileEntryWithStats, SFTPWrapper } from "ssh2";
+import { Client } from "ssh2";
+import { SftpMimic } from "../src/modules/SSHMimic/sftp";
 import VirtualFileSystem from "../src/modules/VirtualFileSystem";
-import {VirtualUserManager} from "../src/modules/VirtualUserManager";
+import { VirtualUserManager } from "../src/modules/VirtualUserManager";
 
 // Skip by default (slow — requires SSH server). Run with:
 //   SSH_MIMIC_RUN_SFTP_TESTS=1 bun test tests/sftp.test.ts
@@ -14,7 +14,7 @@ const describeSftp = runSftpTests ? describe : describe.skip;
 
 function connectSftp(
 	port: number
-): Promise<{client: Client; sftp: SFTPWrapper}> {
+): Promise<{ client: Client; sftp: SFTPWrapper }> {
 	return new Promise((resolve, reject) => {
 		const client = new Client();
 		client.on("ready", () => {
@@ -24,7 +24,7 @@ function connectSftp(
 					reject(err);
 					return;
 				}
-				resolve({client, sftp});
+				resolve({ client, sftp });
 			});
 		});
 		client.on("error", reject);
@@ -42,7 +42,7 @@ function connectSftpWithUser(
 	port: number,
 	username: string,
 	password: string
-): Promise<{client: Client; sftp: SFTPWrapper}> {
+): Promise<{ client: Client; sftp: SFTPWrapper }> {
 	return new Promise((resolve, reject) => {
 		const client = new Client();
 		client.on("ready", () => {
@@ -52,7 +52,7 @@ function connectSftpWithUser(
 					reject(err);
 					return;
 				}
-				resolve({client, sftp});
+				resolve({ client, sftp });
 			});
 		});
 		client.on("error", reject);
@@ -88,7 +88,7 @@ describeSftp("SftpMimic", () => {
 		const port = await server.start();
 
 		try {
-			const {client, sftp} = await connectSftp(port);
+			const { client, sftp } = await connectSftp(port);
 
 			const list = await new Promise<FileEntryWithStats[]>(
 				(resolve, reject) => {
@@ -148,7 +148,7 @@ describeSftp("SftpMimic", () => {
 		const port = await server.start();
 
 		try {
-			const {client, sftp} = await connectSftp(port);
+			const { client, sftp } = await connectSftp(port);
 
 			// /etc/passwd is outside /root — should be rejected
 			const traversalAttempt = await new Promise<Error | null>((resolve) => {
@@ -213,7 +213,7 @@ describeSftp("SftpMimic", () => {
 		const port = await server.start();
 
 		try {
-			const {client, sftp} = await connectSftpWithUser(
+			const { client, sftp } = await connectSftpWithUser(
 				port,
 				"alice",
 				"alice-pass"
@@ -284,7 +284,7 @@ describeSftp("SftpMimic", () => {
 		const port = await server.start();
 
 		try {
-			const {client, sftp} = await connectSftp(port);
+			const { client, sftp } = await connectSftp(port);
 
 			await new Promise<void>((resolve, reject) => {
 				sftp.writeFile(

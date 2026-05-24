@@ -1,6 +1,6 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
-import {assertPathAccess, resolvePath} from "./helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
+import { assertPathAccess, resolvePath } from "./helpers";
 
 /**
  * Create links.
@@ -12,13 +12,13 @@ export const lnCommand: ShellModule = {
 	description: "Create links",
 	category: "files",
 	params: ["[-s] <target> <link_name>"],
-	run: ({authUser, shell, cwd, args, uid, gid}) => {
+	run: ({ authUser, shell, cwd, args, uid, gid }) => {
 		const symbolic = ifFlag(args, ["-s", "--symbolic"]);
 		const positionals = args.filter((a) => !a.startsWith("-"));
 		const [targetArg, linkArg] = positionals;
 
 		if (!(targetArg && linkArg)) {
-			return {stderr: "ln: missing operand", exitCode: 1};
+			return { stderr: "ln: missing operand", exitCode: 1 };
 		}
 
 		const linkPath = resolvePath(cwd, linkArg);
@@ -45,10 +45,10 @@ export const lnCommand: ShellModule = {
 				shell.vfs.writeFile(linkPath, content, {}, uid, gid);
 			}
 
-			return {exitCode: 0};
+			return { exitCode: 0 };
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
-			return {stderr: `ln: ${msg}`, exitCode: 1};
+			return { stderr: `ln: ${msg}`, exitCode: 1 };
 		}
 	},
 };
@@ -59,11 +59,11 @@ export const readlinkCommand: ShellModule = {
 	description: "Print resolved path of symbolic link",
 	category: "files",
 	params: ["[-f] <path>"],
-	run: ({shell, cwd, args}) => {
+	run: ({ shell, cwd, args }) => {
 		const follow = args.includes("-f") || args.includes("-e");
 		const target = args.find((a) => !a.startsWith("-"));
 		if (!target) {
-			return {stderr: "readlink: missing operand\n", exitCode: 1};
+			return { stderr: "readlink: missing operand\n", exitCode: 1 };
 		}
 		const p = resolvePath(cwd, target);
 		if (!shell.vfs.exists(p)) {
@@ -79,6 +79,6 @@ export const readlinkCommand: ShellModule = {
 			};
 		}
 		const resolved = shell.vfs.resolveSymlink(follow ? p : p);
-		return {stdout: `${resolved}\n`, exitCode: 0};
+		return { stdout: `${resolved}\n`, exitCode: 0 };
 	},
 };

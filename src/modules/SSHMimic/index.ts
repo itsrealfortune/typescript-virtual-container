@@ -1,12 +1,12 @@
-import {EventEmitter} from "node:events";
-import {Server as SshServer} from "ssh2";
-import {userHome} from "../../commands";
-import {createPerfLogger, type PerfLogger} from "../../utils/perfLogger";
-import {VirtualShell} from "../VirtualShell";
-import {runExec} from "./exec";
-import {loadOrCreateHostKey} from "./hostKey";
-import {handleScp} from "./scp";
-import type {SftpMimic} from "./sftp";
+import { EventEmitter } from "node:events";
+import { Server as SshServer } from "ssh2";
+import { userHome } from "../../commands";
+import { createPerfLogger, type PerfLogger } from "../../utils/perfLogger";
+import { VirtualShell } from "../VirtualShell";
+import { runExec } from "./exec";
+import { loadOrCreateHostKey } from "./hostKey";
+import { handleScp } from "./scp";
+import type { SftpMimic } from "./sftp";
 
 /**
  * SSH server facade that wires the virtual shell runtime into ssh2 sessions.
@@ -121,11 +121,11 @@ class SshMimic extends EventEmitter {
 	}
 
 	private _recordFailure(ip: string): void {
-		const entry = this._authAttempts.get(ip) ?? {attempts: 0, lockedUntil: 0};
+		const entry = this._authAttempts.get(ip) ?? { attempts: 0, lockedUntil: 0 };
 		entry.attempts += 1;
 		if (entry.attempts >= this._maxAuthAttempts) {
 			entry.lockedUntil = Date.now() + this._lockoutDurationMs;
-			this.emit("auth:lockout", {ip, until: new Date(entry.lockedUntil)});
+			this.emit("auth:lockout", { ip, until: new Date(entry.lockedUntil) });
 		}
 		this._authAttempts.set(ip, entry);
 	}
@@ -181,7 +181,7 @@ class SshMimic extends EventEmitter {
 
 				client.on("authentication", (ctx) => {
 					const candidateUser = ctx.username || "root";
-					remoteAddress = (ctx as {ip?: string}).ip ?? remoteAddress;
+					remoteAddress = (ctx as { ip?: string }).ip ?? remoteAddress;
 
 					// Rate-limit check
 					if (this._isLockedOut(remoteAddress)) {
@@ -204,7 +204,7 @@ class SshMimic extends EventEmitter {
 								remoteAddress
 							).id;
 							this._recordSuccess(remoteAddress);
-							this.emit("auth:success", {username: authUser, remoteAddress});
+							this.emit("auth:success", { username: authUser, remoteAddress });
 							this._ensureHomeDir(authUser);
 							ctx.accept();
 							return;
@@ -227,7 +227,7 @@ class SshMimic extends EventEmitter {
 						authUser = candidateUser;
 						sessionId = shell.users.registerSession(authUser, remoteAddress).id;
 						this._recordSuccess(remoteAddress);
-						this.emit("auth:success", {username: authUser, remoteAddress});
+						this.emit("auth:success", { username: authUser, remoteAddress });
 						this._ensureHomeDir(authUser);
 						ctx.accept();
 						return;
@@ -286,14 +286,14 @@ class SshMimic extends EventEmitter {
 
 				client.on("close", () => {
 					shell.users.unregisterSession(sessionId);
-					this.emit("client:disconnect", {user: authUser});
+					this.emit("client:disconnect", { user: authUser });
 					sessionId = null;
 				});
 
 				client.on("ready", () => {
 					client.on("session", (accept) => {
 						const session = accept();
-						const terminalSize = {cols: 80, rows: 24};
+						const terminalSize = { cols: 80, rows: 24 };
 
 						session.on("pty", (acceptPty, _rejectPty, info) => {
 							terminalSize.cols = info?.cols ?? terminalSize.cols;
@@ -359,7 +359,7 @@ class SshMimic extends EventEmitter {
 					typeof addr === "object" && addr ? addr.port : this.port;
 				this.port = actualPort;
 				devLog(`SSH Mimic listening on port ${actualPort}`);
-				this.emit("start", {port: actualPort});
+				this.emit("start", { port: actualPort });
 				resolve(actualPort);
 			});
 		});
@@ -398,5 +398,5 @@ class SshMimic extends EventEmitter {
 	}
 }
 
-export {SftpMimic} from "./sftp";
-export {SshMimic};
+export { SftpMimic } from "./sftp";
+export { SshMimic };

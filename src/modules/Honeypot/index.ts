@@ -8,13 +8,13 @@
  * @module honeypot
  */
 
-import type {EventEmitter} from "node:events";
-import {type PerfLogger, createPerfLogger} from "../../utils/perfLogger";
-import type {SshMimic} from "../SSHMimic";
-import type {SftpMimic} from "../SSHMimic/sftp";
+import type { EventEmitter } from "node:events";
+import { type PerfLogger, createPerfLogger } from "../../utils/perfLogger";
+import type { SshMimic } from "../SSHMimic";
+import type { SftpMimic } from "../SSHMimic/sftp";
 import type VirtualFileSystem from "../VirtualFileSystem";
-import type {VirtualShell} from "../VirtualShell";
-import type {VirtualUserManager} from "../VirtualUserManager";
+import type { VirtualShell } from "../VirtualShell";
+import type { VirtualUserManager } from "../VirtualUserManager";
 
 /**
  * Audit log entry recorded for each event.
@@ -437,7 +437,7 @@ export class HoneyPot {
 	 */
 	public getStats(): Readonly<HoneyPotStats> {
 		perf.mark("getStats");
-		return Object.freeze({...this._stats});
+		return Object.freeze({ ...this._stats });
 	}
 
 	/**

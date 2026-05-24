@@ -1,5 +1,5 @@
-import type {ShellModule} from "../types/commands";
-import {randomMac} from "../modules/VirtualNetworkManager";
+import type { ShellModule } from "../types/commands";
+import { randomMac } from "../modules/VirtualNetworkManager";
 
 /**
  * Show/manipulate routing, network devices, interfaces and tunnels.
@@ -12,7 +12,7 @@ export const ipCommand: ShellModule = {
 	description: "Show/manipulate routing, network devices, interfaces",
 	category: "network",
 	params: ["<object> <command>"],
-	run: ({args, shell}) => {
+	run: ({ args, shell }) => {
 		const net = shell.network;
 		const obj = args[0]?.toLowerCase();
 		const cmd = args[1]?.toLowerCase() ?? "show";
@@ -38,7 +38,7 @@ export const ipCommand: ShellModule = {
 					const mask = Number.parseInt(maskStr ?? "24", 10);
 					net.setInterfaceIp(dev, ip ?? "0.0.0.0", mask);
 				}
-				return {exitCode: 0};
+				return { exitCode: 0 };
 			}
 			if (cmd === "del") {
 				const devIdx = args.indexOf("dev");
@@ -49,9 +49,9 @@ export const ipCommand: ShellModule = {
 				if (dev) {
 					net.setInterfaceIp(dev, "0.0.0.0", 0);
 				}
-				return {exitCode: 0};
+				return { exitCode: 0 };
 			}
-			return {stdout: `${net.formatIpAddr()}\n`, exitCode: 0};
+			return { stdout: `${net.formatIpAddr()}\n`, exitCode: 0 };
 		}
 		if (obj === "route" || obj === "r" || obj === "ro") {
 			const tableIdx = args.indexOf("table");
@@ -90,14 +90,14 @@ export const ipCommand: ShellModule = {
 						);
 					}
 				}
-				return {exitCode: 0};
+				return { exitCode: 0 };
 			}
 			if (cmd === "del") {
 				const dest = args[1] === "del" ? args[2] : args[1];
 				if (dest && dest !== "del") {
 					net.delRoute(dest);
 				}
-				return {exitCode: 0};
+				return { exitCode: 0 };
 			}
 			if (cmd === "show" || cmd === "list") {
 				if (tableId) {
@@ -106,9 +106,9 @@ export const ipCommand: ShellModule = {
 						exitCode: 0,
 					};
 				}
-				return {stdout: `${net.formatIpRoute()}\n`, exitCode: 0};
+				return { stdout: `${net.formatIpRoute()}\n`, exitCode: 0 };
 			}
-			return {stdout: `${net.formatIpRoute()}\n`, exitCode: 0};
+			return { stdout: `${net.formatIpRoute()}\n`, exitCode: 0 };
 		}
 		if (obj === "link" || obj === "l") {
 			if (cmd === "set") {
@@ -126,7 +126,7 @@ export const ipCommand: ShellModule = {
 						net.setInterfaceMtu(dev, mtu);
 					}
 				}
-				return {exitCode: 0};
+				return { exitCode: 0 };
 			}
 			if (cmd === "add") {
 				const typeIdx = args.indexOf("type");
@@ -148,23 +148,23 @@ export const ipCommand: ShellModule = {
 					ipv4Mask: 24,
 					ipv6: "fe80::1",
 				});
-				return {exitCode: 0};
+				return { exitCode: 0 };
 			}
 			if (cmd === "del") {
 				const dev = args[2];
 				if (dev) {
 					net.removeInterface(dev);
 				}
-				return {exitCode: 0};
+				return { exitCode: 0 };
 			}
-			return {stdout: `${net.formatIpLink()}\n`, exitCode: 0};
+			return { stdout: `${net.formatIpLink()}\n`, exitCode: 0 };
 		}
 		if (obj === "neigh" || obj === "n") {
-			return {stdout: `${net.formatIpNeigh()}\n`, exitCode: 0};
+			return { stdout: `${net.formatIpNeigh()}\n`, exitCode: 0 };
 		}
 		if (obj === "rule" || obj === "ru") {
 			if (cmd === "show" || cmd === "list") {
-				return {stdout: `${net.formatIpRule()}\n`, exitCode: 0};
+				return { stdout: `${net.formatIpRule()}\n`, exitCode: 0 };
 			}
 			if (cmd === "add") {
 				const fromIdx = args.indexOf("from");
@@ -180,24 +180,24 @@ export const ipCommand: ShellModule = {
 					oif: oifIdx === -1 ? undefined : args[oifIdx + 1],
 					action: "lookup",
 				});
-				return {exitCode: 0};
+				return { exitCode: 0 };
 			}
 			if (cmd === "del") {
 				const priority = Number.parseInt(args[2] ?? "0", 10);
 				if (priority) {
 					net.delPolicyRule(priority);
 				}
-				return {exitCode: 0};
+				return { exitCode: 0 };
 			}
-			return {stdout: `${net.formatIpRule()}\n`, exitCode: 0};
+			return { stdout: `${net.formatIpRule()}\n`, exitCode: 0 };
 		}
 		if (obj === "route" && args.includes("table")) {
 			const tableIdx = args.indexOf("table");
 			const tableId = Number.parseInt(args[tableIdx + 1] ?? "254", 10);
-			return {stdout: `${net.formatIpRouteTable(tableId)}\n`, exitCode: 0};
+			return { stdout: `${net.formatIpRouteTable(tableId)}\n`, exitCode: 0 };
 		}
 		if (["set", "add", "del", "flush", "change", "replace"].includes(cmd)) {
-			return {exitCode: 0};
+			return { exitCode: 0 };
 		}
 		return {
 			stderr: `ip: Object "${obj}" is unknown, try "ip help".`,

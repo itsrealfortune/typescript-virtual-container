@@ -1,26 +1,26 @@
 import * as path from "node:path";
-import {basename} from "node:path";
-import {stdin, stdout} from "node:process";
-import {createInterface, type Interface} from "node:readline";
+import { basename } from "node:path";
+import { stdin, stdout } from "node:process";
+import { createInterface, type Interface } from "node:readline";
 
-import {getCommandNames} from "./commands/registry";
+import { getCommandNames } from "./commands/registry";
 import {
 	applyUserSwitch,
 	makeDefaultEnv,
 	runCommand,
 	userHome,
 } from "./commands/runtime";
-import {NanoEditor} from "./modules/nanoEditor";
-import {PacmanGame} from "./modules/pacmanGame";
-import {buildLoginBanner} from "./modules/SSHMimic/loginBanner";
-import {buildPrompt} from "./modules/SSHMimic/prompt";
-import {VirtualShell} from "./modules/VirtualShell";
+import { NanoEditor } from "./modules/nanoEditor";
+import { PacmanGame } from "./modules/pacmanGame";
+import { buildLoginBanner } from "./modules/SSHMimic/loginBanner";
+import { buildPrompt } from "./modules/SSHMimic/prompt";
+import { VirtualShell } from "./modules/VirtualShell";
 import type {
 	CommandResult,
 	PasswordChallenge,
 	SudoChallenge,
 } from "./types/commands";
-import {getFlag, getOptionString} from "./utils/argv";
+import { getFlag, getOptionString } from "./utils/argv";
 import {
 	listPathCompletions,
 	loadHistory,
@@ -96,13 +96,13 @@ function flushVfs(): void {
 
 // ── Tab completion ────────────────────────────────────────────────────────────
 
-function makeCompleter(getState: () => {cwd: string}) {
+function makeCompleter(getState: () => { cwd: string }) {
 	const commandNames = Array.from(new Set(getCommandNames())).sort();
 	return (
 		line: string,
 		cb: (err: null, result: [string[], string]) => void
 	): void => {
-		const {cwd} = getState();
+		const { cwd } = getState();
 		const token = line.split(/\s+/).at(-1) ?? "";
 		const isFirstToken = line.trimStart() === token;
 		const cmdHits = isFirstToken
@@ -174,7 +174,7 @@ function applySessionState(
 	cwdState: string,
 	result: CommandResult,
 	shellEnvState: ReturnType<typeof makeDefaultEnv>
-): {authUser: string; cwd: string} {
+): { authUser: string; cwd: string } {
 	let authUser = authUserState;
 	let cwd = cwdState;
 	if (result.switchUser) {
@@ -188,7 +188,7 @@ function applySessionState(
 		cwd = result.nextCwd;
 		shellEnvState.vars.PWD = cwd;
 	}
-	return {authUser, cwd};
+	return { authUser, cwd };
 }
 
 // ── Demo command ──────────────────────────────────────────────────────────────
@@ -225,11 +225,11 @@ async function runReadlineShell(): Promise<void> {
 	let authUser = selectedUser;
 	let cwd = userHome(authUser);
 	shellEnv.vars.PWD = cwd;
-	const sessionStack: Array<{authUser: string; cwd: string}> = [];
+	const sessionStack: Array<{ authUser: string; cwd: string }> = [];
 	const remoteAddress = "localhost";
 
 	// Terminal size — updated on SIGWINCH
-	const terminalSize = {cols: stdout.columns ?? 80, rows: stdout.rows ?? 24};
+	const terminalSize = { cols: stdout.columns ?? 80, rows: stdout.rows ?? 24 };
 	process.on("SIGWINCH", () => {
 		terminalSize.cols = stdout.columns ?? terminalSize.cols;
 		terminalSize.rows = stdout.rows ?? terminalSize.rows;
@@ -241,7 +241,7 @@ async function runReadlineShell(): Promise<void> {
 		input: stdin,
 		output: stdout,
 		terminal: true,
-		completer: makeCompleter(() => ({cwd})),
+		completer: makeCompleter(() => ({ cwd })),
 	});
 
 	// Inject history into readline's internal history array.
@@ -256,7 +256,7 @@ async function runReadlineShell(): Promise<void> {
 	{
 		const rlRecord2 = rl as unknown as Record<string, unknown>;
 		const ttyWrite = rlRecord2._ttyWrite as
-			| ((s: string, key: {ctrl?: boolean; name?: string} | null) => void)
+			| ((s: string, key: { ctrl?: boolean; name?: string } | null) => void)
 			| undefined;
 		if (ttyWrite === undefined) {
 			return;
@@ -264,7 +264,7 @@ async function runReadlineShell(): Promise<void> {
 		const orig = ttyWrite.bind(rl);
 		rlRecord2._ttyWrite = (
 			s: string,
-			key: {ctrl?: boolean; name?: string} | null
+			key: { ctrl?: boolean; name?: string } | null
 		) => {
 			const line = rlRecord2.line as string;
 			if (
@@ -310,7 +310,7 @@ async function runReadlineShell(): Promise<void> {
 				on: () => undefined,
 			};
 
-			const snapSize = {cols: stdout.columns ?? 80, rows: stdout.rows ?? 24};
+			const snapSize = { cols: stdout.columns ?? 80, rows: stdout.rows ?? 24 };
 
 			// Steal all stdin listeners from readline so it gets no bytes during nano.
 			// Store them to restore later — this is safer than rl.pause()/resume()
@@ -414,7 +414,7 @@ async function runReadlineShell(): Promise<void> {
 				on: () => undefined,
 			};
 
-			const snapSize = {cols: stdout.columns ?? 80, rows: stdout.rows ?? 24};
+			const snapSize = { cols: stdout.columns ?? 80, rows: stdout.rows ?? 24 };
 
 			// Steal stdin listeners from readline so game gets raw input
 			const stdinListeners = stdin.listeners("data") as ((
@@ -501,7 +501,7 @@ async function runReadlineShell(): Promise<void> {
 		}
 
 		if (!challenge.commandLine) {
-			sessionStack.push({authUser, cwd});
+			sessionStack.push({ authUser, cwd });
 			authUser = challenge.targetUser;
 			cwd = userHome(authUser);
 			shellEnv.vars.PWD = cwd;
@@ -555,7 +555,7 @@ async function runReadlineShell(): Promise<void> {
 				);
 				break;
 			case "su":
-				sessionStack.push({authUser, cwd});
+				sessionStack.push({ authUser, cwd });
 				authUser = challenge.targetUsername;
 				cwd = userHome(authUser);
 				shellEnv.vars.USER = authUser;
@@ -612,7 +612,7 @@ async function runReadlineShell(): Promise<void> {
 		}
 
 		if (result.switchUser) {
-			sessionStack.push({authUser, cwd});
+			sessionStack.push({ authUser, cwd });
 		}
 		const updated = applySessionState(authUser, cwd, result, shellEnv);
 		authUser = updated.authUser;
@@ -776,7 +776,7 @@ async function runReadlineShell(): Promise<void> {
 
 	rl.on("SIGINT", () => {
 		stdout.write("^C\n");
-		rl.write("", {ctrl: true, name: "u"});
+		rl.write("", { ctrl: true, name: "u" });
 		prompt();
 	});
 

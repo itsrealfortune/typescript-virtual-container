@@ -1,5 +1,5 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 /**
  * Report process status with various formatting options.
@@ -11,7 +11,7 @@ export const psCommand: ShellModule = {
 	description: "Report process status",
 	category: "system",
 	params: ["[-a] [-u] [-x] [aux]"],
-	run: ({authUser, shell, args}) => {
+	run: ({ authUser, shell, args }) => {
 		const sessions = shell.users.listActiveSessions();
 		const procs = shell.users.listProcesses();
 		const showUser =
@@ -56,7 +56,7 @@ export const psCommand: ShellModule = {
 			rows.push(
 				`root       ${String(nextPid).padStart(6)}   0  20  0.0   0.0      0      0 ?        S    00:00   0:00 ps`
 			);
-			return {stdout: rows.join("\n"), exitCode: 0};
+			return { stdout: rows.join("\n"), exitCode: 0 };
 		}
 
 		const header = "  PID TTY          TIME CMD";
@@ -78,6 +78,6 @@ export const psCommand: ShellModule = {
 			);
 		}
 		rows.push(`${String(nextPid).padStart(5)} pts/0        00:00:00 ps`);
-		return {stdout: rows.join("\n"), exitCode: 0};
+		return { stdout: rows.join("\n"), exitCode: 0 };
 	},
 };

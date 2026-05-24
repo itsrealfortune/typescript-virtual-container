@@ -1,4 +1,4 @@
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 /**
  * Print user identity.
@@ -10,7 +10,7 @@ export const idCommand: ShellModule = {
 	description: "Print user identity",
 	category: "system",
 	params: ["[-u] [-g] [-G] [-n] [user]"],
-	run: ({authUser, shell, args}) => {
+	run: ({ authUser, shell, args }) => {
 		const flagU = args.includes("-u");
 		const flagG = args.includes("-g");
 		const flagGN = args.includes("-G");
@@ -26,18 +26,18 @@ export const idCommand: ShellModule = {
 		});
 
 		if (flagU) {
-			return {stdout: String(uid), exitCode: 0};
+			return { stdout: String(uid), exitCode: 0 };
 		}
 
 		if (flagG) {
 			if (flagN) {
-				return {stdout: allGroups.join(" "), exitCode: 0};
+				return { stdout: allGroups.join(" "), exitCode: 0 };
 			}
-			return {stdout: String(gid), exitCode: 0};
+			return { stdout: String(gid), exitCode: 0 };
 		}
 
 		if (flagGN) {
-			return {stdout: groupNames.join(" "), exitCode: 0};
+			return { stdout: groupNames.join(" "), exitCode: 0 };
 		}
 
 		const primaryGroupName = shell.users.getNameByGid(gid) ?? target;

@@ -5,7 +5,7 @@
  * deploy phases running in isolated VMs on a virtual network.
  */
 
-import {Baie, SshClient, VirtualSshServer} from "../src";
+import { Baie, SshClient, VirtualSshServer } from "../src";
 
 function lastLine(s: string | undefined): string {
 	return (s ?? "").trim().split("\n").pop() ?? "";
@@ -21,10 +21,10 @@ const testVM = await baie.createVM("test");
 const buildVM = await baie.createVM("build");
 const deployVM = await baie.createVM("deploy");
 
-const sshLint = new VirtualSshServer({port: 0, shell: lintVM});
-const sshTest = new VirtualSshServer({port: 0, shell: testVM});
-const sshBuild = new VirtualSshServer({port: 0, shell: buildVM});
-const sshDeploy = new VirtualSshServer({port: 0, shell: deployVM});
+const sshLint = new VirtualSshServer({ port: 0, shell: lintVM });
+const sshTest = new VirtualSshServer({ port: 0, shell: testVM });
+const sshBuild = new VirtualSshServer({ port: 0, shell: buildVM });
+const sshDeploy = new VirtualSshServer({ port: 0, shell: deployVM });
 
 const [portLint, portTest, portBuild, portDeploy] = await Promise.all([
 	sshLint.start(),
@@ -76,7 +76,7 @@ for (const [name, vm] of Object.entries({
 	vm.vfs.setRamCap(50 * 1024 * 1024);
 	vm.users.setCpuCapCores(1);
 	vm.users.setPassword("root", "root");
-	vm.users.enableScheduler({baseTimesliceMs: 50});
+	vm.users.enableScheduler({ baseTimesliceMs: 50 });
 	console.log(`  ${name} VM: 50MB RAM, 1 vCPU, scheduler enabled`);
 }
 
@@ -135,10 +135,10 @@ console.log("Pipeline Summary");
 console.log("=".repeat(50));
 
 const stages = [
-	{name: "Lint", result: lintResult},
-	{name: "Tests", result: testResult},
-	{name: "Build", result: buildResult},
-	{name: "Deploy", result: deployResult},
+	{ name: "Lint", result: lintResult },
+	{ name: "Tests", result: testResult },
+	{ name: "Build", result: buildResult },
+	{ name: "Deploy", result: deployResult },
 ];
 
 const allPassed = stages.every(

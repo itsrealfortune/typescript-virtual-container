@@ -1,4 +1,4 @@
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 /**
  * `passwd [username]` — change a virtual user's password.
@@ -13,12 +13,12 @@ export const passwdCommand: ShellModule = {
 	description: "Change user password",
 	category: "users",
 	params: ["[username]"],
-	run: async ({authUser, args, shell, stdin}) => {
+	run: async ({ authUser, args, shell, stdin }) => {
 		const targetUser = args[0] ?? authUser;
 
 		// Permission check
 		if (authUser !== "root" && authUser !== targetUser) {
-			return {stderr: "passwd: permission denied", exitCode: 1};
+			return { stderr: "passwd: permission denied", exitCode: 1 };
 		}
 
 		// Target must exist

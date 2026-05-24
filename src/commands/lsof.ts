@@ -1,4 +1,4 @@
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 /**
  * List open files (stub — returns simulated process file descriptors).
@@ -9,7 +9,7 @@ export const lsofCommand: ShellModule = {
 	description: "List open files",
 	category: "system",
 	params: ["[-p <pid>] [-u <user>] [-i [addr]]"],
-	run: ({authUser, args}) => {
+	run: ({ authUser, args }) => {
 		const iNet = args.includes("-i");
 		if (iNet) {
 			const header =
@@ -18,7 +18,7 @@ export const lsofCommand: ShellModule = {
 				"sshd       1234     root    3u  IPv4  12345      0t0  TCP *:22 (LISTEN)",
 				"nginx       567     root    6u  IPv4  23456      0t0  TCP *:80 (LISTEN)",
 			];
-			return {stdout: `${header}\n${rows.join("\n")}`, exitCode: 0};
+			return { stdout: `${header}\n${rows.join("\n")}`, exitCode: 0 };
 		}
 		const header =
 			"COMMAND    PID     USER   FD   TYPE DEVICE SIZE/OFF NODE NAME";
@@ -29,6 +29,6 @@ export const lsofCommand: ShellModule = {
 			`bash      1001 ${authUser}    1u   CHR  136,0      0t0    3 /dev/pts/0`,
 			`bash      1001 ${authUser}    2u   CHR  136,0      0t0    3 /dev/pts/0`,
 		];
-		return {stdout: `${header}\n${rows.join("\n")}`, exitCode: 0};
+		return { stdout: `${header}\n${rows.join("\n")}`, exitCode: 0 };
 	},
 };

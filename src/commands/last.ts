@@ -1,5 +1,5 @@
-import type {ShellModule} from "../types/commands";
-import {userHome} from "./runtime";
+import type { ShellModule } from "../types/commands";
+import { userHome } from "./runtime";
 
 /**
  * Show listing of last logged in users.
@@ -11,7 +11,7 @@ export const lastCommand: ShellModule = {
 	description: "Show listing of last logged in users",
 	category: "system",
 	params: ["[username]"],
-	run: ({args, shell, authUser}) => {
+	run: ({ args, shell, authUser }) => {
 		const target = args[0] ?? authUser;
 		const logPath = `${userHome(target)}/.lastlog`;
 		const lines: string[] = [];
@@ -37,7 +37,7 @@ export const lastCommand: ShellModule = {
 		}
 		lines.push("");
 		lines.push(`wtmp begins ${new Date().toDateString()}`);
-		return {stdout: lines.join("\n"), exitCode: 0};
+		return { stdout: lines.join("\n"), exitCode: 0 };
 	},
 };
 
@@ -51,7 +51,7 @@ export const dmesgCommand: ShellModule = {
 	description: "Print or control the kernel ring buffer",
 	category: "system",
 	params: ["[-n n]"],
-	run: ({args}) => {
+	run: ({ args }) => {
 		const n = args.includes("-n")
 			? Number.parseInt(args[args.indexOf("-n") + 1] ?? "20", 10)
 			: 20;
@@ -77,6 +77,6 @@ export const dmesgCommand: ShellModule = {
 			"[    2.500000] Bluetooth: Core ver 2.22",
 			"[    3.000000] input: Power Button as /devices/LNXSYSTM:00/LNXPWRBN:00/input/input0",
 		].slice(0, n);
-		return {stdout: msgs.join("\n"), exitCode: 0};
+		return { stdout: msgs.join("\n"), exitCode: 0 };
 	},
 };

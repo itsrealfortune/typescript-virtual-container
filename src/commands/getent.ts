@@ -1,4 +1,4 @@
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 /**
  * Query user/group database.
@@ -10,12 +10,12 @@ export const getentCommand: ShellModule = {
 	description: "Query user/group database",
 	category: "system",
 	params: ["passwd|group [key]"],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		const database = args[0];
 		const key = args[1];
 
 		if (!database) {
-			return {stderr: "Usage: getent passwd|group [key]\n", exitCode: 1};
+			return { stderr: "Usage: getent passwd|group [key]\n", exitCode: 1 };
 		}
 
 		if (database === "passwd") {
@@ -29,9 +29,9 @@ export const getentCommand: ShellModule = {
 					return `${u}:x:${uid}:${gid}::${home}:/bin/bash`;
 				});
 			if (key && lines.length === 0) {
-				return {exitCode: 2};
+				return { exitCode: 2 };
 			}
-			return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
+			return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 		}
 
 		if (database === "group") {
@@ -40,11 +40,11 @@ export const getentCommand: ShellModule = {
 				.filter((g) => !key || g.name === key)
 				.map((g) => `${g.name}:x:${g.gid}:${g.members.join(",")}`);
 			if (key && lines.length === 0) {
-				return {exitCode: 2};
+				return { exitCode: 2 };
 			}
-			return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
+			return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 		}
 
-		return {stderr: `getent: unknown database '${database}'\n`, exitCode: 1};
+		return { stderr: `getent: unknown database '${database}'\n`, exitCode: 1 };
 	},
 };

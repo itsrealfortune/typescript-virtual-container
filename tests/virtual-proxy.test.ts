@@ -1,5 +1,5 @@
-import {afterEach, describe, expect, test, beforeAll} from "bun:test";
-import {Baie, VirtualProxy} from "../src";
+import { afterEach, describe, expect, test, beforeAll } from "bun:test";
+import { Baie, VirtualProxy } from "../src";
 
 async function waitForListen(): Promise<void> {
 	await new Promise((r) => setTimeout(r, 100));

@@ -6,9 +6,9 @@
  * No host filesystem access, no network, no child processes.
  */
 import vm from "node:vm";
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
-import {resolvePath} from "./helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
+import { resolvePath } from "./helpers";
 
 const VIRTUAL_VERSION = "v18.19.0";
 const VIRTUAL_VERSIONS = {
@@ -209,7 +209,7 @@ function runJs(code: string): {
 	let exitCode = 0;
 
 	try {
-		const result = vm.runInContext(code, ctx, {timeout: 5000});
+		const result = vm.runInContext(code, ctx, { timeout: 5000 });
 		// If the expression returned a value and nothing was console.log'd, print it
 		if (result !== undefined && outputLines.length === 0) {
 			outputLines.push(formatValue(result));
@@ -275,7 +275,7 @@ export const nodeCommand: ShellModule = {
 	description: "JavaScript runtime (virtual)",
 	category: "system",
 	params: ["[--version] [-e <expr>] [-p <expr>] [file]"],
-	run: ({args, shell, cwd}) => {
+	run: ({ args, shell, cwd }) => {
 		// Require explicit installation via `apt install nodejs`
 		if (!shell.packageManager.isInstalled("nodejs")) {
 			return {
@@ -285,7 +285,7 @@ export const nodeCommand: ShellModule = {
 			};
 		}
 		if (ifFlag(args, ["--version", "-v"])) {
-			return {stdout: `${VIRTUAL_VERSION}\n`, exitCode: 0};
+			return { stdout: `${VIRTUAL_VERSION}\n`, exitCode: 0 };
 		}
 
 		if (ifFlag(args, ["--versions"])) {
@@ -300,9 +300,9 @@ export const nodeCommand: ShellModule = {
 		if (eIdx !== -1) {
 			const expr = args[eIdx + 1];
 			if (!expr) {
-				return {stderr: "node: -e requires an argument\n", exitCode: 1};
+				return { stderr: "node: -e requires an argument\n", exitCode: 1 };
 			}
-			const {stdout, stderr, exitCode} = runJs(expr);
+			const { stdout, stderr, exitCode } = runJs(expr);
 			return {
 				stdout: stdout || undefined,
 				stderr: stderr || undefined,
@@ -315,9 +315,9 @@ export const nodeCommand: ShellModule = {
 		if (pIdx !== -1) {
 			const expr = args[pIdx + 1];
 			if (!expr) {
-				return {stderr: "node: -p requires an argument\n", exitCode: 1};
+				return { stderr: "node: -p requires an argument\n", exitCode: 1 };
 			}
-			const {stdout, stderr, exitCode} = runJs(expr);
+			const { stdout, stderr, exitCode } = runJs(expr);
 			return {
 				stdout: stdout || (exitCode === 0 ? "\n" : undefined),
 				stderr: stderr || undefined,
@@ -336,7 +336,7 @@ export const nodeCommand: ShellModule = {
 				};
 			}
 			const code = shell.vfs.readFile(filePath);
-			const {stdout, stderr, exitCode} = runJsFile(code);
+			const { stdout, stderr, exitCode } = runJsFile(code);
 			return {
 				stdout: stdout || undefined,
 				stderr: stderr || undefined,

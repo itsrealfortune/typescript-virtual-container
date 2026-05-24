@@ -1,5 +1,5 @@
-import type {ShellModule} from "../types/commands";
-import {evalArith} from "../utils/expand";
+import type { ShellModule } from "../types/commands";
+import { evalArith } from "../utils/expand";
 
 /**
  * Arbitrary precision calculator language.
@@ -11,10 +11,10 @@ export const bcCommand: ShellModule = {
 	description: "Arbitrary precision calculator language",
 	category: "system",
 	params: ["[expression]"],
-	run: ({args, stdin}) => {
+	run: ({ args, stdin }) => {
 		const input = (stdin ?? args.join(" ")).trim();
 		if (!input) {
-			return {stdout: "", exitCode: 0};
+			return { stdout: "", exitCode: 0 };
 		}
 		const results: string[] = [];
 		for (const line of input.split("\n")) {
@@ -26,10 +26,10 @@ export const bcCommand: ShellModule = {
 			const cleaned = expr.replace(/;+$/, "").trim();
 			const val = evalArith(cleaned, {});
 			if (Number.isNaN(val)) {
-				return {stderr: `bc: syntax error on line: ${expr}`, exitCode: 1};
+				return { stderr: `bc: syntax error on line: ${expr}`, exitCode: 1 };
 			}
 			results.push(String(val));
 		}
-		return {stdout: results.join("\n"), exitCode: 0};
+		return { stdout: results.join("\n"), exitCode: 0 };
 	},
 };

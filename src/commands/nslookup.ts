@@ -1,12 +1,12 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 export const nslookupCommand: ShellModule = {
 	name: "nslookup",
 	description: "Query DNS for hostname or IP",
 	category: "network",
 	params: ["<hostname> [dns-server]"],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout: [
@@ -22,7 +22,7 @@ export const nslookupCommand: ShellModule = {
 		const positionals = args.filter((a) => !a.startsWith("-"));
 		const hostname = positionals[0];
 		if (!hostname) {
-			return {stderr: "nslookup: missing hostname", exitCode: 1};
+			return { stderr: "nslookup: missing hostname", exitCode: 1 };
 		}
 
 		const server = positionals[1] ?? "1.1.1.1";

@@ -1,4 +1,4 @@
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 /**
  * View and manage swap file usage.
@@ -10,21 +10,21 @@ export const swapCommand: ShellModule = {
 	description: "View and manage swap file usage",
 	category: "system",
 	params: ["[-s|--stats] [-c|--clear]"],
-	run: ({shell, args}) => {
+	run: ({ shell, args }) => {
 		const clearSwap = args.includes("-c") || args.includes("--clear");
 
 		if (!shell.vfs.isSwapEnabled()) {
-			return {stderr: "swap: swap is not enabled\n", exitCode: 1};
+			return { stderr: "swap: swap is not enabled\n", exitCode: 1 };
 		}
 
 		if (clearSwap) {
 			shell.vfs.clearSwap();
-			return {stdout: "swap: swap files cleared\n", exitCode: 0};
+			return { stdout: "swap: swap files cleared\n", exitCode: 0 };
 		}
 
 		const stats = shell.vfs.getSwapStats();
 		if (!stats) {
-			return {stderr: "swap: unable to retrieve swap stats\n", exitCode: 1};
+			return { stderr: "swap: unable to retrieve swap stats\n", exitCode: 1 };
 		}
 
 		const formatBytes = (bytes: number): string => {
@@ -45,6 +45,6 @@ export const swapCommand: ShellModule = {
 			`  Swap-out ops      : ${stats.swapOuts}`,
 		];
 
-		return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
+		return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 	},
 };

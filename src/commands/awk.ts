@@ -1,5 +1,5 @@
-import type {ShellModule} from "../types/commands";
-import {assertPathAccess, resolvePath} from "./helpers";
+import type { ShellModule } from "../types/commands";
+import { assertPathAccess, resolvePath } from "./helpers";
 
 /**
  * AWK pattern scanning — supports BEGIN/END, /regex/, NR/NF conditions, field ops,
@@ -13,7 +13,7 @@ export const awkCommand: ShellModule = {
 	description: "Pattern scanning and processing language",
 	category: "text",
 	params: ["[-F sep] [-v var=val] '<program>' [file]"],
-	run: ({authUser, args, stdin, cwd, shell}) => {
+	run: ({ authUser, args, stdin, cwd, shell }) => {
 		// Parse flags
 		let sep = " ";
 		const initVars: Record<string, string> = {};
@@ -50,7 +50,7 @@ export const awkCommand: ShellModule = {
 		const prog = positionals[0];
 		const fileArg = positionals[1];
 		if (!prog) {
-			return {stderr: "awk: no program", exitCode: 1};
+			return { stderr: "awk: no program", exitCode: 1 };
 		}
 
 		let input = stdin ?? "";
@@ -526,7 +526,7 @@ export const awkCommand: ShellModule = {
 
 				if (progTrim[j] !== "{") {
 					if (pat) {
-						clauses.push({pattern: pat, action: "print $0"});
+						clauses.push({ pattern: pat, action: "print $0" });
 					}
 					break;
 				}
@@ -549,7 +549,7 @@ export const awkCommand: ShellModule = {
 					action += c;
 					j++;
 				}
-				clauses.push({pattern: pat, action: action.trim()});
+				clauses.push({ pattern: pat, action: action.trim() });
 			}
 		}
 

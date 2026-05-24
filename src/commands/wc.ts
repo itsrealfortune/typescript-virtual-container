@@ -1,6 +1,6 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
-import {assertPathAccess, resolvePath} from "./helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
+import { assertPathAccess, resolvePath } from "./helpers";
 
 /**
  * Count words, lines, and/or bytes in files or stdin.
@@ -12,7 +12,7 @@ export const wcCommand: ShellModule = {
 	description: "Count words/lines/bytes",
 	category: "text",
 	params: ["[-l] [-w] [-c] [file...]"],
-	run: ({authUser, shell, cwd, args, stdin}) => {
+	run: ({ authUser, shell, cwd, args, stdin }) => {
 		const lines = ifFlag(args, ["-l"]);
 		const words = ifFlag(args, ["-w"]);
 		const bytes = ifFlag(args, ["-c"]);
@@ -41,7 +41,7 @@ export const wcCommand: ShellModule = {
 
 		if (positionals.length === 0) {
 			const content = stdin ?? "";
-			return {stdout: count(content, ""), exitCode: 0};
+			return { stdout: count(content, ""), exitCode: 0 };
 		}
 
 		const results: string[] = [];
@@ -58,6 +58,6 @@ export const wcCommand: ShellModule = {
 				};
 			}
 		}
-		return {stdout: results.join("\n"), exitCode: 0};
+		return { stdout: results.join("\n"), exitCode: 0 };
 	},
 };

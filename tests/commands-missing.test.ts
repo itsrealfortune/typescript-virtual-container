@@ -1,7 +1,12 @@
 /** biome-ignore-all lint/suspicious/noTemplateCurlyInString: expand */
-import {beforeAll, describe, expect, test} from "bun:test";
-import type {SshClient, VirtualShell} from "../src";
-import {createTestEnv, createTestFile, pathExists, runCmd} from "./test-helper";
+import { beforeAll, describe, expect, test } from "bun:test";
+import type { SshClient, VirtualShell } from "../src";
+import {
+	createTestEnv,
+	createTestFile,
+	pathExists,
+	runCmd,
+} from "./test-helper";
 
 let shell: VirtualShell;
 let client: InstanceType<typeof SshClient>;

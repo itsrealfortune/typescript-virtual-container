@@ -5,7 +5,7 @@
  * track statistics, and detect anomalies.
  */
 
-import {HoneyPot, SshClient, VirtualShell, VirtualSshServer} from "../src";
+import { HoneyPot, SshClient, VirtualShell, VirtualSshServer } from "../src";
 
 const shell = new VirtualShell("typescript-vm");
 await shell.ensureInitialized();
@@ -18,7 +18,7 @@ const hp = new HoneyPot(5000);
 hp.attach(shell, shell.vfs, shell.users);
 
 // ── Start SSH server ──────────────────────────────────────────────
-const ssh = new VirtualSshServer({port: 0, shell});
+const ssh = new VirtualSshServer({ port: 0, shell });
 const port = await ssh.start();
 
 // ── Simulate activity ──────────────────────────────────────────────

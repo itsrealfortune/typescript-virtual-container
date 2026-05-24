@@ -1,4 +1,4 @@
-import {afterEach, beforeEach, describe, expect, test} from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import * as fsSync from "node:fs";
 import * as path from "node:path";
 import VirtualFileSystem from "../src/modules/VirtualFileSystem";
@@ -7,7 +7,7 @@ const TEST_DIR = path.join(process.cwd(), ".test-cache");
 
 function cleanup() {
 	try {
-		fsSync.rmSync(TEST_DIR, {recursive: true, force: true});
+		fsSync.rmSync(TEST_DIR, { recursive: true, force: true });
 	} catch {
 		/* ignore */
 	}
@@ -15,7 +15,7 @@ function cleanup() {
 
 function makeVfsWithCache(cacheOptions = {}) {
 	cleanup();
-	fsSync.mkdirSync(TEST_DIR, {recursive: true});
+	fsSync.mkdirSync(TEST_DIR, { recursive: true });
 	return new VirtualFileSystem({
 		mode: "fs",
 		snapshotPath: TEST_DIR,
@@ -288,7 +288,7 @@ describe("Cache + VFS integration", () => {
 
 	test("cache works with compressed files", () => {
 		const vfs = makeVfsWithCache();
-		vfs.writeFile("/compressed.txt", "compressed content", {compress: true});
+		vfs.writeFile("/compressed.txt", "compressed content", { compress: true });
 
 		const content = vfs.readFile("/compressed.txt");
 		expect(content).toBe("compressed content");

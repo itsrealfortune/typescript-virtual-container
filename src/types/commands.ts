@@ -1,8 +1,8 @@
 /** Command invocation mode used by shell runtime. */
 export type CommandMode = "shell" | "exec" | "background";
 
-import type {VirtualShell} from "../modules/VirtualShell";
-import type {VirtualActiveSession} from "../modules/VirtualUserManager";
+import type { VirtualShell } from "../modules/VirtualShell";
+import type { VirtualActiveSession } from "../modules/VirtualUserManager";
 
 /**
  * Normalized command execution output.

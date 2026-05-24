@@ -1,4 +1,4 @@
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 /**
  * Return filename or directory portion of pathname.
@@ -10,9 +10,9 @@ export const basenameCommand: ShellModule = {
 	description: "Strip directory and suffix from filenames",
 	category: "text",
 	params: ["<path> [suffix]"],
-	run: ({args}) => {
+	run: ({ args }) => {
 		if (!args[0]) {
-			return {stderr: "basename: missing operand", exitCode: 1};
+			return { stderr: "basename: missing operand", exitCode: 1 };
 		}
 		const results: string[] = [];
 		// basename can take multiple paths with -a
@@ -25,7 +25,7 @@ export const basenameCommand: ShellModule = {
 			}
 			results.push(base);
 		}
-		return {stdout: results.join("\n"), exitCode: 0};
+		return { stdout: results.join("\n"), exitCode: 0 };
 	},
 };
 
@@ -39,13 +39,13 @@ export const dirnameCommand: ShellModule = {
 	description: "Strip last component from file name",
 	category: "text",
 	params: ["<path>"],
-	run: ({args}) => {
+	run: ({ args }) => {
 		if (!args[0]) {
-			return {stderr: "dirname: missing operand", exitCode: 1};
+			return { stderr: "dirname: missing operand", exitCode: 1 };
 		}
 		const p = args[0].replace(/\/+$/, "");
 		const idx = p.lastIndexOf("/");
 		const dir = idx <= 0 ? (idx === 0 ? "/" : ".") : p.slice(0, idx);
-		return {stdout: dir, exitCode: 0};
+		return { stdout: dir, exitCode: 0 };
 	},
 };

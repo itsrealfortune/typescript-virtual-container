@@ -1,4 +1,4 @@
-import type {ShellModule} from "../types/commands";
+import type { ShellModule } from "../types/commands";
 
 /**
  * Print working directory.
@@ -10,5 +10,5 @@ export const pwdCommand: ShellModule = {
 	description: "Print working directory",
 	category: "navigation",
 	params: [],
-	run: ({cwd}) => ({stdout: cwd, exitCode: 0}),
+	run: ({ cwd }) => ({ stdout: cwd, exitCode: 0 }),
 };

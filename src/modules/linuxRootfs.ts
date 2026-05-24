@@ -23,8 +23,8 @@ import type {
 	VirtualShellResourceCaps,
 } from "../modules/VirtualShell";
 import VirtualFileSystem from "./VirtualFileSystem";
-import {decodeVfs} from "./VirtualFileSystem/binaryPack";
-import type {VirtualNetworkManager} from "./VirtualNetworkManager";
+import { decodeVfs } from "./VirtualFileSystem/binaryPack";
+import type { VirtualNetworkManager } from "./VirtualNetworkManager";
 import type {
 	VirtualActiveSession,
 	VirtualUserManager,
@@ -541,7 +541,7 @@ export function syncEtcPasswd(
 
 	// Generate /etc/shadow from VirtualUserManager password aging data
 	const shadowContent = users.generateShadowFile();
-	vfs.writeFile("/etc/shadow", `${shadowContent}\n`, {mode: 0o640});
+	vfs.writeFile("/etc/shadow", `${shadowContent}\n`, { mode: 0o640 });
 }
 
 // ─── /proc helpers ───────────────────────────────────────────────────────────
@@ -916,7 +916,7 @@ export function refreshProc(
 		stealJiffies;
 	const cpuStats = `cpu  ${userJiffies} ${niceJiffies} ${systemJiffies} ${idleJiffies} ${iowaitJiffies} ${irqJiffies} ${softirqJiffies} ${stealJiffies} 0 0\n`;
 	const perCpuStats = Array.from(
-		{length: cpuCount},
+		{ length: cpuCount },
 		(_, i) =>
 			`cpu${i} ${Math.floor(userJiffies / cpuCount)} ${Math.floor(niceJiffies / cpuCount)} ${Math.floor(systemJiffies / cpuCount)} ${Math.floor(idleJiffies / cpuCount)} ${Math.floor(iowaitJiffies / cpuCount)} ${Math.floor(irqJiffies / cpuCount)} ${Math.floor(softirqJiffies / cpuCount)} ${Math.floor(stealJiffies / cpuCount)} 0 0`
 	).join("\n");
@@ -2431,7 +2431,7 @@ export function getStaticRootfsSnapshot(
 		return cached;
 	}
 
-	const tmp = new VirtualFileSystem({mode: "memory"});
+	const tmp = new VirtualFileSystem({ mode: "memory" });
 	bootstrapEtc(tmp, hostname, props);
 	bootstrapSys(tmp, hostname, props);
 	bootstrapDev(tmp);

@@ -1,6 +1,6 @@
-import {gunzipSync, gzipSync} from "fflate";
-import type {ShellModule} from "../types/commands";
-import {resolvePath} from "./helpers";
+import { gunzipSync, gzipSync } from "fflate";
+import type { ShellModule } from "../types/commands";
+import { resolvePath } from "./helpers";
 
 // ── POSIX ustar tar format ────────────────────────────────────────────────────
 
@@ -48,10 +48,10 @@ function tarPad(size: number): Buffer {
 }
 
 function buildTar(
-	entries: Array<{name: string; content: Buffer; isDir: boolean}>
+	entries: Array<{ name: string; content: Buffer; isDir: boolean }>
 ): Buffer {
 	const parts: Buffer[] = [];
-	for (const {name, content, isDir} of entries) {
+	for (const { name, content, isDir } of entries) {
 		parts.push(makeTarHeader(name, isDir ? 0 : content.length, isDir));
 		if (!isDir) {
 			parts.push(content);
@@ -62,8 +62,8 @@ function buildTar(
 	return Buffer.concat(parts);
 }
 
-function parseTar(raw: Buffer): Array<{name: string; content: Buffer}> {
-	const files: Array<{name: string; content: Buffer}> = [];
+function parseTar(raw: Buffer): Array<{ name: string; content: Buffer }> {
+	const files: Array<{ name: string; content: Buffer }> = [];
 	let off = 0;
 	while (off + 512 <= raw.length) {
 		const hdr = raw.slice(off, off + 512);
@@ -82,7 +82,7 @@ function parseTar(raw: Buffer): Array<{name: string; content: Buffer}> {
 		if (name && typeflag !== 0x35 && typeflag !== 53) {
 			// not a directory
 			const content = raw.slice(off, off + size);
-			files.push({name, content});
+			files.push({ name, content });
 		}
 		off += Math.ceil(size / 512) * 512;
 	}
@@ -100,7 +100,7 @@ export const tarCommand: ShellModule = {
 	description: "Archive utility",
 	category: "archive",
 	params: ["[-czf|-xzf|-tf] <archive> [files...]"],
-	run: ({shell, cwd, args, uid, gid}) => {
+	run: ({ shell, cwd, args, uid, gid }) => {
 		// Expand combined flags: -czf → ["-c", "-z", "-f"]
 		const expanded: string[] = [];
 		let foundModeStr = false;
@@ -142,10 +142,10 @@ export const tarCommand: ShellModule = {
 				: expanded[fIdx + 1];
 
 		if (!(create || extract || list)) {
-			return {stderr: "tar: must specify -c, -x, or -t", exitCode: 1};
+			return { stderr: "tar: must specify -c, -x, or -t", exitCode: 1 };
 		}
 		if (!archiveName) {
-			return {stderr: "tar: no archive specified", exitCode: 1};
+			return { stderr: "tar: no archive specified", exitCode: 1 };
 		}
 
 		const archivePath = resolvePath(cwd, archiveName);
@@ -161,7 +161,7 @@ export const tarCommand: ShellModule = {
 				(a) => !(a.startsWith("-") || skipSet.has(a))
 			);
 
-			const entries: Array<{name: string; content: Buffer; isDir: boolean}> =
+			const entries: Array<{ name: string; content: Buffer; isDir: boolean }> =
 				[];
 			const verboseLines: string[] = [];
 
@@ -176,12 +176,12 @@ export const tarCommand: ShellModule = {
 				const st = shell.vfs.stat(p);
 				if (st.type === "file") {
 					const content = shell.vfs.readFileRaw(p);
-					entries.push({name: f, content, isDir: false});
+					entries.push({ name: f, content, isDir: false });
 					if (verbose) {
 						verboseLines.push(f);
 					}
 				} else {
-					entries.push({name: f, content: Buffer.alloc(0), isDir: true});
+					entries.push({ name: f, content: Buffer.alloc(0), isDir: true });
 					if (verbose) {
 						verboseLines.push(`${f}/`);
 					}
@@ -202,7 +202,7 @@ export const tarCommand: ShellModule = {
 								walk(full, rel);
 							} else {
 								const content = shell.vfs.readFileRaw(full);
-								entries.push({name: rel, content, isDir: false});
+								entries.push({ name: rel, content, isDir: false });
 								if (verbose) {
 									verboseLines.push(rel);
 								}
@@ -245,11 +245,11 @@ export const tarCommand: ShellModule = {
 						? `-rw-r--r-- 0/0 ${f.content.length.toString().padStart(8)} 1970-01-01 00:00 ${f.name}`
 						: f.name
 				);
-				return {stdout: names.join("\n"), exitCode: 0};
+				return { stdout: names.join("\n"), exitCode: 0 };
 			}
 
 			const verboseLines: string[] = [];
-			for (const {name, content} of files) {
+			for (const { name, content } of files) {
 				const destPath = resolvePath(cwd, name);
 				shell.vfs.writeFile(destPath, content, {}, uid, gid);
 				if (verbose) {
@@ -262,6 +262,6 @@ export const tarCommand: ShellModule = {
 			};
 		}
 
-		return {stderr: "tar: must specify -c, -x, or -t", exitCode: 1};
+		return { stderr: "tar: must specify -c, -x, or -t", exitCode: 1 };
 	},
 };

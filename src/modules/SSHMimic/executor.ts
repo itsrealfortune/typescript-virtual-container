@@ -1,8 +1,16 @@
-import {runCommandDirect} from "../../commands";
-import {resolvePath} from "../../commands/helpers";
-import type {CommandMode, CommandResult, ShellEnv} from "../../types/commands";
-import type {Pipeline, PipelineCommand, Statement} from "../../types/pipeline";
-import type {VirtualShell} from "../VirtualShell";
+import { runCommandDirect } from "../../commands";
+import { resolvePath } from "../../commands/helpers";
+import type {
+	CommandMode,
+	CommandResult,
+	ShellEnv,
+} from "../../types/commands";
+import type {
+	Pipeline,
+	PipelineCommand,
+	Statement,
+} from "../../types/pipeline";
+import type { VirtualShell } from "../VirtualShell";
 
 // ── Script executor (handles &&/||/;) ────────────────────────────────────────
 
@@ -28,7 +36,7 @@ export async function executeStatements(
 	shell: VirtualShell,
 	env: ShellEnv
 ): Promise<CommandResult> {
-	let last: CommandResult = {exitCode: 0};
+	let last: CommandResult = { exitCode: 0 };
 	const accumulatedStdout: string[] = [];
 	let currentCwd = cwd;
 	let i = 0;
@@ -39,7 +47,7 @@ export async function executeStatements(
 		// Subshell: execute in isolated context
 		if (stmt.subshell) {
 			const subEnv: ShellEnv = {
-				vars: {...env.vars},
+				vars: { ...env.vars },
 				lastExitCode: env.lastExitCode,
 			};
 			last = await executeStatements(
@@ -57,7 +65,7 @@ export async function executeStatements(
 				accumulatedStdout.push(last.stdout);
 			}
 			if (last.closeSession || last.switchUser) {
-				return {...last, stdout: accumulatedStdout.join("") || last.stdout};
+				return { ...last, stdout: accumulatedStdout.join("") || last.stdout };
 			}
 			i++;
 			continue;
@@ -82,7 +90,7 @@ export async function executeStatements(
 				accumulatedStdout.push(last.stdout);
 			}
 			if (last.closeSession || last.switchUser) {
-				return {...last, stdout: accumulatedStdout.join("") || last.stdout};
+				return { ...last, stdout: accumulatedStdout.join("") || last.stdout };
 			}
 			i++;
 			continue;
@@ -101,7 +109,7 @@ export async function executeStatements(
 				env,
 				ac
 			);
-			last = {exitCode: 0};
+			last = { exitCode: 0 };
 			env.lastExitCode = 0;
 			i++;
 			continue;
@@ -189,13 +197,13 @@ export function executePipeline(
 	abortController?: AbortController
 ): CommandResult | Promise<CommandResult> {
 	if (!pipeline.isValid) {
-		return {stderr: pipeline.error || "Syntax error", exitCode: 1};
+		return { stderr: pipeline.error || "Syntax error", exitCode: 1 };
 	}
 	if (pipeline.commands.length === 0) {
-		return {exitCode: 0};
+		return { exitCode: 0 };
 	}
 
-	const shellEnv: ShellEnv = env ?? {vars: {}, lastExitCode: 0};
+	const shellEnv: ShellEnv = env ?? { vars: {}, lastExitCode: 0 };
 
 	if (pipeline.commands.length === 1) {
 		return executeSingleCommandWithRedirections(
@@ -279,7 +287,7 @@ async function executeSingleCommandWithRedirections(
 			} else {
 				shell.vfs.writeFile(outputPath, output, {}, uid, gid);
 			}
-			return {...result, stdout: ""};
+			return { ...result, stdout: "" };
 		} catch {
 			return {
 				...result,
@@ -388,19 +396,19 @@ async function executePipelineChain(
 				}
 				currentOutput = "";
 			} catch {
-				return {stderr: `Failed to write to ${cmd.outputFile}`, exitCode: 1};
+				return { stderr: `Failed to write to ${cmd.outputFile}`, exitCode: 1 };
 			}
 		} else {
 			currentOutput = effectiveResult.stdout || "";
 		}
 
 		if (effectiveResult.stderr && exitCode !== 0) {
-			return {stderr: effectiveResult.stderr, exitCode};
+			return { stderr: effectiveResult.stderr, exitCode };
 		}
 		if (effectiveResult.closeSession || effectiveResult.switchUser) {
 			return effectiveResult;
 		}
 	}
 
-	return {stdout: currentOutput, exitCode};
+	return { stdout: currentOutput, exitCode };
 }

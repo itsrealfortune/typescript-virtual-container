@@ -19,7 +19,7 @@ async function demonstrateHoneypot() {
 
 	// Initialize the virtual environment
 	const shell = new VirtualShell("security-lab");
-	const ssh = new VirtualSshServer({port: 2222, shell});
+	const ssh = new VirtualSshServer({ port: 2222, shell });
 	await ssh.start();
 
 	const users = shell.getUsers()!;

@@ -1,12 +1,12 @@
-import type {ShellModule} from "../types/commands";
-import {ifFlag} from "./command-helpers";
+import type { ShellModule } from "../types/commands";
+import { ifFlag } from "./command-helpers";
 
 export const xxdCommand: ShellModule = {
 	name: "xxd",
 	description: "Make a hexdump or reverse a hexdump",
 	category: "files",
 	params: ["[-r] [file]"],
-	run: ({shell, args, stdin}) => {
+	run: ({ shell, args, stdin }) => {
 		if (ifFlag(args, ["--help", "-h"])) {
 			return {
 				stdout:
@@ -21,13 +21,13 @@ export const xxdCommand: ShellModule = {
 		let data: string;
 		if (file) {
 			if (!shell.vfs.exists(file)) {
-				return {stderr: `xxd: ${file}: No such file`, exitCode: 1};
+				return { stderr: `xxd: ${file}: No such file`, exitCode: 1 };
 			}
 			data = shell.vfs.readFile(file);
 		} else if (stdin) {
 			data = stdin;
 		} else {
-			return {stderr: "xxd: missing operand", exitCode: 1};
+			return { stderr: "xxd: missing operand", exitCode: 1 };
 		}
 
 		if (reverse) {
@@ -54,7 +54,7 @@ function hexdump(data: string) {
 		lines.push(`${addr}: ${hex.padEnd(47)} ${ascii}`);
 	}
 
-	return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
+	return { stdout: `${lines.join("\n")}\n`, exitCode: 0 };
 }
 
 function unHexdump(data: string) {
@@ -67,5 +67,5 @@ function unHexdump(data: string) {
 			}
 		}
 	}
-	return {stdout: Buffer.from(bytes).toString("utf-8"), exitCode: 0};
+	return { stdout: Buffer.from(bytes).toString("utf-8"), exitCode: 0 };
 }

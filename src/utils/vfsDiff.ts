@@ -126,7 +126,7 @@ export function diffSnapshots(
 			continue;
 		}
 		if (!beforeMap.has(path)) {
-			added.push({path, type: node.type});
+			added.push({ path, type: node.type });
 		}
 	}
 
@@ -136,7 +136,7 @@ export function diffSnapshots(
 			continue;
 		}
 		if (!afterMap.has(path)) {
-			removed.push({path, type: node.type});
+			removed.push({ path, type: node.type });
 		}
 	}
 
@@ -203,7 +203,7 @@ export function formatDiff(
 		return "(no changes)";
 	}
 
-	const {showContent = false, maxContentChars = 120} = options;
+	const { showContent = false, maxContentChars = 120 } = options;
 	const lines: string[] = [];
 
 	for (const entry of diff.added) {

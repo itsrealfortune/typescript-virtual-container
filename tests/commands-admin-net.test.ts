@@ -1,6 +1,6 @@
-import {afterAll, beforeAll, describe, expect, test} from "bun:test";
-import {SshClient, type VirtualShell} from "../src";
-import {createTestEnv, runCmd} from "./test-helper";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { SshClient, type VirtualShell } from "../src";
+import { createTestEnv, runCmd } from "./test-helper";
 
 // Skip network-dependent tests by default. Run with:
 //   SSH_MIMIC_RUN_NETWORK_TESTS=1 bun test tests/commands-admin-net.test.ts

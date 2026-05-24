@@ -1,6 +1,6 @@
-import {deflateSync, inflateSync} from "fflate";
-import type {ShellModule} from "../types/commands";
-import {resolvePath} from "./helpers";
+import { deflateSync, inflateSync } from "fflate";
+import type { ShellModule } from "../types/commands";
+import { resolvePath } from "./helpers";
 
 // ── CRC32 ─────────────────────────────────────────────────────────────────────
 
@@ -42,15 +42,15 @@ function dosDateTime(): [number, number] {
 
 // ── ZIP builder ───────────────────────────────────────────────────────────────
 
-function buildZip(entries: Array<{name: string; content: Buffer}>): Buffer {
+function buildZip(entries: Array<{ name: string; content: Buffer }>): Buffer {
 	const parts: Buffer[] = [];
 	const cdParts: Buffer[] = [];
 	let offset = 0;
 	const [modTime, modDate] = dosDateTime();
 
-	for (const {name, content} of entries) {
+	for (const { name, content } of entries) {
 		const nameBuf = Buffer.from(name, "utf8");
-		const compressed = Buffer.from(deflateSync(content, {level: 6}));
+		const compressed = Buffer.from(deflateSync(content, { level: 6 }));
 		const useDeflate = compressed.length < content.length;
 		const stored = useDeflate ? compressed : content;
 		const crc = crc32(content);
@@ -113,8 +113,8 @@ function buildZip(entries: Array<{name: string; content: Buffer}>): Buffer {
 
 // ── ZIP parser ────────────────────────────────────────────────────────────────
 
-function parseZip(raw: Buffer): Array<{name: string; content: Buffer}> {
-	const files: Array<{name: string; content: Buffer}> = [];
+function parseZip(raw: Buffer): Array<{ name: string; content: Buffer }> {
+	const files: Array<{ name: string; content: Buffer }> = [];
 	let off = 0;
 	while (off + 4 <= raw.length) {
 		const sig = raw.readUInt32LE(off);
@@ -149,9 +149,9 @@ function parseZip(raw: Buffer): Array<{name: string; content: Buffer}> {
 		if (name && !name.endsWith("/")) {
 			// Validate size
 			if (content.length === uncompSize || method !== 0) {
-				files.push({name, content});
+				files.push({ name, content });
 			} else {
-				files.push({name, content});
+				files.push({ name, content });
 			}
 		}
 		off = dataOff + compSize;
@@ -170,23 +170,23 @@ export const zipCommand: ShellModule = {
 	description: "Package and compress files",
 	category: "archive",
 	params: ["[-r] <archive.zip> <file...>"],
-	run: ({shell, cwd, args, authUser}) => {
+	run: ({ shell, cwd, args, authUser }) => {
 		const recursive = args.includes("-r") || args.includes("-R");
 		const files = args.filter((a) => !a.startsWith("-"));
 		const archiveArg = files[0];
 		const sources = files.slice(1);
 		if (!archiveArg) {
-			return {stderr: "zip: no archive specified", exitCode: 1};
+			return { stderr: "zip: no archive specified", exitCode: 1 };
 		}
 		if (sources.length === 0) {
-			return {stderr: "zip: nothing to do!", exitCode: 12};
+			return { stderr: "zip: nothing to do!", exitCode: 12 };
 		}
 
 		const archivePath = resolvePath(
 			cwd,
 			archiveArg.endsWith(".zip") ? archiveArg : `${archiveArg}.zip`
 		);
-		const entries: Array<{name: string; content: Buffer}> = [];
+		const entries: Array<{ name: string; content: Buffer }> = [];
 		const verboseLines: string[] = [];
 		const uid = shell.users.getUid(authUser);
 		const gid = shell.users.getGid(authUser);
@@ -204,7 +204,7 @@ export const zipCommand: ShellModule = {
 			const storeName = src.startsWith("/") ? src.slice(1) : src;
 			if (st.type === "file") {
 				const content = shell.vfs.readFileRaw(p);
-				entries.push({name: storeName, content});
+				entries.push({ name: storeName, content });
 				verboseLines.push(`  adding: ${src} (deflated)`);
 			} else if (recursive) {
 				const walk = (dir: string, prefix: string) => {
@@ -229,11 +229,11 @@ export const zipCommand: ShellModule = {
 		}
 
 		if (entries.length === 0) {
-			return {stderr: "zip: nothing to do!", exitCode: 12};
+			return { stderr: "zip: nothing to do!", exitCode: 12 };
 		}
 		const zipBuf = buildZip(entries);
 		shell.vfs.writeFile(archivePath, zipBuf, {}, uid, gid);
-		return {stdout: verboseLines.join("\n"), exitCode: 0};
+		return { stdout: verboseLines.join("\n"), exitCode: 0 };
 	},
 };
 
@@ -246,22 +246,22 @@ export const unzipCommand: ShellModule = {
 	description: "Extract compressed files from ZIP archives",
 	category: "archive",
 	params: ["[-l] [-o] <archive.zip> [-d <dir>]"],
-	run: ({shell, cwd, args, authUser}) => {
+	run: ({ shell, cwd, args, authUser }) => {
 		const listOnly = args.includes("-l");
 		const dIdx = args.indexOf("-d");
 		const destDir = dIdx === -1 ? undefined : args[dIdx + 1];
 		const archive = args.find((a) => !a.startsWith("-") && a !== destDir);
 		if (!archive) {
-			return {stderr: "unzip: missing archive operand", exitCode: 1};
+			return { stderr: "unzip: missing archive operand", exitCode: 1 };
 		}
 
 		const archivePath = resolvePath(cwd, archive);
 		if (!shell.vfs.exists(archivePath)) {
-			return {stderr: `unzip: cannot find or open ${archive}`, exitCode: 9};
+			return { stderr: `unzip: cannot find or open ${archive}`, exitCode: 9 };
 		}
 
 		const raw = shell.vfs.readFileRaw(archivePath);
-		let files: Array<{name: string; content: Buffer}>;
+		let files: Array<{ name: string; content: Buffer }>;
 		try {
 			files = parseZip(raw);
 		} catch (e) {
@@ -290,12 +290,12 @@ export const unzipCommand: ShellModule = {
 		}
 
 		const out: string[] = [`Archive:  ${archive}`];
-		for (const {name, content} of files) {
+		for (const { name, content } of files) {
 			const cleanName = name.startsWith("/") ? name.slice(1) : name;
 			const destPath = resolvePath(dest, cleanName);
 			shell.vfs.writeFile(destPath, content, {}, uid, gid);
 			out.push(`  inflating: ${destPath}`);
 		}
-		return {stdout: out.join("\n"), exitCode: 0};
+		return { stdout: out.join("\n"), exitCode: 0 };
 	},
 };

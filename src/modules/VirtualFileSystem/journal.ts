@@ -19,7 +19,7 @@
  */
 
 import * as fsSync from "node:fs";
-import {dirname} from "node:path";
+import { dirname } from "node:path";
 
 /**
  * Journal operation type codes used in VFS write-ahead log entries.
@@ -140,23 +140,23 @@ function decodeJournal(buf: Buffer): JournalEntry[] {
 				off += cLen;
 				const mode = buf.readUInt32LE(off);
 				off += 4;
-				entries.push({op, path, content, mode});
+				entries.push({ op, path, content, mode });
 			} else if (op === JournalOp.MKDIR) {
 				if (off + 4 > buf.length) {
 					break;
 				}
 				const mode = buf.readUInt32LE(off);
 				off += 4;
-				entries.push({op, path, mode});
+				entries.push({ op, path, mode });
 			} else if (op === JournalOp.REMOVE) {
-				entries.push({op, path});
+				entries.push({ op, path });
 			} else if (op === JournalOp.CHMOD) {
 				if (off + 4 > buf.length) {
 					break;
 				}
 				const mode = buf.readUInt32LE(off);
 				off += 4;
-				entries.push({op, path, mode});
+				entries.push({ op, path, mode });
 			} else if (op === JournalOp.MOVE || op === JournalOp.SYMLINK) {
 				if (off + 2 > buf.length) {
 					break;
@@ -168,7 +168,7 @@ function decodeJournal(buf: Buffer): JournalEntry[] {
 				}
 				const dest = buf.subarray(off, off + dLen).toString(ENC);
 				off += dLen;
-				entries.push({op, path, dest});
+				entries.push({ op, path, dest });
 			} else {
 				// Unknown op — skip rest of buffer to avoid corrupt replay
 				break;
@@ -202,7 +202,7 @@ export function appendJournalEntry(
 	} else {
 		const journalDir = dirname(journalPath);
 		if (!fsSync.existsSync(journalDir)) {
-			fsSync.mkdirSync(journalDir, {recursive: true});
+			fsSync.mkdirSync(journalDir, { recursive: true });
 		}
 		fsSync.writeFileSync(journalPath, buf);
 	}

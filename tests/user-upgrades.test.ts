@@ -1,7 +1,7 @@
-import {describe, expect, test} from "bun:test";
+import { describe, expect, test } from "bun:test";
 import VirtualFileSystem from "../src/modules/VirtualFileSystem";
-import {VirtualUserManager} from "../src/modules/VirtualUserManager";
-import {VirtualGroupManager} from "../src/modules/VirtualUserManager/groups";
+import { VirtualUserManager } from "../src/modules/VirtualUserManager";
+import { VirtualGroupManager } from "../src/modules/VirtualUserManager/groups";
 
 function makeVfs() {
 	return new VirtualFileSystem();

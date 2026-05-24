@@ -1,6 +1,6 @@
-import {describe, expect, test} from "bun:test";
-import {buildLoginBanner} from "../src/modules/SSHMimic/loginBanner";
-import type {ShellProperties} from "../src/modules/VirtualShell";
+import { describe, expect, test } from "bun:test";
+import { buildLoginBanner } from "../src/modules/SSHMimic/loginBanner";
+import type { ShellProperties } from "../src/modules/VirtualShell";
 
 const defaultProps: ShellProperties = {
 	kernel: "6.8.0-fortune",

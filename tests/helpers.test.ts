@@ -1,5 +1,5 @@
-import {describe, expect, test} from "bun:test";
-import {assertPathAccess} from "../src/commands/helpers";
+import { describe, expect, test } from "bun:test";
+import { assertPathAccess } from "../src/commands/helpers";
 
 describe("assertPathAccess", () => {
 	test("blocks non-root access to auth store", () => {

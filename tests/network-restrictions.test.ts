@@ -1,4 +1,4 @@
-import {describe, expect, test} from "bun:test";
+import { describe, expect, test } from "bun:test";
 import {
 	isPrivateHostname,
 	checkOutboundRestriction,
@@ -59,8 +59,8 @@ describe("isPrivateHostname", () => {
 describe("checkOutboundRestriction", () => {
 	test("allow-all mode permits everything", () => {
 		expect(
-			checkOutboundRestriction("http://192.168.1.1", {mode: "allow-all"})
-		).toEqual({allowed: true, honeypot: false});
+			checkOutboundRestriction("http://192.168.1.1", { mode: "allow-all" })
+		).toEqual({ allowed: true, honeypot: false });
 	});
 
 	test("block-private blocks RFC1918", () => {
@@ -73,8 +73,8 @@ describe("checkOutboundRestriction", () => {
 
 	test("block-private allows public IPs", () => {
 		expect(
-			checkOutboundRestriction("http://8.8.8.8/test", {mode: "block-private"})
-		).toEqual({allowed: true, honeypot: false});
+			checkOutboundRestriction("http://8.8.8.8/test", { mode: "block-private" })
+		).toEqual({ allowed: true, honeypot: false });
 	});
 
 	test("block-private allows hostnames", () => {
@@ -82,7 +82,7 @@ describe("checkOutboundRestriction", () => {
 			checkOutboundRestriction("http://example.com/test", {
 				mode: "block-private",
 			})
-		).toEqual({allowed: true, honeypot: false});
+		).toEqual({ allowed: true, honeypot: false });
 	});
 
 	test("block-private with honeypot flag", () => {
@@ -117,7 +117,7 @@ describe("checkOutboundRestriction", () => {
 				mode: "blocklist",
 				blocklist: ["evil.com"],
 			})
-		).toEqual({allowed: true, honeypot: false});
+		).toEqual({ allowed: true, honeypot: false });
 	});
 
 	test("allowlist blocks domains not in list", () => {
@@ -135,13 +135,13 @@ describe("checkOutboundRestriction", () => {
 				mode: "allowlist",
 				allowlist: ["good.com"],
 			})
-		).toEqual({allowed: true, honeypot: false});
+		).toEqual({ allowed: true, honeypot: false });
 	});
 
 	test("undefined config returns allowed", () => {
 		expect(
 			checkOutboundRestriction("http://192.168.1.1/test", undefined)
-		).toEqual({allowed: true, honeypot: false});
+		).toEqual({ allowed: true, honeypot: false });
 	});
 
 	test("no mode defaults to allow-all", () => {
