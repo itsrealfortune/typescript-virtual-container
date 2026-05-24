@@ -48,6 +48,10 @@ export class SandboxedShell {
 	private _readyReject!: (err: Error) => void;
 	private _execTimeoutMs: number;
 
+	/**
+	 * Creates a new sandboxed shell worker.
+	 * @param options - Timeout and worker script configuration.
+	 */
 	constructor(options: SandboxedShellOptions = {}) {
 		this._execTimeoutMs = options.execTimeoutMs ?? 30_000;
 
@@ -110,6 +114,14 @@ export class SandboxedShell {
 		this._post({ type: "init" });
 	}
 
+	/**
+	 * Execute a shell command in the worker. Waits for the worker to be ready
+	 * before dispatching. Rejects if the command exceeds the configured timeout.
+	 * @param cmd - Shell command string to execute.
+	 * @param user - Unix user to run as (default "root").
+	 * @param cwd - Working directory for the command (default "/root").
+	 * @returns Promise resolving with exit code, stdout, and stderr.
+	 */
 	async exec(cmd: string, user = "root", cwd = "/root"): Promise<ExecResult> {
 		await this._ready;
 		return new Promise<ExecResult>((resolve, reject) => {
@@ -127,6 +139,10 @@ export class SandboxedShell {
 		});
 	}
 
+	/**
+	 * Gracefully terminate the worker thread. Sends a terminate message and
+	 * forcefully kills the worker after a 1-second timeout.
+	 */
 	terminate(): void {
 		this._post({ type: "terminate" });
 		setTimeout(() => {

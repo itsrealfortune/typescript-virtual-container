@@ -16,6 +16,12 @@ export class VirtualVpn {
 	private readonly _peers: VirtualVpn[] = [];
 	private readonly _routes: Map<string, VirtualVpn> = new Map();
 
+	/**
+	 * Creates an encrypted VPN tunnel between two virtual switch subnets.
+	 * @param _baieA - First switch endpoint (subnet with route method).
+	 * @param _baieB - Second switch endpoint (subnet with route method).
+	 * @param options - Encryption key and optional latency.
+	 */
 	constructor(
 		private readonly _baieA: {
 			switch: { route: (p: Packet) => Promise<PacketResult>; subnet: string };
@@ -30,10 +36,20 @@ export class VirtualVpn {
 		this._registerRoutes();
 	}
 
+	/**
+	 * Register a peer VPN tunnel for multi-site routing.
+	 * @param peer - Another VirtualVpn instance to forward packets to.
+	 */
 	public addPeer(peer: VirtualVpn): void {
 		this._peers.push(peer);
 	}
 
+	/**
+	 * Encrypt a packet, tunnel it to the peer subnet, decrypt, and route.
+	 * Adds simulated latency configured in the constructor.
+	 * @param packet - Virtual packet to tunnel.
+	 * @returns Routing result from the destination switch.
+	 */
 	public async tunnel(packet: Packet): Promise<PacketResult> {
 		const iv = randomBytes(16);
 		const encrypted = encrypt(JSON.stringify(packet), this._key, iv);

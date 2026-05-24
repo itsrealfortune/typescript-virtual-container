@@ -25,7 +25,12 @@ const PRIVATE_IP_PATTERNS = [
 	/^fe80:/,
 ];
 
-/** Check if a hostname/IP is a private/internal address. */
+/**
+ * Check if a hostname/IP is a private/internal address.
+ * Matches RFC 1918 private ranges, loopback, link-local, and IPv6 private/ULA.
+ * @param hostname - Hostname or IP (may include brackets like [::1]).
+ * @returns True if the address falls in a private range.
+ */
 export function isPrivateHostname(hostname: string): boolean {
 	const normalized = hostname.replace(/^\[|\]$/g, "").toLowerCase();
 	return PRIVATE_IP_PATTERNS.some((pattern) => pattern.test(normalized));
@@ -38,7 +43,13 @@ export interface RestrictionCheck {
 	honeypot: boolean;
 }
 
-/** Check whether an outbound request to a URL is allowed by the restriction config. */
+/**
+ * Check whether an outbound request to a URL is allowed by the restriction config.
+ * Supports allow-all, block-private, blocklist, and allowlist modes.
+ * @param url - Full URL to check (e.g. "https://example.com/path").
+ * @param config - Restriction configuration (mode, blocklist, allowlist, honeypot flag).
+ * @returns Check result with allowed flag, reason, and honeypot indicator.
+ */
 export function checkOutboundRestriction(
 	url: string,
 	config?: NetworkRestrictionConfig
@@ -100,6 +111,13 @@ const HONEYPOT_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
+/**
+ * Generate a fake nginx HTTP response for honeypot mode.
+ * Returns a 200 OK with nginx-style headers and a generic welcome page,
+ * masking the fact that the target is a virtual sandbox.
+ * @param _url - Original request URL (unused, kept for API consistency).
+ * @returns A Response object mimicking a real nginx server.
+ */
 export function honeypotResponse(_url: string): Response {
 	return new Response(HONEYPOT_HTML, {
 		status: 200,

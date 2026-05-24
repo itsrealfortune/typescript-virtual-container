@@ -1560,15 +1560,6 @@ export class VirtualUserManager extends EventEmitter {
 	}
 
 	/**
-	 * Hashes a plaintext password using scrypt (or SHA-256 in fast-hash mode).
-	 *
-	 * Set `SSH_MIMIC_FAST_PASSWORD_HASH=1` to switch to SHA-256 for test
-	 * environments where scrypt latency is undesirable.
-	 *
-	 * @param password Plaintext password string.
-	 * @returns Hex-encoded hash string.
-	 */
-	/**
 	 * Hash a password with an optional salt.
 	 * When salt is provided (verify path), the same salt is used for a
 	 * deterministic hash. When omitted (create path), an empty salt is used

@@ -182,7 +182,12 @@ function decodeJournal(buf: Buffer): JournalEntry[] {
 	return entries;
 }
 
-/** Append a single entry to the journal file (O_APPEND, atomic write). */
+/**
+ * Append a single entry to the journal file (O_APPEND, atomic write).
+ * Creates parent directories and the journal file if they don't exist.
+ * @param journalPath - Absolute path to the journal binary file.
+ * @param entry - Journal entry to persist (op, path, optional content/mode/dest).
+ */
 export function appendJournalEntry(
 	journalPath: string,
 	entry: JournalEntry
@@ -209,7 +214,11 @@ export function appendJournalEntry(
 	}
 }
 
-/** Read and decode all entries from a journal file. Returns [] if file is absent/empty. */
+/**
+ * Read and decode all entries from a journal file. Returns [] if file is absent/empty.
+ * @param journalPath - Absolute path to the journal binary file.
+ * @returns Array of decoded journal entries (empty if file missing or corrupt).
+ */
 export function readJournal(journalPath: string): JournalEntry[] {
 	if (!fsSync.existsSync(journalPath)) {
 		return [];
@@ -221,7 +230,11 @@ export function readJournal(journalPath: string): JournalEntry[] {
 	return decodeJournal(buf);
 }
 
-/** Delete the journal file (after a successful checkpoint). */
+/**
+ * Delete the journal file (after a successful checkpoint).
+ * No-op if the file does not exist.
+ * @param journalPath - Absolute path to the journal binary file.
+ */
 export function truncateJournal(journalPath: string): void {
 	if (fsSync.existsSync(journalPath)) {
 		fsSync.unlinkSync(journalPath);
