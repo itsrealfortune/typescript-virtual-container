@@ -1,11 +1,38 @@
 import type {ShellModule} from "../types/commands";
 import {ifFlag} from "./command-helpers";
 
-/**
- * Declare variables and give them attributes (integer, readonly, export, array).
- * @category shell
- * @params ["[-i] [-r] [-x] [-a] [name[=value]...]"]
- */
+const SCOPE_KEY = "__local_scope";
+
+interface ScopeEntry {
+	name: string;
+	oldValue: string | undefined;
+}
+
+function pushScope(vars: Record<string, string>, name: string): void {
+	const raw = vars[SCOPE_KEY];
+	const stack: ScopeEntry[] = raw ? (JSON.parse(raw) as ScopeEntry[]) : [];
+	stack.push({name, oldValue: vars[name]});
+	vars[SCOPE_KEY] = JSON.stringify(stack);
+}
+
+/** Pop and restore all local scope entries from the stack. */
+export function popScope(vars: Record<string, string>): void {
+	const raw = vars[SCOPE_KEY];
+	if (!raw) {
+		return;
+	}
+	const stack: ScopeEntry[] = JSON.parse(raw) as ScopeEntry[];
+	while (stack.length > 0) {
+		const entry = stack.pop()!;
+		if (entry.oldValue === undefined) {
+			delete vars[entry.name];
+		} else {
+			vars[entry.name] = entry.oldValue;
+		}
+	}
+	vars[SCOPE_KEY] = "[]";
+}
+
 export const declareCommand: ShellModule = {
 	name: "declare",
 	aliases: ["local", "typeset"],
@@ -31,10 +58,10 @@ export const declareCommand: ShellModule = {
 		for (const token of assignments) {
 			const eq = token.indexOf("=");
 			if (eq === -1) {
-				// Just declare (no value)
 				if (!(token in env.vars)) {
 					env.vars[token] = "";
 				}
+				pushScope(env.vars, token);
 			} else {
 				const name = token.slice(0, eq);
 				let val = token.slice(eq + 1);
@@ -42,6 +69,7 @@ export const declareCommand: ShellModule = {
 					const n = Number.parseInt(val, 10);
 					val = Number.isNaN(n) ? "0" : String(n);
 				}
+				pushScope(env.vars, name);
 				env.vars[name] = val;
 			}
 		}

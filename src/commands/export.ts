@@ -4,7 +4,7 @@ export const exportCommand: ShellModule = {
 	name: "export",
 	description: "Set shell environment variable",
 	category: "shell",
-	params: ["[-n] [-p] [NAME[=VALUE] ...]"],
+	params: ["[-fn] [-p] [NAME[=VALUE] ...]"],
 	run: ({args, env}) => {
 		const flags = new Set(
 			args.filter((a) => a.startsWith("-") && !a.includes("="))
@@ -12,7 +12,16 @@ export const exportCommand: ShellModule = {
 		const names = args.filter((a) => !flags.has(a));
 		const options = [...flags].join("").replace(/-/g, "");
 
-		// -p or no args: print exported vars
+		if (options.includes("f")) {
+			for (const name of names) {
+				const funcKey = `__func_${name}`;
+				if (funcKey in env.vars && options.includes("n")) {
+					delete env.vars[funcKey];
+				}
+			}
+			return {exitCode: 0};
+		}
+
 		if (options.includes("p") || names.length === 0) {
 			const out = Object.entries(env.vars)
 				.filter(
@@ -31,8 +40,6 @@ export const exportCommand: ShellModule = {
 				const value = arg.slice(eq + 1);
 				env.vars[name] = value;
 			}
-			// -n: unexport (remove from env) — in our model all vars are accessible,
-			// so we just delete it to simulate unexport
 			if (options.includes("n")) {
 				delete env.vars[arg];
 			}

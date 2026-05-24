@@ -147,7 +147,7 @@ import {tailCommand} from "./tail";
 import {tarCommand} from "./tar";
 import {tcCommand} from "./tc";
 import {teeCommand} from "./tee";
-import {testCommand} from "./test";
+import {bracketCommand, testCommand} from "./test";
 import {
 	commCommand,
 	csplitCommand,
@@ -394,6 +394,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	aliasCommand,
 	unaliasCommand,
 	testCommand,
+	bracketCommand,
 	sourceCommand,
 	historyCommand,
 	printfCommand,

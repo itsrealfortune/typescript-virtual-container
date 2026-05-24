@@ -6,6 +6,7 @@ import type {
 import {evalArith, expandAsync, expandBraces} from "../utils/expand";
 import {ifFlag} from "./command-helpers";
 import {resolvePath} from "./helpers";
+import {popScope} from "./declare";
 import {runCommand} from "./runtime";
 
 /** Alias for clarity inside sh.ts */
@@ -417,18 +418,18 @@ async function runBlocks(
 				if (funcBody) {
 					// Set positional params $1 $2 ... from remaining args
 					const funcArgs = expanded.trim().split(/\s+/).slice(1);
-					const savedVars = {...ctx.env.vars};
 					funcArgs.forEach((a, i) => {
 						ctx.env.vars[String(i + 1)] = a;
 					});
 					ctx.env.vars["0"] = cmdName;
 					const funcLines = funcBody.split("\n");
 					const funcResult = await runBlocks(parseBlocks(funcLines), ctx);
+					// Restore local variables
+					popScope(ctx.env.vars);
 					// Restore positional params
 					for (let pi = 1; pi <= funcArgs.length; pi++) {
 						delete ctx.env.vars[String(pi)];
 					}
-					Object.assign(ctx.env.vars, {...savedVars, ...ctx.env.vars});
 					return funcResult;
 				}
 				return runCommand(

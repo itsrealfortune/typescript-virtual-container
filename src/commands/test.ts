@@ -3,49 +3,37 @@ import type {ShellModule} from "../types/commands";
 import type {VfsFileNode} from "../types/vfs";
 import {resolvePath} from "./helpers";
 
-/**
- * Evaluate a POSIX test expression.
- * Supports: -f, -d, -e, -r, -w, -x, -s, -z, -n,
- *           string =, !=, numeric -eq -ne -lt -le -gt -ge,
- *           ! (negate), -a (and), -o (or).
- */
-function evalTest(tokens: string[], shell: VirtualShell, cwd: string): boolean {
-	// When called via [ command, ] is the last arg — strip it
-	// When called via test command, no brackets present
-	if (tokens[tokens.length - 1] === "]") {
-		tokens = tokens.slice(0, -1);
-	}
-	// Also strip leading [ if present (shouldn't normally happen but be safe)
-	if (tokens[0] === "[") {
-		tokens = tokens.slice(1);
-	}
-
+function evalTest(
+	tokens: string[],
+	shell: VirtualShell,
+	cwd: string,
+	vars?: Record<string, string>
+): boolean {
 	if (tokens.length === 0) {
 		return false;
 	}
 
-	// Negation
 	if (tokens[0] === "!") {
-		return !evalTest(tokens.slice(1), shell, cwd);
+		return !evalTest(tokens.slice(1), shell, cwd, vars);
 	}
 
-	// Boolean -a / -o (simple left-right, no precedence)
-	const andIdx = tokens.indexOf("-a");
-	if (andIdx !== -1) {
-		return (
-			evalTest(tokens.slice(0, andIdx), shell, cwd) &&
-			evalTest(tokens.slice(andIdx + 1), shell, cwd)
-		);
-	}
-	const orIdx = tokens.indexOf("-o");
-	if (orIdx !== -1) {
-		return (
-			evalTest(tokens.slice(0, orIdx), shell, cwd) ||
-			evalTest(tokens.slice(orIdx + 1), shell, cwd)
-		);
+	if (tokens.includes("-a") || tokens.includes("-o")) {
+		const andIdx = tokens.indexOf("-a");
+		if (andIdx !== -1) {
+			return (
+				evalTest(tokens.slice(0, andIdx), shell, cwd, vars) &&
+				evalTest(tokens.slice(andIdx + 1), shell, cwd, vars)
+			);
+		}
+		const orIdx = tokens.indexOf("-o");
+		if (orIdx !== -1) {
+			return (
+				evalTest(tokens.slice(0, orIdx), shell, cwd, vars) ||
+				evalTest(tokens.slice(orIdx + 1), shell, cwd, vars)
+			);
+		}
 	}
 
-	// Unary file tests
 	if (tokens.length === 2) {
 		const [flag, operand = ""] = tokens;
 		const path = resolvePath(cwd, operand);
@@ -59,8 +47,24 @@ function evalTest(tokens: string[], shell: VirtualShell, cwd: string): boolean {
 				return (
 					shell.vfs.exists(path) && shell.vfs.stat(path).type === "directory"
 				);
+			case "-b":
+				return false;
+			case "-c":
+				return false;
+			case "-p":
+				return false;
+			case "-S":
+				return false;
+			case "-g":
+				return Boolean(
+					shell.vfs.exists(path) && shell.vfs.stat(path).mode & 0o2000
+				);
+			case "-k":
+				return Boolean(
+					shell.vfs.exists(path) && shell.vfs.stat(path).mode & 0o1000
+				);
 			case "-r":
-				return shell.vfs.exists(path); // all readable in virtual env
+				return shell.vfs.exists(path);
 			case "-w":
 				return shell.vfs.exists(path);
 			case "-x":
@@ -79,19 +83,37 @@ function evalTest(tokens: string[], shell: VirtualShell, cwd: string): boolean {
 				return operand.length > 0;
 			case "-L":
 				return shell.vfs.isSymlink(path);
+			case "-t": {
+				const fd = Number.parseInt(operand, 10);
+				return fd === 0 || fd === 1 || fd === 2;
+			}
+			case "-o": {
+				if (!vars) {
+					return false;
+				}
+				const optVar = `__${operand}`;
+				return vars[optVar] === "1";
+			}
+			case "-v":
+				return vars ? operand in vars : false;
+			case "-R": {
+				if (!vars) {
+					return false;
+				}
+				const refVal = vars[operand];
+				return refVal !== undefined;
+			}
 			default:
 				break;
 		}
 	}
 
-	// Binary comparisons
 	if (tokens.length === 3) {
 		const [left = "", op, right = ""] = tokens;
 		const leftN = Number(left);
 		const rightN = Number(right);
 
 		switch (op) {
-			// String
 			case "=":
 			case "==":
 				return left === right;
@@ -101,7 +123,6 @@ function evalTest(tokens: string[], shell: VirtualShell, cwd: string): boolean {
 				return left < right;
 			case ">":
 				return left > right;
-			// Numeric
 			case "-eq":
 				return leftN === rightN;
 			case "-ne":
@@ -114,12 +135,49 @@ function evalTest(tokens: string[], shell: VirtualShell, cwd: string): boolean {
 				return leftN > rightN;
 			case "-ge":
 				return leftN >= rightN;
+			case "-nt": {
+				const lPath = resolvePath(cwd, left);
+				const rPath = resolvePath(cwd, right);
+				if (!(shell.vfs.exists(lPath) && shell.vfs.exists(rPath))) {
+					return false;
+				}
+				const lStat = shell.vfs.stat(lPath);
+				const rStat = shell.vfs.stat(rPath);
+				return lStat.updatedAt > rStat.updatedAt;
+			}
+			case "-ot": {
+				const lPath = resolvePath(cwd, left);
+				const rPath = resolvePath(cwd, right);
+				if (!(shell.vfs.exists(lPath) && shell.vfs.exists(rPath))) {
+					return false;
+				}
+				const lStat = shell.vfs.stat(lPath);
+				const rStat = shell.vfs.stat(rPath);
+				return lStat.updatedAt < rStat.updatedAt;
+			}
+			case "-ef": {
+				const lPath = resolvePath(cwd, left);
+				const rPath = resolvePath(cwd, right);
+				if (!(shell.vfs.exists(lPath) && shell.vfs.exists(rPath))) {
+					return false;
+				}
+				const lStat = shell.vfs.stat(lPath);
+				const rStat = shell.vfs.stat(rPath);
+				return lStat.path === rStat.path;
+			}
+			case "=~": {
+				try {
+					const re = new RegExp(right);
+					return re.test(left);
+				} catch {
+					return false;
+				}
+			}
 			default:
 				break;
 		}
 	}
 
-	// Single string (truthy if non-empty)
 	if (tokens.length === 1) {
 		return (tokens[0] ?? "").length > 0;
 	}
@@ -127,11 +185,6 @@ function evalTest(tokens: string[], shell: VirtualShell, cwd: string): boolean {
 	return false;
 }
 
-/**
- * Evaluate conditional expression.
- * @category shell
- * @params ["<expression>"]
- */
 export const testCommand: ShellModule = {
 	name: "test",
 	aliases: ["["],
@@ -140,10 +193,45 @@ export const testCommand: ShellModule = {
 	params: ["<expression>"],
 	run: ({args, shell, cwd}) => {
 		try {
-			const result = evalTest([...args], shell, cwd);
+			const tokens = [...args];
+			if (tokens[tokens.length - 1] === "]") {
+				tokens.length--;
+			}
+			if (tokens[0] === "[") {
+				tokens.shift();
+			}
+			const result = evalTest(tokens, shell, cwd);
 			return {exitCode: result ? 0 : 1};
 		} catch {
 			return {stderr: "test: malformed expression", exitCode: 2};
+		}
+	},
+};
+
+export const bracketCommand: ShellModule = {
+	name: "[[",
+	aliases: ["[["],
+	description: "Evaluate conditional expression (extended)",
+	category: "shell",
+	params: ["<expression>"],
+	run: ({args, shell, cwd, env}) => {
+		try {
+			const tokens = [...args];
+			while (tokens[tokens.length - 1] === "]]") {
+				tokens.length--;
+			}
+			while (tokens[0] === "[[") {
+				tokens.shift();
+			}
+			// Inside [[ ]], && and || are logical operators, not command separators
+			// Simple handling: replace -a/-o with &&
+			const processed = tokens.map((t) =>
+				t === "&&" ? "-a" : t === "||" ? "-o" : t
+			);
+			const result = evalTest(processed, shell, cwd, env.vars);
+			return {exitCode: result ? 0 : 1};
+		} catch {
+			return {stderr: "[[ : malformed expression", exitCode: 2};
 		}
 	},
 };
