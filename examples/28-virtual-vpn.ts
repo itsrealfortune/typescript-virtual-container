@@ -30,11 +30,12 @@ console.log("\n--- Tunnel traffic ---");
 // Packet from DC-1 → DC-2 (10.0.2.10 is in dc2's subnet)
 const pkt = {
 	srcIp: "10.0.1.10",
+	srcMac: "02:42:0a:00:01:0a" as const,
 	dstIp: "10.0.2.10",
 	protocol: "tcp" as const,
 	srcPort: 40000,
 	dstPort: 80,
-	payload: Buffer.from("GET / HTTP/1.1"),
+	payload: "GET / HTTP/1.1",
 };
 const result = await vpn.tunnel(pkt);
 console.log(
@@ -44,11 +45,12 @@ console.log(
 // Packet from DC-2 → DC-1 (10.0.1.10 is in dc1's subnet)
 const pkt2 = {
 	srcIp: "10.0.2.10",
+	srcMac: "02:42:0a:00:02:0a" as const,
 	dstIp: "10.0.1.10",
 	protocol: "tcp" as const,
 	srcPort: 50000,
 	dstPort: 22,
-	payload: Buffer.from("SSH handshake"),
+	payload: "SSH handshake",
 };
 const result2 = await vpn.tunnel(pkt2);
 console.log(
@@ -58,6 +60,7 @@ console.log(
 // Unknown destination (not in either subnet)
 const pkt3 = {
 	srcIp: "10.0.1.10",
+	srcMac: "02:42:0a:00:01:0a" as const,
 	dstIp: "8.8.8.8",
 	protocol: "udp" as const,
 	srcPort: 40001,

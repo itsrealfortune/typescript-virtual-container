@@ -122,8 +122,8 @@ describe("node:vm sandbox", () => {
 
 describe("SandboxedShell isolation", () => {
 	test("workers are isolated from each other", async () => {
-		const s1 = new SandboxedShell("sandbox1");
-		const s2 = new SandboxedShell("sandbox2");
+		const s1 = new SandboxedShell();
+		const s2 = new SandboxedShell();
 
 		try {
 			// Each worker has its own VFS
