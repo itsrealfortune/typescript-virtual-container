@@ -31,6 +31,7 @@ function setFlag(
 	}
 }
 
+/** Display or set shell variables. */
 export const setCommand: ShellModule = {
 	name: "set",
 	description: "Display or set shell variables",

@@ -1,6 +1,7 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/** Display file contents in hexadecimal. */
 export const hexdumpCommand: ShellModule = {
 	name: "hexdump",
 	description: "Display file contents in hexadecimal",

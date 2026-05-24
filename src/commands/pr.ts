@@ -1,6 +1,7 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/** Paginate or columnate files for printing. */
 export const prCommand: ShellModule = {
 	name: "pr",
 	description: "Paginate or columnate files for printing",

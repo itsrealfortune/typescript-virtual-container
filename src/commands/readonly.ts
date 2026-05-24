@@ -18,6 +18,7 @@ function saveReadonlySet(vars: Record<string, string>, set: Set<string>): void {
 	vars[READONLY_KEY] = JSON.stringify([...set]);
 }
 
+/** Mark shell variables as readonly. */
 export const readonlyCommand: ShellModule = {
 	name: "readonly",
 	description: "Mark shell variables as readonly",

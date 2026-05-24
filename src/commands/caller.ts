@@ -1,5 +1,6 @@
 import type { ShellModule } from "../types/commands";
 
+/** Print the current call stack. */
 export const callerCommand: ShellModule = {
 	name: "caller",
 	description: "Print the current call stack",

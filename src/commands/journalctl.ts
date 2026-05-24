@@ -1,6 +1,7 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/** Query the systemd journal. */
 export const journalctlCommand: ShellModule = {
 	name: "journalctl",
 	description: "Query the systemd journal",

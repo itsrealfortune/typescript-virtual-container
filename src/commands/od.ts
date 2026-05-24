@@ -1,6 +1,7 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/** Dump files in octal and other formats. */
 export const odCommand: ShellModule = {
 	name: "od",
 	description: "Dump files in octal and other formats",

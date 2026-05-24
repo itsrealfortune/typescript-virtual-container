@@ -13,6 +13,7 @@ function parseJobspec(
 	return procs.find((p) => p.pid === pid);
 }
 
+/** List active jobs. */
 export const jobsCommand: ShellModule = {
 	name: "jobs",
 	description: "List active jobs",
@@ -39,6 +40,7 @@ export const jobsCommand: ShellModule = {
 	},
 };
 
+/** Resume a suspended job in the background. */
 export const bgCommand: ShellModule = {
 	name: "bg",
 	description: "Resume a suspended job in the background",
@@ -61,6 +63,7 @@ export const bgCommand: ShellModule = {
 	},
 };
 
+/** Resume a suspended job in the foreground. */
 export const fgCommand: ShellModule = {
 	name: "fg",
 	description: "Resume a suspended job in the foreground",

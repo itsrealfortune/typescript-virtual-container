@@ -1,6 +1,7 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/** Send message to syslog. */
 export const loggerCommand: ShellModule = {
 	name: "logger",
 	description: "Send message to syslog",

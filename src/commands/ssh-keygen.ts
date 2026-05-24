@@ -1,6 +1,7 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/** Generate SSH key pairs. */
 export const sshKeygenCommand: ShellModule = {
 	name: "ssh-keygen",
 	description: "Generate SSH key pairs",

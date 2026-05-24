@@ -1,6 +1,7 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/** Display or modify the routing table. */
 export const routeCommand: ShellModule = {
 	name: "route",
 	description: "Display or modify the routing table",

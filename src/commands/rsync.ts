@@ -1,6 +1,7 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/** Fast file synchronization tool. */
 export const rsyncCommand: ShellModule = {
 	name: "rsync",
 	description: "Fast file synchronization tool",

@@ -7,6 +7,7 @@ interface Rule {
 	cmds: string[];
 }
 
+/** Build targets from a Makefile. */
 export const makeCommand: ShellModule = {
 	name: "make",
 	description: "Build targets from a Makefile",

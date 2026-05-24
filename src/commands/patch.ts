@@ -1,6 +1,7 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/** Apply a diff file to an original. */
 export const patchCommand: ShellModule = {
 	name: "patch",
 	description: "Apply a diff file to an original",

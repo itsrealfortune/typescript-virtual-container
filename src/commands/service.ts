@@ -3,6 +3,7 @@ import { ifFlag } from "./command-helpers";
 
 const INIT_D_DIR = "/etc/init.d";
 
+/** Run System V init script. */
 export const serviceCommand: ShellModule = {
 	name: "service",
 	description: "Run System V init script",

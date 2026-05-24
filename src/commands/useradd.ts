@@ -1,6 +1,7 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/** Create a new user (POSIX semantics). */
 export const useraddCommand: ShellModule = {
 	name: "useradd",
 	description: "Create a new user (POSIX semantics)",
@@ -37,6 +38,7 @@ export const useraddCommand: ShellModule = {
 	},
 };
 
+/** Delete a user account (POSIX semantics). */
 export const userdelCommand: ShellModule = {
 	name: "userdel",
 	description: "Delete a user account (POSIX semantics)",
@@ -75,6 +77,7 @@ export const userdelCommand: ShellModule = {
 	},
 };
 
+/** Modify a group. */
 export const groupmodCommand: ShellModule = {
 	name: "groupmod",
 	description: "Modify a group",

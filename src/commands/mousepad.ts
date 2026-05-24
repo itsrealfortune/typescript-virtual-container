@@ -4,6 +4,7 @@ import type {
 	ShellModule,
 } from "../types/commands";
 
+/** Open a text file in the desktop text editor. */
 export const mousepadCommand: ShellModule = {
 	name: "mousepad",
 	aliases: ["gedit", "xed"],

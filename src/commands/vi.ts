@@ -2,6 +2,7 @@ import * as path from "node:path";
 import type { ShellModule } from "../types/commands";
 import { assertPathAccess, resolvePath } from "./helpers";
 
+/** Modal text editor (vi compatible). */
 export const viCommand: ShellModule = {
 	name: "vi",
 	aliases: ["vim"],

@@ -1,6 +1,7 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/** Unmount a mounted filesystem. */
 export const umountCommand: ShellModule = {
 	name: "umount",
 	aliases: ["unmount"],

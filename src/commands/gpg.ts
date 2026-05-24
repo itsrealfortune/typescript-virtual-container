@@ -1,6 +1,7 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/** GNU Privacy Guard — encryption and signing. */
 export const gpgCommand: ShellModule = {
 	name: "gpg",
 	description: "GNU Privacy Guard — encryption and signing",

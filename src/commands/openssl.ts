@@ -1,6 +1,7 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/** OpenSSL cryptographic utility. */
 export const opensslCommand: ShellModule = {
 	name: "openssl",
 	description: "OpenSSL cryptographic utility",

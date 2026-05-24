@@ -1,6 +1,7 @@
 import type { ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 
+/** Query DNS for hostname or IP. */
 export const nslookupCommand: ShellModule = {
 	name: "nslookup",
 	description: "Query DNS for hostname or IP",

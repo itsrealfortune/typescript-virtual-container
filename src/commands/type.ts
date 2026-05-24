@@ -26,6 +26,7 @@ function classify(
 	return { kind: "not found" };
 }
 
+/** Describe how a command would be interpreted. */
 export const typeCommand: ShellModule = {
 	name: "type",
 	description: "Describe how a command would be interpreted",

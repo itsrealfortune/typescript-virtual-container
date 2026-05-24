@@ -16,6 +16,7 @@ const CHARSET_MAP: Record<string, string> = {
 	hex: "hex",
 };
 
+/** Convert text from one character encoding to another. */
 export const iconvCommand: ShellModule = {
 	name: "iconv",
 	description: "Convert text from one character encoding to another",
