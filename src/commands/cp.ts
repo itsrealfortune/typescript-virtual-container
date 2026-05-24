@@ -1,20 +1,22 @@
 import * as path from "node:path";
-import type { ShellModule } from "../types/commands";
+import type { VirtualShell } from "../modules/VirtualShell";
+import type { CommandResult, ShellModule } from "../types/commands";
 import { ifFlag } from "./command-helpers";
 import { checkFilePermission, resolvePath } from "./helpers";
 
 /**
  * Copy files or directories inside the virtual filesystem.
  * @category files
- * @params ["[-r] <source> <dest>"]
+ * @params ["[-r] [-i] <source> <dest>"]
  */
 export const cpCommand: ShellModule = {
 	name: "cp",
 	description: "Copy files or directories",
 	category: "files",
-	params: ["[-r] <source> <dest>"],
+	params: ["[-r] [-i] <source> <dest>"],
 	run: ({ authUser, shell, cwd, args, uid, gid }) => {
 		const recursive = ifFlag(args, ["-r", "-R", "--recursive"]);
+		const interactive = ifFlag(args, ["-i"]);
 		const positionals = args.filter((a) => !a.startsWith("-"));
 		const [srcArg, destArg] = positionals;
 
@@ -44,44 +46,76 @@ export const cpCommand: ShellModule = {
 
 			const srcStat = shell.vfs.stat(srcPath);
 
-			if (srcStat.type === "directory") {
-				if (!recursive) {
-					return {
-						stderr: `cp: ${srcArg}: is a directory (use -r)`,
-						exitCode: 1,
-					};
-				}
-				const copyDir = (from: string, to: string) => {
-					shell.vfs.mkdir(to, 0o755, uid, gid);
-					for (const entry of shell.vfs.list(from)) {
-						const fromEntry = `${from}/${entry}`;
-						const toEntry = `${to}/${entry}`;
-						const stat = shell.vfs.stat(fromEntry);
-						if (stat.type === "directory") {
-							copyDir(fromEntry, toEntry);
-						} else {
-							const content = shell.vfs.readFileRaw(fromEntry);
-							shell.vfs.writeFile(toEntry, content, {}, uid, gid);
-						}
+			const doCopy = (sh: VirtualShell): CommandResult => {
+				if (srcStat.type === "directory") {
+					if (!recursive) {
+						return {
+							stderr: `cp: ${srcArg}: is a directory (use -r)`,
+							exitCode: 1,
+						};
 					}
+					const cpDir = (from: string, to: string) => {
+						sh.vfs.mkdir(to, 0o755, uid, gid);
+						for (const entry of sh.vfs.list(from)) {
+							const fe = `${from}/${entry}`;
+							const te = `${to}/${entry}`;
+							const st = sh.vfs.stat(fe);
+							if (st.type === "directory") {
+								cpDir(fe, te);
+							} else {
+								const content = sh.vfs.readFileRaw(fe);
+								sh.vfs.writeFile(te, content, {}, uid, gid);
+							}
+						}
+					};
+					const finalDest =
+						sh.vfs.exists(destPath) &&
+						sh.vfs.stat(destPath).type === "directory"
+							? `${destPath}/${srcArg.split("/").pop()}`
+							: destPath;
+					cpDir(srcPath, finalDest);
+				} else {
+					const finalDest =
+						sh.vfs.exists(destPath) &&
+						sh.vfs.stat(destPath).type === "directory"
+							? `${destPath}/${srcArg.split("/").pop()}`
+							: destPath;
+					const content = sh.vfs.readFileRaw(srcPath);
+					sh.vfs.writeFile(finalDest, content, {}, uid, gid);
+				}
+				return { exitCode: 0 };
+			};
+
+			if (
+				interactive &&
+				shell.vfs.exists(destPath) &&
+				shell.vfs.stat(destPath).type === "file"
+			) {
+				const label =
+					srcStat.type === "directory" ? srcArg : destArg;
+				return {
+					sudoChallenge: {
+						username: authUser,
+						targetUser: authUser,
+						commandLine: null,
+						loginShell: false,
+						prompt: `cp: overwrite '${label}'? [y/N] `,
+						mode: "confirm",
+						onPassword: (input, sh) => {
+							const answer = input.trim().toLowerCase();
+							if (answer !== "y" && answer !== "yes") {
+								return Promise.resolve({
+									result: { stdout: "cp: cancelled\n", exitCode: 1 },
+								});
+							}
+							return Promise.resolve({ result: doCopy(sh) });
+						},
+					},
+					exitCode: 0,
 				};
-				const finalDest =
-					shell.vfs.exists(destPath) &&
-					shell.vfs.stat(destPath).type === "directory"
-						? `${destPath}/${srcArg.split("/").pop()}`
-						: destPath;
-				copyDir(srcPath, finalDest);
-			} else {
-				const finalDest =
-					shell.vfs.exists(destPath) &&
-					shell.vfs.stat(destPath).type === "directory"
-						? `${destPath}/${srcArg.split("/").pop()}`
-						: destPath;
-				const content = shell.vfs.readFileRaw(srcPath);
-				shell.vfs.writeFile(finalDest, content, {}, uid, gid);
 			}
 
-			return { exitCode: 0 };
+			return doCopy(shell);
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
 			return { stderr: `cp: ${msg}`, exitCode: 1 };

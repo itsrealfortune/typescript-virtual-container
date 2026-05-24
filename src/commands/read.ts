@@ -65,7 +65,7 @@ export const readCommand: ShellModule = {
 		if (arrayName) {
 			const words = input.split(/\s+/).filter(Boolean);
 			env.vars[`${arrayName}[0]`] = words.join(" ");
-			for (let i = 0; i < words.length; i++) {
+			for (let i = 1; i < words.length; i++) {
 				env.vars[`${arrayName}[${i}]`] = words[i] as string;
 			}
 			env.vars[`#${arrayName}[@]`] = String(words.length);

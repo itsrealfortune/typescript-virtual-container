@@ -10,13 +10,13 @@ const FLAG_FORCE = ["-f", "-rf", "-fr", "-rF", "-Fr", "--force"];
 /**
  * Remove files or directories from the filesystem.
  * @category files
- * @params ["[-r|-rf|-f] <path>"]
+ * @params ["[-r|-rf|-f|-I] <path>"]
  */
 export const rmCommand: ShellModule = {
 	name: "rm",
 	description: "Remove files or directories",
 	category: "files",
-	params: ["[-r|-rf|-f] <path>"],
+	params: ["[-r|-rf|-f|-I] <path>"],
 	run: ({ authUser, shell, cwd, args, uid, gid }) => {
 		if (args.length === 0) {
 			return { stderr: "rm: missing operand", exitCode: 1 };
@@ -24,7 +24,13 @@ export const rmCommand: ShellModule = {
 
 		const recursive = ifFlag(args, FLAG_RECURSIVE);
 		const force = ifFlag(args, FLAG_FORCE);
-		const allFlags = [...FLAG_RECURSIVE, ...FLAG_FORCE, "--force"];
+		const interactiveOnce = ifFlag(args, ["-I"]);
+		const allFlags = [
+			...FLAG_RECURSIVE,
+			...FLAG_FORCE,
+			"--force",
+			"-I",
+		];
 
 		const targets: string[] = [];
 		for (let index = 0; ; index += 1) {
@@ -73,6 +79,14 @@ export const rmCommand: ShellModule = {
 
 		if (force) {
 			return doRemove(shell);
+		}
+
+		// -I: prompt once before removing more than 3 files or recursive
+		if (interactiveOnce) {
+			const needsConfirm = targets.length > 3 || recursive;
+			if (!needsConfirm) {
+				return doRemove(shell);
+			}
 		}
 
 		const label =

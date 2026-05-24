@@ -144,19 +144,31 @@ function renderPrintf(fmt: string, args: string[]): string {
 /**
  * Format and print data to stdout.
  * @category shell
- * @params ["<format> [args...]"]
+ * @params ["[-v var] <format> [args...]"]
  */
 export const printfCommand: ShellModule = {
 	name: "printf",
 	description: "Format and print data",
 	category: "shell",
-	params: ["<format> [args...]"],
-	run: ({ args }) => {
-		const fmt = args[0];
+	params: ["[-v var] <format> [args...]"],
+	run: ({ args, env }) => {
+		let varName: string | undefined;
+		let fmtIdx = 0;
+		if (args[0] === "-v" && args[1]) {
+			varName = args[1];
+			fmtIdx = 2;
+		}
+		const fmt = args[fmtIdx];
 		if (!fmt) {
 			return { stderr: "printf: missing format string", exitCode: 1 };
 		}
-		const output = renderPrintf(fmt, args.slice(1));
+		const output = renderPrintf(fmt, args.slice(fmtIdx + 1));
+		if (varName) {
+			if (env) {
+				env.vars[varName] = output;
+			}
+			return { exitCode: 0 };
+		}
 		return { stdout: output, exitCode: 0 };
 	},
 };

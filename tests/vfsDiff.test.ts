@@ -3,7 +3,17 @@ import { diffSnapshots, formatDiff, assertDiff } from "../src/utils/vfsDiff";
 import type { VfsSnapshot } from "../src/types/vfs";
 
 function makeSnapshot(root: Record<string, string | { type: string; content?: string; mode?: string }>): VfsSnapshot {
-	const nodes: Array<{ name: string; type: string; children?: unknown[]; contentBase64?: string; mode?: string }> = [];
+	const nodes: Array<{
+		name: string;
+		type: string;
+		children?: unknown[];
+		contentBase64?: string;
+		mode?: string;
+		uid?: number;
+		gid?: number;
+		atime?: number;
+		mtime?: number;
+	}> = [];
 
 	for (const [path, val] of Object.entries(root)) {
 		const parts = path.split("/").filter(Boolean);
@@ -14,6 +24,10 @@ function makeSnapshot(root: Record<string, string | { type: string; content?: st
 				type: "file",
 				contentBase64: Buffer.from(val).toString("base64"),
 				mode: "644",
+				uid: 0,
+				gid: 0,
+				mtime: Date.now(),
+				atime: Date.now(),
 			});
 		} else {
 			nodes.push({
@@ -21,18 +35,29 @@ function makeSnapshot(root: Record<string, string | { type: string; content?: st
 				type: val.type,
 				contentBase64: val.content ? Buffer.from(val.content).toString("base64") : undefined,
 				mode: val.mode ?? "644",
+				uid: 0,
+				gid: 0,
+				mtime: Date.now(),
+				atime: Date.now(),
 			});
 		}
 	}
 
-	return {
+	const snapshot = {
 		version: "0.1",
 		timestamp: new Date().toISOString(),
 		root: {
-			type: "directory",
+			name: "/",
+			type: "directory" as const,
+			mode: "755",
+			uid: 0,
+			gid: 0,
+			atime: Date.now(),
+			mtime: Date.now(),
 			children: nodes,
 		},
-	} as VfsSnapshot;
+	};
+	return snapshot as unknown as VfsSnapshot;
 }
 
 describe("diffSnapshots", () => {
@@ -89,10 +114,16 @@ describe("diffSnapshots", () => {
 			version: "0.1",
 			timestamp: new Date().toISOString(),
 			root: {
-				type: "directory",
-				children: [{ name: "subdir", type: "directory", children: [] }],
+				name: "/",
+				type: "directory" as const,
+				mode: "755",
+				uid: 0,
+				gid: 0,
+				atime: Date.now(),
+				mtime: Date.now(),
+				children: [{ name: "subdir", type: "directory", mode: "755", uid: 0, gid: 0, atime: Date.now(), mtime: Date.now(), children: [] }],
 			},
-		} as VfsSnapshot;
+		} as unknown as VfsSnapshot;
 		const diff = diffSnapshots(before, after);
 		expect(diff.added).toHaveLength(1);
 		expect(diff.added[0]?.type).toBe("directory");

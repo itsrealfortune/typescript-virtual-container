@@ -1,6 +1,24 @@
-import { deflateSync, inflateSync } from "fflate";
 import type { ShellModule } from "../types/commands";
 import { resolvePath } from "./helpers";
+
+let _fflateAvailable = true;
+let _deflateSync: (d: Buffer, o: { level: number }) => Uint8Array;
+let _inflateSync: (d: Uint8Array) => Uint8Array;
+try {
+	const fflate = require("fflate");
+	_deflateSync = fflate.deflateSync;
+	_inflateSync = fflate.inflateSync;
+} catch {
+	_fflateAvailable = false;
+}
+
+function requireFflate(): void {
+	if (!_fflateAvailable) {
+		throw new Error(
+			"zip/unzip: fflate module is required for ZIP compression. Install it with: npm install fflate"
+		);
+	}
+}
 
 // ── CRC32 ─────────────────────────────────────────────────────────────────────
 
@@ -43,6 +61,7 @@ function dosDateTime(): [number, number] {
 // ── ZIP builder ───────────────────────────────────────────────────────────────
 
 function buildZip(entries: Array<{ name: string; content: Buffer }>): Buffer {
+	requireFflate();
 	const parts: Buffer[] = [];
 	const cdParts: Buffer[] = [];
 	let offset = 0;
@@ -50,7 +69,7 @@ function buildZip(entries: Array<{ name: string; content: Buffer }>): Buffer {
 
 	for (const { name, content } of entries) {
 		const nameBuf = Buffer.from(name, "utf8");
-		const compressed = Buffer.from(deflateSync(content, { level: 6 }));
+		const compressed = Buffer.from(_deflateSync(content, { level: 6 }));
 		const useDeflate = compressed.length < content.length;
 		const stored = useDeflate ? compressed : content;
 		const crc = crc32(content);
@@ -138,7 +157,7 @@ function parseZip(raw: Buffer): Array<{ name: string; content: Buffer }> {
 		let content: Buffer;
 		if (method === 8) {
 			try {
-				content = Buffer.from(inflateSync(compData));
+				content = Buffer.from(_inflateSync(compData));
 			} catch {
 				content = compData;
 			}

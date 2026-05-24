@@ -9,6 +9,7 @@ import { assertPathAccess, resolvePath } from "./helpers";
  */
 export const grepCommand: ShellModule = {
 	name: "grep",
+	aliases: ["egrep", "fgrep"],
 	description: "Search text patterns",
 	category: "text",
 	params: ["[-i] [-v] [-n] [-r] <pattern> [file...]"],

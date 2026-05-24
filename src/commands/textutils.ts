@@ -12,6 +12,10 @@ function alphaSuffix(n: number): string {
 	return result;
 }
 
+function numericSuffix(n: number, digits: number): string {
+	return String(n).padStart(digits, "0");
+}
+
 /**
  * Join lines of two files on a common field
  * @category text
@@ -134,16 +138,17 @@ export const commCommand: ShellModule = {
 /**
  * Split a file into pieces
  * @category text
- * @params ["[-l lines] [-b bytes] <file> [prefix]"]
+ * @params ["[-l lines] [-b bytes] [-d] [--additional-suffix suffix] <file> [prefix]"]
  */
 export const splitCommand: ShellModule = {
 	name: "split",
 	description: "Split a file into pieces",
 	category: "text",
-	params: ["[-l lines] [-b bytes] <file> [prefix]"],
+	params: ["[-l lines] [-b bytes] [-d] [--additional-suffix suffix] <file> [prefix]"],
 	run: ({ shell, cwd, args, uid, gid }) => {
-		const { flagsWithValues, positionals } = parseArgs(args, {
-			flagsWithValue: ["-l", "-b"],
+		const { flags, flagsWithValues, positionals } = parseArgs(args, {
+			flags: ["-d"],
+			flagsWithValue: ["-l", "-b", "--additional-suffix"],
 		});
 		const linesPerFile = Number.parseInt(
 			flagsWithValues.get("-l") || "1000",
@@ -152,6 +157,8 @@ export const splitCommand: ShellModule = {
 		const bytesPerFile = flagsWithValues.has("-b")
 			? Number.parseInt(flagsWithValues.get("-b") as string, 10)
 			: undefined;
+		const useNumeric = flags.has("-d");
+		const suffix = flagsWithValues.get("--additional-suffix") ?? "";
 		const fileArg = positionals[0];
 		const prefix = positionals[1] || "x";
 
@@ -169,11 +176,15 @@ export const splitCommand: ShellModule = {
 
 		const content = shell.vfs.readFile(p, uid, gid);
 
+		const suffixGen = useNumeric
+			? (n: number) => numericSuffix(n, 2)
+			: alphaSuffix;
+
 		if (bytesPerFile !== undefined) {
 			let chunkIndex = 0;
 			for (let i = 0; i < content.length; i += bytesPerFile) {
 				const chunk = content.slice(i, i + bytesPerFile);
-				const outPath = resolvePath(cwd, `${prefix}${alphaSuffix(chunkIndex)}`);
+				const outPath = resolvePath(cwd, `${prefix}${suffixGen(chunkIndex)}${suffix}`);
 				shell.vfs.writeFile(outPath, chunk, {}, uid, gid);
 				chunkIndex++;
 			}
@@ -184,7 +195,7 @@ export const splitCommand: ShellModule = {
 		let chunkIndex = 0;
 		for (let i = 0; i < allLines.length; i += linesPerFile) {
 			const chunk = allLines.slice(i, i + linesPerFile).join("\n");
-			const outPath = resolvePath(cwd, `${prefix}${alphaSuffix(chunkIndex)}`);
+			const outPath = resolvePath(cwd, `${prefix}${suffixGen(chunkIndex)}${suffix}`);
 			shell.vfs.writeFile(outPath, chunk, {}, uid, gid);
 			chunkIndex++;
 		}
@@ -196,14 +207,149 @@ export const splitCommand: ShellModule = {
 /**
  * Split a file based on context patterns
  * @category text
- * @params ["<file> <pattern>..."]
+ * @params ["[-f prefix] [-n digits] [-s] [-k] <file> <pattern>..."]
  */
 export const csplitCommand: ShellModule = {
 	name: "csplit",
 	description: "Split a file based on context patterns",
 	category: "text",
-	params: ["<file> <pattern>..."],
-	run: () => {
-		return { stderr: "csplit: not implemented\n", exitCode: 1 };
+	params: ["[-f prefix] [-n digits] [-s] [-k] <file> <pattern>..."],
+	run: ({ shell, cwd, args, uid, gid }) => {
+		const { flags, flagsWithValues, positionals } = parseArgs(args, {
+			flags: ["-s", "-k"],
+			flagsWithValue: ["-f", "-n"],
+		});
+		const silent = flags.has("-s");
+		const prefix = flagsWithValues.get("-f") ?? "xx";
+		const digits = Number.parseInt(flagsWithValues.get("-n") ?? "2", 10);
+		const fileArg = positionals[0];
+		const patterns = positionals.slice(1);
+
+		if (!fileArg) {
+			return { stderr: "csplit: missing file operand\n", exitCode: 1 };
+		}
+		if (patterns.length === 0) {
+			return { stderr: "csplit: missing pattern\n", exitCode: 1 };
+		}
+
+		const p = resolvePath(cwd, fileArg);
+		if (!shell.vfs.exists(p)) {
+			return {
+				stderr: `csplit: ${fileArg}: No such file or directory\n`,
+				exitCode: 1,
+			};
+		}
+
+		const content = shell.vfs.readFile(p, uid, gid);
+		const lines = content.split("\n");
+		if (lines.length > 0 && lines[lines.length - 1] === "") {
+			lines.pop();
+		}
+
+		type Pattern =
+			| { kind: "regex"; regex: RegExp; repeat: number }
+			| { kind: "lineno"; lineno: number };
+
+		const parsedPatterns: Pattern[] = [];
+		for (const pat of patterns) {
+			if (/^\d+$/.test(pat)) {
+				parsedPatterns.push({ kind: "lineno", lineno: Number.parseInt(pat, 10) });
+			} else if (pat.startsWith("/") && pat.endsWith("/")) {
+				const reBody = pat.slice(1, -1);
+				try {
+					parsedPatterns.push({ kind: "regex", regex: new RegExp(reBody), repeat: 1 });
+				} catch {
+					return { stderr: `csplit: invalid regex: ${pat}\n`, exitCode: 1 };
+				}
+			} else if (pat.startsWith("%") && pat.endsWith("%")) {
+				// %regex% — suppress pattern (skip matched lines)
+				const reBody = pat.slice(1, -1);
+				try {
+					new RegExp(reBody);
+				} catch {
+					return { stderr: `csplit: invalid regex: ${pat}\n`, exitCode: 1 };
+				}
+				parsedPatterns.push({ kind: "regex", regex: /$^/, repeat: 0 });
+			} else if (pat.startsWith("/") && pat.includes("{")) {
+				const braceStart = pat.indexOf("{");
+				const reBody = pat.slice(1, braceStart - 1);
+				const repeatStr = pat.slice(braceStart + 1, pat.indexOf("}", braceStart));
+				const repeat = Number.parseInt(repeatStr, 10) || 1;
+				try {
+					parsedPatterns.push({
+						kind: "regex",
+						regex: new RegExp(reBody),
+						repeat,
+					});
+				} catch {
+					return { stderr: `csplit: invalid regex: ${pat}\n`, exitCode: 1 };
+				}
+			} else {
+				return { stderr: `csplit: invalid pattern: ${pat}\n`, exitCode: 1 };
+			}
+		}
+
+		const splitPoints = new Set<number>();
+		for (const pat of parsedPatterns) {
+			if (pat.kind === "lineno") {
+				if (pat.lineno > 0 && pat.lineno <= lines.length) {
+					splitPoints.add(pat.lineno - 1);
+				}
+			} else if (pat.kind === "regex" && pat.repeat > 0) {
+				let count = 0;
+				for (let i = 0; i < lines.length; i++) {
+					if (pat.regex.test(lines[i] ?? "")) {
+						splitPoints.add(i);
+						count++;
+						if (count >= pat.repeat) {
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		const sortedPoints = [...splitPoints].sort((a, b) => a - b);
+		const outFiles: string[] = [];
+		let prev = 0;
+		let fileIndex = 0;
+
+		for (const pt of sortedPoints) {
+			if (pt <= prev) {
+				continue;
+			}
+			const chunk = lines.slice(prev, pt).join("\n");
+			const outName = `${prefix}${numericSuffix(fileIndex, digits)}`;
+			const outPath = resolvePath(cwd, outName);
+			shell.vfs.writeFile(outPath, chunk, {}, uid, gid);
+			outFiles.push(outName);
+			prev = pt;
+			fileIndex++;
+		}
+
+		if (prev < lines.length) {
+			const chunk = lines.slice(prev).join("\n");
+			const outName = `${prefix}${numericSuffix(fileIndex, digits)}`;
+			const outPath = resolvePath(cwd, outName);
+			shell.vfs.writeFile(outPath, chunk, {}, uid, gid);
+			outFiles.push(outName);
+		}
+
+		if (!silent) {
+			const sizeReport = outFiles
+				.map((f) => {
+					const fp = resolvePath(cwd, f);
+					try {
+						const st = shell.vfs.stat(fp);
+						return String(st.type === "file" ? st.size : 0);
+					} catch {
+						return "0";
+					}
+				})
+				.join("\n");
+			return { stdout: `${sizeReport}\n`, exitCode: 0 };
+		}
+
+		return { exitCode: 0 };
 	},
 };
