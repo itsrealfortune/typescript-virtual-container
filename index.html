@@ -544,7 +544,7 @@ The standalone builds are intended for quick demos and testing. For production u
 </details>
 <hr>
 <details>
-<summary><strong>Built-in Commands (173)</strong></summary>
+<summary><strong>Built-in Commands (223)</strong></summary>
 <p>Type <code>help</code> in the shell for a grouped, colorized listing. Type <code>help &lt;command&gt;</code> for detailed usage. Type <code>man &lt;command&gt;</code> for full manual pages — all commands are documented.</p>
 <h3 id="navigation" class="tsd-anchor-link">Navigation<a href="#navigation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <table>
@@ -1075,7 +1075,7 @@ The standalone builds are intended for quick demos and testing. For production u
 <td>Format and print</td>
 </tr>
 <tr>
-<td><code>read [-r] &lt;var...&gt;</code></td>
+<td><code>read [-d] [-n] [-t] [-a] &lt;var...&gt;</code></td>
 <td>Read stdin into variable(s)</td>
 </tr>
 <tr>
@@ -1083,28 +1083,44 @@ The standalone builds are intended for quick demos and testing. For production u
 <td>Execute file in current env</td>
 </tr>
 <tr>
-<td><code>export NAME=VALUE</code></td>
-<td>Set shell variable</td>
+<td><code>export [-n] [-f] NAME=VALUE</code></td>
+<td>Set shell variable or function</td>
 </tr>
 <tr>
-<td><code>set [VAR=val]</code></td>
-<td>Display or set shell variables</td>
+<td><code>readonly [-p] &lt;name...&gt;</code></td>
+<td>Mark variables as readonly</td>
 </tr>
 <tr>
-<td><code>unset &lt;VAR&gt;</code></td>
-<td>Remove shell variable</td>
+<td><code>set [-o] [+o] [--] [VAR=val]</code></td>
+<td>Display or set shell options/variables</td>
+</tr>
+<tr>
+<td><code>unset [-f] [-v] &lt;VAR&gt;</code></td>
+<td>Remove variable or function</td>
 </tr>
 <tr>
 <td><code>alias [name=value]</code></td>
 <td>Define or display aliases</td>
 </tr>
 <tr>
-<td><code>type &lt;command&gt;</code></td>
+<td><code>type [-a] [-t] [-p] &lt;command&gt;</code></td>
 <td>Describe command interpretation</td>
+</tr>
+<tr>
+<td><code>command [-v] [-V] [-p] &lt;cmd&gt;</code></td>
+<td>Run or identify command (skip functions)</td>
+</tr>
+<tr>
+<td><code>builtin &lt;cmd&gt; [args...]</code></td>
+<td>Run a shell builtin (skip functions/aliases)</td>
 </tr>
 <tr>
 <td><code>test &lt;expr&gt;</code> / <code>[ &lt;expr&gt; ]</code></td>
 <td>POSIX conditional</td>
+</tr>
+<tr>
+<td><code>[[ &lt;expr&gt; ]]</code></td>
+<td>Extended conditional (bash)</td>
 </tr>
 <tr>
 <td><code>expr &lt;expr&gt;</code></td>
@@ -1113,6 +1129,18 @@ The standalone builds are intended for quick demos and testing. For production u
 <tr>
 <td><code>declare [name=value]</code></td>
 <td>Declare variables</td>
+</tr>
+<tr>
+<td><code>hash [-r] &lt;name&gt;</code></td>
+<td>PATH cache utilities</td>
+</tr>
+<tr>
+<td><code>shopt [-s] [-u] &lt;opt&gt;</code></td>
+<td>Shell option management (bash)</td>
+</tr>
+<tr>
+<td><code>caller [n]</code></td>
+<td>Print stack trace</td>
 </tr>
 <tr>
 <td><code>exit [code]</code></td>
@@ -1127,7 +1155,7 @@ The standalone builds are intended for quick demos and testing. For production u
 <td>Return from shell function</td>
 </tr>
 <tr>
-<td><code>trap [action] [signal]</code></td>
+<td><code>trap [-p] [action] [signal]</code></td>
 <td>Signal handlers</td>
 </tr>
 <tr>
@@ -1143,8 +1171,8 @@ The standalone builds are intended for quick demos and testing. For production u
 <td>Run command with time limit</td>
 </tr>
 <tr>
-<td><code>wait [job...]</code></td>
-<td>Wait for background jobs (no-op)</td>
+<td><code>wait [-n] [job...]</code></td>
+<td>Wait for background jobs</td>
 </tr>
 <tr>
 <td><code>history [n]</code></td>
@@ -1233,7 +1261,7 @@ The standalone builds are intended for quick demos and testing. For production u
 </tr>
 </tbody>
 </table>
-<p><strong>ℹ️ All 173 built-in commands include complete JSDoc documentation</strong> with <code>@category</code> and <code>@params</code> tags. See <a href="https://github.com/itsrealfortune/typescript-virtual-container/tree/main/src/commands">src/commands/</a> for source code and inline documentation.</p>
+<p><strong>ℹ️ All 223 built-in commands include complete JSDoc documentation</strong> with <code>@category</code> and <code>@params</code> tags. See <a href="https://github.com/itsrealfortune/typescript-virtual-container/tree/main/src/commands">src/commands/</a> for source code and inline documentation.</p>
 <p>Custom commands: <code>shell.addCommand(name, params, callback)</code>.</p>
 </details>
 <hr>

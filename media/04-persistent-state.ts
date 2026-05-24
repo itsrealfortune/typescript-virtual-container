@@ -6,8 +6,8 @@
  * - Memory mode: manual JSON snapshot / restore
  */
 
-import {VirtualFileSystem} from "../src";
-import {mkdirSync, existsSync, rmSync} from "node:fs";
+import { VirtualFileSystem } from "../src";
+import { mkdirSync, existsSync, rmSync } from "node:fs";
 
 // ── FS mode — automatic .vfsb persistence ─────────────────────────
 console.log("--- FS mode — automatic .vfsb persistence ---");
@@ -41,5 +41,5 @@ console.log(`Restored content: "${restored.readFile("/data/report.txt")}"`);
 
 // ── Cleanup ───────────────────────────────────────────────────────
 console.log("--- Cleanup ---");
-rmSync(dataDir, {recursive: true, force: true});
+rmSync(dataDir, { recursive: true, force: true });
 console.log("Cleaned up persistent data");

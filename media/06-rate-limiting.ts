@@ -6,7 +6,7 @@
  * and admin override.
  */
 
-import {VirtualShell, VirtualSshServer} from "../src";
+import { VirtualShell, VirtualSshServer } from "../src";
 
 const shell = new VirtualShell("rate-limited-vm");
 await shell.ensureInitialized();
@@ -20,11 +20,11 @@ const ssh = new VirtualSshServer({
 
 // ── Event listeners ───────────────────────────────────────────────
 console.log("--- Event listeners ---");
-ssh.on("auth:failure", ({username, remoteAddress}) => {
+ssh.on("auth:failure", ({ username, remoteAddress }) => {
 	console.log(`  [AUTH FAIL] ${username}@${remoteAddress}`);
 });
 
-ssh.on("auth:lockout", ({ip, until}) => {
+ssh.on("auth:lockout", ({ ip, until }) => {
 	console.warn(`  [LOCKOUT] ${ip} locked until ${until.toLocaleTimeString()}`);
 });
 
