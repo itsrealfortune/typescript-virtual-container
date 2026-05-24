@@ -50,8 +50,8 @@ export function parseShellPipeline(rawInput: string): Pipeline {
 		return {commands: [], isValid: true};
 	}
 	try {
-		const commands = parsePipeline(trimmed);
-		return {commands, isValid: true};
+		const pipeline = parsePipeline(trimmed);
+		return pipeline;
 	} catch (e) {
 		return {commands: [], isValid: false, error: (e as Error).message};
 	}
@@ -82,8 +82,8 @@ function parseStatements(input: string): Statement[] {
 				statements: parseStatements(inner),
 			} satisfies CommandGroup;
 		} else {
-			const commands = parsePipeline(text);
-			stmt.pipeline = {commands, isValid: true};
+			const pipeline = parsePipeline(text);
+			stmt.pipeline = pipeline;
 		}
 
 		statements.push(stmt);
@@ -200,16 +200,22 @@ function splitByLogicalOps(input: string): Segment[] {
 	return segments;
 }
 
-function parsePipeline(input: string): PipelineCommand[] {
-	const pipeTokens = splitByPipe(input);
-	return pipeTokens.map(parseCommandWithRedirections);
+function parsePipeline(input: string): Pipeline {
+	const tokens = splitByPipe(input);
+	const commands = tokens.map(parseCommandWithRedirections);
+	return {
+		commands,
+		isValid: true,
+		pipeStderr: tokens.rawPipeStderr,
+	};
 }
 
-function splitByPipe(input: string): string[] {
+function splitByPipe(input: string): string[] & {rawPipeStderr?: boolean} {
 	const tokens: string[] = [];
 	let current = "";
 	let inQ = false;
 	let qChar = "";
+	let hasPipeStderr = false;
 
 	for (let i = 0; i < input.length; i++) {
 		const ch = input.charAt(i);
@@ -229,16 +235,26 @@ function splitByPipe(input: string): string[] {
 			continue;
 		}
 
-		// || was already consumed at statement level, bare | is pipe
+		if (ch === "|" && input[i + 1] === "&") {
+			if (!current.trim()) {
+				throw new Error("Syntax error near unexpected token '|'");
+			}
+			tokens.push(current.trim());
+			current = "";
+			hasPipeStderr = true;
+			i++;
+			continue;
+		}
+
 		if (ch === "|" && input[i + 1] !== "|") {
 			if (!current.trim()) {
 				throw new Error("Syntax error near unexpected token '|'");
 			}
 			tokens.push(current.trim());
 			current = "";
-		} else {
-			current += ch;
+			continue;
 		}
+		current += ch;
 	}
 
 	const tail = current.trim();
@@ -248,7 +264,9 @@ function splitByPipe(input: string): string[] {
 	if (tail) {
 		tokens.push(tail);
 	}
-	return tokens;
+	(tokens as string[] & {rawPipeStderr?: boolean}).rawPipeStderr =
+		hasPipeStderr;
+	return tokens as string[] & {rawPipeStderr?: boolean};
 }
 
 function parseCommandWithRedirections(token: string): PipelineCommand {
@@ -266,6 +284,10 @@ function parseCommandWithRedirections(token: string): PipelineCommand {
 	let stderrFile: string | undefined;
 	let stderrAppend = false;
 	let stderrToStdout = false;
+	let readWriteFile: string | undefined;
+	let hereString: string | undefined;
+	let hereDoc: string | undefined;
+	let hereDocStripTab = false;
 
 	while (i < parts.length) {
 		const part = parts[i] as string;
@@ -275,6 +297,35 @@ function parseCommandWithRedirections(token: string): PipelineCommand {
 				throw new Error("Syntax error: expected filename after <");
 			}
 			inputFile = parts[i];
+			i++;
+		} else if (part === "<<") {
+			i++;
+			if (i >= parts.length) {
+				throw new Error("Syntax error: expected delimiter after <<");
+			}
+			hereDoc = parts[i];
+			i++;
+		} else if (part === "<<-") {
+			i++;
+			if (i >= parts.length) {
+				throw new Error("Syntax error: expected delimiter after <<-");
+			}
+			hereDoc = parts[i];
+			hereDocStripTab = true;
+			i++;
+		} else if (part === "<<<") {
+			i++;
+			if (i >= parts.length) {
+				throw new Error("Syntax error: expected word after <<<");
+			}
+			hereString = parts[i];
+			i++;
+		} else if (part === "<>") {
+			i++;
+			if (i >= parts.length) {
+				throw new Error("Syntax error: expected filename after <>");
+			}
+			readWriteFile = parts[i];
 			i++;
 		} else if (part === ">>") {
 			i++;
@@ -293,7 +344,6 @@ function parseCommandWithRedirections(token: string): PipelineCommand {
 			appendOutput = false;
 			i++;
 		} else if (part === "&>" || part === "&>>") {
-			// &> file — redirect both stdout and stderr to file
 			const append = part === "&>>";
 			i++;
 			if (i >= parts.length) {
@@ -341,5 +391,9 @@ function parseCommandWithRedirections(token: string): PipelineCommand {
 		stderrFile,
 		stderrAppend,
 		stderrToStdout,
+		readWriteFile,
+		hereString,
+		hereDoc,
+		hereDocStripTab,
 	};
 }

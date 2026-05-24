@@ -1,70 +1,47 @@
-/** Represents a single command in a pipeline. */
 export interface PipelineCommand {
-	/** Command name */
 	name: string;
-	/** Command arguments */
 	args: string[];
-	/** Input redirection file path (< file) */
 	inputFile?: string;
-	/** Output redirection file path (> file) */
 	outputFile?: string;
-	/** Append to output file (>> file) */
 	appendOutput?: boolean;
-	/** Stderr redirection file path (2> file) */
 	stderrFile?: string;
-	/** Append stderr to file (2>> file) */
 	stderrAppend?: boolean;
-	/** Redirect stderr to stdout (2>&1) */
 	stderrToStdout?: boolean;
+	readWriteFile?: string;
+	hereString?: string;
+	hereDoc?: string;
+	hereDocStripTab?: boolean;
+	pipeStderr?: boolean;
 }
 
-/** Logical operator connecting two statement groups. */
 export type LogicalOp = "&&" | "||" | ";";
 
-/** A subshell: commands executed in a child shell context. */
 export interface Subshell {
-	/** Statements to execute inside the subshell. */
 	statements: Statement[];
 }
 
-/** A command group: commands executed in the current shell context. */
 export interface CommandGroup {
-	/** Statements to execute in the group. */
 	statements: Statement[];
 }
 
-/** Represents a parsed shell pipeline */
 export interface Pipeline {
-	/** List of commands in the pipeline */
 	commands: PipelineCommand[];
-	/** Whether this is a valid pipeline */
 	isValid: boolean;
-	/** Error message if parsing failed */
 	error?: string;
+	pipeStderr?: boolean;
 }
 
-/** A statement: one pipeline optionally followed by && / || / ; and the next statement */
 export interface Statement {
-	/** Pipeline to execute for this statement. */
 	pipeline?: Pipeline;
-	/** Subshell to execute (if present instead of pipeline). */
 	subshell?: Subshell;
-	/** Command group to execute (if present instead of pipeline). */
 	group?: CommandGroup;
-	/** Operator connecting this statement to the next one. */
 	op?: LogicalOp;
-	/** Optional next statement in sequence. */
 	next?: Statement;
-	/** Run in background (trailing &). */
 	background?: boolean;
 }
 
-/** Top-level parse result for a script. */
 export interface Script {
-	/** Statements contained in the script. */
 	statements: Statement[];
-	/** Whether the script was parsed successfully. */
 	isValid: boolean;
-	/** Optional parse error message. */
 	error?: string;
 }
