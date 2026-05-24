@@ -45,6 +45,7 @@ import {
 	W_OK,
 	X_OK,
 } from "./permissions";
+import { decodeSquashfs, isSquashfsFormat } from "./squashfs";
 import { SwapStore, type SwapStats } from "./swapStore";
 import { decodeTar, encodeTar, isTarFormat } from "./tarFormat";
 
@@ -681,6 +682,11 @@ class VirtualFileSystem extends EventEmitter {
 			}
 		if (isBinarySnapshot(raw)) {
 			this._root = decodeVfs(raw);
+		} else if (isSquashfsFormat(raw)) {
+			this._root = decodeSquashfs(raw);
+			console.info(
+				"[VirtualFileSystem] Loaded snapshot from squashfs format; will migrate to VFSB on next flush."
+			);
 		} else if (isTarFormat(raw) || (raw.length > 2 && raw[0] === 0x1f && raw[1] === 0x8b)) {
 			this._root = decodeTar(raw);
 			console.info(

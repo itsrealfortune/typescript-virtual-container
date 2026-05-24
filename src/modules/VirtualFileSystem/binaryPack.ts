@@ -1,36 +1,53 @@
 /**
- * Binary serialisation format for VirtualFileSystem snapshots.
+ * Binary serialisation format for VirtualFileSystem snapshots (`.vfsb`).
  *
- * Replaces the JSON+base64 approach. No external dependencies.
+ * Proprietary format. Replaces the legacy JSON+base64 approach.
+ * No external dependencies. ~27% smaller than JSON+base64 and much faster to parse.
  *
- * Wire format (little-endian throughout):
+ * Wire format (little-endian throughout, except float64 which is big-endian):
  *
  *   File header:
  *     [4]  magic  = 0x56 0x46 0x53 0x21  ("VFS!")
- *     [1]  version = 0x02
+ *     [1]  version = 0x03
  *
- *   Node (recursive):
- *     [1]  type    = 0x01 (file) | 0x02 (directory)
+ *   Node (all types):
+ *     [1]  type       = 0x01 (file) | 0x02 (directory) | 0x03 (device)
  *     [2]  name length (uint16)
  *     [N]  name bytes (utf8)
  *     [4]  mode (uint32)
- *     [4]  uid (uint32)
- *     [4]  gid (uint32)
- *     [8]  createdAt ms (float64)
- *     [8]  updatedAt ms (float64)
+ *     [4]  uid (uint32)         -- only if version >= 0x02
+ *     [4]  gid (uint32)         -- only if version >= 0x02
+ *     [8]  createdAt ms (float64, big-endian, via writeDoubleBE)
+ *     [8]  updatedAt ms (float64, big-endian, via writeDoubleBE)
  *
- *   File node extra:
- *     [1]  compressed flag (0x00 | 0x01)
+ *   File node extra (type == 0x01):
+ *     [1]  compressed flag     (0x00 = raw, 0x01 = gzip via fflate)
  *     [4]  content length (uint32)
- *     [N]  content bytes (raw — no base64)
+ *     [N]  content bytes       (raw binary — no base64)
  *
- *   Directory node extra:
+ *   Directory node extra (type == 0x02):
  *     [4]  children count (uint32)
- *     [N]  children nodes (recursive)
+ *     [N]  children nodes      (recursive, each with full header + extra)
  *
- * Total overhead vs JSON+base64 for 1 MB of file data:
- *   JSON+base64 :  ~1.37 MB (base64 33% bloat) + JSON string wrapping
- *   Binary pack :  ~1.00 MB + ~40 bytes/node header  → ~27% smaller, no string parsing
+ *   Device node extra (type == 0x03):
+ *     [1]  device kind code    (see DEVICE_KIND_MAP — null=0x01 .. console=0x07)
+ *     [1]  major               (device major number)
+ *     [1]  minor               (device minor number)
+ *
+ * Version history:
+ *   0x01  — initial format (uid/gid not stored; defaults to 0/0).
+ *   0x02  — added uid (u32) and gid (u32) fields to node header.
+ *   0x03  — added device node type (0x03) with kind/major/minor.
+ *
+ * Stub files (InternalStubNode) are promoted to real file nodes on serialisation
+ * — their stubContent is written as regular content. On deserialisation they
+ * become regular InternalFileNode (never stubs).
+ *
+ * Auto-detection: isBinarySnapshot() checks the first 4 bytes for the magic.
+ * See restoreMirror() in index.ts for the full detection chain:
+ *   VFSB → squashfs → tar/gzip → legacy JSON.
+ *
+ * @module binaryPack
  */
 
 import type {

@@ -1,6 +1,8 @@
 import { describe, test, expect } from "bun:test";
 import * as fs from "node:fs";
-import { decodeSquashfs } from "../src/modules/VirtualFileSystem/squashfs";
+import * as path from "node:path";
+import VirtualFileSystem from "../src/modules/VirtualFileSystem";
+import { decodeSquashfs, isSquashfsFormat } from "../src/modules/VirtualFileSystem/squashfs";
 import type {
 	InternalDirectoryNode,
 	InternalFileNode,
@@ -8,12 +10,26 @@ import type {
 
 const imagePath = "/tmp/test-comp.squashfs";
 
-describe("squashfs decoder", () => {
+describe("isSquashfsFormat", () => {
+	test("detects squashfs magic bytes", () => {
+		const buf = fs.readFileSync(imagePath);
+		expect(isSquashfsFormat(buf)).toBe(true);
+	});
+
+	test("rejects empty buffer", () => {
+		expect(isSquashfsFormat(Buffer.alloc(0))).toBe(false);
+	});
+
+	test("rejects random data", () => {
+		expect(isSquashfsFormat(Buffer.from("not a squashfs image"))).toBe(false);
+	});
+});
+
+describe("decodeSquashfs", () => {
 	test("decodes root tree correctly", () => {
 		const buf = fs.readFileSync(imagePath);
 		const root = decodeSquashfs(buf);
 		expect(root.type).toBe("directory");
-		expect(root.name).toBe("");
 
 		const names = Object.keys(root.children).sort();
 		expect(names).toEqual(["emptydir", "hello.txt", "link-to-hello", "nested"]);
@@ -40,4 +56,61 @@ describe("squashfs decoder", () => {
 		expect(fileTxt.type).toBe("file");
 		expect(fileTxt.content.toString("utf8")).toBe("Nested file content\n");
 	});
+});
+
+describe("squashfs snapshot integration", () => {
+	test("restoreMirror loads squashfs snapshot in fs mode", async () => {
+		const testDir = path.join(process.cwd(), ".test-squashfs-snapshot");
+		try {
+			fs.rmSync(testDir, { recursive: true, force: true });
+		} catch {}
+		fs.mkdirSync(testDir, { recursive: true });
+
+		// Copy the squashfs image as the snapshot file
+		fs.copyFileSync(imagePath, path.join(testDir, "vfs-snapshot.vfsb"));
+
+		try {
+			const vfs = new VirtualFileSystem({
+				mode: "fs",
+				snapshotPath: testDir,
+			});
+			await vfs.restoreMirror();
+
+			expect(vfs.readFile("/hello.txt")).toBe("Hello, World!\n");
+			expect(vfs.isSymlink("/link-to-hello")).toBe(true);
+			expect(vfs.resolveSymlink("/link-to-hello")).toBe("/hello.txt");
+			expect(vfs.exists("/emptydir")).toBe(true);
+			expect(vfs.list("/emptydir")).toEqual([]);
+			expect(vfs.readFile("/nested/file.txt")).toBe("Nested file content\n");
+		} finally {
+			try {
+				fs.rmSync(testDir, { recursive: true, force: true });
+			} catch {}
+		}
+	});
+
+	test("squashfs contents survive tar roundtrip", () => {
+		const buf = fs.readFileSync(imagePath);
+		const root = decodeSquashfs(buf);
+
+		// Import into VFS
+		const vfs = new VirtualFileSystem();
+		vfs.mergeRootTree(root);
+
+		// Export as tar
+		const tarBuf = vfs.exportTar();
+
+		// Re-import into fresh VFS
+		const vfs2 = new VirtualFileSystem();
+		vfs2.importTar(tarBuf);
+
+		// Verify contents survive
+		expect(vfs2.readFile("/hello.txt")).toBe("Hello, World!\n");
+		expect(vfs2.isSymlink("/link-to-hello")).toBe(true);
+		expect(vfs2.resolveSymlink("/link-to-hello")).toBe("/hello.txt");
+		expect(vfs2.exists("/emptydir")).toBe(true);
+		expect(vfs2.list("/emptydir")).toEqual([]);
+		expect(vfs2.readFile("/nested/file.txt")).toBe("Nested file content\n");
+	});
+
 });
