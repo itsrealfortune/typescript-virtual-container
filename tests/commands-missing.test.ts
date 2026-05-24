@@ -622,3 +622,55 @@ describe("error handling and edge cases", () => {
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 });
+
+// ─── REALPATH tests ─────────────────────────────────────────────────────────
+
+describe("realpath command", () => {
+	test("realpath resolves absolute path", async () => {
+		const r = await runCmd(client, "realpath /tmp");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.trim()).toBe("/tmp");
+	});
+
+	test("realpath resolves relative path", async () => {
+		const r = await runCmd(client, "cd /tmp && realpath .");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.trim()).toBe("/tmp");
+	});
+
+	test("realpath missing operand", async () => {
+		const r = await runCmd(client, "realpath");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("missing operand");
+	});
+
+	test("realpath resolves symlink", async () => {
+		shell.vfs.writeFile("/tmp/real_target.txt", "hello");
+		shell.vfs.symlink("/tmp/real_target.txt", "/tmp/real_link.txt");
+		const r = await runCmd(client, "realpath /tmp/real_link.txt");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.trim()).toBe("/tmp/real_target.txt");
+	});
+});
+
+// ─── TIMEOUT tests ──────────────────────────────────────────────────────────
+
+describe("timeout command", () => {
+	test("timeout with valid command", async () => {
+		const r = await runCmd(client, "timeout 1 echo hello");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.trim()).toBe("hello");
+	});
+
+	test("timeout missing operand", async () => {
+		const r = await runCmd(client, "timeout");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("missing operand");
+	});
+
+	test("timeout runs command with args", async () => {
+		const r = await runCmd(client, "timeout 5 echo hello world");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout?.trim()).toBe("hello world");
+	});
+});

@@ -753,3 +753,177 @@ describe("ip command", () => {
 		expect(r.stderr).toContain("Usage");
 	});
 });
+
+// ─── IFCONFIG tests ─────────────────────────────────────────────────────────
+
+describe("ifconfig command", () => {
+	test("ifconfig shows all interfaces", async () => {
+		const r = await runCmd(client, "ifconfig");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout).toContain("lo");
+	});
+
+	test("ifconfig specific interface", async () => {
+		const r = await runCmd(client, "ifconfig lo");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout).toContain("lo");
+	});
+
+	test("ifconfig unknown interface", async () => {
+		const r = await runCmd(client, "ifconfig nonexistent");
+		expect(r.exitCode).toBe(1);
+	});
+
+	test("ifconfig -a shows all", async () => {
+		const r = await runCmd(client, "ifconfig -a");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("ifconfig interface up/down", async () => {
+		const r = await runCmd(client, "ifconfig eth0 up");
+		expect(r.exitCode).toBe(0);
+		const r2 = await runCmd(client, "ifconfig eth0 down");
+		expect(r2.exitCode).toBe(0);
+	});
+
+	test("ifconfig set inet address", async () => {
+		const r = await runCmd(client, "ifconfig eth0 inet 10.0.0.2");
+		expect(r.exitCode).toBe(0);
+	});
+});
+
+// ─── TC tests ───────────────────────────────────────────────────────────────
+
+describe("tc command", () => {
+	test("tc no args errors", async () => {
+		const r = await runCmd(client, "tc");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("Usage");
+	});
+
+	test("tc qdisc show lists disciplines", async () => {
+		const r = await runCmd(client, "tc qdisc show");
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout).toContain("qdisc");
+	});
+
+	test("tc qdisc show dev eth0", async () => {
+		const r = await runCmd(client, "tc qdisc show dev lo");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("tc qdisc add with netem", async () => {
+		const r = await runCmd(
+			client,
+			"tc qdisc add dev eth0 root netem delay 100ms"
+		);
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("tc qdisc change latency", async () => {
+		const r = await runCmd(
+			client,
+			"tc qdisc change dev eth0 root netem delay 200ms"
+		);
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("tc qdisc add with loss", async () => {
+		const r = await runCmd(
+			client,
+			"tc qdisc add dev eth0 root netem loss 10%"
+		);
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("tc class show", async () => {
+		const r = await runCmd(client, "tc class show dev eth0");
+		expect(r.exitCode).toBe(0);
+	});
+});
+
+// ─── SS tests ───────────────────────────────────────────────────────────────
+
+describe("ss command", () => {
+	test("ss shows sockets", async () => {
+		const r = await runCmd(client, "ss");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("ss -t shows TCP", async () => {
+		const r = await runCmd(client, "ss -t");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("ss -u shows UDP", async () => {
+		const r = await runCmd(client, "ss -u");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("ss -l shows listening", async () => {
+		const r = await runCmd(client, "ss -l");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("ss -a shows all", async () => {
+		const r = await runCmd(client, "ss -a");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("ss -s shows summary", async () => {
+		const r = await runCmd(client, "ss -s");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("ss -n numeric", async () => {
+		const r = await runCmd(client, "ss -n");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("ss -p shows processes", async () => {
+		const r = await runCmd(client, "ss -p");
+		expect(r.exitCode).toBe(0);
+	});
+});
+
+// ─── CONNTRACK tests ────────────────────────────────────────────────────────
+
+describe("conntrack command", () => {
+	test("conntrack -L lists entries", async () => {
+		const r = await runCmd(client, "conntrack -L");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("conntrack with no args", async () => {
+		const r = await runCmd(client, "conntrack");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("conntrack -S shows stats", async () => {
+		const r = await runCmd(client, "conntrack -S");
+		expect(r.exitCode).toBe(0);
+	});
+});
+
+// ─── TRACEROUTE tests ────────────────────────────────────────────────────────
+
+describe("traceroute command", () => {
+	test("traceroute no args errors", async () => {
+		const r = await runCmd(client, "traceroute");
+		expect(r.exitCode).toBe(1);
+		expect(r.stderr).toContain("Usage");
+	});
+
+	test("traceroute to localhost", async () => {
+		const r = await runCmd(client, "traceroute localhost 2>/dev/null");
+		expect(r.exitCode).toBe(0);
+	});
+
+	test("traceroute with options", async () => {
+		const r = await runCmd(
+			client,
+			"traceroute -m 5 -q 1 localhost 2>/dev/null"
+		);
+		expect(r.exitCode).toBe(0);
+	});
+});
