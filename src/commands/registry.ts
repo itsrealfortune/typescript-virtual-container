@@ -128,7 +128,9 @@ import {straceCommand} from "./strace";
 import {suCommand} from "./su";
 import {sudoCommand} from "./sudo";
 import {swapCommand} from "./swap";
+import {umountCommand} from "./umount";
 import {sysctlCommand} from "./sysctl";
+import {mountCommand} from "./mount";
 import {lscpuCommand, lspciCommand, lsusbCommand} from "./sysinfo";
 import {tailCommand} from "./tail";
 import {tarCommand} from "./tar";
@@ -334,6 +336,8 @@ const BASE_COMMANDS: ShellModule[] = [
 	thunarCommand,
 	mousepadCommand,
 	// System (extended)
+	mountCommand,
+	umountCommand,
 	uptimeCommand,
 	freeCommand,
 	lsbReleaseCommand,
