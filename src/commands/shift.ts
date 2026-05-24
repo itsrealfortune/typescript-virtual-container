@@ -39,13 +39,52 @@ export const trapCommand: ShellModule = {
 	description: "Trap signals and events",
 	category: "shell",
 	params: ["[action] [signal...]"],
-	// Store trap handlers in env for EXIT signal support
 	run: ({args, env}) => {
-		if (!env || args.length === 0) {
+		if (!env) {
 			return {exitCode: 0};
 		}
+
+		// trap -p — display active traps
+		if (args.includes("-p") || args.length === 0) {
+			const lines: string[] = [];
+			for (const [k, v] of Object.entries(env.vars)) {
+				if (k.startsWith("__trap_") && v) {
+					const sig = k.slice(7);
+					lines.push(`trap -- '${v}' ${sig}`);
+				}
+			}
+			return {
+				stdout: lines.length > 0 ? `${lines.join("\n")}\n` : "",
+				exitCode: 0,
+			};
+		}
+
+		// trap - SIGNAL — reset to default
+		if (args[0] === "-") {
+			const signals = args.slice(1);
+			for (const sig of signals) {
+				delete env.vars[`__trap_${sig.toUpperCase()}`];
+			}
+			return {exitCode: 0};
+		}
+
 		const action = args[0] ?? "";
 		const signals = args.slice(1);
+		if (signals.length === 0) {
+			// Just print traps for named signals
+			const lines: string[] = [];
+			for (const sig of signals) {
+				const handler = env.vars[`__trap_${sig.toUpperCase()}`];
+				if (handler) {
+					lines.push(`trap -- '${handler}' ${sig}`);
+				}
+			}
+			if (lines.length > 0) {
+				return {stdout: `${lines.join("\n")}\n`, exitCode: 0};
+			}
+			return {exitCode: 0};
+		}
+
 		for (const sig of signals) {
 			env.vars[`__trap_${sig.toUpperCase()}`] = action;
 		}

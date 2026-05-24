@@ -88,8 +88,49 @@ export const waitCommand: ShellModule = {
 	name: "wait",
 	description: "Wait for background jobs to finish",
 	category: "shell",
-	params: ["[job_id...]"],
-	run: () => ({exitCode: 0}),
+	params: ["[-n] [job_id...]"],
+	run: ({args, shell, env}) => {
+		const waitNext = args.includes("-n");
+		const jobIds = args.filter((a) => a !== "-n");
+
+		const procs = shell.users.listProcesses();
+
+		if (waitNext) {
+			const running = procs.filter(
+				(p) => p.status === "running" || p.status === "stopped"
+			);
+			if (running.length === 0) {
+				// No active jobs to wait for
+				if (env) {
+					env.vars.__wait_exit = "127";
+				}
+				return {exitCode: 127};
+			}
+			// Return exit code of the most recent background job
+			const lastRunning = running.pop();
+			if (lastRunning && env) {
+				env.vars.__wait_exit = String(lastRunning.exitCode ?? 0);
+			}
+			return {exitCode: lastRunning?.exitCode ?? 0};
+		}
+
+		if (jobIds.length > 0) {
+			for (const id of jobIds) {
+				const pid = Number.parseInt(id.replace(/^%?/, ""), 10);
+				const proc = procs.find((p) => p.pid === pid);
+				if (proc) {
+					proc.status = "done";
+				}
+			}
+			return {exitCode: 0};
+		}
+
+		// Wait for all background jobs
+		for (const p of procs) {
+			p.status = "done";
+		}
+		return {exitCode: 0};
+	},
 };
 
 /**

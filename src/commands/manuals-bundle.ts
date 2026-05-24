@@ -1786,19 +1786,25 @@ NAME
        read - read a line from standard input
 
 SYNOPSIS
-       read [-r] [-p PROMPT] [-s] NAME...
+       read [-rs] [-d delim] [-n nchars] [-p prompt] [-t timeout] [-a array] [NAME...]
 
 OPTIONS
-       -r    do not allow backslashes to escape characters
-       -p PROMPT  output the string PROMPT before reading
-       -s    do not echo input (silent, for passwords)
-       -n N  return after reading N characters
+       -r        Do not allow backslashes to escape characters.
+       -d delim  Read until DELIM instead of newline.
+       -n nchars Return after reading NCHARS characters.
+       -p PROMPT Output PROMPT before reading.
+       -s        Silent mode (do not echo input).
+       -t TIMEOUT Time out after TIMEOUT seconds.
+       -a ARRAY  Store words into array ARRAY.
 
 EXAMPLES
        read name
        read -p "Enter name: " name
        read -s password
-       read -r line`,
+       read -r line
+       read -d: field
+       read -n 5 first5
+       read -a arr`,
 	readlink: `READLINK(1)               User Commands                READLINK(1)
 
 NAME
@@ -2721,20 +2727,23 @@ NAME
        wait - wait for job completion
 
 SYNOPSIS
-       wait [jobspec or pid ...]
+       wait [-n] [jobspec or pid ...]
+
+OPTIONS
+       -n     Wait for the next background job to complete and return
+              its exit status.
 
 DESCRIPTION
-       Wait for each specified process or job and return its termination
-       status. If no arguments are given, wait for all currently active
-       background jobs.
-
-       In this environment, background jobs are fire-and-forget; wait
-       returns immediately with exit code 0.
+       Wait for each specified process or job and return its
+       termination status.  If no arguments are given, wait for all
+       currently active background jobs.
 
 EXAMPLES
        sleep 5 &
        wait
-       echo "done"`,
+       echo "done"
+       sleep 3 &
+       wait -n`,
 	wc: `WC(1)                    User Commands                      WC(1)
 
 NAME
