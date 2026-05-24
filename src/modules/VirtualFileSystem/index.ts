@@ -46,6 +46,7 @@ import {
 	X_OK,
 } from "./permissions";
 import { SwapStore, type SwapStats } from "./swapStore";
+import { decodeTar, encodeTar, isTarFormat } from "./tarFormat";
 
 // ── Persistence options ───────────────────────────────────────────────────────
 
@@ -678,17 +679,20 @@ class VirtualFileSystem extends EventEmitter {
 			} else {
 				raw = fsSync.readFileSync(this._snapshotFile);
 			}
-			if (isBinarySnapshot(raw)) {
-				// Fast binary format (current)
-				this._root = decodeVfs(raw);
-			} else {
-				// Legacy JSON fallback — auto-migrates on next flushMirror()
-				const snapshot: VfsSnapshot = JSON.parse(raw.toString("utf8"));
-				this._root = this._deserializeDir(snapshot.root, "");
-				console.info(
-					"[VirtualFileSystem] Migrating legacy JSON snapshot to binary format."
-				);
-			}
+		if (isBinarySnapshot(raw)) {
+			this._root = decodeVfs(raw);
+		} else if (isTarFormat(raw) || (raw.length > 2 && raw[0] === 0x1f && raw[1] === 0x8b)) {
+			this._root = decodeTar(raw);
+			console.info(
+				"[VirtualFileSystem] Loaded snapshot from tar format; will migrate to VFSB on next flush."
+			);
+		} else {
+			const snapshot: VfsSnapshot = JSON.parse(raw.toString("utf8"));
+			this._root = this._deserializeDir(snapshot.root, "");
+			console.info(
+				"[VirtualFileSystem] Migrating legacy JSON snapshot to binary format."
+			);
+		}
 			this.emit("snapshot:restore", { path: this._snapshotFile });
 			// Replay WAL journal on top of the loaded snapshot
 			if (this._journalFile) {
@@ -901,6 +905,26 @@ class VirtualFileSystem extends EventEmitter {
 	 */
 	public encodeBinary(): Buffer {
 		return encodeVfs(this._root);
+	}
+
+	/**
+	 * Serialise current tree to POSIX ustar tar format.
+	 * Device nodes are stored as character device entries (typeflag '3').
+	 * Symlinks use typeflag '2' with the link target in the linkname field.
+	 * @returns Buffer containing the tar archive.
+	 */
+	public exportTar(): Buffer {
+		return encodeTar(this._root);
+	}
+
+	/**
+	 * Import a POSIX ustar tar archive into the VFS, replacing the current tree.
+	 * Supports gzip-compressed archives (auto-detected).
+	 * @param buf - Buffer containing the tar archive.
+	 */
+	public importTar(buf: Buffer): void {
+		this._root = decodeTar(buf);
+		this.emit("snapshot:import");
 	}
 
 	/**
