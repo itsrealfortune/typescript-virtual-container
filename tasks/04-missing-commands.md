@@ -11,12 +11,12 @@
 ## Commands to implement (by priority)
 
 ### P1 — System administration
-- [ ] `mount` / `umount` — mount/unmount virtual filesystems
-- [ ] `systemctl` — systemd interface (start/stop/status/enable)
-- [ ] `journalctl` — system logs
-- [ ] `ssh-keygen` — SSH key generation
-- [ ] `crontab` — task scheduling
-- [ ] `at` — delayed execution
+- [x] `mount` / `umount` — mount/unmount virtual filesystems
+- [x] `systemctl` — systemd interface (start/stop/status/enable)
+- [x] `journalctl` — system logs
+- [x] `ssh-keygen` — SSH key generation
+- [x] `crontab` — task scheduling
+- [x] `at` — delayed execution
 
 ### P1 — Editing and viewing
 - [ ] `less` — pagination with search (highly requested)

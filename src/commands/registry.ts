@@ -19,6 +19,7 @@ import {chmodCommand} from "./chmod";
 import {chownCommand} from "./chown";
 import {clearCommand} from "./clear";
 import {conntrackCommand} from "./conntrack";
+import {crontabCommand} from "./crontab";
 import {
 	columnCommand,
 	mktempCommand,
@@ -67,7 +68,9 @@ import {gunzipCommand, gzipCommand} from "./gzip";
 import {headCommand} from "./head";
 import {createHelpCommand} from "./help";
 import {historyCommand} from "./history";
+import {atCommand, atqCommand, atrmCommand} from "./at";
 import {hostnameCommand} from "./hostname";
+import {journalctlCommand} from "./journalctl";
 import {htopCommand} from "./htop";
 import {idCommand} from "./id";
 import {ifconfigCommand} from "./ifconfig";
@@ -121,6 +124,7 @@ import {returnCommand, shiftCommand, trapCommand} from "./shift";
 import {sleepCommand} from "./sleep";
 import {sortCommand} from "./sort";
 import {sourceCommand} from "./source";
+import {sshKeygenCommand} from "./ssh-keygen";
 import {ssCommand} from "./ss";
 import {startxfce4Command} from "./startxfce4";
 import {statCommand} from "./stat";
@@ -128,6 +132,7 @@ import {straceCommand} from "./strace";
 import {suCommand} from "./su";
 import {sudoCommand} from "./sudo";
 import {swapCommand} from "./swap";
+import {systemctlCommand} from "./systemctl";
 import {umountCommand} from "./umount";
 import {sysctlCommand} from "./sysctl";
 import {mountCommand} from "./mount";
@@ -338,6 +343,13 @@ const BASE_COMMANDS: ShellModule[] = [
 	// System (extended)
 	mountCommand,
 	umountCommand,
+	systemctlCommand,
+	journalctlCommand,
+	sshKeygenCommand,
+	crontabCommand,
+	atCommand,
+	atqCommand,
+	atrmCommand,
 	uptimeCommand,
 	freeCommand,
 	lsbReleaseCommand,

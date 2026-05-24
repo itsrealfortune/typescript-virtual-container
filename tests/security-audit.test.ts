@@ -99,7 +99,7 @@ describe("node:vm sandbox", () => {
 
 	test("node -e runs code in sandboxed context", async () => {
 		const r = await client.exec(
-			'node -e "console.log(typeof process !== \"undefined\" ? process.platform : \"undefined\")"'
+			'node -e "console.log(typeof process !== "undefined" ? process.platform : "undefined")"'
 		);
 		expect(r.stdout).toContain("linux");
 	});
