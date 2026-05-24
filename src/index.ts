@@ -39,6 +39,11 @@ export {
 	withTerminalSize,
 } from "./modules/shellRuntime";
 export type {TerminalSize} from "./modules/shellRuntime";
+export {SandboxedShell} from "./modules/SandboxedShell/index";
+export type {
+	SandboxedShellOptions,
+	ExecResult,
+} from "./modules/SandboxedShell/index";
 export {SshClient} from "./modules/SSHClient/index";
 export {runExec} from "./modules/SSHMimic/exec";
 export {loadOrCreateHostKey} from "./modules/SSHMimic/hostKey";
