@@ -8,7 +8,7 @@
 
 /** Static map of command name → man page content. */
 export const MANUALS: Readonly<Record<string, string>> = {
-	"adduser": `ADDUSER(8)                User Commands                ADDUSER(8)
+	adduser: `ADDUSER(8)                User Commands                ADDUSER(8)
 
 NAME
        adduser - add a user to the system
@@ -19,7 +19,7 @@ SYNOPSIS
 DESCRIPTION
        Create a new user account with a home directory.
        In this environment, prompts for a password interactively.`,
-	"alias": `ALIAS(1)                 User Commands                    ALIAS(1)
+	alias: `ALIAS(1)                 User Commands                    ALIAS(1)
 
 NAME
        alias - define or display aliases
@@ -47,7 +47,7 @@ COMMANDS
        search term    search package names/descriptions
        show pkg       show package metadata
        policy pkg     show package policy and candidate versions`,
-	"apt": `APT(8)                   APT                             APT(8)
+	apt: `APT(8)                   APT                             APT(8)
 
 NAME
        apt - command-line interface
@@ -67,7 +67,7 @@ COMMANDS
        search term      Search in package descriptions
        show pkg         Show package information
        list             List packages`,
-	"awk": `AWK(1)                   User Commands                     AWK(1)
+	awk: `AWK(1)                   User Commands                     AWK(1)
 
 NAME
        awk - pattern scanning and processing language
@@ -80,7 +80,7 @@ DESCRIPTION
 
 OPTIONS
        -F fs    use fs as input field separator`,
-	"base64": `BASE64(1)                User Commands                   BASE64(1)
+	base64: `BASE64(1)                User Commands                   BASE64(1)
 
 NAME
        base64 - encode/decode data in base64
@@ -95,7 +95,7 @@ OPTIONS
 EXAMPLES
        echo 'hello' | base64
        echo 'aGVsbG8=' | base64 -d`,
-	"basename": `BASENAME(1)              User Commands                 BASENAME(1)
+	basename: `BASENAME(1)              User Commands                 BASENAME(1)
 
 NAME
        basename - strip directory and suffix from filenames
@@ -112,7 +112,7 @@ EXAMPLES
        basename /usr/bin/vim        # vim
        basename /etc/hosts .conf    # hosts
        basename -a /a/b /c/d        # b\\nd`,
-	"bc": `BC(1)                  User Commands                  BC(1)
+	bc: `BC(1)                  User Commands                  BC(1)
 
 NAME
        bc - an arbitrary precision calculator language
@@ -128,7 +128,7 @@ EXAMPLES
        bc           # start interactive calculator
        echo "2+2" | bc   # calculate 2+2
        echo "scale=2; 10/3" | bc   # division with 2 decimal places`,
-	"builtin": `BUILTIN(1)               Shell Builtins              BUILTIN(1)
+	builtin: `BUILTIN(1)               Shell Builtins              BUILTIN(1)
 
 NAME
        builtin - run a shell builtin command
@@ -154,7 +154,7 @@ EXAMPLES
        builtin echo hello
        builtin readonly
        builtin set -o`,
-	"bzip2": `BZIP2(1)               User Commands               BZIP2(1)
+	bzip2: `BZIP2(1)               User Commands               BZIP2(1)
 
 NAME
        bzip2 - a block-sorting file compressor
@@ -176,7 +176,7 @@ EXAMPLES
        bzip2 file.txt        # compress file.txt to file.txt.bz2
        bzip2 -d file.txt.bz2 # decompress
        bzip2 -k file.txt     # compress but keep original`,
-	"caller": `CALLER(1)                User Commands                    CALLER(1)
+	caller: `CALLER(1)                User Commands                    CALLER(1)
 
 NAME
        caller - print the current call stack frame
@@ -195,7 +195,7 @@ EXAMPLES
        caller
        caller 0
        caller 1`,
-	"cat": `CAT(1)                   User Commands                    CAT(1)
+	cat: `CAT(1)                   User Commands                    CAT(1)
 
 NAME
        cat - concatenate files and print on the standard output
@@ -209,7 +209,7 @@ DESCRIPTION
 OPTIONS
        -n, --number          number all output lines
        -b, --number-nonblank number nonempty output lines`,
-	"cd": `CD(1)                    Shell Builtins                    CD(1)
+	cd: `CD(1)                    Shell Builtins                    CD(1)
 
 NAME
        cd - change the shell working directory
@@ -225,7 +225,7 @@ EXAMPLES
        cd /etc
        cd ..
        cd ~`,
-	"chage": `CHAGE(1)               User Commands               CHAGE(1)
+	chage: `CHAGE(1)               User Commands               CHAGE(1)
 
 NAME
        chage - change user password expiry information
@@ -250,7 +250,7 @@ EXAMPLES
        chage -W 7 alice            # warn 7 days before expiry
        chage -E 2025-12-31 alice   # account expires end of 2025
        chage -l alice              # show alice's aging info`,
-	"chgrp": `CHGRP(1)               User Commands               CHGRP(1)
+	chgrp: `CHGRP(1)               User Commands               CHGRP(1)
 
 NAME
        chgrp - change group ownership
@@ -271,7 +271,7 @@ EXAMPLES
        chgrp staff file.txt      # change group to staff
        chgrp -R users /dir/      # recursive group change
        chgrp --reference=ref.txt file.txt  # copy group from ref`,
-	"chmod": `CHMOD(1)                 User Commands                    CHMOD(1)
+	chmod: `CHMOD(1)                 User Commands                    CHMOD(1)
 
 NAME
        chmod - change file mode bits
@@ -287,7 +287,7 @@ EXAMPLES
        chmod 755 script.sh      rwxr-xr-x
        chmod 644 file.txt       rw-r--r--
        chmod +x script.sh       add execute permission`,
-	"chown": `CHOWN(1)               User Commands               CHOWN(1)
+	chown: `CHOWN(1)               User Commands               CHOWN(1)
 
 NAME
        chown - change file owner and group
@@ -309,7 +309,7 @@ EXAMPLES
        chown root file.txt       # change owner to root
        chown root:staff file.txt # change owner and group
        chown -R www-data /var/www  # recursive ownership change`,
-	"clear": `CLEAR(1)                 User Commands                   CLEAR(1)
+	clear: `CLEAR(1)                 User Commands                   CLEAR(1)
 
 NAME
        clear - clear the terminal screen
@@ -319,7 +319,7 @@ SYNOPSIS
 
 DESCRIPTION
        Clear the display and move cursor to top-left.`,
-	"cmatrix": `CMATRIX(1)               User Commands                 CMATRIX(1)
+	cmatrix: `CMATRIX(1)               User Commands                 CMATRIX(1)
 
 NAME
        cmatrix - show a scrolling Matrix-like screen
@@ -338,7 +338,7 @@ OPTIONS
 
 EXAMPLES
        cmatrix`,
-	"column": `COLUMN(1)                User Commands                   COLUMN(1)
+	column: `COLUMN(1)                User Commands                   COLUMN(1)
 
 NAME
        column - columnate lists
@@ -360,7 +360,7 @@ EXAMPLES
        mount | column -t
        cat /etc/passwd | column -t -s:
        column -t file.txt`,
-	"comm": `COMM(1)                  User Commands                  COMM(1)
+	comm: `COMM(1)                  User Commands                  COMM(1)
 
 NAME
        comm - compare two sorted files line by line
@@ -371,7 +371,7 @@ SYNOPSIS
 DESCRIPTION
        Compare FILE1 and FILE2 line by line, producing
        three-column output of common and unique lines.`,
-	"command": `COMMAND(1)               User Commands                    COMMAND(1)
+	command: `COMMAND(1)               User Commands                    COMMAND(1)
 
 NAME
        command - run a command or display information about it
@@ -395,7 +395,7 @@ EXAMPLES
        command -v ls
        command -V ls
        command -p ls -la`,
-	"conntrack": `CONNTRACK(8)       System Administration       CONNTRACK(8)
+	conntrack: `CONNTRACK(8)       System Administration       CONNTRACK(8)
 
 NAME
        conntrack - connection tracking administration tool
@@ -421,7 +421,7 @@ EXAMPLES
        conntrack -L -p tcp       # list only TCP connections
        conntrack -E              # monitor connection events
        conntrack -F              # flush tracking table`,
-	"cowsay": `COWSAY(1)                User Commands                  COWSAY(1)
+	cowsay: `COWSAY(1)                User Commands                  COWSAY(1)
 
 NAME
        cowsay - configurable speaking/thinking cow
@@ -442,7 +442,7 @@ EXAMPLES
        echo 'Moo.' | cowsay
        fortune | cowsay
        cowthink 'Hmm...'`,
-	"cp": `CP(1)                    User Commands                      CP(1)
+	cp: `CP(1)                    User Commands                      CP(1)
 
 NAME
        cp - copy files and directories
@@ -452,7 +452,7 @@ SYNOPSIS
 
 OPTIONS
        -r     copy directories recursively`,
-	"csplit": `CSPLIT(1)                User Commands                CSPLIT(1)
+	csplit: `CSPLIT(1)                User Commands                CSPLIT(1)
 
 NAME
        csplit - split a file into pieces by context
@@ -463,7 +463,7 @@ SYNOPSIS
 DESCRIPTION
        Split FILE into pieces based on context lines
        matching PATTERN, creating numbered output files.`,
-	"curl": `CURL(1)                  User Commands                    CURL(1)
+	curl: `CURL(1)                  User Commands                    CURL(1)
 
 NAME
        curl - transfer a URL
@@ -483,7 +483,7 @@ OPTIONS
        -I, --head              Show document info only
        -L, --location          Follow redirects
        -v, --verbose           Make the operation more talkative`,
-	"cut": `CUT(1)                   User Commands                     CUT(1)
+	cut: `CUT(1)                   User Commands                     CUT(1)
 
 NAME
        cut - remove sections from each line of files
@@ -501,7 +501,7 @@ EXAMPLES
        echo 'a:b:c' | cut -d: -f2       # b
        echo 'hello' | cut -c1-3         # hel
        cut -d, -f1 file.csv`,
-	"date": `DATE(1)                  User Commands                    DATE(1)
+	date: `DATE(1)                  User Commands                    DATE(1)
 
 NAME
        date - print or set the system date and time
@@ -515,7 +515,7 @@ DESCRIPTION
 EXAMPLES
        date
        date +%Y-%m-%d`,
-	"dd": `DD(1)                    User Commands                    DD(1)
+	dd: `DD(1)                    User Commands                    DD(1)
 
 NAME
        dd - convert and copy a file
@@ -527,7 +527,7 @@ DESCRIPTION
        Copy a file with optional conversions.  Operands
        specify input file, output file, block size, and
        count.`,
-	"declare": `DECLARE(1)               Shell Builtins               DECLARE(1)
+	declare: `DECLARE(1)               Shell Builtins               DECLARE(1)
 
 NAME
        declare, local, typeset - set variable values and attributes
@@ -556,7 +556,7 @@ EXAMPLES
        declare -i count=0
        local myvar=hello
        declare -x MY_ENV=value`,
-	"deluser": `DELUSER(8)                User Commands                DELUSER(8)
+	deluser: `DELUSER(8)                User Commands                DELUSER(8)
 
 NAME
        deluser - remove a user account
@@ -566,7 +566,7 @@ SYNOPSIS
 
 OPTIONS
        -f, --force    remove without interactive confirmation`,
-	"df": `DF(1)                    User Commands                      DF(1)
+	df: `DF(1)                    User Commands                      DF(1)
 
 NAME
        df - report file system disk space usage
@@ -576,7 +576,7 @@ SYNOPSIS
 
 OPTIONS
        -h     print sizes in human readable format`,
-	"diff": `DIFF(1)                  User Commands                     DIFF(1)
+	diff: `DIFF(1)                  User Commands                     DIFF(1)
 
 NAME
        diff - compare files line by line
@@ -594,7 +594,7 @@ OPTIONS
 EXAMPLES
        diff file1.txt file2.txt
        diff -u old.py new.py`,
-	"dirname": `DIRNAME(1)               User Commands                  DIRNAME(1)
+	dirname: `DIRNAME(1)               User Commands                  DIRNAME(1)
 
 NAME
        dirname - strip last component from file name
@@ -610,7 +610,7 @@ EXAMPLES
        dirname /usr/bin/vim    # /usr/bin
        dirname /etc/hosts      # /etc
        dirname foo             # .`,
-	"dmesg": `DMESG(1)                 User Commands                   DMESG(1)
+	dmesg: `DMESG(1)                 User Commands                   DMESG(1)
 
 NAME
        dmesg - print or control the kernel ring buffer
@@ -644,7 +644,7 @@ SYNOPSIS
 OPTIONS
        -W     list installed packages (show format)
        -l     list packages`,
-	"dpkg": `DPKG(1)                  User Commands                    DPKG(1)
+	dpkg: `DPKG(1)                  User Commands                    DPKG(1)
 
 NAME
        dpkg - package manager for Fortune GNU/Linux
@@ -658,7 +658,7 @@ OPTIONS
        -L     list files in package
        -r     remove package
        -P     purge package`,
-	"du": `DU(1)                    User Commands                      DU(1)
+	du: `DU(1)                    User Commands                      DU(1)
 
 NAME
        du - estimate file space usage
@@ -669,7 +669,7 @@ SYNOPSIS
 OPTIONS
        -h     print sizes in human readable format
        -s     display only a total for each argument`,
-	"echo": `ECHO(1)                  User Commands                    ECHO(1)
+	echo: `ECHO(1)                  User Commands                    ECHO(1)
 
 NAME
        echo - display a line of text
@@ -680,7 +680,7 @@ SYNOPSIS
 OPTIONS
        -n     do not output the trailing newline
        -e     enable interpretation of backslash escapes`,
-	"env": `ENV(1)                   User Commands                     ENV(1)
+	env: `ENV(1)                   User Commands                     ENV(1)
 
 NAME
        env - run a program in a modified environment
@@ -700,7 +700,7 @@ EXAMPLES
        env                        # print all variables
        env NODE_ENV=production node app.js
        env -u HOME bash`,
-	"exit": `EXIT(1)                  User Commands                     EXIT(1)
+	exit: `EXIT(1)                  User Commands                     EXIT(1)
 
 NAME
        exit - exit the shell
@@ -716,7 +716,7 @@ EXAMPLES
        exit       # exit with last command's status
        exit 0     # exit successfully
        exit 1     # exit with error`,
-	"expand": `EXPAND(1)                User Commands                EXPAND(1)
+	expand: `EXPAND(1)                User Commands                EXPAND(1)
 
 NAME
        expand - convert tabs to spaces
@@ -727,7 +727,7 @@ SYNOPSIS
 DESCRIPTION
        Convert tabs in each FILE to spaces, writing to
        standard output.`,
-	"export": `EXPORT(1)                User Commands                   EXPORT(1)
+	export: `EXPORT(1)                User Commands                   EXPORT(1)
 
 NAME
        export - set export attribute for shell variables
@@ -751,7 +751,7 @@ EXAMPLES
        export -n PATH
        export -f myfunc
        export -p`,
-	"expr": `EXPR(1)                  User Commands                  EXPR(1)
+	expr: `EXPR(1)                  User Commands                  EXPR(1)
 
 NAME
        expr - evaluate arithmetic expressions
@@ -762,7 +762,7 @@ SYNOPSIS
 DESCRIPTION
        Evaluate an EXPRESSION and print its result.
        Supports arithmetic, string, and logical operators.`,
-	"false": `FALSE(1)                 User Commands                   FALSE(1)
+	false: `FALSE(1)                 User Commands                   FALSE(1)
 
 NAME
        false - do nothing, unsuccessfully
@@ -772,7 +772,7 @@ SYNOPSIS
 
 DESCRIPTION
        Exit with a status code indicating failure (1).`,
-	"file": `FILE(1)                  User Commands                     FILE(1)
+	file: `FILE(1)                  User Commands                     FILE(1)
 
 NAME
        file - determine file type
@@ -793,7 +793,7 @@ EXAMPLES
        file /bin/ls
        file *.txt
        file -b script.sh`,
-	"find": `FIND(1)                  User Commands                    FIND(1)
+	find: `FIND(1)                  User Commands                    FIND(1)
 
 NAME
        find - search for files in a directory hierarchy
@@ -804,7 +804,7 @@ SYNOPSIS
 OPTIONS
        -name PATTERN   base name matches shell PATTERN
        -type TYPE      file type, e.g. f for file, d for directory`,
-	"fmt": `FMT(1)                   User Commands                   FMT(1)
+	fmt: `FMT(1)                   User Commands                   FMT(1)
 
 NAME
        fmt - simple text formatter
@@ -815,7 +815,7 @@ SYNOPSIS
 DESCRIPTION
        Reformat paragraphs from each FILE to a specified
        width, filling and joining lines.`,
-	"fold": `FOLD(1)                  User Commands                  FOLD(1)
+	fold: `FOLD(1)                  User Commands                  FOLD(1)
 
 NAME
        fold - wrap each input line to fit specified width
@@ -826,7 +826,7 @@ SYNOPSIS
 DESCRIPTION
        Wrap lines from each FILE to a specified width
        (default 80), breaking at character boundaries.`,
-	"fortune": `FORTUNE(6)               Games and Amusements          FORTUNE(6)
+	fortune: `FORTUNE(6)               Games and Amusements          FORTUNE(6)
 
 NAME
        fortune - print a random, hopefully interesting adage
@@ -842,7 +842,7 @@ DESCRIPTION
 EXAMPLES
        fortune
        fortune | cowsay`,
-	"free": `FREE(1)                  User Commands                    FREE(1)
+	free: `FREE(1)                  User Commands                    FREE(1)
 
 NAME
        free - display amount of free and used memory in the system
@@ -854,7 +854,7 @@ OPTIONS
        -h     show all output fields automatically scaled
        -m     show output in mebibytes
        -g     show output in gibibytes`,
-	"fun": `FUN(6)                   Games                   FUN(6)
+	fun: `FUN(6)                   Games                   FUN(6)
 
 NAME
        fun - collection of fun commands and easter eggs
@@ -870,7 +870,7 @@ EXAMPLES
        fun cmatrix    # matrix rain effect
        fun fortune    # random fortune quote
        fun cowsay     # ASCII cow says your message`,
-	"getent": `GETENT(1)               User Commands               GETENT(1)
+	getent: `GETENT(1)               User Commands               GETENT(1)
 
 NAME
        getent - get entries from administrative database
@@ -889,7 +889,7 @@ EXAMPLES
        getent passwd root         # show root user entry
        getent group               # list all groups
        getent group sudo          # show sudo group entry`,
-	"gpasswd": `GPASSWD(8)       System Administration       GPASSWD(8)
+	gpasswd: `GPASSWD(8)       System Administration       GPASSWD(8)
 
 NAME
        gpasswd - administer /etc/group
@@ -909,7 +909,7 @@ DESCRIPTION
 EXAMPLES
        gpasswd -a -G developers alice   # add alice to developers
        gpasswd -d -G developers bob     # remove bob from developers`,
-	"grep": `GREP(1)                  User Commands                    GREP(1)
+	grep: `GREP(1)                  User Commands                    GREP(1)
 
 NAME
        grep, egrep, fgrep - print lines that match patterns
@@ -922,7 +922,7 @@ OPTIONS
        -v, --invert-match    select non-matching lines
        -n, --line-number     print line number with output lines
        -r, --recursive       read all files under each directory, recursively`,
-	"groupadd": `GROUPADD(8)       System Administration       GROUPADD(8)
+	groupadd: `GROUPADD(8)       System Administration       GROUPADD(8)
 
 NAME
        groupadd - create a new group
@@ -941,7 +941,7 @@ DESCRIPTION
 EXAMPLES
        groupadd developers        # create group with auto GID
        groupadd -g 2000 staff     # create group with GID 2000`,
-	"groupdel": `GROUPDEL(8)       System Administration       GROUPDEL(8)
+	groupdel: `GROUPDEL(8)       System Administration       GROUPDEL(8)
 
 NAME
        groupdel - delete a group
@@ -955,7 +955,7 @@ DESCRIPTION
 
 EXAMPLES
        groupadd developers       # delete the developers group`,
-	"groups": `GROUPS(1)                User Commands                  GROUPS(1)
+	groups: `GROUPS(1)                User Commands                  GROUPS(1)
 
 NAME
        groups - print the groups a user is in
@@ -965,7 +965,7 @@ SYNOPSIS
 
 DESCRIPTION
        Print group memberships for USER or current user if omitted.`,
-	"gzip": `GZIP(1)                  User Commands                    GZIP(1)
+	gzip: `GZIP(1)                  User Commands                    GZIP(1)
 
 NAME
        gzip, gunzip - compress or expand files
@@ -976,7 +976,7 @@ SYNOPSIS
 
 DESCRIPTION
        Compress or decompress files in place.`,
-	"hash": `HASH(1)                  User Commands                    HASH(1)
+	hash: `HASH(1)                  User Commands                    HASH(1)
 
 NAME
        hash - display and manage the command hash table
@@ -999,7 +999,7 @@ EXAMPLES
        hash
        hash ls cat grep
        hash -r`,
-	"head": `HEAD(1)                  User Commands                    HEAD(1)
+	head: `HEAD(1)                  User Commands                    HEAD(1)
 
 NAME
        head - output the first part of files
@@ -1009,7 +1009,7 @@ SYNOPSIS
 
 OPTIONS
        -n, --lines=[-]NUM    print the first NUM lines`,
-	"help": `HELP(1)                   Shell Builtins                  HELP(1)
+	help: `HELP(1)                   Shell Builtins                  HELP(1)
 
 NAME
        help - display information about builtin commands
@@ -1020,7 +1020,7 @@ SYNOPSIS
 DESCRIPTION
        With no arguments, list available commands.
        With COMMAND, show usage details for that command.`,
-	"history": `HISTORY(1)               Shell Builtins               HISTORY(1)
+	history: `HISTORY(1)               Shell Builtins               HISTORY(1)
 
 NAME
        history - command history list
@@ -1031,7 +1031,7 @@ SYNOPSIS
 DESCRIPTION
        Print recent command history entries.
        If N is provided, print only the last N entries.`,
-	"hostname": `HOSTNAME(1)              User Commands                HOSTNAME(1)
+	hostname: `HOSTNAME(1)              User Commands                HOSTNAME(1)
 
 NAME
        hostname - show or set the system host name
@@ -1041,7 +1041,7 @@ SYNOPSIS
 
 DESCRIPTION
        Print the current host name.`,
-	"htop": `HTOP(1)                  User Commands                    HTOP(1)
+	htop: `HTOP(1)                  User Commands                    HTOP(1)
 
 NAME
        htop - interactive process viewer
@@ -1065,7 +1065,7 @@ KEYS
        F9       kill process
        F10, q   quit
        Up/Down  select process`,
-	"id": `ID(1)                    User Commands                      ID(1)
+	id: `ID(1)                    User Commands                      ID(1)
 
 NAME
        id - print real and effective user and group IDs
@@ -1075,7 +1075,7 @@ SYNOPSIS
 
 DESCRIPTION
        Print user identity information including uid, gid, and groups.`,
-	"ifconfig": `IFCONFIG(8)         System Administration         IFCONFIG(8)
+	ifconfig: `IFCONFIG(8)         System Administration         IFCONFIG(8)
 
 NAME
        ifconfig - configure a network interface
@@ -1097,7 +1097,7 @@ EXAMPLES
        ifconfig           # show active interfaces
        ifconfig -a        # show all interfaces
        ifconfig eth0      # show eth0 details`,
-	"ip": `IP(8)               System Administration              IP(8)
+	ip: `IP(8)               System Administration              IP(8)
 
 NAME
        ip - show/manipulate routing, network devices, interfaces
@@ -1121,7 +1121,7 @@ EXAMPLES
        ip addr show eth0        # show eth0 address
        ip route                 # show routing table
        ip link                  # show link info`,
-	"iptables": `IPTABLES(8)       System Administration       IPTABLES(8)
+	iptables: `IPTABLES(8)       System Administration       IPTABLES(8)
 
 NAME
        iptables - administration tool for IPv4 packet filtering and NAT
@@ -1149,7 +1149,7 @@ EXAMPLES
        iptables -A INPUT -p tcp --dport 22 -j ACCEPT  # allow SSH
        iptables -A INPUT -p tcp --dport 80 -j ACCEPT  # allow HTTP
        iptables -A INPUT -j DROP      # drop everything else`,
-	"jobs": `JOBS(1)                  User Commands                  JOBS(1)
+	jobs: `JOBS(1)                  User Commands                  JOBS(1)
 
 NAME
        jobs - display status of jobs in the current session
@@ -1172,7 +1172,7 @@ EXAMPLES
        jobs          # list all jobs
        jobs -l       # list jobs with PIDs
        jobs -r       # show running jobs only`,
-	"join": `JOIN(1)                  User Commands                  JOIN(1)
+	join: `JOIN(1)                  User Commands                  JOIN(1)
 
 NAME
        join - join lines of two files on a common field
@@ -1183,7 +1183,7 @@ SYNOPSIS
 DESCRIPTION
        Join lines from FILE1 and FILE2 based on a common
        field, writing to standard output.`,
-	"kill": `KILL(1)                  User Commands                    KILL(1)
+	kill: `KILL(1)                  User Commands                    KILL(1)
 
 NAME
        kill - send signals to processes
@@ -1196,7 +1196,7 @@ DESCRIPTION
 
 NOTES
        This environment provides a mock process model.`,
-	"last": `LAST(1)                  User Commands                    LAST(1)
+	last: `LAST(1)                  User Commands                    LAST(1)
 
 NAME
        last - show a listing of last logged in users
@@ -1216,7 +1216,7 @@ EXAMPLES
        last           # show all logins
        last root      # show root logins
        last -n 10     # show last 10 entries`,
-	"ln": `LN(1)                    User Commands                      LN(1)
+	ln: `LN(1)                    User Commands                      LN(1)
 
 NAME
        ln - make links between files
@@ -1233,7 +1233,7 @@ EXAMPLES
        ln -s /usr/bin/python3 /usr/local/bin/python
        ln file.txt hardlink.txt
        ln -sf new_target existing_link`,
-	"ls": `LS(1)                    User Commands                    LS(1)
+	ls: `LS(1)                    User Commands                    LS(1)
 
 NAME
        ls - list directory contents
@@ -1253,7 +1253,7 @@ OPTIONS
 
 AUTHOR
        Written by Richard M. Stallman and David MacKenzie.`,
-	"lsb_release": `LSB_RELEASE(1)           User Commands              LSB_RELEASE(1)
+	lsb_release: `LSB_RELEASE(1)           User Commands              LSB_RELEASE(1)
 
 NAME
        lsb_release - print distribution-specific information
@@ -1273,7 +1273,7 @@ EXAMPLES
        lsb_release -a
        lsb_release -d
        lsb_release -rs`,
-	"lscpu": `LSCPU(1)                 User Commands                 LSCPU(1)
+	lscpu: `LSCPU(1)                 User Commands                 LSCPU(1)
 
 NAME
        lscpu - display CPU architecture information
@@ -1284,7 +1284,7 @@ SYNOPSIS
 DESCRIPTION
        Display information about the CPU architecture,
        including cores, threads, caches, and flags.`,
-	"lsof": `LSOF(8)           System Administration           LSOF(8)
+	lsof: `LSOF(8)           System Administration           LSOF(8)
 
 NAME
        lsof - list open files
@@ -1307,7 +1307,7 @@ EXAMPLES
        lsof -i          # list all network connections
        lsof -p 1234     # list files opened by PID 1234
        lsof -u root     # list files opened by root`,
-	"lspci": `LSPCI(1)                 User Commands                 LSPCI(1)
+	lspci: `LSPCI(1)                 User Commands                 LSPCI(1)
 
 NAME
        lspci - list PCI devices
@@ -1318,7 +1318,7 @@ SYNOPSIS
 DESCRIPTION
        Display information about PCI buses and devices
        connected to the system.`,
-	"lsusb": `LSUSB(1)                 User Commands                 LSUSB(1)
+	lsusb: `LSUSB(1)                 User Commands                 LSUSB(1)
 
 NAME
        lsusb - list USB devices
@@ -1329,7 +1329,7 @@ SYNOPSIS
 DESCRIPTION
        Display information about USB buses and devices
        connected to the system.`,
-	"man": `MAN(1)                   User Commands                     MAN(1)
+	man: `MAN(1)                   User Commands                     MAN(1)
 
 NAME
        man - an interface to the system reference manuals
@@ -1351,7 +1351,7 @@ EXAMPLES
        man ls
        man 1 printf
        man grep`,
-	"md5sum": `MD5SUM(1)                User Commands                MD5SUM(1)
+	md5sum: `MD5SUM(1)                User Commands                MD5SUM(1)
 
 NAME
        md5sum - compute and check MD5 message digest
@@ -1361,7 +1361,7 @@ SYNOPSIS
 
 DESCRIPTION
        Print or check MD5 (128-bit) checksums for each FILE.`,
-	"mkdir": `MKDIR(1)                 User Commands                  MKDIR(1)
+	mkdir: `MKDIR(1)                 User Commands                  MKDIR(1)
 
 NAME
        mkdir - make directories
@@ -1371,7 +1371,7 @@ SYNOPSIS
 
 OPTIONS
        -p     no error if existing, make parent directories as needed`,
-	"mknod": `MKNOD(1)               User Commands               MKNOD(1)
+	mknod: `MKNOD(1)               User Commands               MKNOD(1)
 
 NAME
        mknod - make block or character special files
@@ -1391,7 +1391,7 @@ EXAMPLES
        mknod /dev/null c 1 3      # create character device
        mknod myfifo p              # create named pipe (FIFO)
        mknod -m 660 /dev/sda b 8 0  # create block device`,
-	"mktemp": `MKTEMP(1)                User Commands                   MKTEMP(1)
+	mktemp: `MKTEMP(1)                User Commands                   MKTEMP(1)
 
 NAME
        mktemp - create a temporary file or directory
@@ -1416,7 +1416,7 @@ EXAMPLES
        mktemp
        mktemp -d
        mktemp /tmp/foo.XXXXXX`,
-	"mousepad": `MOUSEPAD(1)              User Commands              MOUSEPAD(1)
+	mousepad: `MOUSEPAD(1)              User Commands              MOUSEPAD(1)
 
 NAME
        mousepad - simple graphical text editor
@@ -1431,7 +1431,7 @@ DESCRIPTION
 EXAMPLES
        mousepad            # open editor
        mousepad file.txt   # open file.txt for editing`,
-	"mv": `MV(1)                    User Commands                      MV(1)
+	mv: `MV(1)                    User Commands                      MV(1)
 
 NAME
        mv - move (rename) files
@@ -1441,7 +1441,7 @@ SYNOPSIS
 
 DESCRIPTION
        Rename SOURCE to DEST, or move SOURCE into a destination directory.`,
-	"nano": `NANO(1)                  User Commands                    NANO(1)
+	nano: `NANO(1)                  User Commands                    NANO(1)
 
 NAME
        nano - simple terminal text editor
@@ -1452,7 +1452,7 @@ SYNOPSIS
 DESCRIPTION
        Open FILE in an interactive editor.
        Save with Ctrl+O, exit with Ctrl+X.`,
-	"nc": `NC(1)                    User Commands                    NC(1)
+	nc: `NC(1)                    User Commands                    NC(1)
 
 NAME
        nc - arbitrary TCP and UDP connections
@@ -1463,7 +1463,7 @@ SYNOPSIS
 DESCRIPTION
        Open TCP or UDP connections to arbitrary ports,
        useful for debugging and network exploration.`,
-	"neofetch": `NEOFETCH(1)              User Commands                NEOFETCH(1)
+	neofetch: `NEOFETCH(1)              User Commands                NEOFETCH(1)
 
 NAME
        neofetch - display system information
@@ -1473,7 +1473,7 @@ SYNOPSIS
 
 DESCRIPTION
        Print OS, kernel, uptime, package count, and related system details.`,
-	"netcat": `NETCAT(1)               User Commands               NETCAT(1)
+	netcat: `NETCAT(1)               User Commands               NETCAT(1)
 
 NAME
        netcat - TCP/IP swiss army knife
@@ -1498,7 +1498,7 @@ EXAMPLES
        nc -l 8080           # listen on port 8080
        nc -zv host 1-1000   # scan ports 1-1000
        nc -u host 53        # UDP connection`,
-	"newgrp": `NEWGRP(1)               User Commands               NEWGRP(1)
+	newgrp: `NEWGRP(1)               User Commands               NEWGRP(1)
 
 NAME
        newgrp - log in to a new group
@@ -1516,7 +1516,7 @@ DESCRIPTION
 EXAMPLES
        newgrp developers    # switch to developers group
        newgrp              # return to default group`,
-	"nice": `NICE(1)                  User Commands                  NICE(1)
+	nice: `NICE(1)                  User Commands                  NICE(1)
 
 NAME
        nice - run a command with modified niceness
@@ -1527,7 +1527,7 @@ SYNOPSIS
 DESCRIPTION
        Run COMMAND with an adjusted scheduling priority
        (niceness).  Higher niceness means lower priority.`,
-	"nl": `NL(1)                    User Commands                      NL(1)
+	nl: `NL(1)                    User Commands                      NL(1)
 
 NAME
        nl - number lines of files
@@ -1551,7 +1551,7 @@ OPTIONS
 EXAMPLES
        nl /etc/passwd
        cat file.txt | nl`,
-	"node": `NODE(1)                  User Commands                    NODE(1)
+	node: `NODE(1)                  User Commands                    NODE(1)
 
 NAME
        node - virtual JavaScript runtime entry point
@@ -1564,7 +1564,7 @@ DESCRIPTION
 
 NOTES
        Requires package installation: apt install nodejs.`,
-	"nohup": `NOHUP(1)                 User Commands                 NOHUP(1)
+	nohup: `NOHUP(1)                 User Commands                 NOHUP(1)
 
 NAME
        nohup - run a command immune to hangups
@@ -1575,7 +1575,7 @@ SYNOPSIS
 DESCRIPTION
        Run COMMAND such that it ignores HUP signals and
        continues running after the terminal is closed.`,
-	"npm": `NPM(1)                   User Commands                      NPM(1)
+	npm: `NPM(1)                   User Commands                      NPM(1)
 
 NAME
        npm - virtual Node.js package manager interface
@@ -1588,7 +1588,7 @@ DESCRIPTION
 
 NOTES
        Requires package installation: apt install npm.`,
-	"nproc": `NPROC(1)                 User Commands                    NPROC(1)
+	nproc: `NPROC(1)                 User Commands                    NPROC(1)
 
 NAME
        nproc - print the number of processing units available
@@ -1606,7 +1606,7 @@ OPTIONS
 EXAMPLES
        nproc
        make -j$(nproc)`,
-	"npx": `NPX(1)                   User Commands                      NPX(1)
+	npx: `NPX(1)                   User Commands                      NPX(1)
 
 NAME
        npx - execute package binaries from npm
@@ -1619,7 +1619,7 @@ DESCRIPTION
 
 NOTES
        Requires package installation: apt install npm.`,
-	"pacman": `PACMAN(1)                User Commands                   PACMAN(1)
+	pacman: `PACMAN(1)                User Commands                   PACMAN(1)
 
 NAME
        pacman - play ASCII Pac-Man in the terminal
@@ -1654,7 +1654,7 @@ NOTES
        Ghosts slow down during fright mode. Fright mode ends after
        a few seconds; ghosts flash before returning to normal.
        Left and right tunnel exits wrap around the maze.`,
-	"passwd": `PASSWD(1)                 User Commands                 PASSWD(1)
+	passwd: `PASSWD(1)                 User Commands                 PASSWD(1)
 
 NAME
        passwd - change user password
@@ -1665,7 +1665,7 @@ SYNOPSIS
 DESCRIPTION
        Update the authentication token (password) for USER.
        Without USER, change the current user's password.`,
-	"paste": `PASTE(1)                 User Commands                   PASTE(1)
+	paste: `PASTE(1)                 User Commands                   PASTE(1)
 
 NAME
        paste - merge lines of files
@@ -1685,7 +1685,7 @@ EXAMPLES
        paste file1 file2
        paste -d: /etc/passwd /etc/shadow
        paste -d, a.txt b.txt c.txt`,
-	"perl": `PERL(1)                  User Commands                  PERL(1)
+	perl: `PERL(1)                  User Commands                  PERL(1)
 
 NAME
        perl - Practical Extraction and Report Language
@@ -1707,7 +1707,7 @@ EXAMPLES
        perl -e 'print "Hello\\n"'    # one-liner
        perl script.pl                # run a script
        perl -ne 'print if /pattern/' file.txt  # grep-like`,
-	"pgrep": `PGREP(1)                 User Commands                 PGREP(1)
+	pgrep: `PGREP(1)                 User Commands                 PGREP(1)
 
 NAME
        pgrep - look up processes by pattern
@@ -1718,7 +1718,7 @@ SYNOPSIS
 DESCRIPTION
        List process IDs matching PATTERN.  By default
        matches against process names.`,
-	"ping": `PING(8)                   User Commands                   PING(8)
+	ping: `PING(8)                   User Commands                   PING(8)
 
 NAME
        ping - send ICMP ECHO_REQUEST to network hosts
@@ -1728,7 +1728,7 @@ SYNOPSIS
 
 OPTIONS
        -c COUNT    stop after sending COUNT packets`,
-	"pkill": `PKILL(1)                 User Commands                 PKILL(1)
+	pkill: `PKILL(1)                 User Commands                 PKILL(1)
 
 NAME
        pkill - kill processes by pattern
@@ -1739,7 +1739,7 @@ SYNOPSIS
 DESCRIPTION
        Send signals to processes matching PATTERN.  By
        default sends SIGTERM.`,
-	"printf": `PRINTF(1)                User Commands                  PRINTF(1)
+	printf: `PRINTF(1)                User Commands                  PRINTF(1)
 
 NAME
        printf - format and print data
@@ -1750,7 +1750,7 @@ SYNOPSIS
 DESCRIPTION
        Print ARGUMENT(s) according to FORMAT.
        Supports common conversions like %s, %d, %f, %x and escapes like \\n.`,
-	"ps": `PS(1)                    User Commands                      PS(1)
+	ps: `PS(1)                    User Commands                      PS(1)
 
 NAME
        ps - report a snapshot of current processes
@@ -1760,7 +1760,7 @@ SYNOPSIS
 
 DESCRIPTION
        Show process information for active sessions and commands.`,
-	"pwd": `PWD(1)                   User Commands                    PWD(1)
+	pwd: `PWD(1)                   User Commands                    PWD(1)
 
 NAME
        pwd - print name of current working directory
@@ -1770,7 +1770,7 @@ SYNOPSIS
 
 DESCRIPTION
        Print the absolute path of the current directory.`,
-	"python": `PYTHON(1)               User Commands               PYTHON(1)
+	python: `PYTHON(1)               User Commands               PYTHON(1)
 
 NAME
        python - Python interpreter
@@ -1793,7 +1793,7 @@ EXAMPLES
        python script.py        # run a Python script
        python -c 'print(2+2)'  # one-liner
        python -m http.server   # start HTTP server`,
-	"python3": `PYTHON3(1)               User Commands                  PYTHON3(1)
+	python3: `PYTHON3(1)               User Commands                  PYTHON3(1)
 
 NAME
        python3 - virtual Python 3 interpreter entry point
@@ -1806,7 +1806,7 @@ DESCRIPTION
 
 NOTES
        Requires package installation: apt install python3.`,
-	"read": `READ(1)                  User Commands                    READ(1)
+	read: `READ(1)                  User Commands                    READ(1)
 
 NAME
        read - read a line from standard input
@@ -1831,7 +1831,7 @@ EXAMPLES
        read -d: field
        read -n 5 first5
        read -a arr`,
-	"readlink": `READLINK(1)               User Commands                READLINK(1)
+	readlink: `READLINK(1)               User Commands                READLINK(1)
 
 NAME
        readlink - print resolved symbolic links or canonical file names
@@ -1841,7 +1841,7 @@ SYNOPSIS
 
 OPTIONS
        -f     canonicalize by following every symlink in every component`,
-	"readonly": `READONLY(1)              User Commands                    READONLY(1)
+	readonly: `READONLY(1)              User Commands                    READONLY(1)
 
 NAME
        readonly - mark shell variables as readonly
@@ -1866,7 +1866,7 @@ EXAMPLES
 NOTES
        Readonly status is stored in the shell environment and persists
        until the shell session ends.`,
-	"realpath": `REALPATH(1)              User Commands              REALPATH(1)
+	realpath: `REALPATH(1)              User Commands              REALPATH(1)
 
 NAME
        realpath - print resolved absolute file name
@@ -1877,7 +1877,7 @@ SYNOPSIS
 DESCRIPTION
        Print the resolved absolute path for each FILE,
        with all symbolic links resolved.`,
-	"return": `RETURN(1)                Shell Builtins                 RETURN(1)
+	return: `RETURN(1)                Shell Builtins                 RETURN(1)
 
 NAME
        return - return from a shell function
@@ -1887,7 +1887,7 @@ SYNOPSIS
 
 DESCRIPTION
        Cause a function to exit with status N (default: last status).`,
-	"rm": `RM(1)                    User Commands                      RM(1)
+	rm: `RM(1)                    User Commands                      RM(1)
 
 NAME
        rm - remove files or directories
@@ -1906,7 +1906,7 @@ OPTIONS
 
        Without -f, rm prompts for confirmation before removing each target.
        Answer y or yes to confirm, anything else cancels.`,
-	"sed": `SED(1)                   User Commands                      SED(1)
+	sed: `SED(1)                   User Commands                      SED(1)
 
 NAME
        sed - stream editor for filtering and transforming text
@@ -1917,7 +1917,7 @@ SYNOPSIS
 OPTIONS
        -e SCRIPT   add SCRIPT to commands to be executed
        -i          edit files in place`,
-	"seq": `SEQ(1)                   User Commands                     SEQ(1)
+	seq: `SEQ(1)                   User Commands                     SEQ(1)
 
 NAME
        seq - print a sequence of numbers
@@ -1937,7 +1937,7 @@ EXAMPLES
        seq 2 8          # 2 3 4 5 6 7 8
        seq 0 2 10       # 0 2 4 6 8 10
        seq -s, 5        # 1,2,3,4,5`,
-	"set": `SET(1)                   Shell Builtins                    SET(1)
+	set: `SET(1)                   Shell Builtins                    SET(1)
 
 NAME
        set - set or unset shell options and positional parameters
@@ -1972,7 +1972,7 @@ EXAMPLES
        set +o nounset
        set -- one two three
        set -eux`,
-	"sh": `SH(1)                    User Commands                      SH(1)
+	sh: `SH(1)                    User Commands                      SH(1)
 
 NAME
        sh - command interpreter (shell)
@@ -1997,7 +1997,7 @@ EXAMPLES
        sh -c 'echo hello'
        sh script.sh
        sh -c 'for i in 1 2 3; do echo $i; done'`,
-	"sha256sum": `SHA256SUM(1)             User Commands             SHA256SUM(1)
+	sha256sum: `SHA256SUM(1)             User Commands             SHA256SUM(1)
 
 NAME
        sha256sum - compute and check SHA-256 message digest
@@ -2008,7 +2008,7 @@ SYNOPSIS
 DESCRIPTION
        Print or check SHA-256 (256-bit) checksums for each
        FILE.`,
-	"shift": `SHIFT(1)                 Shell Builtins                  SHIFT(1)
+	shift: `SHIFT(1)                 Shell Builtins                  SHIFT(1)
 
 NAME
        shift - shift positional parameters
@@ -2018,7 +2018,7 @@ SYNOPSIS
 
 DESCRIPTION
        Rename positional parameters by discarding the first N arguments.`,
-	"shopt": `SHOPT(1)                 User Commands                    SHOPT(1)
+	shopt: `SHOPT(1)                 User Commands                    SHOPT(1)
 
 NAME
        shopt - manage shell options (bash extension)
@@ -2047,7 +2047,7 @@ EXAMPLES
        shopt -s dotglob
        shopt -u nullglob
        shopt -q extglob`,
-	"shuf": `SHUF(1)                  User Commands                    SHUF(1)
+	shuf: `SHUF(1)                  User Commands                    SHUF(1)
 
 NAME
        shuf - generate random permutations
@@ -2069,7 +2069,7 @@ EXAMPLES
        shuf /etc/passwd
        shuf -i 1-10
        shuf -n 3 /etc/hosts`,
-	"sl": `SL(1)                    User Commands                      SL(1)
+	sl: `SL(1)                    User Commands                      SL(1)
 
 NAME
        sl - steam locomotive
@@ -2085,7 +2085,7 @@ DESCRIPTION
 
 EXAMPLES
        sl         # you typed 'sl' instead of 'ls', didn't you?`,
-	"sleep": `SLEEP(1)                 User Commands                   SLEEP(1)
+	sleep: `SLEEP(1)                 User Commands                   SLEEP(1)
 
 NAME
        sleep - delay for a specified amount of time
@@ -2095,7 +2095,7 @@ SYNOPSIS
 
 DESCRIPTION
        Pause execution for NUMBER seconds.`,
-	"sort": `SORT(1)                  User Commands                    SORT(1)
+	sort: `SORT(1)                  User Commands                    SORT(1)
 
 NAME
        sort - sort lines of text files
@@ -2107,7 +2107,7 @@ OPTIONS
        -r     reverse the result of comparisons
        -n     compare according to string numerical value
        -u     output only the first of an equal run`,
-	"source": `SOURCE(1)                 Shell Builtins                SOURCE(1)
+	source: `SOURCE(1)                 Shell Builtins                SOURCE(1)
 
 NAME
        source - execute commands from a file in the current shell
@@ -2118,7 +2118,7 @@ SYNOPSIS
 
 DESCRIPTION
        Read and execute commands from FILE in the current shell context.`,
-	"split": `SPLIT(1)                 User Commands                 SPLIT(1)
+	split: `SPLIT(1)                 User Commands                 SPLIT(1)
 
 NAME
        split - split a file into pieces
@@ -2129,7 +2129,7 @@ SYNOPSIS
 DESCRIPTION
        Split FILE into fixed-size pieces, creating output
        files named PREFIXaa, PREFIXab, etc.`,
-	"ss": `SS(8)           System Administration           SS(8)
+	ss: `SS(8)           System Administration           SS(8)
 
 NAME
        ss - another utility to investigate sockets
@@ -2157,7 +2157,7 @@ EXAMPLES
        ss -tuln        # show listening TCP/UDP sockets
        ss -s           # show socket statistics
        ss -p           # show processes`,
-	"ssh": `SSH(1)                   OpenSSH                          SSH(1)
+	ssh: `SSH(1)                   OpenSSH                          SSH(1)
 
 NAME
        ssh - OpenSSH remote login client
@@ -2168,7 +2168,7 @@ SYNOPSIS
 DESCRIPTION
        ssh (SSH client) is a program for logging into a remote machine and
        for executing commands on a remote machine.`,
-	"startxfce4": `STARTXFCE4(1)           User Commands           STARTXFCE4(1)
+	startxfce4: `STARTXFCE4(1)           User Commands           STARTXFCE4(1)
 
 NAME
        startxfce4 - start the Xfce desktop environment
@@ -2183,7 +2183,7 @@ DESCRIPTION
 
 EXAMPLES
        startxfce4    # launch Xfce session`,
-	"stat": `STAT(1)                  User Commands                    STAT(1)
+	stat: `STAT(1)                  User Commands                    STAT(1)
 
 NAME
        stat - display file status
@@ -2193,7 +2193,7 @@ SYNOPSIS
 
 OPTIONS
        -c, --format=FORMAT   use the specified output format`,
-	"strace": `STRACE(1)               User Commands               STRACE(1)
+	strace: `STRACE(1)               User Commands               STRACE(1)
 
 NAME
        strace - trace system calls and signals
@@ -2217,7 +2217,7 @@ EXAMPLES
        strace -p 1234       # attach to PID 1234
        strace -c ls         # summary of system calls
        strace -f ./program  # trace forks too`,
-	"strings": `STRINGS(1)               User Commands               STRINGS(1)
+	strings: `STRINGS(1)               User Commands               STRINGS(1)
 
 NAME
        strings - print printable strings in binary files
@@ -2228,7 +2228,7 @@ SYNOPSIS
 DESCRIPTION
        For each FILE, print sequences of printable
        characters found in binary data.`,
-	"stty": `STTY(1)                  User Commands                    STTY(1)
+	stty: `STTY(1)                  User Commands                    STTY(1)
 
 NAME
        stty - change and print terminal line settings
@@ -2249,7 +2249,7 @@ EXAMPLES
        stty -a            # all settings
        stty size          # terminal size (rows cols)
        stty sane          # reset to sane settings`,
-	"su": `SU(1)                    User Commands                      SU(1)
+	su: `SU(1)                    User Commands                      SU(1)
 
 NAME
        su - run a command with substitute user and group ID
@@ -2262,7 +2262,7 @@ OPTIONS
 
 DESCRIPTION
        Switch to another user account in the current session.`,
-	"sudo": `SUDO(8)                   User Commands                   SUDO(8)
+	sudo: `SUDO(8)                   User Commands                   SUDO(8)
 
 NAME
        sudo - execute a command as another user
@@ -2273,7 +2273,7 @@ SYNOPSIS
 OPTIONS
        -i          run login shell as target user
        -u USER     run command as USER`,
-	"swap": `SWAP(1)               User Commands               SWAP(1)
+	swap: `SWAP(1)               User Commands               SWAP(1)
 
 NAME
        swap - view and manage swap file usage
@@ -2296,7 +2296,7 @@ EXAMPLES
        swap --stats         # same as above
        swap -c              # clear all swap files
        swap --clear         # same as above`,
-	"sysctl": `SYSCTL(8)       System Administration       SYSCTL(8)
+	sysctl: `SYSCTL(8)       System Administration       SYSCTL(8)
 
 NAME
        sysctl - configure kernel parameters at runtime
@@ -2319,7 +2319,7 @@ EXAMPLES
        sysctl net.ipv4.ip_forward # read a value
        sysctl -w net.ipv4.ip_forward=1  # set a value
        sysctl -p                  # reload from config`,
-	"sysinfo": `SYSINFO(1)               User Commands               SYSINFO(1)
+	sysinfo: `SYSINFO(1)               User Commands               SYSINFO(1)
 
 NAME
        sysinfo - display system information
@@ -2333,7 +2333,7 @@ DESCRIPTION
 
 EXAMPLES
        sysinfo    # display system information`,
-	"tac": `TAC(1)                   User Commands                     TAC(1)
+	tac: `TAC(1)                   User Commands                     TAC(1)
 
 NAME
        tac - concatenate and print files in reverse
@@ -2351,7 +2351,7 @@ OPTIONS
 EXAMPLES
        tac /var/log/syslog
        echo -e "a\\nb\\nc" | tac`,
-	"tail": `TAIL(1)                  User Commands                    TAIL(1)
+	tail: `TAIL(1)                  User Commands                    TAIL(1)
 
 NAME
        tail - output the last part of files
@@ -2361,7 +2361,7 @@ SYNOPSIS
 
 OPTIONS
        -n, --lines=[+]NUM    output the last NUM lines`,
-	"tar": `TAR(1)                   GNU tar Manual                   TAR(1)
+	tar: `TAR(1)                   GNU tar Manual                   TAR(1)
 
 NAME
        tar - an archiving utility
@@ -2380,7 +2380,7 @@ OPTIONS
        -f, --file=ARCHIVE     use archive file or device ARCHIVE
        -v, --verbose          verbosely list files processed
        -t, --list             list the contents of an archive`,
-	"tc": `TC(8)           System Administration           TC(8)
+	tc: `TC(8)           System Administration           TC(8)
 
 NAME
        tc - show / manipulate traffic control settings
@@ -2408,7 +2408,7 @@ EXAMPLES
        tc qdisc add dev eth0 root netem loss 5%      # add packet loss
        tc qdisc del dev eth0 root                  # remove qdisc
        tc -s qdisc show dev eth0                   # show with stats`,
-	"tee": `TEE(1)                   User Commands                     TEE(1)
+	tee: `TEE(1)                   User Commands                     TEE(1)
 
 NAME
        tee - read from standard input and write to standard output and files
@@ -2418,7 +2418,7 @@ SYNOPSIS
 
 OPTIONS
        -a     append to the given FILEs, do not overwrite`,
-	"test": `TEST(1)                   Shell Builtins                  TEST(1)
+	test: `TEST(1)                   Shell Builtins                  TEST(1)
 
 NAME
        test, [ - check file types and compare values
@@ -2477,7 +2477,7 @@ EXAMPLES
        test -f /etc/passwd
        [ -d /tmp ]
        [ "$USER" = "root" ]`,
-	"timeout": `TIMEOUT(1)               User Commands                  TIMEOUT(1)
+	timeout: `TIMEOUT(1)               User Commands                  TIMEOUT(1)
 
 NAME
        timeout - run a command with a time limit
@@ -2500,7 +2500,7 @@ EXIT STATUS
 EXAMPLES
        timeout 5 sleep 10
        timeout 30 curl http://example.com/`,
-	"top": `TOP(1)                   User Commands                   TOP(1)
+	top: `TOP(1)                   User Commands                   TOP(1)
 
 NAME
        top - display process information
@@ -2511,7 +2511,7 @@ SYNOPSIS
 DESCRIPTION
        Display a dynamic, real-time view of running
        processes and system resource usage.`,
-	"touch": `TOUCH(1)                 User Commands                  TOUCH(1)
+	touch: `TOUCH(1)                 User Commands                  TOUCH(1)
 
 NAME
        touch - change file timestamps / create file
@@ -2522,7 +2522,7 @@ SYNOPSIS
 DESCRIPTION
        Update access and modification times.
        If FILE does not exist, create an empty file.`,
-	"tput": `TPUT(1)                  User Commands                    TPUT(1)
+	tput: `TPUT(1)                  User Commands                    TPUT(1)
 
 NAME
        tput - initialize a terminal or query terminfo database
@@ -2550,7 +2550,7 @@ EXAMPLES
        tput cols
        tput setaf 2; echo "green"; tput sgr0
        tput bold; echo "bold text"; tput sgr0`,
-	"tr": `TR(1)                    User Commands                      TR(1)
+	tr: `TR(1)                    User Commands                      TR(1)
 
 NAME
        tr - translate or delete characters
@@ -2560,7 +2560,7 @@ SYNOPSIS
 
 OPTIONS
        -d     delete characters in SET1 instead of translating`,
-	"traceroute": `TRACEROUTE(8)       System Administration       TRACEROUTE(8)
+	traceroute: `TRACEROUTE(8)       System Administration       TRACEROUTE(8)
 
 NAME
        traceroute - print the route packets take to a network host
@@ -2586,7 +2586,7 @@ EXAMPLES
        traceroute -I google.com       # use ICMP
        traceroute -m 15 google.com    # max 15 hops
        traceroute -w 2 google.com     # 2s wait per probe`,
-	"trap": `TRAP(1)                  Shell Builtins                   TRAP(1)
+	trap: `TRAP(1)                  Shell Builtins                   TRAP(1)
 
 NAME
        trap - trap signals and other events
@@ -2596,7 +2596,7 @@ SYNOPSIS
 
 DESCRIPTION
        Define or clear handlers for shell signals and EXIT.`,
-	"tree": `TREE(1)                  User Commands                    TREE(1)
+	tree: `TREE(1)                  User Commands                    TREE(1)
 
 NAME
        tree - list contents of directories in a tree-like format
@@ -2616,7 +2616,7 @@ EXAMPLES
        tree /etc
        tree -L 2 /usr
        tree -a -d`,
-	"true": `TRUE(1)                  User Commands                    TRUE(1)
+	true: `TRUE(1)                  User Commands                    TRUE(1)
 
 NAME
        true - do nothing, successfully
@@ -2626,7 +2626,7 @@ SYNOPSIS
 
 DESCRIPTION
        Exit with a status code indicating success (0).`,
-	"type": `TYPE(1)                   Shell Builtins                  TYPE(1)
+	type: `TYPE(1)                   Shell Builtins                  TYPE(1)
 
 NAME
        type - display how a command name is interpreted
@@ -2652,7 +2652,7 @@ EXAMPLES
        type -t ls
        type -p ls
        type -a ls`,
-	"uname": `UNAME(1)                 User Commands                  UNAME(1)
+	uname: `UNAME(1)                 User Commands                  UNAME(1)
 
 NAME
        uname - print system information
@@ -2664,7 +2664,7 @@ OPTIONS
        -a     print all information
        -r     print kernel release
        -m     print machine hardware name`,
-	"uniq": `UNIQ(1)                  User Commands                    UNIQ(1)
+	uniq: `UNIQ(1)                  User Commands                    UNIQ(1)
 
 NAME
        uniq - report or omit repeated lines
@@ -2676,7 +2676,7 @@ OPTIONS
        -c     prefix lines by the number of occurrences
        -d     only print duplicate lines
        -u     only print unique lines`,
-	"unset": `UNSET(1)                 Shell Builtins                  UNSET(1)
+	unset: `UNSET(1)                 Shell Builtins                  UNSET(1)
 
 NAME
        unset - unset values and attributes of shell variables
@@ -2696,7 +2696,7 @@ EXAMPLES
        unset MYVAR
        unset -v MYVAR
        unset -f myfunc`,
-	"uptime": `UPTIME(1)                User Commands                  UPTIME(1)
+	uptime: `UPTIME(1)                User Commands                  UPTIME(1)
 
 NAME
        uptime - tell how long the system has been running
@@ -2707,7 +2707,7 @@ SYNOPSIS
 OPTIONS
        -p     show uptime in a pretty format
        -s     show system up since time`,
-	"usermod": `USERMOD(8)       System Administration       USERMOD(8)
+	usermod: `USERMOD(8)       System Administration       USERMOD(8)
 
 NAME
        usermod - modify a user account
@@ -2730,7 +2730,7 @@ EXAMPLES
        usermod -aG developers alice   # add alice to developers
        usermod -g staff bob           # change bob's primary group
        usermod -L charlie             # lock charlie's account`,
-	"w": `W(1)                     User Commands                       W(1)
+	w: `W(1)                     User Commands                       W(1)
 
 NAME
        w - show who is logged on and what they are doing
@@ -2747,7 +2747,7 @@ DESCRIPTION
        The following entries are displayed for each user: login name,
        the tty name, the remote host, login time, idle time, JCPU, PCPU,
        and the command line of the current process.`,
-	"wait": `WAIT(1)                  Bash Builtin Commands             WAIT(1)
+	wait: `WAIT(1)                  Bash Builtin Commands             WAIT(1)
 
 NAME
        wait - wait for job completion
@@ -2770,7 +2770,7 @@ EXAMPLES
        echo "done"
        sleep 3 &
        wait -n`,
-	"wc": `WC(1)                    User Commands                      WC(1)
+	wc: `WC(1)                    User Commands                      WC(1)
 
 NAME
        wc - print newline, word, and byte counts for each file
@@ -2782,7 +2782,7 @@ OPTIONS
        -l     print the newline counts
        -w     print the word counts
        -c     print the byte counts`,
-	"wget": `WGET(1)                  User Commands                    WGET(1)
+	wget: `WGET(1)                  User Commands                    WGET(1)
 
 NAME
        wget - non-interactive network downloader
@@ -2794,7 +2794,7 @@ OPTIONS
        -O FILE    write documents to FILE
        -P DIR     save files to DIR
        -q         quiet mode`,
-	"which": `WHICH(1)                 User Commands                  WHICH(1)
+	which: `WHICH(1)                 User Commands                  WHICH(1)
 
 NAME
        which - locate a command
@@ -2804,7 +2804,7 @@ SYNOPSIS
 
 DESCRIPTION
        Print the path of COMMAND found in $PATH.`,
-	"who": `WHO(1)                   User Commands                     WHO(1)
+	who: `WHO(1)                   User Commands                     WHO(1)
 
 NAME
        who - show who is logged on
@@ -2823,7 +2823,7 @@ EXAMPLES
        who          # show logged in users
        who -H       # with headers
        who am i     # show current user`,
-	"whoami": `WHOAMI(1)                User Commands                 WHOAMI(1)
+	whoami: `WHOAMI(1)                User Commands                 WHOAMI(1)
 
 NAME
        whoami - print effective user name
@@ -2833,7 +2833,7 @@ SYNOPSIS
 
 DESCRIPTION
        Print the user name associated with the current effective user ID.`,
-	"xargs": `XARGS(1)                 User Commands                   XARGS(1)
+	xargs: `XARGS(1)                 User Commands                   XARGS(1)
 
 NAME
        xargs - build and execute command lines from standard input
@@ -2843,7 +2843,7 @@ SYNOPSIS
 
 DESCRIPTION
        Read items from stdin and execute COMMAND with those items as arguments.`,
-	"xfceDesktop": `XFCEDESKTOP(1)           User Commands           XFCEDESKTOP(1)
+	xfceDesktop: `XFCEDESKTOP(1)           User Commands           XFCEDESKTOP(1)
 
 NAME
        xfceDesktop - manage Xfce desktop settings
@@ -2857,7 +2857,7 @@ DESCRIPTION
 
 EXAMPLES
        xfceDesktop    # open desktop settings`,
-	"yes": `YES(1)                   User Commands                     YES(1)
+	yes: `YES(1)                   User Commands                     YES(1)
 
 NAME
        yes - output a string repeatedly until killed
@@ -2873,7 +2873,7 @@ EXAMPLES
        yes | apt-get install pkg   # auto-confirm
        yes no | some-program       # repeatedly answer 'no'
        yes                         # output 'y' forever`,
-	"zip": `ZIP(1)                   User Commands                   ZIP(1)
+	zip: `ZIP(1)                   User Commands                   ZIP(1)
 
 NAME
        zip - package and compress (archive) files
