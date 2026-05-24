@@ -14,17 +14,24 @@ function resolveWorkerScript(): string {
 	return resolve(__dirname, "worker.js");
 }
 
+/** Options for creating a SandboxedShell worker instance. */
 export interface SandboxedShellOptions {
 	execTimeoutMs?: number;
 	workerScript?: string;
 }
 
+/** Result of a command execution in the sandboxed worker. */
 export interface ExecResult {
 	exitCode: number;
 	stdout: string;
 	stderr: string;
 }
 
+/**
+ * Execute shell commands in an isolated worker_thread.
+ * Each instance spawns a Node.js worker that provides a restricted shell
+ * environment with configurable execution timeouts.
+ */
 export class SandboxedShell {
 	private _worker: Worker;
 	private _pending: Map<

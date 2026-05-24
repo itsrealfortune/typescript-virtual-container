@@ -46,6 +46,7 @@ export interface VirtualUserRecord {
 	accountExpiryDate: number;
 }
 
+/** Process lifecycle status. */
 export type ProcessStatus = "running" | "stopped" | "done";
 
 /** Runtime representation of a command currently executing in a session. */

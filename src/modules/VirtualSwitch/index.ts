@@ -32,6 +32,7 @@ function gaussianRandom(mean = 0, stdev = 1): number {
 	return z * stdev + mean;
 }
 
+/** Virtual network switch with L2/L3 forwarding, QoS, NAT, and load balancing. */
 export class VirtualSwitch {
 	readonly subnet: string;
 
@@ -588,6 +589,7 @@ export class VirtualSwitch {
 	}
 }
 
+/** A rack (baie) of VMs connected to a shared VirtualSwitch. */
 export class Baie {
 	readonly name: string;
 	readonly switch: VirtualSwitch;

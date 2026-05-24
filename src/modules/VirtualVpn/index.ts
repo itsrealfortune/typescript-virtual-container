@@ -3,11 +3,13 @@ import type { Packet, PacketResult } from "../VirtualSwitch";
 import { decrypt, deriveKey, encrypt } from "./crypto";
 export { decrypt, deriveKey, encrypt } from "./crypto";
 
+/** Options for creating a VirtualVpn tunnel between two subnets. */
 export interface VpnOptions {
 	key: string;
 	latencyMs?: number;
 }
 
+/** Encrypted VPN tunnel between two virtual subnets with simulated latency. */
 export class VirtualVpn {
 	private readonly _key: Buffer;
 	private readonly _latencyMs: number;

@@ -16,9 +16,11 @@
 import type { InternalDirectoryNode } from "./internalTypes";
 import { getNodeNormalized, normalizePath } from "./path";
 
-/** Permission check flags */
+/** Permission check flag: read access. */
 export const R_OK = 4;
+/** Permission check flag: write access. */
 export const W_OK = 2;
+/** Permission check flag: execute access. */
 export const X_OK = 1;
 
 /**

@@ -40,6 +40,7 @@ export const JournalOp = {
 	SYMLINK: 0x06,
 } as const;
 
+/** VFS journal operation type — one of CREATE, WRITE, DELETE, MKDIR, CHMOD, MOVE, SYMLINK. */
 export type JournalOp = (typeof JournalOp)[keyof typeof JournalOp];
 
 /** @internal */

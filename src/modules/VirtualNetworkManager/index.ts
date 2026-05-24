@@ -19,6 +19,7 @@ export type {
 	PolicyRule,
 } from "./types";
 
+/** Simulated network stack with interfaces, routing, firewalls, and connection tracking. */
 export class VirtualNetworkManager {
 	private _interfaces: VirtualInterface[] = [
 		{

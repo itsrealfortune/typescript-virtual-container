@@ -1,9 +1,11 @@
+/** Mode for outbound network restriction filtering. */
 export type OutboundRestrictionMode =
 	| "allow-all"
 	| "block-private"
 	| "blocklist"
 	| "allowlist";
 
+/** Configuration for network restriction rules. */
 export interface NetworkRestrictionConfig {
 	mode?: OutboundRestrictionMode;
 	blocklist?: string[];
@@ -23,17 +25,20 @@ const PRIVATE_IP_PATTERNS = [
 	/^fe80:/,
 ];
 
+/** Check if a hostname/IP is a private/internal address. */
 export function isPrivateHostname(hostname: string): boolean {
 	const normalized = hostname.replace(/^\[|\]$/g, "").toLowerCase();
 	return PRIVATE_IP_PATTERNS.some((pattern) => pattern.test(normalized));
 }
 
+/** Result of an outbound restriction check. */
 export interface RestrictionCheck {
 	allowed: boolean;
 	reason?: string;
 	honeypot: boolean;
 }
 
+/** Check whether an outbound request to a URL is allowed by the restriction config. */
 export function checkOutboundRestriction(
 	url: string,
 	config?: NetworkRestrictionConfig

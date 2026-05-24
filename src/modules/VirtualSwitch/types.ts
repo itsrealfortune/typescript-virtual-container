@@ -6,14 +6,17 @@ import type {
 } from "../VirtualNetworkManager/types";
 import type { VirtualShell } from "../VirtualShell";
 
+/** MAC address string (e.g. "02:42:0a:00:01:01"). */
 export type MacAddress = string;
 
+/** A VM connected to a VirtualSwitch port. */
 export interface VmPort {
 	mac: MacAddress;
 	ip: string;
 	shell: VirtualShell;
 }
 
+/** A network packet being routed through the switch. */
 export interface Packet {
 	srcIp: string;
 	srcMac: MacAddress;
@@ -26,6 +29,7 @@ export interface Packet {
 	ttl?: number;
 }
 
+/** Result of routing a packet through the switch. */
 export interface PacketResult {
 	action: "ACCEPT" | "DROP" | "REJECT";
 	payload?: string;
@@ -34,6 +38,7 @@ export interface PacketResult {
 	fragmented?: boolean;
 }
 
+/** Traffic shaping rule applied between groups of VMs. */
 export interface TrafficRule {
 	vms: string[];
 	maxBandwidthMbps?: number;
@@ -43,6 +48,7 @@ export interface TrafficRule {
 	burstLoss?: boolean;
 }
 
+/** Queuing discipline rule for traffic control (tc-like). */
 export interface QdiscRule {
 	interface: string;
 	type: "tbf" | "netem" | "htb";
@@ -58,17 +64,20 @@ export interface QdiscRule {
 	corruptPct?: number;
 }
 
+/** A DNS record mapping a hostname to an IP. */
 export interface DnsRecord {
 	hostname: string;
 	ip: string;
 }
 
+/** A load balancer target backend. */
 export interface LoadBalancerTarget {
 	hostname: string;
 	port: number;
 	weight: number;
 }
 
+/** A load balancer rule distributing traffic across targets. */
 export interface LoadBalancerRule {
 	name: string;
 	port: number;
