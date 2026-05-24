@@ -2,16 +2,55 @@
 
 ## Current Focus
 
-- **Command Completeness** — filling gaps in the POSIX command set
+- **Test Coverage** — ~72 commands (56%) ont zéro test. Priorité absolue.
+- **Security** — sandbox multi-tenant et isolation.
 
 ---
 
 ## Planned
 
-- [ ] **WebSocket remote shell client** — experimental real-time shell over WebSocket
-- [ ] **Session multi-user** — switch user from panel (login screen, isolated `/home`)
-- [ ] **WebWorker sandbox isolation** — security boundary between shells
-- [ ] **Full POSIX shell compliance** — shell interpreter coverage
+### P0 — Test Coverage & Security
+
+- [ ] **01 — Test coverage: 72 commands sans test** — `ping`, `ifconfig`, `iptables`, `dd`, `file`, `apt`, `gzip`, `tar`, `top`, `fortune`, et ~62 autres (`tasks/01-test-coverage-commands.md`)
+- [ ] **02 — Test coverage: modules critiques** — SSHMimic (scp, hostKey, prompt), Honeypot, desktopManager, VirtualProxy, VirtualVpn, nanoEditor (`tasks/02-test-coverage-modules.md`)
+- [ ] **03 — Security sandbox multi-tenant** — WebWorker isolation, restriction curl/wget, CSP, VFS fork-on-write, cgroups virtuels (`tasks/03-security-sandbox.md`)
+
+### P1 — POSIX Completeness & Desktop
+
+- [ ] **04 — 32+ commandes POSIX manquantes** — mount, systemctl, journalctl, less, more, dig, git, make, ssh-keygen, crontab, gpg, openssl, screen/tmux, watch, rsync, figlet, et plus (`tasks/04-missing-commands.md`)
+- [ ] **05 — Full POSIX shell compliance** — parser, expansions, `[[ ]]`, redirections, traps, builtins, shell options (`tasks/05-shell-compliance.md`)
+- [ ] **06 — Desktop features** — multi-workspaces, icons desktop, login screen, notifications, window snapping, Alt+Tab, search, clipboard, personalisation (`tasks/06-desktop-features.md`)
+
+### P2 — Infrastructure & Transport
+
+- [ ] **07 — CI/CD gates** — coverage threshold, build verification, bundle size gate, security audit, benchmark regression, matrix tests (`tasks/07-ci-cd-gates.md`)
+- [ ] **08 — Snapshot format standard** — support tar/squashfs en plus de VFSB, interopérabilité (`tasks/08-snapshot-format.md`)
+- [ ] **09 — WebSocket remote shell client** — serveur WS, protocole messages, client terminal web, intégration desktop (`tasks/09-websocket-shell.md`)
+
+### P3 — Polish
+
+- [ ] **10 — Utils test coverage** — tokenize, glob, argv, vfsDiff, keyToBytes, perfLogger, shellSession (`tasks/10-utils-test-coverage.md`)
+- [ ] **11 — Stubs et correctifs** — csplit, split, printf, read, alias manquants, graceful degradation (`tasks/11-stubs-fixes.md`)
+
+---
+
+## Detailed Task Files
+
+Chaque groupe de tâches est documenté en détail dans `tasks/` :
+
+| Fichier | Contenu |
+|---|---|
+| `tasks/01-test-coverage-commands.md` | Liste exhaustive des ~72 commandes à tester |
+| `tasks/02-test-coverage-modules.md` | Modules critiques à couvrir (SSHMimic, Honeypot, desktop) |
+| `tasks/03-security-sandbox.md` | WebWorker, CSP, restriction réseau, isolation |
+| `tasks/04-missing-commands.md` | 32+ commandes à implémenter |
+| `tasks/05-shell-compliance.md` | POSIX shell gaps |
+| `tasks/06-desktop-features.md` | Desktop fonctionnalités manquantes |
+| `tasks/07-ci-cd-gates.md` | CI/CD améliorations |
+| `tasks/08-snapshot-format.md` | Standard snapshot format |
+| `tasks/09-websocket-shell.md` | WebSocket transport |
+| `tasks/10-utils-test-coverage.md` | Tests unitaires utils |
+| `tasks/11-stubs-fixes.md` | Stubs et correctifs |
 
 ---
 
