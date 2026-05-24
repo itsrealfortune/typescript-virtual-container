@@ -1,6 +1,10 @@
 import type {ShellModule} from "../types/commands";
 import {ifFlag, parseArgs} from "./command-helpers";
 import {assertPathAccess, resolvePath, stripUrlFilename} from "./helpers";
+import {
+	checkOutboundRestriction,
+	honeypotResponse,
+} from "../utils/networkRestrictions";
 
 /**
  * Download files from the web (fetch-based implementation).
@@ -105,22 +109,38 @@ export const wgetCommand: ShellModule = {
 				: parsedUrl.protocol === "https:"
 					? 443
 					: 80;
-			const fwAction = shell.network.checkFirewall(
-				"OUTPUT",
-				"tcp",
-				undefined,
-				parsedUrl.hostname,
-				dstPort
+
+			const restriction = checkOutboundRestriction(
+				url,
+				shell.resourceCaps?.outboundRestriction
 			);
-			if (fwAction === "DROP" || fwAction === "REJECT") {
+			if (restriction.allowed) {
+				const fwAction = shell.network.checkFirewall(
+					"OUTPUT",
+					"tcp",
+					undefined,
+					parsedUrl.hostname,
+					dstPort
+				);
+				if (fwAction === "DROP" || fwAction === "REJECT") {
+					return {
+						stderr: `wget: unable to connect to ${parsedUrl.hostname}:${dstPort}: Connection refused\n`,
+						exitCode: 4,
+					};
+				}
+				response = await fetch(url, {
+					headers: {
+						"User-Agent": "Wget/1.21.3 (Fortune GNU/Linux)",
+					},
+				});
+			} else if (restriction.honeypot) {
+				response = honeypotResponse(url);
+			} else {
 				return {
 					stderr: `wget: unable to connect to ${parsedUrl.hostname}:${dstPort}: Connection refused\n`,
 					exitCode: 4,
 				};
 			}
-			response = await fetch(url, {
-				headers: {"User-Agent": "Wget/1.21.3 (Fortune GNU/Linux)"},
-			});
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
 			stderrLines.push(`wget: unable to resolve host: ${msg}`);

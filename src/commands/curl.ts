@@ -1,6 +1,10 @@
 import type {ShellModule} from "../types/commands";
 import {ifFlag, parseArgs} from "./command-helpers";
 import {assertPathAccess, resolvePath} from "./helpers";
+import {
+	checkOutboundRestriction,
+	honeypotResponse,
+} from "../utils/networkRestrictions";
 
 /**
  * HTTP client wrapper using `fetch()` semantics (virtual curl).
@@ -110,20 +114,34 @@ export const curlCommand: ShellModule = {
 				: parsedUrl.protocol === "https:"
 					? 443
 					: 80;
-			const fwAction = shell.network.checkFirewall(
-				"OUTPUT",
-				"tcp",
-				undefined,
-				parsedUrl.hostname,
-				dstPort
+
+			const restriction = checkOutboundRestriction(
+				urlWithHttp,
+				shell.resourceCaps?.outboundRestriction
 			);
-			if (fwAction === "DROP" || fwAction === "REJECT") {
+			if (restriction.allowed) {
+				const fwAction = shell.network.checkFirewall(
+					"OUTPUT",
+					"tcp",
+					undefined,
+					parsedUrl.hostname,
+					dstPort
+				);
+				if (fwAction === "DROP" || fwAction === "REJECT") {
+					return {
+						stderr: `curl: (7) Failed to connect to ${parsedUrl.hostname} port ${dstPort}: Connection refused`,
+						exitCode: 7,
+					};
+				}
+				response = await fetch(urlWithHttp, fetchOpts);
+			} else if (restriction.honeypot) {
+				response = honeypotResponse(urlWithHttp);
+			} else {
 				return {
-					stderr: `curl: (7) Failed to connect to ${parsedUrl.hostname} port ${dstPort}: Connection refused`,
+					stderr: `curl: (7) Failed to connect to ${parsedUrl.hostname} port ${dstPort}: ${restriction.reason}`,
 					exitCode: 7,
 				};
 			}
-			response = await fetch(urlWithHttp, fetchOpts);
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
 			return {
