@@ -8,6 +8,7 @@ import {ifFlag} from "./command-helpers";
 import {resolvePath} from "./helpers";
 import {popScope} from "./declare";
 import {runCommand} from "./runtime";
+import {consumeHeredocs} from "../modules/VirtualShell/shellParser";
 
 /** Alias for clarity inside sh.ts */
 type ShellContext = CommandContext;
@@ -728,7 +729,8 @@ export const shCommand: ShellModule = {
 			if (!script) {
 				return {stderr: "sh: -c requires a script", exitCode: 1};
 			}
-			const lines = splitShScript(script);
+			const processed = consumeHeredocs(script);
+			const lines = splitShScript(processed);
 			const blocks = parseBlocks(lines);
 			return runBlocks(blocks, ctx);
 		}
@@ -744,7 +746,8 @@ export const shCommand: ShellModule = {
 				};
 			}
 			const content = shell.vfs.readFile(p);
-			const lines = splitShScript(content);
+			const processed = consumeHeredocs(content);
+			const lines = splitShScript(processed);
 			const blocks = parseBlocks(lines);
 			return runBlocks(blocks, ctx);
 		}

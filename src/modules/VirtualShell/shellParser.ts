@@ -9,6 +9,87 @@ import type {
 } from "../../types/pipeline";
 import {tokenizeCommand} from "../../utils/tokenize";
 
+// ── Heredoc pre-processing ───────────────────────────────────────────────────
+
+/**
+ * Check if a given position in the line is inside single or double quotes.
+ */
+function isInsideQuotes(line: string, pos: number): boolean {
+	let inSingle = false;
+	let inDouble = false;
+	for (let j = 0; j < pos && j < line.length; j++) {
+		const c = line[j] as string;
+		if (c === "'" && !inDouble) {
+			inSingle = !inSingle;
+		} else if (c === '"' && !inSingle) {
+			inDouble = !inDouble;
+		}
+	}
+	return inSingle || inDouble;
+}
+
+/**
+ * Scan multi-line input for heredoc syntax (`<<` / `<<-`) and consume the
+ * body lines between the delimiter.
+ *
+ * Returns a new string where each heredoc block is replaced with an equivalent
+ * here-string (`<<< 'body'`) so the standard parser can handle it.
+ *
+ * Example:
+ * ```
+ * cat << EOF
+ * hello world
+ * EOF
+ * ```
+ * becomes `cat <<< 'hello world'`
+ */
+export function consumeHeredocs(input: string): string {
+	if (!input.includes("<<")) {
+		return input;
+	}
+	const lines = input.split("\n");
+	const output: string[] = [];
+	let i = 0;
+
+	while (i < lines.length) {
+		const line = lines[i] as string;
+		const match = line.match(/^(.*?)(?<!<)<<(?!<)(-?)\s+(\S+)(.*)$/);
+		if (match) {
+			const before = match[1] ?? "";
+			const heredocPos = before.length;
+			if (isInsideQuotes(line, heredocPos)) {
+				output.push(line);
+				i++;
+				continue;
+			}
+			const strip = (match[2] ?? "") === "-";
+			const delimiter = match[3] ?? "";
+			const after = match[4] ?? "";
+
+			const bodyLines: string[] = [];
+			i++;
+			while (i < lines.length) {
+				const bodyLine = strip
+					? (lines[i] as string).replace(/^\t+/, "")
+					: (lines[i] as string);
+				if (bodyLine === delimiter) {
+					break;
+				}
+				bodyLines.push(bodyLine);
+				i++;
+			}
+
+			const body = bodyLines.join("\n");
+			const escapedBody = body.replace(/'/g, "'\\''");
+			output.push(`${before}<<< '${escapedBody}'${after}`);
+		} else {
+			output.push(line);
+		}
+		i++;
+	}
+	return output.join("\n");
+}
+
 // ── Public API ───────────────────────────────────────────────────────────────
 
 /**
@@ -29,7 +110,8 @@ export function parseScript(rawInput: string): Script {
 	}
 
 	try {
-		const statements = parseStatements(trimmed);
+		const processed = consumeHeredocs(trimmed);
+		const statements = parseStatements(processed);
 		return {statements, isValid: true};
 	} catch (e) {
 		return {statements: [], isValid: false, error: (e as Error).message};
@@ -318,7 +400,11 @@ function parseCommandWithRedirections(token: string): PipelineCommand {
 			if (i >= parts.length) {
 				throw new Error("Syntax error: expected word after <<<");
 			}
-			hereString = parts[i];
+			const raw = parts[i] as string;
+			// Strip surrounding single quotes (added by heredoc pre-processing)
+			hereString = raw.startsWith("'") && raw.endsWith("'") && raw.length >= 2
+				? raw.slice(1, -1)
+				: raw;
 			i++;
 		} else if (part === "<>") {
 			i++;
