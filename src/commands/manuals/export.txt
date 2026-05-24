@@ -4,17 +4,21 @@ NAME
        export - set export attribute for shell variables
 
 SYNOPSIS
-       export [NAME[=VALUE] ...]
-       export -p
+       export [-fn] [-p] [NAME[=VALUE] ...]
 
 OPTIONS
-       -p    print all exported variables
+       -f     Operate on shell functions (export -f funcname).
+       -n     Remove the export attribute from each NAME.
+       -p     Print all exported variables (default with no args).
 
 DESCRIPTION
-       Marks each NAME for automatic export to the environment of
-       subsequently executed commands.
+       Mark each NAME for automatic export to the environment of
+       subsequently executed commands.  With NAME=VALUE, set the
+       variable to VALUE and mark it exported.
 
 EXAMPLES
        export PATH="$PATH:/usr/local/bin"
        export NODE_ENV=production
+       export -n PATH
+       export -f myfunc
        export -p

@@ -1,0 +1,19 @@
+CALLER(1)                User Commands                    CALLER(1)
+
+NAME
+       caller - print the current call stack frame
+
+SYNOPSIS
+       caller [n]
+
+DESCRIPTION
+       Print the current call stack frame.  With n, print the n-th
+       calling frame (0 is the current function, 1 is its caller,
+       etc.).  Without n, print frame 0.
+
+       Output format: <line> <file> <function>
+
+EXAMPLES
+       caller
+       caller 0
+       caller 1

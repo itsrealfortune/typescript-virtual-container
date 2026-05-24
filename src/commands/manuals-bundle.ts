@@ -150,6 +150,25 @@ EXAMPLES
        bzip2 file.txt        # compress file.txt to file.txt.bz2
        bzip2 -d file.txt.bz2 # decompress
        bzip2 -k file.txt     # compress but keep original`,
+	caller: `CALLER(1)                User Commands                    CALLER(1)
+
+NAME
+       caller - print the current call stack frame
+
+SYNOPSIS
+       caller [n]
+
+DESCRIPTION
+       Print the current call stack frame.  With n, print the n-th
+       calling frame (0 is the current function, 1 is its caller,
+       etc.).  Without n, print frame 0.
+
+       Output format: <line> <file> <function>
+
+EXAMPLES
+       caller
+       caller 0
+       caller 1`,
 	cat: `CAT(1)                   User Commands                    CAT(1)
 
 NAME
@@ -326,6 +345,30 @@ SYNOPSIS
 DESCRIPTION
        Compare FILE1 and FILE2 line by line, producing
        three-column output of common and unique lines.`,
+	command: `COMMAND(1)               User Commands                    COMMAND(1)
+
+NAME
+       command - run a command or display information about it
+
+SYNOPSIS
+       command [-vVp] <command> [args...]
+
+DESCRIPTION
+       Run a command or display information about how a command would
+       be resolved.
+
+       -v     Print the path or name of the command.
+       -V     Print a verbose description of the command.
+       -p     Use a default PATH (POSIX-standard path) instead of the
+              current shell PATH.
+
+       Without -v or -V, run the command with the given arguments,
+       bypassing any shell function with the same name.
+
+EXAMPLES
+       command -v ls
+       command -V ls
+       command -p ls -la`,
 	conntrack: `CONNTRACK(8)       System Administration       CONNTRACK(8)
 
 NAME
@@ -461,15 +504,32 @@ DESCRIPTION
 	declare: `DECLARE(1)               Shell Builtins               DECLARE(1)
 
 NAME
-       declare - set variable values and attributes
+       declare, local, typeset - set variable values and attributes
 
 SYNOPSIS
        declare [OPTION]... [NAME[=VALUE]...]
+       local [NAME[=VALUE]...]
 
 OPTIONS
-       -i     variable has integer attribute
-       -r     make NAMEs readonly
-       -x     export NAMEs to environment`,
+       -i     Variable has integer attribute (arithmetic evaluation).
+       -r     Make NAMEs readonly.
+       -x     Export NAMEs to environment.
+       -a     Declare array variable.
+
+DESCRIPTION
+       Set variable values and attributes.  Without arguments, print
+       all shell variables with their attributes.
+
+       The local keyword is equivalent to declare inside a function
+       body, and the variable's scope is limited to the function.
+       Local variables are automatically restored when the function
+       returns.
+
+EXAMPLES
+       declare -r PATH
+       declare -i count=0
+       local myvar=hello
+       declare -x MY_ENV=value`,
 	deluser: `DELUSER(8)                User Commands                DELUSER(8)
 
 NAME
@@ -647,19 +707,23 @@ NAME
        export - set export attribute for shell variables
 
 SYNOPSIS
-       export [NAME[=VALUE] ...]
-       export -p
+       export [-fn] [-p] [NAME[=VALUE] ...]
 
 OPTIONS
-       -p    print all exported variables
+       -f     Operate on shell functions (export -f funcname).
+       -n     Remove the export attribute from each NAME.
+       -p     Print all exported variables (default with no args).
 
 DESCRIPTION
-       Marks each NAME for automatic export to the environment of
-       subsequently executed commands.
+       Mark each NAME for automatic export to the environment of
+       subsequently executed commands.  With NAME=VALUE, set the
+       variable to VALUE and mark it exported.
 
 EXAMPLES
        export PATH="$PATH:/usr/local/bin"
        export NODE_ENV=production
+       export -n PATH
+       export -f myfunc
        export -p`,
 	expr: `EXPR(1)                  User Commands                  EXPR(1)
 
@@ -886,6 +950,29 @@ SYNOPSIS
 
 DESCRIPTION
        Compress or decompress files in place.`,
+	hash: `HASH(1)                  User Commands                    HASH(1)
+
+NAME
+       hash - display and manage the command hash table
+
+SYNOPSIS
+       hash [-r] [name ...]
+
+DESCRIPTION
+       Display and manage the internal hash table of command locations.
+       The shell caches the full path of each looked-up command to
+       avoid repeated PATH searches.
+
+       -r     Clear the entire hash table.
+
+       With name arguments, hash the named commands and add them to
+       the hash table.  Without arguments, display the current hash
+       table contents.
+
+EXAMPLES
+       hash
+       hash ls cat grep
+       hash -r`,
 	head: `HEAD(1)                  User Commands                    HEAD(1)
 
 NAME
@@ -1722,6 +1809,31 @@ SYNOPSIS
 
 OPTIONS
        -f     canonicalize by following every symlink in every component`,
+	readonly: `READONLY(1)              User Commands                    READONLY(1)
+
+NAME
+       readonly - mark shell variables as readonly
+
+SYNOPSIS
+       readonly [-p] [NAME[=VALUE] ...]
+
+DESCRIPTION
+       Mark shell variables as readonly.  Subsequent attempts to modify
+       a readonly variable will fail.
+
+       -p     Print all readonly variables (default when no NAME given).
+
+       With NAME, mark the named variable as readonly.  With
+       NAME=VALUE, set the variable to VALUE and mark it readonly.
+
+EXAMPLES
+       readonly PATH
+       readonly MYVAR=hello
+       readonly -p
+
+NOTES
+       Readonly status is stored in the shell environment and persists
+       until the shell session ends.`,
 	realpath: `REALPATH(1)              User Commands              REALPATH(1)
 
 NAME
@@ -1800,10 +1912,34 @@ NAME
 
 SYNOPSIS
        set [OPTION]... [ARG]...
-       set [NAME=VALUE]...
+       set [+-abCefhkmnuvx] [+-o option] [-- args]
+
+OPTIONS
+       -e     Exit immediately if a command exits with non-zero status.
+       -u     Treat unset variables as an error.
+       -x     Print commands and their arguments as they execute.
+       -C     Prevent redirection from overwriting files (noclobber).
+
+       -o option
+              Enable an option by name (errexit, nounset, noclobber,
+              xtrace, pipefail).
+
+       +o option
+              Disable an option by name.
+
+       --     Mark the end of options.  Remaining arguments are
+              assigned to positional parameters ($1, $2, ...).
 
 DESCRIPTION
-       Display or modify shell variable state.`,
+       Display or modify shell variables and options.  With no
+       arguments, print all shell variables.
+
+EXAMPLES
+       set -e
+       set -o pipefail
+       set +o nounset
+       set -- one two three
+       set -eux`,
 	sh: `SH(1)                    User Commands                      SH(1)
 
 NAME
@@ -1850,6 +1986,35 @@ SYNOPSIS
 
 DESCRIPTION
        Rename positional parameters by discarding the first N arguments.`,
+	shopt: `SHOPT(1)                 User Commands                    SHOPT(1)
+
+NAME
+       shopt - manage shell options (bash extension)
+
+SYNOPSIS
+       shopt [-pqsu] [-o] [optname ...]
+
+DESCRIPTION
+       Display and manage shell option variables.  Without arguments,
+       list all shell options and their current state.
+
+       -s     Set (enable) the named options.
+       -u     Unset (disable) the named options.
+       -q     Quiet mode: return 0 if all named options are set, 1
+              otherwise.  No output is printed.
+       -p     Print option settings in a reusable format.
+       -o     Use POSIX-style option names (errexit, nounset, etc.)
+              instead of bash-style names.
+
+       Shell options are stored in the environment.  Options that can
+       be set via shopt include: dotglob, nullglob, failglob, extglob,
+       histexpand, cdable_vars, extdebug.
+
+EXAMPLES
+       shopt
+       shopt -s dotglob
+       shopt -u nullglob
+       shopt -q extglob`,
 	shuf: `SHUF(1)                  User Commands                    SHUF(1)
 
 NAME
@@ -2224,14 +2389,62 @@ OPTIONS
 	test: `TEST(1)                   Shell Builtins                  TEST(1)
 
 NAME
-       test - check file types and compare values
+       test, [ - check file types and compare values
 
 SYNOPSIS
        test EXPRESSION
        [ EXPRESSION ]
 
 DESCRIPTION
-       Evaluate conditional expressions for scripts and shell logic.`,
+       Evaluate conditional expressions for scripts and shell logic.
+       Returns 0 (true) if EXPRESSION evaluates to true, 1 (false)
+       otherwise.
+
+FILE TESTS
+       -b FILE     True if FILE is a block device.
+       -c FILE     True if FILE is a character device.
+       -d FILE     True if FILE is a directory.
+       -e FILE     True if FILE exists.
+       -f FILE     True if FILE is a regular file.
+       -g FILE     True if FILE has SGID bit set.
+       -k FILE     True if FILE has sticky bit set.
+       -L FILE     True if FILE is a symbolic link.
+       -p FILE     True if FILE is a named pipe.
+       -r FILE     True if FILE is readable.
+       -S FILE     True if FILE is a socket.
+       -s FILE     True if FILE exists and is non-empty.
+       -t FD       True if FD is a terminal.
+       -w FILE     True if FILE is writable.
+       -x FILE     True if FILE is executable.
+       -nt         True if FILE1 is newer than FILE2.
+       -ot         True if FILE1 is older than FILE2.
+       -ef         True if FILE1 and FILE2 refer to the same file.
+
+STRING TESTS
+       -n STRING   True if STRING is non-empty.
+       -z STRING   True if STRING is empty.
+       STRING1 = STRING2    True if equal.
+       STRING1 != STRING2   True if not equal.
+       STRING1 < STRING2    True if lexicographically less.
+       STRING1 > STRING2    True if lexicographically greater.
+
+NUMERIC TESTS
+       -eq  -ne  -lt  -le  -gt  -ge
+
+OTHER TESTS
+       -o OPTION   True if shell option OPTION is set.
+       -v VAR      True if variable VAR is set.
+       -R VAR      True if VAR is a name reference.
+
+LOGICAL OPERATORS
+       ! EXPR      Negation.
+       EXPR1 -a EXPR2    And.
+       EXPR1 -o EXPR2    Or.
+
+EXAMPLES
+       test -f /etc/passwd
+       [ -d /tmp ]
+       [ "$USER" = "root" ]`,
 	timeout: `TIMEOUT(1)               User Commands                  TIMEOUT(1)
 
 NAME
@@ -2387,10 +2600,26 @@ NAME
        type - display how a command name is interpreted
 
 SYNOPSIS
-       type NAME...
+       type [-afptP] NAME...
+
+OPTIONS
+       -a     Show all locations containing the command (all builtins
+              and all PATH matches).
+       -f     Suppress shell function lookup.
+       -p     Print the disk file path of the command.
+       -t     Print a single word: alias, builtin, file, function, or
+              keyword.
 
 DESCRIPTION
-       Indicate whether NAME is a shell builtin, alias, or found in PATH.`,
+       Indicate how each NAME would be interpreted if used as a
+       command name.  Shows whether NAME is a shell builtin, function,
+       or found in PATH.
+
+EXAMPLES
+       type ls
+       type -t ls
+       type -p ls
+       type -a ls`,
 	uname: `UNAME(1)                 User Commands                  UNAME(1)
 
 NAME
@@ -2421,10 +2650,20 @@ NAME
        unset - unset values and attributes of shell variables
 
 SYNOPSIS
-       unset NAME...
+       unset [-fv] NAME...
+
+OPTIONS
+       -f     Unset a shell function (NAME refers to a function).
+       -v     Unset a shell variable (default).
 
 DESCRIPTION
-       Remove one or more shell variables from the current environment.`,
+       Remove one or more shell variables or functions from the
+       current environment.
+
+EXAMPLES
+       unset MYVAR
+       unset -v MYVAR
+       unset -f myfunc`,
 	uptime: `UPTIME(1)                User Commands                  UPTIME(1)
 
 NAME

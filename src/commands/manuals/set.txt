@@ -5,7 +5,31 @@ NAME
 
 SYNOPSIS
        set [OPTION]... [ARG]...
-       set [NAME=VALUE]...
+       set [+-abCefhkmnuvx] [+-o option] [-- args]
+
+OPTIONS
+       -e     Exit immediately if a command exits with non-zero status.
+       -u     Treat unset variables as an error.
+       -x     Print commands and their arguments as they execute.
+       -C     Prevent redirection from overwriting files (noclobber).
+
+       -o option
+              Enable an option by name (errexit, nounset, noclobber,
+              xtrace, pipefail).
+
+       +o option
+              Disable an option by name.
+
+       --     Mark the end of options.  Remaining arguments are
+              assigned to positional parameters ($1, $2, ...).
 
 DESCRIPTION
-       Display or modify shell variable state.
+       Display or modify shell variables and options.  With no
+       arguments, print all shell variables.
+
+EXAMPLES
+       set -e
+       set -o pipefail
+       set +o nounset
+       set -- one two three
+       set -eux
