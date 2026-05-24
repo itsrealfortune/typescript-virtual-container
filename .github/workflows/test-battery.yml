@@ -201,7 +201,7 @@ jobs:
       - run: bun run bench 2>&1 | tee bench-output.txt
       - name: Compare wall time with baseline
         run: |
-          wall=$(grep "Wall time" bench-output.txt | awk '{print $NF}')
+          wall=$(grep "Wall time" bench-output.txt | awk '{print $4}')
           echo "Wall time: ${wall} ms"
           BASELINE_FILE=".benchmark-baseline.json"
           if [ -f "$BASELINE_FILE" ]; then
