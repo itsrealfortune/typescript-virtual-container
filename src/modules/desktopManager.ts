@@ -55,6 +55,11 @@ export interface AboutContent {
 	type: "about";
 }
 
+/** Content state for the Keyboard Shortcuts dialog window. */
+export interface ShortcutsContent {
+	type: "shortcuts";
+}
+
 /** Content state for a Task Manager (htop-like) window. */
 export interface TaskManagerContent {
 	type: "taskmanager";
@@ -74,7 +79,8 @@ export type WindowContent =
 	| ThunarContent
 	| AboutContent
 	| EditorContent
-	| TaskManagerContent;
+	| TaskManagerContent
+	| ShortcutsContent;
 
 /** Represents a single desktop window with position, size, and content. */
 export interface DesktopWindow {
@@ -292,6 +298,9 @@ export class DesktopManager {
 				case "about":
 					id = this.createAboutWindow();
 					break;
+				case "shortcuts":
+					id = this.createShortcutsWindow();
+					break;
 				default:
 					continue;
 			}
@@ -367,7 +376,7 @@ export class DesktopManager {
 			}
 		}
 
-		// Super/Meta key toggles menu
+		// Super/Meta key toggles menu or opens shortcuts
 		if (
 			e.key === "Meta" ||
 			e.key === "Super" ||
@@ -379,6 +388,11 @@ export class DesktopManager {
 				this._renderPanel();
 			}
 			e.preventDefault();
+			return;
+		}
+		if (e.metaKey && e.key === "s") {
+			e.preventDefault();
+			this.createShortcutsWindow();
 			return;
 		}
 
@@ -533,6 +547,19 @@ export class DesktopManager {
 			width: 400,
 			height: 280,
 			content: { type: "about" },
+		});
+	}
+
+	/**
+	 * Create a keyboard shortcuts dialog window.
+	 * @returns The unique window ID.
+	 */
+	createShortcutsWindow(): string {
+		return this._createWindow({
+			title: "Keyboard Shortcuts",
+			width: 480,
+			height: 420,
+			content: { type: "shortcuts" },
 		});
 	}
 
@@ -790,6 +817,8 @@ export class DesktopManager {
 			this._renderEditorContent(el, win.id, win.content);
 		} else if (win.content.type === "taskmanager") {
 			this._renderTaskManagerContent(el, win.id);
+		} else if (win.content.type === "shortcuts") {
+			this._renderShortcutsContent(el);
 		}
 	}
 
@@ -985,6 +1014,8 @@ export class DesktopManager {
 					this.createEditorWindow();
 				} else if (action === "taskmanager") {
 					this.createTaskManagerWindow();
+				} else if (action === "shortcuts") {
+					this.createShortcutsWindow();
 				} else if (action === "about") {
 					this.createAboutWindow();
 				} else if (action === "logout") {
@@ -1472,6 +1503,7 @@ export class DesktopManager {
           <div class="menu-item" data-action="editor" data-search="mousepad editor text nano"><span class="menu-item-icon"><i class="fa-solid fa-file-pen"></i></span>Text Editor</div>
           <div class="menu-item" data-action="taskmanager" data-search="task manager processes htop"><span class="menu-item-icon"><i class="fa-solid fa-chart-bar"></i></span>Task Manager</div>
           <div class="menu-separator"></div>
+          <div class="menu-item" data-action="shortcuts" data-search="shortcuts keyboard keys"><span class="menu-item-icon"><i class="fa-solid fa-keyboard"></i></span>Keyboard Shortcuts</div>
           <div class="menu-item" data-action="about" data-search="about information system"><span class="menu-item-icon"><i class="fa-solid fa-circle-info"></i></span>About Fortune GNU/Linux</div>
           <div class="menu-separator"></div>
           <div class="menu-item" data-action="logout" data-search="logout quit exit"><span class="menu-item-icon"><i class="fa-solid fa-power-off"></i></span>Log Out</div>
@@ -1685,6 +1717,33 @@ export class DesktopManager {
         <p>Kernel: ${this._shell.properties.kernel}</p>
         <p>Architecture: ${this._shell.properties.arch}</p>
         <p class="about-close-hint">Close this window to return</p>
+      </div>
+    `;
+	}
+
+	private _renderShortcutsContent(el: HTMLElement): void {
+		const contentArea = el.querySelector(".win-content") as HTMLElement;
+		if (!contentArea) {
+			return;
+		}
+		const shortcuts = [
+			{ keys: "Super", desc: "Open Application Menu" },
+			{ keys: "Super + S", desc: "Keyboard Shortcuts" },
+			{ keys: "Alt+Tab", desc: "Switch between windows" },
+			{ keys: "Super + Left/Right", desc: "Tile window to half screen" },
+			{ keys: "Ctrl+Alt+F1-F4", desc: "Switch workspace" },
+			{ keys: "Escape", desc: "Close menu / cancel" },
+			{ keys: "Ctrl+C", desc: "Copy in terminal" },
+			{ keys: "Ctrl+V", desc: "Paste in terminal" },
+			{ keys: "Ctrl+S", desc: "Save file in editor" },
+			{ keys: "Double-click titlebar", desc: "Toggle maximize" },
+		];
+		contentArea.innerHTML = `
+      <div class="shortcuts-dialog">
+        <h3>Keyboard Shortcuts</h3>
+        <div class="shortcuts-list">
+          ${shortcuts.map((s) => `<div class="shortcut-row"><span class="shortcut-keys">${DesktopManager._escapeHtml(s.keys)}</span><span class="shortcut-desc">${DesktopManager._escapeHtml(s.desc)}</span></div>`).join("")}
+        </div>
       </div>
     `;
 	}

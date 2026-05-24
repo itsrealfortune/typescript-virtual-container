@@ -789,3 +789,40 @@ body {
   max-height: 320px;
   overflow-y: auto;
 }
+
+/* ── Keyboard Shortcuts ────────────────────────────── */
+.shortcuts-dialog {
+  padding: 16px 20px;
+  height: 100%;
+  overflow-y: auto;
+}
+.shortcuts-dialog h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: #8cf;
+}
+.shortcuts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.shortcut-row {
+  display: flex;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px solid #333;
+}
+.shortcut-keys {
+  min-width: 180px;
+  font-family: 'JetBrains Mono', 'Cascadia Code', monospace;
+  font-size: 12px;
+  color: #e8e8e8;
+  background: #2a2a2a;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+.shortcut-desc {
+  font-size: 12px;
+  color: #aaa;
+  padding-left: 12px;
+}
