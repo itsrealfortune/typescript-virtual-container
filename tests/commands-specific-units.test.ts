@@ -468,10 +468,7 @@ describe("caller command - stack trace", () => {
 	});
 
 	test("caller inside function prints frame", async () => {
-		const r = await runCmd(
-			client,
-			"sh -c 'f() { caller 0; }; f'"
-		);
+		const r = await runCmd(client, "sh -c 'f() { caller 0; }; f'");
 		expect(r.exitCode).toBe(0);
 	});
 });
@@ -521,10 +518,7 @@ describe("unset command - enhanced flags", () => {
 	});
 
 	test("unset -f removes function", async () => {
-		const r = await runCmd(
-			client,
-			"sh -c 'f() { echo func; }; unset -f f; f'"
-		);
+		const r = await runCmd(client, "sh -c 'f() { echo func; }; unset -f f; f'");
 		expect(r.exitCode).not.toBe(0);
 	});
 });

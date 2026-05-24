@@ -402,9 +402,10 @@ function parseCommandWithRedirections(token: string): PipelineCommand {
 			}
 			const raw = parts[i] as string;
 			// Strip surrounding single quotes (added by heredoc pre-processing)
-			hereString = raw.startsWith("'") && raw.endsWith("'") && raw.length >= 2
-				? raw.slice(1, -1)
-				: raw;
+			hereString =
+				raw.startsWith("'") && raw.endsWith("'") && raw.length >= 2
+					? raw.slice(1, -1)
+					: raw;
 			i++;
 		} else if (part === "<>") {
 			i++;

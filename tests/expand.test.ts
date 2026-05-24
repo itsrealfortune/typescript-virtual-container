@@ -185,7 +185,7 @@ function makeGlobVfs(files: Record<string, string>): {
 } {
 	const tree: Record<string, string[]> = {};
 	const types: Record<string, string> = {};
-	for (const [path, content] of Object.entries(files)) {
+	for (const [path, _content] of Object.entries(files)) {
 		types[path] = "file";
 		const parts = path.split("/").filter(Boolean);
 		let cur = "";
