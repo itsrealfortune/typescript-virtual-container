@@ -6,7 +6,7 @@
  * race conditions, and concurrent file operations.
  */
 
-import {SshClient, VirtualShell, VirtualSshServer} from "../src";
+import { SshClient, VirtualShell, VirtualSshServer } from "../src";
 
 const shell = new VirtualShell("typescript-vm");
 await shell.ensureInitialized();
@@ -16,7 +16,7 @@ shell.users.addUser("alice", "alice123");
 shell.users.addUser("bob", "bob456");
 shell.users.addUser("charlie", "charlie789");
 
-const ssh = new VirtualSshServer({port: 0, shell});
+const ssh = new VirtualSshServer({ port: 0, shell });
 const port = await ssh.start();
 
 const client1 = new SshClient();

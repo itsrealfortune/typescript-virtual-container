@@ -5,7 +5,7 @@
  * and verifying file permission isolation between users.
  */
 
-import {SshClient, VirtualShell, VirtualSshServer} from "../src";
+import { SshClient, VirtualShell, VirtualSshServer } from "../src";
 
 const shell = new VirtualShell("typescript-vm");
 await shell.ensureInitialized();
@@ -28,7 +28,7 @@ shell.users.setQuotaBytes("bob", 5 * 1024 * 1024);
 console.log(`Bob's quota: ${shell.users.getQuotaBytes("bob")} bytes`);
 
 // ── Start SSH server ──────────────────────────────────────────────
-const ssh = new VirtualSshServer({port: 0, shell});
+const ssh = new VirtualSshServer({ port: 0, shell });
 const port = await ssh.start();
 
 // ── Alice writes private file ─────────────────────────────────────

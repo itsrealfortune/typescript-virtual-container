@@ -8,19 +8,19 @@
  *   ssh root@localhost -p 2222
  */
 
-import {runCommand} from "../src/commands/index";
-import {SshMimic as VirtualSshServer} from "../src/modules/SSHMimic/index";
-import {VirtualShell} from "../src/modules/VirtualShell/index";
+import { runCommand } from "../src/commands/index";
+import { SshMimic as VirtualSshServer } from "../src/modules/SSHMimic/index";
+import { VirtualShell } from "../src/modules/VirtualShell/index";
 
 const shell = new VirtualShell("lab-environment");
 await shell.ensureInitialized();
 shell.users.setPassword("root", "root");
 
-const ssh = new VirtualSshServer({port: 2222, shell});
+const ssh = new VirtualSshServer({ port: 2222, shell });
 
 // ── Register all event listeners ──────────────────────────────────
 console.log("--- Register all event listeners ---");
-ssh.on("start", ({port}) => {
+ssh.on("start", ({ port }) => {
 	console.log(`[EVENT] Server started on port ${port}`);
 });
 
@@ -28,23 +28,23 @@ ssh.on("stop", () => {
 	console.log("[EVENT] Server stopped");
 });
 
-ssh.on("auth:success", ({username, remoteAddress}) => {
+ssh.on("auth:success", ({ username, remoteAddress }) => {
 	console.log(`[EVENT] Auth success: ${username}@${remoteAddress}`);
 });
 
-ssh.on("auth:failure", ({username, remoteAddress}) => {
+ssh.on("auth:failure", ({ username, remoteAddress }) => {
 	console.log(`[EVENT] Auth failure: ${username}@${remoteAddress}`);
 });
 
-ssh.on("auth:lockout", ({ip, until}) => {
+ssh.on("auth:lockout", ({ ip, until }) => {
 	console.warn(`[EVENT] Lockout: ${ip} until ${until.toISOString()}`);
 });
 
-ssh.on("client:connect", ({remoteAddress}) => {
+ssh.on("client:connect", ({ remoteAddress }) => {
 	console.log(`[EVENT] Client connected from ${remoteAddress}`);
 });
 
-ssh.on("client:disconnect", ({user}) => {
+ssh.on("client:disconnect", ({ user }) => {
 	console.log(`[EVENT] Client disconnected: ${user ?? "unknown"}`);
 });
 

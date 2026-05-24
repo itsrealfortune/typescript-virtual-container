@@ -5,7 +5,7 @@
  * then asserting on the diff to verify expected changes.
  */
 
-import {assertDiff, diffSnapshots, VirtualFileSystem} from "../src";
+import { assertDiff, diffSnapshots, VirtualFileSystem } from "../src";
 
 // ── Setup initial state ───────────────────────────────────────────
 console.log("--- Setup initial state ---");
