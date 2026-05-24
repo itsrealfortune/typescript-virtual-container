@@ -48,7 +48,7 @@ export class SandboxedShell {
 	private _readyReject!: (err: Error) => void;
 	private _execTimeoutMs: number;
 
-	constructor(_hostname = "sandbox", options: SandboxedShellOptions = {}) {
+	constructor(options: SandboxedShellOptions = {}) {
 		this._execTimeoutMs = options.execTimeoutMs ?? 30_000;
 
 		const workerPath = options.workerScript ?? resolveWorkerScript();
