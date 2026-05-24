@@ -475,7 +475,7 @@ All examples are available as runnable TypeScript files in the [`examples/`](exa
 ---
 
 <details>
-<summary><strong>Built-in Commands (173)</strong></summary>
+<summary><strong>Built-in Commands (223)</strong></summary>
 
 Type `help` in the shell for a grouped, colorized listing. Type `help <command>` for detailed usage. Type `man <command>` for full manual pages — all commands are documented.
 
@@ -633,24 +633,31 @@ Type `help` in the shell for a grouped, colorized listing. Type `help <command>`
 | `sh` | Execute shell script |
 | `echo <text>` | Display text |
 | `printf <fmt> [args...]` | Format and print |
-| `read [-r] <var...>` | Read stdin into variable(s) |
+| `read [-d] [-n] [-t] [-a] <var...>` | Read stdin into variable(s) |
 | `source <file>` | Execute file in current env |
-| `export NAME=VALUE` | Set shell variable |
-| `set [VAR=val]` | Display or set shell variables |
-| `unset <VAR>` | Remove shell variable |
+| `export [-n] [-f] NAME=VALUE` | Set shell variable or function |
+| `readonly [-p] <name...>` | Mark variables as readonly |
+| `set [-o] [+o] [--] [VAR=val]` | Display or set shell options/variables |
+| `unset [-f] [-v] <VAR>` | Remove variable or function |
 | `alias [name=value]` | Define or display aliases |
-| `type <command>` | Describe command interpretation |
+| `type [-a] [-t] [-p] <command>` | Describe command interpretation |
+| `command [-v] [-V] [-p] <cmd>` | Run or identify command (skip functions) |
+| `builtin <cmd> [args...]` | Run a shell builtin (skip functions/aliases) |
 | `test <expr>` / `[ <expr> ]` | POSIX conditional |
+| `[[ <expr> ]]` | Extended conditional (bash) |
 | `expr <expr>` | Evaluate expression |
 | `declare [name=value]` | Declare variables |
+| `hash [-r] <name>` | PATH cache utilities |
+| `shopt [-s] [-u] <opt>` | Shell option management (bash) |
+| `caller [n]` | Print stack trace |
 | `exit [code]` | Exit session |
 | `shift [n]` | Shift positional parameters |
 | `return [n]` | Return from shell function |
-| `trap [action] [signal]` | Signal handlers |
+| `trap [-p] [action] [signal]` | Signal handlers |
 | `true` / `false` | Return exit code 0 / 1 |
 | `sleep <seconds>` | Delay execution |
 | `timeout <n> <cmd>` | Run command with time limit |
-| `wait [job...]` | Wait for background jobs (no-op) |
+| `wait [-n] [job...]` | Wait for background jobs |
 | `history [n]` | Command history |
 | `help` | Full list: type `help` in the shell |
 
@@ -679,7 +686,7 @@ Type `help` in the shell for a grouped, colorized listing. Type `help <command>`
 | `pacman` | Pacman game (mock) |
 | `help` | Full list: type `help` in the shell |
 
-**ℹ️ All 173 built-in commands include complete JSDoc documentation** with `@category` and `@params` tags. See [src/commands/](https://github.com/itsrealfortune/typescript-virtual-container/tree/main/src/commands) for source code and inline documentation.
+**ℹ️ All 223 built-in commands include complete JSDoc documentation** with `@category` and `@params` tags. See [src/commands/](https://github.com/itsrealfortune/typescript-virtual-container/tree/main/src/commands) for source code and inline documentation.
 
 Custom commands: `shell.addCommand(name, params, callback)`.
 
