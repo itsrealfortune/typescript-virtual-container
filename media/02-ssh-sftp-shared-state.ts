@@ -5,7 +5,7 @@
  * VirtualShell instance, so files written via SSH are visible via SFTP.
  */
 
-import { VirtualSftpServer as SftpMimic, VirtualShell } from "../src";
+import {VirtualSftpServer as SftpMimic, VirtualShell} from "../src";
 
 const shell = new VirtualShell("my-container");
 await shell.ensureInitialized();
@@ -17,7 +17,7 @@ console.log("VFS wrote /shared/hello.txt");
 
 // ── Start SFTP server ─────────────────────────────────────────────
 console.log("--- Start SFTP server ---");
-const sftp = new SftpMimic({ port: 0, shell });
+const sftp = new SftpMimic({port: 0, shell});
 const sftpPort = await sftp.start();
 console.log(`SFTP server started on port ${sftpPort}`);
 
