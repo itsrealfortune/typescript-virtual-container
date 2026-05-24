@@ -19,13 +19,13 @@
 - [x] `at` — delayed execution
 
 ### P1 — Editing and viewing
-- [ ] `less` — pagination with search (highly requested)
-- [ ] `more` — simple pagination
-- [ ] `vi` / `vim` — modal editor (or at least a useful stub)
+- [x] `less` — pagination with search (highly requested)
+- [x] `more` — simple pagination
+- [x] `vi` / `vim` — modal editor (or at least a useful stub)
 
 ### P1 — Development
-- [ ] `make` — build automation
-- [ ] `git` — version control (even partial: init, add, commit, log, status)
+- [x] `make` — build automation
+- [x] `git` — version control (even partial: init, add, commit, log, status)
 
 ### P2 — Network
 - [ ] `dig` — DNS queries

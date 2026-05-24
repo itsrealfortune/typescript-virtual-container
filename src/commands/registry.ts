@@ -59,6 +59,7 @@ import {
 	yesCommand,
 } from "./fun";
 import {getentCommand} from "./getent";
+import {gitCommand} from "./git";
 import {gpasswdCommand} from "./gpasswd";
 import {grepCommand} from "./grep";
 import {groupaddCommand} from "./groupadd";
@@ -79,10 +80,12 @@ import {iptablesCommand} from "./iptables";
 import {bgCommand, fgCommand, jobsCommand} from "./jobs";
 import {killCommand} from "./kill";
 import {dmesgCommand, lastCommand} from "./last";
+import {lessCommand} from "./less";
 import {lnCommand, readlinkCommand} from "./ln";
 import {lsCommand} from "./ls";
 import {lsbReleaseCommand} from "./lsb-release";
 import {lsofCommand} from "./lsof";
+import {makeCommand} from "./make";
 import {manCommand} from "./man";
 import {
 	expandCommand,
@@ -95,6 +98,7 @@ import {
 } from "./miscutils";
 import {mkdirCommand} from "./mkdir";
 import {mkfifoCommand, mknodCommand} from "./mknod";
+import {moreCommand} from "./more";
 import {mousepadCommand} from "./mousepad";
 import {mvCommand} from "./mv";
 import {nanoCommand} from "./nano";
@@ -161,6 +165,7 @@ import {uniqCommand} from "./uniq";
 import {unsetCommand} from "./unset";
 import {uptimeCommand} from "./uptime";
 import {usermodCommand} from "./usermod";
+import {viCommand} from "./vi";
 import {wCommand} from "./w";
 import {wcCommand} from "./wc";
 import {wgetCommand} from "./wget";
@@ -263,6 +268,9 @@ const BASE_COMMANDS: ShellModule[] = [
 	exitCommand,
 	// Editors
 	nanoCommand,
+	viCommand,
+	lessCommand,
+	moreCommand,
 	wCommand,
 	basenameCommand,
 	dirnameCommand,
@@ -280,6 +288,9 @@ const BASE_COMMANDS: ShellModule[] = [
 	slCommand,
 	pacmanCommand,
 	htopCommand,
+	// Development
+	makeCommand,
+	gitCommand,
 	// Network
 	curlCommand,
 	wgetCommand,
