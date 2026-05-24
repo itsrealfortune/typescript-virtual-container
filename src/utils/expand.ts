@@ -18,32 +18,7 @@
  *   $((expr))     arithmetic (integer)
  */
 
-import {globToRegex} from "./glob";
-
-// Memoized shell-pattern → RegExp for ${VAR//pat/rep} etc. forms.
-// Key encodes anchor/greedy options to keep separate caches per form.
-const _shellPatCache = new Map<string, RegExp>();
-function shellPatToRegex(
-	pat: string,
-	anchor: "none" | "prefix" | "suffix",
-	greedy: boolean,
-	global = false
-): RegExp {
-	const key = `${anchor}:${greedy ? "g" : "s"}:${global ? "G" : ""}:${pat}`;
-	let re = _shellPatCache.get(key);
-	if (re) {
-		return re;
-	}
-	const esc = pat.replace(/[.+^${}()|[\]\\]/g, "\\$&");
-	const body = greedy
-		? esc.replace(/\*/g, ".*").replace(/\?/g, ".")
-		: esc.replace(/\*/g, "[^/]*").replace(/\?/g, ".");
-	const src =
-		anchor === "prefix" ? `^${body}` : anchor === "suffix" ? `${body}$` : body;
-	re = new RegExp(src, global ? "g" : "");
-	_shellPatCache.set(key, re);
-	return re;
-}
+import {globToRegex, shellGlobToRegex} from "./glob";
 
 // ─── arithmetic evaluator ────────────────────────────────────────────────────
 
@@ -858,10 +833,24 @@ export function expandSync(
 			});
 		});
 
-		// Tilde expansion — only at start of token or after `:` or whitespace
+		// Tilde expansion: ~, ~user, ~+, ~-
+		// ~+ → $PWD, ~- → $OLDPWD, ~user → /home/<user>
 		s = s.replace(
-			/(^|[\s:])~(\/|$)/g,
-			(_, pre, post) => `${pre}${homePath}${post}`
+			/(^|[\s:])(~\+|~-|~[A-Za-z_][A-Za-z0-9_]*|~)(?=\/|$|\s|:)/g,
+			(_, pre, tilde) => {
+				let expanded: string;
+				if (tilde === "~+") {
+					expanded = env.PWD ?? homePath;
+				} else if (tilde === "~-") {
+					expanded = env.OLDPWD ?? "";
+				} else if (tilde === "~") {
+					expanded = homePath;
+				} else {
+					const userName = tilde.slice(1);
+					expanded = `/home/${userName}`;
+				}
+				return expanded ? `${pre}${expanded}` : `${pre}${tilde}`;
+			}
 		);
 
 		// $? $$ $# $RANDOM $LINENO
@@ -957,7 +946,7 @@ export function expandSync(
 			(_, name, pat, rep) => {
 				const val = env[name] ?? "";
 				try {
-					return val.replace(shellPatToRegex(pat, "none", true, true), rep);
+					return val.replace(shellGlobToRegex(pat, "none", true, true), rep);
 				} catch {
 					return val;
 				}
@@ -970,7 +959,7 @@ export function expandSync(
 			(_, name, pat, rep) => {
 				const val = env[name] ?? "";
 				try {
-					return val.replace(shellPatToRegex(pat, "none", true, false), rep);
+					return val.replace(shellGlobToRegex(pat, "none", true, false), rep);
 				} catch {
 					return val;
 				}
@@ -979,22 +968,22 @@ export function expandSync(
 
 		// ${VAR##pattern} — strip longest prefix
 		s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)##([^}]+)\}/g, (_, name, pat) =>
-			(env[name] ?? "").replace(shellPatToRegex(pat, "prefix", true), "")
+			(env[name] ?? "").replace(shellGlobToRegex(pat, "prefix", true), "")
 		);
 
 		// ${VAR#pattern} — strip shortest prefix
 		s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)#([^}]+)\}/g, (_, name, pat) =>
-			(env[name] ?? "").replace(shellPatToRegex(pat, "prefix", false), "")
+			(env[name] ?? "").replace(shellGlobToRegex(pat, "prefix", false), "")
 		);
 
 		// ${VAR%%pattern} — strip longest suffix
 		s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)%%([^}]+)\}/g, (_, name, pat) =>
-			(env[name] ?? "").replace(shellPatToRegex(pat, "suffix", true), "")
+			(env[name] ?? "").replace(shellGlobToRegex(pat, "suffix", true), "")
 		);
 
 		// ${VAR%pattern} — strip shortest suffix
 		s = s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)%([^}]+)\}/g, (_, name, pat) =>
-			(env[name] ?? "").replace(shellPatToRegex(pat, "suffix", false), "")
+			(env[name] ?? "").replace(shellGlobToRegex(pat, "suffix", false), "")
 		);
 
 		// ${VAR}
