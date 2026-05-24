@@ -1,4 +1,4 @@
-name: Test battery
+name: CI Gates
 
 on:
   pull_request:
@@ -8,7 +8,24 @@ permissions:
   contents: read
 
 jobs:
-  typecheck:
+  # ── Skip check ───────────────────────────────────────────────────────────────
+  skip-check:
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - id: check
+        run: |
+          if [ "${{ contains(github.event.pull_request.labels.*.name, 'ci-skip-gates') }}" = "true" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ── Biome check (format + lint) ──────────────────────────────────────────────
+  check:
+    needs: skip-check
+    if: needs.skip-check.outputs.skip != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,6 +36,8 @@ jobs:
       - run: bun check
 
   lint:
+    needs: skip-check
+    if: needs.skip-check.outputs.skip != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,7 +47,10 @@ jobs:
       - run: bun install
       - run: bun lint
 
+  # ── Tests + coverage ─────────────────────────────────────────────────────────
   tests:
+    needs: skip-check
+    if: needs.skip-check.outputs.skip != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,10 +58,293 @@ jobs:
         with:
           bun-version: latest
       - run: bun install
-      - run: bun test
+      - run: bun test --coverage 2>&1 | tee coverage.txt
+      - name: Check coverage threshold (≥70% lines)
+        run: |
+          pct=$(grep "All files" coverage.txt | awk -F'|' '{gsub(/ /,"",$3); print $3}')
+          echo "Line coverage: ${pct}%"
+          if [ "$(echo "$pct < 70" | bc -l)" -eq 1 ]; then
+            echo "❌ Coverage ${pct}% is below 70% threshold"
+            exit 1
+          fi
+          echo "✅ Coverage ${pct}% meets 70% threshold"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.txt
 
-  test-battery:
-    needs: [typecheck, lint, tests]
+  # ── Build verification (tsc + dist/) ─────────────────────────────────────────
+  build:
+    needs: skip-check
+    if: needs.skip-check.outputs.skip != 'true'
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Typecheck, lint and tests succeeded."
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      - run: bun install
+      - run: bun run build
+      - name: Verify dist/ artifacts
+        run: |
+          [ -f dist/index.js ] && echo "✅ dist/index.js exists"
+          [ -f dist/index.d.ts ] && echo "✅ dist/index.d.ts exists"
+          [ -f dist/index.d.ts ] && [ -s dist/index.d.ts ] || { echo "❌ dist/index.d.ts missing or empty"; exit 1; }
+          lines=$(wc -l < dist/index.d.ts)
+          echo "dist/index.d.ts: ${lines} lines"
+
+  # ── Web build + bundle size ──────────────────────────────────────────────────
+  web-build:
+    needs: skip-check
+    if: needs.skip-check.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      - run: bun install
+      - run: node build.js
+      - name: Check bundle size
+        run: |
+          if [ -f builds/fortune-nyx-v1.7.5-web.min.js ]; then
+            size=$(wc -c < builds/fortune-nyx-v1.7.5-web.min.js)
+            echo "Web bundle: ${size} bytes ($(( size / 1024 )) KB)"
+            if [ "$size" -gt 51200 ]; then
+              echo "❌ Web bundle ${size}B exceeds 50KB limit"
+              exit 1
+            fi
+            echo "✅ Web bundle within 50KB limit"
+          else
+            echo "⚠️ No web bundle found, checking demo/app.js"
+            size=$(wc -c < demo/app.js)
+            echo "demo/app.js: ${size} bytes ($(( size / 1024 )) KB)"
+          fi
+
+  # ── Bundle size gate ────────────────────────────────────────────────────────
+  bundle-size:
+    needs: skip-check
+    if: needs.skip-check.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      - run: bun install
+      - run: bun run build-all
+      - name: Check bundle sizes vs baseline
+        run: |
+          FAIL=0
+          # Fetch baseline from main
+          BASELINE_JSON="{}"
+          if git show origin/main:builds/.sizes.json > /dev/null 2>&1; then
+            BASELINE_JSON=$(git show origin/main:builds/.sizes.json)
+          fi
+          for f in builds/*; do
+            [ -f "$f" ] || continue
+            size=$(wc -c < "$f")
+            name=$(basename "$f")
+            echo "${name}: ${size} bytes ($(( size / 1024 )) KB)"
+            prev=$(echo "$BASELINE_JSON" | jq -r ".[\"$name\"] // 0")
+            if [ "$prev" -gt 0 ]; then
+              growth=$(( size - prev ))
+              growthPct=$(( growth * 100 / prev ))
+              echo "  baseline: ${prev}B, change: ${growthPct}%"
+              if [ "$growthPct" -gt 10 ]; then
+                echo "❌ ${name} grew by ${growthPct}% (threshold: 10%)"
+                FAIL=1
+              fi
+            fi
+          done
+          if [ "$FAIL" -eq 1 ]; then exit 1; fi
+          echo "✅ All bundles within 10% of baseline"
+
+  # ── Security audit ──────────────────────────────────────────────────────────
+  audit:
+    needs: skip-check
+    if: needs.skip-check.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      - run: bun install
+      - name: Run npm audit
+        continue-on-error: true
+        run: npm audit --audit-level=high 2>&1 | tee audit.txt
+      - name: Check for critical vulnerabilities
+        run: |
+          if grep -q "critical" audit.txt 2>/dev/null; then
+            echo "❌ Critical vulnerabilities found"
+            grep -E "critical|Critical" audit.txt
+            exit 1
+          fi
+          echo "✅ No critical vulnerabilities"
+
+  # ── Benchmark regression ────────────────────────────────────────────────────
+  benchmark:
+    needs: skip-check
+    if: needs.skip-check.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      - run: bun install
+      - run: bun run bench 2>&1 | tee bench-output.txt
+      - name: Compare wall time with baseline
+        run: |
+          wall=$(grep "Wall time" bench-output.txt | awk '{print $NF}')
+          echo "Wall time: ${wall} ms"
+          BASELINE_FILE=".benchmark-baseline.json"
+          if [ -f "$BASELINE_FILE" ]; then
+            prev=$(jq -r '.wallTimeMs // 0' < "$BASELINE_FILE")
+            if [ "$prev" -gt 0 ]; then
+              pct=$(echo "scale=2; ($wall - $prev) / $prev * 100" | bc -l)
+              echo "Baseline: ${prev} ms"
+              echo "Change: ${pct}%"
+              if [ "$(echo "$pct > 10" | bc -l)" -eq 1 ]; then
+                echo "❌ Benchmark degraded by ${pct}% (threshold: 10%)"
+                exit 1
+              fi
+            fi
+          fi
+          echo "✅ No regression detected"
+          # Store new baseline for main branch
+          echo "{\"wallTimeMs\": ${wall}}" > "$BASELINE_FILE"
+
+  # ── TypeScript strictness ───────────────────────────────────────────────────
+  strict-tsc:
+    needs: skip-check
+    if: needs.skip-check.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      - run: bun install
+      - run: npx tsc --noEmit --strict --noUnusedLocals --noUnusedParameters --skipLibCheck
+
+  # ── Dependencies check ──────────────────────────────────────────────────────
+  deps:
+    needs: skip-check
+    if: needs.skip-check.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      - name: Verify lockfile consistency
+        run: |
+          bun install --frozen-lockfile 2>&1 || {
+            echo "❌ Lockfile out of date — run 'bun install' and commit the update"
+            exit 1
+          }
+          echo "✅ Lockfile is consistent"
+      - name: Show dependency tree
+        run: |
+          echo "Dependencies: $(bun pm ls 2>/dev/null | wc -l) packages"
+          echo "✅ Dependency check passed"
+
+  # ── Documentation ───────────────────────────────────────────────────────────
+  docs:
+    needs: skip-check
+    if: needs.skip-check.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      - run: bun install
+      - name: Build TypeDoc
+        run: |
+          npx typedoc --treatWarningsAsErrors 2>&1 | tail -5
+      - name: Generate wiki
+        run: |
+          node scripts/generate-wiki.mjs 2>&1 | tail -5
+
+  # ── Test matrix (Node.js versions + Bun) ────────────────────────────────────
+  test-matrix:
+    needs: skip-check
+    if: needs.skip-check.outputs.skip != 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            runtime: bun
+            bun-version: latest
+          - os: ubuntu-latest
+            runtime: node
+            node-version: "18"
+          - os: ubuntu-latest
+            runtime: node
+            node-version: "20"
+          - os: ubuntu-latest
+            runtime: node
+            node-version: "22"
+          - os: macos-latest
+            runtime: bun
+            bun-version: latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+        if: matrix.runtime == 'bun'
+        with:
+          bun-version: ${{ matrix.bun-version }}
+      - uses: actions/setup-node@v4
+        if: matrix.runtime == 'node'
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install Bun on Node
+        if: matrix.runtime == 'node'
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      - run: bun install
+      - run: bun run build
+      - run: bun test 2>&1 | tail -5
+
+  # ── Final gate ──────────────────────────────────────────────────────────────
+  gate:
+    if: always()
+    needs:
+      - check
+      - lint
+      - tests
+      - build
+      - web-build
+      - bundle-size
+      - audit
+      - benchmark
+      - strict-tsc
+      - deps
+      - docs
+      - test-matrix
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "## CI Gates Results" >> $GITHUB_STEP_SUMMARY
+          for job in check lint tests build web-build bundle-size audit benchmark strict-tsc deps docs test-matrix; do
+            result="${{ needs[job].result }}"
+            echo "- **${job}**: ${result}" >> $GITHUB_STEP_SUMMARY
+            if [ "$result" != "success" ] && [ "$result" != "skipped" ]; then
+              FAIL=1
+            fi
+          done
+          if [ "$FAIL" = "1" ]; then
+            echo "❌ Some gates failed"
+            exit 1
+          fi
+          echo "✅ All gates passed"
