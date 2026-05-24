@@ -49,6 +49,7 @@ function shellPatToRegex(
 
 type ArithToken =
 	| {type: "number"; value: number}
+	| {type: "ident"; value: string}
 	| {
 			type:
 				| "plus"
@@ -58,12 +59,30 @@ type ArithToken =
 				| "mod"
 				| "pow"
 				| "lparen"
-				| "rparen";
+				| "rparen"
+				| "bitand"
+				| "bitor"
+				| "bitxor"
+				| "bitnot"
+				| "shl"
+				| "shr"
+				| "logical_and"
+				| "logical_or"
+				| "ternary_q"
+				| "ternary_c"
+				| "eq"
+				| "ne"
+				| "lt"
+				| "gt"
+				| "le"
+				| "ge"
+				| "assign"
+				| "comma";
 	  };
 
 function tokenizeArith(
 	expr: string,
-	env: Record<string, string>
+	_env?: Record<string, string>
 ): ArithToken[] {
 	const tokens: ArithToken[] = [];
 	let i = 0;
@@ -74,16 +93,30 @@ function tokenizeArith(
 			continue;
 		}
 		if (ch === "+") {
+			if (expr[i + 1] === "+") {
+				// ++ prefix — skip (we don't do side effects)
+				i += 2;
+				continue;
+			}
 			tokens.push({type: "plus"});
 			i++;
 			continue;
 		}
 		if (ch === "-") {
+			if (expr[i + 1] === "-") {
+				i += 2;
+				continue;
+			}
 			tokens.push({type: "minus"});
 			i++;
 			continue;
 		}
 		if (ch === "*") {
+			if (expr[i + 1] === "=") {
+				tokens.push({type: "assign"});
+				i += 2;
+				continue;
+			}
 			if (expr[i + 1] === "*") {
 				tokens.push({type: "pow"});
 				i += 2;
@@ -113,9 +146,130 @@ function tokenizeArith(
 			i++;
 			continue;
 		}
-		if (/\d/.test(ch)) {
+		if (ch === "&") {
+			if (expr[i + 1] === "&") {
+				tokens.push({type: "logical_and"});
+				i += 2;
+				continue;
+			}
+			tokens.push({type: "bitand"});
+			i++;
+			continue;
+		}
+		if (ch === "|") {
+			if (expr[i + 1] === "|") {
+				tokens.push({type: "logical_or"});
+				i += 2;
+				continue;
+			}
+			tokens.push({type: "bitor"});
+			i++;
+			continue;
+		}
+		if (ch === "^") {
+			tokens.push({type: "bitxor"});
+			i++;
+			continue;
+		}
+		if (ch === "~") {
+			tokens.push({type: "bitnot"});
+			i++;
+			continue;
+		}
+		if (ch === "<") {
+			if (expr[i + 1] === "<") {
+				tokens.push({type: "shl"});
+				i += 2;
+				continue;
+			}
+			if (expr[i + 1] === "=") {
+				tokens.push({type: "le"});
+				i += 2;
+				continue;
+			}
+			tokens.push({type: "lt"});
+			i++;
+			continue;
+		}
+		if (ch === ">") {
+			if (expr[i + 1] === ">") {
+				tokens.push({type: "shr"});
+				i += 2;
+				continue;
+			}
+			if (expr[i + 1] === "=") {
+				tokens.push({type: "ge"});
+				i += 2;
+				continue;
+			}
+			tokens.push({type: "gt"});
+			i++;
+			continue;
+		}
+		if (ch === "=") {
+			if (expr[i + 1] === "=") {
+				tokens.push({type: "eq"});
+				i += 2;
+				continue;
+			}
+			tokens.push({type: "assign"});
+			i++;
+			continue;
+		}
+		if (ch === "!") {
+			if (expr[i + 1] === "=") {
+				tokens.push({type: "ne"});
+				i += 2;
+				continue;
+			}
+			// Logical NOT via unary != is not in our token set; skip
+			i++;
+			continue;
+		}
+		if (ch === "?") {
+			tokens.push({type: "ternary_q"});
+			i++;
+			continue;
+		}
+		if (ch === ":") {
+			tokens.push({type: "ternary_c"});
+			i++;
+			continue;
+		}
+		if (ch === ",") {
+			tokens.push({type: "comma"});
+			i++;
+			continue;
+		}
+		if (/[0-9]/.test(ch)) {
+			// hex 0x...
+			if (ch === "0" && (expr[i + 1] === "x" || expr[i + 1] === "X")) {
+				let j = i + 2;
+				while (j < expr.length && /[0-9a-fA-F]/.test(expr.charAt(j))) {
+					j++;
+				}
+				tokens.push({
+					type: "number",
+					value: Number.parseInt(expr.slice(i + 2, j), 16),
+				});
+				i = j;
+				continue;
+			}
+			// octal 0...
+			if (ch === "0" && /[0-7]/.test(expr[i + 1] ?? "")) {
+				let j = i + 1;
+				while (j < expr.length && /[0-7]/.test(expr.charAt(j))) {
+					j++;
+				}
+				tokens.push({
+					type: "number",
+					value: Number.parseInt(expr.slice(i, j), 8),
+				});
+				i = j;
+				continue;
+			}
 			let j = i + 1;
-			while (j < expr.length && /\d/.test(expr.charAt(j))) {
+			while (j < expr.length && /[0-9]/.test(expr.charAt(j))) {
 				j++;
 			}
 			tokens.push({type: "number", value: Number(expr.slice(i, j))});
@@ -128,12 +282,7 @@ function tokenizeArith(
 				j++;
 			}
 			const name = expr.slice(i, j);
-			const raw = env[name];
-			const value = raw === undefined || raw === "" ? 0 : Number(raw);
-			tokens.push({
-				type: "number",
-				value: Number.isFinite(value) ? value : 0,
-			});
+			tokens.push({type: "ident", value: name});
 			i = j;
 			continue;
 		}
@@ -142,10 +291,26 @@ function tokenizeArith(
 	return tokens;
 }
 
+// helper: resolve ident to number
+function resolveIdent(token: ArithToken, env: Record<string, string>): number {
+	if (token.type === "number") {
+		return token.value;
+	}
+	if (token.type === "ident") {
+		const raw = env[token.value];
+		const v = raw === undefined || raw === "" ? 0 : Number(raw);
+		return Number.isFinite(v) ? v : 0;
+	}
+	return Number.NaN;
+}
+
 /**
- * Evaluate a simple integer arithmetic expression with a bounded parser.
- * Supports: +  -  *  /  %  **  unary-  ( )
- * Variables are resolved from `env`.
+ * Evaluate a full POSIX integer arithmetic expression with a bounded parser.
+ * Supports: + - * / % ** ( ) unary - + ~ !
+ *           << >> & | ^
+ *           == != < > <= >=
+ *           && || ? : = ,
+ * Variables resolved from `env`, hex/octal literals.
  * Returns NaN on syntax error.
  */
 export function evalArith(expr: string, env: Record<string, string>): number {
@@ -159,96 +324,249 @@ export function evalArith(expr: string, env: Record<string, string>): number {
 	}
 
 	let index = 0;
+	const peek = (): ArithToken | undefined => tokens[index];
+	const consume = (): ArithToken | undefined => tokens[index++];
 
-	const peek = () => tokens[index];
-	const consume = () => tokens[index++];
+	// ── precedence climbing ──────────────────────────────────────────────
+	// parse(prec) — next higher precedence level
+	type PrefixFn = () => number;
+	type InfixFn = (left: number) => number;
 
-	const parsePrimary = (): number => {
-		const token = consume();
-		if (!token) {
-			return Number.NaN;
-		}
-		if (token.type === "number") {
-			return token.value;
-		}
-		if (token.type === "lparen") {
-			const value = parseExpression();
-			if (tokens[index]?.type !== "rparen") {
+	const prefix: Partial<Record<string, PrefixFn>> = {
+		number: () => resolveIdent(consume()!, env),
+		ident: () => resolveIdent(consume()!, env),
+		lparen: () => {
+			consume();
+			const v = parseExpr(0);
+			if (peek()?.type !== "rparen") {
 				return Number.NaN;
 			}
-			index++;
-			return value;
-		}
-		return Number.NaN;
+			consume();
+			return v;
+		},
+		plus: () => {
+			consume();
+			return parseExpr(90);
+		},
+		minus: () => {
+			consume();
+			return -parseExpr(90);
+		},
+		bitnot: () => {
+			consume();
+			return ~parseExpr(90);
+		},
 	};
 
-	const parseUnary = (): number => {
-		const token = peek();
-		if (token?.type === "plus") {
-			consume();
-			return parseUnary();
-		}
-		if (token?.type === "minus") {
-			consume();
-			return -parseUnary();
-		}
-		return parsePrimary();
+	interface InfixEntry {
+		prec: number;
+		fn: InfixFn;
+		rightAsso?: boolean;
+	}
+	const infix: Partial<Record<string, InfixEntry>> = {
+		comma: {
+			prec: 1,
+			fn: (_l) => {
+				consume();
+				return parseExpr(1);
+			},
+		},
+		assign: {
+			prec: 2,
+			fn: (_l) => {
+				consume();
+				return parseExpr(2);
+			},
+		},
+		ternary_q: {
+			prec: 3,
+			fn: (l) => {
+				consume();
+				const t = parseExpr(3);
+				if (peek()?.type !== "ternary_c") {
+					return Number.NaN;
+				}
+				consume();
+				const f = parseExpr(3);
+				return l ? t : f;
+			},
+		},
+		logical_or: {
+			prec: 4,
+			fn: (l) => {
+				consume();
+				return l || parseExpr(5);
+			},
+		},
+		logical_and: {
+			prec: 5,
+			fn: (l) => {
+				consume();
+				return l && parseExpr(6);
+			},
+		},
+		bitor: {
+			prec: 6,
+			fn: (l) => {
+				consume();
+				const r = Math.trunc(parseExpr(7));
+				return l | r;
+			},
+		},
+		bitxor: {
+			prec: 7,
+			fn: (l) => {
+				consume();
+				const r = Math.trunc(parseExpr(8));
+				return l ^ r;
+			},
+		},
+		bitand: {
+			prec: 8,
+			fn: (l) => {
+				consume();
+				const r = Math.trunc(parseExpr(9));
+				return l & r;
+			},
+		},
+		eq: {
+			prec: 9,
+			fn: (l) => {
+				consume();
+				return l === parseExpr(10) ? 1 : 0;
+			},
+		},
+		ne: {
+			prec: 9,
+			fn: (l) => {
+				consume();
+				return l === parseExpr(10) ? 0 : 1;
+			},
+		},
+		lt: {
+			prec: 10,
+			fn: (l) => {
+				consume();
+				const r = parseExpr(11);
+				return l < r ? 1 : 0;
+			},
+		},
+		gt: {
+			prec: 10,
+			fn: (l) => {
+				consume();
+				const r = parseExpr(11);
+				return l > r ? 1 : 0;
+			},
+		},
+		le: {
+			prec: 10,
+			fn: (l) => {
+				consume();
+				const r = parseExpr(11);
+				return l <= r ? 1 : 0;
+			},
+		},
+		ge: {
+			prec: 10,
+			fn: (l) => {
+				consume();
+				const r = parseExpr(11);
+				return l >= r ? 1 : 0;
+			},
+		},
+		shl: {
+			prec: 11,
+			fn: (l) => {
+				consume();
+				const r = Math.trunc(parseExpr(12));
+				return l << r;
+			},
+		},
+		shr: {
+			prec: 11,
+			fn: (l) => {
+				consume();
+				const r = Math.trunc(parseExpr(12));
+				return l >> r;
+			},
+		},
+		plus: {
+			prec: 12,
+			fn: (l) => {
+				consume();
+				return l + parseExpr(13);
+			},
+		},
+		minus: {
+			prec: 12,
+			fn: (l) => {
+				consume();
+				return l - parseExpr(13);
+			},
+		},
+		mul: {
+			prec: 13,
+			fn: (l) => {
+				consume();
+				return l * parseExpr(14);
+			},
+		},
+		div: {
+			prec: 13,
+			fn: (l) => {
+				consume();
+				const r = parseExpr(14);
+				return r === 0 ? Number.NaN : Math.trunc(l / r);
+			},
+		},
+		mod: {
+			prec: 13,
+			fn: (l) => {
+				consume();
+				const r = parseExpr(14);
+				return r === 0 ? Number.NaN : Math.trunc(l % r);
+			},
+		},
+		pow: {
+			prec: 14,
+			fn: (l) => {
+				consume();
+				return l ** parseExpr(14);
+			},
+			rightAsso: true,
+		},
 	};
 
-	const parsePower = (): number => {
-		let left = parseUnary();
-		while (peek()?.type === "pow") {
-			consume();
-			const right = parseUnary();
-			left **= right;
+	function parseExpr(prec: number): number {
+		const tok = peek();
+		if (!tok) {
+			return Number.NaN;
+		}
+		const prefixFn = prefix[tok.type];
+		if (!prefixFn) {
+			return Number.NaN;
+		}
+		let left = prefixFn();
+		while (true) {
+			const next = peek();
+			if (!next) {
+				break;
+			}
+			const entry = infix[next.type];
+			if (!entry) {
+				break;
+			}
+			const {prec: p, fn, rightAsso} = entry;
+			if (p < prec || (p === prec && rightAsso)) {
+				break;
+			}
+			left = fn(left);
 		}
 		return left;
-	};
+	}
 
-	const parseTerm = (): number => {
-		let left = parsePower();
-		while (true) {
-			const token = peek();
-			if (token?.type === "mul") {
-				consume();
-				left *= parsePower();
-				continue;
-			}
-			if (token?.type === "div") {
-				consume();
-				const right = parsePower();
-				left = right === 0 ? Number.NaN : left / right;
-				continue;
-			}
-			if (token?.type === "mod") {
-				consume();
-				const right = parsePower();
-				left = right === 0 ? Number.NaN : left % right;
-				continue;
-			}
-			return left;
-		}
-	};
-
-	const parseExpression = (): number => {
-		let left = parseTerm();
-		while (true) {
-			const token = peek();
-			if (token?.type === "plus") {
-				consume();
-				left += parseTerm();
-				continue;
-			}
-			if (token?.type === "minus") {
-				consume();
-				left -= parseTerm();
-				continue;
-			}
-			return left;
-		}
-	};
-
-	const result = parseExpression();
+	const result = parseExpr(0);
 	if (!Number.isFinite(result) || index !== tokens.length) {
 		return Number.NaN;
 	}
@@ -485,6 +803,61 @@ export function expandSync(
 	return outsideSingleQuotes(input, (chunk) => {
 		let s = chunk;
 
+		// ANSI-C quoting: $'...' — resolve escape sequences
+		s = s.replace(/\$'((?:\\.|[^'\\])*)'/g, (_, content: string) => {
+			return content.replace(/\\(.)/g, (_, esc: string) => {
+				switch (esc) {
+					case "n":
+						return "\n";
+					case "t":
+						return "\t";
+					case "r":
+						return "\r";
+					case "0":
+						return "\0";
+					case "a":
+						return "\x07";
+					case "b":
+						return "\b";
+					case "e":
+						return "\x1b";
+					case "f":
+						return "\f";
+					case "v":
+						return "\v";
+					case "\\":
+						return "\\";
+					case "'":
+						return "'";
+					case '"':
+						return '"';
+					default: {
+						// \xHH, \0NNN, \uHHHH, \cX
+						if (esc[0] === "x" && esc.length > 1) {
+							const hh = esc.slice(1);
+							if (/^[0-9a-fA-F]+$/.test(hh)) {
+								return String.fromCodePoint(Number.parseInt(hh, 16));
+							}
+						}
+						if (/^[0-7]{1,3}$/.test(esc)) {
+							return String.fromCodePoint(Number.parseInt(esc, 8));
+						}
+						if (esc[0] === "u" && esc.length > 1) {
+							const uu = esc.slice(1);
+							if (/^[0-9a-fA-F]{1,4}$/.test(uu)) {
+								return String.fromCodePoint(Number.parseInt(uu, 16));
+							}
+						}
+						if (esc[0] === "c" && esc[1]) {
+							const code = esc[1].toUpperCase().charCodeAt(0) - 64;
+							return String.fromCodePoint(code >= 0 ? code : 0);
+						}
+						return esc;
+					}
+				}
+			});
+		});
+
 		// Tilde expansion — only at start of token or after `:` or whitespace
 		s = s.replace(
 			/(^|[\s:])~(\/|$)/g,
@@ -551,6 +924,17 @@ export function expandSync(
 		s = s.replace(
 			/\$\{([A-Za-z_][A-Za-z0-9_]*):\+([^}]*)\}/g,
 			(_, name, alt) => (env[name] !== undefined && env[name] !== "" ? alt : "")
+		);
+
+		// ${VAR:?error_msg} — error if unset or empty
+		s = s.replace(
+			/\$\{([A-Za-z_][A-Za-z0-9_]*):\?([^}]*)\}/g,
+			(_, name, msg) => {
+				if (env[name] === undefined || env[name] === "") {
+					return `bash: ${name}: ${msg || "parameter null or not set"}`;
+				}
+				return env[name] as string;
+			}
 		);
 
 		// ${VAR:offset:len} and ${VAR:offset}

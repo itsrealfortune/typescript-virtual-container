@@ -42,6 +42,7 @@ import {dfCommand} from "./df";
 import {diffCommand} from "./diff";
 import {dpkgCommand, dpkgQueryCommand} from "./dpkg";
 import {duCommand} from "./du";
+import {commandCommand} from "./command";
 import {echoCommand} from "./echo";
 import {envCommand} from "./env";
 import {exitCommand} from "./exit";
@@ -119,6 +120,7 @@ import {psCommand} from "./ps";
 import {pwdCommand} from "./pwd";
 import {python3Command} from "./python";
 import {readCommand} from "./read";
+import {readonlyCommand} from "./readonly";
 import {rmCommand} from "./rm";
 import {sedCommand} from "./sed";
 import {seqCommand} from "./seq";
@@ -303,6 +305,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	echoCommand,
 	envCommand,
 	exportCommand,
+	readonlyCommand,
 	setCommand,
 	unsetCommand,
 	shCommand,
@@ -386,6 +389,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	bcCommand,
 	whichCommand,
 	typeCommand,
+	commandCommand,
 	manCommand,
 	aliasCommand,
 	unaliasCommand,
