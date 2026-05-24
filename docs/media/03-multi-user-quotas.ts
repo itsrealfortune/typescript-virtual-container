@@ -5,7 +5,7 @@
  * and verifying file permission isolation between users.
  */
 
-import { SshClient, VirtualShell, VirtualSshServer } from "../src";
+import {SshClient, VirtualShell, VirtualSshServer} from "../src";
 
 const shell = new VirtualShell("typescript-vm");
 await shell.ensureInitialized();
@@ -28,7 +28,7 @@ shell.users.setQuotaBytes("bob", 5 * 1024 * 1024);
 console.log(`Bob's quota: ${shell.users.getQuotaBytes("bob")} bytes`);
 
 // ── Start SSH server ──────────────────────────────────────────────
-const ssh = new VirtualSshServer({ port: 0, shell });
+const ssh = new VirtualSshServer({port: 0, shell});
 const port = await ssh.start();
 
 // ── Alice writes private file ─────────────────────────────────────
@@ -41,7 +41,7 @@ await alice.connect({
 	password: "alice123",
 });
 await alice.exec(
-	"echo 'secret=yes' > /home/alice/private.conf && chmod 600 /home/alice/private.conf",
+	"echo 'secret=yes' > /home/alice/private.conf && chmod 600 /home/alice/private.conf"
 );
 console.log("Alice wrote /home/alice/private.conf (mode 600)");
 
@@ -56,7 +56,7 @@ await bob.connect({
 });
 const r = await bob.cat("/home/alice/private.conf");
 console.log(
-	`Bob's cat result: exit ${r.exitCode}${r.stderr ? ` — "${r.stderr.trim()}"` : ""}`,
+	`Bob's cat result: exit ${r.exitCode}${r.stderr ? ` — "${r.stderr.trim()}"` : ""}`
 );
 
 // ── Alice can read her own file ───────────────────────────────────
