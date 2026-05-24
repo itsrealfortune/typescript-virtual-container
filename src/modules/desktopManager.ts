@@ -345,6 +345,7 @@ export class DesktopManager {
 	/**
 	 * Handle a keyboard event and forward keystrokes to the focused terminal.
 	 * Handles Ctrl+C/V passthrough and Escape to close the panel menu.
+	 * Super/Windows key toggles the application menu.
 	 * @param e - Keyboard event from the browser.
 	 */
 	handleKeyDown(e: KeyboardEvent): void {
@@ -352,9 +353,32 @@ export class DesktopManager {
 			return;
 		}
 
-		if (e.key === "Escape" && this._menuOpen) {
-			this._menuOpen = false;
-			this._renderPanel();
+		if (e.key === "Escape") {
+			if (this._menuOpen) {
+				this._menuOpen = false;
+				this._renderPanel();
+				return;
+			}
+			const search = this._container.querySelector(
+				".menu-search"
+			) as HTMLInputElement | null;
+			if (search) {
+				search.blur();
+			}
+		}
+
+		// Super/Meta key toggles menu
+		if (
+			e.key === "Meta" ||
+			e.key === "Super" ||
+			e.code === "MetaLeft" ||
+			e.code === "MetaRight"
+		) {
+			if (!e.repeat) {
+				this._menuOpen = !this._menuOpen;
+				this._renderPanel();
+			}
+			e.preventDefault();
 			return;
 		}
 
@@ -1022,7 +1046,7 @@ export class DesktopManager {
 			}
 
 			// Click outside menu → close it
-			if (this._menuOpen) {
+			if (this._menuOpen && !target.closest(".xfce-menu")) {
 				this._menuOpen = false;
 				this._renderPanel();
 			}
@@ -1437,16 +1461,38 @@ export class DesktopManager {
 			menu = document.createElement("div");
 			menu.className = "xfce-menu";
 			menu.innerHTML = `
-        <div class="menu-category">System</div>
-        <div class="menu-item" data-action="terminal"><span class="menu-item-icon"><i class="fa-solid fa-terminal"></i></span>Terminal</div>
-        <div class="menu-item" data-action="thunar"><span class="menu-item-icon"><i class="fa-solid fa-folder-open"></i></span>File Manager</div>
-        <div class="menu-item" data-action="editor"><span class="menu-item-icon"><i class="fa-solid fa-file-pen"></i></span>Text Editor</div>
-        <div class="menu-item" data-action="taskmanager"><span class="menu-item-icon"><i class="fa-solid fa-chart-bar"></i></span>Task Manager</div>
-        <div class="menu-separator"></div>
-        <div class="menu-item" data-action="about"><span class="menu-item-icon"><i class="fa-solid fa-circle-info"></i></span>About Fortune GNU/Linux</div>
-        <div class="menu-separator"></div>
-        <div class="menu-item" data-action="logout"><span class="menu-item-icon"><i class="fa-solid fa-power-off"></i></span>Log Out</div>
+        <div class="menu-search-wrap">
+          <i class="fa-solid fa-search menu-search-icon"></i>
+          <input class="menu-search" type="text" placeholder="Search applications..." autocomplete="off">
+        </div>
+        <div class="menu-scroll">
+          <div class="menu-category">System</div>
+          <div class="menu-item" data-action="terminal" data-search="terminal console shell"><span class="menu-item-icon"><i class="fa-solid fa-terminal"></i></span>Terminal</div>
+          <div class="menu-item" data-action="thunar" data-search="thunar file manager explorer"><span class="menu-item-icon"><i class="fa-solid fa-folder-open"></i></span>File Manager</div>
+          <div class="menu-item" data-action="editor" data-search="mousepad editor text nano"><span class="menu-item-icon"><i class="fa-solid fa-file-pen"></i></span>Text Editor</div>
+          <div class="menu-item" data-action="taskmanager" data-search="task manager processes htop"><span class="menu-item-icon"><i class="fa-solid fa-chart-bar"></i></span>Task Manager</div>
+          <div class="menu-separator"></div>
+          <div class="menu-item" data-action="about" data-search="about information system"><span class="menu-item-icon"><i class="fa-solid fa-circle-info"></i></span>About Fortune GNU/Linux</div>
+          <div class="menu-separator"></div>
+          <div class="menu-item" data-action="logout" data-search="logout quit exit"><span class="menu-item-icon"><i class="fa-solid fa-power-off"></i></span>Log Out</div>
+        </div>
       `;
+			// Live search filter
+			const searchInput = menu.querySelector(
+				".menu-search"
+			) as HTMLInputElement;
+			searchInput.addEventListener("input", () => {
+				const q = searchInput.value.toLowerCase();
+				const items = menu?.querySelectorAll(".menu-item");
+				for (const item of items ?? []) {
+					const text =
+						item.getAttribute("data-search") ?? item.textContent ?? "";
+					(item as HTMLElement).style.display =
+						q === "" || text.toLowerCase().includes(q) ? "flex" : "none";
+				}
+			});
+			// Focus search when menu opens
+			setTimeout(() => searchInput.focus(), 50);
 			panel.appendChild(menu);
 		} else if (!this._menuOpen && menu) {
 			menu.remove();

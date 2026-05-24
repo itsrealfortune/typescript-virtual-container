@@ -753,3 +753,39 @@ body {
   font-weight: 600;
 }
 .cal-day-empty { background: transparent; }
+
+/* ── Application search ────────────────────────────── */
+.menu-search-wrap {
+  position: relative;
+  padding: 6px 8px;
+}
+.menu-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #888;
+  font-size: 12px;
+  pointer-events: none;
+}
+.menu-search {
+  width: 100%;
+  padding: 5px 6px 5px 22px;
+  background: #2a2a2a;
+  border: 1px solid #555;
+  border-radius: 3px;
+  color: #ddd;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+}
+.menu-search:focus {
+  border-color: #4a7fc1;
+}
+.menu-search::placeholder {
+  color: #666;
+}
+.menu-scroll {
+  max-height: 320px;
+  overflow-y: auto;
+}
