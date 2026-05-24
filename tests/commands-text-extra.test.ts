@@ -71,10 +71,7 @@ describe("column command", () => {
 	});
 
 	test("column -s custom delimiter", async () => {
-		const r = await runCmd(
-			client,
-			"echo 'a:b:c' | column -s: -t"
-		);
+		const r = await runCmd(client, "echo 'a:b:c' | column -s: -t");
 		expect(r.exitCode).toBe(0);
 	});
 });

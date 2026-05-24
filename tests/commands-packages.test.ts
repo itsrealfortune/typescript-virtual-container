@@ -30,10 +30,7 @@ describe("pacman command", () => {
 
 	test("pacman -Qi shows package info", async () => {
 		await runCmd(client, "pacman -S nano 2>/dev/null || true");
-		const r = await runCmd(
-			client,
-			"pacman -Qi nano 2>&1 || echo 'info'"
-		);
+		const r = await runCmd(client, "pacman -Qi nano 2>&1 || echo 'info'");
 		expect(r.exitCode).toBeGreaterThanOrEqual(0);
 	});
 });
