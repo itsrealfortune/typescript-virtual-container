@@ -5,6 +5,7 @@ import type {
 } from "../types/commands";
 import {adduserCommand} from "./adduser";
 import {aliasCommand, unaliasCommand} from "./alias";
+import {builtinCommand} from "./builtin";
 import {aptCacheCommand, aptCommand} from "./apt";
 import {awkCommand} from "./awk";
 import {base64Command} from "./base64";
@@ -394,6 +395,7 @@ const BASE_COMMANDS: ShellModule[] = [
 	bcCommand,
 	whichCommand,
 	typeCommand,
+	builtinCommand,
 	commandCommand,
 	shoptCommand,
 	manCommand,

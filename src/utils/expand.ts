@@ -1157,12 +1157,14 @@ function nodeType(vfs: GlobVfs, p: string): string | null {
  * @param pattern - Glob pattern.
  * @param cwd - Current working directory for relative patterns.
  * @param vfs - VFS interface for listing and statting paths.
+ * @param options - Glob options: dotglob, nullglob, failglob.
  * @returns Array of matching absolute paths, or [pattern] if no match.
  */
 export function expandGlob(
 	pattern: string,
 	cwd: string,
-	vfs: GlobVfs
+	vfs: GlobVfs,
+	options?: {dotglob?: boolean; nullglob?: boolean; failglob?: boolean}
 ): string[] {
 	// No glob chars → return as-is
 	if (!(pattern.includes("*") || pattern.includes("?"))) {
@@ -1173,14 +1175,22 @@ export function expandGlob(
 	const base = isAbsolute ? "/" : cwd;
 	const relPattern = isAbsolute ? pattern.slice(1) : pattern;
 
-	const results = matchGlob(base, relPattern.split("/"), vfs);
+	const results = matchGlob(base, relPattern.split("/"), vfs, options?.dotglob);
 	if (results.length === 0) {
+		if (options?.nullglob) {
+			return [];
+		}
 		return [pattern]; // no match → literal
 	}
 	return results.sort();
 }
 
-function matchGlob(dir: string, segments: string[], vfs: GlobVfs): string[] {
+function matchGlob(
+	dir: string,
+	segments: string[],
+	vfs: GlobVfs,
+	dotglob?: boolean
+): string[] {
 	if (segments.length === 0) {
 		return [dir];
 	}
@@ -1198,7 +1208,7 @@ function matchGlob(dir: string, segments: string[], vfs: GlobVfs): string[] {
 		const out: string[] = [];
 		for (const d of all) {
 			if (nodeType(vfs, d) === "directory") {
-				out.push(...matchGlob(d, rest, vfs));
+				out.push(...matchGlob(d, rest, vfs, dotglob));
 			}
 		}
 		return out;
@@ -1212,7 +1222,7 @@ function matchGlob(dir: string, segments: string[], vfs: GlobVfs): string[] {
 	}
 
 	const re = globToRegex(seg);
-	const showHidden = seg.startsWith(".");
+	const showHidden = dotglob ? false : seg.startsWith(".");
 	const matched: string[] = [];
 	for (const e of entries) {
 		if ((!showHidden && e.startsWith(".")) || !re.test(e)) {
@@ -1224,7 +1234,7 @@ function matchGlob(dir: string, segments: string[], vfs: GlobVfs): string[] {
 			continue;
 		}
 		if (nodeType(vfs, full) === "directory") {
-			matched.push(...matchGlob(full, rest, vfs));
+			matched.push(...matchGlob(full, rest, vfs, dotglob));
 		}
 	}
 	return matched;

@@ -668,9 +668,26 @@ export async function runCommand(
 		// Apply brace expansion to each arg token
 		const rawArgs = parts.slice(1);
 		const args: string[] = [];
+		const globOptions = {
+			dotglob: shellEnv.vars.__dotglob === "1",
+			nullglob: shellEnv.vars.__nullglob === "1",
+			failglob: shellEnv.vars.__failglob === "1",
+		};
 		for (const token of rawArgs) {
 			for (const brace of expandBraces(token)) {
-				for (const glob of expandGlob(brace, cwd, shell.vfs)) {
+				const globResults = expandGlob(brace, cwd, shell.vfs, globOptions);
+				if (globResults.length === 0 && globOptions.nullglob) {
+					continue;
+				}
+				if (
+					globResults.length === 1 &&
+					globResults[0] === brace &&
+					globOptions.failglob &&
+					(brace.includes("*") || brace.includes("?"))
+				) {
+					return {stderr: `${commandName}: no match: ${brace}`, exitCode: 1};
+				}
+				for (const glob of globResults) {
 					args.push(glob);
 				}
 			}
