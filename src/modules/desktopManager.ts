@@ -101,6 +101,16 @@ export interface DesktopState {
 	focusedWindowId: string | null;
 }
 
+/** A desktop notification toast. */
+export interface DesktopNotification {
+	id: string;
+	title: string;
+	message: string;
+	type: "info" | "success" | "warning" | "error";
+	timestamp: number;
+	dismissed: boolean;
+}
+
 // ── Desktop Manager ───────────────────────────────────────────────────
 
 /**
@@ -163,6 +173,11 @@ export class DesktopManager {
 	private _globalDocListeners: Array<{ type: string; fn: EventListener }> = [];
 	private _pendingTimeouts: Set<ReturnType<typeof setTimeout>> = new Set();
 	private _thunar: ThunarManager;
+	private _notifications: DesktopNotification[] = [];
+	private _notificationHistory: DesktopNotification[] = [];
+	private _nextNotifId = 0;
+	private _clipboard = "";
+	private _calendarOpen = false;
 
 	/**
 	 * Creates a desktop manager bound to a VirtualShell and DOM container.
@@ -241,7 +256,9 @@ export class DesktopManager {
 			}
 		}
 		this._windows = [];
+		this._notifications = [];
 		this._menuOpen = false;
+		this._calendarOpen = false;
 		this._dragState = null;
 		this._resizeState = null;
 		for (const id of this._pendingTimeouts) {
@@ -518,6 +535,46 @@ export class DesktopManager {
 			}, 3000);
 		}
 		return id;
+	}
+
+	/**
+	 * Show a desktop notification toast.
+	 * @param title - Notification title.
+	 * @param message - Notification body text.
+	 * @param type - Severity: "info" | "success" | "warning" | "error".
+	 */
+	showNotification(
+		title: string,
+		message: string,
+		type: "info" | "success" | "warning" | "error" = "info"
+	): void {
+		const notif: DesktopNotification = {
+			id: `notif-${++this._nextNotifId}`,
+			title,
+			message,
+			type,
+			timestamp: Date.now(),
+			dismissed: false,
+		};
+		this._notifications.push(notif);
+		this._notificationHistory.push(notif);
+		this._renderNotifications();
+		const tid = setTimeout(() => {
+			this._pendingTimeouts.delete(tid);
+			this._dismissNotification(notif.id);
+		}, 5000);
+		this._pendingTimeouts.add(tid);
+	}
+
+	/** Get the current system clipboard content. */
+	getClipboard(): string {
+		return this._clipboard;
+	}
+
+	/** Set the system clipboard content. */
+	setClipboard(text: string): void {
+		this._clipboard = text;
+		this.showNotification("Clipboard", "Copied to clipboard", "info");
 	}
 
 	/**
@@ -914,6 +971,56 @@ export class DesktopManager {
 				return;
 			}
 
+			// Notification close button
+			if (target.classList.contains("notif-close")) {
+				const id = target
+					.closest(".notif-toast")
+					?.getAttribute("data-notif-id");
+				if (id) {
+					this._dismissNotification(id);
+				}
+				e.stopPropagation();
+				return;
+			}
+
+			// Notification area click → show history
+			if (
+				target.classList.contains("xfce-notif-area") ||
+				target.closest(".xfce-notif-area")
+			) {
+				this._showNotificationHistory();
+				e.stopPropagation();
+				return;
+			}
+
+			// Clock click → toggle calendar
+			if (
+				target.classList.contains("xfce-clock") ||
+				target.closest(".xfce-clock")
+			) {
+				const clockEl = this._container.querySelector(
+					".xfce-clock"
+				) as HTMLElement;
+				if (clockEl) {
+					this._renderCalendarPopup(clockEl);
+				}
+				e.stopPropagation();
+				return;
+			}
+
+			// Click outside calendar → close it
+			if (
+				this._calendarOpen &&
+				!target.closest("#desktop-calendar") &&
+				!target.closest(".xfce-clock")
+			) {
+				const cal = this._container.querySelector("#desktop-calendar");
+				if (cal) {
+					cal.remove();
+					this._calendarOpen = false;
+				}
+			}
+
 			// Click outside menu → close it
 			if (this._menuOpen) {
 				this._menuOpen = false;
@@ -1116,6 +1223,121 @@ export class DesktopManager {
 			true
 		); // capture phase so it fires before the generic click handler
 	}
+	private _showNotificationHistory(): void {
+		const existing = this._container.querySelector(
+			"#desktop-notif-history"
+		) as HTMLElement | null;
+		if (existing) {
+			existing.remove();
+			return;
+		}
+		const history = this._notificationHistory.slice().reverse().slice(0, 20);
+		const panel = this._container.querySelector(
+			"#desktop-panel"
+		) as HTMLElement;
+		if (!panel) {
+			return;
+		}
+		const popup = document.createElement("div");
+		popup.id = "desktop-notif-history";
+		popup.innerHTML =
+			history.length === 0
+				? '<div class="notif-history-empty">No notifications</div>'
+				: history
+						.map(
+							(n) =>
+								`<div class="notif-history-item notif-${n.type}">
+                  <div class="notif-history-title">${DesktopManager._escapeHtml(n.title)}</div>
+                  <div class="notif-history-msg">${DesktopManager._escapeHtml(n.message)}</div>
+                  <div class="notif-history-time">${new Date(n.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+                </div>`
+						)
+						.join("");
+		panel.appendChild(popup);
+	}
+
+	private _renderNotifications(): void {
+		let container = this._container.querySelector(
+			"#desktop-notifications"
+		) as HTMLElement;
+		if (!container) {
+			container = document.createElement("div");
+			container.id = "desktop-notifications";
+			this._container.appendChild(container);
+		}
+		const active = this._notifications.filter((n) => !n.dismissed);
+		container.innerHTML = active
+			.map(
+				(n) =>
+					`<div class="notif-toast notif-${n.type}" data-notif-id="${n.id}">
+            <div class="notif-header">
+              <span class="notif-title">${DesktopManager._escapeHtml(n.title)}</span>
+              <button class="notif-close">✕</button>
+            </div>
+            <div class="notif-body">${DesktopManager._escapeHtml(n.message)}</div>
+          </div>`
+			)
+			.join("");
+
+		const badge = this._container.querySelector(
+			".xfce-notif-badge"
+		) as HTMLElement | null;
+		if (badge) {
+			const count = active.length;
+			badge.textContent = String(count);
+			badge.style.display = count > 0 ? "flex" : "none";
+		}
+	}
+
+	private _dismissNotification(id: string): void {
+		const n = this._notifications.find((nn) => nn.id === id);
+		if (n) {
+			n.dismissed = true;
+		}
+		this._notifications = this._notifications.filter((nn) => !nn.dismissed);
+		this._renderNotifications();
+	}
+
+	private _renderCalendarPopup(clockEl: HTMLElement): void {
+		const existing = this._container.querySelector(
+			"#desktop-calendar"
+		) as HTMLElement | null;
+		if (existing) {
+			existing.remove();
+			this._calendarOpen = false;
+			return;
+		}
+		const now = new Date();
+		const y = now.getFullYear();
+		const m = now.getMonth();
+		const firstDay = new Date(y, m, 1).getDay();
+		const daysInMonth = new Date(y, m + 1, 0).getDate();
+		const today = now.getDate();
+
+		let days = "";
+		const dayNames = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+		for (const d of dayNames) {
+			days += `<div class="cal-day-header">${d}</div>`;
+		}
+		for (let i = 0; i < firstDay; i++) {
+			days += `<div class="cal-day cal-day-empty"></div>`;
+		}
+		for (let d = 1; d <= daysInMonth; d++) {
+			days += `<div class="cal-day${d === today ? " cal-today" : ""}">${d}</div>`;
+		}
+
+		const popup = document.createElement("div");
+		popup.id = "desktop-calendar";
+		popup.innerHTML = `
+        <div class="cal-header">
+          <span class="cal-month-year">${now.toLocaleDateString([], { month: "long", year: "numeric" })}</span>
+        </div>
+        <div class="cal-grid">${days}</div>
+      `;
+		clockEl.parentElement?.appendChild(popup);
+		this._calendarOpen = true;
+	}
+
 	// ── Rendering ──────────────────────────────────────────────────────
 
 	private _renderAll(): void {
@@ -1144,10 +1366,14 @@ export class DesktopManager {
         </div>
         <div class="xfce-window-list"></div>
         <div class="xfce-tray">
+          <span class="xfce-tray-icon xfce-notif-area" title="Notifications">
+            <i class="fa-solid fa-bell"></i>
+            <span class="xfce-notif-badge" style="display:none">0</span>
+          </span>
           <span class="xfce-tray-icon" title="Network"><i class="fa-solid fa-wifi"></i></span>
           <span class="xfce-tray-icon" title="Volume"><i class="fa-solid fa-volume-high"></i></span>
         </div>
-        <div class="xfce-clock">
+        <div class="xfce-clock" style="cursor:pointer">
           <span class="xfce-clock-time"></span>
           <span class="xfce-clock-date"></span>
         </div>
