@@ -159,6 +159,65 @@ The standalone builds are intended for quick demos and testing. For production u
 <p><strong>What it is not:</strong> a fully isolated sandbox. The shell commands are contained — no host binary is ever spawned, <code>execvp</code> is never called, <code>node</code>/<code>python3</code>/<code>npm</code> are virtual stubs. Permission enforcement follows POSIX semantics (owner/group/other, sticky bit, setuid) for all file operations, and unknown users are auto-provisioned with non-root UIDs. But <code>curl</code>/<code>wget</code> use the real <code>fetch()</code> API (live network access), all instances share the same JS heap as the host application, and resource capping is enforced at the VFS/process level (not at the kernel level). Do not expose to untrusted input without additional infrastructure-level isolation.</p>
 </details>
 <hr>
+<details id="virtualshell-vs-sandboxedshell">
+<summary><strong>VirtualShell vs SandboxedShell</strong></summary>
+<p>Two execution modes for different isolation needs:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><code>VirtualShell</code></th>
+<th><code>SandboxedShell</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Thread</strong></td>
+<td>Main thread</td>
+<td>Worker thread (<code>node:worker_threads</code>)</td>
+</tr>
+<tr>
+<td><strong>JS heap</strong></td>
+<td>Shared with host and other shells</td>
+<td><strong>Isolated</strong> (separate V8 isolate)</td>
+</tr>
+<tr>
+<td><strong>API</strong></td>
+<td>Full shell — pipes, redirects, desktop, <code>exec()</code>, interactive sessions</td>
+<td>Minimal — <code>exec(cmd, user?, cwd?)</code> only</td>
+</tr>
+<tr>
+<td><strong>Overhead</strong></td>
+<td>~0.1ms per command</td>
+<td>IPC message passing + worker bootstrap</td>
+</tr>
+<tr>
+<td><strong>Timeout</strong></td>
+<td>None</td>
+<td>Configurable (default 30s)</td>
+</tr>
+<tr>
+<td><strong>Lifespan</strong></td>
+<td>Long-lived, reusable</td>
+<td>Single worker (create, exec, terminate)</td>
+</tr>
+<tr>
+<td><strong>Use case</strong></td>
+<td>Test harnesses, embedded shells, automation</td>
+<td>Multi-tenant, untrusted code, CI runners</td>
+</tr>
+<tr>
+<td><strong>Browser</strong></td>
+<td>✅ Yes (via polyfills)</td>
+<td>❌ No (requires <code>worker_threads</code>)</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="typescript"><span class="hl-5">import</span><span class="hl-1"> { </span><span class="hl-6">VirtualShell</span><span class="hl-1">, </span><span class="hl-6">SandboxedShell</span><span class="hl-1"> } </span><span class="hl-5">from</span><span class="hl-1"> </span><span class="hl-2">&quot;typescript-virtual-container&quot;</span><span class="hl-1">;</span><br/><br/><span class="hl-3">// Shared heap — lightweight, full-featured</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">shell</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">VirtualShell</span><span class="hl-1">(</span><span class="hl-2">&quot;dev-vm&quot;</span><span class="hl-1">);</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-0">ensureInitialized</span><span class="hl-1">();</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">r1</span><span class="hl-1"> = </span><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">shell</span><span class="hl-1">.</span><span class="hl-0">exec</span><span class="hl-1">(</span><span class="hl-2">&quot;echo hello&quot;</span><span class="hl-1">);</span><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-6">r1</span><span class="hl-1">.</span><span class="hl-6">stdout</span><span class="hl-1">); </span><span class="hl-3">// &quot;hello\n&quot;</span><br/><br/><span class="hl-3">// Isolated worker — separate heap, exec-only</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">sandbox</span><span class="hl-1"> = </span><span class="hl-4">new</span><span class="hl-1"> </span><span class="hl-0">SandboxedShell</span><span class="hl-1">({ </span><span class="hl-6">execTimeoutMs:</span><span class="hl-1"> </span><span class="hl-8">10_000</span><span class="hl-1"> });</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-7">r2</span><span class="hl-1"> = </span><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-6">sandbox</span><span class="hl-1">.</span><span class="hl-0">exec</span><span class="hl-1">(</span><span class="hl-2">&quot;echo hello&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;root&quot;</span><span class="hl-1">, </span><span class="hl-2">&quot;/root&quot;</span><span class="hl-1">);</span><br/><span class="hl-6">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-6">r2</span><span class="hl-1">.</span><span class="hl-6">stdout</span><span class="hl-1">); </span><span class="hl-3">// &quot;hello\n&quot;</span><br/><span class="hl-6">sandbox</span><span class="hl-1">.</span><span class="hl-0">terminate</span><span class="hl-1">();</span>
+</code><button type="button">Copy</button></pre>
+
+</details>
+<hr>
 <details id="resource-capping">
 <summary><strong>Resource Capping</strong></summary>
 <p>Limit the RAM and CPU resources visible inside a virtual shell. Pass a <code>VirtualShellResourceCaps</code> object as the 4th constructor argument:</p>
