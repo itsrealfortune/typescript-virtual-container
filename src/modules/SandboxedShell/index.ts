@@ -4,7 +4,12 @@ import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import type { HostMessage, WorkerMessage } from "./types";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+let __dirname: string;
+try {
+	__dirname = dirname(fileURLToPath(import.meta.url));
+} catch {
+	__dirname = "";
+}
 
 function resolveWorkerScript(): string {
 	const tsPath = resolve(__dirname, "worker.ts");
