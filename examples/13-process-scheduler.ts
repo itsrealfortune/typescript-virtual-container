@@ -8,13 +8,13 @@
 
 import { VirtualShell } from "../src";
 
-const shell = new VirtualShell("scheduler-demo");
-await shell.ensureInitialized();
+const SHELL = new VirtualShell("scheduler-demo");
+await SHELL.ensureInitialized();
 
 // ── Enable scheduler ────────────────────────────────────────────────
 console.log("--- Enable scheduler ---");
 
-shell.users.enableScheduler({
+SHELL.users.enableScheduler({
 	baseTimesliceMs: 100,
 	maxTimesliceMs: 500,
 	minTimesliceMs: 10,
@@ -22,32 +22,32 @@ shell.users.enableScheduler({
 	accountingWindowMs: 1000,
 });
 
-console.log("Scheduler enabled:", shell.users.isSchedulerEnabled());
+console.log("Scheduler enabled:", SHELL.users.isSchedulerEnabled());
 console.log("Config: base=100ms, max=500ms, min=10ms, fair-share=on");
 
 // ── Nice value to priority mapping ─────────────────────────────────
 console.log("\n--- Nice value to Priority mapping ---");
 
-const niceValues = [-20, -15, -10, -5, 0, 5, 10, 15, 19];
-for (const nice of niceValues) {
-	const pid = shell.users.registerProcess(
+const NICE_VALUES = [-20, -15, -10, -5, 0, 5, 10, 15, 19];
+for (const NICE of NICE_VALUES) {
+	const PID = SHELL.users.registerProcess(
 		"root",
 		"test",
 		["test"],
 		"pts/0",
 		undefined,
 		1,
-		nice
+		NICE
 	);
-	const priority = shell.users.getProcessPriority(pid);
-	shell.users.unregisterProcess(pid);
-	console.log(`  nice ${String(nice).padStart(3)} -> ${priority.padEnd(12)}`);
+	const PRIORITY = SHELL.users.getProcessPriority(PID);
+	SHELL.users.unregisterProcess(PID);
+	console.log(`  nice ${String(NICE).padStart(3)} -> ${PRIORITY.padEnd(12)}`);
 }
 
 // ── Process registration ───────────────────────────────────────────
 console.log("\n--- Process registration ---");
 
-const processes = [
+const PROCESSES = [
 	{ name: "nginx", nice: -10, cmd: ["nginx", "-g", "daemon off;"] },
 	{ name: "node", nice: 0, cmd: ["node", "server.js"] },
 	{
@@ -58,63 +58,63 @@ const processes = [
 	{ name: "cron", nice: 19, cmd: ["cron", "-f"] },
 ];
 
-const pids: number[] = [];
-for (const proc of processes) {
-	const pid = shell.users.registerProcess(
+const PIDS: number[] = [];
+for (const PROC of PROCESSES) {
+	const PID = SHELL.users.registerProcess(
 		"root",
-		proc.name,
-		proc.cmd,
+		PROC.name,
+		PROC.cmd,
 		"pts/0",
 		undefined,
 		1,
-		proc.nice
+		PROC.nice
 	);
-	pids.push(pid);
+	PIDS.push(PID);
 	console.log(
-		`  PID ${pid}: ${proc.name} (nice ${proc.nice}, priority: ${shell.users.getProcessPriority(pid)})`
+		`  PID ${PID}: ${PROC.name} (nice ${PROC.nice}, priority: ${SHELL.users.getProcessPriority(PID)})`
 	);
 }
 
 // ── CPU accounting ─────────────────────────────────────────────────
 console.log("\n--- CPU accounting ---");
 
-for (const pid of pids) {
-	const elapsed = 50;
-	const throttled = shell.users.recordAndCheckThrottle(pid, elapsed);
-	const cpuTime = shell.users.getSchedulerCpuTime(pid);
-	console.log(`  PID ${pid}: ${cpuTime}ms consumed, throttled: ${throttled}`);
+for (const PID of PIDS) {
+	const ELAPSED = 50;
+	const THROTTLED = SHELL.users.recordAndCheckThrottle(PID, ELAPSED);
+	const CPU_TIME = SHELL.users.getSchedulerCpuTime(PID);
+	console.log(`  PID ${PID}: ${CPU_TIME}ms consumed, throttled: ${THROTTLED}`);
 }
 
 // ── Priority boosting ──────────────────────────────────────────────
 console.log("\n--- Priority boosting ---");
 
-const backupPid = pids.find((pid) => shell.users.getProcessNice(pid) === 15)!;
+const BACKUP_PID = PIDS.find((pid) => SHELL.users.getProcessNice(pid) === 15)!;
 console.log(
-	`  Before: PID ${backupPid} nice=${shell.users.getProcessNice(backupPid)}, priority=${shell.users.getProcessPriority(backupPid)}`
+	`  Before: PID ${BACKUP_PID} nice=${SHELL.users.getProcessNice(BACKUP_PID)}, priority=${SHELL.users.getProcessPriority(BACKUP_PID)}`
 );
 
-shell.users.setProcessNice(backupPid, -5);
+SHELL.users.setProcessNice(BACKUP_PID, -5);
 console.log(
-	`  After:  PID ${backupPid} nice=${shell.users.getProcessNice(backupPid)}, priority=${shell.users.getProcessPriority(backupPid)}`
+	`  After:  PID ${BACKUP_PID} nice=${SHELL.users.getProcessNice(BACKUP_PID)}, priority=${SHELL.users.getProcessPriority(BACKUP_PID)}`
 );
 
 // ── Scheduler statistics ───────────────────────────────────────────
 console.log("\n--- Scheduler statistics ---");
 
-const stats = shell.users.getSchedulerStats();
-if (stats) {
-	console.log(`  Run queue: ${stats.runQueueLength} processes`);
-	console.log(`  Total CPU time: ${stats.totalCpuTimeMs}ms`);
-	console.log(`  Throttle count: ${stats.throttleCount}`);
-	console.log(`  Preempt count: ${stats.preemptCount}`);
-	console.log(`  Avg timeslice: ${stats.avgTimesliceMs}ms`);
+const STATS = SHELL.users.getSchedulerStats();
+if (STATS) {
+	console.log(`  Run queue: ${STATS.runQueueLength} processes`);
+	console.log(`  Total CPU time: ${STATS.totalCpuTimeMs}ms`);
+	console.log(`  Throttle count: ${STATS.throttleCount}`);
+	console.log(`  Preempt count: ${STATS.preemptCount}`);
+	console.log(`  Avg timeslice: ${STATS.avgTimesliceMs}ms`);
 }
 
 // ── Process cleanup ────────────────────────────────────────────────
 console.log("\n--- Process cleanup ---");
 
-for (const pid of pids) {
-	shell.users.killProcess(pid, 9);
-	shell.users.unregisterProcess(pid);
-	console.log(`  PID ${pid} terminated`);
+for (const PID of PIDS) {
+	SHELL.users.killProcess(PID, 9);
+	SHELL.users.unregisterProcess(PID);
+	console.log(`  PID ${PID} terminated`);
 }

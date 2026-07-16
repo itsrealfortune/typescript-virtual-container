@@ -7,7 +7,7 @@
 
 import { VirtualFileSystem } from "../src";
 
-const vfs = new VirtualFileSystem({
+const VFS = new VirtualFileSystem({
 	mode: "fs",
 	snapshotPath: ".vfs-cache-demo",
 	cache: {
@@ -26,59 +26,59 @@ const vfs = new VirtualFileSystem({
 // ── Write files ─────────────────────────────────────────────────────
 console.log("--- Write files ---");
 
-vfs.writeFile("/etc/config.txt", "database_host=localhost\ndatabase_port=5432");
-vfs.writeFile(
+VFS.writeFile("/etc/config.txt", "database_host=localhost\ndatabase_port=5432");
+VFS.writeFile(
 	"/var/log/app.log",
 	"INFO: Application started\nINFO: Listening on port 3000"
 );
-vfs.writeFile("/tmp/data.bin", Buffer.alloc(10000, 0x42));
+VFS.writeFile("/tmp/data.bin", Buffer.alloc(10000, 0x42));
 
 // ── First read (populates cache) ───────────────────────────────────
 console.log("\n--- First read ---");
 
-const config = vfs.readFile("/etc/config.txt");
-console.log("Config:", config);
+const CONFIG = VFS.readFile("/etc/config.txt");
+console.log("Config:", CONFIG);
 
 // ── Second read (cache hit) ────────────────────────────────────────
 console.log("\n--- Second read (cache hit) ---");
 
-const config2 = vfs.readFile("/etc/config.txt");
-console.log("Config (cached):", config2);
+const CONFIG2 = VFS.readFile("/etc/config.txt");
+console.log("Config (cached):", CONFIG2);
 
 // ── Cache stats ────────────────────────────────────────────────────
 console.log("\n--- Cache stats ---");
 
-const stats = vfs.getCacheStats();
-if (stats) {
+const STATS = VFS.getCacheStats();
+if (STATS) {
 	console.log({
-		hits: stats.hits,
-		misses: stats.misses,
-		entries: stats.entries,
-		hitRate: `${stats.hitRate.toFixed(1)}%`,
-		memoryUsage: `${stats.memoryUsage} bytes`,
+		hits: STATS.hits,
+		misses: STATS.misses,
+		entries: STATS.entries,
+		hitRate: `${STATS.hitRate.toFixed(1)}%`,
+		memoryUsage: `${STATS.memoryUsage} bytes`,
 	});
 }
 
 // ── Preload cache ──────────────────────────────────────────────────
 console.log("\n--- Preload cache ---");
 
-vfs.preloadCache(["/var/log/app.log", "/etc/config.txt"]);
+VFS.preloadCache(["/var/log/app.log", "/etc/config.txt"]);
 console.log("Preloaded 2 files into cache");
 
 // ── Cache invalidation on write ────────────────────────────────────
 console.log("\n--- Cache invalidation on write ---");
 
-vfs.writeFile(
+VFS.writeFile(
 	"/etc/config.txt",
 	"database_host=production-db\ndatabase_port=5433"
 );
 console.log("Wrote new config -- cache invalidated");
 
-const fresh = vfs.readFile("/etc/config.txt");
-console.log("Fresh config:", fresh);
+const FRESH = VFS.readFile("/etc/config.txt");
+console.log("Fresh config:", FRESH);
 
 // ── Clear cache ────────────────────────────────────────────────────
 console.log("\n--- Clear cache ---");
 
-vfs.clearCache();
+VFS.clearCache();
 console.log("Cache cleared");

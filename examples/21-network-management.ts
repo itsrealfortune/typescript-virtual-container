@@ -7,14 +7,14 @@
 
 import { VirtualShell } from "../src";
 
-const shell = new VirtualShell("network-demo");
-await shell.ensureInitialized();
+const SHELL = new VirtualShell("network-demo");
+await SHELL.ensureInitialized();
 
-const net = shell.network;
+const NET = SHELL.network;
 
 // ── Interfaces ────────────────────────────────────────────────────
 console.log("--- Interfaces ---");
-net.addInterface({
+NET.addInterface({
 	name: "eth0",
 	type: "ether",
 	mac: "02:42:ac:10:00:01",
@@ -24,7 +24,7 @@ net.addInterface({
 	ipv6: "::1",
 	speed: 1000,
 });
-net.addInterface({
+NET.addInterface({
 	name: "eth1",
 	type: "ether",
 	mac: "02:42:ac:10:00:02",
@@ -34,7 +34,7 @@ net.addInterface({
 	ipv6: "::1",
 	speed: 100,
 });
-net.addInterface({
+NET.addInterface({
 	name: "lo",
 	type: "loopback",
 	mac: "00:00:00:00:00:00",
@@ -44,29 +44,29 @@ net.addInterface({
 	ipv6: "::1",
 });
 
-net.setInterfaceState("eth0", "UP");
-net.setInterfaceState("eth1", "UP");
+NET.setInterfaceState("eth0", "UP");
+NET.setInterfaceState("eth1", "UP");
 
-console.log(net.formatIpAddr());
+console.log(NET.formatIpAddr());
 
 // ── Routes ────────────────────────────────────────────────────────
 console.log("--- Routes ---");
-net.addRoute("10.0.0.0/8", "0.0.0.0", "255.0.0.0", "eth0");
-net.addRoute("0.0.0.0/0", "10.0.0.1", "0.0.0.0", "eth0", 100);
-net.addRoute("192.168.1.0/24", "0.0.0.0", "255.255.255.0", "eth1");
+NET.addRoute("10.0.0.0/8", "0.0.0.0", "255.0.0.0", "eth0");
+NET.addRoute("0.0.0.0/0", "10.0.0.1", "0.0.0.0", "eth0", 100);
+NET.addRoute("192.168.1.0/24", "0.0.0.0", "255.255.255.0", "eth1");
 
-console.log(net.formatIpRoute());
+console.log(NET.formatIpRoute());
 
 // ── Policy routing ────────────────────────────────────────────────
 console.log("--- Policy routing ---");
-net.addRoutingTable("custom");
-net.addRouteToTable("10.0.0.0/8", "10.0.0.1", "255.0.0.0", "eth0", 1);
-net.addPolicyRule({ from: "10.0.0.0/8", table: 1, action: "lookup" });
-console.log(net.formatIpRule());
+NET.addRoutingTable("custom");
+NET.addRouteToTable("10.0.0.0/8", "10.0.0.1", "255.0.0.0", "eth0", 1);
+NET.addPolicyRule({ from: "10.0.0.0/8", table: 1, action: "lookup" });
+console.log(NET.formatIpRule());
 
 // ── Firewall ──────────────────────────────────────────────────────
 console.log("\n--- Firewall (iptables simulation) ---");
-net.addFirewallRule({
+NET.addFirewallRule({
 	chain: "INPUT",
 	protocol: "tcp",
 	source: "0.0.0.0/0",
@@ -74,7 +74,7 @@ net.addFirewallRule({
 	destPort: 22,
 	action: "ACCEPT",
 });
-net.addFirewallRule({
+NET.addFirewallRule({
 	chain: "INPUT",
 	protocol: "tcp",
 	source: "0.0.0.0/0",
@@ -82,7 +82,7 @@ net.addFirewallRule({
 	destPort: 80,
 	action: "ACCEPT",
 });
-net.addFirewallRule({
+NET.addFirewallRule({
 	chain: "INPUT",
 	protocol: "tcp",
 	source: "0.0.0.0/0",
@@ -90,13 +90,13 @@ net.addFirewallRule({
 	destPort: 443,
 	action: "ACCEPT",
 });
-net.setPolicy("INPUT", "DROP");
+NET.setPolicy("INPUT", "DROP");
 
-console.log(net.formatFirewall());
+console.log(NET.formatFirewall());
 
 // ── Check firewall ────────────────────────────────────────────────
 console.log("\n--- Firewall checks ---");
-const checks: Array<{
+const CHECKS: Array<{
 	proto: "tcp" | "udp" | "icmp" | "all";
 	dst: string;
 	port: number;
@@ -105,24 +105,24 @@ const checks: Array<{
 	{ proto: "tcp", dst: "10.0.0.1", port: 8080 },
 	{ proto: "tcp", dst: "10.0.0.1", port: 443 },
 ];
-for (const { proto, dst, port } of checks) {
-	const result = net.checkFirewall("INPUT", proto, "10.0.0.2", dst, port);
-	console.log(`  ${proto} ${dst}:${port} → ${result}`);
+for (const { proto, dst, port } of CHECKS) {
+	const RESULT = NET.checkFirewall("INPUT", proto, "10.0.0.2", dst, port);
+	console.log(`  ${proto} ${dst}:${port} → ${RESULT}`);
 }
 
 // ── Conntrack ─────────────────────────────────────────────────────
 console.log("\n--- Conntrack ---");
-net.updateConntrack("10.0.0.2", "10.0.0.1", "tcp", 40000, 80, 1024);
-net.updateConntrack("10.0.0.2", "8.8.8.8", "udp", 40001, 53, 64);
-console.log(`  Entries: ${net.getConntrackCount()}/${net.getConntrackMax()}`);
-console.log(net.formatConntrack());
+NET.updateConntrack("10.0.0.2", "10.0.0.1", "tcp", 40000, 80, 1024);
+NET.updateConntrack("10.0.0.2", "8.8.8.8", "udp", 40001, 53, 64);
+console.log(`  Entries: ${NET.getConntrackCount()}/${NET.getConntrackMax()}`);
+console.log(NET.formatConntrack());
 
 // ── ARP cache ─────────────────────────────────────────────────────
 console.log("\n--- ARP cache ---");
-if (net.getArpCache().length === 0) {
+if (NET.getArpCache().length === 0) {
 	console.log("  (ARP cache empty — populate via traffic)");
 } else {
-	for (const entry of net.getArpCache()) {
-		console.log(`  ${entry.ip.padEnd(15)} ${entry.mac}  ${entry.device}`);
+	for (const ENTRY of NET.getArpCache()) {
+		console.log(`  ${ENTRY.ip.padEnd(15)} ${ENTRY.mac}  ${ENTRY.device}`);
 	}
 }

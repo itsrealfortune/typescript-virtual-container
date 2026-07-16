@@ -22,11 +22,7 @@ import { randomUUID } from "node:crypto";
 import { WebSocketServer, type RawData } from "ws";
 import type { ShellStream } from "../../types/streams";
 import type { VirtualShell } from "../VirtualShell";
-import {
-	parseClientMessage,
-	serializeMessage,
-	type WsUser,
-} from "./protocol";
+import { parseClientMessage, serializeMessage, type WsUser } from "./protocol";
 
 /** Options for {@link VirtualWebSocketServer}. */
 export interface VirtualWebSocketServerOptions {
@@ -92,12 +88,17 @@ export class VirtualWebSocketServer {
 		});
 
 		this._wss.on("connection", (ws, req) => {
-			const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
+			const url = new URL(
+				req.url ?? "/",
+				`http://${req.headers.host ?? "localhost"}`
+			);
 			const token = url.searchParams.get("token");
 
 			// Auth check — reject with error message and close code 4001
 			if (this._authToken && token !== this._authToken) {
-				ws.send(serializeMessage({ type: "error", message: "Authentication failed" }));
+				ws.send(
+					serializeMessage({ type: "error", message: "Authentication failed" })
+				);
 				ws.close(4001, "Authentication failed");
 				return;
 			}
@@ -120,7 +121,9 @@ export class VirtualWebSocketServer {
 				}
 				if (this._idleTimeoutMs > 0) {
 					idleTimer = setTimeout(() => {
-						ws.send(serializeMessage({ type: "error", message: "Idle timeout" }));
+						ws.send(
+							serializeMessage({ type: "error", message: "Idle timeout" })
+						);
 						ws.close(4002, "Idle timeout");
 					}, this._idleTimeoutMs);
 				}
@@ -220,7 +223,7 @@ export class VirtualWebSocketServer {
 				user.username,
 				user.sessionId,
 				req.socket.remoteAddress ?? "127.0.0.1",
-				terminalSize,
+				terminalSize
 			);
 		});
 	}
@@ -231,7 +234,9 @@ export class VirtualWebSocketServer {
 	 * informational.
 	 */
 	start(): void {
-		console.log(`[WebSocketShell] Listening on ws://0.0.0.0:${(this._wss.address() as { port: number }).port}`);
+		console.log(
+			`[WebSocketShell] Listening on ws://0.0.0.0:${(this._wss.address() as { port: number }).port}`
+		);
 	}
 
 	/**

@@ -14,12 +14,12 @@ if (navigator.storage?.persist) {
 
 // ── Terminal element ──────────────────────────────────────────────────────────
 
-const terminal = document.getElementById("terminal") as HTMLPreElement;
-const scrollbackEl = document.getElementById("scrollback") as HTMLPreElement;
-terminal.focus();
+const TERMINAL = document.getElementById("terminal") as HTMLPreElement;
+const SCROLLBACK_EL = document.getElementById("scrollback") as HTMLPreElement;
+TERMINAL.focus();
 document.addEventListener("click", () => {
 	if (!window.getSelection()?.toString()) {
-		terminal.focus();
+		TERMINAL.focus();
 	}
 });
 
@@ -29,17 +29,17 @@ function measureCharCell(): { w: number; h: number } {
 	const probe = document.createElement("span");
 	probe.style.cssText = "position:absolute;visibility:hidden;white-space:pre;";
 	probe.textContent = "X";
-	terminal.appendChild(probe);
+	TERMINAL.appendChild(probe);
 	const rect = probe.getBoundingClientRect();
-	terminal.removeChild(probe);
+	TERMINAL.removeChild(probe);
 	return { w: rect.width || 8, h: rect.height || 16 };
 }
 
 function getTermSize(): { cols: number; rows: number } {
 	const { w, h } = measureCharCell();
-	const wrapper = document.getElementById("terminal-wrapper") ?? terminal;
+	const wrapper = document.getElementById("terminal-wrapper") ?? TERMINAL;
 	return {
-		cols: Math.max(1, Math.floor(terminal.clientWidth / w)),
+		cols: Math.max(1, Math.floor(TERMINAL.clientWidth / w)),
 		rows: Math.max(1, Math.floor(wrapper.clientHeight / h)),
 	};
 }
@@ -47,10 +47,10 @@ function getTermSize(): { cols: number; rows: number } {
 // ── Renderer ──────────────────────────────────────────────────────────────────
 
 const { cols, rows } = getTermSize();
-const renderer = new WebTermRenderer(rows, cols);
+const RENDERER = new WebTermRenderer(rows, cols);
 
 let rafPending = false;
-const wrapper = document.getElementById("terminal-wrapper") as HTMLDivElement;
+const WRAPPER = document.getElementById("terminal-wrapper") as HTMLDivElement;
 let fullscreenMode = false;
 function flush(): void {
 	if (rafPending) {
@@ -59,27 +59,27 @@ function flush(): void {
 	rafPending = true;
 	requestAnimationFrame(() => {
 		rafPending = false;
-		const cleared = renderer.consumeCleared();
+		const cleared = RENDERER.consumeCleared();
 		if (cleared) {
 			fullscreenMode = true;
 		}
-		scrollbackEl.innerHTML = renderer.renderScrollbackHtml();
-		terminal.innerHTML = renderer.renderHtml();
+		SCROLLBACK_EL.innerHTML = RENDERER.renderScrollbackHtml();
+		TERMINAL.innerHTML = RENDERER.renderHtml();
 		if (fullscreenMode) {
 			// Always wipe scrollback DOM in fullscreen — lines leaked by scrollUp must not show
-			renderer.clearScrollback();
-			scrollbackEl.innerHTML = "";
-			if (!cleared && renderer.scrollbackLength > 0) {
+			RENDERER.clearScrollback();
+			SCROLLBACK_EL.innerHTML = "";
+			if (!cleared && RENDERER.scrollbackLength > 0) {
 				fullscreenMode = false;
-				wrapper.classList.remove("fullscreen");
-				terminal.scrollIntoView(false);
+				WRAPPER.classList.remove("fullscreen");
+				TERMINAL.scrollIntoView(false);
 			} else {
-				wrapper.classList.add("fullscreen");
-				wrapper.scrollTop = 0;
+				WRAPPER.classList.add("fullscreen");
+				WRAPPER.scrollTop = 0;
 			}
 		} else {
-			wrapper.classList.remove("fullscreen");
-			terminal.scrollIntoView(false);
+			WRAPPER.classList.remove("fullscreen");
+			TERMINAL.scrollIntoView(false);
 		}
 	});
 }
@@ -87,17 +87,17 @@ function flush(): void {
 // ── ShellStream bridge ────────────────────────────────────────────────────────
 
 // Listeners registered by shell.ts via stream.on("data"|"close")
-const dataListeners: ((chunk: Buffer) => void)[] = [];
-const closeListeners: (() => void)[] = [];
+const DATA_LISTENERS: ((chunk: Buffer) => void)[] = [];
+const CLOSE_LISTENERS: (() => void)[] = [];
 
-const stream: ShellStream = {
+const STREAM: ShellStream = {
 	write: (data: string) => {
-		renderer.write(data);
+		RENDERER.write(data);
 		flush();
 	},
 	exit: () => undefined,
 	end: () => {
-		for (const l of closeListeners) {
+		for (const l of CLOSE_LISTENERS) {
 			l();
 		}
 	},
@@ -106,9 +106,9 @@ const stream: ShellStream = {
 		listener: ((chunk: Buffer) => void) & (() => void)
 	) => {
 		if (event === "data") {
-			dataListeners.push(listener);
+			DATA_LISTENERS.push(listener);
 		} else if (event === "close") {
-			closeListeners.push(listener as () => void);
+			CLOSE_LISTENERS.push(listener as () => void);
 		}
 	},
 };
@@ -123,7 +123,7 @@ function toChunk(bytes: Uint8Array): Buffer {
 	return g.Buffer ? g.Buffer.from(bytes) : (bytes as unknown as Buffer);
 }
 
-terminal.addEventListener("keydown", (e: KeyboardEvent) => {
+TERMINAL.addEventListener("keydown", (e: KeyboardEvent) => {
 	// Route to desktop if active
 	if (desktopManager?.isActive()) {
 		desktopManager.handleKeyDown(e);
@@ -152,14 +152,14 @@ terminal.addEventListener("keydown", (e: KeyboardEvent) => {
 		return;
 	}
 
-	for (const l of dataListeners) {
+	for (const l of DATA_LISTENERS) {
 		l(toChunk(bytes));
 	}
-	terminal.scrollTop = terminal.scrollHeight;
+	TERMINAL.scrollTop = TERMINAL.scrollHeight;
 });
 
 // Paste support
-terminal.addEventListener("paste", (e: ClipboardEvent) => {
+TERMINAL.addEventListener("paste", (e: ClipboardEvent) => {
 	e.preventDefault();
 	const text = e.clipboardData?.getData("text") ?? "";
 	if (!text) {
@@ -167,17 +167,17 @@ terminal.addEventListener("paste", (e: ClipboardEvent) => {
 	}
 	const enc = new TextEncoder();
 	const bytes = enc.encode(text);
-	for (const l of dataListeners) {
+	for (const l of DATA_LISTENERS) {
 		l(toChunk(bytes));
 	}
-	terminal.scrollTop = terminal.scrollHeight;
+	TERMINAL.scrollTop = TERMINAL.scrollHeight;
 });
 
 // ── Resize ────────────────────────────────────────────────────────────────────
 
 window.addEventListener("resize", () => {
 	const { cols: newCols, rows: newRows } = getTermSize();
-	renderer.resize(newRows, newCols);
+	RENDERER.resize(newRows, newCols);
 	flush();
 	// shell.ts listens to stream resize via terminalSize ref — not exposed,
 	// but a full redraw from the shell side happens on next output anyway.
@@ -185,7 +185,7 @@ window.addEventListener("resize", () => {
 
 // ── Desktop ────────────────────────────────────────────────────────────
 
-const desktopEl = document.getElementById("desktop") as HTMLDivElement;
+const DESKTOP_EL = document.getElementById("desktop") as HTMLDivElement;
 let desktopManager: DesktopManager | null = null;
 
 // ── GPU detection ─────────────────────────────────────────────────────────────
@@ -217,7 +217,7 @@ function detectGpu(): string | undefined {
 
 const HOSTNAME = "my-vm";
 
-const shell = new VirtualShell(
+const SHELL = new VirtualShell(
 	HOSTNAME,
 	{
 		kernel: "6.1.0-web-amd64",
@@ -237,32 +237,32 @@ const shell = new VirtualShell(
 	}
 );
 
-await shell.ensureInitialized();
+await SHELL.ensureInitialized();
 
 // Detect first run by checking a marker that only exists after a successful flush.
 // /root/.bashrc and /root/.profile are created by bootstrapRoot in the constructor
 // on EVERY load, so they can't serve as markers. /root/README.txt is only created here.
-const isFirstRun = !shell.vfs.exists("/root/README.txt");
-if (isFirstRun) {
-	if (!shell.vfs.exists("/root")) {
-		shell.vfs.mkdir("/root", 0o700);
+const IS_FIRST_RUN = !SHELL.vfs.exists("/root/README.txt");
+if (IS_FIRST_RUN) {
+	if (!SHELL.vfs.exists("/root")) {
+		SHELL.vfs.mkdir("/root", 0o700);
 	}
-	shell.vfs.writeFile("/root/README.txt", `Welcome to ${HOSTNAME}\n`);
-	shell.vfs.flushMirror();
+	SHELL.vfs.writeFile("/root/README.txt", `Welcome to ${HOSTNAME}\n`);
+	SHELL.vfs.flushMirror();
 }
 
 window.addEventListener("beforeunload", () => {
-	shell.vfs.flushMirror();
+	SHELL.vfs.flushMirror();
 });
 
 // ── Desktop integration ───────────────────────────────────────────────────────
 
-desktopManager = new DesktopManager(shell, desktopEl);
-shell.desktopManager = desktopManager;
+desktopManager = new DesktopManager(SHELL, DESKTOP_EL);
+SHELL.desktopManager = desktopManager;
 desktopManager.setOnExit(() => {
-	terminal.focus();
+	TERMINAL.focus();
 });
 
 // ── Start interactive session ─────────────────────────────────────────────────
 
-shell.startInteractiveSession(stream, "root", null, "browser", { cols, rows });
+SHELL.startInteractiveSession(STREAM, "root", null, "browser", { cols, rows });

@@ -15,15 +15,15 @@ type ShellContext = CommandContext;
 
 // Module-level compiled regexes for function definition matching.
 // Rebuilt per-line inside parseBlocks would recompile on every script line — hoisted here instead.
-const _funcNamePat = "[^\\s(){}]+";
+const _FUNC_NAME_PAT = "[^\\s(){}]+";
 const RE_FUNC_INLINE = new RegExp(
-	`^(?:function\\s+)?(${_funcNamePat})\\s*\\(\\s*\\)\\s*\\{(.+)\\}\\s*$`
+	`^(?:function\\s+)?(${_FUNC_NAME_PAT})\\s*\\(\\s*\\)\\s*\\{(.+)\\}\\s*$`
 );
 const RE_FUNC_MULTI = new RegExp(
-	`^(?:function\\s+)?(${_funcNamePat})\\s*\\(\\s*\\)\\s*\\{?\\s*$`
+	`^(?:function\\s+)?(${_FUNC_NAME_PAT})\\s*\\(\\s*\\)\\s*\\{?\\s*$`
 );
 const RE_FUNC_KW_ONLY = new RegExp(
-	`^function\\s+(${_funcNamePat})\\s*\\{?\\s*$`
+	`^function\\s+(${_FUNC_NAME_PAT})\\s*\\{?\\s*$`
 );
 
 /**
@@ -449,10 +449,10 @@ async function runBlocks(
 				output += `${r.stdout}\n`;
 			}
 			if (r.stderr) {
-				return { ...r, stdout: output.trim() };
+				return { ...await r, stdout: output.trim() };
 			}
 			if (ctx.env.vars.__errexit && (r.exitCode ?? 0) !== 0) {
-				return { ...r, stdout: output.trim() };
+				return { ...await r, stdout: output.trim() };
 			}
 			lastResult = r;
 		} else if (block.type === "if") {

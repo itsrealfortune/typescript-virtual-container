@@ -28,12 +28,12 @@ interface Service {
 // ── Create cluster network ────────────────────────────────────────
 console.log("--- Create cluster network ---");
 
-const cluster = new Baie("k8s-cluster", "172.16.0.0/16");
+const CLUSTER = new Baie("k8s-cluster", "172.16.0.0/16");
 
 // ── Deploy pods ───────────────────────────────────────────────────
 console.log("\n--- Deploy pods ---");
 
-const podSpecs = [
+const POD_SPECS = [
 	{ name: "web-1", image: "nginx:1.25", ports: [80] },
 	{ name: "web-2", image: "nginx:1.25", ports: [80] },
 	{ name: "web-3", image: "nginx:1.25", ports: [80] },
@@ -43,110 +43,110 @@ const podSpecs = [
 	{ name: "cache-1", image: "redis:7", ports: [6379] },
 ];
 
-const pods: Pod[] = [];
+const PODS: Pod[] = [];
 
-for (const spec of podSpecs) {
-	const vm = await cluster.createVM(spec.name);
-	vm.vfs.setRamCap(256 * 1024 * 1024);
-	vm.users.setCpuCapCores(1);
-	vm.users.setPassword("root", "root");
+for (const SPEC of POD_SPECS) {
+	const VM = await CLUSTER.createVM(SPEC.name);
+	VM.vfs.setRamCap(256 * 1024 * 1024);
+	VM.users.setCpuCapCores(1);
+	VM.users.setPassword("root", "root");
 
-	const ssh = new VirtualSshServer({ port: 0, shell: vm });
-	const port = await ssh.start();
+	const SSH = new VirtualSshServer({ port: 0, shell: VM });
+	const PORT = await SSH.start();
 
-	const client = new SshClient();
-	await client.connect({
+	const CLIENT = new SshClient();
+	await CLIENT.connect({
 		host: "localhost",
-		port,
+		port: PORT,
 		username: "root",
 		password: "root",
 	});
 
-	await client.exec(`mkdir -p /app && echo '${spec.image}' > /app/image`);
-	for (const p of spec.ports) {
-		await client.exec(`echo "Listening on port ${p}" > /app/port-${p}`);
+	await CLIENT.exec(`mkdir -p /app && echo '${SPEC.image}' > /app/image`);
+	for (const p of SPEC.ports) {
+		await CLIENT.exec(`echo "Listening on port ${p}" > /app/port-${p}`);
 	}
 
-	const pod: Pod = {
-		name: spec.name,
-		vm,
-		ssh,
-		client,
-		port,
-		image: spec.image,
-		ports: spec.ports,
+	const POD: Pod = {
+		name: SPEC.name,
+		vm: VM,
+		ssh: SSH,
+		client: CLIENT,
+		port: PORT,
+		image: SPEC.image,
+		ports: SPEC.ports,
 		ready: true,
 	};
-	pods.push(pod);
-	console.log(`  ${spec.name}: ${spec.image} [${spec.ports.join(", ")}]`);
+	PODS.push(POD);
+	console.log(`  ${SPEC.name}: ${SPEC.image} [${SPEC.ports.join(", ")}]`);
 }
 
 // ── Create services ───────────────────────────────────────────────
 console.log("\n--- Create services ---");
 
-const services: Service[] = [
+const SERVICES: Service[] = [
 	{
 		name: "web-svc",
-		pods: pods.filter((p) => p.name.startsWith("web")),
+		pods: PODS.filter((p) => p.name.startsWith("web")),
 		port: 80,
 		targetPort: 80,
 	},
 	{
 		name: "api-svc",
-		pods: pods.filter((p) => p.name.startsWith("api")),
+		pods: PODS.filter((p) => p.name.startsWith("api")),
 		port: 3000,
 		targetPort: 3000,
 	},
 	{
 		name: "db-svc",
-		pods: pods.filter((p) => p.name.startsWith("db")),
+		pods: PODS.filter((p) => p.name.startsWith("db")),
 		port: 5432,
 		targetPort: 5432,
 	},
 	{
 		name: "cache-svc",
-		pods: pods.filter((p) => p.name.startsWith("cache")),
+		pods: PODS.filter((p) => p.name.startsWith("cache")),
 		port: 6379,
 		targetPort: 6379,
 	},
 ];
 
-for (const svc of services) {
-	cluster.switch.addDnsRecord(svc.name, "172.16.0.1");
+for (const SVC of SERVICES) {
+	CLUSTER.switch.addDnsRecord(SVC.name, "172.16.0.1");
 
-	if (svc.pods.length > 1) {
-		cluster.switch.addLoadBalancer({
-			name: svc.name,
-			port: svc.port,
-			targets: svc.pods.map((p) => ({
+	if (SVC.pods.length > 1) {
+		CLUSTER.switch.addLoadBalancer({
+			name: SVC.name,
+			port: SVC.port,
+			targets: SVC.pods.map((p) => ({
 				hostname: p.name,
-				port: svc.targetPort,
+				port: SVC.targetPort,
 				weight: 1,
 			})),
 			algorithm: "round-robin",
 		});
 		console.log(
-			`  ${svc.name}: ${svc.pods.length} pods, round-robin LB on port ${svc.port}`
+			`  ${SVC.name}: ${SVC.pods.length} pods, round-robin LB on port ${SVC.port}`
 		);
 	} else {
-		console.log(`  ${svc.name}: 1 pod on port ${svc.port}`);
+		console.log(`  ${SVC.name}: 1 pod on port ${SVC.port}`);
 	}
 }
 
 // ── Apply network policies ────────────────────────────────────────
 console.log("\n--- Apply network policies ---");
 
-const webClient = pods[0]!.client;
-await webClient.exec("iptables -A OUTPUT -d 172.16.0.0/16 -j ACCEPT");
+const WEB_CLIENT = PODS[0]!.client;
+await WEB_CLIENT.exec("iptables -A OUTPUT -d 172.16.0.0/16 -j ACCEPT");
 
-const dbClient = pods.find((p) => p.name === "db-1")!.client;
-await dbClient.exec(
+const DB_CLIENT = PODS.find((p) => p.name === "db-1")!.client;
+await DB_CLIENT.exec(
 	"iptables -A INPUT -s 172.16.0.4 -p tcp --dport 5432 -j ACCEPT"
 );
-await dbClient.exec(
+await DB_CLIENT.exec(
 	"iptables -A INPUT -s 172.16.0.5 -p tcp --dport 5432 -j ACCEPT"
 );
-await dbClient.exec("iptables -P INPUT DROP");
+await DB_CLIENT.exec("iptables -P INPUT DROP");
 
 console.log("  web -> api: allowed");
 console.log("  api -> db: allowed");
@@ -156,76 +156,76 @@ console.log("  external -> db: denied (default)");
 // ── Verify connectivity ───────────────────────────────────────────
 console.log("\n--- Verify connectivity ---");
 
-const webToApi = await webClient.exec(
+const WEB_TO_API = await WEB_CLIENT.exec(
 	"echo 'test' | nc -w 1 172.16.0.4 3000 2>&1 || echo 'connection-refused'"
 );
 console.log(
-	`  web-1 -> api-1: ${webToApi.exitCode === 0 ? "connected" : "refused"}`
+	`  web-1 -> api-1: ${WEB_TO_API.exitCode === 0 ? "connected" : "refused"}`
 );
 
-const webToDb = await webClient.exec(
+const WEB_TO_DB = await WEB_CLIENT.exec(
 	"nc -z -w 1 172.16.0.6 5432 2>&1 || echo 'unreachable'"
 );
 console.log(
-	`  web-1 -> db-1: ${(webToDb.stdout ?? "").includes("unreachable") ? "blocked" : "open"}`
+	`  web-1 -> db-1: ${(WEB_TO_DB.stdout ?? "").includes("unreachable") ? "blocked" : "open"}`
 );
 
 // ── Rolling update ────────────────────────────────────────────────
 console.log("\n--- Rolling update: web pods v1.25 -> v1.26 ---");
 
-for (const pod of pods.filter((p) => p.name.startsWith("web"))) {
-	console.log(`  Updating ${pod.name}...`);
+for (const POD of PODS.filter((p) => p.name.startsWith("web"))) {
+	console.log(`  Updating ${POD.name}...`);
 
-	pod.ready = false;
+	POD.ready = false;
 
-	await pod.client.exec("echo 'nginx:1.26' > /app/image");
-	pod.image = "nginx:1.26";
+	await POD.client.exec("echo 'nginx:1.26' > /app/image");
+	POD.image = "nginx:1.26";
 
-	pod.ready = true;
-	console.log(`  ${pod.name} updated to ${pod.image}`);
+	POD.ready = true;
+	console.log(`  ${POD.name} updated to ${POD.image}`);
 }
 
 // ── Cluster status report ─────────────────────────────────────────
 console.log("\n--- Cluster status report ---");
 console.log("=".repeat(60));
 
-console.log(`\n  Pods: ${pods.length} total`);
-for (const pod of pods) {
-	const status = pod.ready ? "Running" : "NotReady";
+console.log(`\n  Pods: ${PODS.length} total`);
+for (const POD of PODS) {
+	const STATUS = POD.ready ? "Running" : "NotReady";
 	console.log(
-		`    ${pod.name}: ${pod.image} [${pod.ports.join(", ")}] - ${status}`
+		`    ${POD.name}: ${POD.image} [${POD.ports.join(", ")}] - ${STATUS}`
 	);
 }
 
-console.log(`\n  Services: ${services.length}`);
-for (const svc of services) {
+console.log(`\n  Services: ${SERVICES.length}`);
+for (const SVC of SERVICES) {
 	console.log(
-		`    ${svc.name}: ${svc.pods.length} pods, port ${svc.port}->${svc.targetPort}`
+		`    ${SVC.name}: ${SVC.pods.length} pods, port ${SVC.port}->${SVC.targetPort}`
 	);
 }
 
 let totalSent = 0;
 let totalReceived = 0;
-for (const [mac] of cluster.switch.getPorts()) {
-	totalSent += cluster.switch.getBytesSent(mac);
-	totalReceived += cluster.switch.getBytesReceived(mac);
+for (const [MAC] of CLUSTER.switch.getPorts()) {
+	totalSent += CLUSTER.switch.getBytesSent(MAC);
+	totalReceived += CLUSTER.switch.getBytesReceived(MAC);
 }
 console.log(
 	`\n  Network bandwidth: ${totalSent} bytes sent, ${totalReceived} bytes received`
 );
 
 let _totalRam = 0;
-for (const pod of pods) {
-	const procs = pod.vm.users.listProcesses();
-	_totalRam += procs.length * 10;
+for (const POD of PODS) {
+	const PROCS = POD.vm.users.listProcesses();
+	_totalRam += PROCS.length * 10;
 }
 console.log(
-	`  Total processes: ${pods.reduce((sum, p) => sum + p.vm.users.listProcesses().length, 0)}`
+	`  Total processes: ${PODS.reduce((sum, p) => sum + p.vm.users.listProcesses().length, 0)}`
 );
 
 console.log("\n--- Cluster running ---");
 
-for (const pod of pods) {
-	pod.client.disconnect();
-	pod.ssh.stop();
+for (const POD of PODS) {
+	POD.client.disconnect();
+	POD.ssh.stop();
 }

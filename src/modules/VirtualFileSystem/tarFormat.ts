@@ -112,7 +112,12 @@ function padBlock(size: number): Buffer {
 function buildTar(entries: TarEntry[]): Buffer {
 	const parts: Buffer[] = [];
 	for (const e of entries) {
-		const hdr = makeTarHeader(e.name, e.isDir ? 0 : e.content.length, e.isDir, e);
+		const hdr = makeTarHeader(
+			e.name,
+			e.isDir ? 0 : e.content.length,
+			e.isDir,
+			e
+		);
 		parts.push(hdr);
 		if (!e.isDir && e.content.length > 0) {
 			parts.push(e.content);
@@ -249,19 +254,33 @@ function parseTar(raw: Buffer): TarFile[] {
 			continue;
 		}
 
-		const prefix = hdr.slice(345, 500).toString("ascii").replace(/\0.*/, "").trim();
-		const namePart = hdr.slice(0, 100).toString("ascii").replace(/\0.*/, "").trim();
+		const prefix = hdr
+			.slice(345, 500)
+			.toString("ascii")
+			.replace(/\0.*/, "")
+			.trim();
+		const namePart = hdr
+			.slice(0, 100)
+			.toString("ascii")
+			.replace(/\0.*/, "")
+			.trim();
 		const name = prefix ? `${prefix}/${namePart}` : namePart;
 		const size = parseOctal(hdr.slice(124, 135).toString("ascii"));
 		const typeflag = hdr[156] ?? 0;
 		const mode = parseOctal(hdr.slice(100, 107).toString("ascii"));
 		const uid = parseOctal(hdr.slice(108, 115).toString("ascii"));
 		const gid = parseOctal(hdr.slice(116, 123).toString("ascii"));
-		const mtimeStr = hdr.slice(136, 147).toString("ascii").replace(/\0.*/, "").trim();
-		const mtime = mtimeStr
-			? Number.parseInt(mtimeStr, 8) * 1000
-			: Date.now();
-		const linkname = hdr.slice(157, 257).toString("ascii").replace(/\0.*/, "").trim();
+		const mtimeStr = hdr
+			.slice(136, 147)
+			.toString("ascii")
+			.replace(/\0.*/, "")
+			.trim();
+		const mtime = mtimeStr ? Number.parseInt(mtimeStr, 8) * 1000 : Date.now();
+		const linkname = hdr
+			.slice(157, 257)
+			.toString("ascii")
+			.replace(/\0.*/, "")
+			.trim();
 		const devmajor = parseOctal(hdr.slice(329, 336).toString("ascii"));
 		const devminor = parseOctal(hdr.slice(337, 344).toString("ascii"));
 
@@ -371,11 +390,7 @@ export function decodeTar(buf: Buffer): InternalDirectoryNode {
 	let raw = buf;
 
 	// Auto-decompress gzip
-	if (
-		raw.length > 2 &&
-		raw[0] === 0x1f &&
-		raw[1] === 0x8b
-	) {
+	if (raw.length > 2 && raw[0] === 0x1f && raw[1] === 0x8b) {
 		try {
 			raw = Buffer.from(gunzipSync(raw));
 		} catch {
@@ -467,7 +482,10 @@ export function decodeTar(buf: Buffer): InternalDirectoryNode {
 		}
 
 		// Regular file (typeflag 0x30 or 0x00 or unset)
-		if ((f.typeflag === 0x30 || f.typeflag === 0x00 || f.typeflag === 0) && !cur.children[leafName]) {
+		if (
+			(f.typeflag === 0x30 || f.typeflag === 0x00 || f.typeflag === 0) &&
+			!cur.children[leafName]
+		) {
 			cur.children[leafName] = makeFile(
 				leafName,
 				f.content,
@@ -488,9 +506,5 @@ export function decodeTar(buf: Buffer): InternalDirectoryNode {
  * Detect whether a buffer is a gzip-compressed tar archive.
  */
 export function isGzipTar(buf: Buffer): boolean {
-	return (
-		buf.length > 2 &&
-		buf[0] === 0x1f &&
-		buf[1] === 0x8b
-	);
+	return buf.length > 2 && buf[0] === 0x1f && buf[1] === 0x8b;
 }

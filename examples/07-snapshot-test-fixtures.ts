@@ -31,38 +31,38 @@ console.log(
 // ── Test 1: reads config file ─────────────────────────────────────
 console.log("\n--- Test 1: reads config file ---");
 {
-	const vfs = VirtualFileSystem.fromSnapshot(FIXTURE);
-	const content = JSON.parse(vfs.readFile("/app/config/settings.json"));
+	const VFS = VirtualFileSystem.fromSnapshot(FIXTURE);
+	const CONTENT = JSON.parse(VFS.readFile("/app/config/settings.json"));
 	console.log(
-		`  env: ${content.env} (expected: test) ${content.env === "test" ? "(ok)" : "(fail)"}`
+		`  env: ${CONTENT.env} (expected: test) ${CONTENT.env === "test" ? "(ok)" : "(fail)"}`
 	);
 	console.log(
-		`  db: ${content.db} (expected: localhost) ${content.db === "localhost" ? "(ok)" : "(fail)"}`
+		`  db: ${CONTENT.db} (expected: localhost) ${CONTENT.db === "localhost" ? "(ok)" : "(fail)"}`
 	);
 }
 
 // ── Test 2: isolated writes don't affect fixture ──────────────────
 console.log("\n--- Test 2: isolated writes don't affect fixture ---");
 {
-	const vfs1 = VirtualFileSystem.fromSnapshot(FIXTURE);
-	vfs1.writeFile(
+	const VFS1 = VirtualFileSystem.fromSnapshot(FIXTURE);
+	VFS1.writeFile(
 		"/app/config/settings.json",
 		JSON.stringify({ env: "modified" })
 	);
 
-	const vfs2 = VirtualFileSystem.fromSnapshot(FIXTURE);
-	const content = JSON.parse(vfs2.readFile("/app/config/settings.json"));
+	const VFS2 = VirtualFileSystem.fromSnapshot(FIXTURE);
+	const CONTENT = JSON.parse(VFS2.readFile("/app/config/settings.json"));
 	console.log(
-		`  fixture still has env=test: ${content.env === "test" ? "(ok)" : "(fail)"}`
+		`  fixture still has env=test: ${CONTENT.env === "test" ? "(ok)" : "(fail)"}`
 	);
 }
 
 // ── Test 3: file listing ──────────────────────────────────────────
 console.log("\n--- Test 3: file listing ---");
 {
-	const vfs = VirtualFileSystem.fromSnapshot(FIXTURE);
-	const files = vfs.list("/app/config");
-	console.log(`  /app/config contains: ${files.join(", ")}`);
+	const VFS = VirtualFileSystem.fromSnapshot(FIXTURE);
+	const FILES = VFS.list("/app/config");
+	console.log(`  /app/config contains: ${FILES.join(", ")}`);
 }
 
 console.log("\nAll tests passed");

@@ -8,9 +8,9 @@ import { VirtualUserManager } from "../src/modules/VirtualUserManager";
 
 // Skip by default (slow — requires SSH server). Run with:
 //   SSH_MIMIC_RUN_SFTP_TESTS=1 bun test tests/sftp.test.ts
-const runSftpTests = Boolean(process.env.SSH_MIMIC_RUN_SFTP_TESTS);
-const it = runSftpTests ? test : test.skip;
-const describeSftp = runSftpTests ? describe : describe.skip;
+const RUN_SFTP_TESTS = Boolean(process.env.SSH_MIMIC_RUN_SFTP_TESTS);
+const IT = RUN_SFTP_TESTS ? test : test.skip;
+const DESCRIBE_SFTP = RUN_SFTP_TESTS ? describe : describe.skip;
 
 function connectSftp(
 	port: number
@@ -66,8 +66,8 @@ function connectSftpWithUser(
 	});
 }
 
-describeSftp("SftpMimic", () => {
-	it("authenticates with VirtualUserManager and serves files from the VirtualFileSystem", async () => {
+DESCRIBE_SFTP("SftpMimic", () => {
+	IT("authenticates with VirtualUserManager and serves files from the VirtualFileSystem", async () => {
 		const vfs = new VirtualFileSystem();
 		const users = new VirtualUserManager(vfs);
 
@@ -128,7 +128,7 @@ describeSftp("SftpMimic", () => {
 		}
 	});
 
-	it("blocks path traversal attempts outside home directory", async () => {
+	IT("blocks path traversal attempts outside home directory", async () => {
 		const vfs = new VirtualFileSystem();
 		const users = new VirtualUserManager(vfs);
 
@@ -191,7 +191,7 @@ describeSftp("SftpMimic", () => {
 		}
 	});
 
-	it("allows a user with a password to authenticate", async () => {
+	IT("allows a user with a password to authenticate", async () => {
 		const vfs = new VirtualFileSystem();
 		const users = new VirtualUserManager(vfs);
 
@@ -242,7 +242,7 @@ describeSftp("SftpMimic", () => {
 		}
 	});
 
-	it("rejects a user with a wrong password", async () => {
+	IT("rejects a user with a wrong password", async () => {
 		const vfs = new VirtualFileSystem();
 		const users = new VirtualUserManager(vfs);
 
@@ -265,7 +265,7 @@ describeSftp("SftpMimic", () => {
 		}
 	});
 
-	it("allows writing and reading back a file over SFTP", async () => {
+	IT("allows writing and reading back a file over SFTP", async () => {
 		const vfs = new VirtualFileSystem();
 		const users = new VirtualUserManager(vfs);
 

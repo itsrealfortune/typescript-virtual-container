@@ -333,12 +333,12 @@ export function evalArith(expr: string, env: Record<string, string>): number {
 		},
 	};
 
-	interface InfixEntry {
+	interface INfixEntry {
 		prec: number;
 		fn: InfixFn;
 		rightAsso?: boolean;
 	}
-	const infix: Partial<Record<string, InfixEntry>> = {
+	const infix: Partial<Record<string, INfixEntry>> = {
 		comma: {
 			prec: 1,
 			fn: (_l) => {

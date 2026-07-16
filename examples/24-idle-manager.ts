@@ -8,45 +8,45 @@
 
 import { VirtualShell } from "../src";
 
-const shell = new VirtualShell("idle-demo");
-await shell.ensureInitialized();
+const SHELL = new VirtualShell("idle-demo");
+await SHELL.ensureInitialized();
 
 // ── Enable idle management ────────────────────────────────────────
 console.log("--- Enabling idle management ---");
-shell.enableIdleManagement({
+SHELL.enableIdleManagement({
 	idleThresholdMs: 2_000, // freeze after 2s inactivity
 	checkIntervalMs: 500, // check every 500ms
 	gcIntervalMs: 5_000, // GC every 5s
 });
 
-console.log(`  idle state: ${shell.idleState}`); // "active"
-console.log(`  idle duration: ${shell.idleMs}ms`);
+console.log(`  idle state: ${SHELL.idleState}`); // "active"
+console.log(`  idle duration: ${SHELL.idleMs}ms`);
 
 // ── Simulate activity ─────────────────────────────────────────────
 console.log("\n--- Activity simulation ---");
-await shell.executeCommand("echo 'user activity'", "root", "/root");
-shell.pingIdle();
-console.log(`  idle state: ${shell.idleState}`); // "active"
+await SHELL.executeCommand("echo 'user activity'", "root", "/root");
+SHELL.pingIdle();
+console.log(`  idle state: ${SHELL.idleState}`); // "active"
 
 // ── Wait for freeze ───────────────────────────────────────────────
 console.log("\n--- Waiting for idle threshold (2s)...");
 await new Promise((r) => setTimeout(r, 3_000));
-console.log(`  idle state: ${shell.idleState}`); // "frozen"
-console.log(`  idle duration: ${shell.idleMs}ms`);
+console.log(`  idle state: ${SHELL.idleState}`); // "frozen"
+console.log(`  idle duration: ${SHELL.idleMs}ms`);
 
 // ── Thaw on activity ──────────────────────────────────────────────
 console.log("\n--- Activity triggers thaw ---");
-shell.pingIdle();
-console.log(`  idle state: ${shell.idleState}`); // "active"
+SHELL.pingIdle();
+console.log(`  idle state: ${SHELL.idleState}`); // "active"
 
 // ── Manual garbage collection ─────────────────────────────────────
 console.log("\n--- Manual GC ---");
-const gcStats = shell.runGc();
-if (gcStats) {
-	console.log(`  GC stats: ${JSON.stringify(gcStats)}`);
+const GC_STATS = SHELL.runGc();
+if (GC_STATS) {
+	console.log(`  GC stats: ${JSON.stringify(GC_STATS)}`);
 }
 
 // ── Disable idle management ───────────────────────────────────────
 console.log("\n--- Disabling idle management ---");
-shell.disableIdleManagement();
-console.log(`  idle state: ${shell.idleState}`);
+SHELL.disableIdleManagement();
+console.log(`  idle state: ${SHELL.idleState}`);

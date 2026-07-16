@@ -44,7 +44,7 @@ function stripAnsi(s: string): string {
 	return out;
 }
 
-const ansi = {
+const ANSI = {
 	cup: (row: number, col: number) => `${CSI}${row};${col}H`,
 	el: () => `${CSI}K`,
 	ed: () => `${CSI}2J`,
@@ -1047,32 +1047,32 @@ export class NanoEditor {
 
 	fullRedraw(): void {
 		const buf: string[] = [];
-		buf.push(ansi.cursorHide());
-		buf.push(ansi.ed());
-		buf.push(ansi.home());
+		buf.push(ANSI.cursorHide());
+		buf.push(ANSI.ed());
+		buf.push(ANSI.home());
 		this._buildTitleBar(buf);
 		this._buildEditArea(buf);
 		this._buildHelpBar(buf);
-		buf.push(ansi.cursorShow());
+		buf.push(ANSI.cursorShow());
 		buf.push(this._buildCursorPosition());
 		this._stream.write(buf.join(""));
 	}
 
 	private _renderTitleBar(): void {
 		const buf: string[] = [];
-		buf.push(ansi.cursorHide());
-		buf.push(ansi.cup(1, 1));
+		buf.push(ANSI.cursorHide());
+		buf.push(ANSI.cup(1, 1));
 		this._buildTitleBar(buf);
-		buf.push(ansi.cursorShow());
+		buf.push(ANSI.cursorShow());
 		buf.push(this._buildCursorPosition());
 		this._stream.write(buf.join(""));
 	}
 
 	private _renderEditArea(): void {
 		const buf: string[] = [];
-		buf.push(ansi.cursorHide());
+		buf.push(ANSI.cursorHide());
 		this._buildEditArea(buf);
-		buf.push(ansi.cursorShow());
+		buf.push(ANSI.cursorShow());
 		buf.push(this._buildCursorPosition());
 		this._stream.write(buf.join(""));
 	}
@@ -1086,12 +1086,12 @@ export class NanoEditor {
 			return;
 		}
 		const buf: string[] = [];
-		buf.push(ansi.cursorHide());
-		buf.push(ansi.cup(screenRow, 1));
-		buf.push(ansi.el());
+		buf.push(ANSI.cursorHide());
+		buf.push(ANSI.cup(screenRow, 1));
+		buf.push(ANSI.el());
 		const line = this._lines[row] ?? "";
 		buf.push(this._renderLineText(line));
-		buf.push(ansi.cursorShow());
+		buf.push(ANSI.cursorShow());
 		buf.push(this._buildCursorPosition());
 		this._stream.write(buf.join(""));
 	}
@@ -1102,12 +1102,12 @@ export class NanoEditor {
 
 	private _renderStatusLine(msg: string): void {
 		const buf: string[] = [];
-		buf.push(ansi.cursorHide());
+		buf.push(ANSI.cursorHide());
 		// Status line is 1 row above the bottom help bar (row = rows - 1)
-		buf.push(ansi.cup(this.rows - 1, 1));
-		buf.push(ansi.el());
-		buf.push(ansi.reverse(NanoEditor._pad(msg, this.cols)));
-		buf.push(ansi.cursorShow());
+		buf.push(ANSI.cup(this.rows - 1, 1));
+		buf.push(ANSI.el());
+		buf.push(ANSI.reverse(NanoEditor._pad(msg, this.cols)));
+		buf.push(ANSI.cursorShow());
 		buf.push(this._buildCursorPosition());
 		this._stream.write(buf.join(""));
 	}
@@ -1115,13 +1115,13 @@ export class NanoEditor {
 	private _renderStatusBar(msg: string): void {
 		// Overwrite the bottom help bar area with the prompt
 		const buf: string[] = [];
-		buf.push(ansi.cursorHide());
-		buf.push(ansi.cup(this.rows, 1));
-		buf.push(ansi.el());
+		buf.push(ANSI.cursorHide());
+		buf.push(ANSI.cup(this.rows, 1));
+		buf.push(ANSI.el());
 		buf.push(msg.slice(0, this.cols));
-		buf.push(ansi.cursorShow());
+		buf.push(ANSI.cursorShow());
 		// Keep cursor in status bar
-		buf.push(ansi.cup(this.rows, Math.min(msg.length + 1, this.cols)));
+		buf.push(ANSI.cup(this.rows, Math.min(msg.length + 1, this.cols)));
 		this._stream.write(buf.join(""));
 	}
 
@@ -1137,8 +1137,8 @@ export class NanoEditor {
 			this.cols - right.length
 		);
 		const full = NanoEditor._pad(mid + right, this.cols);
-		buf.push(ansi.cup(1, 1));
-		buf.push(ansi.reverse(full));
+		buf.push(ANSI.cup(1, 1));
+		buf.push(ANSI.reverse(full));
 	}
 
 	private _buildEditArea(buf: string[]): void {
@@ -1146,8 +1146,8 @@ export class NanoEditor {
 		for (let r = 0; r < editRows; r++) {
 			const lineIdx = this._scrollTop + r;
 			const screenRow = this._editAreaStart() + r;
-			buf.push(ansi.cup(screenRow, 1));
-			buf.push(ansi.el());
+			buf.push(ANSI.cup(screenRow, 1));
+			buf.push(ANSI.el());
 			if (lineIdx < this._lines.length) {
 				buf.push(this._renderLineText(this._lines[lineIdx] as string));
 			}
@@ -1191,12 +1191,12 @@ export class NanoEditor {
 			["^/", "Go To Line"],
 		];
 
-		buf.push(ansi.cup(this.rows - 1, 1));
-		buf.push(ansi.el());
+		buf.push(ANSI.cup(this.rows - 1, 1));
+		buf.push(ANSI.el());
 		buf.push(this._buildShortcutRow(shortcuts1));
 
-		buf.push(ansi.cup(this.rows, 1));
-		buf.push(ansi.el());
+		buf.push(ANSI.cup(this.rows, 1));
+		buf.push(ANSI.el());
 		buf.push(this._buildShortcutRow(shortcuts2));
 	}
 
@@ -1208,7 +1208,7 @@ export class NanoEditor {
 			const label = (shortcuts[i] as string[])[1] ?? "";
 			const key2 = (shortcuts[i + 1]?.[0] ?? "").padEnd(3);
 			const label2 = shortcuts[i + 1]?.[1] ?? "";
-			const cell = `${ansi.reverse(key)} ${label.padEnd(colWidth - 5)}${ansi.reverse(key2)} ${label2.padEnd(colWidth - 5)}`;
+			const cell = `${ANSI.reverse(key)} ${label.padEnd(colWidth - 5)}${ANSI.reverse(key2)} ${label2.padEnd(colWidth - 5)}`;
 			result += cell;
 			if (stripAnsi(result).length >= this.cols) {
 				break;
@@ -1229,15 +1229,15 @@ export class NanoEditor {
 			}
 		}
 		const screenRow = this._cursorRow - this._scrollTop + this._editAreaStart();
-		return ansi.cup(screenRow, screenCol + 1);
+		return ANSI.cup(screenRow, screenCol + 1);
 	}
 
 	private _renderHelp(): void {
 		const buf: string[] = [];
-		buf.push(ansi.cursorHide());
-		buf.push(ansi.ed());
-		buf.push(ansi.cup(1, 1));
-		buf.push(ansi.reverse(NanoEditor._pad(" GNU nano — Help", this.cols)));
+		buf.push(ANSI.cursorHide());
+		buf.push(ANSI.ed());
+		buf.push(ANSI.cup(1, 1));
+		buf.push(ANSI.reverse(NanoEditor._pad(" GNU nano — Help", this.cols)));
 
 		const help = [
 			"",
@@ -1259,11 +1259,11 @@ export class NanoEditor {
 		];
 
 		for (let i = 0; i < help.length && i + 2 <= this.rows - 2; i++) {
-			buf.push(ansi.cup(i + 2, 1));
+			buf.push(ANSI.cup(i + 2, 1));
 			buf.push((help[i] as string).slice(0, this.cols));
 		}
 
-		buf.push(ansi.cursorShow());
+		buf.push(ANSI.cursorShow());
 		this._stream.write(buf.join(""));
 	}
 }

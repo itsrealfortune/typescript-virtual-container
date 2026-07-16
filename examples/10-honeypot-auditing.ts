@@ -7,51 +7,51 @@
 
 import { HoneyPot, SshClient, VirtualShell, VirtualSshServer } from "../src";
 
-const shell = new VirtualShell("typescript-vm");
-await shell.ensureInitialized();
-shell.users.setPassword("root", "root");
+const SHELL = new VirtualShell("typescript-vm");
+await SHELL.ensureInitialized();
+SHELL.users.setPassword("root", "root");
 
 // ── Attach HoneyPot ────────────────────────────────────────────────
 console.log("--- Attach HoneyPot ---");
 
-const hp = new HoneyPot(5000);
-hp.attach(shell, shell.vfs, shell.users);
+const HP = new HoneyPot(5000);
+HP.attach(SHELL, SHELL.vfs, SHELL.users);
 
 // ── Start SSH server ──────────────────────────────────────────────
-const ssh = new VirtualSshServer({ port: 0, shell });
-const port = await ssh.start();
+const SSH = new VirtualSshServer({ port: 0, shell: SHELL });
+const PORT = await SSH.start();
 
 // ── Simulate activity ──────────────────────────────────────────────
 console.log("\n--- Simulate activity ---");
 
-const client = new SshClient();
-await client.connect({
+const CLIENT = new SshClient();
+await CLIENT.connect({
 	host: "localhost",
-	port,
+	port: PORT,
 	username: "root",
 	password: "root",
 });
-await client.exec("echo 'secret data' > /etc/secrets.txt");
-await client.exec("cat /etc/secrets.txt");
-await client.exec("ls -la /tmp");
+await CLIENT.exec("echo 'secret data' > /etc/secrets.txt");
+await CLIENT.exec("cat /etc/secrets.txt");
+await CLIENT.exec("ls -la /tmp");
 for (let i = 0; i < 5; i++) {
-	await client.exec(`echo "command ${i}"`);
+	await CLIENT.exec(`echo "command ${i}"`);
 }
 
 // ── Audit statistics ───────────────────────────────────────────────
 console.log("\n--- Audit statistics ---");
 
-const stats = hp.getStats();
-console.log(`Commands: ${stats.commands}`);
-console.log(`File reads: ${stats.fileReads}`);
-console.log(`File writes: ${stats.fileWrites}`);
+const STATS = HP.getStats();
+console.log(`Commands: ${STATS.commands}`);
+console.log(`File reads: ${STATS.fileReads}`);
+console.log(`File writes: ${STATS.fileWrites}`);
 
 // ── Anomalies ──────────────────────────────────────────────────────
 console.log("\n--- Anomalies ---");
 
-const anomalies = hp.detectAnomalies();
-if (anomalies.length > 0) {
-	for (const a of anomalies) {
+const ANOMALIES = HP.detectAnomalies();
+if (ANOMALIES.length > 0) {
+	for (const a of ANOMALIES) {
 		console.log(`[${a.severity.toUpperCase()}] ${a.type}: ${a.message}`);
 	}
 } else {
@@ -61,10 +61,10 @@ if (anomalies.length > 0) {
 // ── Recent log entries ─────────────────────────────────────────────
 console.log("\n--- Recent log entries ---");
 
-const recent = hp.getRecent(3);
-for (const entry of recent) {
-	console.log(`[${entry.type}] ${entry.source}`);
+const RECENT = HP.getRecent(3);
+for (const ENTRY of RECENT) {
+	console.log(`[${ENTRY.type}] ${ENTRY.source}`);
 }
 
-client.disconnect();
-ssh.stop();
+CLIENT.disconnect();
+SSH.stop();

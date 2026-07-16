@@ -10,9 +10,9 @@ import { VirtualFileSystem } from "../src";
 // ── Symlinks ────────────────────────────────────────────────────────
 console.log("--- Symlinks ---");
 
-const vfs = new VirtualFileSystem();
-vfs.writeFile("/opt/myapp/bin/app", "#!/bin/sh\necho hello");
-vfs.symlink("/opt/myapp/bin/app", "/usr/local/bin/app");
+const VFS = new VirtualFileSystem();
+VFS.writeFile("/opt/myapp/bin/app", "#!/bin/sh\necho hello");
+VFS.symlink("/opt/myapp/bin/app", "/usr/local/bin/app");
 
-console.log(vfs.isSymlink("/usr/local/bin/app"));
-console.log(vfs.resolveSymlink("/usr/local/bin/app"));
+console.log(VFS.isSymlink("/usr/local/bin/app"));
+console.log(VFS.resolveSymlink("/usr/local/bin/app"));

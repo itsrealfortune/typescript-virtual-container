@@ -1,28 +1,35 @@
-import { VirtualSftpServer, VirtualShell, VirtualSshServer, VirtualWebSocketServer } from ".";
+import {
+	VirtualSftpServer,
+	VirtualShell,
+	VirtualSshServer,
+	VirtualWebSocketServer,
+} from ".";
 import { getFlag, getOptionInt, getOptionString } from "./utils/argv";
 
 // ── CLI argument parsing ──────────────────────────────────────────────────────
 
-const argv = process.argv.slice(2);
+const ARGV = process.argv.slice(2);
 
-const noSsh = getFlag(argv, "--no-ssh");
-const sshPort = getOptionInt(argv, "--ssh-port", 2222);
-const wsPort = getOptionInt(argv, "--ws-port", 8080);
-const wsTransport = getFlag(argv, "--transport-ws") || getOptionString(argv, "--transport", "") === "ws";
+const NO_SSH = getFlag(ARGV, "--no-ssh");
+const SSH_PORT = getOptionInt(ARGV, "--ssh-port", 2222);
+const WS_PORT = getOptionInt(ARGV, "--ws-port", 8080);
+const WS_TRANSPORT =
+	getFlag(ARGV, "--transport-ws") ||
+	getOptionString(ARGV, "--transport", "") === "ws";
 
 // ── Baseline memory (before any shell is created) ─────────────────────────────
 
-const baselineRss = process.memoryUsage().rss;
+const BASELINE_RSS = process.memoryUsage().rss;
 
 // ── Shell ─────────────────────────────────────────────────────────────────────
 
-const hostname = process.env.SSH_MIMIC_HOSTNAME ?? "typescript-vm";
-const virtualShell = new VirtualShell(hostname, undefined, {
+const HOSTNAME = process.env.SSH_MIMIC_HOSTNAME ?? "typescript-vm";
+const VIRTUAL_SHELL = new VirtualShell(HOSTNAME, undefined, {
 	mode: "fs",
 	snapshotPath: ".vfs",
 });
 
-virtualShell.addCommand("demo", [], () => {
+VIRTUAL_SHELL.addCommand("demo", [], () => {
 	return {
 		stdout: "This is a demo command. It does nothing useful.",
 		exitCode: 0,
@@ -34,16 +41,16 @@ virtualShell.addCommand("demo", [], () => {
 // stale CPU entries, and closed large files. Also trigger GC on SSH disconnect
 // for immediate cleanup.
 
-virtualShell.enableIdleManagement({
+VIRTUAL_SHELL.enableIdleManagement({
 	idleThresholdMs: 120_000, // freeze VFS after 2 min of inactivity
 	checkIntervalMs: 30_000, // check every 30s
 	gcIntervalMs: 30_000, // GC runs every 30s
 });
 
 // Log periodic GC stats
-virtualShell.on("gc:run", (stats: import(".").GcStats) => {
+VIRTUAL_SHELL.on("gc:run", (stats: import(".").GcStats) => {
 	const total = process.memoryUsage().rss;
-	const shells = total - baselineRss;
+	const shells = total - BASELINE_RSS;
 	console.debug(
 		`[GC periodic] terminated=${stats.terminatedProcesses} staleCpu=${stats.staleCpuEntries} evicted=${stats.evictedFiles} forcedGc=${stats.forcedGc} | ` +
 			`mem: shells=${Math.round(shells / 1024 / 1024)} MB total=${Math.round(total / 1024 / 1024)} MB`
@@ -51,13 +58,13 @@ virtualShell.on("gc:run", (stats: import(".").GcStats) => {
 });
 
 // Trigger GC immediately when an SSH session disconnects
-virtualShell.users.on(
+VIRTUAL_SHELL.users.on(
 	"session:unregister",
 	(data: { sessionId: string; username: string; tty: string }) => {
-		const killed = virtualShell.users.killProcessesByTty(data.tty);
-		const gcStats = virtualShell.runGc();
+		const killed = VIRTUAL_SHELL.users.killProcessesByTty(data.tty);
+		const gcStats = VIRTUAL_SHELL.runGc();
 		const total = process.memoryUsage().rss;
-		const shells = total - baselineRss;
+		const shells = total - BASELINE_RSS;
 		console.debug(
 			`[GC] session=${data.sessionId.slice(0, 8)}… user=${data.username} tty=${data.tty} | ` +
 				`killed=${killed} procs | ` +
@@ -71,14 +78,14 @@ virtualShell.users.on(
 
 // SFTP subsystem handler — no standalone server, reused by the SSH server
 // so that `scp` and `sftp` clients work directly on the SSH port.
-const sftpHandler = new VirtualSftpServer({ shell: virtualShell });
+const SFTP_HANDLER = new VirtualSftpServer({ shell: VIRTUAL_SHELL });
 
-if (!noSsh) {
+if (!NO_SSH) {
 	new VirtualSshServer({
-		port: sshPort,
-		hostname,
-		shell: virtualShell,
-		sftp: sftpHandler,
+		port: SSH_PORT,
+		hostname: HOSTNAME,
+		shell: VIRTUAL_SHELL,
+		sftp: SFTP_HANDLER,
 	})
 		.start()
 		.catch((error: unknown) => {
@@ -87,11 +94,11 @@ if (!noSsh) {
 		});
 }
 
-if (wsTransport) {
+if (WS_TRANSPORT) {
 	new VirtualWebSocketServer({
-		port: wsPort,
-		hostname,
-		shell: virtualShell,
+		port: WS_PORT,
+		hostname: HOSTNAME,
+		shell: VIRTUAL_SHELL,
 	}).start();
 }
 
@@ -107,7 +114,7 @@ function gracefulShutdown(signal: string): void {
 	isShuttingDown = true;
 	console.log(`\n[${signal}] Flushing VFS checkpoint before exit...`);
 	try {
-		virtualShell.vfs.stopAutoFlush();
+		VIRTUAL_SHELL.vfs.stopAutoFlush();
 		console.log("[shutdown] Checkpoint written. Goodbye.");
 	} catch (err) {
 		console.error("[shutdown] Flush failed:", err);
@@ -122,7 +129,7 @@ process.on("SIGTERM", () => {
 	void gracefulShutdown("SIGTERM");
 });
 process.on("beforeExit", () => {
-	void virtualShell.vfs.stopAutoFlush();
+	void VIRTUAL_SHELL.vfs.stopAutoFlush();
 });
 
 process.on("uncaughtException", (error) => {
@@ -139,8 +146,8 @@ process.on("unhandledRejection", (error, promise) => {
 
 setInterval(() => {
 	const total = process.memoryUsage().rss;
-	const shells = total - baselineRss;
-	const runtime = baselineRss;
+	const shells = total - BASELINE_RSS;
+	const runtime = BASELINE_RSS;
 	console.debug(
 		`Memory: total=${Math.round(total / 1024 / 1024)} MB | ` +
 			`shells=${Math.round(shells / 1024 / 1024)} MB | ` +

@@ -91,8 +91,7 @@ export const cpCommand: ShellModule = {
 				shell.vfs.exists(destPath) &&
 				shell.vfs.stat(destPath).type === "file"
 			) {
-				const label =
-					srcStat.type === "directory" ? srcArg : destArg;
+				const label = srcStat.type === "directory" ? srcArg : destArg;
 				return {
 					sudoChallenge: {
 						username: authUser,

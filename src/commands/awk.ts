@@ -68,7 +68,7 @@ export const awkCommand: ShellModule = {
 		}
 
 		// ── Evaluator ──────────────────────────────────────────────────────────
-		type AWKVars = Record<string, string | number>;
+		type AwkVars = Record<string, string | number>;
 
 		function numVal(v: string | number | undefined): number {
 			if (v === undefined || v === "") {
@@ -98,7 +98,7 @@ export const awkCommand: ShellModule = {
 		// Evaluate an AWK expression string with given context
 		function evalExpr(
 			expr: string,
-			vars: AWKVars,
+			vars: AwkVars,
 			fields: string[],
 			nr: number,
 			nf: number
@@ -160,7 +160,7 @@ export const awkCommand: ShellModule = {
 
 			const substrM = expr.match(/^substr\s*\((.+)\)$/);
 			if (substrM) {
-				const parts2 = splitCSV(substrM[1] as string);
+				const parts2 = splitCsv(substrM[1] as string);
 				const s = strVal(
 					evalExpr(parts2[0]?.trim() ?? "", vars, fields, nr, nf)
 				);
@@ -177,7 +177,7 @@ export const awkCommand: ShellModule = {
 
 			const indexM = expr.match(/^index\s*\((.+)\)$/);
 			if (indexM) {
-				const parts2 = splitCSV(indexM[1] as string);
+				const parts2 = splitCsv(indexM[1] as string);
 				const s = strVal(
 					evalExpr(parts2[0]?.trim() ?? "", vars, fields, nr, nf)
 				);
@@ -271,7 +271,7 @@ export const awkCommand: ShellModule = {
 			return strVal(vars[expr] ?? expr);
 		}
 
-		function splitCSV(s: string): string[] {
+		function splitCsv(s: string): string[] {
 			const parts: string[] = [];
 			let cur = "";
 			let depth = 0;
@@ -295,7 +295,7 @@ export const awkCommand: ShellModule = {
 		// Execute one statement, return false to stop (next/exit)
 		function execStmt(
 			stmt: string,
-			vars: AWKVars,
+			vars: AwkVars,
 			fields: string[],
 			nr: number,
 			nf: number,
@@ -321,12 +321,12 @@ export const awkCommand: ShellModule = {
 			}
 			if (stmt.startsWith("printf ")) {
 				const fmtRest = stmt.slice(7).trim();
-				out.push(sprintfAWK(fmtRest, vars, fields, nr, nf));
+				out.push(sprintfAwk(fmtRest, vars, fields, nr, nf));
 				return "ok";
 			}
 			if (stmt.startsWith("print ")) {
 				const argStr = stmt.slice(6);
-				const parts2 = splitCSV(argStr);
+				const parts2 = splitCsv(argStr);
 				out.push(
 					parts2
 						.map((p) => strVal(evalExpr(p.trim(), vars, fields, nr, nf)))
@@ -348,7 +348,7 @@ export const awkCommand: ShellModule = {
 				const global2 = subM[1] === "gsub";
 				const reStr = subM[2] as string;
 				const rest2 = stmt.slice(subM[0].length).replace(/^\s*,\s*/, "");
-				const parts2 = splitCSV(rest2.replace(/\)\s*$/, ""));
+				const parts2 = splitCsv(rest2.replace(/\)\s*$/, ""));
 				const rep = strVal(
 					evalExpr(parts2[0]?.trim() ?? '""', vars, fields, nr, nf)
 				);
@@ -376,7 +376,7 @@ export const awkCommand: ShellModule = {
 			// split(str, arr, sep)
 			const splitM = stmt.match(/^split\s*\((.+)\)$/);
 			if (splitM) {
-				const parts2 = splitCSV(splitM[1] as string);
+				const parts2 = splitCsv(splitM[1] as string);
 				const s = strVal(
 					evalExpr(parts2[0]?.trim() ?? "", vars, fields, nr, nf)
 				);
@@ -444,14 +444,14 @@ export const awkCommand: ShellModule = {
 			return "ok";
 		}
 
-		function sprintfAWK(
+		function sprintfAwk(
 			fmtStr: string,
-			vars: AWKVars,
+			vars: AwkVars,
 			fields: string[],
 			nr: number,
 			nf: number
 		): string {
-			const parts2 = splitCSV(fmtStr);
+			const parts2 = splitCsv(fmtStr);
 			const fmt = strVal(
 				evalExpr(parts2[0]?.trim() ?? '""', vars, fields, nr, nf)
 			);
@@ -562,7 +562,7 @@ export const awkCommand: ShellModule = {
 
 		// ── Execute ────────────────────────────────────────────────────────────
 		const out: string[] = [];
-		const vars: AWKVars = {
+		const vars: AwkVars = {
 			FS: sep,
 			OFS: sep === " " ? " " : sep,
 			ORS: "\n",

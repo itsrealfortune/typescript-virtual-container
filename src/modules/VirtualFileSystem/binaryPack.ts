@@ -315,22 +315,22 @@ function decodeNode(dec: Decoder, includeUidGid: boolean): InternalNode {
 
 // String intern pool for node names — avoids duplicate string allocations per decode call.
 // Names like "bin", "etc", "usr", "passwd" appear in every shell's tree.
-const _namePool = new Map<string, string>();
-const _maxNamePoolSize = 500;
+const _NAME_POOL = new Map<string, string>();
+const _MAX_NAME_POOL_SIZE = 500;
 function internName(s: string): string {
-	const cached = _namePool.get(s);
+	const cached = _NAME_POOL.get(s);
 	if (cached !== undefined) {
 		return cached;
 	}
-	if (_namePool.size >= _maxNamePoolSize) {
+	if (_NAME_POOL.size >= _MAX_NAME_POOL_SIZE) {
 		// Evict first 25% of entries (simple LRU approximation)
-		const toRemove = Math.floor(_maxNamePoolSize / 4);
-		const keys = [..._namePool.keys()];
+		const toRemove = Math.floor(_MAX_NAME_POOL_SIZE / 4);
+		const keys = [..._NAME_POOL.keys()];
 		for (let i = 0; i < toRemove; i++) {
-			_namePool.delete(keys[i] as string);
+			_NAME_POOL.delete(keys[i] as string);
 		}
 	}
-	_namePool.set(s, s);
+	_NAME_POOL.set(s, s);
 	return s;
 }
 

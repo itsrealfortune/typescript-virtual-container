@@ -4,8 +4,8 @@ import { createTestEnv, runCmd } from "./test-helper";
 
 // Skip network-dependent tests by default. Run with:
 //   SSH_MIMIC_RUN_NETWORK_TESTS=1 bun test tests/commands-admin-net.test.ts
-const runNetwork = Boolean(process.env.SSH_MIMIC_RUN_NETWORK_TESTS);
-const describeNetwork = runNetwork ? describe : describe.skip;
+const RUN_NETWORK = Boolean(process.env.SSH_MIMIC_RUN_NETWORK_TESTS);
+const DESCRIBE_NETWORK = RUN_NETWORK ? describe : describe.skip;
 
 let client: InstanceType<typeof SshClient>;
 let nonRootClient: InstanceType<typeof SshClient>;
@@ -180,7 +180,7 @@ describe("su command", () => {
 
 // ─── CURL tests ───────────────────────────────────────────────────────────
 
-describeNetwork("curl command", () => {
+DESCRIBE_NETWORK("curl command", () => {
 	test("curl basic request", async () => {
 		const r = await runCmd(
 			client,
@@ -242,7 +242,7 @@ describeNetwork("curl command", () => {
 
 // ─── WGET tests ───────────────────────────────────────────────────────────
 
-describeNetwork("wget command", () => {
+DESCRIBE_NETWORK("wget command", () => {
 	test("wget basic download", async () => {
 		const r = await runCmd(
 			client,
@@ -270,7 +270,7 @@ describeNetwork("wget command", () => {
 
 // ─── PING tests ───────────────────────────────────────────────────────────
 
-describeNetwork("ping command", () => {
+DESCRIBE_NETWORK("ping command", () => {
 	test("ping localhost", async () => {
 		const r = await runCmd(client, "ping -c 1 localhost");
 		expect(r.exitCode).toBe(0);

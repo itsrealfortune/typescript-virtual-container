@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { globToRegex, globToRegexMatch, shellGlobToRegex } from "../src/utils/glob";
+import {
+	globToRegex,
+	globToRegexMatch,
+	shellGlobToRegex,
+} from "../src/utils/glob";
 
 describe("globToRegex", () => {
 	test("literal string", () => {

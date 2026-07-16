@@ -25,11 +25,15 @@ describe("getFlag", () => {
 
 describe("getOptionString", () => {
 	test("returns value for --name VALUE form", () => {
-		expect(getOptionString(["--output", "out.txt"], "--output", "")).toBe("out.txt");
+		expect(getOptionString(["--output", "out.txt"], "--output", "")).toBe(
+			"out.txt"
+		);
 	});
 
 	test("returns value for --name=VALUE form", () => {
-		expect(getOptionString(["--output=out.txt"], "--output", "")).toBe("out.txt");
+		expect(getOptionString(["--output=out.txt"], "--output", "")).toBe(
+			"out.txt"
+		);
 	});
 
 	test("returns fallback when option absent", () => {

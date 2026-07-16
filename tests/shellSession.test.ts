@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import VirtualFileSystem from "../src/modules/VirtualFileSystem";
 
-import { loadHistory, saveHistory, listPathCompletions } from "../src/utils/shellSession";
+import {
+	loadHistory,
+	saveHistory,
+	listPathCompletions,
+} from "../src/utils/shellSession";
 
 describe("shellSession", () => {
 	describe("loadHistory", () => {

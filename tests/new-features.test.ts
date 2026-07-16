@@ -4,8 +4,8 @@ import { SshClient } from "../src/modules/SSHClient";
 
 // Skip slow network tests by default. Run with:
 //   SSH_MIMIC_RUN_NETWORK_TESTS=1 bun test tests/new-features.test.ts
-const runNetwork = Boolean(process.env.SSH_MIMIC_RUN_NETWORK_TESTS);
-const itNetwork = runNetwork ? test : test.skip;
+const RUN_NETWORK = Boolean(process.env.SSH_MIMIC_RUN_NETWORK_TESTS);
+const IT_NETWORK = RUN_NETWORK ? test : test.skip;
 
 async function setupClient(vmName: string) {
 	const shell = new VirtualShell(vmName, undefined, { mode: "memory" });
@@ -286,13 +286,13 @@ describe("curl / wget (pure fetch)", () => {
 		expect(r.stdout).toContain("GNU Wget");
 	});
 
-	itNetwork("curl fetches real URL and returns body", async () => {
+	IT_NETWORK("curl fetches real URL and returns body", async () => {
 		const r = await client.exec("curl https://httpbin.org/get");
 		// In sandboxed env network may be blocked — accept 0 (ok), 6 (dns), 22 (http err), or 1 (fetch error)
 		expect([0, 1, 6, 22]).toContain(r.exitCode ?? -1);
 	});
 
-	itNetwork("curl -o saves to VFS", async () => {
+	IT_NETWORK("curl -o saves to VFS", async () => {
 		try {
 			await client.exec("curl -o /tmp/test-curl.txt https://httpbin.org/get");
 		} catch {}

@@ -55,7 +55,7 @@ export interface HoneyPotStats {
 	authLockouts: number;
 }
 
-const perf: PerfLogger = createPerfLogger("HoneyPot");
+const PERF: PerfLogger = createPerfLogger("HoneyPot");
 
 /**
  * HoneyPot audit and event tracking utility.
@@ -115,7 +115,7 @@ export class HoneyPot {
 	 * @param maxLogSize Maximum audit log entries to retain (default: 10000).
 	 */
 	constructor(maxLogSize = 10000) {
-		perf.mark("constructor");
+		PERF.mark("constructor");
 		this._maxLogSize = maxLogSize;
 	}
 
@@ -135,7 +135,7 @@ export class HoneyPot {
 		ssh?: SshMimic,
 		sftp?: SftpMimic
 	): void {
-		perf.mark("attach");
+		PERF.mark("attach");
 		this._shell = shell;
 		this._attachVirtualShell(shell);
 		this._attachVirtualFileSystem(vfs);
@@ -423,7 +423,7 @@ export class HoneyPot {
 	 * @returns Filtered audit log entries.
 	 */
 	public getAuditLog(type?: string, source?: string): AuditLogEntry[] {
-		perf.mark("getAuditLog");
+		PERF.mark("getAuditLog");
 		return this._auditLog.filter(
 			(entry) =>
 				(!type || entry.type === type) && (!source || entry.source === source)
@@ -436,7 +436,7 @@ export class HoneyPot {
 	 * @returns Snapshot of honeypot stats.
 	 */
 	public getStats(): Readonly<HoneyPotStats> {
-		perf.mark("getStats");
+		PERF.mark("getStats");
 		return Object.freeze({ ...this._stats });
 	}
 
@@ -444,7 +444,7 @@ export class HoneyPot {
 	 * Clears audit log and resets statistics.
 	 */
 	public reset(): void {
-		perf.mark("reset");
+		PERF.mark("reset");
 		this._auditLog = [];
 		this._stats = {
 			authAttempts: 0,
@@ -480,7 +480,7 @@ export class HoneyPot {
 	 * @returns Recent audit log entries.
 	 */
 	public getRecent(limit = 100): AuditLogEntry[] {
-		perf.mark("getRecent");
+		PERF.mark("getRecent");
 		return this._auditLog.slice(Math.max(0, this._auditLog.length - limit));
 	}
 
@@ -494,7 +494,7 @@ export class HoneyPot {
 		severity: "low" | "medium" | "high";
 		message: string;
 	}> {
-		perf.mark("detectAnomalies");
+		PERF.mark("detectAnomalies");
 		const anomalies: Array<{
 			type: string;
 			severity: "low" | "medium" | "high";

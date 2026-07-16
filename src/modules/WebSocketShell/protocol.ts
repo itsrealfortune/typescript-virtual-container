@@ -53,10 +53,18 @@ export interface WsErrorMessage extends WsMessage {
 }
 
 /** Union of all message types the client may send. */
-export type WsClientMessage = WsDataMessage | WsResizeMessage | WsPingMessage | WsExitMessage;
+export type WsClientMessage =
+	| WsDataMessage
+	| WsResizeMessage
+	| WsPingMessage
+	| WsExitMessage;
 
 /** Union of all message types the server may send. */
-export type WsServerMessage = WsDataMessage | WsPongMessage | WsExitMessage | WsErrorMessage;
+export type WsServerMessage =
+	| WsDataMessage
+	| WsPongMessage
+	| WsExitMessage
+	| WsErrorMessage;
 
 /** Authenticated user info extracted during the WebSocket handshake. */
 export interface WsUser {
@@ -76,7 +84,9 @@ export interface WsUser {
  * @param raw - Incoming message payload (string or Buffer).
  * @returns A parsed client message, or `null` if parsing fails.
  */
-export function parseClientMessage(raw: string | Buffer): WsClientMessage | null {
+export function parseClientMessage(
+	raw: string | Buffer
+): WsClientMessage | null {
 	if (typeof raw !== "string") {
 		raw = Buffer.from(raw).toString("utf8");
 	}
@@ -94,14 +104,25 @@ export function parseClientMessage(raw: string | Buffer): WsClientMessage | null
 	if (type === "data" && typeof msg.data === "string") {
 		return { type: "data", data: msg.data } as WsDataMessage;
 	}
-	if (type === "resize" && typeof msg.cols === "number" && typeof msg.rows === "number") {
-		return { type: "resize", cols: msg.cols, rows: msg.rows } as WsResizeMessage;
+	if (
+		type === "resize" &&
+		typeof msg.cols === "number" &&
+		typeof msg.rows === "number"
+	) {
+		return {
+			type: "resize",
+			cols: msg.cols,
+			rows: msg.rows,
+		} as WsResizeMessage;
 	}
 	if (type === "ping") {
 		return { type: "ping" } as WsPingMessage;
 	}
 	if (type === "exit") {
-		return { type: "exit", code: typeof msg.code === "number" ? msg.code : 0 } as WsExitMessage;
+		return {
+			type: "exit",
+			code: typeof msg.code === "number" ? msg.code : 0,
+		} as WsExitMessage;
 	}
 	return null;
 }

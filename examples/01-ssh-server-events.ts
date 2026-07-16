@@ -12,72 +12,72 @@ import { runCommand } from "../src/commands/index";
 import { SshMimic as VirtualSshServer } from "../src/modules/SSHMimic/index";
 import { VirtualShell } from "../src/modules/VirtualShell/index";
 
-const shell = new VirtualShell("lab-environment");
-await shell.ensureInitialized();
-shell.users.setPassword("root", "root");
+const SHELL = new VirtualShell("lab-environment");
+await SHELL.ensureInitialized();
+SHELL.users.setPassword("root", "root");
 
-const ssh = new VirtualSshServer({ port: 2222, shell });
+const SSH = new VirtualSshServer({ port: 2222, shell: SHELL });
 
 // ── Register all event listeners ──────────────────────────────────
 console.log("--- Register all event listeners ---");
-ssh.on("start", ({ port }) => {
+SSH.on("start", ({ port }) => {
 	console.log(`[EVENT] Server started on port ${port}`);
 });
 
-ssh.on("stop", () => {
+SSH.on("stop", () => {
 	console.log("[EVENT] Server stopped");
 });
 
-ssh.on("auth:success", ({ username, remoteAddress }) => {
+SSH.on("auth:success", ({ username, remoteAddress }) => {
 	console.log(`[EVENT] Auth success: ${username}@${remoteAddress}`);
 });
 
-ssh.on("auth:failure", ({ username, remoteAddress }) => {
+SSH.on("auth:failure", ({ username, remoteAddress }) => {
 	console.log(`[EVENT] Auth failure: ${username}@${remoteAddress}`);
 });
 
-ssh.on("auth:lockout", ({ ip, until }) => {
+SSH.on("auth:lockout", ({ ip, until }) => {
 	console.warn(`[EVENT] Lockout: ${ip} until ${until.toISOString()}`);
 });
 
-ssh.on("client:connect", ({ remoteAddress }) => {
+SSH.on("client:connect", ({ remoteAddress }) => {
 	console.log(`[EVENT] Client connected from ${remoteAddress}`);
 });
 
-ssh.on("client:disconnect", ({ user }) => {
+SSH.on("client:disconnect", ({ user }) => {
 	console.log(`[EVENT] Client disconnected: ${user ?? "unknown"}`);
 });
 
 // ── Start server ──────────────────────────────────────────────────
 console.log("--- Start server ---");
-const port = await ssh.start();
-console.log(`Server ready on port ${port}`);
-console.log("Accepting real SSH connections: ssh root@localhost -p", port);
+const PORT = await SSH.start();
+console.log(`Server ready on port ${PORT}`);
+console.log("Accepting real SSH connections: ssh root@localhost -p", PORT);
 
 // ── Simulate activity via command runner ──────────────────────────
 console.log("--- Simulate activity ---");
-const result = await runCommand(
+const RESULT = await runCommand(
 	"echo 'Hello from connected client'",
 	"root",
 	"lab-environment",
 	"exec",
 	"/",
-	shell
+	SHELL
 );
-console.log(`Command output: ${result.stdout?.trim()}`);
+console.log(`Command output: ${RESULT.stdout?.trim()}`);
 
 // ── Demonstrate lockout mechanism ─────────────────────────────────
 console.log("--- Demonstrate lockout mechanism ---");
-const attackerIp = "10.0.0.99";
+const ATTACKER_IP = "10.0.0.99";
 
-ssh.recordAuthFailure(attackerIp);
-ssh.recordAuthFailure(attackerIp);
-ssh.recordAuthFailure(attackerIp);
+SSH.recordAuthFailure(ATTACKER_IP);
+SSH.recordAuthFailure(ATTACKER_IP);
+SSH.recordAuthFailure(ATTACKER_IP);
 
-console.log(`Admin clears lockout for ${attackerIp}...`);
-ssh.clearLockout(attackerIp);
+console.log(`Admin clears lockout for ${ATTACKER_IP}...`);
+SSH.clearLockout(ATTACKER_IP);
 console.log("Lockout cleared");
 
 // ── Graceful shutdown ─────────────────────────────────────────────
 console.log("--- Graceful shutdown ---");
-ssh.stop();
+SSH.stop();

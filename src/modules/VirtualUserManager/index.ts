@@ -1,9 +1,9 @@
 import {
-    createHash,
-    randomBytes,
-    randomUUID,
-    scryptSync,
-    timingSafeEqual,
+	createHash,
+	randomBytes,
+	randomUUID,
+	scryptSync,
+	timingSafeEqual,
 } from "node:crypto";
 import { EventEmitter } from "node:events";
 import * as path from "node:path";
@@ -11,10 +11,10 @@ import { type PerfLogger, createPerfLogger } from "../../utils/perfLogger";
 import type VirtualFileSystem from "../VirtualFileSystem";
 import { VirtualGroupManager, type VirtualGroupRecord } from "./groups";
 import {
-    type ProcessPriority,
-    ProcessScheduler,
-    type SchedulerConfig,
-    type SchedulerStats,
+	type ProcessPriority,
+	ProcessScheduler,
+	type SchedulerConfig,
+	type SchedulerStats,
 } from "./processScheduler";
 
 /**
@@ -105,7 +105,7 @@ function resolveFastPasswordHash(): boolean {
 	);
 }
 
-const perf: PerfLogger = createPerfLogger("VirtualUserManager");
+const PERF: PerfLogger = createPerfLogger("VirtualUserManager");
 
 /**
  * Persistent user, sudoers, and active-session manager for the shell runtime.
@@ -204,7 +204,7 @@ export class VirtualUserManager extends EventEmitter {
 		private readonly _autoSudoForNewUsers: boolean = false
 	) {
 		super();
-		perf.mark("constructor");
+		PERF.mark("constructor");
 		this._groups = new VirtualGroupManager(_vfs);
 		this._scheduler = new ProcessScheduler();
 	}
@@ -214,7 +214,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * Also creates the current system user if not already present.
 	 */
 	public initialize(): void {
-		perf.mark("initialize");
+		PERF.mark("initialize");
 		this._groups.initialize();
 		this._loadFromVfs();
 		this._loadSudoersFromVfs();
@@ -250,7 +250,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param maxBytes Quota ceiling in bytes.
 	 */
 	public setQuotaBytes(username: string, maxBytes: number): void {
-		perf.mark("setQuotaBytes");
+		PERF.mark("setQuotaBytes");
 		VirtualUserManager._validateUsername(username);
 		if (!this._users.has(username)) {
 			throw new Error(`quota: user '${username}' does not exist`);
@@ -270,7 +270,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param username Target username.
 	 */
 	public clearQuota(username: string): void {
-		perf.mark("clearQuota");
+		PERF.mark("clearQuota");
 		VirtualUserManager._validateUsername(username);
 		this._quotas.delete(username);
 		this.persist();
@@ -283,7 +283,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns Quota in bytes, or null when unlimited.
 	 */
 	public getQuotaBytes(username: string): number | null {
-		perf.mark("getQuotaBytes");
+		PERF.mark("getQuotaBytes");
 		return this._quotas.get(username) ?? null;
 	}
 
@@ -294,7 +294,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns Current usage in bytes.
 	 */
 	public getUsageBytes(username: string): number {
-		perf.mark("getUsageBytes");
+		PERF.mark("getUsageBytes");
 		const homePath = username === "root" ? "/root" : `/home/${username}`;
 		if (!this._vfs.exists(homePath)) {
 			return 0;
@@ -317,7 +317,7 @@ export class VirtualUserManager extends EventEmitter {
 		targetPath: string,
 		nextContent: string | Buffer
 	): void {
-		perf.mark("assertWriteWithinQuota");
+		PERF.mark("assertWriteWithinQuota");
 		const quota = this._quotas.get(username);
 		if (quota === undefined) {
 			return;
@@ -362,7 +362,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns True when credentials are valid.
 	 */
 	public verifyPassword(username: string, password: string): boolean {
-		perf.mark("verifyPassword");
+		PERF.mark("verifyPassword");
 		const record = this._users.get(username);
 		if (!record) {
 			// Perform a dummy hash to avoid timing leakage on unknown usernames
@@ -392,7 +392,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param password Initial plaintext password.
 	 */
 	public addUser(username: string, password: string): void {
-		perf.mark("addUser");
+		PERF.mark("addUser");
 		VirtualUserManager._validateUsername(username);
 		VirtualUserManager._validatePassword(password);
 
@@ -528,7 +528,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns Password hash in hex encoding, or null when user is not found.
 	 */
 	public getPasswordHash(username: string): string | null {
-		perf.mark("getPasswordHash");
+		PERF.mark("getPasswordHash");
 		const record = this._users.get(username);
 		return record ? record.passwordHash : null;
 	}
@@ -541,7 +541,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @throws When the user does not exist or the password is empty.
 	 */
 	public setPassword(username: string, password: string): void {
-		perf.mark("setPassword");
+		PERF.mark("setPassword");
 		VirtualUserManager._validateUsername(username);
 		VirtualUserManager._validatePassword(password);
 
@@ -560,7 +560,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @throws When `username` is `"root"` or the user does not exist.
 	 */
 	public deleteUser(username: string): void {
-		perf.mark("deleteUser");
+		PERF.mark("deleteUser");
 		VirtualUserManager._validateUsername(username);
 
 		if (username === "root") {
@@ -607,7 +607,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns True when user can run sudo.
 	 */
 	public isSudoer(username: string): boolean {
-		perf.mark("isSudoer");
+		PERF.mark("isSudoer");
 		return this._sudoers.has(username);
 	}
 
@@ -618,7 +618,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @throws When the user does not exist.
 	 */
 	public addSudoer(username: string): void {
-		perf.mark("addSudoer");
+		PERF.mark("addSudoer");
 		VirtualUserManager._validateUsername(username);
 		if (!this._users.has(username)) {
 			throw new Error(`sudoers: user '${username}' does not exist`);
@@ -640,7 +640,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @throws When `username` is `"root"`.
 	 */
 	public removeSudoer(username: string): void {
-		perf.mark("removeSudoer");
+		PERF.mark("removeSudoer");
 		VirtualUserManager._validateUsername(username);
 		if (username === "root") {
 			throw new Error("sudoers: cannot remove root");
@@ -669,7 +669,7 @@ export class VirtualUserManager extends EventEmitter {
 		username: string,
 		remoteAddress: string
 	): VirtualActiveSession {
-		perf.mark("registerSession");
+		PERF.mark("registerSession");
 		const session: VirtualActiveSession = {
 			id: randomUUID(),
 			username,
@@ -694,7 +694,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param sessionId Session UUID returned by `registerSession()`, or nullish.
 	 */
 	public unregisterSession(sessionId: string | null | undefined): void {
-		perf.mark("unregisterSession");
+		PERF.mark("unregisterSession");
 		if (!sessionId) {
 			return;
 		}
@@ -726,7 +726,7 @@ export class VirtualUserManager extends EventEmitter {
 		username: string,
 		remoteAddress: string
 	): void {
-		perf.mark("updateSession");
+		PERF.mark("updateSession");
 		if (!sessionId) {
 			return;
 		}
@@ -751,7 +751,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns Array of `VirtualActiveSession` descriptors.
 	 */
 	public listActiveSessions(): VirtualActiveSession[] {
-		perf.mark("listActiveSessions");
+		PERF.mark("listActiveSessions");
 		return Array.from(this._activeSessions.values()).sort((left, right) =>
 			left.startedAt.localeCompare(right.startedAt)
 		);
@@ -1244,7 +1244,7 @@ export class VirtualUserManager extends EventEmitter {
 		this._scheduler.recordCpuTime(pid, elapsedMs);
 
 		const proc = this._activeProcesses.get(pid);
-		if (!proc || proc.status !== "running") {
+		if (proc?.status !== "running") {
 			return false;
 		}
 
@@ -1546,7 +1546,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @returns True if the user has a password set, false otherwise.
 	 */
 	public hasPassword(username: string): boolean {
-		perf.mark("hasPassword");
+		PERF.mark("hasPassword");
 		const record = this._users.get(username);
 		if (!record) {
 			return false;
@@ -1604,7 +1604,7 @@ export class VirtualUserManager extends EventEmitter {
 	 * @param data Raw key data as a Buffer (the base64-decoded key bytes).
 	 */
 	public addAuthorizedKey(username: string, algo: string, data: Buffer): void {
-		perf.mark("addAuthorizedKey");
+		PERF.mark("addAuthorizedKey");
 		const keys = this._authorizedKeys.get(username) ?? [];
 		keys.push({ algo, data });
 		this._authorizedKeys.set(username, keys);
@@ -2137,9 +2137,8 @@ function normalizeVfsPath(targetPath: string): string {
 // Re-export scheduler types for external consumers
 export { ProcessScheduler } from "./processScheduler";
 export type {
-    ProcessPriority,
-    SchedulerAction,
-    SchedulerConfig,
-    SchedulerStats
+	ProcessPriority,
+	SchedulerAction,
+	SchedulerConfig,
+	SchedulerStats,
 } from "./processScheduler";
-

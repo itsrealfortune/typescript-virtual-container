@@ -680,25 +680,28 @@ class VirtualFileSystem extends EventEmitter {
 			} else {
 				raw = fsSync.readFileSync(this._snapshotFile);
 			}
-		if (isBinarySnapshot(raw)) {
-			this._root = decodeVfs(raw);
-		} else if (isSquashfsFormat(raw)) {
-			this._root = decodeSquashfs(raw);
-			console.info(
-				"[VirtualFileSystem] Loaded snapshot from squashfs format; will migrate to VFSB on next flush."
-			);
-		} else if (isTarFormat(raw) || (raw.length > 2 && raw[0] === 0x1f && raw[1] === 0x8b)) {
-			this._root = decodeTar(raw);
-			console.info(
-				"[VirtualFileSystem] Loaded snapshot from tar format; will migrate to VFSB on next flush."
-			);
-		} else {
-			const snapshot: VfsSnapshot = JSON.parse(raw.toString("utf8"));
-			this._root = this._deserializeDir(snapshot.root, "");
-			console.info(
-				"[VirtualFileSystem] Migrating legacy JSON snapshot to binary format."
-			);
-		}
+			if (isBinarySnapshot(raw)) {
+				this._root = decodeVfs(raw);
+			} else if (isSquashfsFormat(raw)) {
+				this._root = decodeSquashfs(raw);
+				console.info(
+					"[VirtualFileSystem] Loaded snapshot from squashfs format; will migrate to VFSB on next flush."
+				);
+			} else if (
+				isTarFormat(raw) ||
+				(raw.length > 2 && raw[0] === 0x1f && raw[1] === 0x8b)
+			) {
+				this._root = decodeTar(raw);
+				console.info(
+					"[VirtualFileSystem] Loaded snapshot from tar format; will migrate to VFSB on next flush."
+				);
+			} else {
+				const snapshot: VfsSnapshot = JSON.parse(raw.toString("utf8"));
+				this._root = this._deserializeDir(snapshot.root, "");
+				console.info(
+					"[VirtualFileSystem] Migrating legacy JSON snapshot to binary format."
+				);
+			}
 			this.emit("snapshot:restore", { path: this._snapshotFile });
 			// Replay WAL journal on top of the loaded snapshot
 			if (this._journalFile) {

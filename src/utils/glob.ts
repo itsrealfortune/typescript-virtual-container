@@ -1,4 +1,4 @@
-const _globCache = new Map<string, RegExp>();
+const _GLOB_CACHE = new Map<string, RegExp>();
 
 function parseExtglob(pat: string, i: number): { re: string; end: number } {
 	const op = pat[i] as string;
@@ -86,12 +86,12 @@ function globToRegexInner(pattern: string, anchor: boolean): string {
  */
 export function globToRegex(pattern: string, flags = ""): RegExp {
 	const key = `${flags}:${pattern}`;
-	const cached = _globCache.get(key);
+	const cached = _GLOB_CACHE.get(key);
 	if (cached) {
 		return cached;
 	}
 	const result = new RegExp(globToRegexInner(pattern, true), flags);
-	_globCache.set(key, result);
+	_GLOB_CACHE.set(key, result);
 	return result;
 }
 
@@ -121,7 +121,7 @@ export function shellGlobToRegex(
 	global = false
 ): RegExp {
 	const key = `shell:${mode}:${greedy ? "g" : "s"}:${global ? "G" : ""}:${pat}`;
-	let re = _globCache.get(key);
+	let re = _GLOB_CACHE.get(key);
 	if (re) {
 		return re;
 	}
@@ -132,6 +132,6 @@ export function shellGlobToRegex(
 	const src =
 		mode === "prefix" ? `^${body}` : mode === "suffix" ? `${body}$` : body;
 	re = new RegExp(src, global ? "g" : "");
-	_globCache.set(key, re);
+	_GLOB_CACHE.set(key, re);
 	return re;
 }

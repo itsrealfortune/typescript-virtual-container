@@ -3,8 +3,8 @@ import { Baie, VirtualNetworkManager } from "../src";
 
 // Skip slow network tests by default. Run with:
 //   SSH_MIMIC_RUN_NETWORK_TESTS=1 bun test tests/network-upgrades.test.ts
-const runNetwork = Boolean(process.env.SSH_MIMIC_RUN_NETWORK_TESTS);
-const describeNetwork = runNetwork ? describe : describe.skip;
+const RUN_NETWORK = Boolean(process.env.SSH_MIMIC_RUN_NETWORK_TESTS);
+const DESCRIBE_NETWORK = RUN_NETWORK ? describe : describe.skip;
 
 describe("VirtualNetworkManager - Multiple Interfaces", () => {
 	test("addInterface creates new interface", () => {
@@ -335,7 +335,7 @@ describe("VirtualSwitch - MTU Enforcement", () => {
 	});
 });
 
-describeNetwork("VirtualSwitch - Gaussian Jitter", () => {
+DESCRIBE_NETWORK("VirtualSwitch - Gaussian Jitter", () => {
 	test("jitterMs adds variable latency", async () => {
 		const baie = new Baie("jitter", "10.0.1.0/24");
 		void baie.createVM("test");

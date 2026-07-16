@@ -16,11 +16,11 @@ import type { TerminalSize } from "./shellRuntime";
 
 const ESC = "\x1b";
 const CSI = `${ESC}[`;
-const cup = (r: number, c: number) => `${CSI}${r};${c}H`;
-const hide = `${CSI}?25l`;
-const show = `${CSI}?25h`;
-const clearScreen = `${CSI}2J${CSI}H`;
-const eraseEol = `${CSI}K`;
+const CUP = (r: number, c: number) => `${CSI}${r};${c}H`;
+const HIDE = `${CSI}?25l`;
+const SHOW = `${CSI}?25h`;
+const CLEAR_SCREEN = `${CSI}2J${CSI}H`;
+const ERASE_EOL = `${CSI}K`;
 
 const C = {
 	blue: `${ESC}[1;34m`,
@@ -374,7 +374,7 @@ export class PacmanGame {
 	 * Start the game loop. Renders the initial maze and begins the 8fps tick.
 	 */
 	start(): void {
-		this._stream.write(hide + clearScreen);
+		this._stream.write(HIDE + CLEAR_SCREEN);
 		this._prevLines = [];
 		this._renderFull();
 		this._intervalId = setInterval(() => this._gameTick(), 125);
@@ -388,7 +388,7 @@ export class PacmanGame {
 			clearInterval(this._intervalId);
 			this._intervalId = null;
 		}
-		this._stream.write(show + clearScreen + C.r);
+		this._stream.write(SHOW + CLEAR_SCREEN + C.r);
 	}
 
 	/**
@@ -924,9 +924,9 @@ export class PacmanGame {
 
 	private _renderFull(): void {
 		const lines = this._buildLines();
-		let out = hide + clearScreen;
+		let out = HIDE + CLEAR_SCREEN;
 		for (let i = 0; i < lines.length; i++) {
-			out += cup(i + 1, 1) + (lines[i] ?? "") + eraseEol;
+			out += CUP(i + 1, 1) + (lines[i] ?? "") + ERASE_EOL;
 		}
 		this._stream.write(out);
 		this._prevLines = lines;
@@ -938,12 +938,12 @@ export class PacmanGame {
 		for (let i = 0; i < lines.length; i++) {
 			const line = lines[i] ?? "";
 			if (line !== this._prevLines[i]) {
-				out += cup(i + 1, 1) + line + eraseEol;
+				out += CUP(i + 1, 1) + line + ERASE_EOL;
 			}
 		}
 		// Clear any extra lines from previous render
 		for (let i = lines.length; i < this._prevLines.length; i++) {
-			out += cup(i + 1, 1) + eraseEol;
+			out += CUP(i + 1, 1) + ERASE_EOL;
 		}
 		if (out) {
 			this._stream.write(out);

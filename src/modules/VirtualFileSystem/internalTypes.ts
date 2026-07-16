@@ -5,7 +5,7 @@ export type InternalNode =
 	| InternalDirectoryNode
 	| InternalDeviceNode;
 
-interface InternalBaseNode {
+interface INternalBaseNode {
 	name: string;
 	mode: number;
 	/** Owner user ID (0 = root). */
@@ -19,7 +19,7 @@ interface InternalBaseNode {
 }
 
 /** @internal */
-export interface InternalFileNode extends InternalBaseNode {
+export interface InternalFileNode extends INternalBaseNode {
 	type: "file";
 	content: Buffer;
 	compressed: boolean;
@@ -35,14 +35,14 @@ export interface InternalFileNode extends InternalBaseNode {
  * On first write, promoted to a real InternalFileNode.
  * @internal
  */
-export interface InternalStubNode extends InternalBaseNode {
+export interface InternalStubNode extends INternalBaseNode {
 	type: "stub";
 	/** Raw UTF-8 content — never compressed, never evicted. */
 	stubContent: string;
 }
 
 /** @internal */
-export interface InternalDirectoryNode extends InternalBaseNode {
+export interface InternalDirectoryNode extends INternalBaseNode {
 	type: "directory";
 	/** Null-prototype object — avoids Map overhead (~40% less RAM per entry). */
 	children: Record<string, InternalNode>;
@@ -57,7 +57,7 @@ export interface InternalDirectoryNode extends InternalBaseNode {
  * Read/write behavior is handled, not stored as content.
  * @internal
  */
-export interface InternalDeviceNode extends InternalBaseNode {
+export interface InternalDeviceNode extends INternalBaseNode {
 	type: "device";
 	/** Device kind identifier. */
 	deviceKind: DeviceKind;

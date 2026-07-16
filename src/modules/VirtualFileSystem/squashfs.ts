@@ -1,8 +1,5 @@
 import { unzlibSync } from "fflate";
-import type {
-	InternalDirectoryNode,
-	InternalFileNode,
-} from "./internalTypes";
+import type { InternalDirectoryNode, InternalFileNode } from "./internalTypes";
 
 const MAGIC = 0x73717368;
 
@@ -110,7 +107,7 @@ function getBlockSize(hdr: number): number {
 function readMetadataBlocks(
 	buf: Buffer,
 	startOffset: number,
-	endOffset?: number,
+	endOffset?: number
 ): { data: Buffer; blocks: MetadataBlockEntry[] } {
 	const parts: Buffer[] = [];
 	const blocks: MetadataBlockEntry[] = [];
@@ -121,11 +118,15 @@ function readMetadataBlocks(
 		const compressed = isCompressed(hdr);
 		let blockSize = getBlockSize(hdr);
 
-		if (blockSize === 0) { break; }
+		if (blockSize === 0) {
+			break;
+		}
 
 		if (offset + 2 + blockSize > limit) {
 			blockSize = limit - offset - 2;
-			if (blockSize <= 0) { break; }
+			if (blockSize <= 0) {
+				break;
+			}
 		}
 
 		blocks.push({ fileOffset: offset, blockSize, compressed });
@@ -148,7 +149,7 @@ function readMetadataBlocks(
 function findRootInodePosition(
 	blocks: MetadataBlockEntry[],
 	rootInode: bigint,
-	inodeTableStart: number,
+	inodeTableStart: number
 ): number {
 	const targetFileOffset = inodeTableStart + (Number(rootInode) >> 16);
 	const offsetInBlock = Number(rootInode) & 0xffff;
@@ -158,14 +159,16 @@ function findRootInodePosition(
 		if (block.fileOffset === targetFileOffset) {
 			return decompressedOffset + offsetInBlock;
 		}
-		decompressedOffset += block.compressed
-			? 8192
-			: block.blockSize;
+		decompressedOffset += block.compressed ? 8192 : block.blockSize;
 	}
 	return -1;
 }
 
-function readIdTable(buf: Buffer, startOffset: number, count: number): number[] {
+function readIdTable(
+	buf: Buffer,
+	startOffset: number,
+	count: number
+): number[] {
 	const { data } = readMetadataBlocks(buf, startOffset);
 	const ids: number[] = [];
 	for (let i = 0; i < count && i * 4 + 4 <= data.length; i++) {
@@ -174,34 +177,52 @@ function readIdTable(buf: Buffer, startOffset: number, count: number): number[] 
 	return ids;
 }
 
-function readFragmentTable(buf: Buffer, startOffset: number, fragmentCount: number): FragmentEntry[] {
-	const metaBlocks = Math.ceil(fragmentCount * 12 / 8192);
+function readFragmentTable(
+	buf: Buffer,
+	startOffset: number,
+	fragmentCount: number
+): FragmentEntry[] {
+	const metaBlocks = Math.ceil((fragmentCount * 12) / 8192);
 
 	const fragments: FragmentEntry[] = [];
 	for (let i = 0; i < metaBlocks; i++) {
 		const indexOffset = Number(buf.readBigUInt64LE(startOffset + i * 8));
-		if (indexOffset === 0) { break; }
+		if (indexOffset === 0) {
+			break;
+		}
 		const { data } = readBlock(buf, indexOffset);
-		if (data.length === 0) { break; }
+		if (data.length === 0) {
+			break;
+		}
 		fragments.push(...readFragmentEntriesFromBlock(data));
 	}
 	return fragments;
 }
 
-function readBlock(buf: Buffer, startOffset: number): { data: Buffer; compressedSize: number; compressed: boolean } {
+function readBlock(
+	buf: Buffer,
+	startOffset: number
+): { data: Buffer; compressedSize: number; compressed: boolean } {
 	const hdr = buf.readUInt16LE(startOffset);
 	const compressed = !(hdr & COMPRESSED_BIT);
 	let blockSize = hdr & ~COMPRESSED_BIT;
-	if (blockSize === 0) { return { data: Buffer.alloc(0), compressedSize: 0, compressed: false }; }
+	if (blockSize === 0) {
+		return { data: Buffer.alloc(0), compressedSize: 0, compressed: false };
+	}
 	if (startOffset + 2 + blockSize > buf.length) {
 		blockSize = buf.length - startOffset - 2;
-		if (blockSize <= 0) { return { data: Buffer.alloc(0), compressedSize: 0, compressed: false }; }
+		if (blockSize <= 0) {
+			return { data: Buffer.alloc(0), compressedSize: 0, compressed: false };
+		}
 	}
 	const raw = buf.slice(startOffset + 2, startOffset + 2 + blockSize);
 	let data: Buffer;
 	if (compressed) {
-		try { data = Buffer.from(unzlibSync(raw)); }
-		catch { data = raw; }
+		try {
+			data = Buffer.from(unzlibSync(raw));
+		} catch {
+			data = raw;
+		}
 	} else {
 		data = raw;
 	}
@@ -213,7 +234,9 @@ function readFragmentEntriesFromBlock(blockData: Buffer): FragmentEntry[] {
 	for (let off = 0; off + 12 <= blockData.length; off += 12) {
 		const startBlock = Number(blockData.readBigUInt64LE(off));
 		const size = blockData.readUInt32LE(off + 8);
-		if (startBlock === 0 && size === 0) { break; }
+		if (startBlock === 0 && size === 0) {
+			break;
+		}
 		fragments.push({ startBlock, size });
 	}
 	return fragments;
@@ -291,7 +314,9 @@ function parseInode(buf: Buffer, offset: number): ParsedInode {
 		case INODE_SYMLINK:
 		case INODE_LSYMLINK: {
 			const symSize = buf.readUInt32LE(offset + 20);
-			base.symlinkTarget = buf.slice(offset + 24, offset + 24 + symSize).toString("utf8");
+			base.symlinkTarget = buf
+				.slice(offset + 24, offset + 24 + symSize)
+				.toString("utf8");
 			break;
 		}
 		case INODE_BLKDEV:
@@ -312,17 +337,25 @@ function parseInode(buf: Buffer, offset: number): ParsedInode {
 
 function inodeHeaderSize(inodeType: number): number {
 	switch (inodeType) {
-		case INODE_DIR: return 32;
-		case INODE_LDIR: return 40;
-		case INODE_FILE: return 32;
-		case INODE_LFILE: return 56;
+		case INODE_DIR:
+			return 32;
+		case INODE_LDIR:
+			return 40;
+		case INODE_FILE:
+			return 32;
+		case INODE_LFILE:
+			return 56;
 		case INODE_SYMLINK:
-		case INODE_LSYMLINK: return 24;
+		case INODE_LSYMLINK:
+			return 24;
 		case INODE_BLKDEV:
-		case INODE_CHRDEV: return 28;
+		case INODE_CHRDEV:
+			return 28;
 		case INODE_FIFO:
-		case INODE_SOCKET: return 24;
-		default: return 32;
+		case INODE_SOCKET:
+			return 24;
+		default:
+			return 32;
 	}
 }
 
@@ -362,7 +395,9 @@ function buildInodeMap(inodeData: Buffer): Map<number, ParsedInode> {
 	let offset = 0;
 	while (offset + 16 <= inodeData.length) {
 		const t = inodeData.readUInt16LE(offset);
-		if (t === 0) { break; }
+		if (t === 0) {
+			break;
+		}
 		const inode = parseInode(inodeData, offset);
 		inodes.set(inode.inodeNumber, inode);
 		offset += inodeTotalSize(inodeData, offset);
@@ -370,14 +405,22 @@ function buildInodeMap(inodeData: Buffer): Map<number, ParsedInode> {
 	return inodes;
 }
 
-function readFileData(buf: Buffer, startBlock: number, blockSizes: number[]): Buffer {
+function readFileData(
+	buf: Buffer,
+	startBlock: number,
+	blockSizes: number[]
+): Buffer {
 	const parts: Buffer[] = [];
 	let offset = startBlock;
 	for (const rawSize of blockSizes) {
-		if (rawSize === 0) { continue; }
+		if (rawSize === 0) {
+			continue;
+		}
 		const compressed = !(rawSize & COMPRESSED_BIT_BLOCK);
 		const actualSize = rawSize & ~COMPRESSED_BIT_BLOCK;
-		if (actualSize === 0) { continue; }
+		if (actualSize === 0) {
+			continue;
+		}
 
 		let part: Buffer;
 		if (compressed) {
@@ -395,7 +438,11 @@ function readFileData(buf: Buffer, startBlock: number, blockSizes: number[]): Bu
 	return Buffer.concat(parts);
 }
 
-function parseDirEntries(dirTable: Buffer, start: number, size: number): DirEntry[] {
+function parseDirEntries(
+	dirTable: Buffer,
+	start: number,
+	size: number
+): DirEntry[] {
 	const entries: DirEntry[] = [];
 	const end = start + size;
 	let offset = start;
@@ -414,7 +461,9 @@ function parseDirEntries(dirTable: Buffer, start: number, size: number): DirEntr
 
 		const numEntries = count + 1;
 		for (let i = 0; i < numEntries; i++) {
-			if (offset + 8 > dirTable.length || offset >= end) { break; }
+			if (offset + 8 > dirTable.length || offset >= end) {
+				break;
+			}
 
 			const relInode = dirTable.readInt16LE(offset + 2);
 			const entryType = dirTable.readUInt16LE(offset + 4);
@@ -422,7 +471,9 @@ function parseDirEntries(dirTable: Buffer, start: number, size: number): DirEntr
 
 			offset += 8;
 			const actualNameLen = nameLen + 1;
-			const name = dirTable.slice(offset, offset + actualNameLen).toString("utf8");
+			const name = dirTable
+				.slice(offset, offset + actualNameLen)
+				.toString("utf8");
 			offset += actualNameLen;
 
 			entries.push({
@@ -442,24 +493,33 @@ export function decodeSquashfs(buf: Buffer): InternalDirectoryNode {
 	}
 	const sb = parseSuperblock(buf);
 	if (sb.compression !== COMP_GZIP) {
-		throw new Error(`decodeSquashfs: unsupported compression ${sb.compression} (only gzip=1)`);
+		throw new Error(
+			`decodeSquashfs: unsupported compression ${sb.compression} (only gzip=1)`
+		);
 	}
 
 	const idTable = readIdTable(buf, sb.idTableStart, sb.idCount);
 	const fragmentCount = buf.readUInt32LE(16);
-	const fragments = sb.fragmentTableStart > 0 && fragmentCount > 0
-		? readFragmentTable(buf, sb.fragmentTableStart, fragmentCount)
-		: [];
+	const fragments =
+		sb.fragmentTableStart > 0 && fragmentCount > 0
+			? readFragmentTable(buf, sb.fragmentTableStart, fragmentCount)
+			: [];
 
 	const { data: inodeData, blocks: inodeBlocks } = readMetadataBlocks(
 		buf,
 		sb.inodeTableStart,
-		sb.directoryTableStart,
+		sb.directoryTableStart
 	);
 
-	const rootInodeOffset = findRootInodePosition(inodeBlocks, sb.rootInode, sb.inodeTableStart);
+	const rootInodeOffset = findRootInodePosition(
+		inodeBlocks,
+		sb.rootInode,
+		sb.inodeTableStart
+	);
 	if (rootInodeOffset < 0 || rootInodeOffset >= inodeData.length) {
-		throw new Error(`decodeSquashfs: root inode not found at offset ${rootInodeOffset}`);
+		throw new Error(
+			`decodeSquashfs: root inode not found at offset ${rootInodeOffset}`
+		);
 	}
 
 	const rootParsed = parseInode(inodeData, rootInodeOffset);
@@ -467,16 +527,38 @@ export function decodeSquashfs(buf: Buffer): InternalDirectoryNode {
 
 	const { data: dirTable } = readMetadataBlocks(buf, sb.directoryTableStart);
 
-	const root = makeDir("", rootParsed.mode || 0o755, 0, 0, rootParsed.mtime * 1000);
+	const root = makeDir(
+		"",
+		rootParsed.mode || 0o755,
+		0,
+		0,
+		rootParsed.mtime * 1000
+	);
 
 	if (rootParsed.dirStartBlock !== undefined) {
-		walkDir(buf, rootParsed, dirTable, inodes, idTable, fragments, root, "", sb);
+		walkDir(
+			buf,
+			rootParsed,
+			dirTable,
+			inodes,
+			idTable,
+			fragments,
+			root,
+			"",
+			sb
+		);
 	}
 
 	return root;
 }
 
-function makeDir(name: string, mode: number, uid: number, gid: number, mtime: number): InternalDirectoryNode {
+function makeDir(
+	name: string,
+	mode: number,
+	uid: number,
+	gid: number,
+	mtime: number
+): InternalDirectoryNode {
 	return {
 		type: "directory",
 		name,
@@ -497,7 +579,7 @@ function makeFile(
 	mode: number,
 	uid: number,
 	gid: number,
-	mtime: number,
+	mtime: number
 ): InternalFileNode {
 	return {
 		type: "file",
@@ -512,7 +594,11 @@ function makeFile(
 	};
 }
 
-function computeDirTableOffset(dirTable: Buffer, dirInode: ParsedInode, dirTableStart: number): number {
+function computeDirTableOffset(
+	dirTable: Buffer,
+	dirInode: ParsedInode,
+	dirTableStart: number
+): number {
 	const targetBlock = dirInode.dirStartBlock ?? 0;
 	const offsetInBlock = dirInode.dirOffset ?? 0;
 	const targetFileOffset = dirTableStart + targetBlock;
@@ -521,7 +607,9 @@ function computeDirTableOffset(dirTable: Buffer, dirInode: ParsedInode, dirTable
 	let filePos = dirTableStart;
 	while (filePos < targetFileOffset && decompressedPos < dirTable.length) {
 		const nextFilePos = filePos + 2;
-		if (nextFilePos >= targetFileOffset) { break; }
+		if (nextFilePos >= targetFileOffset) {
+			break;
+		}
 		decompressedPos += 8192;
 		filePos = nextFilePos;
 	}
@@ -538,20 +626,30 @@ function walkDir(
 	fragments: FragmentEntry[],
 	parentDir: InternalDirectoryNode,
 	prefix: string,
-	sb: SquashfsSuperblock,
+	sb: SquashfsSuperblock
 ): void {
-	if (dirInode.dirStartBlock === undefined || dirInode.dirOffset === undefined) {
+	if (
+		dirInode.dirStartBlock === undefined ||
+		dirInode.dirOffset === undefined
+	) {
 		return;
 	}
 
-	const startPos = computeDirTableOffset(dirTable, dirInode, sb.directoryTableStart);
-	const dirSize = dirInode.dirSize === undefined ? 0 : Math.max(0, dirInode.dirSize - 3);
+	const startPos = computeDirTableOffset(
+		dirTable,
+		dirInode,
+		sb.directoryTableStart
+	);
+	const dirSize =
+		dirInode.dirSize === undefined ? 0 : Math.max(0, dirInode.dirSize - 3);
 
 	const entries = parseDirEntries(dirTable, startPos, dirSize);
 
 	for (const entry of entries) {
 		const inode = inodes.get(entry.inodeNumber);
-		if (!inode) { continue; }
+		if (!inode) {
+			continue;
+		}
 
 		const uid = inode.uid < idTable.length ? (idTable[inode.uid] ?? 0) : 0;
 		const gid = inode.gid < idTable.length ? (idTable[inode.gid] ?? 0) : 0;
@@ -563,7 +661,7 @@ function walkDir(
 				inode.mode === 0 ? 0o755 : inode.mode,
 				uid,
 				gid,
-				mtimeMs,
+				mtimeMs
 			);
 			parentDir.children[entry.name] = dirNode;
 			parentDir._childCount++;
@@ -579,7 +677,7 @@ function walkDir(
 					fragments,
 					dirNode,
 					prefix ? `${prefix}/${entry.name}` : `/${entry.name}`,
-					sb,
+					sb
 				);
 			}
 		} else if (
@@ -593,7 +691,7 @@ function walkDir(
 				0o120777,
 				uid,
 				gid,
-				mtimeMs,
+				mtimeMs
 			);
 			parentDir._childCount++;
 			parentDir._sortedKeys = null;
@@ -603,25 +701,39 @@ function walkDir(
 		) {
 			let content: Buffer = Buffer.alloc(0);
 			const fileSize = inode.fileSize ?? 0;
-			if (inode.blockSizes && inode.blockSizes.length > 0 && inode.fileStartBlock) {
+			if (
+				inode.blockSizes &&
+				inode.blockSizes.length > 0 &&
+				inode.fileStartBlock
+			) {
 				try {
 					content = readFileData(buf, inode.fileStartBlock, inode.blockSizes);
 				} catch {
 					content = Buffer.alloc(0);
 				}
 			}
-			if (content.length === 0 && inode.fragmentIndex !== undefined &&
-					inode.fragmentIndex !== 0xffffffff && fileSize > 0) {
+			if (
+				content.length === 0 &&
+				inode.fragmentIndex !== undefined &&
+				inode.fragmentIndex !== 0xffffffff &&
+				fileSize > 0
+			) {
 				try {
 					const frag = fragments[inode.fragmentIndex];
 					if (frag) {
 						const compressed = !(frag.size & COMPRESSED_BIT_BLOCK);
 						const actualSize = frag.size & ~COMPRESSED_BIT_BLOCK;
-						const fragRaw = buf.slice(frag.startBlock, frag.startBlock + actualSize);
+						const fragRaw = buf.slice(
+							frag.startBlock,
+							frag.startBlock + actualSize
+						);
 						let fragData: Buffer;
 						if (compressed) {
-							try { fragData = Buffer.from(unzlibSync(fragRaw)); }
-							catch { fragData = fragRaw; }
+							try {
+								fragData = Buffer.from(unzlibSync(fragRaw));
+							} catch {
+								fragData = fragRaw;
+							}
 						} else {
 							fragData = fragRaw;
 						}
@@ -638,7 +750,7 @@ function walkDir(
 				inode.mode || 0o644,
 				uid,
 				gid,
-				mtimeMs,
+				mtimeMs
 			);
 			parentDir._childCount++;
 			parentDir._sortedKeys = null;

@@ -144,7 +144,9 @@ export const splitCommand: ShellModule = {
 	name: "split",
 	description: "Split a file into pieces",
 	category: "text",
-	params: ["[-l lines] [-b bytes] [-d] [--additional-suffix suffix] <file> [prefix]"],
+	params: [
+		"[-l lines] [-b bytes] [-d] [--additional-suffix suffix] <file> [prefix]",
+	],
 	run: ({ shell, cwd, args, uid, gid }) => {
 		const { flags, flagsWithValues, positionals } = parseArgs(args, {
 			flags: ["-d"],
@@ -184,7 +186,10 @@ export const splitCommand: ShellModule = {
 			let chunkIndex = 0;
 			for (let i = 0; i < content.length; i += bytesPerFile) {
 				const chunk = content.slice(i, i + bytesPerFile);
-				const outPath = resolvePath(cwd, `${prefix}${suffixGen(chunkIndex)}${suffix}`);
+				const outPath = resolvePath(
+					cwd,
+					`${prefix}${suffixGen(chunkIndex)}${suffix}`
+				);
 				shell.vfs.writeFile(outPath, chunk, {}, uid, gid);
 				chunkIndex++;
 			}
@@ -195,7 +200,10 @@ export const splitCommand: ShellModule = {
 		let chunkIndex = 0;
 		for (let i = 0; i < allLines.length; i += linesPerFile) {
 			const chunk = allLines.slice(i, i + linesPerFile).join("\n");
-			const outPath = resolvePath(cwd, `${prefix}${suffixGen(chunkIndex)}${suffix}`);
+			const outPath = resolvePath(
+				cwd,
+				`${prefix}${suffixGen(chunkIndex)}${suffix}`
+			);
 			shell.vfs.writeFile(outPath, chunk, {}, uid, gid);
 			chunkIndex++;
 		}
@@ -253,11 +261,18 @@ export const csplitCommand: ShellModule = {
 		const parsedPatterns: Pattern[] = [];
 		for (const pat of patterns) {
 			if (/^\d+$/.test(pat)) {
-				parsedPatterns.push({ kind: "lineno", lineno: Number.parseInt(pat, 10) });
+				parsedPatterns.push({
+					kind: "lineno",
+					lineno: Number.parseInt(pat, 10),
+				});
 			} else if (pat.startsWith("/") && pat.endsWith("/")) {
 				const reBody = pat.slice(1, -1);
 				try {
-					parsedPatterns.push({ kind: "regex", regex: new RegExp(reBody), repeat: 1 });
+					parsedPatterns.push({
+						kind: "regex",
+						regex: new RegExp(reBody),
+						repeat: 1,
+					});
 				} catch {
 					return { stderr: `csplit: invalid regex: ${pat}\n`, exitCode: 1 };
 				}
@@ -273,7 +288,10 @@ export const csplitCommand: ShellModule = {
 			} else if (pat.startsWith("/") && pat.includes("{")) {
 				const braceStart = pat.indexOf("{");
 				const reBody = pat.slice(1, braceStart - 1);
-				const repeatStr = pat.slice(braceStart + 1, pat.indexOf("}", braceStart));
+				const repeatStr = pat.slice(
+					braceStart + 1,
+					pat.indexOf("}", braceStart)
+				);
 				const repeat = Number.parseInt(repeatStr, 10) || 1;
 				try {
 					parsedPatterns.push({

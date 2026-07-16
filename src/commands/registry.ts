@@ -460,25 +460,25 @@ const BASE_COMMANDS: ShellModule[] = [
 	columnCommand,
 ];
 
-const customCommands: ShellModule[] = [];
-const commandRegistry = new Map<string, ShellModule>();
+const CUSTOM_COMMANDS: ShellModule[] = [];
+const COMMAND_REGISTRY = new Map<string, ShellModule>();
 let cachedCommandNames: string[] | null = null;
 
-const helpCommand = createHelpCommand();
+const HELP_COMMAND = createHelpCommand();
 
 function buildCache(): void {
-	commandRegistry.clear();
+	COMMAND_REGISTRY.clear();
 	for (const mod of getCommandModules()) {
-		commandRegistry.set(mod.name, mod);
+		COMMAND_REGISTRY.set(mod.name, mod);
 		for (const alias of mod.aliases ?? []) {
-			commandRegistry.set(alias, mod);
+			COMMAND_REGISTRY.set(alias, mod);
 		}
 	}
-	cachedCommandNames = Array.from(commandRegistry.keys()).sort();
+	cachedCommandNames = Array.from(COMMAND_REGISTRY.keys()).sort();
 }
 
 function getCommandModules(): ShellModule[] {
-	return [...BASE_COMMANDS, ...customCommands, helpCommand];
+	return [...BASE_COMMANDS, ...CUSTOM_COMMANDS, HELP_COMMAND];
 }
 
 /**
@@ -499,11 +499,11 @@ export function registerCommand(module: ShellModule): void {
 	if (names.some((n) => n.length === 0 || /\s/.test(n))) {
 		throw new Error("Command names must be non-empty and contain no spaces");
 	}
-	customCommands.push(normalized);
+	CUSTOM_COMMANDS.push(normalized);
 	// Incremental insert — avoids full Map rebuild for every registerCommand call
-	commandRegistry.set(normalized.name, normalized);
+	COMMAND_REGISTRY.set(normalized.name, normalized);
 	for (const alias of normalized.aliases ?? []) {
-		commandRegistry.set(alias, normalized);
+		COMMAND_REGISTRY.set(alias, normalized);
 	}
 	// Invalidate sorted names cache; rebuilt lazily on next getCommandNames()
 	cachedCommandNames = null;
@@ -561,5 +561,5 @@ export function resolveModule(name: string): ShellModule | undefined {
 	if (!cachedCommandNames) {
 		buildCache();
 	}
-	return commandRegistry.get(name.toLowerCase());
+	return COMMAND_REGISTRY.get(name.toLowerCase());
 }

@@ -2409,7 +2409,7 @@ function bootstrapMisc(vfs: VirtualFileSystem, props: ShellProperties): void {
 
 // ── Static rootfs snapshot cache ─────────────────────────────────────────────
 
-const _staticRootfsCache = new Map<string, Buffer>();
+const _STATIC_ROOTFS_CACHE = new Map<string, Buffer>();
 
 function _staticCacheKey(hostname: string, props: ShellProperties): string {
 	return `${hostname}|${props.kernel}|${props.os}|${props.arch}`;
@@ -2426,7 +2426,7 @@ export function getStaticRootfsSnapshot(
 	props: ShellProperties
 ): Buffer {
 	const key = _staticCacheKey(hostname, props);
-	const cached = _staticRootfsCache.get(key);
+	const cached = _STATIC_ROOTFS_CACHE.get(key);
 	if (cached) {
 		return cached;
 	}
@@ -2443,7 +2443,7 @@ export function getStaticRootfsSnapshot(
 	bootProcLog(tmp, props);
 
 	const snapshot = tmp.encodeBinary();
-	_staticRootfsCache.set(key, snapshot);
+	_STATIC_ROOTFS_CACHE.set(key, snapshot);
 	return snapshot;
 }
 

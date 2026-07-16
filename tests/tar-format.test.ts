@@ -3,7 +3,10 @@ import { gzipSync } from "fflate";
 import * as fsSync from "node:fs";
 import * as path from "node:path";
 import VirtualFileSystem from "../src/modules/VirtualFileSystem";
-import { decodeTar, isTarFormat } from "../src/modules/VirtualFileSystem/tarFormat";
+import {
+	decodeTar,
+	isTarFormat,
+} from "../src/modules/VirtualFileSystem/tarFormat";
 
 // ── Helper: make a simple VFS tree ──────────────────────────────────────────
 

@@ -7,11 +7,11 @@
 
 import { VirtualFileSystem } from "../src";
 
-const testDir = `${process.cwd()}/.vfs-swap-demo`;
+const TEST_DIR = `${process.cwd()}/.vfs-swap-demo`;
 
-const vfs = new VirtualFileSystem({
+const VFS = new VirtualFileSystem({
 	mode: "fs",
-	snapshotPath: testDir,
+	snapshotPath: TEST_DIR,
 	evictionThresholdBytes: 1024,
 	swapEnabled: true,
 });
@@ -19,56 +19,56 @@ const vfs = new VirtualFileSystem({
 // ── Write files ─────────────────────────────────────────────────────
 console.log("--- Write files ---");
 
-vfs.writeFile("/small.txt", "tiny file");
-vfs.writeFile("/medium.txt", "x".repeat(2000));
-vfs.writeFile("/large.txt", "y".repeat(10000));
+VFS.writeFile("/small.txt", "tiny file");
+VFS.writeFile("/medium.txt", "x".repeat(2000));
+VFS.writeFile("/large.txt", "y".repeat(10000));
 
 console.log("Wrote 3 files");
-console.log("Swap enabled:", vfs.isSwapEnabled());
+console.log("Swap enabled:", VFS.isSwapEnabled());
 
 // ── Flush to disk ───────────────────────────────────────────────────
 console.log("\n--- Flush to disk ---");
 
-vfs.flushMirror();
+VFS.flushMirror();
 console.log("Flushed to disk -- large files evicted from RAM");
 
 // ── Swap stats ──────────────────────────────────────────────────────
 console.log("\n--- Swap stats ---");
 
-const swapStats = vfs.getSwapStats();
-if (swapStats) {
+const SWAP_STATS = VFS.getSwapStats();
+if (SWAP_STATS) {
 	console.log({
-		filesSwapped: swapStats.filesSwapped,
-		swapOuts: swapStats.swapOuts,
-		swapIns: swapStats.swapIns,
-		diskUsage: `${swapStats.diskUsage} bytes`,
-		originalSize: `${swapStats.originalSize} bytes`,
+		filesSwapped: SWAP_STATS.filesSwapped,
+		swapOuts: SWAP_STATS.swapOuts,
+		swapIns: SWAP_STATS.swapIns,
+		diskUsage: `${SWAP_STATS.diskUsage} bytes`,
+		originalSize: `${SWAP_STATS.originalSize} bytes`,
 	});
 }
 
 // ── Read from swap ──────────────────────────────────────────────────
 console.log("\n--- Read from swap ---");
 
-const large = vfs.readFile("/large.txt");
-console.log(`Read /large.txt from swap: ${large.length} bytes`);
+const LARGE = VFS.readFile("/large.txt");
+console.log(`Read /large.txt from swap: ${LARGE.length} bytes`);
 
 // ── Manual swap out ─────────────────────────────────────────────────
 console.log("\n--- Manual swap out ---");
 
-vfs.swapOutFile("/medium.txt");
+VFS.swapOutFile("/medium.txt");
 console.log("Manually swapped out /medium.txt");
 
-const medium = vfs.readFile("/medium.txt");
-console.log(`Read /medium.txt from swap: ${medium.length} bytes`);
+const MEDIUM = VFS.readFile("/medium.txt");
+console.log(`Read /medium.txt from swap: ${MEDIUM.length} bytes`);
 
 // ── LRU swap out ────────────────────────────────────────────────────
 console.log("\n--- LRU swap out ---");
 
-const swapped = vfs.swapOutLru(5000);
-console.log(`Swapped out ${swapped} files to free 5KB`);
+const SWAPPED = VFS.swapOutLru(5000);
+console.log(`Swapped out ${SWAPPED} files to free 5KB`);
 
 // ── Cleanup ─────────────────────────────────────────────────────────
 console.log("\n--- Cleanup ---");
 
-vfs.clearSwap();
+VFS.clearSwap();
 console.log("Cleanup complete");

@@ -1,7 +1,7 @@
 import type { ShellModule } from "../types/commands";
 import { parseArgs } from "./command-helpers";
 
-const isBrowser =
+const IS_BROWSER =
 	typeof process === "undefined" ||
 	typeof (process as NodeJS.Process).versions?.node === "undefined";
 
@@ -50,7 +50,7 @@ export const pingCommand: ShellModule = {
 			: 4;
 
 		// Try real system ping first (Node.js only)
-		if (!isBrowser) {
+		if (!IS_BROWSER) {
 			const result = await execPing(count, host);
 			if (result) {
 				return { ...result, exitCode: "stdout" in result ? 0 : 1 };

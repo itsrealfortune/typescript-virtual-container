@@ -241,13 +241,13 @@ function isVirtualShellVfsLike(value: unknown): value is VirtualShellVfsLike {
 	);
 }
 
-const defaultShellProperties: ShellProperties = {
+const DEFAULT_SHELL_PROPERTIES: ShellProperties = {
 	kernel: "1.0.0+itsrealfortune+1-amd64",
 	os: "Fortune GNU/Linux x64",
 	arch: "x86_64",
 };
 
-const perf: PerfLogger = createPerfLogger("VirtualShell");
+const PERF: PerfLogger = createPerfLogger("VirtualShell");
 
 function resolveAutoSudoForNewUsers(): boolean {
 	const configured = process.env.SSH_MIMIC_AUTO_SUDO_NEW_USERS;
@@ -329,9 +329,9 @@ class VirtualShell extends EventEmitter {
 		resourceCaps?: VirtualShellResourceCaps
 	) {
 		super();
-		perf.mark("constructor");
+		PERF.mark("constructor");
 		this.hostname = hostname;
-		this.properties = properties || defaultShellProperties;
+		this.properties = properties || DEFAULT_SHELL_PROPERTIES;
 		this.startTime = Date.now();
 		this.sysctl = defaultSysctlState(hostname, this.properties.kernel);
 		this.resourceCaps = resourceCaps ?? {};
@@ -442,7 +442,7 @@ class VirtualShell extends EventEmitter {
 	 * Call this before any authentication or command execution.
 	 */
 	public ensureInitialized(): Promise<void> {
-		perf.mark("ensureInitialized");
+		PERF.mark("ensureInitialized");
 		return this._initialized;
 	}
 
@@ -485,7 +485,7 @@ class VirtualShell extends EventEmitter {
 		authUser: string,
 		cwd: string
 	): CommandResult | Promise<CommandResult> {
-		perf.mark("executeCommand");
+		PERF.mark("executeCommand");
 		this._idle?.ping();
 		const result = runCommand(
 			rawInput,
@@ -520,7 +520,7 @@ class VirtualShell extends EventEmitter {
 		remoteAddress: string,
 		terminalSize: { cols: number; rows: number }
 	): void {
-		perf.mark("startInteractiveSession");
+		PERF.mark("startInteractiveSession");
 		this._idle?.ping();
 		// Interactive shell logic
 		this.emit("session:start", { user: authUser, sessionId, remoteAddress });
@@ -674,7 +674,7 @@ class VirtualShell extends EventEmitter {
 		targetPath: string,
 		content: string | Buffer
 	): void {
-		perf.mark("writeFileAsUser");
+		PERF.mark("writeFileAsUser");
 		this.users.assertWriteWithinQuota(authUser, targetPath, content);
 		this.vfs.writeFile(targetPath, content);
 	}

@@ -1244,7 +1244,7 @@ export class DesktopManager {
 				return;
 			}
 			const w = this._windows.find((ww) => ww.id === winId);
-			if (!w || w.content.type !== "editor") {
+			if (w?.content.type !== "editor") {
 				return;
 			}
 			w.content.dirty = true;
@@ -1604,7 +1604,7 @@ export class DesktopManager {
 
 	private _renderTerminalContentById(winId: string): void {
 		const w = this._windows.find((ww) => ww.id === winId);
-		if (!w || w.content.type !== "terminal") {
+		if (w?.content.type !== "terminal") {
 			return;
 		}
 		const el = this._container.querySelector(
@@ -1655,7 +1655,7 @@ export class DesktopManager {
 
 	private _saveEditor(winId: string): void {
 		const w = this._windows.find((ww) => ww.id === winId);
-		if (!w || w.content.type !== "editor") {
+		if (w?.content.type !== "editor") {
 			return;
 		}
 		const el = this._container.querySelector(

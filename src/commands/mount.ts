@@ -9,18 +9,24 @@ import type {
 } from "../modules/VirtualFileSystem/internalTypes";
 
 function mountSquashfs(
-	vfs: { mkdir(p: string, mode?: number): void; writeFile(p: string, content: Buffer, opts?: { mode?: number }): void },
+	vfs: {
+		mkdir(p: string, mode?: number): void;
+		writeFile(p: string, content: Buffer, opts?: { mode?: number }): void;
+	},
 	target: string,
-	decoded: InternalDirectoryNode,
+	decoded: InternalDirectoryNode
 ): void {
 	vfs.mkdir(target, decoded.mode);
 	_mountTree(vfs, target, decoded);
 }
 
 function _mountTree(
-	vfs: { mkdir(p: string, mode?: number): void; writeFile(p: string, content: Buffer, opts?: { mode?: number }): void },
+	vfs: {
+		mkdir(p: string, mode?: number): void;
+		writeFile(p: string, content: Buffer, opts?: { mode?: number }): void;
+	},
 	base: string,
-	dir: InternalDirectoryNode,
+	dir: InternalDirectoryNode
 ): void {
 	for (const [name, child] of Object.entries(dir.children)) {
 		const childPath = path.posix.join(base, name);
@@ -28,10 +34,14 @@ function _mountTree(
 			vfs.mkdir(childPath, child.mode);
 			_mountTree(vfs, childPath, child);
 		} else if (child.type === "file" || child.type === "stub") {
-			const f = child as InternalNode & { content?: Buffer; stubContent?: string };
-			const content = f.type === "stub" && f.stubContent
-				? Buffer.from(f.stubContent, "utf8")
-				: (f as { content: Buffer }).content ?? Buffer.alloc(0);
+			const f = child as InternalNode & {
+				content?: Buffer;
+				stubContent?: string;
+			};
+			const content =
+				f.type === "stub" && f.stubContent
+					? Buffer.from(f.stubContent, "utf8")
+					: ((f as { content: Buffer }).content ?? Buffer.alloc(0));
 			vfs.writeFile(childPath, content, { mode: child.mode });
 		}
 	}

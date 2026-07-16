@@ -22,11 +22,11 @@ import type { SftpMimic } from "./sftp";
  * - Interactive shell sessions
  * - Non-interactive exec sessions
  */
-const perf: PerfLogger = createPerfLogger("SshMimic");
+const PERF: PerfLogger = createPerfLogger("SshMimic");
 
 // ── Dev-mode logger ───────────────────────────────────────────────────────────
 const DEV = Boolean(process.env.DEV_MODE);
-const devLog = DEV ? console.log.bind(console) : () => {};
+const DEV_LOG = DEV ? console.log.bind(console) : () => {};
 
 /** @internal */
 interface RateLimitEntry {
@@ -95,7 +95,7 @@ class SshMimic extends EventEmitter {
 		lockoutDurationMs?: number;
 	}) {
 		super();
-		perf.mark("constructor");
+		PERF.mark("constructor");
 		this.port = port;
 		this.server = null;
 		this._shell = shell;
@@ -161,7 +161,7 @@ class SshMimic extends EventEmitter {
 	 * @returns Promise resolved with bound listening port.
 	 */
 	public async start(): Promise<number> {
-		perf.mark("start");
+		PERF.mark("start");
 		const shell = this._shell;
 		const privateKey = loadOrCreateHostKey();
 
@@ -358,7 +358,7 @@ class SshMimic extends EventEmitter {
 				const actualPort =
 					typeof addr === "object" && addr ? addr.port : this.port;
 				this.port = actualPort;
-				devLog(`SSH Mimic listening on port ${actualPort}`);
+				DEV_LOG(`SSH Mimic listening on port ${actualPort}`);
 				this.emit("start", { port: actualPort });
 				resolve(actualPort);
 			});
@@ -369,12 +369,12 @@ class SshMimic extends EventEmitter {
 	 * Stops server if running.
 	 */
 	public stop(): void {
-		perf.mark("stop");
+		PERF.mark("stop");
 		// Flush pending WAL journal before closing
 		void this._shell.vfs.stopAutoFlush();
 		if (this.server) {
 			this.server.close(() => {
-				devLog("SSH Mimic stopped");
+				DEV_LOG("SSH Mimic stopped");
 				this.emit("stop");
 			});
 		}

@@ -9,7 +9,10 @@ import { csplitCommand, splitCommand } from "../src/commands/textutils";
 import VirtualFileSystem from "../src/modules/VirtualFileSystem";
 import type { CommandContext, CommandResult } from "../src/types/commands";
 
-function runCmd(cmd: { run: (ctx: CommandContext) => CommandResult | Promise<CommandResult> }, ctx: CommandContext): CommandResult {
+function runCmd(
+	cmd: { run: (ctx: CommandContext) => CommandResult | Promise<CommandResult> },
+	ctx: CommandContext
+): CommandResult {
 	return cmd.run(ctx) as CommandResult;
 }
 
@@ -107,7 +110,10 @@ describe("csplit", () => {
 
 describe("split", () => {
 	test("splits file by lines", () => {
-		const ctx = makeContext({ args: ["-l", "2", "/tmp/input", "part_"], cwd: "/" });
+		const ctx = makeContext({
+			args: ["-l", "2", "/tmp/input", "part_"],
+			cwd: "/",
+		});
 		ctx.shell.vfs.writeFile("/tmp/input", "a\nb\nc\nd\ne\n");
 		const result = runCmd(splitCommand, ctx);
 		expect(result.exitCode).toBe(0);
@@ -116,7 +122,10 @@ describe("split", () => {
 	});
 
 	test("-d flag uses numeric suffixes", () => {
-		const ctx = makeContext({ args: ["-d", "-l", "2", "/tmp/input", "num_"], cwd: "/" });
+		const ctx = makeContext({
+			args: ["-d", "-l", "2", "/tmp/input", "num_"],
+			cwd: "/",
+		});
 		ctx.shell.vfs.writeFile("/tmp/input", "a\nb\nc\nd\n");
 		runCmd(splitCommand, ctx);
 		expect(ctx.shell.vfs.exists("/num_00")).toBe(true);
@@ -232,7 +241,10 @@ describe("rm -I", () => {
 	});
 
 	test("removes without prompt for <= 3 files", () => {
-		const ctx = makeContext({ args: ["-I", "/tmp/a.txt", "/tmp/b.txt"], cwd: "/" });
+		const ctx = makeContext({
+			args: ["-I", "/tmp/a.txt", "/tmp/b.txt"],
+			cwd: "/",
+		});
 		ctx.shell.vfs.writeFile("/tmp/a.txt", "x");
 		ctx.shell.vfs.writeFile("/tmp/b.txt", "x");
 		const result = runCmd(rmCommand, ctx);

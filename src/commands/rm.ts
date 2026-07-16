@@ -25,12 +25,7 @@ export const rmCommand: ShellModule = {
 		const recursive = ifFlag(args, FLAG_RECURSIVE);
 		const force = ifFlag(args, FLAG_FORCE);
 		const interactiveOnce = ifFlag(args, ["-I"]);
-		const allFlags = [
-			...FLAG_RECURSIVE,
-			...FLAG_FORCE,
-			"--force",
-			"-I",
-		];
+		const allFlags = [...FLAG_RECURSIVE, ...FLAG_FORCE, "--force", "-I"];
 
 		const targets: string[] = [];
 		for (let index = 0; ; index += 1) {

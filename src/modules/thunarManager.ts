@@ -220,7 +220,7 @@ export class ThunarManager {
 				return;
 			}
 			const w = this._host.windows.find((ww) => ww.id === winId);
-			if (!w || w.content.type !== "thunar") {
+			if (w?.content.type !== "thunar") {
 				return;
 			}
 
@@ -432,7 +432,7 @@ export class ThunarManager {
 			return;
 		}
 		const w = this._host.windows.find((ww) => ww.id === winId);
-		if (!w || w.content.type !== "thunar") {
+		if (w?.content.type !== "thunar") {
 			return;
 		}
 		const wEl = this._container.querySelector(

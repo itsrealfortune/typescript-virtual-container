@@ -15,314 +15,314 @@ import {
 
 // ── Infrastructure — create virtual switch and two VMs ─────────────
 console.log("--- Infrastructure ---");
-const net = new VirtualSwitch("10.0.100.0/24");
+const NET = new VirtualSwitch("10.0.100.0/24");
 
-const web = new VirtualShell("web-01");
-await web.ensureInitialized();
-const webPort = net.attach(web, "10.0.100.10");
+const WEB = new VirtualShell("web-01");
+await WEB.ensureInitialized();
+const WEB_PORT = NET.attach(WEB, "10.0.100.10");
 
-const db = new VirtualShell("db-01");
-await db.ensureInitialized();
-const dbPort = net.attach(db, "10.0.100.20");
+const DB = new VirtualShell("db-01");
+await DB.ensureInitialized();
+const DB_PORT = NET.attach(DB, "10.0.100.20");
 
-console.log(`  web-01: ${webPort.ip} / ${webPort.mac}`);
-console.log(`  db-01:  ${dbPort.ip} / ${dbPort.mac}`);
+console.log(`  web-01: ${WEB_PORT.ip} / ${WEB_PORT.mac}`);
+console.log(`  db-01:  ${DB_PORT.ip} / ${DB_PORT.mac}`);
 
 // ── Per-VM network configuration ──────────────────────────────────
 console.log("\n--- Network config ---");
-web.network.addInterface({
+WEB.network.addInterface({
 	name: "eth0",
 	type: "ether",
-	mac: webPort.mac,
+	mac: WEB_PORT.mac,
 	mtu: 1500,
 	ipv4: "10.0.100.10",
 	ipv4Mask: 24,
 	ipv6: "::1",
 	speed: 1000,
 });
-web.network.setInterfaceState("eth0", "UP");
-web.network.addRoute("0.0.0.0/0", "10.0.100.1", "0.0.0.0", "eth0");
+WEB.network.setInterfaceState("eth0", "UP");
+WEB.network.addRoute("0.0.0.0/0", "10.0.100.1", "0.0.0.0", "eth0");
 
-db.network.addInterface({
+DB.network.addInterface({
 	name: "eth0",
 	type: "ether",
-	mac: dbPort.mac,
+	mac: DB_PORT.mac,
 	mtu: 1500,
 	ipv4: "10.0.100.20",
 	ipv4Mask: 24,
 	ipv6: "::1",
 	speed: 1000,
 });
-db.network.setInterfaceState("eth0", "UP");
+DB.network.setInterfaceState("eth0", "UP");
 
 // ── DNS service discovery (switch-level) ───────────────────────────
 console.log("\n--- DNS records ---");
-net.addDnsRecord("web-01", "10.0.100.10");
-net.addDnsRecord("db-01", "10.0.100.20");
+NET.addDnsRecord("web-01", "10.0.100.10");
+NET.addDnsRecord("db-01", "10.0.100.20");
 
-console.log(`  web-01 → ${net.resolveDns("web-01")}`);
-console.log(`  db-01  → ${net.resolveDns("db-01")}`);
+console.log(`  web-01 → ${NET.resolveDns("web-01")}`);
+console.log(`  db-01  → ${NET.resolveDns("db-01")}`);
 
-for (const r of net.listDnsRecords()) {
+for (const r of NET.listDnsRecords()) {
 	console.log(`  DNS: ${r.hostname} → ${r.ip}`);
 }
 
 // ── Firewall ──────────────────────────────────────────────────────
 console.log("\n--- Firewall rules ---");
-web.network.addFirewallRule({
+WEB.network.addFirewallRule({
 	chain: "INPUT",
 	protocol: "tcp",
 	destPort: 22,
 	action: "ACCEPT",
 });
-web.network.addFirewallRule({
+WEB.network.addFirewallRule({
 	chain: "INPUT",
 	protocol: "tcp",
 	destPort: 80,
 	action: "ACCEPT",
 });
-web.network.addFirewallRule({
+WEB.network.addFirewallRule({
 	chain: "INPUT",
 	protocol: "tcp",
 	destPort: 443,
 	action: "ACCEPT",
 });
-web.network.setPolicy("INPUT", "DROP");
+WEB.network.setPolicy("INPUT", "DROP");
 
-db.network.addFirewallRule({
+DB.network.addFirewallRule({
 	chain: "INPUT",
 	protocol: "tcp",
 	source: "10.0.100.10",
 	destPort: 3306,
 	action: "ACCEPT",
 });
-db.network.setPolicy("INPUT", "DROP");
+DB.network.setPolicy("INPUT", "DROP");
 
-const routeWebToDb = await net.route({
+const ROUTE_WEB_TO_DB = await NET.route({
 	srcIp: "10.0.100.10",
-	srcMac: webPort.mac,
+	srcMac: WEB_PORT.mac,
 	dstIp: "10.0.100.20",
 	protocol: "tcp",
 	dstPort: 3306,
 });
-const routeDbToWeb = await net.route({
+const ROUTE_DB_TO_WEB = await NET.route({
 	srcIp: "10.0.100.20",
-	srcMac: dbPort.mac,
+	srcMac: DB_PORT.mac,
 	dstIp: "10.0.100.10",
 	protocol: "tcp",
 	dstPort: 80,
 });
-console.log(`  web to db:3306 = ${routeWebToDb.action}`);
-console.log(`  db to web:80  = ${routeDbToWeb.action}`);
+console.log(`  web to db:3306 = ${ROUTE_WEB_TO_DB.action}`);
+console.log(`  db to web:80  = ${ROUTE_DB_TO_WEB.action}`);
 
 console.log(
-	`  web check MySQL = ${web.network.checkFirewall("INPUT", "tcp", "10.0.100.10", "10.0.100.20", 3306)}`
+	`  web check MySQL = ${WEB.network.checkFirewall("INPUT", "tcp", "10.0.100.10", "10.0.100.20", 3306)}`
 );
 console.log(
-	`  db check MySQL  = ${db.network.checkFirewall("INPUT", "tcp", "10.0.100.20", "10.0.100.20", 3306)}`
+	`  db check MySQL  = ${DB.network.checkFirewall("INPUT", "tcp", "10.0.100.20", "10.0.100.20", 3306)}`
 );
 
 // ── Users, groups, sudo, password policies ─────────────────────────
 console.log("\n--- Users and groups ---");
-web.users.addUser("admin", "s3cret!");
-web.users.addUser("developer", "dev-pass");
-web.users.addUser("deploy", "deploy-token");
+WEB.users.addUser("admin", "s3cret!");
+WEB.users.addUser("developer", "dev-pass");
+WEB.users.addUser("deploy", "deploy-token");
 
-web.users.createGroup("wheel", 1000);
-web.users.createGroup("developers", 2000);
-web.users.addGroupMember("wheel", "admin");
-web.users.addGroupMember("developers", "admin");
-web.users.addGroupMember("developers", "developer");
+WEB.users.createGroup("wheel", 1000);
+WEB.users.createGroup("developers", 2000);
+WEB.users.addGroupMember("wheel", "admin");
+WEB.users.addGroupMember("developers", "admin");
+WEB.users.addGroupMember("developers", "developer");
 
-const groups = web.users.getUserAllGroups("admin");
-console.log(`  admin groups: ${groups.join(", ")}`);
-console.log(`  admin sudoer: ${web.users.isSudoer("admin")}`);
-web.users.addSudoer("admin");
-console.log(`  admin sudoer after add: ${web.users.isSudoer("admin")}`);
+const GROUPS = WEB.users.getUserAllGroups("admin");
+console.log(`  admin groups: ${GROUPS.join(", ")}`);
+console.log(`  admin sudoer: ${WEB.users.isSudoer("admin")}`);
+WEB.users.addSudoer("admin");
+console.log(`  admin sudoer after add: ${WEB.users.isSudoer("admin")}`);
 
-web.users.setPasswordAging("developer", 1, 90, 7, 30);
-const aging = web.users.getPasswordAging("developer");
-if (aging) {
+WEB.users.setPasswordAging("developer", 1, 90, 7, 30);
+const AGING = WEB.users.getPasswordAging("developer");
+if (AGING) {
 	console.log(
-		`  developer password: minAge=${aging.minAge}d maxAge=${aging.maxAge}d warn=${aging.warnDays}d`
+		`  developer password: minAge=${AGING.minAge}d maxAge=${AGING.maxAge}d warn=${AGING.warnDays}d`
 	);
 }
-console.log(`  developer expired: ${web.users.isPasswordExpired("developer")}`);
+console.log(`  developer expired: ${WEB.users.isPasswordExpired("developer")}`);
 
 // ── SSH authorized keys ───────────────────────────────────────────
 console.log("\n--- Authorized keys ---");
-web.users.addAuthorizedKey(
+WEB.users.addAuthorizedKey(
 	"admin",
 	"ssh-ed25519",
 	Buffer.from("AAAAC3NzaC1lZDI1NTE5AAAAI...")
 );
 console.log(
-	`  admin authorized keys: ${web.users.getAuthorizedKeys("admin").length}`
+	`  admin authorized keys: ${WEB.users.getAuthorizedKeys("admin").length}`
 );
 
 // ── Sessions and login tracking ───────────────────────────────────
 console.log("\n--- Sessions ---");
-web.users.registerSession("admin", "10.0.0.1");
-web.users.registerSession("developer", "10.0.0.2");
-web.users.registerSession("deploy", "10.0.0.3");
-console.log(`  active sessions: ${web.users.listActiveSessions().length}`);
+WEB.users.registerSession("admin", "10.0.0.1");
+WEB.users.registerSession("developer", "10.0.0.2");
+WEB.users.registerSession("deploy", "10.0.0.3");
+console.log(`  active sessions: ${WEB.users.listActiveSessions().length}`);
 
-web.users.recordLoginFailure("developer", "10.0.99.99");
-web.users.recordLoginFailure("developer", "10.0.99.99");
-web.users.recordLoginFailure("developer", "10.0.99.99");
-console.log(`  developer failures: ${web.users.getLoginFailures("developer")}`);
+WEB.users.recordLoginFailure("developer", "10.0.99.99");
+WEB.users.recordLoginFailure("developer", "10.0.99.99");
+WEB.users.recordLoginFailure("developer", "10.0.99.99");
+console.log(`  developer failures: ${WEB.users.getLoginFailures("developer")}`);
 console.log(
-	`  developer locked: ${web.users.isAccountLockedByFailures("developer")}`
+	`  developer locked: ${WEB.users.isAccountLockedByFailures("developer")}`
 );
-web.users.resetLoginFailures("developer");
+WEB.users.resetLoginFailures("developer");
 
 // ── Account locking and expiry ─────────────────────────────────────
 console.log("\n--- Account locking ---");
-console.log(`  deploy locked: ${web.users.isAccountLocked("deploy")}`);
-web.users.lockAccount("deploy");
+console.log(`  deploy locked: ${WEB.users.isAccountLocked("deploy")}`);
+WEB.users.lockAccount("deploy");
 console.log(
-	`  deploy locked after lock: ${web.users.isAccountLocked("deploy")}`
+	`  deploy locked after lock: ${WEB.users.isAccountLocked("deploy")}`
 );
-web.users.unlockAccount("deploy");
+WEB.users.unlockAccount("deploy");
 
-web.users.setAccountExpiry(
+WEB.users.setAccountExpiry(
 	"developer",
 	Math.floor(Date.now() / 1000) + 30 * 86400
 );
 console.log(
-	`  developer password expired: ${web.users.isPasswordExpired("developer")}`
+	`  developer password expired: ${WEB.users.isPasswordExpired("developer")}`
 );
 
 // ── Quotas ────────────────────────────────────────────────────────
 console.log("\n--- Quotas ---");
-web.users.setQuotaBytes("developer", 50 * 1024 * 1024);
-console.log(`  developer quota: ${web.users.getQuotaBytes("developer")} bytes`);
-console.log(`  developer usage: ${web.users.getUsageBytes("developer")} bytes`);
+WEB.users.setQuotaBytes("developer", 50 * 1024 * 1024);
+console.log(`  developer quota: ${WEB.users.getQuotaBytes("developer")} bytes`);
+console.log(`  developer usage: ${WEB.users.getUsageBytes("developer")} bytes`);
 
 // ── Package management ─────────────────────────────────────────────
 console.log("\n--- Package management ---");
-web.packageManager.load();
+WEB.packageManager.load();
 console.log(
 	`  available packages: ${VirtualPackageManager.listAvailable().length}`
 );
 
-const nginxPkg = VirtualPackageManager.findInRegistry("nginx");
-if (nginxPkg) {
-	console.log(`  nginx: ${nginxPkg.version} — ${nginxPkg.description}`);
+const NGINX_PKG = VirtualPackageManager.findInRegistry("nginx");
+if (NGINX_PKG) {
+	console.log(`  nginx: ${NGINX_PKG.version} — ${NGINX_PKG.description}`);
 }
 
-const nodePkg = VirtualPackageManager.findInRegistry("node");
-if (nodePkg) {
-	console.log(`  node:  ${nodePkg.version} — ${nodePkg.description}`);
+const NODE_PKG = VirtualPackageManager.findInRegistry("node");
+if (NODE_PKG) {
+	console.log(`  node:  ${NODE_PKG.version} — ${NODE_PKG.description}`);
 }
 
 // ── VFS: files, directories, mounts ───────────────────────────────
 console.log("\n--- VFS operations ---");
-web.vfs.mkdir("/etc/nginx", 0o755);
-web.vfs.mkdir("/var/www", 0o755);
-web.vfs.mkdir("/var/log", 0o755);
+WEB.vfs.mkdir("/etc/nginx", 0o755);
+WEB.vfs.mkdir("/var/www", 0o755);
+WEB.vfs.mkdir("/var/log", 0o755);
 
-web.vfs.writeFile(
+WEB.vfs.writeFile(
 	"/etc/nginx/nginx.conf",
 	"worker_processes auto;\nevents {}\nhttp {\n    include /etc/nginx/sites-enabled/*;\n}\n"
 );
-web.vfs.writeFile("/var/www/index.html", "<h1>Hello from web-01</h1>");
-web.vfs.writeFile("/var/log/access.log", "");
+WEB.vfs.writeFile("/var/www/index.html", "<h1>Hello from web-01</h1>");
+WEB.vfs.writeFile("/var/log/access.log", "");
 
-const conf = web.vfs.readFile("/etc/nginx/nginx.conf");
-console.log(`  nginx.conf: ${conf.split("\n").length} lines`);
+const CONF = WEB.vfs.readFile("/etc/nginx/nginx.conf");
+console.log(`  nginx.conf: ${CONF.split("\n").length} lines`);
 
-const wwwStat = web.vfs.stat("/var/www/index.html");
+const WWW_STAT = WEB.vfs.stat("/var/www/index.html");
 console.log(
-	`  index.html: type=${wwwStat.type}, size=${wwwStat.type === "file" ? wwwStat.size : "N/A"}`
+	`  index.html: type=${WWW_STAT.type}, size=${WWW_STAT.type === "file" ? WWW_STAT.size : "N/A"}`
 );
 
 // ── Content resolvers and VFS hooks ───────────────────────────────
 console.log("\n--- VFS resolvers and hooks ---");
-web.vfs.registerContentResolver("/var/www", (path) => {
+WEB.vfs.registerContentResolver("/var/www", (path) => {
 	if (path === "/var/www/status.json") {
 		return JSON.stringify({
 			status: "ok",
 			hostname: "web-01",
-			uptimeMs: Date.now() - web.startTime,
+			uptimeMs: Date.now() - WEB.startTime,
 		});
 	}
 	return null;
 });
 
-console.log(`  status.json: ${web.vfs.readFile("/var/www/status.json")}`);
+console.log(`  status.json: ${WEB.vfs.readFile("/var/www/status.json")}`);
 
-web.vfs.onBeforeWrite("/etc", () => {
+WEB.vfs.onBeforeWrite("/etc", () => {
 	console.log("  (audit: /etc write detected)");
 });
-web.vfs.writeFile("/etc/test-hook", "should trigger hook");
+WEB.vfs.writeFile("/etc/test-hook", "should trigger hook");
 
-web.vfs.offBeforeRead("/etc");
-web.vfs.offBeforeWrite("/etc");
+WEB.vfs.offBeforeRead("/etc");
+WEB.vfs.offBeforeWrite("/etc");
 
 // ── Process scheduling and monitoring ──────────────────────────────
 console.log("\n--- Process scheduler ---");
-web.users.enableScheduler();
+WEB.users.enableScheduler();
 
-const pid1 = web.users.registerProcess(
+const PID1 = WEB.users.registerProcess(
 	"admin",
 	"nginx",
 	["-g", "daemon off;"],
 	"/dev/pts/0"
 );
-const pid2 = web.users.registerProcess(
+const PID2 = WEB.users.registerProcess(
 	"developer",
 	"node",
 	["app.js"],
 	"/dev/pts/1"
 );
-const pid3 = web.users.registerProcess(
+const PID3 = WEB.users.registerProcess(
 	"developer",
 	"tail",
 	["-f", "/var/log/access.log"],
 	"/dev/pts/1"
 );
 
-console.log(`  processes: ${web.users.listProcesses().length}`);
+console.log(`  processes: ${WEB.users.listProcesses().length}`);
 
-const proc2 = web.users.getProcess(pid2);
-if (proc2) {
-	console.log(`  pid ${pid2}: ${proc2.command} (${proc2.username})`);
+const PROC2 = WEB.users.getProcess(PID2);
+if (PROC2) {
+	console.log(`  pid ${PID2}: ${PROC2.command} (${PROC2.username})`);
 }
 
-web.users.killProcess(pid3, 9);
-web.users.unregisterProcess(pid1);
-web.users.unregisterProcess(pid2);
+WEB.users.killProcess(PID3, 9);
+WEB.users.unregisterProcess(PID1);
+WEB.users.unregisterProcess(PID2);
 
-const stats = web.users.getSchedulerStats();
-if (stats) {
+const STATS = WEB.users.getSchedulerStats();
+if (STATS) {
 	console.log(
-		`  scheduler: ${stats.runQueueLength} queued, ${stats.scheduleCount} context switches`
+		`  scheduler: ${STATS.runQueueLength} queued, ${STATS.scheduleCount} context switches`
 	);
 }
 
 // ── Traffic shaping ───────────────────────────────────────────────
 console.log("\n--- Traffic shaping ---");
-net.setTrafficRule(webPort.mac, {
-	vms: [webPort.mac],
+NET.setTrafficRule(WEB_PORT.mac, {
+	vms: [WEB_PORT.mac],
 	maxBandwidthMbps: 100,
 	latencyMs: 5,
 	jitterMs: 2,
 });
 
-net.addQdiscRule(webPort.mac, {
+NET.addQdiscRule(WEB_PORT.mac, {
 	interface: "eth0",
 	type: "netem",
 	latencyMs: 50,
 	packetLossPct: 1,
 });
 
-console.log(`  traffic rule set for ${webPort.mac}`);
-console.log(`  qdisc rules: ${net.getQdiscRules(webPort.mac).length}`);
+console.log(`  traffic rule set for ${WEB_PORT.mac}`);
+console.log(`  qdisc rules: ${NET.getQdiscRules(WEB_PORT.mac).length}`);
 
 // ── Load balancing ────────────────────────────────────────────────
 console.log("\n--- Load balancing ---");
-net.addLoadBalancer({
+NET.addLoadBalancer({
 	name: "web-lb",
 	port: 80,
 	algorithm: "round-robin",
@@ -330,80 +330,80 @@ net.addLoadBalancer({
 });
 
 for (let i = 0; i < 3; i++) {
-	const target = net.resolveLoadBalancer(80);
-	if (target) {
+	const TARGET = NET.resolveLoadBalancer(80);
+	if (TARGET) {
 		console.log(
-			`  request ${i + 1} to ${target.hostname} (${target.ip}:${target.port})`
+			`  request ${i + 1} to ${TARGET.hostname} (${TARGET.ip}:${TARGET.port})`
 		);
 	}
 }
 
 // ── Network partitions ────────────────────────────────────────────
 console.log("\n--- Network partitions ---");
-net.setPartitions([[webPort.mac], [dbPort.mac]]);
+NET.setPartitions([[WEB_PORT.mac], [DB_PORT.mac]]);
 console.log("  partitions: web and db isolated");
-net.clearPartitions();
+NET.clearPartitions();
 console.log("  partitions cleared");
 
 // ── Port forwarding ───────────────────────────────────────────────
 console.log("\n--- Port forwarding ---");
-const proxy = new VirtualProxy({
-	getVM: (name: string) => (name === "web-01" ? web : undefined),
-	switch: net,
-	listVMs: () => [{ hostname: "web-01", ip: "10.0.100.10", shell: web }],
+const PROXY = new VirtualProxy({
+	getVM: (name: string) => (name === "web-01" ? WEB : undefined),
+	switch: NET,
+	listVMs: () => [{ hostname: "web-01", ip: "10.0.100.10", shell: WEB }],
 });
 
-proxy.exposePort("web-01", 80, 35801);
-proxy.exposePort("web-01", 22, 35802);
+PROXY.exposePort("web-01", 80, 35801);
+PROXY.exposePort("web-01", 22, 35802);
 
 await new Promise((r) => setTimeout(r, 100));
-console.log(`  forwards: ${proxy.listPorts().length}`);
+console.log(`  forwards: ${PROXY.listPorts().length}`);
 
-for (const f of proxy.listPorts()) {
+for (const f of PROXY.listPorts()) {
 	console.log(`  ${f.vmName}:${f.vmPort} ↔ host:${f.hostPort}`);
 }
 
-proxy.stop();
+PROXY.stop();
 console.log("  forwards stopped");
 
 // ── Idle management and GC ────────────────────────────────────────
 console.log("\n--- Idle management ---");
-web.enableIdleManagement({ gcIntervalMs: 60000 });
-console.log(`  idle state: ${web.idleState}`);
-console.log(`  idle ms: ${web.idleMs}`);
+WEB.enableIdleManagement({ gcIntervalMs: 60000 });
+console.log(`  idle state: ${WEB.idleState}`);
+console.log(`  idle ms: ${WEB.idleMs}`);
 
-web.pingIdle();
-const gc = web.runGc();
-if (gc) {
+WEB.pingIdle();
+const GC = WEB.runGc();
+if (GC) {
 	console.log(
-		`  GC: ${gc.terminatedProcesses} terminated, ${gc.evictedFiles} evicted, forced=${gc.forcedGc}`
+		`  GC: ${GC.terminatedProcesses} terminated, ${GC.evictedFiles} evicted, forced=${GC.forcedGc}`
 	);
 }
 
-web.disableIdleManagement();
+WEB.disableIdleManagement();
 console.log("  idle manager stopped");
 
 // ── System files generation ───────────────────────────────────────
 console.log("\n--- System files ---");
 console.log(
-	`  shadow entries: ${web.users.generateShadowFile().split("\n").length}`
+	`  shadow entries: ${WEB.users.generateShadowFile().split("\n").length}`
 );
 console.log(
-	`  group entries:  ${web.users.generateGroupFile().split("\n").length}`
+	`  group entries:  ${WEB.users.generateGroupFile().split("\n").length}`
 );
 
 // ── Traffic statistics ────────────────────────────────────────────
 console.log("\n--- Traffic statistics ---");
 console.log(
-	`  ${webPort.mac} sent:     ${net.getBytesSent(webPort.mac)} bytes`
+	`  ${WEB_PORT.mac} sent:     ${NET.getBytesSent(WEB_PORT.mac)} bytes`
 );
-console.log(`  ${dbPort.mac} sent:     ${net.getBytesSent(dbPort.mac)} bytes`);
+console.log(`  ${DB_PORT.mac} sent:     ${NET.getBytesSent(DB_PORT.mac)} bytes`);
 console.log(
-	`  ${webPort.mac} received: ${net.getBytesReceived(webPort.mac)} bytes`
+	`  ${WEB_PORT.mac} received: ${NET.getBytesReceived(WEB_PORT.mac)} bytes`
 );
 
 // ── Cleanup ───────────────────────────────────────────────────────
 console.log("\n--- Cleanup ---");
-net.detach(webPort.mac);
-net.detach(dbPort.mac);
-console.log(`  ports remaining: ${net.getPorts().size}`);
+NET.detach(WEB_PORT.mac);
+NET.detach(DB_PORT.mac);
+console.log(`  ports remaining: ${NET.getPorts().size}`);

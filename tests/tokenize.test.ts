@@ -6,35 +6,70 @@ import { tokenizeCommand } from "../src/utils/tokenize";
 
 describe("tokenizeCommand", () => {
 	test("simple command", () => {
-		expect(tokenizeCommand("echo hello world")).toEqual(["echo", "hello", "world"]);
+		expect(tokenizeCommand("echo hello world")).toEqual([
+			"echo",
+			"hello",
+			"world",
+		]);
 	});
 
 	test("single quotes preserve spaces", () => {
-		expect(tokenizeCommand("echo 'hello world'")).toEqual(["echo", "hello world"]);
+		expect(tokenizeCommand("echo 'hello world'")).toEqual([
+			"echo",
+			"hello world",
+		]);
 	});
 
 	test("double quotes preserve spaces", () => {
-		expect(tokenizeCommand('echo "hello world"')).toEqual(["echo", "hello world"]);
+		expect(tokenizeCommand('echo "hello world"')).toEqual([
+			"echo",
+			"hello world",
+		]);
 	});
 
 	test("backslash before space is literal backslash", () => {
-		expect(tokenizeCommand("echo hello\\ world")).toEqual(["echo", "hello\\", "world"]);
+		expect(tokenizeCommand("echo hello\\ world")).toEqual([
+			"echo",
+			"hello\\",
+			"world",
+		]);
 	});
 
 	test("pipes", () => {
-		expect(tokenizeCommand("cat file | grep foo")).toEqual(["cat", "file", "|", "grep", "foo"]);
+		expect(tokenizeCommand("cat file | grep foo")).toEqual([
+			"cat",
+			"file",
+			"|",
+			"grep",
+			"foo",
+		]);
 	});
 
 	test("pipe with stderr", () => {
-		expect(tokenizeCommand("cmd |& grep foo")).toEqual(["cmd", "|&", "grep", "foo"]);
+		expect(tokenizeCommand("cmd |& grep foo")).toEqual([
+			"cmd",
+			"|&",
+			"grep",
+			"foo",
+		]);
 	});
 
 	test("stdout redirect", () => {
-		expect(tokenizeCommand("echo foo > out")).toEqual(["echo", "foo", ">", "out"]);
+		expect(tokenizeCommand("echo foo > out")).toEqual([
+			"echo",
+			"foo",
+			">",
+			"out",
+		]);
 	});
 
 	test("append redirect", () => {
-		expect(tokenizeCommand("echo foo >> out")).toEqual(["echo", "foo", ">>", "out"]);
+		expect(tokenizeCommand("echo foo >> out")).toEqual([
+			"echo",
+			"foo",
+			">>",
+			"out",
+		]);
 	});
 
 	test("stderr redirect", () => {
@@ -103,7 +138,13 @@ describe("tokenizeCommand", () => {
 
 	test("multiple redirects", () => {
 		expect(tokenizeCommand("cmd < in > out 2> err")).toEqual([
-			"cmd", "<", "in", ">", "out", "2>", "err",
+			"cmd",
+			"<",
+			"in",
+			">",
+			"out",
+			"2>",
+			"err",
 		]);
 	});
 
@@ -112,7 +153,12 @@ describe("tokenizeCommand", () => {
 	});
 
 	test("mixed quotes and redirects", () => {
-		expect(tokenizeCommand('echo "hello" > out')).toEqual(["echo", "hello", ">", "out"]);
+		expect(tokenizeCommand('echo "hello" > out')).toEqual([
+			"echo",
+			"hello",
+			">",
+			"out",
+		]);
 	});
 
 	test("variable in double quotes preserved", () => {

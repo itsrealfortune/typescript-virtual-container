@@ -7,63 +7,63 @@
 
 import { SshClient, VirtualShell, VirtualSshServer } from "../src";
 
-const shell = new VirtualShell("typescript-vm");
-await shell.ensureInitialized();
-shell.users.setPassword("root", "root");
+const SHELL = new VirtualShell("typescript-vm");
+await SHELL.ensureInitialized();
+SHELL.users.setPassword("root", "root");
 
 // ── Create users ──────────────────────────────────────────────────
 console.log("--- Create users ---");
-shell.users.addUser("alice", "alice123");
-shell.users.addUser("bob", "bob456");
+SHELL.users.addUser("alice", "alice123");
+SHELL.users.addUser("bob", "bob456");
 console.log("Created users: alice, bob");
 
 // ── Remove sudo from bob ──────────────────────────────────────────
 console.log("--- Remove sudo from bob ---");
-shell.users.removeSudoer("bob");
+SHELL.users.removeSudoer("bob");
 console.log("Removed sudo from bob");
 
 // ── Set disk quota for bob ────────────────────────────────────────
 console.log("--- Set disk quota for bob ---");
-shell.users.setQuotaBytes("bob", 5 * 1024 * 1024);
-console.log(`Bob's quota: ${shell.users.getQuotaBytes("bob")} bytes`);
+SHELL.users.setQuotaBytes("bob", 5 * 1024 * 1024);
+console.log(`Bob's quota: ${SHELL.users.getQuotaBytes("bob")} bytes`);
 
 // ── Start SSH server ──────────────────────────────────────────────
-const ssh = new VirtualSshServer({ port: 0, shell });
-const port = await ssh.start();
+const SSH = new VirtualSshServer({ port: 0, shell: SHELL });
+const PORT = await SSH.start();
 
 // ── Alice writes private file ─────────────────────────────────────
 console.log("--- Alice writes private file ---");
-const alice = new SshClient();
-await alice.connect({
+const ALICE = new SshClient();
+await ALICE.connect({
 	host: "localhost",
-	port,
+	port: PORT,
 	username: "alice",
 	password: "alice123",
 });
-await alice.exec(
+await ALICE.exec(
 	"echo 'secret=yes' > /home/alice/private.conf && chmod 600 /home/alice/private.conf"
 );
 console.log("Alice wrote /home/alice/private.conf (mode 600)");
 
 // ── Bob tries to read Alice's file ────────────────────────────────
 console.log("--- Bob tries to read Alice's file ---");
-const bob = new SshClient();
-await bob.connect({
+const BOB = new SshClient();
+await BOB.connect({
 	host: "localhost",
-	port,
+	port: PORT,
 	username: "bob",
 	password: "bob456",
 });
-const r = await bob.cat("/home/alice/private.conf");
+const r = await BOB.cat("/home/alice/private.conf");
 console.log(
 	`Bob's cat result: exit ${r.exitCode}${r.stderr ? ` — "${r.stderr.trim()}"` : ""}`
 );
 
 // ── Alice can read her own file ───────────────────────────────────
 console.log("--- Alice can read her own file ---");
-const r2 = await alice.cat("/home/alice/private.conf");
-console.log(`Alice's cat result: exit ${r2.exitCode} — "${r2.stdout!.trim()}"`);
+const R2 = await ALICE.cat("/home/alice/private.conf");
+console.log(`Alice's cat result: exit ${R2.exitCode} — "${R2.stdout!.trim()}"`);
 
-alice.disconnect();
-bob.disconnect();
-ssh.stop();
+ALICE.disconnect();
+BOB.disconnect();
+SSH.stop();

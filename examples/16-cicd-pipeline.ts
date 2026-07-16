@@ -14,26 +14,26 @@ function lastLine(s: string | undefined): string {
 // ── Pipeline start ────────────────────────────────────────────────
 console.log("--- Pipeline start ---");
 
-const baie = new Baie("ci-pipeline", "10.100.0.0/24");
+const BAIE = new Baie("ci-pipeline", "10.100.0.0/24");
 
-const lintVM = await baie.createVM("lint");
-const testVM = await baie.createVM("test");
-const buildVM = await baie.createVM("build");
-const deployVM = await baie.createVM("deploy");
+const LINT_VM = await BAIE.createVM("lint");
+const TEST_VM = await BAIE.createVM("test");
+const BUILD_VM = await BAIE.createVM("build");
+const DEPLOY_VM = await BAIE.createVM("deploy");
 
-const sshLint = new VirtualSshServer({ port: 0, shell: lintVM });
-const sshTest = new VirtualSshServer({ port: 0, shell: testVM });
-const sshBuild = new VirtualSshServer({ port: 0, shell: buildVM });
-const sshDeploy = new VirtualSshServer({ port: 0, shell: deployVM });
+const SSH_LINT = new VirtualSshServer({ port: 0, shell: LINT_VM });
+const SSH_TEST = new VirtualSshServer({ port: 0, shell: TEST_VM });
+const SSH_BUILD = new VirtualSshServer({ port: 0, shell: BUILD_VM });
+const SSH_DEPLOY = new VirtualSshServer({ port: 0, shell: DEPLOY_VM });
 
-const [portLint, portTest, portBuild, portDeploy] = await Promise.all([
-	sshLint.start(),
-	sshTest.start(),
-	sshBuild.start(),
-	sshDeploy.start(),
+const [PORT_LINT, PORT_TEST, PORT_BUILD, PORT_DEPLOY] = await Promise.all([
+	SSH_LINT.start(),
+	SSH_TEST.start(),
+	SSH_BUILD.start(),
+	SSH_DEPLOY.start(),
 ]);
 
-const clients = {
+const CLIENTS = {
 	lint: new SshClient(),
 	test: new SshClient(),
 	build: new SshClient(),
@@ -41,78 +41,78 @@ const clients = {
 };
 
 await Promise.all([
-	clients.lint.connect({
+	CLIENTS.lint.connect({
 		host: "localhost",
-		port: portLint,
+		port: PORT_LINT,
 		username: "root",
 		password: "root",
 	}),
-	clients.test.connect({
+	CLIENTS.test.connect({
 		host: "localhost",
-		port: portTest,
+		port: PORT_TEST,
 		username: "root",
 		password: "root",
 	}),
-	clients.build.connect({
+	CLIENTS.build.connect({
 		host: "localhost",
-		port: portBuild,
+		port: PORT_BUILD,
 		username: "root",
 		password: "root",
 	}),
-	clients.deploy.connect({
+	CLIENTS.deploy.connect({
 		host: "localhost",
-		port: portDeploy,
+		port: PORT_DEPLOY,
 		username: "root",
 		password: "root",
 	}),
 ]);
 
-for (const [name, vm] of Object.entries({
-	lint: lintVM,
-	test: testVM,
-	build: buildVM,
-	deploy: deployVM,
+for (const [NAME, VM] of Object.entries({
+	lint: LINT_VM,
+	test: TEST_VM,
+	build: BUILD_VM,
+	deploy: DEPLOY_VM,
 })) {
-	vm.vfs.setRamCap(50 * 1024 * 1024);
-	vm.users.setCpuCapCores(1);
-	vm.users.setPassword("root", "root");
-	vm.users.enableScheduler({ baseTimesliceMs: 50 });
-	console.log(`  ${name} VM: 50MB RAM, 1 vCPU, scheduler enabled`);
+	VM.vfs.setRamCap(50 * 1024 * 1024);
+	VM.users.setCpuCapCores(1);
+	VM.users.setPassword("root", "root");
+	VM.users.enableScheduler({ baseTimesliceMs: 50 });
+	console.log(`  ${NAME} VM: 50MB RAM, 1 vCPU, scheduler enabled`);
 }
 
 // ── Stage 1: Lint ─────────────────────────────────────────────────
 console.log("\n--- Stage 1: Lint ---");
-const lintResult = await clients.lint.exec(
+const LINT_RESULT = await CLIENTS.lint.exec(
 	"echo 'Running ESLint...' && echo 'No errors found' && echo 'lint-passed' > /tmp/lint-status && echo 'lint-passed'"
 );
-console.log("  Lint exit code:", lintResult.exitCode);
+console.log("  Lint exit code:", LINT_RESULT.exitCode);
 
 // ── Stage 2: Test ─────────────────────────────────────────────────
 console.log("\n--- Stage 2: Test ---");
-const testResult = await clients.test.exec(
+const TEST_RESULT = await CLIENTS.test.exec(
 	"echo 'Running test suite...' && " +
 		"mkdir -p /tmp/test-results && " +
 		"echo '42 tests, 0 failures' > /tmp/test-results/summary.txt && " +
 		"echo 'tests-passed' > /tmp/test-status && echo 'tests-passed'"
 );
-console.log("  Test exit code:", testResult.exitCode);
+console.log("  Test exit code:", TEST_RESULT.exitCode);
 
 // ── Stage 3: Build ────────────────────────────────────────────────
 console.log("\n--- Stage 3: Build ---");
-const buildResult = await clients.build.exec(
+const BUILD_RESULT = await CLIENTS.build.exec(
 	"echo 'Compiling TypeScript...' && " +
 		"mkdir -p /tmp/build-output && " +
 		'echo \'{"name":"app","version":"1.0.0"}\' > /tmp/build-output/package.json && ' +
 		"dd if=/dev/zero of=/tmp/build-output/app.bin bs=1024 count=100 2>/dev/null && " +
 		"echo 'build-passed' > /tmp/build-status && echo 'build-passed'"
 );
-console.log("  Build exit code:", buildResult.exitCode);
+console.log("  Build exit code:", BUILD_RESULT.exitCode);
 
 // ── Stage 4: Deploy ───────────────────────────────────────────────
 console.log("\n--- Stage 4: Deploy ---");
 
-const deployFs = deployVM.vfs;
-deployFs.writeFile(
+const DEPLOY_FS = DEPLOY_VM.vfs;
+DEPLOY_FS.writeFile(
 	"/etc/deploy-config.json",
 	JSON.stringify({
 		environment: "production",
@@ -121,60 +121,60 @@ deployFs.writeFile(
 	})
 );
 
-const deployResult = await clients.deploy.exec(
+const DEPLOY_RESULT = await CLIENTS.deploy.exec(
 	"echo 'Deploying to production...' && " +
 		"cat /etc/deploy-config.json && " +
 		"echo 'Deployment complete' && " +
 		"echo 'deploy-passed' > /tmp/deploy-status && echo 'deploy-passed'"
 );
-console.log("  Deploy exit code:", deployResult.exitCode);
+console.log("  Deploy exit code:", DEPLOY_RESULT.exitCode);
 
 // ── Pipeline summary ──────────────────────────────────────────────
 console.log(`\n${"=".repeat(50)}`);
 console.log("Pipeline Summary");
 console.log("=".repeat(50));
 
-const stages = [
-	{ name: "Lint", result: lintResult },
-	{ name: "Tests", result: testResult },
-	{ name: "Build", result: buildResult },
-	{ name: "Deploy", result: deployResult },
+const STAGES = [
+	{ name: "Lint", result: LINT_RESULT },
+	{ name: "Tests", result: TEST_RESULT },
+	{ name: "Build", result: BUILD_RESULT },
+	{ name: "Deploy", result: DEPLOY_RESULT },
 ];
 
-const allPassed = stages.every(
+const ALL_PASSED = STAGES.every(
 	(s) => lastLine(s.result.stdout) === `${s.name.toLowerCase()}-passed`
 );
 
-for (const stage of stages) {
-	const passed =
-		lastLine(stage.result.stdout) === `${stage.name.toLowerCase()}-passed`;
+for (const STAGE of STAGES) {
+	const PASSED =
+		lastLine(STAGE.result.stdout) === `${STAGE.name.toLowerCase()}-passed`;
 	console.log(
-		`  ${passed ? "PASS" : "FAIL"} ${stage.name}: ${lastLine(stage.result.stdout)}`
+		`  ${PASSED ? "PASS" : "FAIL"} ${STAGE.name}: ${lastLine(STAGE.result.stdout)}`
 	);
 }
 
-console.log(`\n${allPassed ? "Pipeline PASSED" : "Pipeline FAILED"}`);
+console.log(`\n${ALL_PASSED ? "Pipeline PASSED" : "Pipeline FAILED"}`);
 
-for (const [name, vm] of Object.entries({
-	lint: lintVM,
-	test: testVM,
-	build: buildVM,
-	deploy: deployVM,
+for (const [NAME, VM] of Object.entries({
+	lint: LINT_VM,
+	test: TEST_VM,
+	build: BUILD_VM,
+	deploy: DEPLOY_VM,
 })) {
-	const procs = vm.users.listProcesses();
-	const schedulerStats = vm.users.getSchedulerStats();
+	const PROCS = VM.users.listProcesses();
+	const SCHEDULER_STATS = VM.users.getSchedulerStats();
 	console.log(
-		`  ${name}: ${procs.length} processes, scheduler: ${schedulerStats ? `${schedulerStats.scheduleCount} schedules` : "disabled"}`
+		`  ${NAME}: ${PROCS.length} processes, scheduler: ${SCHEDULER_STATS ? `${SCHEDULER_STATS.scheduleCount} schedules` : "disabled"}`
 	);
 }
 
 console.log("\n--- Pipeline complete ---");
 
-clients.lint.disconnect();
-clients.test.disconnect();
-clients.build.disconnect();
-clients.deploy.disconnect();
-sshLint.stop();
-sshTest.stop();
-sshBuild.stop();
-sshDeploy.stop();
+CLIENTS.lint.disconnect();
+CLIENTS.test.disconnect();
+CLIENTS.build.disconnect();
+CLIENTS.deploy.disconnect();
+SSH_LINT.stop();
+SSH_TEST.stop();
+SSH_BUILD.stop();
+SSH_DEPLOY.stop();

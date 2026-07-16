@@ -6,11 +6,11 @@ if (!parentPort) {
 	throw new Error("SandboxedShell worker must run as a Worker thread");
 }
 
-const port = parentPort;
+const PORT = parentPort;
 let shell: VirtualShell | null = null;
 
 function send(msg: WorkerMessage): void {
-	port.postMessage(msg);
+	PORT.postMessage(msg);
 }
 
 async function handleExec(msg: HostMessage & { type: "exec" }): Promise<void> {
@@ -59,7 +59,7 @@ async function handleInit(): Promise<void> {
 	}
 }
 
-port.on("message", (msg: HostMessage) => {
+PORT.on("message", (msg: HostMessage) => {
 	switch (msg.type) {
 		case "init":
 			void handleInit();
@@ -68,7 +68,7 @@ port.on("message", (msg: HostMessage) => {
 			void handleExec(msg);
 			break;
 		case "terminate":
-			port.close();
+			PORT.close();
 			break;
 		default:
 			break;

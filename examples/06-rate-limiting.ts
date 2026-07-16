@@ -8,53 +8,53 @@
 
 import { VirtualShell, VirtualSshServer } from "../src";
 
-const shell = new VirtualShell("rate-limited-vm");
-await shell.ensureInitialized();
+const SHELL = new VirtualShell("rate-limited-vm");
+await SHELL.ensureInitialized();
 
-const ssh = new VirtualSshServer({
+const SSH = new VirtualSshServer({
 	port: 0,
-	shell,
+	shell: SHELL,
 	maxAuthAttempts: 3,
 	lockoutDurationMs: 5_000,
 });
 
 // ── Event listeners ───────────────────────────────────────────────
 console.log("--- Event listeners ---");
-ssh.on("auth:failure", ({ username, remoteAddress }) => {
+SSH.on("auth:failure", ({ username, remoteAddress }) => {
 	console.log(`  [AUTH FAIL] ${username}@${remoteAddress}`);
 });
 
-ssh.on("auth:lockout", ({ ip, until }) => {
+SSH.on("auth:lockout", ({ ip, until }) => {
 	console.warn(`  [LOCKOUT] ${ip} locked until ${until.toLocaleTimeString()}`);
 });
 
 // ── Start server ──────────────────────────────────────────────────
 console.log("--- Start server ---");
-const port = await ssh.start();
-console.log(`SSH server on port ${port}`);
+const PORT = await SSH.start();
+console.log(`SSH server on port ${PORT}`);
 console.log("Config: max 3 attempts, 5s lockout");
 
 // ── Simulate brute-force attack ───────────────────────────────────
 console.log("--- Simulate brute-force attack ---");
-const attackerIp = "192.168.1.100";
-console.log(`Simulating brute-force attack from ${attackerIp}`);
+const ATTACKER_IP = "192.168.1.100";
+console.log(`Simulating brute-force attack from ${ATTACKER_IP}`);
 
 console.log("\n  Attempt 1/3:");
-ssh.recordAuthFailure(attackerIp);
+SSH.recordAuthFailure(ATTACKER_IP);
 
 console.log("  Attempt 2/3:");
-ssh.recordAuthFailure(attackerIp);
+SSH.recordAuthFailure(ATTACKER_IP);
 
 console.log("  Attempt 3/3:");
-ssh.recordAuthFailure(attackerIp);
+SSH.recordAuthFailure(ATTACKER_IP);
 
 // ── Admin override ────────────────────────────────────────────────
 console.log("--- Admin override ---");
 console.log("  Admin clears lockout...");
-ssh.clearLockout(attackerIp);
-console.log(`  IP ${attackerIp} cleared`);
+SSH.clearLockout(ATTACKER_IP);
+console.log(`  IP ${ATTACKER_IP} cleared`);
 
 // ── Cleanup ───────────────────────────────────────────────────────
 console.log("--- Cleanup ---");
-ssh.stop();
+SSH.stop();
 console.log("SSH server stopped");

@@ -2,7 +2,12 @@ import { describe, expect, test } from "bun:test";
 import { diffSnapshots, formatDiff, assertDiff } from "../src/utils/vfsDiff";
 import type { VfsSnapshot } from "../src/types/vfs";
 
-function makeSnapshot(root: Record<string, string | { type: string; content?: string; mode?: string }>): VfsSnapshot {
+function makeSnapshot(
+	root: Record<
+		string,
+		string | { type: string; content?: string; mode?: string }
+	>
+): VfsSnapshot {
 	const nodes: Array<{
 		name: string;
 		type: string;
@@ -33,7 +38,9 @@ function makeSnapshot(root: Record<string, string | { type: string; content?: st
 			nodes.push({
 				name,
 				type: val.type,
-				contentBase64: val.content ? Buffer.from(val.content).toString("base64") : undefined,
+				contentBase64: val.content
+					? Buffer.from(val.content).toString("base64")
+					: undefined,
 				mode: val.mode ?? "644",
 				uid: 0,
 				gid: 0,
@@ -100,8 +107,12 @@ describe("diffSnapshots", () => {
 	});
 
 	test("permission change detected", () => {
-		const before = makeSnapshot({ "file.txt": { type: "file", content: "same", mode: "644" } });
-		const after = makeSnapshot({ "file.txt": { type: "file", content: "same", mode: "755" } });
+		const before = makeSnapshot({
+			"file.txt": { type: "file", content: "same", mode: "644" },
+		});
+		const after = makeSnapshot({
+			"file.txt": { type: "file", content: "same", mode: "755" },
+		});
 		const diff = diffSnapshots(before, after);
 		expect(diff.clean).toBe(false);
 		expect(diff.modified).toHaveLength(1);
@@ -121,7 +132,18 @@ describe("diffSnapshots", () => {
 				gid: 0,
 				atime: Date.now(),
 				mtime: Date.now(),
-				children: [{ name: "subdir", type: "directory", mode: "755", uid: 0, gid: 0, atime: Date.now(), mtime: Date.now(), children: [] }],
+				children: [
+					{
+						name: "subdir",
+						type: "directory",
+						mode: "755",
+						uid: 0,
+						gid: 0,
+						atime: Date.now(),
+						mtime: Date.now(),
+						children: [],
+					},
+				],
 			},
 		} as unknown as VfsSnapshot;
 		const diff = diffSnapshots(before, after);
@@ -229,6 +251,8 @@ describe("assertDiff", () => {
 		const before = makeSnapshot({ "old.txt": "x" });
 		const after = makeSnapshot({ "new.txt": "y" });
 		const diff = diffSnapshots(before, after);
-		expect(() => assertDiff(diff, { added: ["/new.txt"], removed: ["/old.txt"] })).not.toThrow();
+		expect(() =>
+			assertDiff(diff, { added: ["/new.txt"], removed: ["/old.txt"] })
+		).not.toThrow();
 	});
 });

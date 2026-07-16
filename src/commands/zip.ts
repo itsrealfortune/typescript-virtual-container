@@ -5,9 +5,9 @@ let _fflateAvailable = true;
 let _deflateSync: (d: Buffer, o: { level: number }) => Uint8Array;
 let _inflateSync: (d: Uint8Array) => Uint8Array;
 try {
-	const fflate = require("fflate");
-	_deflateSync = fflate.deflateSync;
-	_inflateSync = fflate.inflateSync;
+	const FFLATE = require("fflate");
+	_deflateSync = FFLATE.deflateSync;
+	_inflateSync = FFLATE.inflateSync;
 } catch {
 	_fflateAvailable = false;
 }

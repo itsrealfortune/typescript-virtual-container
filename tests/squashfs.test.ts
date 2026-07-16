@@ -2,17 +2,20 @@ import { describe, test, expect } from "bun:test";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import VirtualFileSystem from "../src/modules/VirtualFileSystem";
-import { decodeSquashfs, isSquashfsFormat } from "../src/modules/VirtualFileSystem/squashfs";
+import {
+	decodeSquashfs,
+	isSquashfsFormat,
+} from "../src/modules/VirtualFileSystem/squashfs";
 import type {
 	InternalDirectoryNode,
 	InternalFileNode,
 } from "../src/modules/VirtualFileSystem/internalTypes";
 
-const imagePath = "/tmp/test-comp.squashfs";
+const IMAGE_PATH = "/tmp/test-comp.squashfs";
 
 describe("isSquashfsFormat", () => {
 	test("detects squashfs magic bytes", () => {
-		const buf = fs.readFileSync(imagePath);
+		const buf = fs.readFileSync(IMAGE_PATH);
 		expect(isSquashfsFormat(buf)).toBe(true);
 	});
 
@@ -27,7 +30,7 @@ describe("isSquashfsFormat", () => {
 
 describe("decodeSquashfs", () => {
 	test("decodes root tree correctly", () => {
-		const buf = fs.readFileSync(imagePath);
+		const buf = fs.readFileSync(IMAGE_PATH);
 		const root = decodeSquashfs(buf);
 		expect(root.type).toBe("directory");
 
@@ -67,7 +70,7 @@ describe("squashfs snapshot integration", () => {
 		fs.mkdirSync(testDir, { recursive: true });
 
 		// Copy the squashfs image as the snapshot file
-		fs.copyFileSync(imagePath, path.join(testDir, "vfs-snapshot.vfsb"));
+		fs.copyFileSync(IMAGE_PATH, path.join(testDir, "vfs-snapshot.vfsb"));
 
 		try {
 			const vfs = new VirtualFileSystem({
@@ -90,7 +93,7 @@ describe("squashfs snapshot integration", () => {
 	});
 
 	test("squashfs contents survive tar roundtrip", () => {
-		const buf = fs.readFileSync(imagePath);
+		const buf = fs.readFileSync(IMAGE_PATH);
 		const root = decodeSquashfs(buf);
 
 		// Import into VFS
@@ -112,5 +115,4 @@ describe("squashfs snapshot integration", () => {
 		expect(vfs2.list("/emptydir")).toEqual([]);
 		expect(vfs2.readFile("/nested/file.txt")).toBe("Nested file content\n");
 	});
-
 });

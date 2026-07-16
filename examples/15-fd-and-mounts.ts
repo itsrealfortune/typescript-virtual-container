@@ -7,57 +7,57 @@
 
 import { VirtualFileSystem } from "../src";
 
-const vfs = new VirtualFileSystem();
+const VFS = new VirtualFileSystem();
 
 // ── File descriptors ────────────────────────────────────────────────
 console.log("--- File descriptors ---");
 
-vfs.writeFile("/tmp/test.txt", "Hello, file descriptors!");
+VFS.writeFile("/tmp/test.txt", "Hello, file descriptors!");
 
-const fd1 = vfs.fdOpen("/tmp/test.txt", 0);
-const fd2 = vfs.fdOpen("/tmp/test.txt", 0);
+const FD1 = VFS.fdOpen("/tmp/test.txt", 0);
+const FD2 = VFS.fdOpen("/tmp/test.txt", 0);
 
-console.log("Opened FDs:", fd1, fd2);
-console.log("FD1 path:", vfs.fdPath(fd1));
-console.log("FD2 path:", vfs.fdPath(fd2));
+console.log("Opened FDs:", FD1, FD2);
+console.log("FD1 path:", VFS.fdPath(FD1));
+console.log("FD2 path:", VFS.fdPath(FD2));
 
 // ── Dup ─────────────────────────────────────────────────────────────
 console.log("\n--- Dup ---");
 
-const fd3 = vfs.fdDup(fd1);
-console.log("Duplicated FD1 -> FD3:", fd3);
+const FD3 = VFS.fdDup(FD1);
+console.log("Duplicated FD1 -> FD3:", FD3);
 
-const fd4 = vfs.fdDup2(fd1, 100);
-console.log("Dup2 FD1 -> FD100:", fd4);
+const FD4 = VFS.fdDup2(FD1, 100);
+console.log("Dup2 FD1 -> FD100:", FD4);
 
 // ── Open FDs ────────────────────────────────────────────────────────
 console.log("\n--- Open FDs ---");
 
-const openFds = vfs.getOpenFds();
-console.log("Open FDs:", Array.from(openFds.entries()));
+const OPEN_FDS = VFS.getOpenFds();
+console.log("Open FDs:", Array.from(OPEN_FDS.entries()));
 
 // ── Close FDs ───────────────────────────────────────────────────────
 console.log("\n--- Close FDs ---");
 
-vfs.fdClose(fd2);
-vfs.fdClose(fd3);
+VFS.fdClose(FD2);
+VFS.fdClose(FD3);
 console.log("Closed FD2 and FD3");
-console.log("Remaining open FDs:", Array.from(vfs.getOpenFds().entries()));
+console.log("Remaining open FDs:", Array.from(VFS.getOpenFds().entries()));
 
-vfs.closeAllFds();
+VFS.closeAllFds();
 console.log("All FDs closed");
 
 // ── Mount points ────────────────────────────────────────────────────
 console.log("\n--- Mount points ---");
 
-vfs.mount("/mnt/host", "/tmp", { readOnly: true });
-console.log("Mount points:", vfs.getMounts());
+VFS.mount("/mnt/host", "/tmp", { readOnly: true });
+console.log("Mount points:", VFS.getMounts());
 
-const entries = vfs.list("/mnt/host");
-console.log("Mounted directory entries:", entries);
+const ENTRIES = VFS.list("/mnt/host");
+console.log("Mounted directory entries:", ENTRIES);
 
 try {
-	vfs.writeFile("/mnt/host/new-file.txt", "should fail");
+	VFS.writeFile("/mnt/host/new-file.txt", "should fail");
 } catch (err: unknown) {
 	console.log(
 		"Write to read-only mount failed (expected):",
@@ -65,5 +65,5 @@ try {
 	);
 }
 
-vfs.unmount("/mnt/host");
+VFS.unmount("/mnt/host");
 console.log("Unmounted /mnt/host");

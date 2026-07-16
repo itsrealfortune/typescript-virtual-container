@@ -13,7 +13,7 @@ export const idCommand: ShellModule = {
 	run: ({ authUser, shell, args }) => {
 		const flagU = args.includes("-u");
 		const flagG = args.includes("-g");
-		const flagGN = args.includes("-G");
+		const flagGn = args.includes("-G");
 		const flagN = args.includes("-n");
 		const target = args.find((a) => !a.startsWith("-")) ?? authUser;
 
@@ -36,7 +36,7 @@ export const idCommand: ShellModule = {
 			return { stdout: String(gid), exitCode: 0 };
 		}
 
-		if (flagGN) {
+		if (flagGn) {
 			return { stdout: groupNames.join(" "), exitCode: 0 };
 		}
 

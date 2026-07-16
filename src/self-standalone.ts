@@ -31,14 +31,14 @@ import {
 
 // ── CLI args ──────────────────────────────────────────────────────────────────
 
-const argv = process.argv.slice(2);
+const ARGV = process.argv.slice(2);
 
-if (getFlag(argv, "--version") || getFlag(argv, "-V")) {
+if (getFlag(ARGV, "--version") || getFlag(ARGV, "-V")) {
 	process.stdout.write("self-standalone 1.6.0\n");
 	process.exit(0);
 }
 
-if (getFlag(argv, "--help") || getFlag(argv, "-h")) {
+if (getFlag(ARGV, "--help") || getFlag(ARGV, "-h")) {
 	process.stdout.write(`\
 Usage: node <self-standalone.mjs> [OPTIONS]
 
@@ -56,10 +56,10 @@ Environment:
 }
 
 function readUserArg(): string {
-	for (let index = 0; index < argv.length; index += 1) {
-		const current = argv[index];
+	for (let index = 0; index < ARGV.length; index += 1) {
+		const current = ARGV[index];
 		if (current === "--user") {
-			const next = argv[index + 1];
+			const next = ARGV[index + 1];
 			if (!next || next.startsWith("--")) {
 				throw new Error("self-standalone: --user requires a value");
 			}
@@ -72,26 +72,26 @@ function readUserArg(): string {
 	return "root";
 }
 
-const hostname = getOptionString(
-	argv,
+const HOSTNAME = getOptionString(
+	ARGV,
 	"--hostname",
 	process.env.SSH_MIMIC_HOSTNAME ?? "typescript-vm"
 );
-const snapshotPath = getOptionString(argv, "--snapshot", ".vfs");
-const initialUser = readUserArg();
+const SNAPSHOT_PATH = getOptionString(ARGV, "--snapshot", ".vfs");
+const INITIAL_USER = readUserArg();
 
 // ── Shell ─────────────────────────────────────────────────────────────────────
 
 console.clear();
-const virtualShell = new VirtualShell(hostname, undefined, {
+const VIRTUAL_SHELL = new VirtualShell(HOSTNAME, undefined, {
 	mode: "fs",
-	snapshotPath,
+	snapshotPath: SNAPSHOT_PATH,
 });
 
 // ── VFS helpers ───────────────────────────────────────────────────────────────
 
 function flushVfs(): void {
-	virtualShell.vfs.stopAutoFlush();
+	VIRTUAL_SHELL.vfs.stopAutoFlush();
 }
 
 // ── Tab completion ────────────────────────────────────────────────────────────
@@ -108,7 +108,7 @@ function makeCompleter(getState: () => { cwd: string }) {
 		const cmdHits = isFirstToken
 			? commandNames.filter((n) => n.startsWith(token))
 			: [];
-		const pathHits = listPathCompletions(virtualShell.vfs, cwd, token);
+		const pathHits = listPathCompletions(VIRTUAL_SHELL.vfs, cwd, token);
 		const hits = Array.from(new Set([...cmdHits, ...pathHits])).sort();
 		cb(null, [hits, token]);
 	};
@@ -193,7 +193,7 @@ function applySessionState(
 
 // ── Demo command ──────────────────────────────────────────────────────────────
 
-virtualShell.addCommand("demo", [], () => ({
+VIRTUAL_SHELL.addCommand("demo", [], () => ({
 	stdout: "This is a demo command. It does nothing useful.",
 	exitCode: 0,
 }));
@@ -201,10 +201,10 @@ virtualShell.addCommand("demo", [], () => ({
 // ── Main shell ────────────────────────────────────────────────────────────────
 
 async function runReadlineShell(): Promise<void> {
-	await virtualShell.ensureInitialized();
+	await VIRTUAL_SHELL.ensureInitialized();
 
-	const selectedUser = initialUser.trim() || "root";
-	if (virtualShell.users.getPasswordHash(selectedUser) === null) {
+	const selectedUser = INITIAL_USER.trim() || "root";
+	if (VIRTUAL_SHELL.users.getPasswordHash(selectedUser) === null) {
 		process.stderr.write(
 			`self-standalone: user '${selectedUser}' does not exist\n`
 		);
@@ -212,16 +212,16 @@ async function runReadlineShell(): Promise<void> {
 	}
 
 	const homePath = selectedUser === "root" ? "/root" : userHome(selectedUser);
-	if (!virtualShell.vfs.exists(homePath)) {
-		virtualShell.vfs.mkdir(homePath, selectedUser === "root" ? 0o700 : 0o755);
+	if (!VIRTUAL_SHELL.vfs.exists(homePath)) {
+		VIRTUAL_SHELL.vfs.mkdir(homePath, selectedUser === "root" ? 0o700 : 0o755);
 	}
 	const readmePath = `${homePath}/README.txt`;
-	if (!virtualShell.vfs.exists(readmePath)) {
-		virtualShell.vfs.writeFile(readmePath, `Welcome to ${hostname}\n`);
-		virtualShell.vfs.stopAutoFlush();
+	if (!VIRTUAL_SHELL.vfs.exists(readmePath)) {
+		VIRTUAL_SHELL.vfs.writeFile(readmePath, `Welcome to ${HOSTNAME}\n`);
+		VIRTUAL_SHELL.vfs.stopAutoFlush();
 	}
 
-	const shellEnv = makeDefaultEnv(selectedUser, hostname);
+	const shellEnv = makeDefaultEnv(selectedUser, HOSTNAME);
 	let authUser = selectedUser;
 	let cwd = userHome(authUser);
 	shellEnv.vars.PWD = cwd;
@@ -235,7 +235,7 @@ async function runReadlineShell(): Promise<void> {
 		terminalSize.rows = stdout.rows ?? terminalSize.rows;
 	});
 
-	let history = loadHistory(virtualShell.vfs, authUser);
+	let history = loadHistory(VIRTUAL_SHELL.vfs, authUser);
 
 	const rl = createInterface({
 		input: stdin,
@@ -284,7 +284,7 @@ async function runReadlineShell(): Promise<void> {
 				shellEnv.vars.LOGNAME = authUser;
 				shellEnv.vars.HOME = userHome(authUser);
 				shellEnv.vars.PWD = cwd;
-				shellEnv.vars.PS1 = makeDefaultEnv(authUser, hostname).vars.PS1 ?? "";
+				shellEnv.vars.PS1 = makeDefaultEnv(authUser, HOSTNAME).vars.PS1 ?? "";
 				stdout.write("logout\n");
 				void flushVfs();
 				prompt();
@@ -364,17 +364,17 @@ async function runReadlineShell(): Promise<void> {
 				content: initialContent,
 				filename: path.posix.basename(targetPath),
 				onSave: (content) => {
-					const uid = virtualShell.users.getUid(authUser);
-					const gid = virtualShell.users.getGid(authUser);
-					virtualShell.vfs.writeFile(targetPath, content, {}, uid, gid);
+					const uid = VIRTUAL_SHELL.users.getUid(authUser);
+					const gid = VIRTUAL_SHELL.users.getGid(authUser);
+					VIRTUAL_SHELL.vfs.writeFile(targetPath, content, {}, uid, gid);
 					void flushVfs();
 				},
 				onExit: (reason, content) => {
 					cleanup();
 					if (reason === "saved") {
-						const uid = virtualShell.users.getUid(authUser);
-						const gid = virtualShell.users.getGid(authUser);
-						virtualShell.vfs.writeFile(targetPath, content, {}, uid, gid);
+						const uid = VIRTUAL_SHELL.users.getUid(authUser);
+						const gid = VIRTUAL_SHELL.users.getGid(authUser);
+						VIRTUAL_SHELL.vfs.writeFile(targetPath, content, {}, uid, gid);
 						void flushVfs();
 					}
 					resolve();
@@ -484,7 +484,7 @@ async function runReadlineShell(): Promise<void> {
 			let promptText = challenge.prompt;
 			while (true) {
 				const typed = await askHiddenQuestion(rl, promptText);
-				const step = await challenge.onPassword(typed, virtualShell);
+				const step = await challenge.onPassword(typed, VIRTUAL_SHELL);
 				if (step.result === null) {
 					promptText = step.nextPrompt ?? promptText;
 					continue;
@@ -495,7 +495,7 @@ async function runReadlineShell(): Promise<void> {
 		}
 
 		const password = await askHiddenQuestion(rl, challenge.prompt);
-		if (!virtualShell.users.verifyPassword(challenge.username, password)) {
+		if (!VIRTUAL_SHELL.users.verifyPassword(challenge.username, password)) {
 			process.stderr.write("Sorry, try again.\n");
 			return;
 		}
@@ -505,7 +505,7 @@ async function runReadlineShell(): Promise<void> {
 			authUser = challenge.targetUser;
 			cwd = userHome(authUser);
 			shellEnv.vars.PWD = cwd;
-			await applyUserSwitch(authUser, hostname, cwd, shellEnv, virtualShell);
+			await applyUserSwitch(authUser, HOSTNAME, cwd, shellEnv, VIRTUAL_SHELL);
 			return;
 		}
 
@@ -513,10 +513,10 @@ async function runReadlineShell(): Promise<void> {
 		const nestedResult = await runCommand(
 			challenge.commandLine,
 			challenge.targetUser,
-			hostname,
+			HOSTNAME,
 			"shell",
 			runCwd,
-			virtualShell,
+			VIRTUAL_SHELL,
 			undefined,
 			shellEnv
 		);
@@ -537,7 +537,7 @@ async function runReadlineShell(): Promise<void> {
 
 		switch (challenge.action) {
 			case "passwd":
-				virtualShell.users.setPassword(challenge.targetUsername, first);
+				VIRTUAL_SHELL.users.setPassword(challenge.targetUsername, first);
 				stdout.write("passwd: password updated successfully\n");
 				break;
 			case "adduser":
@@ -545,11 +545,11 @@ async function runReadlineShell(): Promise<void> {
 					process.stderr.write("adduser: missing username\n");
 					return;
 				}
-				virtualShell.users.addUser(challenge.newUsername, first);
+				VIRTUAL_SHELL.users.addUser(challenge.newUsername, first);
 				stdout.write(`adduser: user '${challenge.newUsername}' created\n`);
 				break;
 			case "deluser":
-				virtualShell.users.deleteUser(challenge.targetUsername);
+				VIRTUAL_SHELL.users.deleteUser(challenge.targetUsername);
 				stdout.write(
 					`Removing user '${challenge.targetUsername}' ...\ndeluser: done.\n`
 				);
@@ -618,7 +618,7 @@ async function runReadlineShell(): Promise<void> {
 		authUser = updated.authUser;
 		cwd = updated.cwd;
 		if (result.switchUser) {
-			await applyUserSwitch(authUser, hostname, cwd, shellEnv, virtualShell);
+			await applyUserSwitch(authUser, HOSTNAME, cwd, shellEnv, VIRTUAL_SHELL);
 		}
 
 		if (result.closeSession) {
@@ -634,7 +634,7 @@ async function runReadlineShell(): Promise<void> {
 				shellEnv.vars.LOGNAME = authUser;
 				shellEnv.vars.HOME = userHome(authUser);
 				shellEnv.vars.PWD = cwd;
-				shellEnv.vars.PS1 = makeDefaultEnv(authUser, hostname).vars.PS1 ?? "";
+				shellEnv.vars.PS1 = makeDefaultEnv(authUser, HOSTNAME).vars.PS1 ?? "";
 				stdout.write("logout\n");
 				// resume prompt handled by caller
 			}
@@ -645,12 +645,12 @@ async function runReadlineShell(): Promise<void> {
 
 	const renderPrompt = (): string => {
 		if (shellEnv.vars.PS1) {
-			return buildPrompt(authUser, hostname, "", shellEnv.vars.PS1, cwd, true);
+			return buildPrompt(authUser, HOSTNAME, "", shellEnv.vars.PS1, cwd, true);
 		}
 		const cwdLabel = cwd === userHome(authUser) ? "~" : basename(cwd) || "/";
 		return buildPrompt(
 			authUser,
-			hostname,
+			HOSTNAME,
 			cwdLabel,
 			undefined,
 			undefined,
@@ -670,10 +670,10 @@ async function runReadlineShell(): Promise<void> {
 	if (
 		authUser !== "root" &&
 		process.env.USER !== "root" &&
-		virtualShell.users.hasPassword(authUser)
+		VIRTUAL_SHELL.users.hasPassword(authUser)
 	) {
 		const password = await askHiddenQuestion(rl, `Password for ${authUser}: `);
-		if (!virtualShell.users.verifyPassword(authUser, password)) {
+		if (!VIRTUAL_SHELL.users.verifyPassword(authUser, password)) {
 			process.stderr.write("self-standalone: authentication failed\n");
 			process.exit(1);
 		}
@@ -683,12 +683,12 @@ async function runReadlineShell(): Promise<void> {
 
 	stdout.write(
 		buildLoginBanner(
-			hostname,
-			virtualShell.properties,
-			readLastLogin(virtualShell.vfs, authUser)
+			HOSTNAME,
+			VIRTUAL_SHELL.properties,
+			readLastLogin(VIRTUAL_SHELL.vfs, authUser)
 		)
 	);
-	writeLastLogin(virtualShell.vfs, authUser, remoteAddress);
+	writeLastLogin(VIRTUAL_SHELL.vfs, authUser, remoteAddress);
 
 	// Source login/rc files so PS1, aliases, exports are applied before first prompt.
 	for (const rcPath of [
@@ -696,10 +696,10 @@ async function runReadlineShell(): Promise<void> {
 		`${userHome(authUser)}/.profile`,
 		`${userHome(authUser)}/.bashrc`,
 	]) {
-		if (!virtualShell.vfs.exists(rcPath)) {
+		if (!VIRTUAL_SHELL.vfs.exists(rcPath)) {
 			continue;
 		}
-		for (const raw of virtualShell.vfs.readFile(rcPath).split("\n")) {
+		for (const raw of VIRTUAL_SHELL.vfs.readFile(rcPath).split("\n")) {
 			const l = raw.trim();
 			if (!l || l.startsWith("#")) {
 				continue;
@@ -708,10 +708,10 @@ async function runReadlineShell(): Promise<void> {
 				const r = await runCommand(
 					l,
 					authUser,
-					hostname,
+					HOSTNAME,
 					"shell",
 					cwd,
-					virtualShell,
+					VIRTUAL_SHELL,
 					undefined,
 					shellEnv
 				);
@@ -751,7 +751,7 @@ async function runReadlineShell(): Promise<void> {
 				if (history.length > 500) {
 					history = history.slice(history.length - 500);
 				}
-				saveHistory(virtualShell.vfs, authUser, history);
+				saveHistory(VIRTUAL_SHELL.vfs, authUser, history);
 			}
 			rlRecord.history = [...history].reverse();
 		}
@@ -759,10 +759,10 @@ async function runReadlineShell(): Promise<void> {
 		const result = await runCommand(
 			inputLine,
 			authUser,
-			hostname,
+			HOSTNAME,
 			"shell",
 			cwd,
-			virtualShell,
+			VIRTUAL_SHELL,
 			undefined,
 			shellEnv
 		);
@@ -814,7 +814,7 @@ function _gracefulShutdown(signal: string): void {
 	_shuttingDown = true;
 	process.stdout.write(`\n[${signal}] Saving VFS...\n`);
 	try {
-		virtualShell.vfs.stopAutoFlush();
+		VIRTUAL_SHELL.vfs.stopAutoFlush();
 	} catch {
 		/* best-effort flush on shutdown */
 	}
@@ -824,7 +824,7 @@ process.on("SIGTERM", () => {
 	void _gracefulShutdown("SIGTERM");
 });
 process.on("beforeExit", () => {
-	void virtualShell.vfs.stopAutoFlush();
+	void VIRTUAL_SHELL.vfs.stopAutoFlush();
 });
 
 process.on("uncaughtException", (error) => {
