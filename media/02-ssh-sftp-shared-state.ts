@@ -7,32 +7,32 @@
 
 import { VirtualSftpServer as SftpMimic, VirtualShell } from "../src";
 
-const shell = new VirtualShell("my-container");
-await shell.ensureInitialized();
+const SHELL = new VirtualShell("my-container");
+await SHELL.ensureInitialized();
 
 // ── Write file via VFS ────────────────────────────────────────────
 console.log("--- Write file via VFS ---");
-shell.vfs.writeFile("/shared/hello.txt", "Written via SSH");
+SHELL.vfs.writeFile("/shared/hello.txt", "Written via SSH");
 console.log("VFS wrote /shared/hello.txt");
 
 // ── Start SFTP server ─────────────────────────────────────────────
 console.log("--- Start SFTP server ---");
-const sftp = new SftpMimic({ port: 0, shell });
-const sftpPort = await sftp.start();
-console.log(`SFTP server started on port ${sftpPort}`);
+const SFTP = new SftpMimic({ port: 0, shell: SHELL });
+const SFTP_PORT = await SFTP.start();
+console.log(`SFTP server started on port ${SFTP_PORT}`);
 
 // ── Verify shared state ───────────────────────────────────────────
 console.log("--- Verify shared state ---");
-const content = shell.vfs.readFile("/shared/hello.txt");
-console.log(`File content via shared VFS: "${content.trim()}"`);
+const CONTENT = SHELL.vfs.readFile("/shared/hello.txt");
+console.log(`File content via shared VFS: "${CONTENT.trim()}"`);
 
-shell.vfs.writeFile("/shared/sftp-upload.txt", "Uploaded via SFTP");
+SHELL.vfs.writeFile("/shared/sftp-upload.txt", "Uploaded via SFTP");
 console.log("VFS wrote /shared/sftp-upload.txt");
 
-const files = shell.vfs.list("/shared");
-console.log(`Files in /shared: ${files.join(", ")}`);
+const FILES = SHELL.vfs.list("/shared");
+console.log(`Files in /shared: ${FILES.join(", ")}`);
 
 // ── Stop server ───────────────────────────────────────────────────
 console.log("--- Stop server ---");
-sftp.stop();
+SFTP.stop();
 console.log("SFTP server stopped");

@@ -8,48 +8,48 @@
 
 import { VirtualShell } from "../src";
 
-const shell = new VirtualShell("secure-vm");
-await shell.ensureInitialized();
+const SHELL = new VirtualShell("secure-vm");
+await SHELL.ensureInitialized();
 
 // ── Create user with password fallback ────────────────────────────
 console.log("--- Create user with password fallback ---");
-shell.users.addUser("alice", "fallback-password");
+SHELL.users.addUser("alice", "fallback-password");
 console.log("Created user 'alice' with password fallback");
 
 // ── Simulate SSH key pair ─────────────────────────────────────────
 console.log("--- Simulate SSH key pair ---");
-const pubKeyLine =
+const PUB_KEY_LINE =
 	"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGtFeG9hbXBsZUtleUZvckRlbW9uc3RyYXRpb25Pbmx5 alice@laptop";
-const [algo, b64] = pubKeyLine.split(" ") as [string, string];
-const keyData = Buffer.from(b64, "base64");
+const [ALGO, B64] = PUB_KEY_LINE.split(" ") as [string, string];
+const KEY_DATA = Buffer.from(B64, "base64");
 
 // ── Add authorized key ────────────────────────────────────────────
 console.log("--- Add authorized key ---");
-shell.users.addAuthorizedKey("alice", algo, keyData);
-console.log(`Added ${algo} key for alice (${keyData.length} bytes)`);
+SHELL.users.addAuthorizedKey("alice", ALGO, KEY_DATA);
+console.log(`Added ${ALGO} key for alice (${KEY_DATA.length} bytes)`);
 
 // ── Add second key for rotation ───────────────────────────────────
 console.log("--- Add second key for rotation ---");
-const key2Line =
+const KEY2_LINE =
 	"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDExampleRsaKeyForDemoPurposesOnly alice@desktop";
-const [algo2, b64_2] = key2Line.split(" ") as [string, string];
-shell.users.addAuthorizedKey("alice", algo2, Buffer.from(b64_2, "base64"));
-console.log(`Added ${algo2} key for alice (key rotation)`);
+const [ALGO2, B64_2] = KEY2_LINE.split(" ") as [string, string];
+SHELL.users.addAuthorizedKey("alice", ALGO2, Buffer.from(B64_2, "base64"));
+console.log(`Added ${ALGO2} key for alice (key rotation)`);
 
 // ── Verify key management ─────────────────────────────────────────
 console.log("--- Verify key management ---");
-const keys = shell.users.getAuthorizedKeys("alice");
-console.log(`Alice has ${keys.length} authorized key(s):`);
-for (let i = 0; i < keys.length; i++) {
-	const k = keys[i]!;
+const KEYS = SHELL.users.getAuthorizedKeys("alice");
+console.log(`Alice has ${KEYS.length} authorized key(s):`);
+for (let i = 0; i < KEYS.length; i++) {
+	const k = KEYS[i]!;
 	console.log(`  [${i + 1}] ${k.algo} (${k.data.length} bytes)`);
 }
 
 // ── Remove all keys ───────────────────────────────────────────────
 console.log("--- Remove all keys ---");
-shell.users.removeAuthorizedKeys("alice");
-const remaining = shell.users.getAuthorizedKeys("alice");
-console.log(`After removing all keys: ${remaining.length} key(s) remaining`);
+SHELL.users.removeAuthorizedKeys("alice");
+const REMAINING = SHELL.users.getAuthorizedKeys("alice");
+console.log(`After removing all keys: ${REMAINING.length} key(s) remaining`);
 
 // ── SSH server auth flow ──────────────────────────────────────────
 console.log("--- SSH server auth flow ---");
