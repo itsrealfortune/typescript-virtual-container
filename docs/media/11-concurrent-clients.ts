@@ -8,37 +8,37 @@
 
 import { SshClient, VirtualShell, VirtualSshServer } from "../src";
 
-const shell = new VirtualShell("typescript-vm");
-await shell.ensureInitialized();
-shell.users.setPassword("root", "root");
+const SHELL = new VirtualShell("typescript-vm");
+await SHELL.ensureInitialized();
+SHELL.users.setPassword("root", "root");
 
-shell.users.addUser("alice", "alice123");
-shell.users.addUser("bob", "bob456");
-shell.users.addUser("charlie", "charlie789");
+SHELL.users.addUser("alice", "alice123");
+SHELL.users.addUser("bob", "bob456");
+SHELL.users.addUser("charlie", "charlie789");
 
-const ssh = new VirtualSshServer({ port: 0, shell });
-const port = await ssh.start();
+const SSH = new VirtualSshServer({ port: 0, shell: SHELL });
+const PORT = await SSH.start();
 
-const client1 = new SshClient();
-const client2 = new SshClient();
-const client3 = new SshClient();
+const CLIENT1 = new SshClient();
+const CLIENT2 = new SshClient();
+const CLIENT3 = new SshClient();
 
 await Promise.all([
-	client1.connect({
+	CLIENT1.connect({
 		host: "localhost",
-		port,
+		port: PORT,
 		username: "alice",
 		password: "alice123",
 	}),
-	client2.connect({
+	CLIENT2.connect({
 		host: "localhost",
-		port,
+		port: PORT,
 		username: "bob",
 		password: "bob456",
 	}),
-	client3.connect({
+	CLIENT3.connect({
 		host: "localhost",
-		port,
+		port: PORT,
 		username: "charlie",
 		password: "charlie789",
 	}),
@@ -47,73 +47,73 @@ await Promise.all([
 // ── Concurrent file writes ─────────────────────────────────────────
 console.log("--- Concurrent file writes ---");
 
-const [r1, r2, r3] = await Promise.all([
-	client1.writeFile(
+const [R1, R2, R3] = await Promise.all([
+	CLIENT1.writeFile(
 		"/tmp/alice.txt",
 		`Alice's data -- written at ${Date.now()}`
 	),
-	client2.writeFile("/tmp/bob.txt", `Bob's data -- written at ${Date.now()}`),
-	client3.writeFile(
+	CLIENT2.writeFile("/tmp/bob.txt", `Bob's data -- written at ${Date.now()}`),
+	CLIENT3.writeFile(
 		"/tmp/charlie.txt",
 		`Charlie's data -- written at ${Date.now()}`
 	),
 ]);
 
-console.log(`Alice write: exit ${r1.exitCode}`);
-console.log(`Bob write:   exit ${r2.exitCode}`);
-console.log(`Charlie write: exit ${r3.exitCode}`);
+console.log(`Alice write: exit ${R1.exitCode}`);
+console.log(`Bob write:   exit ${R2.exitCode}`);
+console.log(`Charlie write: exit ${R3.exitCode}`);
 
 // ── Concurrent reads ───────────────────────────────────────────────
 console.log("\n--- Concurrent reads ---");
 
-const [read1, read2, read3] = await Promise.all([
-	client1.cat("/tmp/alice.txt"),
-	client2.cat("/tmp/bob.txt"),
-	client3.cat("/tmp/charlie.txt"),
+const [READ1, READ2, READ3] = await Promise.all([
+	CLIENT1.cat("/tmp/alice.txt"),
+	CLIENT2.cat("/tmp/bob.txt"),
+	CLIENT3.cat("/tmp/charlie.txt"),
 ]);
 
-console.log(`Alice's file: "${read1.stdout!.trim()}"`);
-console.log(`Bob's file:   "${read2.stdout!.trim()}"`);
-console.log(`Charlie's file: "${read3.stdout!.trim()}"`);
+console.log(`Alice's file: "${READ1.stdout!.trim()}"`);
+console.log(`Bob's file:   "${READ2.stdout!.trim()}"`);
+console.log(`Charlie's file: "${READ3.stdout!.trim()}"`);
 
 // ── Cross-user file sharing ────────────────────────────────────────
 console.log("\n--- Cross-user file sharing ---");
 
-const bobReadsAlice = await client2.cat("/tmp/alice.txt");
+const BOB_READS_ALICE = await CLIENT2.cat("/tmp/alice.txt");
 console.log(
-	`Bob reads Alice's file: exit ${bobReadsAlice.exitCode} -- "${bobReadsAlice.stdout!.trim().slice(0, 30)}..."`
+	`Bob reads Alice's file: exit ${BOB_READS_ALICE.exitCode} -- "${BOB_READS_ALICE.stdout!.trim().slice(0, 30)}..."`
 );
 
 // ── Concurrent directory listing ───────────────────────────────────
 console.log("\n--- Concurrent directory listing ---");
 
-const [ls1, ls2, ls3] = await Promise.all([
-	client1.ls("/tmp"),
-	client2.ls("/tmp"),
-	client3.ls("/tmp"),
+const [LS1, LS2, LS3] = await Promise.all([
+	CLIENT1.ls("/tmp"),
+	CLIENT2.ls("/tmp"),
+	CLIENT3.ls("/tmp"),
 ]);
 
-console.log(`Alice sees: ${ls1.stdout!.trim().split("\n").length} entries`);
-console.log(`Bob sees:   ${ls2.stdout!.trim().split("\n").length} entries`);
-console.log(`Charlie sees: ${ls3.stdout!.trim().split("\n").length} entries`);
+console.log(`Alice sees: ${LS1.stdout!.trim().split("\n").length} entries`);
+console.log(`Bob sees:   ${LS2.stdout!.trim().split("\n").length} entries`);
+console.log(`Charlie sees: ${LS3.stdout!.trim().split("\n").length} entries`);
 
 // ── Concurrent command execution ───────────────────────────────────
 console.log("\n--- Concurrent command execution ---");
 
-const commands = [
-	client1.exec("echo 'hello from alice'"),
-	client2.exec("echo 'hello from bob'"),
-	client3.exec("echo 'hello from charlie'"),
-	client1.exec("hostname"),
-	client2.exec("whoami"),
+const COMMANDS = [
+	CLIENT1.exec("echo 'hello from alice'"),
+	CLIENT2.exec("echo 'hello from bob'"),
+	CLIENT3.exec("echo 'hello from charlie'"),
+	CLIENT1.exec("hostname"),
+	CLIENT2.exec("whoami"),
 ];
 
-const results = await Promise.all(commands);
-for (const r of results) {
+const RESULTS = await Promise.all(COMMANDS);
+for (const r of RESULTS) {
 	console.log(`  -> "${r.stdout!.trim()}" (exit ${r.exitCode})`);
 }
 
-client1.disconnect();
-client2.disconnect();
-client3.disconnect();
-ssh.stop();
+CLIENT1.disconnect();
+CLIENT2.disconnect();
+CLIENT3.disconnect();
+SSH.stop();

@@ -9,46 +9,46 @@ import { assertDiff, diffSnapshots, VirtualFileSystem } from "../src";
 
 // ── Setup initial state ───────────────────────────────────────────
 console.log("--- Setup initial state ---");
-const vfs = new VirtualFileSystem();
-vfs.mkdir("/app");
-vfs.writeFile("/app/index.js", "console.log('hello')");
-vfs.writeFile("/var/log/syslog", "system boot");
+const VFS = new VirtualFileSystem();
+VFS.mkdir("/app");
+VFS.writeFile("/app/index.js", "console.log('hello')");
+VFS.writeFile("/var/log/syslog", "system boot");
 
-const before = vfs.toSnapshot();
+const BEFORE = VFS.toSnapshot();
 console.log("Before snapshot captured");
 
 // ── Simulate operations ───────────────────────────────────────────
 console.log("\n--- Simulate operations ---");
-vfs.writeFile("/usr/bin/vim", "#!/bin/sh\nvim");
-vfs.mkdir("/app/src");
-vfs.writeFile("/app/src/main.js", "export default {}");
-vfs.writeFile("/var/log/syslog", "system boot\npackage installed");
+VFS.writeFile("/usr/bin/vim", "#!/bin/sh\nvim");
+VFS.mkdir("/app/src");
+VFS.writeFile("/app/src/main.js", "export default {}");
+VFS.writeFile("/var/log/syslog", "system boot\npackage installed");
 
-const after = vfs.toSnapshot();
+const AFTER = VFS.toSnapshot();
 console.log("After snapshot captured");
 
 // ── Compute and display diff ──────────────────────────────────────
 console.log("\n--- Compute and display diff ---");
-const diff = diffSnapshots(before, after);
+const DIFF = diffSnapshots(BEFORE, AFTER);
 
 console.log("Added files:");
-for (const entry of diff.added) {
-	console.log(`  + ${entry.path}`);
+for (const ENTRY of DIFF.added) {
+	console.log(`  + ${ENTRY.path}`);
 }
 
 console.log("\nModified files:");
-for (const entry of diff.modified) {
-	console.log(`  ~ ${entry.path}`);
+for (const ENTRY of DIFF.modified) {
+	console.log(`  ~ ${ENTRY.path}`);
 }
 
 console.log("\nRemoved files:");
-for (const entry of diff.removed) {
-	console.log(`  - ${entry.path}`);
+for (const ENTRY of DIFF.removed) {
+	console.log(`  - ${ENTRY.path}`);
 }
 
 // ── Assert expected changes ───────────────────────────────────────
 console.log("\n--- Assert expected changes ---");
-assertDiff(diff, {
+assertDiff(DIFF, {
 	added: ["/usr/bin/vim", "/app/src", "/app/src/main.js"],
 	modified: ["/var/log/syslog"],
 });
